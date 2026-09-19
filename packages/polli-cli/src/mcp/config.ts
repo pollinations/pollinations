@@ -130,8 +130,21 @@ export const readJsonFile = (path: string): JsonFile => {
     }
 };
 
-export const writeJsonFile = (path: string, data: JsonObject) =>
-    writeTextAtomic(path, `${JSON.stringify(data, null, 4)}\n`);
+/**
+ * A config that carries the key in an `Authorization: Bearer ...` header holds a
+ * secret. `writeTextAtomic` preserves the mode of a file that already exists, so
+ * a config created before polli touched it would keep its 0644 and every local
+ * user could read the key; such a file is rewritten owner-only. Configs without
+ * a literal token (an input reference, or a file polli only removes entries
+ * from) keep whatever mode they had.
+ */
+const carriesBearer = (text: string) =>
+    /"authorization"\s*:\s*"Bearer\s+(?!\$\{)[^"]+"/i.test(text);
+
+export const writeJsonFile = (path: string, data: JsonObject) => {
+    const text = `${JSON.stringify(data, null, 4)}\n`;
+    return writeTextAtomic(path, text, carriesBearer(text) ? 0o600 : undefined);
+};
 
 export const readTable = (data: JsonObject, name: string): JsonObject => {
     const value = data[name];
@@ -191,7 +204,9 @@ export const writeEnvValue = (path: string, name: string, value: string) => {
     } else {
         body.push(entry);
     }
-    writeTextAtomic(path, `${body.join("\n")}\n`);
+    // The value is a Pollinations key, so the file stays owner-only even when
+    // it already existed with a looser mode.
+    writeTextAtomic(path, `${body.join("\n")}\n`, 0o600);
     return true;
 };
 
@@ -208,7 +223,7 @@ export const removeEnvValue = (path: string, name: string) => {
                 !(index === all.length - 1 && line.trim() === ""),
         );
     if (body.every((line) => line.trim() === "")) removeIfExists(path);
-    else writeTextAtomic(path, `${body.join("\n")}\n`);
+    else writeTextAtomic(path, `${body.join("\n")}\n`, 0o600);
     return true;
 };
 

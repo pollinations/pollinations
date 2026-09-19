@@ -3,6 +3,7 @@ import {
     mkdirSync,
     mkdtempSync,
     rmSync,
+    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -116,6 +117,45 @@ describe("readJsonFile / writeJsonFile", () => {
         expect(readJsonFile(path).data).toEqual({ mcpServers: {} });
     });
 
+    const mode = (path: string) => statSync(path).mode & 0o777;
+
+    it("tightens a config that already exists and carries the key", () => {
+        const path = join(home, ".cursor", "mcp.json");
+        mkdirSync(join(home, ".cursor"), { recursive: true });
+        writeFileSync(
+            path,
+            JSON.stringify({ mcpServers: { mine: { url: "https://example.com" } } }),
+            { mode: 0o644 },
+        );
+        chmodSync(path, 0o644);
+        writeJsonFile(path, {
+            mcpServers: {
+                pollinations: {
+                    url: "https://gen.pollinations.ai/mcp/pollinations",
+                    headers: { Authorization: "Bearer sk_test" },
+                },
+            },
+        });
+        expect(mode(path)).toBe(0o600);
+    });
+
+    it("leaves a config without a literal key at its own mode", () => {
+        const path = join(home, "vscode", "mcp.json");
+        mkdirSync(join(home, "vscode"), { recursive: true });
+        writeFileSync(path, '{"mcpServers":{}}', { mode: 0o644 });
+        chmodSync(path, 0o644);
+        writeJsonFile(path, {
+            inputs: [{ type: "promptString", id: "pollinations-mcp-key" }],
+            mcpServers: {
+                pollinations: {
+                    url: "https://gen.pollinations.ai/mcp/pollinations",
+                    headers: { Authorization: "Bearer ${input:pollinations-mcp-key}" },
+                },
+            },
+        });
+        expect(mode(path)).toBe(0o644);
+    });
+
     it("reads nested tables", () => {
         expect(
             readNestedTable(
@@ -144,6 +184,16 @@ describe("env files", () => {
         expect(writeEnvValue(path, "A", "1")).toBe(false);
         expect(writeEnvValue(path, "A", "2")).toBe(true);
         expect(readEnvValue(path, "A")).toBe("2");
+    });
+
+    it("keeps an env file that already existed owner-only", () => {
+        const path = join(home, ".codex", ".env");
+        mkdirSync(join(home, ".codex"), { recursive: true });
+        writeFileSync(path, "OTHER=keep\n", { mode: 0o644 });
+        chmodSync(path, 0o644);
+        writeEnvValue(path, "POLLI_MCP_CODEX_API_KEY", "sk_test");
+        expect(statSync(path).mode & 0o777).toBe(0o600);
+        expect(readEnvValue(path, "OTHER")).toBe("keep");
     });
 
     it("removes a variable and deletes the file it emptied", () => {

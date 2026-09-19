@@ -1,0 +1,35 @@
+{
+  "pr_number": 15162,
+  "title": "feat: make the sign-in bounce rate measurable",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15162",
+  "merged_at": "2026-09-19T03:15:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Answers \"what share of people who reach the sign-in page never click through\" — without any browser identifier.\n\n**The problem:** `pct_started` divided starts by views, but the two counted different populations. `sign_in_started` fires for sign-ins begun anywhere (pollinations.ai, gen redirects, app OAuth entry); `sign_in_viewed` only sees the enter dashboard. Production showed 38 starts against 29 views, so the ratio read 7500%.\n\n**The fix:**\n- `sign_in_started` records the page it came from, read from the `Referer` and accepted only if it matches a known route (reuses `productPageViewSchema.shape.page.options` — one source of truth). Anything else stays `''` and falls out of the ratio.\n- `pct_started` divides by views of those same pages. `pct_completed` keeps the unfiltered `sign_in_started_anywhere`, which matches `sign_in_completed`. Each ratio now uses a matched pair.\n- `signup_completed` fires from a `user.create` database hook, so new vs returning separates in real time rather than joining the `d1_user` snapshot (daily, so up to 24h stale).\n\nThe originating page is a property of the request, not of the person — no cookie, no id, no privacy-policy change.\n\nTinybird `--check` against staging: 1 modified endpoint, no deletions, no data copied.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n- Also records the page a `checkout_started` came from, so `/_dashboard/pollen` and `/top-up` get separate conversion rates instead of one undifferentiated count.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Funnels find their footing",
+    "blurb": "The sign-in garden now counts bees from the same flower patch at both ends. Checkout paths also keep their own little trails, without following anyone home.",
+    "summary": "Auth analytics now records validated referring pages for sign-in and checkout starts, computes sign-in conversion from matched page-view populations, and emits signup completion directly from the user.create hook.",
+    "impact": "The team can measure sign-in bounce rates and separate /_dashboard/pollen from /top-up checkout conversion accurately without cookies or browser identifiers.",
+    "keywords": [
+      "analytics",
+      "auth",
+      "sign-in",
+      "checkout",
+      "conversion",
+      "privacy",
+      "observability"
+    ],
+    "visual_concept": "Depict Polli as a tiny surveyor tracing two clearly matched garden paths from sign-in-page flowers to a cozy door, while a retro terminal shows tidy conversion counters. Separate pollen trails lead from /_dashboard/pollen and /top-up to distinct checkout baskets, representing page-level attribution without tracking individual bees.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and a tiny surveyor hat, using a clipboard to trace matching lime green (#ecf874) garden paths from a sign-in flower gate to a warm glowing doorway; two separate paths lead to small checkout baskets labeled '/_dashboard/pollen' and '/top-up'. A friendly CRT monitor robot holds a tidy funnel chart beside code-plants, with soft pastel gradients, warm lighting, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15162.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and a tiny surveyor hat, using a clipboard to trace matching lime green (#ecf874) garden paths from a sign-in flower gate to a warm glowing doorway; two separate paths lead to small checkout baskets labeled '/_dashboard/pollen' and '/top-up'. A friendly CRT monitor robot holds a tidy funnel chart beside code-plants, with soft pastel gradients, warm lighting, subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-19T03:16:05.668558+00:00"
+}

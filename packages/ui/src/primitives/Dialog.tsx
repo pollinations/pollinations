@@ -109,6 +109,7 @@ export type DialogHeaderProps = Omit<
 > & {
     title?: ReactNode;
     description?: ReactNode;
+    inBody?: boolean;
     titleClassName?: string;
     descriptionClassName?: string;
 };
@@ -117,6 +118,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
     title,
     description,
     children,
+    inBody = false,
     className,
     titleClassName,
     descriptionClassName,
@@ -124,7 +126,12 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 }) => {
     return (
         <div
-            className={cn("polli:shrink-0 polli:p-6 polli:pb-4", className)}
+            className={cn(
+                inBody
+                    ? "polli:shrink-0 polli:pt-2 polli:pb-4"
+                    : "polli:shrink-0 polli:p-6 polli:pb-4",
+                className,
+            )}
             {...props}
         >
             {title && (
@@ -154,10 +161,12 @@ export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 const footerButtonDefaults = { appearance: "block" as const };
 
 /** The scrollable content between a dialog's header and actions. */
-export function DialogBody({ className, ...props }: ScrollAreaProps) {
+export function DialogBody({ className, style, ...props }: ScrollAreaProps) {
     return (
         <ScrollArea
             {...props}
+            scrollbar="native"
+            style={{ scrollbarGutter: "stable both-edges", ...style }}
             className={cn(
                 "polli:min-h-0 polli:flex-1 polli:space-y-4 polli:overscroll-contain polli:px-6 polli:py-4",
                 className,

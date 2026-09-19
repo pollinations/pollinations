@@ -136,19 +136,23 @@ export function KeyDialogContent({
 
     return (
         <>
-            <DialogHeader title={title} description={description}>
-                {existingKey && (
-                    <div className="mt-3">
-                        <KeyChip
-                            prefix={existingKey.prefix}
-                            value={existingKey.value}
-                            label="Copy app key"
-                        />
-                    </div>
-                )}
-            </DialogHeader>
             <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
                 <DialogBody>
+                    <DialogHeader
+                        inBody
+                        title={title}
+                        description={description}
+                    >
+                        {existingKey && (
+                            <div className="mt-3">
+                                <KeyChip
+                                    prefix={existingKey.prefix}
+                                    value={existingKey.value}
+                                    label="Copy app key"
+                                />
+                            </div>
+                        )}
+                    </DialogHeader>
                     {error && <ErrorBanner>{error}</ErrorBanner>}
                     {createdKey !== undefined ? (
                         <AuthInfoCard>

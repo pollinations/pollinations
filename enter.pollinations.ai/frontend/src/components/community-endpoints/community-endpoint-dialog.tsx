@@ -405,21 +405,6 @@ export function CommunityEndpointDialog({
             trigger={trigger}
             triggerAsChild
         >
-            <DialogHeader
-                title={
-                    isEndpointAgent
-                        ? "Edit endpoint agent"
-                        : isEdit
-                          ? "Edit model"
-                          : "Create model"
-                }
-                description={
-                    isEndpointAgent
-                        ? "Update its listing and connection."
-                        : "Connect your endpoint to Pollinations."
-                }
-            />
-
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
@@ -427,6 +412,21 @@ export function CommunityEndpointDialog({
                 data-form-type="other"
             >
                 <DialogBody>
+                    <DialogHeader
+                        inBody
+                        title={
+                            isEndpointAgent
+                                ? "Edit endpoint agent"
+                                : isEdit
+                                  ? "Edit model"
+                                  : "Create model"
+                        }
+                        description={
+                            isEndpointAgent
+                                ? "Update its listing and connection."
+                                : "Connect your endpoint to Pollinations."
+                        }
+                    />
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {endpoint?.pending && (

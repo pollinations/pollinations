@@ -8,16 +8,16 @@ import {
     DialogBody,
     DialogFooter,
     DialogHeader,
-    FieldStack,
     TabButton,
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { AgentFormRow } from "./agent-form-row.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
-import { PromptAgentFields } from "./prompt-agent-fields.tsx";
+import { PromptAgentFields, PromptAgentTools } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type AgentFormState,
@@ -116,21 +116,25 @@ export function AgentDialog({
             trigger={trigger}
             triggerAsChild
         >
-            <DialogHeader
-                title={agent ? "Edit agent" : "Create agent"}
-                description="Choose a prompt and model, or deploy code from GitHub."
-            />
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
                 <DialogBody>
+                    <DialogHeader
+                        inBody
+                        title={agent ? "Edit agent" : "Create agent"}
+                        description="Choose a prompt and model, or deploy code from GitHub."
+                    />
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {!agent && (
                         <AuthInfoCard>
-                            <FieldStack label="Agent type">
+                            <AgentFormRow
+                                label="Agent type"
+                                help="Prompt agents use a model and instructions. Code agents deploy a public GitHub repository."
+                            >
                                 <ButtonGroup aria-label="Agent type">
                                     <TabButton
                                         active={form.type === "prompt_agent"}
@@ -167,30 +171,23 @@ export function AgentDialog({
                                         Code agent
                                     </TabButton>
                                 </ButtonGroup>
-                            </FieldStack>
+                            </AgentFormRow>
                         </AuthInfoCard>
                     )}
 
                     <AuthInfoCard>
                         <div className="space-y-3">
                             {form.type === "code_agent" && (
-                                <div className="space-y-3">
-                                    <CodeAgentFields
-                                        form={form}
-                                        disabled={isSubmitting || !!agent}
-                                        onChange={(field, value) =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                [field]: value,
-                                            }))
-                                        }
-                                    />
-                                    <p className="font-body text-xs font-normal leading-normal text-theme-text-muted">
-                                        The repository name becomes the model ID
-                                        and title. Its description becomes the
-                                        catalog description.
-                                    </p>
-                                </div>
+                                <CodeAgentFields
+                                    form={form}
+                                    disabled={isSubmitting || !!agent}
+                                    onChange={(field, value) =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            [field]: value,
+                                        }))
+                                    }
+                                />
                             )}
 
                             <ModelListingFields
@@ -238,18 +235,33 @@ export function AgentDialog({
                             </div>
                         )}
                     </div>
-                    <AuthInfoCard>
-                        <SafetyFeatureSelector
-                            value={form.requiredSafetyFeatures}
-                            disabled={isSubmitting}
-                            onChange={(requiredSafetyFeatures) =>
-                                setForm((current) => ({
-                                    ...current,
-                                    requiredSafetyFeatures,
-                                }))
-                            }
-                        />
-                    </AuthInfoCard>
+                    <div
+                        className={
+                            form.type === "prompt_agent"
+                                ? "grid gap-4 md:grid-cols-2"
+                                : undefined
+                        }
+                    >
+                        {form.type === "prompt_agent" && (
+                            <PromptAgentTools
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
+                        )}
+                        <AuthInfoCard>
+                            <SafetyFeatureSelector
+                                value={form.requiredSafetyFeatures}
+                                disabled={isSubmitting}
+                                onChange={(requiredSafetyFeatures) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        requiredSafetyFeatures,
+                                    }))
+                                }
+                            />
+                        </AuthInfoCard>
+                    </div>
                 </DialogBody>
                 <DialogFooter>
                     <Button

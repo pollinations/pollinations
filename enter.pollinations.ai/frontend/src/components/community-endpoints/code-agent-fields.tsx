@@ -1,4 +1,5 @@
-import { Field, FieldStack, InlineLink, Input } from "@pollinations/ui";
+import { Field, InlineLink, Input } from "@pollinations/ui";
+import { AgentFormRow } from "./agent-form-row.tsx";
 import type { AgentFormState } from "./types.ts";
 
 type CodeAgentFieldsProps = {
@@ -13,23 +14,9 @@ export function CodeAgentFields({
     onChange,
 }: CodeAgentFieldsProps) {
     return (
-        <FieldStack
+        <AgentFormRow
             label="GitHub repository"
-            helper={
-                <>
-                    Public repository with agent.ts at its root.{" "}
-                    <InlineLink
-                        href="https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        Fork an example
-                    </InlineLink>
-                    .
-                    <br />
-                    Private code agents coming soon.
-                </>
-            }
+            help="Public repository with agent.ts at its root. Its name becomes the model ID and title; its description becomes the catalog description. Private code agents coming soon."
         >
             <Field.Input asChild>
                 <Input
@@ -42,11 +29,22 @@ export function CodeAgentFields({
                     spellCheck={false}
                     required
                     disabled={disabled}
+                    className="w-full min-w-0"
                     onChange={(event) =>
                         onChange("repository", event.target.value)
                     }
                 />
             </Field.Input>
-        </FieldStack>
+            <div className="mt-2 flex justify-end">
+                <InlineLink
+                    href="https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs"
+                >
+                    Fork an example
+                </InlineLink>
+            </div>
+        </AgentFormRow>
     );
 }

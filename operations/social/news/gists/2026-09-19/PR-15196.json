@@ -1,0 +1,36 @@
+{
+  "pr_number": 15196,
+  "title": "Add Oracle Mystique to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15196",
+  "merged_at": "2026-09-19T15:48:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Oracle Mystique](https://oracle-mystique.up.railway.app) to chat\n- Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation.\n\nFixes #15151",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Three cards, one oracle",
+    "blurb": "Oracle Mystique has joined the garden: a three-card tarot reader for past, present, and future, with illustrated readings in English. Bring your own OAuth2 petals; the oracle supplies the atmosphere.",
+    "summary": "Added Oracle Mystique to the app catalog: an AI-powered English tarot reader that draws and illustrates Past, Present, and Future cards with full BYOP OAuth2 support.",
+    "impact": "Users can now discover and launch a three-card AI tarot experience with generated card art and OAuth2-based bring-your-own-provider access.",
+    "keywords": [
+      "community-app",
+      "Oracle Mystique",
+      "tarot",
+      "chat",
+      "OAuth2",
+      "AI illustrations"
+    ],
+    "visual_concept": "Depict Oracle Mystique as a cozy tarot table in a moonlit-but-warm garden nook: three glowing pixel tarot cards labeled Past, Present, and Future, surrounded by flowers and code-vines. Polli wears a tiny wizard hat and gently turns over a card while a retro CRT terminal displays a friendly OAuth2 key symbol, making the app's illustrated divination and BYOP login visible without feeling technical.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny wizard hat as she reveals three glowing tarot cards on a warm garden table labeled in simple pixel font: “PAST”, “PRESENT”, “FUTURE”; a small retro CRT beside her shows a friendly key icon, with code-plants, flowers, and prominent lime green (#ecf874) glow among lavender, mint, peach, and warm cream. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and mystical rather than dark."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15196.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny wizard hat as she reveals three glowing tarot cards on a warm garden table labeled in simple pixel font: “PAST”, “PRESENT”, “FUTURE”; a small retro CRT beside her shows a friendly key icon, with code-plants, flowers, and prominent lime green (#ecf874) glow among lavender, mint, peach, and warm cream. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and mystical rather than dark."
+  },
+  "generated_at": "2026-09-19T15:49:33.918567+00:00",
+  "app_name": "Oracle Mystique",
+  "app_url": "https://oracle-mystique.up.railway.app"
+}

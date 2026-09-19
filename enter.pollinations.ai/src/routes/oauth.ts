@@ -8,6 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
@@ -83,7 +84,7 @@ export const oauthRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         validator("json", CreateCodeSchema),
         async (c) => {
-            c.var.auth.requireUser();
+            const user = c.var.auth.requireUser();
             const body = c.req.valid("json");
 
             // Re-validate the client/redirect binding server-side; the same
@@ -124,6 +125,9 @@ export const oauthRoutes = new Hono<Env>()
             };
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
+            });
+            captureFromRequest(c, "authorize_granted", user.id, {
+                client_id: body.clientId,
             });
 
             return c.json({ code });

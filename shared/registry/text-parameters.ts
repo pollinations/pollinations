@@ -300,6 +300,71 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
+    // seed or logprobs in supported_parameters. Forced tool_choice isn't
+    // supported (only "auto"/"none"), so "tools" is declared alone.
+    openRouterHy4Preview: [
+        ...CHAT,
+        "tools",
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "stop",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // Novita route (2026-09-18).
+    openRouterHy3: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
+    // Novita primary, adds min_p over Novita's parameter surface.
+    openRouterHy3Phala: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
+    // excluded via provider.ignore so pricing stays fixed. Both tags report
+    // max_completion_tokens (not max_tokens) as supported.
+    openRouterGpt4oMini: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        ...SAMPLING,
+        "stop",
+        ...PENALTIES,
+        ...LOGPROBS,
+        "seed",
+        "logit_bias",
+        "prediction",
+        "web_search_options",
+    ],
     qwenCoderNext: [...EXTENDED_CHAT, "repetition_penalty", "logit_bias"],
     openRouterQwenCoderNext: [...SAMPLED_CHAT, "presence_penalty"],
     qwen37: [...EXTENDED_CHAT, ...OPENROUTER_REASONING],
@@ -377,4 +442,7 @@ export const CHAT_PARAMETERS = {
         "frequency_penalty",
     ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // The System One adapter forwards the native request untouched, so token
+    // caps, sampling and tools have no effect; only the SSE wrapper is ours.
+    typesafeJev: ["stream"],
 } satisfies Record<string, string[]>;

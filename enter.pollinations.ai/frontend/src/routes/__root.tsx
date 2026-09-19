@@ -1,5 +1,6 @@
 import { useColorMode } from "@pollinations/ui";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+import { Analytics } from "../components/analytics.tsx";
 
 type RouterContext = {};
 
@@ -9,7 +10,12 @@ function RootLayout() {
     // subscribe path derives theme-color from the --polli-color-app-bg token
     // (no hardcoded color) and flips it with the mode.
     useColorMode();
-    return <Outlet />;
+    return (
+        <>
+            <Analytics />
+            <Outlet />
+        </>
+    );
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({

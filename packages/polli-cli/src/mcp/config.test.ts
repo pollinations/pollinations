@@ -124,7 +124,9 @@ describe("readJsonFile / writeJsonFile", () => {
         mkdirSync(join(home, ".cursor"), { recursive: true });
         writeFileSync(
             path,
-            JSON.stringify({ mcpServers: { mine: { url: "https://example.com" } } }),
+            JSON.stringify({
+                mcpServers: { mine: { url: "https://example.com" } },
+            }),
             { mode: 0o644 },
         );
         chmodSync(path, 0o644);
@@ -149,7 +151,9 @@ describe("readJsonFile / writeJsonFile", () => {
             mcpServers: {
                 pollinations: {
                     url: "https://gen.pollinations.ai/mcp/pollinations",
-                    headers: { Authorization: "Bearer ${input:pollinations-mcp-key}" },
+                    headers: {
+                        Authorization: `Bearer \${input:pollinations-mcp-key}`,
+                    },
                 },
             },
         });

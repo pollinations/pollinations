@@ -16,6 +16,9 @@ import {
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
     | "black-forest-labs/flux.2-pro:replicate"
+    // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
+    // so this id carries no ":replicate" suffix, unlike every other case here.
+    | "black-forest-labs/flux.2-max"
     | "qwen/qwen-image-3:replicate"
     | "prunaai/p-image-edit:replicate"
     | "krea/krea-2-medium:replicate";
@@ -132,6 +135,30 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "FLUX.2 Pro",
+            );
+            break;
+        }
+        case "black-forest-labs/flux.2-max": {
+            if (params.image.length > 8) {
+                throw UpstreamError.fromProvider(400, {
+                    message: "FLUX.2 Max supports at most 8 reference images",
+                });
+            }
+            const images = await prepareFluxImages(params.image);
+            promptImageTokens = images.megapixels;
+            completionImageTokens = (params.width * params.height) / 1_000_000;
+            buffer = await runReplicateImage(
+                "black-forest-labs/flux-2-max",
+                {
+                    prompt,
+                    input_images: images.dataUris,
+                    aspect_ratio: "custom",
+                    width: params.width,
+                    height: params.height,
+                    output_format: "png",
+                    seed: params.seed,
+                },
+                "FLUX.2 Max",
             );
             break;
         }

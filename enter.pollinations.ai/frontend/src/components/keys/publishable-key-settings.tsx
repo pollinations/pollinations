@@ -1,12 +1,10 @@
 import { Button, Field, Input, Text } from "@pollinations/ui";
-import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
+import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
-    earningsEnabled: boolean;
-    onEarningsEnabledChange: (enabled: boolean) => void;
     disabled?: boolean;
 };
 
@@ -20,8 +18,6 @@ type PublishableKeySettingsProps = {
 export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
-    earningsEnabled,
-    onEarningsEnabledChange,
     disabled = false,
 }) => {
     function update(index: number, value: string) {
@@ -40,92 +36,71 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <div className="space-y-4">
-            <AuthInfoCard title={null}>
-                <ul className="space-y-3 text-sm text-theme-text-base">
-                    <AuthAccessItem
-                        checked={earningsEnabled}
-                        onChange={onEarningsEnabledChange}
-                        disabled={disabled}
-                        ariaLabel="App earnings"
-                        details={
-                            <Text size="xs" tone="muted">
-                                Users pay 25% over base rates. Markup credits to
-                                your balance.
-                            </Text>
-                        }
-                    >
-                        App earnings
-                    </AuthAccessItem>
-                </ul>
-            </AuthInfoCard>
-            <AuthInfoCard title={null}>
-                <div className="space-y-3">
-                    <div>
-                        <Text
-                            size="sm"
-                            weight="semibold"
-                            tone="strong"
-                            className="polli:leading-5"
-                        >
-                            Callback URLs
-                        </Text>
-                        <Text size="xs" tone="muted" className="polli:mt-1">
-                            Where your app receives users after consent.
-                        </Text>
-                    </div>
-                    {redirectUris.map((uri, index) => (
-                        <div
-                            // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
-                            key={index}
-                            className="flex items-center gap-2"
-                        >
-                            <Field.Root className="min-w-0 flex-1">
-                                <Field.Label className="sr-only">
-                                    Callback URL {index + 1}
-                                </Field.Label>
-                                <Field.Input asChild>
-                                    <Input
-                                        type="text"
-                                        value={uri}
-                                        onChange={(e) =>
-                                            update(index, e.target.value)
-                                        }
-                                        className="w-full"
-                                        placeholder="https://myapp.com/auth/callback"
-                                        disabled={disabled}
-                                    />
-                                </Field.Input>
-                            </Field.Root>
-                            <Button
-                                type="button"
-                                size="sm"
-                                data-theme="neutral"
-                                className="polli:shrink-0"
-                                aria-label={`Remove callback URL ${index + 1}`}
-                                onClick={() => remove(index)}
-                                disabled={disabled}
-                            >
-                                Remove
-                            </Button>
-                        </div>
-                    ))}
-                    <Button
-                        type="button"
+        <AuthInfoCard title={null}>
+            <div className="space-y-3">
+                <div>
+                    <Text
                         size="sm"
-                        data-theme="neutral"
-                        onClick={add}
-                        disabled={disabled}
+                        weight="semibold"
+                        tone="strong"
+                        className="polli:leading-5"
                     >
-                        Add URL
-                    </Button>
-                    <Text size="xs" tone="muted">
-                        Use a localhost callback for local development. Match
-                        the path to your dev server, and remove it before
-                        production.
+                        Callback URLs
+                    </Text>
+                    <Text size="xs" tone="muted" className="polli:mt-1">
+                        Where your app receives users after consent.
                     </Text>
                 </div>
-            </AuthInfoCard>
-        </div>
+                {redirectUris.map((uri, index) => (
+                    <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
+                        key={index}
+                        className="flex items-center gap-2"
+                    >
+                        <Field.Root className="min-w-0 flex-1">
+                            <Field.Label className="sr-only">
+                                Callback URL {index + 1}
+                            </Field.Label>
+                            <Field.Input asChild>
+                                <Input
+                                    type="text"
+                                    value={uri}
+                                    onChange={(e) =>
+                                        update(index, e.target.value)
+                                    }
+                                    className="w-full"
+                                    placeholder="https://myapp.com/auth/callback"
+                                    disabled={disabled}
+                                />
+                            </Field.Input>
+                        </Field.Root>
+                        <Button
+                            type="button"
+                            size="sm"
+                            data-theme="neutral"
+                            className="polli:shrink-0"
+                            aria-label={`Remove callback URL ${index + 1}`}
+                            onClick={() => remove(index)}
+                            disabled={disabled}
+                        >
+                            Remove
+                        </Button>
+                    </div>
+                ))}
+                <Button
+                    type="button"
+                    size="sm"
+                    data-theme="neutral"
+                    onClick={add}
+                    disabled={disabled}
+                >
+                    Add URL
+                </Button>
+                <Text size="xs" tone="muted">
+                    Use a localhost callback for local development. Match the
+                    path to your dev server, and remove it before production.
+                </Text>
+            </div>
+        </AuthInfoCard>
     );
 };

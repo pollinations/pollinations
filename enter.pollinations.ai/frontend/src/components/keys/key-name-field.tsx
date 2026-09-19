@@ -14,7 +14,7 @@ export function KeyNameField({
     disabled: boolean;
 }) {
     const inputId = useId();
-    const label = app ? "App name" : "Name";
+    const label = "Name";
     return (
         <li className="flex min-h-8 items-center gap-3 font-body text-sm font-semibold leading-5">
             <span
@@ -39,7 +39,7 @@ export function KeyNameField({
                 type="text"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                placeholder={app ? "App name" : "Key name"}
+                placeholder={app ? "Name" : "Key name"}
                 className="min-w-0 flex-1"
                 required
                 disabled={disabled}

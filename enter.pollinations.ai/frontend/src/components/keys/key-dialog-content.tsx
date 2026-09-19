@@ -11,9 +11,11 @@ import {
     FieldStack,
     KeyChip,
     KeyIcon,
+    SproutIcon,
     XIcon,
 } from "@pollinations/ui";
 import {
+    AuthAccessItem,
     AuthInfoCard,
     AuthModalFootnote,
     ErrorBanner,
@@ -88,7 +90,7 @@ export function KeyDialogContent({
                 ? "Use this app key to connect your app to Pollinations."
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
-              ? "Set the app name, callback URLs and earnings settings."
+              ? "Set the name, earnings, and callback URLs."
               : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
@@ -177,23 +179,38 @@ export function KeyDialogContent({
                     ) : showFields ? (
                         <div className="space-y-4">
                             <AuthInfoCard>
-                                <ul className="text-sm">
+                                <ul className="space-y-3 text-sm">
                                     <KeyNameField
                                         app={app}
                                         value={name}
                                         onChange={onNameChange}
                                         disabled={isSubmitting}
                                     />
+                                    {publishable && (
+                                        <AuthAccessItem
+                                            checked={earningsEnabled}
+                                            onChange={onEarningsEnabledChange}
+                                            disabled={isSubmitting}
+                                        >
+                                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                <span>Earnings</span>
+                                                <span className="inline-flex items-center gap-1.5 font-normal text-theme-text-muted">
+                                                    <SproutIcon
+                                                        aria-hidden="true"
+                                                        className="h-4 w-4 shrink-0 text-intent-success-text"
+                                                    />
+                                                    Earn 20% of the Pollen users
+                                                    spend in your app.
+                                                </span>
+                                            </span>
+                                        </AuthAccessItem>
+                                    )}
                                 </ul>
                             </AuthInfoCard>
                             {publishable ? (
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={onRedirectUrisChange}
-                                    earningsEnabled={earningsEnabled}
-                                    onEarningsEnabledChange={
-                                        onEarningsEnabledChange
-                                    }
                                     disabled={isSubmitting}
                                 />
                             ) : (

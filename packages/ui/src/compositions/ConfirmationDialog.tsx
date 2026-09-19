@@ -48,7 +48,7 @@ export function ConfirmationDialog({
     cancelDisabled = false,
     onConfirm,
     onCancel,
-    size = "sm",
+    size = "md",
 }: ConfirmationDialogProps) {
     return (
         <Dialog

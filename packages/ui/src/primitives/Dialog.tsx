@@ -10,7 +10,7 @@ import { headingClassName } from "./Typography.tsx";
 const sizeClasses = {
     sm: "polli:max-w-md",
     md: "polli:max-w-xl",
-    lg: "polli:max-w-2xl",
+    lg: "polli:max-w-[800px]",
     xl: "polli:max-w-6xl",
 } as const;
 

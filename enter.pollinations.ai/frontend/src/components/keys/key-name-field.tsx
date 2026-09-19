@@ -1,8 +1,7 @@
-import { AppIcon, Input, KeyIcon, Text } from "@pollinations/ui";
-import { AuthAccessItem } from "@pollinations/ui/auth";
+import { AppIcon, InfoTip, Input, KeyIcon } from "@pollinations/ui";
 import { useId } from "react";
 
-/** The key's name, as a row of the "what the key always has" card. */
+/** The key's name, shown in its own full-width card. */
 export function KeyNameField({
     app,
     value,
@@ -17,37 +16,34 @@ export function KeyNameField({
     const inputId = useId();
     const label = app ? "App name" : "Name";
     return (
-        <AuthAccessItem
-            icon={app ? <AppIcon /> : <KeyIcon />}
-            details={
-                <div className="mt-2">
-                    <label htmlFor={inputId} className="block">
-                        <span className="sr-only">{label}</span>
-                        <Input
-                            id={inputId}
-                            type="text"
-                            value={value}
-                            onChange={(event) => onChange(event.target.value)}
-                            placeholder={app ? "App name" : "Key name"}
-                            className="w-full max-w-sm"
-                            required
-                            disabled={disabled}
-                        />
-                    </label>
-                </div>
-            }
-        >
-            <span className="block">{label}</span>
-            <Text
-                as="span"
-                size="xs"
-                tone="muted"
-                className="mt-0.5 block font-normal"
+        <li className="flex min-h-8 items-center gap-3 font-body text-sm font-semibold leading-5">
+            <span
+                aria-hidden="true"
+                className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong [&>svg]:h-4 [&>svg]:w-4"
             >
-                {app
-                    ? "Shown to users when they connect to your app."
-                    : "Shown in your activity and CSV exports."}
-            </Text>
-        </AuthAccessItem>
+                {app ? <AppIcon /> : <KeyIcon />}
+            </span>
+            <span className="inline-flex shrink-0 items-center">
+                <label htmlFor={inputId}>{label}</label>
+                <InfoTip
+                    text={
+                        app
+                            ? "Shown to users when they connect to your app."
+                            : "Shown in your activity and CSV exports."
+                    }
+                    label={`${label} information`}
+                />
+            </span>
+            <Input
+                id={inputId}
+                type="text"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={app ? "App name" : "Key name"}
+                className="min-w-0 flex-1"
+                required
+                disabled={disabled}
+            />
+        </li>
     );
 }

@@ -47,7 +47,7 @@ interface KeyPermissionsInputsProps {
     disabled?: boolean;
     visiblePermissions?: ReadonlySet<string>;
     requestedModels?: string[] | null;
-    /** First rows of the "always" card: the identity row on consent, the name field in dialogs. */
+    /** Required identity row on consent; key names are shown above this editor. */
     lead?: ReactNode;
     /** Fixed row shown after the optional account permissions on consent. */
     accountAfter?: ReactNode;

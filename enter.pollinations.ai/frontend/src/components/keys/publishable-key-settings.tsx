@@ -1,15 +1,13 @@
 import { Button, Field, Input, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
-import type { FC, ReactNode } from "react";
+import type { FC } from "react";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
-    earningsEnabled?: boolean;
-    onEarningsEnabledChange?: (enabled: boolean) => void;
+    earningsEnabled: boolean;
+    onEarningsEnabledChange: (enabled: boolean) => void;
     disabled?: boolean;
-    /** First row of the "always" card: the app name field. */
-    lead?: ReactNode;
 };
 
 /**
@@ -22,10 +20,9 @@ type PublishableKeySettingsProps = {
 export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
-    earningsEnabled = false,
+    earningsEnabled,
     onEarningsEnabledChange,
     disabled = false,
-    lead,
 }) => {
     function update(index: number, value: string) {
         const next = [...redirectUris];
@@ -44,30 +41,24 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
 
     return (
         <div className="space-y-4">
-            {/* What the app always has: its name, and whether it earns. */}
-            {(lead || onEarningsEnabledChange) && (
-                <AuthInfoCard title={null}>
-                    <ul className="space-y-3 text-sm text-theme-text-base">
-                        {lead}
-                        {onEarningsEnabledChange && (
-                            <AuthAccessItem
-                                checked={earningsEnabled}
-                                onChange={onEarningsEnabledChange}
-                                disabled={disabled}
-                                ariaLabel="App earnings"
-                                details={
-                                    <Text size="xs" tone="muted">
-                                        Users pay 25% over base rates. Markup
-                                        credits to your balance.
-                                    </Text>
-                                }
-                            >
-                                App earnings
-                            </AuthAccessItem>
-                        )}
-                    </ul>
-                </AuthInfoCard>
-            )}
+            <AuthInfoCard title={null}>
+                <ul className="space-y-3 text-sm text-theme-text-base">
+                    <AuthAccessItem
+                        checked={earningsEnabled}
+                        onChange={onEarningsEnabledChange}
+                        disabled={disabled}
+                        ariaLabel="App earnings"
+                        details={
+                            <Text size="xs" tone="muted">
+                                Users pay 25% over base rates. Markup credits to
+                                your balance.
+                            </Text>
+                        }
+                    >
+                        App earnings
+                    </AuthAccessItem>
+                </ul>
+            </AuthInfoCard>
             <AuthInfoCard title={null}>
                 <div className="space-y-3">
                     <div>

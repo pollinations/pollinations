@@ -91,14 +91,6 @@ export function KeyDialogContent({
               ? "Set the app name, callback URLs and earnings settings."
               : "Choose what this key can access and how much it can spend.";
 
-    const nameField = (
-        <KeyNameField
-            app={app}
-            value={name}
-            onChange={onNameChange}
-            disabled={isSubmitting}
-        />
-    );
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
     const submitAction =
         createdKey !== undefined ? (
@@ -182,21 +174,35 @@ export function KeyDialogContent({
                                 />
                             </FieldStack>
                         </AuthInfoCard>
-                    ) : showFields && publishable ? (
-                        <PublishableKeySettings
-                            lead={nameField}
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={onRedirectUrisChange}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={onEarningsEnabledChange}
-                            disabled={isSubmitting}
-                        />
                     ) : showFields ? (
-                        <KeyPermissionsInputs
-                            value={permissions}
-                            lead={nameField}
-                            disabled={isSubmitting}
-                        />
+                        <div className="space-y-4">
+                            <AuthInfoCard>
+                                <ul className="text-sm">
+                                    <KeyNameField
+                                        app={app}
+                                        value={name}
+                                        onChange={onNameChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </ul>
+                            </AuthInfoCard>
+                            {publishable ? (
+                                <PublishableKeySettings
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={onRedirectUrisChange}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={
+                                        onEarningsEnabledChange
+                                    }
+                                    disabled={isSubmitting}
+                                />
+                            ) : (
+                                <KeyPermissionsInputs
+                                    value={permissions}
+                                    disabled={isSubmitting}
+                                />
+                            )}
+                        </div>
                     ) : null}
                 </DialogBody>
                 <DialogFooter>

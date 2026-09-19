@@ -8,6 +8,34 @@ import type {
 import type { GenerationModelEntry } from "../model-registry.ts";
 import { fetchModelHealthRows } from "./model-status.ts";
 
+type HealthLookup = ReturnType<typeof modelHealthLookup>;
+
+// A missing feed must not turn discovery into a 502 or label a model
+// healthy; an empty row set makes every lookup resolve to "unknown".
+export async function getModelHealthLookup(): Promise<HealthLookup> {
+    const rows = await fetchModelHealthRows().catch(() => []);
+    return modelHealthLookup(rows);
+}
+
+// Shared by the list and single-model routes so both return identical shapes.
+export function attachModelHealth(
+    entry: GenerationModelEntry,
+    lookup: HealthLookup,
+): GenerationModelEntry {
+    const health = lookup(entry.id, entry.eventType.replace("generate.", ""));
+    return {
+        ...entry,
+        info: {
+            ...entry.info,
+            health: {
+                status: health.status,
+                success_rate: health.successRate,
+                requests: health.requests,
+            },
+        },
+    };
+}
+
 // Discovery only: callers apply access checks before entering this function.
 export async function filterCatalogEntries(
     c: Context<Env>,
@@ -29,25 +57,6 @@ export async function filterCatalogEntries(
             entry.info.community === (source === "community"),
     );
 
-    // A missing feed must not turn discovery into a 502 or label a model
-    // healthy; an empty row set makes every lookup resolve to "unknown".
-    const rows = await fetchModelHealthRows().catch(() => []);
-    const lookup = modelHealthLookup(rows);
-    return filtered.map((entry) => {
-        const health = lookup(
-            entry.id,
-            entry.eventType.replace("generate.", ""),
-        );
-        return {
-            ...entry,
-            info: {
-                ...entry.info,
-                health: {
-                    status: health.status,
-                    success_rate: health.successRate,
-                    requests: health.requests,
-                },
-            },
-        };
-    });
+    const lookup = await getModelHealthLookup();
+    return filtered.map((entry) => attachModelHealth(entry, lookup));
 }

@@ -109,7 +109,11 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
-import { filterCatalogEntries } from "./model-catalog.ts";
+import {
+    attachModelHealth,
+    filterCatalogEntries,
+    getModelHealthLookup,
+} from "./model-catalog.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
@@ -427,7 +431,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "Retrieve Model (OpenAI-compatible)",
             description:
-                "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint. Returns 404 when the model does not exist or is not accessible to the caller.",
+                "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint, and the entry is byte-identical to its `/v1/models` list entry, including the `health` field. Returns 404 when the model does not exist or is not accessible to the caller.",
             responses: {
                 200: {
                     description: "Success",
@@ -462,7 +466,10 @@ export const proxyRoutes = new Hono<Env>()
                     message: `Model '${modelId}' not found`,
                 });
             }
-            return c.json(toOpenAIModelEntry(entry));
+            // Same shared mapper as the list endpoint, so retrieve and list
+            // return byte-identical entries for the same model.
+            const lookup = await getModelHealthLookup();
+            return c.json(toOpenAIModelEntry(attachModelHealth(entry, lookup)));
         },
     )
     .get(

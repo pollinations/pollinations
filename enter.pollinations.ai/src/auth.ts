@@ -138,6 +138,19 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         }),
                     );
                 }
+                // The path is the route pattern, not the resolved URL, so the
+                // provider comes from params. Only with a code: a denial at
+                // GitHub comes back without one and is a loss on their side,
+                // not a failure of our callback.
+                if (
+                    authContext.path === "/callback/:id" &&
+                    authContext.params?.id === "github" &&
+                    authContext.query?.code
+                ) {
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_returned", ""),
+                    );
+                }
                 if (
                     authContext.path === "/link-social" &&
                     authContext.body.provider === "discord"

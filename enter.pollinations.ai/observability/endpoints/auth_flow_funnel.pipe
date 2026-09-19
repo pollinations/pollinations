@@ -33,9 +33,12 @@ SQL >
             AND page IN ('/sign-in', '/app/sign-in')
         ) AS sign_in_started,
         countIf(event = 'sign_in_started') AS sign_in_started_anywhere,
+        countIf(event = 'sign_in_returned') AS sign_in_returned,
         countIf(event = 'sign_in_completed') AS sign_in_completed,
         countIf(event = 'signup_completed') AS signups,
         if(sign_in_viewed = 0, 0, round(100 * sign_in_started / sign_in_viewed, 1)) AS pct_started,
+        if(sign_in_started_anywhere = 0, 0, round(100 * sign_in_returned / sign_in_started_anywhere, 1)) AS pct_returned,
+        if(sign_in_returned = 0, 0, round(100 * sign_in_completed / sign_in_returned, 1)) AS pct_completed_of_returned,
         if(sign_in_started_anywhere = 0, 0, round(100 * sign_in_completed / sign_in_started_anywhere, 1)) AS pct_completed
     FROM product_event
     WHERE environment = {{String(environment, 'production')}}

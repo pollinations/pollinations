@@ -46,6 +46,9 @@ import { communityEndpointsRoutes } from "./community-endpoints.ts";
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
+/** Matches activity_earnings_events ENGINE_TTL (12 months). */
+const MAX_EARNINGS_DAYS = 365;
+const DEFAULT_EARNINGS_DAYS = 90;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
@@ -375,14 +378,33 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
-const earningsQuerySchema = usageDailyQuerySchema.omit({ api_key_ids: true });
+const earningsQuerySchema = usageDailyQuerySchema
+    .omit({ api_key_ids: true })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_EARNINGS_DAYS),
+    });
 
-const earningsTransactionsQuerySchema = usageQuerySchema.pick({
-    limit: true,
-    days: true,
-    granularity: true,
-    period: true,
-});
+const earningsTransactionsQuerySchema = usageQuerySchema
+    .pick({
+        limit: true,
+        granularity: true,
+        period: true,
+    })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_USAGE_DAYS),
+    });
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
@@ -1103,7 +1125,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows (up to 365, matching earnings event retention) or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description:

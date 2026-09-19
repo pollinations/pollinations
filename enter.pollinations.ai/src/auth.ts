@@ -34,7 +34,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
 import {
     captureProductEvent,
-    referringPage,
+    referringSource,
 } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
@@ -131,7 +131,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         });
                     ctx?.waitUntil(
                         captureProductEvent(env, "sign_in_started", "", {
-                            page: referringPage(authContext.headers),
+                            ...referringSource(
+                                authContext.headers,
+                                env.BETTER_AUTH_URL,
+                            ),
                         }),
                     );
                 }

@@ -77,17 +77,37 @@ export async function captureProductEvent(
 }
 
 /**
- * The route a sign-in was started from, read from the Referer. The funnel
- * divides starts by views of the same pages, so both sides must describe one
- * population; a start from anywhere else keeps '' and stays out of that ratio.
+ * Where a sign-in or checkout was started from, read from the Referer.
+ *
+ * page is set only for our own routes, so the funnel divides starts by views
+ * of those same pages and both sides describe one population. Our origin is
+ * BETTER_AUTH_URL, the same value Better Auth uses as its baseURL, so an
+ * external site whose path collides with one of ours (pollinations.ai/ vs
+ * '/') is never counted as one of our pages. The Referer's own Host header is
+ * not consulted: workerd omits it, which would make the check silently inert
+ * in tests while passing at the edge.
+ *
+ * referrer_host is recorded either way. Most starts come from outside the
+ * tracked routes, and without the host they are one opaque bucket.
  */
-export function referringPage(headers?: Headers | null): string {
+export function referringSource(
+    headers: Headers | null | undefined,
+    ownOrigin: string,
+): { page: string; referrer_host: string } {
     const pages: readonly string[] = productPageViewSchema.shape.page.options;
     try {
-        const { pathname } = new URL(headers?.get("Referer") ?? "");
-        return pages.includes(pathname) ? pathname : "";
+        const { pathname, origin, hostname } = new URL(
+            headers?.get("Referer") ?? "",
+        );
+        return {
+            page:
+                origin === ownOrigin && pages.includes(pathname)
+                    ? pathname
+                    : "",
+            referrer_host: hostname.slice(0, 253),
+        };
     } catch {
-        return "";
+        return { page: "", referrer_host: "" };
     }
 }
 

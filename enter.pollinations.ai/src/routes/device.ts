@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
@@ -97,14 +98,19 @@ export const deviceRoutes = new Hono<Env>()
         const expiresAt = new Date(Date.now() + DEFAULT_EXPIRES_IN * 1000);
 
         const db = drizzle(c.env.DB, { schema });
+        const id = crypto.randomUUID();
         await db.insert(schema.deviceCode).values({
-            id: crypto.randomUUID(),
+            id,
             deviceCode,
             userCode,
             status: "pending" satisfies DeviceStatus,
             expiresAt,
             clientId: body.client_id || null,
             scope: body.scope || null,
+        });
+        captureFromRequest(c, "device_code_issued", "", {
+            flow_id: id,
+            client_id: (body.client_id ?? "").slice(0, 100),
         });
 
         const baseUrl = getPublicOrigin(c);
@@ -191,6 +197,10 @@ export const deviceRoutes = new Hono<Env>()
                     })
                     .where(eq(schema.deviceCode.id, device.id)),
             ]);
+            captureFromRequest(c, "device_approved", user.id, {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
@@ -214,6 +224,10 @@ export const deviceRoutes = new Hono<Env>()
                 .update(schema.deviceCode)
                 .set({ status: "denied" satisfies DeviceStatus })
                 .where(eq(schema.deviceCode.id, device.id));
+            captureFromRequest(c, "device_denied", c.var.auth.user?.id ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
@@ -315,6 +329,10 @@ export async function exchangeDeviceCode(
                     .where(eq(schema.deviceCode.id, device.id)),
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
+            captureFromRequest(c, "device_token_issued", device.userId ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({
                 access_token: stored.key,

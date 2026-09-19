@@ -32,6 +32,8 @@ export const resolveHarnessKey = async (
         label: string;
         existingKey: string | null;
         accountPermissions?: string[];
+        /** Overrides the default `polli-harness-<id>` key name. */
+        keyName?: string;
     },
     options: { browser?: boolean },
 ): Promise<string> => {
@@ -46,7 +48,7 @@ export const resolveHarnessKey = async (
     const accountKey =
         resolveApiKey() ??
         (await loginWithDeviceFlow({ browser: options.browser }));
-    const name = `polli-harness-${harness.id}`;
+    const name = harness.keyName ?? `polli-harness-${harness.id}`;
     const created = await gen<{ key: string }>("/account/keys", {
         method: "POST",
         apiKey: accountKey,

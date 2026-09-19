@@ -63,6 +63,28 @@ const { tools } = await client.listTools();
 Other clients use the same endpoint and bearer header; only their configuration
 format differs.
 
+#### Polli CLI
+
+The [Polli CLI](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
+registers these servers for you, in any combination:
+
+```bash
+npm install -g @pollinations/cli
+polli mcp list                            # catalog servers and supported clients
+polli mcp install codex --all             # register every server from the live catalog
+polli mcp install cursor pollinations exa # or pick servers by id
+polli mcp status                          # which clients have Pollinations MCP servers
+polli mcp remove cursor                   # remove the Pollinations entries again
+```
+
+It covers Claude Code, Codex CLI, VS Code / Copilot Chat, Cursor, OpenCode,
+GitHub Copilot CLI, Gemini CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp, and
+delegates harness ids to `polli harness <id> on`. Clients that ship an `mcp add`
+command are configured through it, the rest have their config file edited in
+place, and each client gets its own Pollinations key (`polli-mcp-<client>`).
+Installing twice changes nothing, and removal touches only Pollinations entries.
+Codex and VS Code keep the key out of their config files.
+
 #### Claude Code
 
 ```bash

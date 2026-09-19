@@ -228,6 +228,16 @@ Each adapter checks that its harness can be launched before login, key creation,
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
+### Install MCP servers into a coding client
+```bash
+polli mcp list                       # catalog servers + clients that can be configured
+polli mcp install codex --all        # register every catalog server, minting key "polli-mcp-codex"
+polli mcp install cursor pollinations exa   # or name servers from the live catalog
+polli mcp status                     # where Pollinations MCP servers are registered
+polli mcp remove cursor              # drop the Pollinations entries only
+```
+Clients with an official `mcp add` command are driven through it (Claude Code, Codex CLI, Gemini CLI, Amp); the others get their config file edited in place (VS Code, Cursor, OpenCode, Copilot CLI, Windsurf, Cline, Kiro, Zed, Warp). Harness ids (`dsh`, `bloom`, `openclaw`, `pi`, `prime`) are accepted and delegate to `polli harness <id> on`; `polli mcp remove <harness>` tells you to use `polli harness <id> off`. Installs are idempotent and reuse the key already present in the client config, otherwise `polli-mcp-<client>` is created. Codex and VS Code keep the key out of their config (env var name and `${input:...}` respectively); every other client stores the key in its own config file.
+
 ### Read API docs
 ```bash
 polli docs                          # full llm.txt reference

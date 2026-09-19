@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "PersonaMorph",
+    "url": "https://personamorph-ai-production.up.railway.app",
+    "description": "A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "stykdofus-ux",
+    "githubUserId": "252947459",
+    "repositoryUrl": "https://github.com/stykdofus-ux/personamorph-ai",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15057",
+    "approvedDate": "2026-09-19",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "baboolharech",
     "url": "https://baboolharech-lgtm.github.io/Fith",
     "description": "App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft",

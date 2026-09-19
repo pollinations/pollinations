@@ -363,6 +363,18 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(token.token_type).toBe("bearer");
         expect(token.expires_in).toBe(3600);
         expect(token.scope).toBe("profile");
+
+        await mocks.clear();
+        expect(
+            mocks.tinybird.state.productEvents.filter(
+                (row) => row.event === "authorize_granted",
+            ),
+        ).toEqual([
+            expect.objectContaining({
+                client_id: client.key,
+                user_id: expect.any(String),
+            }),
+        ]);
     }, 30000);
 
     test("rejects an unregistered redirect_uri", async ({

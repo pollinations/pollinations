@@ -411,6 +411,18 @@ describe("parseUsageHeaders", () => {
         expect(usage.completionVideoSeconds).toBe(15.75);
     });
 
+    it("should parse fractional megapixel image usage instead of truncating to zero", () => {
+        const headers = {
+            "x-usage-prompt-image-tokens": "0.3072",
+            "x-usage-completion-image-tokens": "1.048576",
+        };
+
+        const usage = parseUsageHeaders(headers);
+
+        expect(usage.promptImageTokens).toBe(0.3072);
+        expect(usage.completionImageTokens).toBe(1.048576);
+    });
+
     it("should handle Headers object (from Response)", () => {
         const headers = new Headers({
             "x-model-used": "anthropic/claude-opus-5",

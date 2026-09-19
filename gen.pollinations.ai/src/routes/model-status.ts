@@ -1,3 +1,4 @@
+import type { ModelHealthRow } from "@shared/model-health.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -6,6 +7,24 @@ import type { Env } from "@/env.ts";
 // is documented for client-side use in docs/public-stats.md.
 const MODEL_ROUTE_HEALTH_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_route_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
+
+const HEALTH_ROWS_WINDOW_MINUTES = 24 * 60;
+
+// Powers the `health` field attached by default to /v1/models and /models
+// entries (see model-catalog.ts). Same cf cacheTtl as the /models/status route
+// below, so repeat calls in one colo hit the edge cache instead of Tinybird.
+export async function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
+    const url = new URL(MODEL_ROUTE_HEALTH_URL);
+    url.searchParams.set("minutes", String(HEALTH_ROWS_WINDOW_MINUTES));
+    const upstream = await fetch(url, {
+        cf: { cacheTtl: 60, cacheEverything: true },
+    });
+    if (!upstream.ok) {
+        throw new Error(`Model health fetch failed (${upstream.status})`);
+    }
+    const body = (await upstream.json()) as { data?: ModelHealthRow[] };
+    return body.data ?? [];
+}
 
 // Exists only for the shared edge cache: Tinybird runs the query on every
 // call, so browsers in one colo share one query per minute instead of each

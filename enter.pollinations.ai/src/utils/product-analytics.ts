@@ -12,6 +12,10 @@ export type ProductEvent =
     // the session exists. flow_id is only the device_code row id, never a
     // code, token or email.
     | "sign_in_started"
+    // GitHub sent the user back with a code, so they reached GitHub and
+    // approved. Starts that never reach this are lost on GitHub's side; this
+    // that never reach sign_in_completed are lost on ours.
+    | "sign_in_returned"
     | "sign_in_completed"
     // A user row was created, so this sign-in was also a signup. Counting it
     // separates new from returning without joining the daily d1_user snapshot.

@@ -223,13 +223,16 @@ test("signing in records the request to GitHub and the resulting session", async
     const signIn = mocks.tinybird.state.productEvents.filter((row) =>
         String(row.event).startsWith("sign_in_"),
     );
+    // The middle stage splits the loss: a start that never returns was lost at
+    // GitHub, a return that never completes was lost in our own callback.
     expect(signIn.map((row) => row.event)).toEqual([
         "sign_in_started",
+        "sign_in_returned",
         "sign_in_completed",
     ]);
     expect(signIn[0]?.user_id).toBe("");
-    expect(signIn[1]?.user_id).toEqual(expect.any(String));
-    expect(signIn[1]?.user_id).not.toBe("");
+    expect(signIn[2]?.user_id).toEqual(expect.any(String));
+    expect(signIn[2]?.user_id).not.toBe("");
     // The start carries the page it came from, so the funnel can divide it by
     // views of that same page.
     expect(signIn[0]?.page).toBe("/sign-in");
@@ -238,7 +241,7 @@ test("signing in records the request to GitHub and the resulting session", async
     const signup = mocks.tinybird.state.productEvents.find(
         (row) => row.event === "signup_completed",
     );
-    expect(signup?.user_id).toBe(signIn[1]?.user_id);
+    expect(signup?.user_id).toBe(signIn[2]?.user_id);
 });
 
 test("a start from an untracked page stays out of the funnel ratio", async ({

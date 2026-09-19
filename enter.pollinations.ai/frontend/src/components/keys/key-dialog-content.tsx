@@ -9,9 +9,9 @@ import {
     DialogFooter,
     DialogHeader,
     FieldStack,
+    InfoTip,
     KeyChip,
     KeyIcon,
-    SproutIcon,
     XIcon,
 } from "@pollinations/ui";
 import {
@@ -191,18 +191,16 @@ export function KeyDialogContent({
                                             checked={earningsEnabled}
                                             onChange={onEarningsEnabledChange}
                                             disabled={isSubmitting}
+                                            ariaLabel="Earn 20% of the Pollen users spend in your app"
+                                            info={
+                                                <InfoTip
+                                                    text="When enabled, requests through your app cost users more than the base API rate. You receive 20% of what they pay as Pollen in your balance. Your own spending does not earn rewards."
+                                                    label="App earnings information"
+                                                />
+                                            }
                                         >
-                                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                <span>Earnings</span>
-                                                <span className="inline-flex items-center gap-1.5 font-normal text-theme-text-muted">
-                                                    <SproutIcon
-                                                        aria-hidden="true"
-                                                        className="h-4 w-4 shrink-0 text-intent-success-text"
-                                                    />
-                                                    Earn 20% of the Pollen users
-                                                    spend in your app.
-                                                </span>
-                                            </span>
+                                            Earn 20% of the Pollen users spend
+                                            in your app
                                         </AuthAccessItem>
                                     )}
                                 </ul>

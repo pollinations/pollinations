@@ -239,6 +239,7 @@ export function AuthAccessItem({
     children,
     control,
     details,
+    info,
     icon,
     checked = false,
     onChange,
@@ -248,6 +249,8 @@ export function AuthAccessItem({
     children: ReactNode;
     control?: ReactNode;
     details?: ReactNode;
+    /** Help beside the row, outside its checkbox label. */
+    info?: ReactNode;
     /** Rendered instead of the checkbox; the row is then always granted. */
     icon?: ReactNode;
     checked?: boolean;
@@ -258,10 +261,15 @@ export function AuthAccessItem({
     // A required row has no input to label.
     const Row = icon != null ? "div" : "label";
     return (
-        <li>
+        <li
+            className={cn(
+                info != null && "polli:flex polli:flex-wrap polli:items-center",
+            )}
+        >
             <Row
                 className={cn(
                     "polli:flex polli:min-h-8 polli:items-center polli:gap-3 polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
+                    info != null && "polli:min-w-0",
                     onChange &&
                         (disabled
                             ? "polli:cursor-not-allowed"
@@ -309,8 +317,14 @@ export function AuthAccessItem({
                     <span className="polli:shrink-0">{control}</span>
                 )}
             </Row>
+            {info}
             {details && (
-                <div className="polli:pl-8 polli:font-body polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted">
+                <div
+                    className={cn(
+                        "polli:pl-8 polli:font-body polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted",
+                        info != null && "polli:basis-full",
+                    )}
+                >
                     {details}
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { Button, Field, Input, Text } from "@pollinations/ui";
+import { Button, Field, InfoTip, Input, Text } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 
@@ -38,7 +38,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     return (
         <AuthInfoCard title={null}>
             <div className="space-y-3">
-                <div>
+                <div className="flex items-center">
                     <Text
                         size="sm"
                         weight="semibold"
@@ -47,9 +47,10 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     >
                         Callback URLs
                     </Text>
-                    <Text size="xs" tone="muted" className="polli:mt-1">
-                        Where your app receives users after consent.
-                    </Text>
+                    <InfoTip
+                        text="Your app receives users at these URLs after consent. For local development, match a localhost callback to your dev server’s path; remove it before production."
+                        label="Callback URLs information"
+                    />
                 </div>
                 {redirectUris.map((uri, index) => (
                     <div
@@ -96,10 +97,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 >
                     Add URL
                 </Button>
-                <Text size="xs" tone="muted">
-                    Use a localhost callback for local development. Match the
-                    path to your dev server, and remove it before production.
-                </Text>
             </div>
         </AuthInfoCard>
     );

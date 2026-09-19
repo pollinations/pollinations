@@ -51,6 +51,11 @@ test("page schema accepts only fixed labels and length-capped attribution, never
             client_id: "pk_abc",
         }).success,
     ).toBe(true);
+    expect(
+        new URLSearchParams(
+            productPageViewSchema.parse(VIEW) as Record<string, string>,
+        ).toString(),
+    ).toBe("page=%2Ftop-up");
     for (const body of [
         { page: "/top-up?key=secret" },
         { page: "https://example.com" },

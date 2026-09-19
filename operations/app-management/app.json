@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Text to speech",
+    "url": "https://thinglover21-ux.github.io/My-app-mod",
+    "description": "App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. ",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "thinglover21-ux",
+    "githubUserId": "307535203",
+    "repositoryUrl": "https://github.com/thinglover21-ux/My-app-mod",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-19",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15184",
+    "approvedDate": "2026-09-19",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Oracle Mystique",
     "url": "https://oracle-mystique.up.railway.app",

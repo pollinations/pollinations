@@ -3,6 +3,15 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import { callWan3FalAPI } from "../../src/image/models/wan3FalVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const EXIF_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const CLEAN_JPEG_BYTES = new Uint8Array([
+    0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
+    0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
+]);
+
 const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const IMAGE_ENDPOINT =
@@ -47,6 +56,15 @@ function mockFalFetch(
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (
+                href === "https://media.pollinations.ai/start.png" ||
+                href === "https://media.pollinations.ai/end.png" ||
+                href === REF_IMAGE_URL
+            ) {
+                return new Response(CLEAN_JPEG_BYTES, {
+                    headers: { "Content-Type": "image/jpeg" },
+                });
+            }
             requests.push({
                 url: href,
                 body: init?.body
@@ -104,7 +122,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             "1080p",
             "1080p",
             true,
-            ["https://media.pollinations.ai/start.png"],
+            [CLEAN_JPEG_DATA_URI],
             "adaptive",
             IMAGE_ENDPOINT,
         ],
@@ -172,8 +190,8 @@ describe("Wan 3.0 Prime via Fal", () => {
     it("I2V forwards end_image_url when image[1] is present", async () => {
         const requests: ProviderRequest[] = [];
         mockFalFetch(requests);
-        const START = "https://media.pollinations.ai/start.png";
-        const END = "https://media.pollinations.ai/end.png";
+        const START = CLEAN_JPEG_DATA_URI;
+        const END = CLEAN_JPEG_DATA_URI;
 
         await callWan3FalAPI("smooth transition", {
             ...baseParams,
@@ -184,6 +202,37 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body?.start_image_url).toBe(START);
         expect(requests[0].body?.end_image_url).toBe(END);
         expect(requests[0].body?.aspect_ratio).toBe("adaptive");
+    });
+
+    it("downloads and sanitises remote start and end images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("smooth transition", {
+            ...baseParams,
+            image: [
+                "https://media.pollinations.ai/start.png",
+                "https://media.pollinations.ai/end.png",
+            ],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body?.start_image_url).toBe(CLEAN_JPEG_DATA_URI);
+        expect(requests[0].body?.end_image_url).toBe(CLEAN_JPEG_DATA_URI);
+    });
+
+    it("strips metadata from metadata-bearing data URIs before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("smooth transition", {
+            ...baseParams,
+            image: [EXIF_JPEG_DATA_URI, EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body?.start_image_url).toBe(CLEAN_JPEG_DATA_URI);
+        expect(requests[0].body?.end_image_url).toBe(CLEAN_JPEG_DATA_URI);
     });
 
     it("R2V maps Pollinations references to the Fal Prime contract", async () => {
@@ -208,7 +257,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             aspect_ratio: "9:16",
             duration: 5,
             audio: true,
-            reference_image_urls: [REF_IMAGE_URL],
+            reference_image_urls: [CLEAN_JPEG_DATA_URI],
             reference_video_urls: [REF_VIDEO_URL],
             reference_audio_urls: [REF_AUDIO_URL],
         });
@@ -231,9 +280,57 @@ describe("Wan 3.0 Prime via Fal", () => {
         });
 
         expect(requests[0].url).toBe(R2V_ENDPOINT);
-        expect(requests[0].body?.reference_image_urls).toEqual([REF_IMAGE_URL]);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
         expect(requests[0].body).not.toHaveProperty("reference_video_urls");
         expect(requests[0].body).not.toHaveProperty("reference_audio_urls");
+    });
+
+    it("downloads and sanitises remote reference images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
+    });
+
+    it("strips metadata from metadata-bearing data URIs in reference_images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
+    });
+
+    it("strips metadata from mixed remote and metadata-bearing reference images", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL, EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+            CLEAN_JPEG_DATA_URI,
+        ]);
     });
 
     it("rejects frame + reference combination with 400", async () => {

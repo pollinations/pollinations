@@ -39,7 +39,14 @@ vi.mock("@smithy/fetch-http-handler", () => ({
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
 const OUTPUT_VIDEO_URL = "https://media.example.test/output.mp4";
-const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const PNG_BYTES = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+    0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+    0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+]);
 
 type ReplicateCall = {
     model: string;
@@ -289,7 +296,7 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "openrouter");
+    await mocks.enable("tinybird", "openrouter", "media");
     syncImageEnv(
         { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
         ["OPENROUTER_API_KEY"],
@@ -317,7 +324,9 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: INPUT_IMAGE_URL },
+                    image_url: {
+                        url: expect.stringMatching(/^data:image\/png;base64,/),
+                    },
                 },
             ],
         }),

@@ -18,6 +18,13 @@ import { withInlineGenerationCoordinator } from "../helpers/inline-generation-co
 
 type ProviderBody = Record<string, unknown>;
 
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const CLEAN_JPEG_BYTES = new Uint8Array([
+    0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
+    0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
+]);
+
 function create3dMocks() {
     const inferenceportBodies: ProviderBody[] = [];
     const falBodies: ProviderBody[] = [];
@@ -87,6 +94,16 @@ function create3dMocks() {
                 falBodies.length = 0;
             },
         },
+        media: {
+            state: {},
+            handlerMap: {
+                "example.com": async () =>
+                    new Response(CLEAN_JPEG_BYTES, {
+                        headers: { "content-type": "image/jpeg" },
+                    }),
+            },
+            reset: () => {},
+        },
     });
 }
 
@@ -124,7 +141,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "inferenceport");
+    await mocks.enable("tinybird", "inferenceport", "media");
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 2 },
     });
@@ -156,12 +173,12 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     expect(mocks.inferenceport.state.bodies).toEqual([
         {
             model: "trellis2",
-            image_urls: ["https://example.com/reference.jpg"],
+            image_urls: [CLEAN_JPEG_DATA_URI],
             resolution: "low",
         },
         {
             model: "trellis2",
-            image_urls: ["https://example.com/reference.jpg"],
+            image_urls: [CLEAN_JPEG_DATA_URI],
             resolution: "high",
         },
     ]);
@@ -190,7 +207,7 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
         ...env,
         FAL_KEY: "fal_test_key",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "fal");
+    await mocks.enable("tinybird", "fal", "media");
     const { key } = await createTestApiKey({
         user: { packBalance: 1 },
     });
@@ -211,7 +228,7 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     expect(response.status).toBe(200);
     expect(mocks.fal.state.bodies).toEqual([
         {
-            image_urls: ["https://example.com/reference.jpg?crop=1,2"],
+            image_urls: [CLEAN_JPEG_DATA_URI],
             prompt: expect.any(String),
             seed: 42,
         },
@@ -269,7 +286,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "inferenceport");
+    await mocks.enable("tinybird", "inferenceport", "media");
     const body = {
         model: "trellis-2",
         image: "https://example.com/reference.jpg",
@@ -339,7 +356,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "inferenceport");
+    await mocks.enable("tinybird", "inferenceport", "media");
 
     const response = await fetch3d(
         `/3d/${crypto.randomUUID()}?model=trellis-2&image=${encodeURIComponent("https://example.com/reference.jpg")}&resolution=medium`,

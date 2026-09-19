@@ -4,7 +4,11 @@ import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrl
 
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: createBedrockNativeConfig() };
+const openaiOptions = { modelConfig: { provider: "openai" } };
 const vertexOptions = { modelConfig: { provider: "vertex-ai" } };
+const JPEG_WITH_EXIF_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAGRXhpZv/aAAMA/9k=";
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
 
 /** PNG signature — enough for the media type to be read off the bytes. */
 const PNG_BYTES = new Uint8Array([
@@ -28,32 +32,54 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
-    it("uses the declared flag rather than the provider name", async () => {
-        const input = imageMessage(["not-a-url"]);
-        const result = await transform(input, {
-            modelConfig: { provider: "bedrock" },
+    it("sanitizes HTTP(S) URLs regardless of requiresBase64ImageUrls flag", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+
+        const input = imageMessage(["https://example.com/image.png"]);
+        const { messages } = await transform(input, {
+            modelConfig: { provider: "custom-provider" },
         });
-        expect(result.messages).toBe(input);
-        await expect(
-            transform(input, {
-                modelConfig: {
-                    provider: "custom-provider",
-                    requiresBase64ImageUrls: true,
-                },
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            errorCode: "invalid_image_url",
-        });
+
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
     });
 
-    it("leaves remote image URLs unchanged for Vertex", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it("sanitizes remote image URLs for Vertex", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
         const input = imageMessage(["https://example.com/image.png"]);
 
-        const result = await transform(input, vertexOptions);
+        const { messages } = await transform(input, vertexOptions);
 
-        expect(result.messages).toBe(input);
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
+    });
+
+    it("sanitizes data URLs for providers that do not require base64 conversion", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        const { messages } = await transform(
+            imageMessage([JPEG_WITH_EXIF_DATA_URI]),
+            openaiOptions,
+        );
+
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toBe(CLEAN_JPEG_DATA_URI);
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

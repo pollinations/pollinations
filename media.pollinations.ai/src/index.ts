@@ -1,5 +1,9 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import {
+    InvalidImageStructureError,
+    stripImageMetadata,
+} from "@shared/image-strip.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -528,6 +532,22 @@ api.post(
                 tags.length > 0 || requestedId !== undefined
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
+
+            // Strip privacy-sensitive metadata (EXIF/GPS/IPTC) from image
+            // uploads before persisting to R2.
+            if (contentType.startsWith("image/")) {
+                try {
+                    const stripped = stripImageMetadata(
+                        new Uint8Array(fileBuffer),
+                    );
+                    fileBuffer = stripped.buffer;
+                } catch (error) {
+                    if (!(error instanceof InvalidImageStructureError)) {
+                        throw error;
+                    }
+                    return c.json({ error: error.message }, 400);
+                }
+            }
 
             const stored = await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
                 ...(requestedId !== undefined && {

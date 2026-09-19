@@ -1,6 +1,10 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import {
+    InvalidImageStructureError,
+    stripImageMetadata,
+} from "@shared/image-strip.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 
@@ -157,6 +161,15 @@ function decodeDataUri(imageUrl: string, maxBytes: number): Uint8Array {
     return bytes;
 }
 
+function sanitizeImage(bytes: Uint8Array): Uint8Array {
+    try {
+        return stripImageMetadata(bytes);
+    } catch (error) {
+        if (!(error instanceof InvalidImageStructureError)) throw error;
+        throw new UserImageError(error.message, "unsupported_image_media_type");
+    }
+}
+
 /**
  * Fetches one user-supplied image: guarded, size-capped, and labelled with a
  * media type to forward. Takes either a remote URL or a `data:` URI, so an
@@ -187,7 +200,7 @@ export async function fetchUserImage(
                 "unsupported_image_media_type",
             );
         }
-        return { bytes, mimeType };
+        return { bytes: sanitizeImage(bytes), mimeType };
     }
 
     const url = assertAllowedImageUrl(imageUrl);
@@ -276,5 +289,5 @@ export async function fetchUserImage(
         );
     }
 
-    return { bytes, mimeType };
+    return { bytes: sanitizeImage(bytes), mimeType };
 }

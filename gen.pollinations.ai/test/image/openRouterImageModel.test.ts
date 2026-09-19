@@ -19,6 +19,10 @@ const PNG = Buffer.from(
     "base64",
 );
 const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
+const EXIF_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const WIDE_PNG = Buffer.alloc(24);
 WIDE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 WIDE_PNG.writeUInt32BE(2560, 16);
@@ -45,6 +49,12 @@ function mockOpenRouterFetch(requests: Record<string, unknown>[]) {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (href === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    status: 200,
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
             if (href !== OPENROUTER_IMAGE_URL) {
                 return new Response("unexpected URL", { status: 404 });
             }
@@ -116,7 +126,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             ...baseParams,
             width: 1280,
             height: 720,
-            image: ["https://example.com/input.png"],
+            image: [REFERENCE_IMAGE_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -128,13 +138,36 @@ describe("OpenRouter Grok Imagine Pro", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/input.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
             ],
         });
         expect(result.trackingData?.usage).toEqual({
             promptImageTokens: 1,
             completionImageTokens: 1,
+        });
+    });
+
+    it("strips metadata from metadata-bearing data URIs before forwarding", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockOpenRouterFetch(requests);
+
+        await callOpenRouterGrokImagineProAPI("edit prompt", {
+            ...baseParams,
+            image: [EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0]).toMatchObject({
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: CLEAN_JPEG_DATA_URI },
+                },
+            ],
         });
     });
 
@@ -177,11 +210,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             model: "x-ai/grok-imagine-image-2.0",
             quality,
             resolution,
-            image: [
-                "https://example.com/one.png",
-                "https://example.com/two.png",
-                "https://example.com/three.png",
-            ],
+            image: [REFERENCE_IMAGE_URL, PNG_DATA_URI, REFERENCE_IMAGE_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -198,15 +227,15 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/one.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/two.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/three.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
             ],
         });
@@ -891,6 +920,8 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 describe("OpenRouter Recraft vector", () => {
     const svg =
         '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
+    const SVG_URL = "https://example.com/reference.svg";
+    const RECRAFT_SVG_DATA_URI = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 
     function mockRecraftResponse(
         requests: Record<string, unknown>[],
@@ -900,6 +931,11 @@ describe("OpenRouter Recraft vector", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementation(async (url, init) => {
                 const href = typeof url === "string" ? url : url.toString();
+                if (href === SVG_URL) {
+                    return new Response(svg, {
+                        headers: { "Content-Type": "image/svg+xml" },
+                    });
+                }
                 if (href !== OPENROUTER_IMAGE_URL) {
                     return new Response("unexpected URL", { status: 404 });
                 }
@@ -977,7 +1013,7 @@ describe("OpenRouter Recraft vector", () => {
         const result = await callOpenRouterRecraftVectorAPI("edit prompt", {
             ...baseParams,
             model: "recraft/recraft-v4.1-vector",
-            image: ["https://example.com/input.svg"],
+            image: [SVG_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -992,7 +1028,7 @@ describe("OpenRouter Recraft vector", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/input.svg" },
+                    image_url: { url: RECRAFT_SVG_DATA_URI },
                 },
             ],
         });

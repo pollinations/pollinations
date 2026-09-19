@@ -678,6 +678,7 @@ fixtureTest(
             requests.map((request) => new URL(request.url).pathname),
         );
     },
+    30_000,
 );
 
 describe("model status", () => {
@@ -752,6 +753,11 @@ fixtureTest(
                     request.url.startsWith("http://localhost:7181/")
                 ) {
                     return Response.json({ data: [] });
+                }
+                if (request.url === "https://example.com/source.svg") {
+                    return new Response(svg, {
+                        headers: { "content-type": "image/svg+xml" },
+                    });
                 }
                 throw new Error(`Unexpected fetch: ${request.url}`);
             },
@@ -921,7 +927,9 @@ fixtureTest(
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/source.svg" },
+                    image_url: {
+                        url: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
+                    },
                 },
             ],
         });

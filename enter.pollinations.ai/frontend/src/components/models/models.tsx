@@ -415,7 +415,7 @@ export const Models: FC = () => {
             activeTabModels,
             supportedFilterKeys,
         );
-        if (explicitModelSource) {
+        if (explicitModelSource && draftFilter?.key !== "source") {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter

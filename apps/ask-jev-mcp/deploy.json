@@ -1,0 +1,13 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci",
+  "build": "npm run test",
+  "deploy": "npm run deploy",
+  "watch": [
+    "packages/mcp/"
+  ],
+  "verify": [
+    "https://ask-jev-mcp.pollinations.ai/health"
+  ]
+}

@@ -107,6 +107,8 @@ polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
 ```
 
+On `usage`, `--key`/`--model`/`--days`/`--csv` require `--history` or `--daily`. A `--key` placed **between** `usage` and the flags filters output; a `--key` **before** `usage` (or a literal `sk_`/`pk_` value after it) stays the global auth override instead — that's why the harness-key example above keeps `--key` after `usage`.
+
 Manage agents with API-shaped JSON config files:
 
 ```bash

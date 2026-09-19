@@ -1,0 +1,37 @@
+{
+  "pr_number": 15173,
+  "title": "Add baboolharech to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15173",
+  "merged_at": "2026-09-19T06:38:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [baboolharech](https://baboolharech-lgtm.github.io/Fith) to image\n- App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft\n\nFixes #15126",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Arabic Login Takes Flight",
+    "blurb": "A new flower joined the image garden: baboolharech, a browser-only Arabic app that brings Pollinations BYOP login along for the ride. No backend shed required.",
+    "summary": "Added baboolharech to the image app directory: a static Arabic RTL web app that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely client-side.",
+    "impact": "Arabic-speaking builders can discover a client-only reference app for connecting to Pollinations.ai through the BYOP OAuth 2.1 PKCE flow without running a backend server.",
+    "keywords": [
+      "community-app",
+      "Arabic",
+      "RTL",
+      "BYOP",
+      "OAuth",
+      "PKCE",
+      "image"
+    ],
+    "visual_concept": "Depict baboolharech as a welcoming Arabic RTL client-side login garden: a retro browser window with a right-to-left login panel, a tiny key and secure path made of pixel flowers, showing that OAuth PKCE happens in the browser without a server. Polli should warmly guide the flow while wearing a small explorer scarf; add code-plants and a cozy terminal to connect it to the open image ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny explorer scarf as she guides a glowing pixel key through a right-to-left Arabic browser login panel; nearby, code-plants grow from pots around a small retro terminal, with simple pixel-font text: \"BYOP\" and \"RTL\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15173.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny explorer scarf as she guides a glowing pixel key through a right-to-left Arabic browser login panel; nearby, code-plants grow from pots around a small retro terminal, with simple pixel-font text: \"BYOP\" and \"RTL\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-19T06:39:28.451390+00:00",
+  "app_name": "baboolharech",
+  "app_url": "https://baboolharech-lgtm.github.io/Fith"
+}

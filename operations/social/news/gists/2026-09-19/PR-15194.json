@@ -1,0 +1,36 @@
+{
+  "pr_number": 15194,
+  "title": "Add PersonaMorph to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15194",
+  "merged_at": "2026-09-19T15:33:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PersonaMorph](https://personamorph-ai-production.up.railway.app) to image\n- A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2.\n\nFixes #15057",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "New faces in the garden",
+    "blurb": "PersonaMorph joined the image garden, bringing a studio for turning photos into artistic personas. Connect a Pollinations wallet, pick a direction, and let the pixels do their small identity crisis.",
+    "summary": "Added PersonaMorph to the app directory: an AI Identity Studio that connects Pollinations wallets and uses the /v1/images/edits endpoint to transform photos into artistic personas with OAuth 2.",
+    "impact": "Users can now discover PersonaMorph as a wallet-connected way to create artistic photo transformations through Pollinations image edits.",
+    "keywords": [
+      "PersonaMorph",
+      "image edits",
+      "apps",
+      "OAuth 2",
+      "wallets",
+      "artistic personas"
+    ],
+    "visual_concept": "Depict PersonaMorph as a cozy identity studio: a retro photo booth or artist's mirror showing several gentle pixel-art portrait personas. Polli, wearing a tiny painter's beret, helps arrange photo cards while a code-plant and flowers grow beside a lime-green glowing image-edit terminal.",
+    "image_prompt": "A cozy pixel art identity studio where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, happily pins several artistic pixel portrait cards around a retro mirror while a lime green (#ecf874) terminal runs an image-edit tool; code-plants, flowers, and soft pastel photo-backdrop curtains make the room feel warm and creative. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"PERSONAMORPH\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15194.jpg",
+    "prompt": "A cozy pixel art identity studio where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, happily pins several artistic pixel portrait cards around a retro mirror while a lime green (#ecf874) terminal runs an image-edit tool; code-plants, flowers, and soft pastel photo-backdrop curtains make the room feel warm and creative. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text reading \"PERSONAMORPH\"."
+  },
+  "generated_at": "2026-09-19T15:33:59.375575+00:00",
+  "app_name": "PersonaMorph",
+  "app_url": "https://personamorph-ai-production.up.railway.app"
+}

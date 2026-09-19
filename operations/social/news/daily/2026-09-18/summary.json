@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-18",
+  "period_start": "2026-09-18",
+  "period_end": "2026-09-18",
+  "title": "Five more ways to ask the API difficult questions",
+  "summary": "A model-heavy day: bigger-context text, structured decisions, FLUX.2 Max, and CLI usage tools that can finally answer narrower questions.\n\nThe text-model roster picked up GPT-4o Mini, Tencent HY4 Preview, Tencent HY3, and TypeSafe Jev. HY4 brings a million-token context window; HY3 adds high-reasoning defaults with cross-provider fallback; and Jev makes confidence-calibrated, typed decisions available through Chat Completions or an MCP server. One endpoint, increasingly strange and useful inhabitants.\n\nDevelopers can now call black-forest-labs/flux.2-max for high-end image generation and editing, including workflows with up to eight reference images. Replicate handles the primary route, with an OpenRouter deployment waiting in the wings.\n\nThe polli CLI can now filter usage history and daily totals by API key, model, and day range, with key-name lookup, useful near-match errors, richer token columns, and CSV export. Usage parsing also now preserves fractional units such as audio seconds and image megapixels instead of rounding them into fiction.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 14791,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 14798,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 14811,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 14812,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15045,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15111,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15127,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15131,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15144,
+      "date": "2026-09-18"
+    },
+    {
+      "number": 15154,
+      "date": "2026-09-18"
+    }
+  ],
+  "generated_at": "2026-09-19T06:26:50.531194+00:00"
+}

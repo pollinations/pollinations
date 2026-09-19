@@ -14,7 +14,10 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
-import { captureFromRequest } from "../utils/product-analytics.ts";
+import {
+    captureFromRequest,
+    referringPage,
+} from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
@@ -221,6 +224,9 @@ export const stripeRoutes = new Hono<Env>()
             if (checkoutSession.url) {
                 captureFromRequest(c, "checkout_started", userId, {
                     pack_key: pack.packKey,
+                    // The page the buyer came from, so checkouts divide by
+                    // views of that same page, as sign-ins already do.
+                    page: referringPage(c.req.raw.headers),
                 });
                 return c.redirect(checkoutSession.url);
             }

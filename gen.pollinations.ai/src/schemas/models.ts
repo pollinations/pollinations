@@ -9,6 +9,10 @@ export const ModelListQueryParamsSchema = z.object({
         description:
             "Legacy source filter: `true`/`1` for community, `false`/`0` for official.",
     }),
+    reliability: z.enum(["all", "reliable"]).optional().meta({
+        description:
+            "`reliable` hides models whose measured health is `down`. Healthy, degraded, and unknown (including no data) stay. Default is `all`. Discovery-only; does not change generation permissions.",
+    }),
 });
 
 export type ModelListQueryParams = z.infer<typeof ModelListQueryParamsSchema>;

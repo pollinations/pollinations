@@ -15,15 +15,21 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Filters
 
-All model list endpoints above accept the same optional `source` filter:
-`official` or `community`. Omit it for both. `community=true|false|1|0`
-remains available as a legacy source filter. The query overrides the
-connection-wide header; `source` overrides `community`. Invalid values return
-**400 Bad Request**. The filter combines with the caller's access restrictions;
-it does not change generation permissions.
+All model list endpoints above accept the same optional filters:
+
+- `source`: `official` or `community`. Omit for both. `community=true|false|1|0`
+  remains available as a legacy source filter. The query overrides the
+  connection-wide header; `source` overrides `community`.
+- `reliability`: `all` (default) or `reliable`. `reliable` hides models whose
+  measured health is `down`. Healthy, degraded, and unknown (including no data)
+  stay. Discovery-only; it does not change generation permissions.
+
+Invalid values return **400 Bad Request**. Filters combine with the caller's
+access restrictions.
 
 ```bash
 curl 'https://gen.pollinations.ai/v1/models?source=official'
+curl 'https://gen.pollinations.ai/v1/models?reliability=reliable'
 ```
 
 OpenAI-compatible clients that append `/models` to their base URL can use the
@@ -38,9 +44,10 @@ LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
 catalog header.
 
-Model lists carry no health data. Recent request counts, error rates, latency
-and fallback breakdowns per model are served separately by
-`/models/status`, described in [Public Stats](/docs#tag/public-stats).
+Each list entry includes a `health` field (`status`, `success_rate`,
+`requests`) summarizing gateway reliability over roughly the last 24h. For the
+raw per-route Tinybird breakdown (latency, fallbacks), use `/models/status`,
+described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

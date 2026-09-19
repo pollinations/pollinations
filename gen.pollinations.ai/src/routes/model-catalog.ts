@@ -51,12 +51,20 @@ export async function filterCatalogEntries(
               : "official";
     const source =
         query.source ?? communitySource ?? headers["pollinations-model-source"];
-    const filtered = entries.filter(
+    const bySource = entries.filter(
         (entry) =>
             source === undefined ||
             entry.info.community === (source === "community"),
     );
 
     const lookup = await getModelHealthLookup();
-    return filtered.map((entry) => attachModelHealth(entry, lookup));
+    const withHealth = bySource.map((entry) =>
+        attachModelHealth(entry, lookup),
+    );
+
+    // `reliable` excludes only measured-down models. Missing health / unknown /
+    // healthy / degraded all stay — missing data means unknown, not unreliable.
+    // Discovery-only; generation routing is unchanged.
+    if (query.reliability !== "reliable") return withHealth;
+    return withHealth.filter((entry) => entry.info.health?.status !== "down");
 }

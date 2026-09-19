@@ -121,6 +121,7 @@ test("rejects invalid discovery filters", async () => {
         fetchWorker("/models", {
             headers: { "Pollinations-Model-Source": "other" },
         }),
+        fetchWorker("/models?reliability=unreliable"),
     ]);
 
     expect(responses.every(({ status }) => status === 400)).toBe(true);
@@ -262,4 +263,57 @@ test("applies the same 404 rule to aliases of hidden models", async ({
         headers: { Authorization: `Bearer ${apiKey}` },
     });
     expect(response.status).toBe(404);
+});
+
+test("reliability=reliable excludes models measured as down", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url.includes("model_route_health")) {
+            return Response.json({
+                data: [
+                    {
+                        model: "openai/gpt-5.4-nano",
+                        event_type: "generate.text",
+                        is_rollup: 1,
+                        status_2xx: 10,
+                        errors_5xx: 40,
+                    },
+                    {
+                        model: "openai/gpt-5-nano",
+                        event_type: "generate.text",
+                        is_rollup: 1,
+                        status_2xx: 100,
+                        errors_5xx: 0,
+                    },
+                ],
+            });
+        }
+        return originalFetch(input as RequestInfo, init);
+    });
+
+    const all = await fetchWorkerWithMock("/text/models");
+    expect(all.status).toBe(200);
+    const allModels = (await all.json()) as {
+        name: string;
+        health?: { status: string };
+    }[];
+    expect(
+        allModels.find((m) => m.name === "openai/gpt-5.4-nano")?.health?.status,
+    ).toBe("down");
+    expect(
+        allModels.find((m) => m.name === "openai/gpt-5-nano")?.health?.status,
+    ).toBe("healthy");
+
+    const reliable = await fetchWorkerWithMock(
+        "/text/models?reliability=reliable",
+    );
+    expect(reliable.status).toBe(200);
+    const reliableModels = (await reliable.json()) as { name: string }[];
+    expect(reliableModels.some((m) => m.name === "openai/gpt-5.4-nano")).toBe(
+        false,
+    );
+    expect(reliableModels.some((m) => m.name === "openai/gpt-5-nano")).toBe(
+        true,
+    );
 });

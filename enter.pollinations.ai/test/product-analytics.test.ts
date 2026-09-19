@@ -62,7 +62,7 @@ test("page schema accepts only fixed labels and length-capped attribution, never
         expect(productPageViewSchema.safeParse(body).success).toBe(false);
 });
 
-test("browser cannot submit server events, cross-origin traffic, or request bodies", async () => {
+test("browser cannot submit server events or cross-origin traffic", async () => {
     expect(
         (await pageView({ ...VIEW, event: "payment_completed" })).status,
     ).toBe(400);
@@ -73,7 +73,9 @@ test("browser cannot submit server events, cross-origin traffic, or request bodi
             })
         ).status,
     ).toBe(403);
-    expect((await pageView(VIEW, "", {}, "x".repeat(2000))).status).toBe(415);
+    // Every POST has a body at the edge, so one must not be rejected: the
+    // handler reads the query string and never the body.
+    expect((await pageView(VIEW, "", {}, "x".repeat(2000))).status).toBe(204);
     expect((await pageView({ page: "x".repeat(2000) })).status).toBe(400);
 });
 

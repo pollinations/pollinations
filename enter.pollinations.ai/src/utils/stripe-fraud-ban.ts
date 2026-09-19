@@ -10,10 +10,10 @@ import {
 type FraudQuery = { sql: string; params: string[] };
 type FraudReportUser = FraudUser & {
     name: string | null;
+    github_username: string | null;
     banned: number | null;
     ban_expires: number | null;
 };
-export type FraudCandidate = { id: string; name: string | null; score: number };
 type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
@@ -34,7 +34,7 @@ export async function runFraudBanCheck(
     let cursor = "";
     for (;;) {
         const [page] = await query({
-            sql: "SELECT id, stripe_customer_id, name, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
+            sql: "SELECT id, stripe_customer_id, name, github_username, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
             params: [cursor],
         });
         if (!Array.isArray(page?.results))
@@ -62,11 +62,11 @@ export async function runFraudBanCheck(
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
     // Radar's own risk prediction can reach the threshold on volume alone, so a
     // ban additionally requires a dispute, a fraud report or a fraud warning.
-    const candidates = users.filter(
-        (user) =>
-            !excluded.has(user.id) &&
-            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD &&
-            result.confirmed.has(user.id),
+    const confirmedUsers = users.filter(
+        (user) => !excluded.has(user.id) && result.confirmed.has(user.id),
+    );
+    const candidates = confirmedUsers.filter(
+        (user) => (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD,
     );
     // Public Actions logs contain aggregate counts only.
     console.log(
@@ -97,15 +97,19 @@ export async function runFraudBanCheck(
         charges: result.charges,
         unmapped: result.unmapped,
         // Private report of accounts still needing action; never printed to public logs.
-        report: candidates
+        // Review every confirmed signal, including one issuer warning below the
+        // ban threshold; the score orders the queue.
+        report: confirmedUsers
             .filter((user) => !isActiveBan(user))
-            .map(
-                (user): FraudCandidate => ({
-                    id: user.id,
-                    name: user.name,
-                    score: result.scores.get(user.id) ?? 0,
-                }),
-            ),
+            .map((user) => ({
+                id: user.id,
+                name: user.name,
+                github_username: user.github_username,
+                customerId:
+                    [...(result.customers.get(user.id) ?? [])][0] ?? null,
+                score: result.scores.get(user.id) ?? 0,
+            }))
+            .sort((a, b) => b.score - a.score),
     };
 }
 

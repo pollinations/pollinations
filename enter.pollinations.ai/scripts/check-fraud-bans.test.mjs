@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 import { FraudCheckError } from "../src/utils/stripe-fraud-score.ts";
 import {
-    buildFraudReport,
+    formatDailyReport,
     fraudCheckErrorMessage,
+    listOpenDisputes,
     postFraudReport,
 } from "./check-fraud-bans.mjs";
 
@@ -75,67 +76,87 @@ test("parser, filesystem, and unknown errors never expose raw contents", () => {
     );
 });
 
-const scan = {
-    candidates: 2,
-    applied: 0,
-    charges: 350,
-    unmapped: 12,
-    report: [
-        { id: "u_1", name: "alice", score: 1.25 },
-        { id: "u_2", name: null, score: 0.8 },
-    ],
-};
-
-test("report summarises counts and lists candidates only in the attached file", () => {
-    const readOnly = buildFraudReport(scan, false);
-    assert.equal(
-        readOnly.content,
-        "Fraud ban check · read-only · 2 candidates · 2 awaiting review · 350 charges scanned, 12 unmapped",
-    );
-    assert.match(
-        readOnly.file.name,
-        /^fraud-candidates-\d{4}-\d{2}-\d{2}\.tsv$/,
-    );
-    assert.equal(
-        readOnly.file.body,
-        "score\tuser_id\tname\n1.25\tu_1\talice\n0.80\tu_2\t\n",
-    );
-    const applied = buildFraudReport({ ...scan, applied: 2 }, true);
-    assert.match(applied.content, /bans applied: 2/);
-    assert.equal(buildFraudReport({ ...scan, report: [] }, false).file, null);
+const account = (id, score, extra = {}) => ({
+    id,
+    github_username: `gh_${id}`,
+    customerId: `cus_${id}`,
+    score,
+    ...extra,
+});
+const dispute = (id, status, extra = {}) => ({
+    id,
+    status,
+    amount: 548,
+    currency: "usd",
+    evidence_details: { due_by: Date.UTC(2026, 8, 20, 12) / 1000 },
+    ...extra,
 });
 
-test("report is posted as multipart without mentions and failures hide the webhook", async () => {
-    const calls = [];
-    const fetchImpl = async (url, init) => {
-        calls.push({ url, init });
-        return { ok: true, status: 204 };
-    };
-    await postFraudReport(
-        "https://discord.test/hook/SECRET",
-        scan,
-        false,
-        fetchImpl,
+test("report lists open disputes and accounts with links and a row cap", () => {
+    const report = formatDailyReport({
+        accounts: Array.from({ length: 7 }, (_, i) =>
+            account(`u${i}`, 1 - i / 10),
+        ),
+        disputes: [
+            dispute("dp_1", "needs_response"),
+            dispute("dp_2", "warning_needs_response", {
+                currency: "eur",
+                evidence_details: { due_by: Date.UTC(2026, 8, 19, 8) / 1000 },
+            }),
+        ],
+    });
+    assert.match(report, /Disputes to answer · 2\*\* \(\$5\.48, €5\.48\)/);
+    assert.match(report, /first due 2026-09-19 08:00 UTC/);
+    assert.match(
+        report,
+        /gh_u0 · 1\.00 → <https:\/\/dashboard\.stripe\.com\/customers\/cus_u0>/,
     );
-    assert.equal(calls.length, 1);
-    const form = calls[0].init.body;
-    assert.deepEqual(JSON.parse(form.get("payload_json")), {
-        content: buildFraudReport(scan, false).content,
+    assert.match(report, /\+2 more/);
+    assert.doesNotMatch(report, /gh_u5/);
+    assert.equal(formatDailyReport({ accounts: [], disputes: [] }), null);
+});
+
+test("only disputes awaiting a response from the last 30 days are listed", async () => {
+    const now = Date.UTC(2026, 8, 17);
+    const stripe = {
+        disputes: {
+            list: (params) => {
+                assert.equal(params.created.gte, now / 1000 - 30 * 86400);
+                return [
+                    dispute("dp_open", "needs_response"),
+                    dispute("dp_lost", "lost"),
+                    dispute("dp_review", "under_review"),
+                ];
+            },
+        },
+    };
+    const open = await listOpenDisputes(stripe, now);
+    assert.deepEqual(
+        open.map((d) => d.id),
+        ["dp_open"],
+    );
+});
+
+test("report is posted without mentions and failures hide the webhook", async () => {
+    const calls = [];
+    await postFraudReport(
+        "https://discord.test/SECRET",
+        "brief",
+        async (url, init) => {
+            calls.push({ url, init });
+            return { ok: true };
+        },
+    );
+    assert.equal(calls[0].url, "https://discord.test/SECRET");
+    assert.deepEqual(JSON.parse(calls[0].init.body), {
+        content: "brief",
         allowed_mentions: { parse: [] },
     });
-    assert.match(await form.get("files[0]").text(), /u_1\talice/);
     await assert.rejects(
-        postFraudReport(
-            "https://discord.test/hook/SECRET",
-            scan,
-            false,
-            async () => ({
-                ok: false,
-                status: 429,
-            }),
-        ),
-        (error) =>
-            error instanceof FraudCheckError &&
-            error.message === "Discord report failed: HTTP 429",
+        postFraudReport("https://discord.test/SECRET", "brief", async () => ({
+            ok: false,
+            status: 429,
+        })),
+        (error) => error.message === "Discord report failed: HTTP 429",
     );
 });

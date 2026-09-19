@@ -50,6 +50,8 @@ interface ModelDefinition {
     transform?: TransformFn;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
+    /** Route typed decisions directly through TypeSafe System One. */
+    useSystemOneApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -94,6 +96,10 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: omitOpenAISampling,
+    },
+    {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
         name: "openai/gpt-oss-20b",
@@ -514,6 +520,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "typesafe/jev",
+        config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(
@@ -587,6 +598,10 @@ const models: ModelDefinition[] = [
         name: "meituan/longcat-2.0",
         config: portkeyConfig["meituan/longcat-2.0"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "tencent/hy4-preview",
+        config: portkeyConfig["tencent/hy4-preview"],
     },
     {
         name: "thinkingmachines/inkling-small",
@@ -680,6 +695,14 @@ const models: ModelDefinition[] = [
         name: "minimax/minimax-m2.7:deepinfra",
         config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
         transform: mandatoryReasoning,
+    },
+    {
+        name: "tencent/hy3",
+        config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "tencent/hy3:openrouter:phala",
+        config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
         name: "minimax/minimax-m3",

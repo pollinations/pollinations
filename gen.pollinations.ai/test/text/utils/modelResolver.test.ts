@@ -105,6 +105,43 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy4-preview",
+        });
+
+        expect(result.options.model).toBe("tencent/hy4-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["tencent/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Hy3 to Novita on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["novita"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3:openrouter:phala",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["phala"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
@@ -113,6 +150,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
             only: ["Together"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins gpt-4o-mini to Azure then OpenAI on OpenRouter without further fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-4o-mini",
+        });
+
+        expect(result.options.model).toBe("openai/gpt-4o-mini");
+        expect(result.options.provider).toEqual({
+            order: ["azure", "openai"],
+            ignore: ["azure/swedencentral"],
             allow_fallbacks: false,
         });
     });

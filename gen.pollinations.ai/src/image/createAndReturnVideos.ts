@@ -17,6 +17,7 @@ import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterKlingVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedance25API } from "./models/seedance25VideoModel.ts";
@@ -114,6 +115,9 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "kwaivgi/kling-v3.0-std":
+            result = await callOpenRouterKlingVideoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

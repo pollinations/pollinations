@@ -18,6 +18,9 @@ const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
+const KLING_MODEL = "kwaivgi/kling-v3.0-std";
+const KLING_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+const KLING_ASPECT_RATIOS = ["16:9", "9:16", "1:1"] as const;
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -192,6 +195,69 @@ export async function callOpenRouterGrokVideoAPI(
             usage: {
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,
+            },
+        },
+    };
+}
+
+export async function callOpenRouterKlingVideoAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    const duration = safeParams.duration ?? 5;
+    if (!Number.isInteger(duration) || duration < 3 || duration > 15) {
+        throw UpstreamError.fromProvider(400, {
+            message: "Kling duration must be an integer from 3 to 15 seconds",
+        });
+    }
+    const generateAudio = safeParams.audio === true;
+    const requestBody: Record<string, unknown> = {
+        model: KLING_MODEL,
+        prompt,
+        resolution: "720p",
+        aspect_ratio: closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            KLING_ASPECT_RATIOS,
+        ),
+        duration,
+        generate_audio: generateAudio,
+    };
+
+    const [firstFrame, lastFrame] = safeParams.image ?? [];
+    const frameImages = [
+        [firstFrame, "first_frame"],
+        [lastFrame, "last_frame"],
+    ]
+        .filter(([url]) => url)
+        .map(([url, frameType]) => ({
+            type: "image_url",
+            image_url: { url },
+            frame_type: frameType,
+        }));
+    if (frameImages.length > 0) requestBody.frame_images = frameImages;
+
+    const { buffer, providerCost } = await generateOpenRouterVideo(
+        requestBody,
+        KLING_POLL_TIMEOUT_MS,
+    );
+
+    logOps("Kling generation complete", {
+        duration,
+        generateAudio,
+        providerCost,
+        bufferSize: buffer.length,
+    });
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: duration,
+        trackingData: {
+            actualModel: KLING_MODEL,
+            usage: {
+                completionVideoSeconds: duration,
+                ...(generateAudio ? { completionAudioSeconds: duration } : {}),
             },
         },
     };

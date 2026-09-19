@@ -32,6 +32,7 @@ const VIDEO_FRAME_LIMITS = [
     ["x-ai/grok-imagine-video-1.5:fal", 1],
     ["bytedance/seedance-2.5", 2],
     ["alibaba/happyhorse-1.1", 1],
+    ["kwaivgi/kling-v3.0-std", 2],
     ["minimax/minimax-h3", 0],
     ["minimax/minimax-h3-max-turbo", 2],
     ["prunaai/p-video", 1],

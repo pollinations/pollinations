@@ -18,6 +18,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Ideogram: "ideogram",
     Inception: "inception",
     Krea: "krea",
+    Kuaishou: "kuaishou",
     Lykon: "lykon",
     Meituan: "meituan",
     Meta: "meta",

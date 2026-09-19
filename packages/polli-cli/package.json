@@ -62,12 +62,15 @@
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^14.0.3",
+    "cross-spawn": "^7.0.6",
     "json5": "^2.2.3",
+    "jsonc-parser": "^3.3.1",
     "open": "^11.0.0",
     "update-notifier": "^7.3.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
     "@types/node": "^22.20.1",
     "@types/update-notifier": "^6.0.8",
     "tsup": "^8.4.0",

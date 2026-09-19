@@ -1,0 +1,37 @@
+{
+  "pr_number": 15199,
+  "title": "Add aaarraaa to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15199",
+  "merged_at": "2026-09-19T15:54:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [aaarraaa](https://aaarraaarr990-rgb.github.io/Monster) to image\n- App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in\n\nFixes #15185",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Right-to-left, ready to fly",
+    "blurb": "Aaarraaa has landed in the image garden: an Arabic-first, browser-only way to walk through Pollinations BYOP login. No backend nest required.",
+    "summary": "Added aaarraaa, a static Arabic RTL web app that implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow entirely in the client browser.",
+    "impact": "Arabic-speaking builders can now explore and use the BYOP OAuth 2.1 PKCE flow through a right-to-left interface without deploying a backend server.",
+    "keywords": [
+      "community-app",
+      "Arabic",
+      "RTL",
+      "BYOP",
+      "OAuth",
+      "PKCE",
+      "authentication"
+    ],
+    "visual_concept": "Depict a cozy Arabic RTL login journey as a garden path of glowing browser windows and key-shaped flowers. Polli, wearing a tiny explorer scarf, guides a friendly user-facing terminal through a lime-green OAuth gate, with right-to-left pixel text and code-plants showing that the flow runs in the browser rather than a server room.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny explorer scarf, guiding a glowing retro browser through a garden gate shaped like a key; the screen shows simple Arabic RTL pixel text and a client-side PKCE code-plant, while no server towers appear. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the browser."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15199.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny explorer scarf, guiding a glowing retro browser through a garden gate shaped like a key; the screen shows simple Arabic RTL pixel text and a client-side PKCE code-plant, while no server towers appear. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines around the browser."
+  },
+  "generated_at": "2026-09-19T15:56:29.895866+00:00",
+  "app_name": "aaarraaa",
+  "app_url": "https://aaarraaarr990-rgb.github.io/Monster"
+}

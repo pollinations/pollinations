@@ -1,4 +1,4 @@
-import { BeakerIcon, Text } from "@pollinations/ui";
+import { InfoTip } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
@@ -49,6 +49,8 @@ interface KeyPermissionsInputsProps {
     requestedModels?: string[] | null;
     /** First rows of the "always" card: the identity row on consent, the name field in dialogs. */
     lead?: ReactNode;
+    /** Fixed row shown after the optional account permissions on consent. */
+    accountAfter?: ReactNode;
 }
 
 /**
@@ -60,6 +62,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     visiblePermissions,
     requestedModels,
     lead,
+    accountAfter,
 }) => {
     const {
         permissions,
@@ -87,6 +90,10 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     const hasModels =
         permissions.allowedModels === null ||
         permissions.allowedModels.length > 0;
+    const hasAccountCard =
+        visiblePermissions === undefined ||
+        visiblePermissions.size > 0 ||
+        accountAfter != null;
     const accountPermissionsInput = (
         <AccountPermissionsInput
             value={permissions.accountPermissions}
@@ -120,61 +127,57 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             onChange={(checked) =>
                 setAllowedModels(checked ? (requestedModels ?? null) : [])
             }
-            details={
-                <div className="space-y-2">
-                    {hasModels && (
-                        <ModelPermissionsInput
-                            catalog={catalog}
-                            categories={categories}
-                            models={models}
-                            selected={permissions.allowedModels}
-                            onChange={(next) =>
-                                setAllowedModels(
-                                    requestedModels == null
-                                        ? normalizeAllowedModelSelection(
-                                              next,
-                                              models.map(({ id }) => id),
-                                          )
-                                        : next,
-                                )
-                            }
-                            disabled={disabled}
-                            initiallyExpanded={
-                                permissions.allowedModels !== null
-                            }
-                        />
-                    )}
-                    <Text
-                        size="xs"
-                        tone="muted"
-                        className="flex items-center gap-1.5"
-                    >
-                        <BeakerIcon
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5 shrink-0"
-                        />
-                        Allow this key to generate with selected models.
-                    </Text>
-                </div>
-            }
         >
-            Models
+            Generate
         </AuthAccessItem>
     );
     return (
         <div className="space-y-4">
-            {/* What the key always has, then what it may be granted. */}
+            <div
+                className={`grid gap-4 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
+            >
+                <AuthInfoCard>
+                    <ul className="space-y-3 text-sm">
+                        {lead}
+                        {limitInputs}
+                    </ul>
+                </AuthInfoCard>
+                {hasAccountCard && (
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            {accountPermissionsInput}
+                            {accountAfter}
+                        </ul>
+                    </AuthInfoCard>
+                )}
+            </div>
             <AuthInfoCard>
-                <ul className="space-y-3 text-sm">
-                    {lead}
-                    {limitInputs}
-                </ul>
-            </AuthInfoCard>
-            <AuthInfoCard>
-                <ul className="space-y-3 text-sm">
-                    {accountPermissionsInput}
-                    {modelsItem}
-                </ul>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                    <div className="col-start-1 row-start-1 flex items-center">
+                        <ul className="text-sm">{modelsItem}</ul>
+                        <InfoTip
+                            text="Choose which models this key can use."
+                            label="Generate information"
+                        />
+                    </div>
+                    <ModelPermissionsInput
+                        catalog={catalog}
+                        categories={categories}
+                        models={models}
+                        selected={permissions.allowedModels}
+                        onChange={(next) =>
+                            setAllowedModels(
+                                requestedModels == null
+                                    ? normalizeAllowedModelSelection(
+                                          next,
+                                          models.map(({ id }) => id),
+                                      )
+                                    : next,
+                            )
+                        }
+                        disabled={disabled}
+                    />
+                </div>
             </AuthInfoCard>
         </div>
     );

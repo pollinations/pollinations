@@ -8,9 +8,7 @@ import { getModelCategoriesFromCatalog } from "./model-categories.ts";
  * categories. Callers pass only models the catalog leaves out, so the two
  * sources never describe the same model twice.
  *
- * The consent screen and the permission picker have to agree on this list: one
- * renders the summary of what is being granted and the other renders the
- * checkboxes, so a divergence would describe two different grants.
+ * Consent and key editing use this same list in the shared permission picker.
  */
 export function useModelCategories(extraModels?: ApiModelInfo[]) {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);

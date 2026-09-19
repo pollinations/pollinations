@@ -1,10 +1,8 @@
-import { Chip, SproutIcon, Surface, Text } from "@pollinations/ui";
+import { Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
     githubUsername?: string;
-    found?: boolean;
-    earningsEnabled?: boolean;
 };
 
 type AppAttributionProps = {
@@ -15,7 +13,7 @@ type AppAttributionProps = {
 /**
  * The requesting app, shown the same way before and after sign-in: its name
  * as a name plate in the pixel face, the owner with their GitHub avatar, the
- * callback host and the earnings chip on the right.
+ * callback host on the right.
  */
 export function AppAttribution({
     attribution,
@@ -63,24 +61,10 @@ export function AppAttribution({
                         </Text>
                     )}
                 </div>
-                {(redirectHostname || attribution?.earningsEnabled) && (
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        {redirectHostname && (
-                            <Text size="xs" tone="muted" className="font-mono">
-                                {redirectHostname}
-                            </Text>
-                        )}
-                        {attribution?.earningsEnabled && (
-                            <Chip
-                                size="sm"
-                                intent="success"
-                                title="The app earns 20% of the Pollen you spend in it."
-                            >
-                                <SproutIcon className="h-3 w-3" />
-                                Earns 20%
-                            </Chip>
-                        )}
-                    </div>
+                {redirectHostname && (
+                    <Text size="xs" tone="muted" className="shrink-0 font-mono">
+                        {redirectHostname}
+                    </Text>
                 )}
             </div>
         </Surface>

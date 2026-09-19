@@ -1,31 +1,16 @@
 import { apiClient } from "@frontend/api.ts";
-import {
-    AppIcon,
-    Button,
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader,
-    KeyChip,
-    KeyIcon,
-    XIcon,
-} from "@pollinations/ui";
-import {
-    AuthModal,
-    AuthModalFootnote,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { Dialog } from "@pollinations/ui";
+import { AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
-import { KeyNameField } from "./key-name-field.tsx";
-import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { KeyDialogContent } from "./key-dialog-content.tsx";
+import { useKeyPermissions } from "./key-permissions.tsx";
 import {
     isAppKey,
     isPublishableKey,
     readRedirectUris,
     shouldPostKeyMetadata,
 } from "./key-type.ts";
-import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -130,99 +115,46 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
-    const nameField = (
-        <KeyNameField
-            app={appKey}
-            value={name}
-            onChange={setName}
-            disabled={isSubmitting}
-        />
-    );
     // Same content in both places: the standalone page paints the page shell,
     // the dashboard dims the page behind a dialog.
     const Shell = header ? AuthModal : DashboardDialog;
     return (
-        <Shell onClose={onClose}>
+        <Shell onClose={onClose} size="lg">
             {header}
-            <DialogHeader
-                title={appKey ? "Edit app key" : "Edit key permissions"}
-                description={
-                    appKey
-                        ? "Update your app’s name, callback URLs and earnings settings."
-                        : "Choose what this key can access and how much it can spend."
-                }
-            >
-                <div className="mt-3">
-                    <KeyChip
-                        prefix={apiKey.start ?? ""}
-                        value={isPublishable ? plaintextKey : undefined}
-                        label="Copy app key"
-                    />
-                </div>
-            </DialogHeader>
-
-            <form
-                className="flex min-h-0 flex-1 flex-col"
+            <KeyDialogContent
+                mode="edit"
+                app={appKey}
+                publishable={isPublishable}
+                name={name}
+                onNameChange={setName}
+                permissions={keyPermissions}
+                redirectUris={redirectUris}
+                onRedirectUrisChange={setRedirectUris}
+                earningsEnabled={earningsEnabled}
+                onEarningsEnabledChange={setEarningsEnabled}
+                existingKey={{
+                    prefix: apiKey.start ?? "",
+                    value: isPublishable ? plaintextKey : undefined,
+                }}
+                error={error}
+                isSubmitting={isSubmitting}
                 onSubmit={(event) => {
                     event.preventDefault();
                     void handleSave();
                 }}
-            >
-                <DialogBody>
-                    {error && <ErrorBanner>{error}</ErrorBanner>}
-
-                    <div className="space-y-4">
-                        {isPublishable && (
-                            <PublishableKeySettings
-                                lead={nameField}
-                                redirectUris={redirectUris}
-                                onRedirectUrisChange={setRedirectUris}
-                                earningsEnabled={earningsEnabled}
-                                onEarningsEnabledChange={setEarningsEnabled}
-                                disabled={isSubmitting}
-                            />
-                        )}
-
-                        {!isPublishable && (
-                            <KeyPermissionsInputs
-                                value={keyPermissions}
-                                lead={nameField}
-                                disabled={isSubmitting}
-                            />
-                        )}
-                    </div>
-                </DialogBody>
-
-                <DialogFooter>
-                    <Button
-                        icon={<XIcon />}
-                        type="button"
-                        intent="neutral"
-                        onClick={onClose}
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        icon={appKey ? <AppIcon /> : <KeyIcon />}
-                        type="submit"
-                        intent="commit"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? "Saving…" : "Save changes"}
-                    </Button>
-                </DialogFooter>
-            </form>
-            {footnote && <AuthModalFootnote>{footnote}</AuthModalFootnote>}
+                onClose={onClose}
+                footnote={footnote}
+            />
         </Shell>
     );
 };
 
-const DashboardDialog: FC<{ onClose: () => void; children: ReactNode }> = ({
-    onClose,
-    children,
-}) => (
-    <Dialog open onOpenChange={(open) => !open && onClose()} size="md">
+const DashboardDialog: FC<{
+    onClose: () => void;
+    size: "lg";
+    children: ReactNode;
+}> = ({ onClose, size, children }) => (
+    <Dialog open onOpenChange={(open) => !open && onClose()} size={size}>
         {children}
     </Dialog>
 );

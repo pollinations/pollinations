@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    getModelCategoriesFromCatalog,
-    getSelectedModelCounts,
-} from "../frontend/src/components/models/model-categories.ts";
+import { getModelCategoriesFromCatalog } from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
 const catalog = [
@@ -69,24 +66,6 @@ describe("model categories", () => {
                 models: ["community-agent"],
             },
         ]);
-    });
-
-    it("groups official and community selections by modality", () => {
-        const categories = getModelCategoriesFromCatalog(catalog);
-        const ids = catalog.map(({ name }) => name);
-        expect(
-            getSelectedModelCounts(
-                ["official-text", "community-text", "community-image"],
-                ids,
-                categories,
-            ),
-        ).toEqual([
-            { modality: "text", label: "Text", count: 2 },
-            { modality: "images", label: "Image", count: 1 },
-        ]);
-        expect(
-            getSelectedModelCounts(["community-agent"], ids, categories),
-        ).toEqual([{ modality: "text", label: "Text", count: 1 }]);
     });
 
     it("accepts categories independently of the model query", () => {
@@ -174,17 +153,4 @@ describe("model categories", () => {
             validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
         ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
     });
-});
-
-it("counts only selected offered models, once per modality", () => {
-    const categories = getModelCategoriesFromCatalog(catalog);
-    const counts = getSelectedModelCounts(
-        ["official-text", "official-image"],
-        ["official-text"],
-        categories,
-    );
-    expect(counts).toEqual([{ modality: "text", label: "Text", count: 1 }]);
-    expect(getSelectedModelCounts([], ["official-text"], categories)).toEqual(
-        [],
-    );
 });

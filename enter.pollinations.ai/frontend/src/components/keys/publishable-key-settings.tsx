@@ -129,9 +129,9 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Add URL
                     </Button>
                     <Text size="xs" tone="muted">
-                        A localhost callback is pre-filled for local development
-                        — edit the path to match your dev server, and remove it
-                        before going to production.
+                        Use a localhost callback for local development. Match
+                        the path to your dev server, and remove it before
+                        production.
                     </Text>
                 </div>
             </AuthInfoCard>

@@ -2,7 +2,9 @@ import {
     AccountIcon,
     ArrowLeftIcon,
     Button,
+    InfoTip,
     KeyIcon,
+    SproutIcon,
     Surface,
     Text,
     useScrollLock,
@@ -517,6 +519,7 @@ export function Authorize() {
 
     return (
         <AuthFlowScreen
+            size="lg"
             title={title}
             subject={subject}
             description={`${access} Choose what it can use, you can revoke it any time.`}
@@ -556,8 +559,21 @@ export function Authorize() {
                     requestedModels={models}
                     lead={
                         <AuthAccessItem icon={<AccountIcon />}>
-                            Username and picture
+                            <span className="inline-flex items-center">
+                                Username and picture
+                                <InfoTip
+                                    text="This app can also see this key’s budget and usage."
+                                    label="Username and picture information"
+                                />
+                            </span>
                         </AuthAccessItem>
+                    }
+                    accountAfter={
+                        attribution?.earningsEnabled ? (
+                            <AuthAccessItem icon={<SproutIcon />}>
+                                Earn 20% of the Pollen you spend in-app.
+                            </AuthAccessItem>
+                        ) : undefined
                     }
                     disabled={isAuthorizing}
                 />

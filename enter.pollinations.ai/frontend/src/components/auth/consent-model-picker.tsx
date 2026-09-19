@@ -17,19 +17,21 @@ import type { ModelCategoryModel } from "../models/model-categories.ts";
 import { useModelQuerySearch } from "../models/use-model-query-search.tsx";
 
 export function ConsentModelPicker({
+    allModels,
     models,
     catalog,
     selected,
     onChange,
     disabled,
 }: {
+    allModels: ModelCategoryModel[];
     models: ModelCategoryModel[];
     catalog: ApiModelInfo[];
     selected: string[] | null;
     onChange: (models: string[]) => void;
     disabled: boolean;
 }) {
-    const requestedIds = models.map(({ id }) => id);
+    const requestedIds = allModels.map(({ id }) => id);
     const searchableModels = useMemo(() => {
         const offered = new Set(models.map(({ id }) => id));
         return getModelPricesFromCatalog(catalog).filter(({ name }) =>
@@ -38,6 +40,7 @@ export function ConsentModelPicker({
     }, [catalog, models]);
     const { parsed, matches, comboboxProps } = useModelQuerySearch({
         models: searchableModels,
+        initial: "",
     });
     const indexed = new Map(
         searchableModels.map((model) => [model.name, model]),
@@ -51,6 +54,12 @@ export function ConsentModelPicker({
                       `${model.id} ${model.label}`.toLowerCase().includes(term),
                   );
     });
+    const allShownSelected = visibleModels.every(
+        ({ id }) => selected === null || selected.includes(id),
+    );
+    const anyShownSelected = visibleModels.some(
+        ({ id }) => selected === null || selected.includes(id),
+    );
 
     return (
         <div className="space-y-3">
@@ -66,7 +75,7 @@ export function ConsentModelPicker({
                         type="button"
                         size="xs"
                         className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
-                        disabled={disabled || visibleModels.length === 0}
+                        disabled={disabled || !anyShownSelected}
                         onClick={() =>
                             onChange(
                                 setConsentModelGroup(
@@ -84,7 +93,7 @@ export function ConsentModelPicker({
                         type="button"
                         size="xs"
                         className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
-                        disabled={disabled || visibleModels.length === 0}
+                        disabled={disabled || allShownSelected}
                         onClick={() =>
                             onChange(
                                 setConsentModelGroup(
@@ -96,7 +105,7 @@ export function ConsentModelPicker({
                             )
                         }
                     >
-                        Select shown
+                        Select all shown
                     </Button>
                 </div>
             </div>
@@ -128,7 +137,9 @@ export function ConsentModelPicker({
             </ButtonGroup>
             {visibleModels.length === 0 && (
                 <p className="text-xs text-theme-text-muted">
-                    No models match these filters.
+                    {models.length === 0
+                        ? "No models selected. Choose a category to add one."
+                        : "No models match these filters."}
                 </p>
             )}
         </div>

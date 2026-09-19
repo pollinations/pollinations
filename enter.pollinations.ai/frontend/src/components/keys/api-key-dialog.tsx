@@ -1,19 +1,4 @@
-import {
-    AppIcon,
-    Button,
-    CheckIcon,
-    ClipboardIcon,
-    CopyButton,
-    CopyField,
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader,
-    FieldStack,
-    KeyIcon,
-    XIcon,
-} from "@pollinations/ui";
-import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
+import { Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import {
@@ -21,10 +6,9 @@ import {
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
+import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { DEFAULT_KEY_LIMITS } from "./key-limit-input.tsx";
-import { KeyNameField } from "./key-name-field.tsx";
-import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
-import { PublishableKeySettings } from "./publishable-key-settings.tsx";
+import { useKeyPermissions } from "./key-permissions.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
 /**
@@ -129,7 +113,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }, 500);
     }
 
-    const isCreateDisabled = !createdKey && (!name.trim() || isSubmitting);
     useEffect(() => {
         if (!isOpen) {
             if (!simplified) {
@@ -161,158 +144,35 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setExpiryDays,
     ]);
 
-    const nameField = (
-        <KeyNameField
-            app={simplified}
-            value={name}
-            onChange={setName}
-            disabled={isSubmitting}
-        />
-    );
-    const submitButton = createdKey ? (
-        <CopyButton
-            value={createdKey.key}
-            variant="button"
-            intent="commit"
-            copiedTimeoutMs={500}
-            tooltip={null}
-            onCopied={closeAfterCopy}
-            onCopyError={() =>
-                setError(
-                    "Couldn’t copy the key. Select it and copy it manually before closing.",
-                )
-            }
-        >
-            {(copied) => (
-                <span className="inline-flex items-center gap-2">
-                    <span
-                        aria-hidden="true"
-                        className="flex size-4 shrink-0 [&>svg]:size-full"
-                    >
-                        {copied ? <CheckIcon /> : <ClipboardIcon />}
-                    </span>
-                    {copied ? "Copied" : "Copy and close"}
-                </span>
-            )}
-        </CopyButton>
-    ) : (
-        <Button
-            icon={simplified ? <AppIcon /> : <KeyIcon />}
-            type="submit"
-            intent="commit"
-            className="disabled:opacity-50"
-            disabled={isCreateDisabled}
-        >
-            {isSubmitting
-                ? "Creating…"
-                : simplified
-                  ? "Create app key"
-                  : "Create API key"}
-        </Button>
-    );
-
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen} size="md">
-            <DialogHeader
-                title={
-                    createdKey
-                        ? simplified
-                            ? "App key created"
-                            : "API key created"
-                        : simplified
-                          ? "Create app key"
-                          : "Create API key"
-                }
-                description={
-                    createdKey
-                        ? simplified
-                            ? "Use this app key to connect your app to Pollinations."
-                            : "Copy your secret key now. You won’t be able to see it again."
-                        : simplified
-                          ? "Let users connect their Pollinations accounts and spend their own Pollen in your app."
-                          : "Create a secret key for API requests from your backend."
+        <Dialog open={isOpen} onOpenChange={setIsOpen} size="lg">
+            <KeyDialogContent
+                mode="create"
+                app={simplified}
+                publishable={simplified}
+                name={name}
+                onNameChange={setName}
+                permissions={keyPermissions}
+                redirectUris={redirectUris}
+                onRedirectUrisChange={setRedirectUris}
+                earningsEnabled={earningsEnabled}
+                onEarningsEnabledChange={setEarningsEnabled}
+                createdKey={createdKey?.key}
+                error={error}
+                isSubmitting={isSubmitting}
+                showFields={isOpen}
+                onSubmit={handleSubmit}
+                onClose={() => {
+                    if (createdKey) onComplete();
+                    setIsOpen(false);
+                }}
+                onCopied={closeAfterCopy}
+                onCopyError={() =>
+                    setError(
+                        "Couldn’t copy the key. Select it and copy it manually before closing.",
+                    )
                 }
             />
-
-            <form
-                onSubmit={handleSubmit}
-                className="flex min-h-0 flex-1 flex-col"
-            >
-                <DialogBody>
-                    {error && <ErrorBanner>{error}</ErrorBanner>}
-                    {createdKey && (
-                        <AuthInfoCard>
-                            <FieldStack
-                                label={
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {simplified ? (
-                                            <AppIcon
-                                                aria-hidden="true"
-                                                className="h-4 w-4"
-                                            />
-                                        ) : (
-                                            <KeyIcon
-                                                aria-hidden="true"
-                                                className="h-4 w-4"
-                                            />
-                                        )}
-                                        {simplified ? "App key" : "Secret key"}
-                                    </span>
-                                }
-                                helper={
-                                    !simplified
-                                        ? "Keep this key in your backend. Don’t share it or include it in public code."
-                                        : undefined
-                                }
-                            >
-                                <CopyField
-                                    value={createdKey.key}
-                                    label={
-                                        simplified
-                                            ? "Copy app key"
-                                            : "Copy secret key"
-                                    }
-                                />
-                            </FieldStack>
-                        </AuthInfoCard>
-                    )}
-                    {simplified && !createdKey && (
-                        <PublishableKeySettings
-                            lead={nameField}
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={setRedirectUris}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={setEarningsEnabled}
-                            disabled={isSubmitting}
-                        />
-                    )}
-
-                    {isOpen && !simplified && !createdKey && (
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            lead={nameField}
-                            disabled={isSubmitting}
-                        />
-                    )}
-                </DialogBody>
-
-                <DialogFooter>
-                    <Button
-                        icon={<XIcon />}
-                        type="button"
-                        intent="neutral"
-                        onClick={() => {
-                            if (createdKey) onComplete();
-                            setIsOpen(false);
-                        }}
-                        className="disabled:opacity-50"
-                        disabled={isSubmitting}
-                    >
-                        {createdKey ? "Close" : "Cancel"}
-                    </Button>
-                    {submitButton}
-                </DialogFooter>
-            </form>
         </Dialog>
     );
 };

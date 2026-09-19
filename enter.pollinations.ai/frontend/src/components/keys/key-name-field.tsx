@@ -20,7 +20,7 @@ export function KeyNameField({
         <AuthAccessItem
             icon={app ? <AppIcon /> : <KeyIcon />}
             details={
-                <div className="space-y-2">
+                <div className="mt-2">
                     <label htmlFor={inputId} className="block">
                         <span className="sr-only">{label}</span>
                         <Input
@@ -29,19 +29,25 @@ export function KeyNameField({
                             value={value}
                             onChange={(event) => onChange(event.target.value)}
                             placeholder={app ? "App name" : "Key name"}
+                            className="w-full max-w-sm"
                             required
                             disabled={disabled}
                         />
                     </label>
-                    <Text size="xs" tone="muted">
-                        {app
-                            ? "Shown to users when they connect to your app."
-                            : "Shown in your activity and CSV exports."}
-                    </Text>
                 </div>
             }
         >
-            {label}
+            <span className="block">{label}</span>
+            <Text
+                as="span"
+                size="xs"
+                tone="muted"
+                className="mt-0.5 block font-normal"
+            >
+                {app
+                    ? "Shown to users when they connect to your app."
+                    : "Shown in your activity and CSV exports."}
+            </Text>
         </AuthAccessItem>
     );
 }

@@ -1,24 +1,17 @@
-import { AccountIcon, KeyIcon, Text, UsageIcon } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
 const permissions = [
     {
         id: "profile",
-        label: "Read profile",
-        description: "Display name and email.",
-        icon: AccountIcon,
+        label: "See your name and email.",
     },
     {
         id: "usage",
-        label: "Read account activity",
-        description: "Balance, usage, earnings and quest status.",
-        icon: UsageIcon,
+        label: "View balance, usage, earnings and quests.",
     },
     {
         id: "keys",
-        label: "Manage account resources",
-        description: "API keys, agents, models and connected apps.",
-        icon: KeyIcon,
+        label: "Manage API keys, agents, models and apps.",
     },
 ] as const;
 
@@ -36,22 +29,9 @@ export function AccountPermissionsInput({
 }) {
     return permissions
         .filter(({ id }) => !visiblePermissions || visiblePermissions.has(id))
-        .map(({ id, label, description, icon: Icon }) => (
+        .map(({ id, label }) => (
             <AuthAccessItem
                 key={id}
-                details={
-                    <Text
-                        size="xs"
-                        tone="muted"
-                        className="flex items-center gap-1.5"
-                    >
-                        <Icon
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5 shrink-0"
-                        />
-                        {description}
-                    </Text>
-                }
                 checked={value?.includes(id) ?? false}
                 disabled={disabled}
                 onChange={(checked) =>

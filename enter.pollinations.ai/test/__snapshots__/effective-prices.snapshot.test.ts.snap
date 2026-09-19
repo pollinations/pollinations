@@ -1286,6 +1286,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "kwaivgi/kling-v3.0-std": {
+    "cost": {
+      "completionAudioSeconds": 0.04431,
+      "completionVideoSeconds": 0.08862,
+    },
+    "price": {
+      "completionAudioSeconds": 0.04431,
+      "completionVideoSeconds": 0.08862,
+    },
+  },
   "lykon/dreamshaper-8-lcm": {
     "cost": {
       "completionImageTokens": 0.0001,

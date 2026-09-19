@@ -6,6 +6,7 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterKlingVideoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -92,6 +93,72 @@ describe("openRouterVideoModel", () => {
                 frame_type: "first_frame",
             },
         ]);
+    });
+
+    it("maps Kling frames, aspect ratio and audio to the OpenRouter request", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        const result = await callOpenRouterKlingVideoAPI("a slow dolly shot", {
+            ...baseParams,
+            model: "kwaivgi/kling-v3.0-std",
+            width: 720,
+            height: 1280,
+            audio: true,
+            duration: 8,
+            image: [
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ],
+        });
+
+        expect(requests[0]).toMatchObject({
+            model: "kwaivgi/kling-v3.0-std",
+            resolution: "720p",
+            aspect_ratio: "9:16",
+            duration: 8,
+            generate_audio: true,
+            frame_images: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/start.png" },
+                    frame_type: "first_frame",
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/end.png" },
+                    frame_type: "last_frame",
+                },
+            ],
+        });
+        expect(result.trackingData?.usage).toEqual({
+            completionVideoSeconds: 8,
+            completionAudioSeconds: 8,
+        });
+    });
+
+    it("bills Kling video seconds only when audio is off and rejects bad durations", async () => {
+        setOpenRouterEnv();
+        mockHappyHorseSuccess([]);
+
+        const silent = await callOpenRouterKlingVideoAPI("a quiet scene", {
+            ...baseParams,
+            model: "kwaivgi/kling-v3.0-std",
+            audio: false,
+            duration: 3,
+        });
+        expect(silent.trackingData?.usage).toEqual({
+            completionVideoSeconds: 3,
+        });
+
+        await expect(
+            callOpenRouterKlingVideoAPI("too long", {
+                ...baseParams,
+                model: "kwaivgi/kling-v3.0-std",
+                duration: 16,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
     });
 
     it("retries 429 and 5xx polls without forwarding auth to the download host", async () => {

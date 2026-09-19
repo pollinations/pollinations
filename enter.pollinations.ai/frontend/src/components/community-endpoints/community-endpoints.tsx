@@ -5,12 +5,12 @@ import {
     Button,
     FieldStack,
     GlobeIcon,
+    InfoTip,
     InlineLink,
     Input,
     Section,
     Surface,
     TokensIcon,
-    Tooltip,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
@@ -438,14 +438,10 @@ export function CommunityEndpoints({
                                 <FieldStack
                                     label="Brand icon URL"
                                     action={
-                                        <Tooltip
-                                            ariaLabel="How to upload a brand icon"
-                                            className="text-xs text-theme-text-muted"
-                                            tapEnabled
-                                            content="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                                        >
-                                            Upload help
-                                        </Tooltip>
+                                        <InfoTip
+                                            label="Brand icon upload information"
+                                            text="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                        />
                                     }
                                 >
                                     <Input

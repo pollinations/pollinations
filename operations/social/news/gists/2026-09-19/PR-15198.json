@@ -1,0 +1,37 @@
+{
+  "pr_number": 15198,
+  "title": "Add Text to speech to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15198",
+  "merged_at": "2026-09-19T15:51:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Text to speech](https://thinglover21-ux.github.io/My-app-mod) to video_audio\n- App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. \n\nFixes #15184",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A voice for video_audio",
+    "blurb": "video_audio has learned to speak. An Arabic-first, browser-only little app now turns text into audio with Pollinations BYOP login—no server hive required.",
+    "summary": "Added Text to Speech to the video_audio app, with an Arabic RTL static interface that completes the Pollinations.ai BYOP OAuth 2.1 PKCE flow entirely in the browser.",
+    "impact": "Arabic-speaking makers can sign in through BYOP and generate speech in video_audio without deploying or maintaining a backend server.",
+    "keywords": [
+      "community-app",
+      "text-to-speech",
+      "video_audio",
+      "Arabic",
+      "RTL",
+      "BYOP",
+      "OAuth-PKCE"
+    ],
+    "visual_concept": "Depict a cozy Arabic RTL text-to-speech workspace: a retro terminal turns Arabic script into gentle audio waveform flowers. Polli, wearing tiny headphones, tends the sound garden beside a friendly CRT monitor, making the client-side, no-backend flow feel simple and welcoming.",
+    "image_prompt": "Cozy pixel art scene of a retro computer in an Arabic RTL workspace, where elegant Arabic text flows from the screen into soft pastel sound-wave flowers and a small lime green (#ecf874) audio garden; the cute pixel art bee mascot has a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, and she wears tiny headphones while tending the waveform flowers beside a curious chunky CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'TTS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15198.jpg",
+    "prompt": "Cozy pixel art scene of a retro computer in an Arabic RTL workspace, where elegant Arabic text flows from the screen into soft pastel sound-wave flowers and a small lime green (#ecf874) audio garden; the cute pixel art bee mascot has a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, and she wears tiny headphones while tending the waveform flowers beside a curious chunky CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'TTS'."
+  },
+  "generated_at": "2026-09-19T15:52:45.023449+00:00",
+  "app_name": "Text to speech",
+  "app_url": "https://thinglover21-ux.github.io/My-app-mod"
+}

@@ -73,6 +73,15 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
+    // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
+    // OpenRouter exposes no floating alias, so the version is pinned here.
+    "jev-1.13": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "typesafe/jev-1.13",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

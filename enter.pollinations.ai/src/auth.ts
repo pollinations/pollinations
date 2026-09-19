@@ -32,6 +32,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { captureProductEvent } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -119,14 +120,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
-                if (
-                    authContext.path === "/sign-in/social" &&
-                    authContext.body.provider === "discord"
-                ) {
-                    throw new APIError("BAD_REQUEST", {
-                        message:
-                            "Discord can only be connected to an existing Pollinations account.",
-                    });
+                if (authContext.path === "/sign-in/social") {
+                    if (authContext.body.provider === "discord")
+                        throw new APIError("BAD_REQUEST", {
+                            message:
+                                "Discord can only be connected to an existing Pollinations account.",
+                        });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_started", ""),
+                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -136,6 +138,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     if (session && (await hasDiscordAccount(session.user.id))) {
                         throw discordAccountAlreadyConnected();
                     }
+                    if (session)
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "link_started",
+                                session.user.id,
+                            ),
+                        );
                 }
                 if (authContext.path !== "/delete-user") return;
 
@@ -173,6 +183,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         }
                     },
                     after: async (account) => {
+                        if (account.providerId === "discord")
+                            ctx?.waitUntil(
+                                captureProductEvent(
+                                    env,
+                                    "link_completed",
+                                    account.userId,
+                                ),
+                            );
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
@@ -326,6 +344,9 @@ function onAfterSessionCreate(
         session: { userId: string },
         _ctx?: GenericEndpointContext | null,
     ) => {
+        executionCtx?.waitUntil(
+            captureProductEvent(env, "sign_in_completed", session.userId),
+        );
         executionCtx?.waitUntil(
             (async () => {
                 try {

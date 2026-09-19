@@ -189,10 +189,26 @@ async function ensureModelNameAvailable(
             eq(schema.communityEndpoint.name, name),
         ),
     });
-    if (!existing || existing.id === currentId) return;
-    throw new HTTPException(400, {
-        message: "Community model name is already registered",
+    if (existing && existing.id !== currentId) {
+        throw new HTTPException(400, {
+            message: "Community model name is already registered",
+        });
+    }
+    // The legacy community alias `owner/name` shares its id space with model
+    // sequences, so a name taken by the owner's sequence stays unavailable.
+    const sequence = await db.query.modelSequence.findFirst({
+        columns: { id: true },
+        where: and(
+            eq(schema.modelSequence.ownerUserId, ownerUserId),
+            eq(schema.modelSequence.name, name),
+        ),
     });
+    if (sequence) {
+        throw new HTTPException(400, {
+            message:
+                "A model sequence with this name already owns the model ID",
+        });
+    }
 }
 
 function throwEndpointTestError(error: unknown): never {

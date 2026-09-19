@@ -1,3 +1,7 @@
+- **2026-09-18** – **🚀 FLUX.2 Max** High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})
+- **2026-09-18** – **🤖 Tencent HY3 and HY4 Preview** Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-18** – **💡 Typed decisions with Jev** Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)
+- **2026-09-18** – **🚀 GPT-4o mini** `openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-17** – **✨ Your key has a pulse** Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)
 - **2026-09-17** – **📱 Model status, minus the weather report** Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-17** – **🤖 DCORE joins the garden** Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online) <!-- app -->

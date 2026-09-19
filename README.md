@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ baboolharech](https://baboolharech-lgtm.github.io/Fith) | App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft | [@baboolharech-lgtm](https://github.com/baboolharech-lgtm) |
 | [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) | Describe a database query in plain English, get clean SQL in your dialect (SQLite/PostgreSQL/MySQL/SQL Server). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
@@ -37,7 +38,6 @@
 | [🛠️ GitMuse](https://fadyabohamza-netizen.github.io/gitmuse) | AI-powered git workflow assistant: generates Conventional Commits messages from any diff, explains error messages / stack traces with specific fixes, and writes pull request descriptions. It uses the | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [✍️ cogitor](https://github.com/SkalaSkalolaz/cogitor) | **_Cogitor AI_** — lightweight AI chat on Go with a web interface and desktop GUI, supporting multiple LLM providers, local models, OpenAI-compatible APIs, Web Search, RAG, Vision, conversation histor | [@SkalaSkalolaz](https://github.com/SkalaSkalolaz) |
 | [🖼️ Comicstyles](https://comicstyles.com) | ComicStyles turns a one-line idea into a comic story, with no install, no account and no API key required. Type your premise, let the platform write the story and its split into panels, then watch eac | [@wannerdev](https://github.com/wannerdev) |
-| [💬 Moko - The Remembering Fox](https://heard-was-lessons-altered.trycloudflare.com) | A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

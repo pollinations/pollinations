@@ -3647,3 +3647,126 @@ test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 
         ).toBe(expected);
     }
 });
+
+async function seedRefundablePurchase(mocks: {
+    stripe: { state: { checkoutSessions: unknown[] } };
+}): Promise<string> {
+    const userId = await getSeededUserId();
+    const db = drizzle(env.DB);
+    await db
+        .update(userTable)
+        .set({ packBalance: 25 })
+        .where(eq(userTable.id, userId));
+    await db.insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_refunded",
+        eventId: "evt_refunded_purchase",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_refunded",
+        object: "checkout.session",
+        mode: "payment",
+        customer: null,
+        url: null,
+        status: "complete",
+        payment_intent: "pi_refunded",
+    });
+    return userId;
+}
+
+function chargeRefundedEvent(
+    eventId: string,
+    amountRefunded: number,
+): Record<string, unknown> {
+    return {
+        id: eventId,
+        type: "charge.refunded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_refunded",
+                object: "charge",
+                payment_intent: "pi_refunded",
+                amount_captured: 1200,
+                amount_refunded: amountRefunded,
+            },
+        },
+    };
+}
+
+async function readRefundState(userId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    const credit = await env.DB.prepare(
+        "SELECT SUM(pollen_credited) AS net FROM stripe_checkout_credits WHERE user_id = ?",
+    )
+        .bind(userId)
+        .first<{ net: number }>();
+    return { packBalance: row?.packBalance, netCredited: credit?.net };
+}
+
+test("charge.refunded reverses a fully refunded purchase once", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundablePurchase(mocks);
+
+    for (const eventId of ["evt_refund_full", "evt_refund_full_retry"]) {
+        const response = await postSignedStripeWebhook(
+            chargeRefundedEvent(eventId, 1200),
+        );
+        expect(response.status).toBe(200);
+    }
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: 15,
+        netCredited: 0,
+    });
+
+    mocks.stripe.state.requests.length = 0;
+    await SELF.fetch(`${base}/checkout/p10`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
+        "any",
+    );
+});
+
+test("charge.refunded leaves partial refunds for manual adjustment", async ({
+    sessionToken: _sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundablePurchase(mocks);
+
+    const response = await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_partial", 600),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: 25,
+        netCredited: 10,
+    });
+});
+
+test("charge.refunded without a Pollen purchase is acknowledged", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_unknown", 1200),
+    );
+
+    expect(response.status).toBe(200);
+});

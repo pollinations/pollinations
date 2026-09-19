@@ -251,20 +251,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Qwen3.8 Max to Alibaba without fallback", () => {
+    it("routes Qwen3.8 Max directly to Fireworks", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.8-max",
         });
 
-        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/qwen3p8-max",
+        );
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15155,
+  "title": "fix: stop rejecting every page-view beacon with 415",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15155",
+  "merged_at": "2026-09-19T01:38:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Found while verifying the production deploy of #15149.\n\n**Symptom:** `product_event` in `pollinations_enter` had 0 `page_viewed` rows, and every same-origin POST to `/api/analytics/page-view` returned 415 — including a raw HTTP POST with no `Content-Length` header at all.\n\n**Cause:** `if (c.req.raw.body) return c.body(null, 415)`. At the Cloudflare edge every POST has a non-null body stream, so the guard rejected 100% of real beacons. It passed CI because a `Request` constructed inside workerd genuinely has a null body, so no test ever exercised the network path.\n\n**Fix:** drop the guard. The handler reads `c.req.query()` and never touches the body, so it protected nothing. The test now asserts the opposite — a POST carrying a body is recorded.\n\nPre-existing since #14938; `TINYBIRD_ANALYTICS_ENABLED` short-circuited to 204 before reaching the check, so it only became reachable when the flag was removed.\n\nServer-side events were never affected — `sign_in_started` rows are already arriving in production.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The beacons can land",
+    "blurb": "A tiny edge-case guard was treating every page-view beacon like suspicious pollen. It is gone now, and page visits can finally reach the garden ledger.",
+    "summary": "Fixed the `/api/analytics/page-view` handler so same-origin POST beacons with a body are recorded instead of being rejected with HTTP 415.",
+    "impact": "Page-view analytics can now populate `page_viewed` events in `pollinations_enter`, while existing server-side events continue as before.",
+    "keywords": [
+      "analytics",
+      "page views",
+      "beacons",
+      "HTTP 415",
+      "enter",
+      "Cloudflare"
+    ],
+    "visual_concept": "Polli, wearing a tiny mail carrier cap, delivers glowing page-view letter-beacons through an open garden gate marked 415 no longer blocking them. A cheerful CRT monitor robot watches the analytics garden ledger gain fresh sprouts, with code-plants and flowers representing newly recorded events.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mail carrier cap, happily guiding glowing page-view letter-beacons past an open signpost once marked “415” into a lime green (#ecf874) analytics garden where fresh code-plants sprout beside a retro CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: “PAGE VIEW RECORDED”, with Polli small-to-medium in the warmly lit scene."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15155.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mail carrier cap, happily guiding glowing page-view letter-beacons past an open signpost once marked “415” into a lime green (#ecf874) analytics garden where fresh code-plants sprout beside a retro CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: “PAGE VIEW RECORDED”, with Polli small-to-medium in the warmly lit scene."
+  },
+  "generated_at": "2026-09-19T01:39:44.354139+00:00"
+}

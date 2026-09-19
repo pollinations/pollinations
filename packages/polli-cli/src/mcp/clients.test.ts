@@ -86,6 +86,24 @@ describe("json config clients", () => {
         );
     });
 
+    it("install keeps a user's own entry that reuses a Pollinations server id", async () => {
+        const ctx = freshCtx();
+        const cursor = findClient("cursor");
+        const file = join(ctx.home, ".cursor", "mcp.json");
+        writeJsonObject(file, {
+            mcpServers: { ffmpeg: { url: "https://elsewhere.example/mcp" } },
+        });
+        const result = await cursor?.install(ctx, SERVERS, "sk-test");
+        const after = JSON.parse(readFileSync(file, "utf-8"));
+        expect(after.mcpServers.ffmpeg).toEqual({
+            url: "https://elsewhere.example/mcp",
+        });
+        expect(after.mcpServers.pollinations.headers.Authorization).toBe(
+            "Bearer sk-test",
+        );
+        expect(result?.notes.join(" ")).toContain('"ffmpeg"');
+    });
+
     it("remove deletes only Pollinations-owned entries", async () => {
         const ctx = freshCtx();
         const cursor = findClient("cursor");

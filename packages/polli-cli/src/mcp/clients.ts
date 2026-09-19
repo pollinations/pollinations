@@ -115,8 +115,13 @@ const jsonClient = (adapter: {
         description,
         existingKey: (ctx) => firstOwnedKey(readTable(ctx)),
         install: (ctx, servers, key) => {
+            const kept: string[] = [];
             const { installed, file } = update(ctx, (config, table) => {
                 for (const server of servers) {
+                    if (server.id in table && !isOwnedEntry(table[server.id])) {
+                        kept.push(server.id);
+                        continue;
+                    }
                     table[server.id] = target.entry(server, key);
                 }
                 target.prepare?.(config, key);
@@ -127,7 +132,13 @@ const jsonClient = (adapter: {
                 label,
                 installed,
                 files: [file],
-                notes: target.notes?.(key) ?? [],
+                notes: [
+                    ...kept.map(
+                        (name) =>
+                            `Kept your existing non-Pollinations "${name}" entry; it was not overwritten.`,
+                    ),
+                    ...(target.notes?.(key) ?? []),
+                ],
             };
         },
         remove: (ctx, serverIds) => {

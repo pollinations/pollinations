@@ -32,6 +32,10 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import {
+    captureProductEvent,
+    referringSource,
+} from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -119,14 +123,33 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
+                if (authContext.path === "/sign-in/social") {
+                    if (authContext.body.provider === "discord")
+                        throw new APIError("BAD_REQUEST", {
+                            message:
+                                "Discord can only be connected to an existing Pollinations account.",
+                        });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_started", "", {
+                            ...referringSource(
+                                authContext.headers,
+                                env.BETTER_AUTH_URL,
+                            ),
+                        }),
+                    );
+                }
+                // The path is the route pattern, not the resolved URL, so the
+                // provider comes from params. Only with a code: a denial at
+                // GitHub comes back without one and is a loss on their side,
+                // not a failure of our callback.
                 if (
-                    authContext.path === "/sign-in/social" &&
-                    authContext.body.provider === "discord"
+                    authContext.path === "/callback/:id" &&
+                    authContext.params?.id === "github" &&
+                    authContext.query?.code
                 ) {
-                    throw new APIError("BAD_REQUEST", {
-                        message:
-                            "Discord can only be connected to an existing Pollinations account.",
-                    });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_returned", ""),
+                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -136,6 +159,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     if (session && (await hasDiscordAccount(session.user.id))) {
                         throw discordAccountAlreadyConnected();
                     }
+                    if (session)
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "link_started",
+                                session.user.id,
+                            ),
+                        );
                 }
                 if (authContext.path !== "/delete-user") return;
 
@@ -162,6 +193,19 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             provider: "sqlite",
         }),
         databaseHooks: {
+            user: {
+                create: {
+                    after: async (user) => {
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "signup_completed",
+                                user.id,
+                            ),
+                        );
+                    },
+                },
+            },
             account: {
                 create: {
                     before: async (account) => {
@@ -173,6 +217,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         }
                     },
                     after: async (account) => {
+                        if (account.providerId === "discord")
+                            ctx?.waitUntil(
+                                captureProductEvent(
+                                    env,
+                                    "link_completed",
+                                    account.userId,
+                                ),
+                            );
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
@@ -326,6 +378,9 @@ function onAfterSessionCreate(
         session: { userId: string },
         _ctx?: GenericEndpointContext | null,
     ) => {
+        executionCtx?.waitUntil(
+            captureProductEvent(env, "sign_in_completed", session.userId),
+        );
         executionCtx?.waitUntil(
             (async () => {
                 try {

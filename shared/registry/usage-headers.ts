@@ -453,18 +453,13 @@ export function parseUsageHeaders(
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    const FLOAT_USAGE_TYPES: Set<string> = new Set([
-        "promptAudioSeconds",
-        "completionAudioSeconds",
-        "completionVideoSeconds",
-    ]);
-
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
-                ? parseFloat(value)
-                : parseInt(value, 10);
+            // buildUsageHeaders writes String(number), and Number() is its
+            // exact inverse: integer token counts and fractional units
+            // (seconds, megapixels) parse alike.
+            usage[usageType as UsageType] = Number(value);
         }
     }
 

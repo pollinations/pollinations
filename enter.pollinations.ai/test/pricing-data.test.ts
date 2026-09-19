@@ -1072,9 +1072,12 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
-// input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev"]);
+// Quest-tier OpenRouter exceptions: Jev ($0.042/M free-output bound) and
+// low-cost MiMo V2.5 (see #13495).
+const OPENROUTER_FREE_TIER_MODELS = new Set([
+    "typesafe/jev",
+    "xiaomi/mimo-v2.5",
+]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {

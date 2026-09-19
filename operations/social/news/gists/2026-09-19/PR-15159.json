@@ -1,0 +1,33 @@
+{
+  "pr_number": 15159,
+  "title": "fix: stop sending the literal string \"undefined\" as client_id",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15159",
+  "merged_at": "2026-09-19T02:50:54Z",
+  "labels": [],
+  "pr_body_excerpt": "Found in the first real `page_viewed` rows after #15155 deployed: every browser view without an app key wrote `client_id = \"undefined\"`.\n\n`client_id: (params.get(\"client_id\") ?? params.get(\"app_key\") ?? undefined)?.slice(0, 100)` sets the key explicitly. Zod's `.optional()` keeps a present-but-undefined key, and `new URLSearchParams({client_id: undefined})` serializes it as the string `\"undefined\"`.\n\nFix: spread the key in only when there is a value. Adds a regression assertion that a parsed view with no optionals serializes to exactly `page=%2Ftop-up`.\n\n`referrer_host` and the `utm_*` fields were never affected — `sourceAttribution()` omits missing keys rather than setting them undefined.\n\nExisting bad rows are limited to the ~1 hour since the beacon started working and can be excluded with `client_id != 'undefined'`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Undefined leaves the garden",
+    "blurb": "The page-view beacon has stopped planting the literal word \"undefined\" where an app client ID should be. Analytics rows without an app key are clean again, as nature intended.",
+    "summary": "Fixed enter.pollinations.ai page-view serialization so missing client_id/app_key values are omitted from URLSearchParams instead of being recorded as the literal string \"undefined\", with a regression test confirming an optional-free view serializes as page=%2Ftop-up.",
+    "impact": "Analytics for browser views without an app key now retains an absent client_id rather than a misleading \"undefined\" value, while referrer_host and UTM attribution continue to be preserved normally.",
+    "keywords": [
+      "analytics",
+      "page_viewed",
+      "client_id",
+      "attribution",
+      "regression-test"
+    ],
+    "visual_concept": "Depict Polli tidying a cozy analytics garden: she removes a tiny weed-shaped label reading \"undefined\" from a page-view ledger while a clean retro terminal shows page=/top-up. Small code-plants and attribution flowers represent correctly omitted optional fields and clean event data.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener scarf, carefully pulling a small weed labeled \"undefined\" from a glowing page-view ledger beside a retro terminal showing \"page=/top-up\"; code-plants and soft attribution flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15159.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener scarf, carefully pulling a small weed labeled \"undefined\" from a glowing page-view ledger beside a retro terminal showing \"page=/top-up\"; code-plants and soft attribution flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-19T02:51:59.963341+00:00"
+}

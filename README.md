@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-18** – **🚀 FLUX.2 Max** High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})
+- **2026-09-18** – **🤖 Tencent HY3 and HY4 Preview** Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-18** – **💡 Typed decisions with Jev** Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)
+- **2026-09-18** – **🚀 GPT-4o mini** `openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-17** – **✨ Your key has a pulse** Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)
 - **2026-09-17** – **📱 Model status, minus the weather report** Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-17** – **🤖 DCORE joins the garden** Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online) <!-- app -->
 - **2026-09-17** – **💡 A small pile of developer shortcuts** New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine) <!-- app -->
 - **2026-09-16** – **🎵 ElevenLabs Music v2.5** Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-16** – **🎨 CatGPT Has Opinions** Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response.
-- **2026-09-16** – **💡 The bees remember now** Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)
-- **2026-09-16** – **🤖 A fox remembers** Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com) <!-- app -->
-- **2026-09-15** – **✨ A catalog with a pulse** Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-15** – **🔗 Routes learn to self-report** Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

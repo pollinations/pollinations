@@ -1833,7 +1833,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        // Low OpenRouter rates; move off Paid-only so Quest Pollen can use it (#13495).
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14) * 1.055,

@@ -36,6 +36,33 @@ Add MCP servers to an agent in
 
 ### Connect a client
 
+### Install with Polli CLI
+
+Install one or all hosted servers into a coding agent with a dedicated key:
+
+```bash
+npx @pollinations/cli mcp list
+npx @pollinations/cli mcp clients
+npx @pollinations/cli mcp add claude-code --server pollinations
+npx @pollinations/cli mcp add cursor --server pollinations --server ffmpeg
+npx @pollinations/cli mcp add vscode --server pollinations
+npx @pollinations/cli mcp status
+npx @pollinations/cli mcp remove cursor --server pollinations
+```
+
+`polli mcp` reads the live catalog (`GET /mcp`), prefers each client's own
+`mcp add` command when that binary is on `PATH`, and otherwise writes the
+client config file. Codex uses `bearer_token_env_var`; VS Code uses an `inputs`
+prompt — neither stores the literal key in the MCP config. `remove` deletes only
+Pollinations-owned entries.
+
+Supported clients (priority order): Claude Code, Codex CLI, VS Code / Copilot,
+Cursor, OpenCode, Gemini CLI, Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed,
+Warp, and Claude Desktop (`mcp-remote` when headers are unavailable).
+
+### Manual connect
+
+
 The official TypeScript client handles initialization and tool discovery:
 
 ```ts

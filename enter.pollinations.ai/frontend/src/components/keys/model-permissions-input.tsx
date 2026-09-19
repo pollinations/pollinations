@@ -99,7 +99,7 @@ export function ModelPermissionsInput({
                 type="button"
                 size="sm"
                 intent="neutral"
-                className="col-start-2 row-start-1 justify-self-end sm:col-start-3"
+                className="col-start-2 row-start-1 gap-1.5 justify-self-end sm:col-start-3"
                 aria-label={
                     activeTab === null
                         ? "Expand model selector"
@@ -111,6 +111,7 @@ export function ModelPermissionsInput({
                     setActiveTab(activeTab === null ? "selected" : null)
                 }
             >
+                {activeTab === null && <span>Edit</span>}
                 <ChevronIcon expanded={activeTab !== null} />
             </Button>
             {activeTab !== null && (

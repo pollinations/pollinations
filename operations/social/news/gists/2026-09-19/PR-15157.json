@@ -1,0 +1,34 @@
+{
+  "pr_number": 15157,
+  "title": "feat: attach model health to /v1/models and /models by default",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15157",
+  "merged_at": "2026-09-19T01:58:12Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Reintroduces the `health` field removed by #15052, but by default on every entry (no `?status=` opt-in)\n- Reuses the same cached Tinybird fetch as `GET /models/status` (`cf.cacheTtl`), so no extra Tinybird load\n- A missing/failing feed degrades every model to `health.status: \"unknown\"` instead of 502ing discovery\n\n## Shape\n```json\n\"health\": { \"status\": \"healthy\", \"success_rate\": 99.4, \"requests\": 48213 }\n```\nFlat, closer to OpenRouter's per-endpoint uptime fields than the old nested `window_minutes`/`checked_at`/`stale` object. The window (24h) is documented once on the route instead of repeated per entry. `requests` doubles as a rough popularity signal.\n\n## Test plan\n- [x] `biome check` clean on all touched files\n- [x] `tsc --noEmit` shows zero errors on touched files\n- [ ] Vitest suite couldn't run in this checkout (pre-existing stale `node_modules`/miniflare compat-flag failure, reproduces on unrelated test files too — unrelated to this diff)\n- [ ] Manual `curl /v1/models` after staging deploy\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model shelf has vitals",
+    "blurb": "Model discovery now comes with a tiny health check attached. The hive can see which models are humming along, plus their 24-hour success rate and request count.",
+    "summary": "The /v1/models and /models discovery endpoints now include a cached per-model health object by default, with 24-hour status, success_rate, and requests fields sourced from the same Tinybird cache used by /models/status.",
+    "impact": "Developers can choose models with immediate visibility into health and rough popularity, while a missing health feed safely returns health.status as \"unknown\" instead of interrupting model discovery.",
+    "keywords": [
+      "models",
+      "model-catalog",
+      "health",
+      "uptime",
+      "Tinybird",
+      "API"
+    ],
+    "visual_concept": "A cozy model library or garden has labeled model jars/plants, each with a small green health meter showing a heart, success percentage, and request counter. Polli acts as a gentle inspector with a stethoscope and clipboard, while the eager CRT Monitor Robot reads the status board; healthy code-plants and flowers make the metadata feel useful rather than clinical.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing a tiny doctor head mirror and checking a garden shelf of glowing model code-plants with little health cards reading \"HEALTHY 99.4%\" and request counters; a cute chunky CRT-monitor robot happily watches a lime-green (#ecf874) status board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, warm lighting, flowers and vines, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15157.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing a tiny doctor head mirror and checking a garden shelf of glowing model code-plants with little health cards reading \"HEALTHY 99.4%\" and request counters; a cute chunky CRT-monitor robot happily watches a lime-green (#ecf874) status board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, warm lighting, flowers and vines, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-09-19T01:59:26.193321+00:00"
+}

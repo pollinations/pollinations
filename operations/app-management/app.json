@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "baboolharech",
+    "url": "https://baboolharech-lgtm.github.io/Fith",
+    "description": "App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft",
+    "language": "ar",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "baboolharech-lgtm",
+    "githubUserId": "330192119",
+    "repositoryUrl": "https://github.com/baboolharech-lgtm/Fith",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15126",
+    "approvedDate": "2026-09-19",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "ApiScribe",
     "url": "https://fadyabohamza-netizen.github.io/apiscribe",

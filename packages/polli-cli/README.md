@@ -159,6 +159,26 @@ their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
+## MCP servers
+
+Install the live [MCP server catalog](https://gen.pollinations.ai/mcp) into a
+coding agent or IDE, with a dedicated API key per client:
+
+```bash
+polli mcp list                    # live server catalog
+polli mcp install cursor --all    # every server into Cursor
+polli mcp install claude-code pollinations ffmpeg
+polli mcp status                  # what each client has installed
+polli mcp remove cursor ffmpeg    # remove selected entries
+polli mcp remove cursor           # remove all Pollinations-owned entries
+```
+
+Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp. Re-running
+`install` reuses a still-valid key already configured for that client instead
+of minting a new one; `remove` only ever deletes entries pointing at the
+Pollinations gateway, leaving your other MCP servers untouched.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

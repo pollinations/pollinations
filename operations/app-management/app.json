@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Oracle Mystique",
+    "url": "https://oracle-mystique.up.railway.app",
+    "description": "Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "stykdofus-ux",
+    "githubUserId": "252947459",
+    "repositoryUrl": "https://github.com/stykdofus-ux/tarot-ai",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15151",
+    "approvedDate": "2026-09-19",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "PersonaMorph",
     "url": "https://personamorph-ai-production.up.railway.app",

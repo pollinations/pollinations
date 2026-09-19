@@ -22,8 +22,8 @@ import {
     getModelCapabilities,
     getModelCapabilityLabel,
     getModelDescriptionWithoutName,
+    getModelDisplayedModalities,
     getModelDisplayName,
-    getModelInputModalities,
     getModelModalityLabel,
     hasPollinationsTools,
     isAlpha,
@@ -183,11 +183,10 @@ export const PerPollenEstimate: FC<{
 };
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
-    const modelDescription = getModelDescriptionWithoutName(model);
+    // Description renders inline on the row; tooltip keeps the denser metadata.
     const videoDuration = formatVideoDuration(model);
 
     if (
-        !modelDescription &&
         (!model.agent || !model.baseModel) &&
         model.contextLength == null &&
         !videoDuration
@@ -197,7 +196,6 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
-            {modelDescription && <span>{modelDescription}</span>}
             {model.agent && model.baseModel && (
                 <span className="text-xs text-theme-text-muted">
                     <strong className="font-semibold text-theme-text-base">
@@ -227,11 +225,17 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+    const modelDescription = getModelDescriptionWithoutName(model);
     const modelDisplayName = getModelDisplayName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
-    const inputModalities = getModelInputModalities(model);
+    const { input: inputModalities, output: outputModalities } =
+        getModelDisplayedModalities(model);
+    const displayedModalities = [
+        ...inputModalities,
+        ...outputModalities.filter((m) => !inputModalities.includes(m)),
+    ];
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
@@ -323,6 +327,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
+                    {modelDescription && (
+                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
+                            {modelDescription}
+                        </p>
+                    )}
                     {model.brandUrl && model.publisher && (
                         <a
                             href={model.brandUrl}
@@ -334,16 +343,16 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
-                        {(inputModalities.length > 0 ||
+                        {(displayedModalities.length > 0 ||
                             capabilities.length > 0 ||
                             model.perUserRpm != null ||
                             pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                {(inputModalities.length > 0 ||
+                                {(displayedModalities.length > 0 ||
                                     capabilities.length > 0 ||
                                     model.perUserRpm != null) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
-                                        {inputModalities.length > 0 && (
+                                        {displayedModalities.length > 0 && (
                                             <Tooltip
                                                 content={
                                                     <span>
@@ -360,7 +369,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 displayContents
                                             >
                                                 <span className="inline-flex items-center gap-2">
-                                                    {inputModalities.map(
+                                                    {displayedModalities.map(
                                                         (key) => {
                                                             const Icon =
                                                                 MODALITY_ICON[
@@ -368,7 +377,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                                 ];
                                                             return (
                                                                 <Icon
-                                                                    key={key}
+                                                                    key={`${key}-mod`}
                                                                     className="h-4 w-4"
                                                                 />
                                                             );
@@ -377,7 +386,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </span>
                                             </Tooltip>
                                         )}
-                                        {inputModalities.length > 0 &&
+                                        {displayedModalities.length > 0 &&
                                             capabilities.length > 0 && (
                                                 <span className="h-3.5 w-px bg-current opacity-30" />
                                             )}

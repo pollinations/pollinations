@@ -82,9 +82,32 @@ export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
     return keys;
 };
 
+export const getModelOutputModalities = (
+    model: ModelPrice,
+): InputModality[] => {
+    const modalities = model.outputModalities || [];
+    const keys: InputModality[] = [];
+    if (modalities.includes("text")) keys.push("text");
+    if (modalities.includes("image")) keys.push("image");
+    if (modalities.includes("video")) keys.push("video");
+    if (modalities.includes("audio")) keys.push("audio");
+    return keys;
+};
+
+/** Agents advertise both sides so a text→image agent is not mistaken for chat-only. */
+export const getModelDisplayedModalities = (
+    model: ModelPrice,
+): { input: InputModality[]; output: InputModality[] } => ({
+    input: getModelInputModalities(model),
+    output: model.agent ? getModelOutputModalities(model) : [],
+});
+
 export const getModelModalityLabel = (model: ModelPrice): string => {
-    const modalities = getModelInputModalities(model);
-    return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
+    const { input, output } = getModelDisplayedModalities(model);
+    const parts: string[] = [];
+    if (input.length > 0) parts.push(`Input: ${input.join(", ")}`);
+    if (output.length > 0) parts.push(`Output: ${output.join(", ")}`);
+    return parts.join(" · ") || "Modalities";
 };
 
 export type DisplayCapability =

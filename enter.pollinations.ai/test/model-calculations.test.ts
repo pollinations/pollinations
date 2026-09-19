@@ -102,3 +102,22 @@ describe("model per-pollen calculations", () => {
         );
     });
 });
+
+describe("agent modality display", () => {
+    it("labels both input and output modalities for agents", async () => {
+        const { getModelModalityLabel, getModelDisplayedModalities } =
+            await import("../frontend/src/components/models/model-info.ts");
+        const agent = model({
+            agent: true,
+            inputModalities: ["text"],
+            outputModalities: ["image"],
+        });
+        expect(getModelDisplayedModalities(agent)).toEqual({
+            input: ["text"],
+            output: ["image"],
+        });
+        expect(getModelModalityLabel(agent)).toBe(
+            "Input: text · Output: image",
+        );
+    });
+});

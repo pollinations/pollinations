@@ -36,11 +36,22 @@ export const resolveHarnessKey = async (
     options: { browser?: boolean },
 ): Promise<string> => {
     const existing = harness.existingKey;
-    if (existing && (await keyIsValid(existing))) {
-        printInfo(
-            `Reusing the Pollinations key already stored for ${harness.label}.`,
-        );
-        return existing;
+    if (existing) {
+        let valid: boolean;
+        try {
+            valid = await keyIsValid(existing);
+        } catch (error) {
+            throw new Error(
+                `Could not verify the Pollinations key already stored for ${harness.label} — no new key was minted. Check your connection and try again.`,
+                { cause: error },
+            );
+        }
+        if (valid) {
+            printInfo(
+                `Reusing the Pollinations key already stored for ${harness.label}.`,
+            );
+            return existing;
+        }
     }
 
     const accountKey =

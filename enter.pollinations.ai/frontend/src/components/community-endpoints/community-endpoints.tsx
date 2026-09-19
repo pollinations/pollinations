@@ -3,7 +3,7 @@ import {
     BeakerIcon,
     BotIcon,
     Button,
-    FieldStack,
+    Field,
     GlobeIcon,
     InfoTip,
     InlineLink,
@@ -16,7 +16,13 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import {
+    type FormEvent,
+    type ReactElement,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
@@ -48,6 +54,28 @@ type CommunityEndpointsProps = {
 
 const PUBLISHER_ACCESS_REQUEST_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml";
+
+function ProviderProfileField({
+    label,
+    help,
+    children,
+}: {
+    label: string;
+    help: string;
+    children: ReactElement;
+}) {
+    return (
+        <Field.Root className="grid gap-2 sm:grid-cols-[15rem_minmax(0,1fr)] sm:items-center">
+            <span className="inline-flex items-center">
+                <Field.Label className="text-sm font-semibold leading-5 text-theme-text-strong">
+                    {label}
+                </Field.Label>
+                <InfoTip text={help} label={`${label} information`} />
+            </span>
+            <Field.Input asChild>{children}</Field.Input>
+        </Field.Root>
+    );
+}
 
 export function CommunityEndpoints({
     onChange,
@@ -405,13 +433,18 @@ export function CommunityEndpoints({
                                 void handleProviderSubmit(event)
                             }
                         >
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <FieldStack label="Name">
+                            <div className="space-y-3">
+                                <ProviderProfileField
+                                    label="Name"
+                                    help="Shown as the publisher on all your public models."
+                                >
                                     <Input
                                         name="community-provider-name"
                                         value={providerName}
                                         placeholder="Your service"
                                         autoComplete="organization"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerUrl.trim())}
                                         maxLength={
                                             COMMUNITY_PROVIDER_NAME_MAX_LENGTH
                                         }
@@ -419,14 +452,19 @@ export function CommunityEndpoints({
                                             setProviderName(event.target.value)
                                         }
                                     />
-                                </FieldStack>
-                                <FieldStack label="Website or privacy notice">
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    label="Website or privacy policy"
+                                    help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Name."
+                                >
                                     <Input
                                         type="url"
                                         name="community-provider-url"
                                         value={providerUrl}
                                         placeholder="https://example.com"
                                         autoComplete="url"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerName.trim())}
                                         maxLength={
                                             COMMUNITY_PROVIDER_URL_MAX_LENGTH
                                         }
@@ -434,15 +472,10 @@ export function CommunityEndpoints({
                                             setProviderUrl(event.target.value)
                                         }
                                     />
-                                </FieldStack>
-                                <FieldStack
-                                    label="Brand icon URL"
-                                    action={
-                                        <InfoTip
-                                            label="Brand icon upload information"
-                                            text="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                                        />
-                                    }
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    label="Brand icon"
+                                    help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
                                 >
                                     <Input
                                         type="url"
@@ -450,43 +483,34 @@ export function CommunityEndpoints({
                                         value={providerIconUrl}
                                         placeholder="https://media.pollinations.ai/…"
                                         autoComplete="url"
+                                        className="w-full min-w-0"
                                         onChange={(event) =>
                                             setProviderIconUrl(
                                                 event.target.value,
                                             )
                                         }
                                     />
-                                </FieldStack>
+                                </ProviderProfileField>
                             </div>
-                            <div>
-                                <Button
-                                    type="submit"
-                                    intent="commit"
-                                    disabled={
-                                        isSavingProvider || providerIsSaved
-                                    }
-                                >
-                                    {isSavingProvider ? "Saving…" : "Save"}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    disabled={
-                                        providerIsSaved || isSavingProvider
-                                    }
-                                    onClick={resetProviderChanges}
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
+                            {!providerIsSaved && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        intent="neutral"
+                                        disabled={isSavingProvider}
+                                        onClick={resetProviderChanges}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={isSavingProvider}
+                                    >
+                                        {isSavingProvider ? "Saving…" : "Save"}
+                                    </Button>
+                                </div>
+                            )}
                         </form>
-                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Shown on all your public deployments. Keep it
-                                current so callers can review who operates the
-                                endpoint and how request content is handled.
-                            </span>
-                        </p>
                     </Section>
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}

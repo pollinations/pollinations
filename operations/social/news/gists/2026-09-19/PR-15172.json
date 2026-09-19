@@ -1,0 +1,34 @@
+{
+  "pr_number": 15172,
+  "title": "fix: expose the sign-in loss split on the funnel endpoint",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15172",
+  "merged_at": "2026-09-19T06:24:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes a gap in #15170: `sign_in_returned`, `pct_returned` and `pct_completed_of_returned` were computed in the `sign_in_daily` node but the `funnel` endpoint node lists its output columns explicitly, so the three never reached any consumer of `auth_flow_funnel`.\n- Adds them to that projection. No query-shape change, no new scan.\n- Already deployed and promoted to both Tinybird workspaces; this brings the repo back in sync.\n\nVerified live on prod: the endpoint now returns `sign_in_returned`, which before this was always null.\n\nNote: today's row shows a nonsense `pct_completed_of_returned` because the new event only exists from 06:07 UTC while the bucket covers the whole day. It is correct from 2026-09-20 on; no code change warranted.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The funnel keeps its pollen",
+    "blurb": "Three sign-in funnel signals were already doing the math, then quietly failing to leave the room. They now make it through the endpoint projection and into the dashboards built on it.",
+    "summary": "Added sign_in_returned, pct_returned, and pct_completed_of_returned to the auth_flow_funnel endpoint projection so the funnel endpoint returns the sign-in return and completion metrics already computed by sign_in_daily.",
+    "impact": "Auth and product analytics consumers can now read sign_in_returned and its return-based percentages from auth_flow_funnel instead of receiving null values.",
+    "keywords": [
+      "auth",
+      "funnel",
+      "analytics",
+      "observability",
+      "sign-in",
+      "Tinybird"
+    ],
+    "visual_concept": "Polli, wearing a tiny analyst visor and holding a clipboard, guides three glowing metric pollen grains through a labeled funnel into a cozy retro analytics terminal. A small code-plant and flowers show that the data has finally reached the garden; the monitor robot can excitedly observe the completed funnel output.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny analyst visor, guiding three glowing lime green (#ecf874) metric pollen grains through a chunky funnel into a retro terminal that reads \"FUNNEL OK\"; a cheerful CRT monitor robot watches beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15172.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny analyst visor, guiding three glowing lime green (#ecf874) metric pollen grains through a chunky funnel into a retro terminal that reads \"FUNNEL OK\"; a cheerful CRT monitor robot watches beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-19T06:25:48.847647+00:00"
+}

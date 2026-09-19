@@ -1,0 +1,334 @@
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import * as toml from "smol-toml";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MCP_CLIENTS } from "./clients.js";
+import { offMcp } from "./index.js";
+import {
+    codex,
+    codexConfigPath,
+    codexEnvPath,
+    codexPostInstall,
+    CODEX_ENV_VAR,
+} from "./codex.js";
+import { entryName, ownedNames } from "./entries.js";
+import type { HarnessContext } from "../harnesses/types.js";
+import type { McpCatalogServer } from "./catalog.js";
+
+const KEY = "sk_polli_test_key_1234567890";
+const URL_BASE = "https://gen.pollinations.ai";
+
+const catalog: McpCatalogServer[] = [
+    {
+        id: "pollinations",
+        name: "Pollinations",
+        url: `${URL_BASE}/mcp/pollinations`,
+    },
+    { id: "ffmpeg", name: "FFmpeg", url: `${URL_BASE}/mcp/ffmpeg` },
+    {
+        id: "exa",
+        name: "Exa Search",
+        url: `${URL_BASE}/mcp/exa`,
+    },
+];
+
+let home: string;
+let ctx: HarnessContext;
+const originalCwd = process.cwd();
+
+beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), "polli-mcp-"));
+    ctx = { home, env: {} };
+    // VS Code targets the workspace config (.vscode/mcp.json): run from a
+    // temp cwd so tests never write into the repository itself.
+    process.chdir(home);
+});
+
+afterEach(() => {
+    process.chdir(originalCwd);
+    rmSync(home, { recursive: true, force: true });
+});
+
+const clientById = (id: string) => {
+    const client = MCP_CLIENTS.find((c) => c.id === id);
+    if (!client) throw new Error(`missing client ${id}`);
+    return client;
+};
+
+const read = (path: string) => readFileSync(path, "utf-8");
+const writeWithDir = (path: string, content: string) => {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content);
+};
+
+describe("entry naming", () => {
+    it("keeps pollinations as pollinations and prefixes the rest", () => {
+        expect(entryName("pollinations")).toBe("pollinations");
+        expect(entryName("ffmpeg")).toBe("pollinations-ffmpeg");
+    });
+});
+
+describe("json envelope clients", () => {
+    it.each(["claude-code", "cursor", "gemini", "windsurf", "cline", "opencode"])(
+        "%s: installs entries into an empty config",
+        (id) => {
+            const client = clientById(id);
+            expect(client.readServers(ctx)).toBeNull();
+            client.writeServers(
+                ctx,
+                client.entries(catalog, KEY) as Record<
+                    string,
+                    Record<string, unknown>
+                >,
+            );
+            const servers = client.readServers(ctx) ?? {};
+            expect(Object.keys(servers).sort()).toEqual([
+                "pollinations",
+                "pollinations-exa",
+                "pollinations-ffmpeg",
+            ]);
+        },
+    );
+
+    it("claude-code writes a type:http entry with a literal bearer header", () => {
+        const client = clientById("claude-code");
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        const servers = client.readServers(ctx) ?? {};
+        const entry = servers.pollinations as Record<string, unknown>;
+        expect(entry.type).toBe("http");
+        expect(entry.url).toBe(`${URL_BASE}/mcp/pollinations`);
+        expect(entry.headers).toEqual({
+            Authorization: `Bearer ${KEY}`,
+        });
+    });
+
+    it("gemini uses httpUrl and windsurf uses serverUrl", () => {
+        for (const [id, field] of [
+            ["gemini", "httpUrl"],
+            ["windsurf", "serverUrl"],
+        ] as const) {
+            const client = clientById(id);
+            client.writeServers(
+                ctx,
+                client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+            );
+            const servers = client.readServers(ctx) ?? {};
+            expect(
+                (servers["pollinations-ffmpeg"] as Record<string, unknown>)[field],
+            ).toBe(`${URL_BASE}/mcp/ffmpeg`);
+        }
+    });
+
+    it("cline writes the camelCase streamableHttp type", () => {
+        const client = clientById("cline");
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        const servers = client.readServers(ctx) ?? {};
+        expect((servers.pollinations as Record<string, unknown>).type).toBe(
+            "streamableHttp",
+        );
+    });
+
+    it("is idempotent: reinstalling does not duplicate entries", () => {
+        const client = clientById("cursor");
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        expect(Object.keys(client.readServers(ctx) ?? {}).length).toBe(3);
+    });
+
+    it("preserves unrelated entries and root keys", () => {
+        const client = clientById("cursor");
+        const configPath = client.files(ctx)[0];
+        mkdirSync(dirname(configPath), { recursive: true });
+        writeFileSync(
+            configPath,
+            JSON.stringify(
+                {
+                    mcpServers: {
+                        other: { command: "npx", args: ["other-server"] },
+                        pollinations: { url: `${URL_BASE}/mcp/pollinations` },
+                        "pollinations-old": { url: `${URL_BASE}/mcp/old` },
+                    },
+                    otherRootKey: true,
+                },
+                null,
+                2,
+            ),
+        );
+        const servers = client.readServers(ctx) ?? {};
+        // The user's own "pollinations"-named server with OUR url is ours;
+        // "other" is not.
+        expect(ownedNames(servers, "url").sort()).toEqual([
+            "pollinations",
+            "pollinations-old",
+        ]);
+        client.writeServers(ctx, { other: servers.other });
+        const after = JSON.parse(read(configPath));
+        expect(after.otherRootKey).toBe(true);
+        expect(after.mcpServers.other).toBeDefined();
+        expect(after.mcpServers.pollinations).toBeUndefined();
+    });
+
+    it("opencode nests entries under mcp.<name> with remote type", () => {
+        const client = clientById("opencode");
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        const config = JSON.parse(read(client.files(ctx)[0]));
+        expect(config.mcp.pollinations.type).toBe("remote");
+        expect(config.mcp.pollinations.url).toBe(`${URL_BASE}/mcp/pollinations`);
+        expect(config.mcp.pollinations.enabled).toBe(true);
+        expect(config.mcp.pollinations.headers.Authorization).toBe(
+            `Bearer ${KEY}`,
+        );
+    });
+
+    it("vscode uses the servers key, an input reference, and registers the input", () => {
+        const client = clientById("vscode");
+        client.writeServers(
+            ctx,
+            client.entries(catalog, KEY) as Record<string, Record<string, unknown>>,
+        );
+        const config = JSON.parse(read(client.files(ctx)[0]));
+        expect(config.servers["pollinations-ffmpeg"].url).toBe(
+            `${URL_BASE}/mcp/ffmpeg`,
+        );
+        expect(config.servers["pollinations-ffmpeg"].headers.Authorization).toBe(
+            "${input:pollinations-api-key}",
+        );
+        expect(
+            config.inputs.some(
+                (input: { id?: string }) => input.id === "pollinations-api-key",
+            ),
+        ).toBe(true);
+        // No literal key written in the file.
+        expect(read(client.files(ctx)[0])).not.toContain(KEY);
+    });
+});
+
+describe("codex (toml)", () => {
+    it("writes TOML entries with bearer_token_env_var and stores the key in .env", () => {
+        const client = codex;
+        const entries = client.entries(catalog, KEY);
+        client.writeServers(ctx, entries as Record<string, Record<string, unknown>>);
+        const parsed = toml.parse(read(codexConfigPath(ctx))) as {
+            mcp_servers: Record<string, { url: string; bearer_token_env_var: string }>;
+        };
+        expect(parsed.mcp_servers["pollinations-ffmpeg"]).toEqual({
+            url: `${URL_BASE}/mcp/ffmpeg`,
+            bearer_token_env_var: CODEX_ENV_VAR,
+        });
+        codexPostInstall(ctx, KEY);
+        expect(read(codexEnvPath(ctx))).toContain(`${CODEX_ENV_VAR}=${KEY}`);
+        expect(client.installedServers(ctx).length).toBe(3);
+    });
+
+    it("removes only pollinations entries and keeps the user's own", () => {
+        codex.writeServers(ctx, {
+            ...codex.entries(catalog, KEY),
+            personal: { command: "echo", args: ["hi"] },
+        } as Record<string, Record<string, unknown>>);
+        const servers = codex.readServers(ctx) ?? {};
+        const owned = ownedNames(servers, "url");
+        const next = Object.fromEntries(
+            Object.entries(servers).filter(([name]) => !owned.includes(name)),
+        );
+        codex.writeServers(ctx, next);
+        expect(codex.installedServers(ctx)).toEqual([]);
+        const parsed = toml.parse(read(codexConfigPath(ctx))) as {
+            mcp_servers: Record<string, unknown>;
+        };
+        expect(parsed.mcp_servers.personal).toBeDefined();
+        expect(Object.keys(parsed.mcp_servers)).toEqual(["personal"]);
+    });
+
+    it("configPath honours CODEX_HOME", () => {
+        const withEnv: HarnessContext = { home, env: { CODEX_HOME: "~/.custom-codex" } };
+        expect(codexConfigPath(withEnv)).toBe(join(home, ".custom-codex", "config.toml"));
+        expect(codexEnvPath(withEnv)).toBe(join(home, ".custom-codex", ".env"));
+    });
+});
+
+describe("offMcp (engine, sin red)", () => {
+    it("removes a single server by CATALOG id, keeping the rest", async () => {
+        const client = clientById("claude-code");
+        const configPath = client.files(ctx)[0];
+        mkdirSync(dirname(configPath), { recursive: true });
+        // Pre-install manually (sin red): 2 entries owned + 1 ajena
+        writeWithDir(
+            configPath,
+            JSON.stringify({
+                mcpServers: {
+                    pollinations: { type: "http", url: `${URL_BASE}/mcp/pollinations` },
+                    "pollinations-ffmpeg": { type: "http", url: `${URL_BASE}/mcp/ffmpeg` },
+                    personal: { command: "echo", args: ["hi"] },
+                },
+            }),
+        );
+        const result = await offMcp(ctx, "claude-code", ["ffmpeg"]);
+        expect(result.outcome).toBe("stripped");
+        expect(result.installed.map((entry) => entry.name)).toEqual([
+            "pollinations",
+        ]);
+        const servers = client.readServers(ctx) ?? {};
+        expect(servers.personal).toBeDefined();
+        expect(servers["pollinations-ffmpeg"]).toBeUndefined();
+        expect(servers.pollinations).toBeDefined();
+    });
+
+    it("off without server ids removes all owned entries", async () => {
+        const client = clientById("claude-code");
+        const configPath = client.files(ctx)[0];
+        mkdirSync(dirname(configPath), { recursive: true });
+        writeWithDir(
+            configPath,
+            JSON.stringify({
+                mcpServers: {
+                    "pollinations-ffmpeg": { type: "http", url: `${URL_BASE}/mcp/ffmpeg` },
+                    personal: { command: "echo", args: ["hi"] },
+                },
+            }),
+        );
+        const result = await offMcp(ctx, "claude-code", undefined);
+        expect(result.outcome).toBe("stripped");
+        const servers = client.readServers(ctx) ?? {};
+        expect(Object.keys(servers)).toEqual(["personal"]);
+    });
+});
+
+describe("ownership semantics", () => {
+    it("does not strip a foreign pollinations entry with a different URL", () => {
+        const client = clientById("cursor");
+        const path = client.files(ctx)[0];
+        mkdirSync(dirname(path), { recursive: true });
+        writeFileSync(
+            path,
+            JSON.stringify({
+                mcpServers: {
+                    pollinations: { url: "https://self-hosted.example/mcp/pollinations" },
+                },
+            }),
+        );
+        expect(client.installedServers(ctx)).toEqual([]);
+    });
+
+    it("all clients treat our base URL as owned", () => {
+        for (const client of MCP_CLIENTS) {
+            const entries = client.entries(catalog, KEY);
+            expect(Object.keys(entries).length).toBe(3);
+        }
+    });
+});

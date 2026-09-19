@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-18",
+  "period_start": "2026-09-18",
+  "period_end": "2026-09-18",
+  "generated_at": "2026-09-19T06:26:50.531194+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-18/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: GPT-4o mini, HY3, HY4, Jev typed decisions + MCP, and FLUX.2 Max are now on the API. polli-cli usage filters by key, model, and day range. docs regenerated, having finally caught production."
+}

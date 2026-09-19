@@ -198,7 +198,10 @@ test("signing in records the request to GitHub and the resulting session", async
         "http://localhost:3000/api/auth/sign-in/social",
         {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "http://localhost:3000/sign-in",
+            },
             body: JSON.stringify({ provider: "github" }),
         },
     );
@@ -227,4 +230,35 @@ test("signing in records the request to GitHub and the resulting session", async
     expect(signIn[0]?.user_id).toBe("");
     expect(signIn[1]?.user_id).toEqual(expect.any(String));
     expect(signIn[1]?.user_id).not.toBe("");
+    // The start carries the page it came from, so the funnel can divide it by
+    // views of that same page.
+    expect(signIn[0]?.page).toBe("/sign-in");
+    // A first sign-in also created the user, which is what separates new from
+    // returning without joining the daily d1_user snapshot.
+    const signup = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "signup_completed",
+    );
+    expect(signup?.user_id).toBe(signIn[1]?.user_id);
+});
+
+test("a start from an untracked page stays out of the funnel ratio", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const started = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "https://pollinations.ai/some/other/page",
+            },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(started.status).toBe(200);
+    const start = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "sign_in_started",
+    );
+    expect(start?.page ?? "").toBe("");
 });

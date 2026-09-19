@@ -1,4 +1,5 @@
 import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
+import { productPageViewSchema } from "@shared/product-analytics.ts";
 import type { Context } from "hono";
 
 export type ProductEvent =
@@ -12,6 +13,9 @@ export type ProductEvent =
     // code, token or email.
     | "sign_in_started"
     | "sign_in_completed"
+    // A user row was created, so this sign-in was also a signup. Counting it
+    // separates new from returning without joining the daily d1_user snapshot.
+    | "signup_completed"
     | "authorize_granted"
     | "device_code_issued"
     | "device_approved"
@@ -69,6 +73,21 @@ export async function captureProductEvent(
     } catch {
         // Best-effort analytics must never fail auth or payment fulfillment.
         console.warn("Product event ingest failed");
+    }
+}
+
+/**
+ * The route a sign-in was started from, read from the Referer. The funnel
+ * divides starts by views of the same pages, so both sides must describe one
+ * population; a start from anywhere else keeps '' and stays out of that ratio.
+ */
+export function referringPage(headers?: Headers | null): string {
+    const pages: readonly string[] = productPageViewSchema.shape.page.options;
+    try {
+        const { pathname } = new URL(headers?.get("Referer") ?? "");
+        return pages.includes(pathname) ? pathname : "";
+    } catch {
+        return "";
     }
 }
 

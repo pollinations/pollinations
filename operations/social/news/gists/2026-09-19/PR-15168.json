@@ -1,0 +1,34 @@
+{
+  "pr_number": 15168,
+  "title": "fix: record where a sign-in came from when it is not one of our pages",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15168",
+  "merged_at": "2026-09-19T05:43:20Z",
+  "labels": [],
+  "pr_body_excerpt": "58% of production sign-in starts carry no page. `referringPage` only recognised our own routes, so every other origin collapsed into one opaque bucket — the largest single group in the funnel.\n\n- Records `referrer_host` on `sign_in_started` and `checkout_started`, so external origins are visible instead of empty.\n- Stops crediting an external site whose path collides with one of ours: `pollinations.ai/` was attributed to our `/` route.\n- Our origin now comes from `BETTER_AUTH_URL` (Better Auth's own `baseURL`), not the request `Host`. workerd omits `Host`, so a Host check passes at the edge while being silently inert in tests — the same divergence behind the 415 beacon bug in #15155.\n- Adds a regression test that fails without the origin check.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The trail gets footprints",
+    "blurb": "The hive can now tell which outside gardens send visitors its way. Sign-ins and checkouts leave a useful little trail instead of disappearing into the fog.",
+    "summary": "Product analytics now records `referrer_host` for `sign_in_started` and `checkout_started`, uses `BETTER_AUTH_URL` to reliably identify Pollinations’ own origin, and prevents external URLs with matching paths from being attributed to internal routes.",
+    "impact": "The funnel can now distinguish external sign-in and checkout origins—including the 58% of production sign-ins with no recognized internal page—while correctly keeping lookalike paths such as an external `pollinations.ai/` URL out of the internal `/` bucket.",
+    "keywords": [
+      "analytics",
+      "sign-in",
+      "checkout",
+      "referrer",
+      "better-auth",
+      "attribution"
+    ],
+    "visual_concept": "A cozy garden-path attribution scene: Polli, wearing a tiny surveyor hat and carrying a clipboard, follows several labeled trail markers from outside gardens toward a glowing sign-in gate. A retro CRT monitor robot sorts the trails by their host names, while distinct flower paths prevent two identical-looking route signs from being confused; this represents recording external referrer hosts and correctly identifying the home origin.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny surveyor hat and holding a clipboard as she maps flower-lined paths from several outside gardens into a glowing sign-in gate; a chunky CRT monitor robot carefully labels each path by host, with a prominent lime green (#ecf874) trail and a small pixel-font sign reading “REFERRER HOST.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15168.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny surveyor hat and holding a clipboard as she maps flower-lined paths from several outside gardens into a glowing sign-in gate; a chunky CRT monitor robot carefully labels each path by host, with a prominent lime green (#ecf874) trail and a small pixel-font sign reading “REFERRER HOST.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "generated_at": "2026-09-19T05:44:34.264681+00:00"
+}

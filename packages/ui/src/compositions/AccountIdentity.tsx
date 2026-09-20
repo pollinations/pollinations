@@ -30,7 +30,7 @@ function AccountAvatar({
             alt=""
             className={cn(
                 className,
-                "polli:shrink-0 polli:rounded-full polli:object-cover",
+                "polli:shrink-0 polli:rounded-full polli:object-cover polli:ring-2 polli:ring-surface-opaque",
             )}
         />
     ) : (

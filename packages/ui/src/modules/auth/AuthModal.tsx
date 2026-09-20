@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useId } from "react";
 import logoUrl from "../../brand/mark.svg";
+import { Alert } from "../../compositions/Alert.tsx";
 import { cn } from "../../lib/cn.ts";
 import {
     Dialog,
@@ -204,14 +205,7 @@ export function AuthModalLoading({
 }
 
 export function ErrorBanner({ children }: { children: ReactNode }) {
-    return (
-        <Surface
-            role="alert"
-            className="polli:font-body polli:text-sm polli:leading-6 polli:text-intent-danger-text"
-        >
-            {children}
-        </Surface>
-    );
+    return <Alert intent="danger">{children}</Alert>;
 }
 
 export type AuthInfoCardProps = {

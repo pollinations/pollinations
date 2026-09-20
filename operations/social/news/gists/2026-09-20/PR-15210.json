@@ -1,0 +1,34 @@
+{
+  "pr_number": 15210,
+  "title": "fix: route Mistral Small 4 directly",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15210",
+  "merged_at": "2026-09-20T10:09:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes the existing Mistral Small 4 public ID and aliases to Mistral direct API using the same mistral-small-2603 checkpoint.\n- Prices the primary at Mistral direct USD 0.15/USD 0.60 per million input/output-token rates, with multiplier 1.\n- Keeps OpenRouter as a hidden same-checkpoint fallback, with its 5.5% fee applied only when the fallback is used.\n\nTests:\n- npx tsc --noEmit\n- npx vitest run test/static-provider-fallbacks.test.ts test/text/utils/modelResolver.test.ts\n- npm run build:staging",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mistral gets a direct flight",
+    "blurb": "Mistral Small 4 now flies straight to Mistral’s own API, with OpenRouter tucked behind the hedge as a same-checkpoint fallback. Fewer scenic routes for your tokens.",
+    "summary": "Routed the existing Mistral Small 4 public ID and aliases directly to Mistral’s mistral-small-2603 checkpoint at $0.15/M input and $0.60/M output tokens, while retaining OpenRouter as a hidden 5.5%-fee fallback.",
+    "impact": "Apps using Mistral Small 4 now receive the direct-provider pricing and route by default, with the same checkpoint still available through an automatic fallback when needed.",
+    "keywords": [
+      "Mistral Small 4",
+      "Mistral",
+      "text API",
+      "model routing",
+      "pricing",
+      "fallbacks"
+    ],
+    "visual_concept": "A cozy garden-postal scene represents direct model routing: Polli carries a sealed message along a clearly marked path from a retro terminal to a Mistral-branded windmill/server, while a smaller covered side path leads to an OpenRouter fallback gate. The direct path should be visibly simple and primary, with code-plants and price-tag flowers suggesting token-rate clarity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny postal cap as she delivers a glowing code letter from a retro terminal along a lime green (#ecf874) garden path directly to a friendly Mistral server-windmill; a small covered side path marked “fallback” leads to a distant router gate, surrounded by flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, pixel-font sign: “DIRECT ROUTE”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15210.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny postal cap as she delivers a glowing code letter from a retro terminal along a lime green (#ecf874) garden path directly to a friendly Mistral server-windmill; a small covered side path marked “fallback” leads to a distant router gate, surrounded by flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, pixel-font sign: “DIRECT ROUTE”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-20T10:11:01.077485+00:00"
+}

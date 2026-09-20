@@ -74,11 +74,7 @@ export function CommunityEndpointCard({
     const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
-        <Surface
-            className={`transition-colors hover:bg-surface-opaque/90 ${
-                endpoint.hidden ? "opacity-60" : ""
-            }`}
-        >
+        <Surface className="transition-colors hover:bg-surface-opaque/90">
             <ResourceCardHeader
                 icon={
                     isAgent ? (
@@ -148,11 +144,15 @@ export function CommunityEndpointCard({
                 >
                     <div className="flex flex-col gap-1">
                         <span className="font-semibold">
-                            {isAgent ? "Agent hidden" : "Model hidden"}
+                            {hiddenByOwner
+                                ? "Hidden by you"
+                                : isAgent
+                                  ? "Agent hidden"
+                                  : "Model hidden"}
                         </span>
                         <span className="text-sm">
                             {hiddenByOwner
-                                ? "Hidden by you; still callable by its exact model ID."
+                                ? `This ${isAgent ? "agent" : "model"} still works when called with its exact model ID.`
                                 : (endpoint.hiddenReason ??
                                   "Hidden due to repeated failures.")}
                         </span>

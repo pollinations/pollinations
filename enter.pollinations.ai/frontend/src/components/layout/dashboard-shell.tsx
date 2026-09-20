@@ -369,7 +369,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 active={accountActive}
                                 onClick={onNavigate}
                                 aria-label={`Account: ${accountName}`}
-                                className="dashboard-rail-tab polli:w-fit polli:p-1 polli:pr-3"
+                                className="dashboard-rail-tab polli:w-fit polli:!p-1"
                             >
                                 <AccountIdentity
                                     name={accountName}

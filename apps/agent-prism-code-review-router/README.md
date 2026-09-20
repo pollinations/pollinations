@@ -35,10 +35,10 @@ Tier selection, in evaluation order:
 
 Model selection then filters the live catalog:
 
-1. **Hard gates** — drops models that are unhealthy (catalog `success_rate < 95%` or >10% 5xx in the last 30 min on `/models/status`, ignoring rows with <10 requests as noise), that don't support the stateless Responses API (`supported_endpoints` — community/proxy models often don't), that can't fit the estimated context (chars/3 + 4k margin), that lack text/image input modality when needed, or that lack `tool_calling` when the request needs tools.
+1. **Hard gates** — drops models that are unhealthy (explicit `down`/`degraded` catalog status, success rate <95% on a real sample, >10% 5xx in the last 30 min on `/models/status`, or a status row where every request failed; rows with <10 requests are ignored as noise, and *unproven* models with no traffic are allowed), that don't support the stateless Responses API (`supported_endpoints` — community/proxy models often don't), that can't fit the estimated context (chars/3 + 4k margin), that lack text/image input modality when needed, or that lack `tool_calling` when the request needs tools.
 2. **Wallet cap** — models whose estimated cost for this request (prompt tokens from actual payload size + completion tokens from `max_output_tokens`, default 500) exceed the spend cap are dropped before ranking. If *nothing* fits, the router picks the cheapest eligible model: the caller either gets an answer that squeaks under budget or a clean gateway 402 instead of a surprise drain. Capping is visible in the trace (`wallet-capped (balance 2, max spend 1.0000)`).
-3. **Deep tier pays for quality** — among affordable models, ranks by reasoning capability, then context length, then listed price (flagship proxy). If nothing is reasoning-capable, the largest-context model wins.
-4. **Fast/balanced tiers pay for cost** — ranked by live token price: lowest for fast, median for balanced (median avoids both toy models and accidental flagships).
+3. **Free-community preference (fast/balanced)** — when any healthy free community model qualifies, it wins: free listings cost the caller zero pollen, and if one degrades it fails the health gate on the next request, so the router automatically switches to the next-best (verified live: a community model serving 41 requests with 0 successes is dropped and the paid model is picked). When no free model qualifies, the paid pool is ranked by live token price: lowest for fast, median for balanced (median avoids both toy models and accidental flagships).
+4. **Deep tier pays for quality** — among affordable models, ranks by reasoning capability, then context length, then listed price (flagship proxy). Deep is deliberately the tier where paying for strength is allowed; the wallet cap, not a free preference, protects affordability. If nothing is reasoning-capable, the largest-context model wins.
 
 The router also:
 
@@ -74,13 +74,16 @@ PR/diff review, debugging, failing tests, API/SDK work, dependency upgrades, arc
 
 ## Demo matrix
 
-| Request | Expected tier |
-| --- | --- |
-| `what does this function return?` | fast |
-| `review this PR diff for regressions` + diff body | balanced |
-| `audit this oauth migration for race conditions and security issues` | deep |
+Live-verified routes (test API key, balance 2 pollen):
 
-Live routing evidence (selected model + reason per request) is produced by registering the agent and running the three calls below against the deployed model name.
+| Request | Tier | Routed to | Why |
+| --- | --- | --- | --- |
+| `what does this function return? function f(x) { return x * 2 }` | fast | `community/YoannDev90/agentic-gt` | small coding request; healthy free community model — 0 pollen |
+| `review this PR diff for regressions` + diff body | balanced | `community/YoannDev90/agentic-gt` | code review context; free community model preferred |
+| `audit this oauth migration for race conditions and security issues` | deep | `openai/gpt-6-astra` | security-sensitive; strongest affordable (reasoning, 1.05M ctx) |
+| `design a technical plan… for migrating our webhook delivery to a queue` | balanced | `community/YoannDev90/agentic-gt` | planning work; free community model preferred |
+
+Degradation switchover is covered by a zero-spend check against `choose()`: a healthy free community model wins the fast tier, and the same model with a status row of 41 requests / 0 successes is dropped in favor of the paid model — "switch when one degrades", no config needed.
 
 ## Register and call
 

@@ -40,6 +40,7 @@ type StatusRow = {
 	model?: string;
 	is_rollup?: number;
 	total_requests?: number;
+	status_2xx?: number;
 	errors_5xx?: number;
 };
 
@@ -155,14 +156,23 @@ function classify(text: string): Classification {
 	return { tier: "fast", reason: writing ? "documentation or language task" : "short general request" };
 }
 
+/** Models with no listed token pricing (free community listings) cost nothing. */
+function isFree(model: Model): boolean {
+	return !model.pricing?.promptTextTokens && !model.pricing?.completionTextTokens;
+}
+
 function tokenCost(model: Model): number {
-	const prompt = Number(model.pricing?.promptTextTokens ?? 1);
-	const completion = Number(model.pricing?.completionTextTokens ?? 1);
-	return prompt + completion;
+	if (isFree(model)) return 0;
+	const price = (value: string | undefined) => {
+		const parsed = Number(value ?? 1);
+		return Number.isFinite(parsed) ? parsed : 1;
+	};
+	return price(model.pricing?.promptTextTokens) + price(model.pricing?.completionTextTokens);
 }
 
 /** Estimated pollen cost of this request on a model, at catalog prices. */
 function estimateCost(model: Model, promptTokens: number, completionTokens: number): number {
+	if (isFree(model)) return 0;
 	return (
 		promptTokens * Number(model.pricing?.promptTextTokens ?? 1) +
 		completionTokens * Number(model.pricing?.completionTextTokens ?? 1)
@@ -176,11 +186,27 @@ function supportsReasoning(model: Model): boolean {
 	);
 }
 
+/**
+ * Degrade detection for "prefer free community models, switch when one
+ * degrades". Unproven models (status "unknown", no traffic) are allowed —
+ * only positive evidence of degradation excludes a model:
+ * explicit "down"/"degraded" catalog status, a low success rate on a real
+ * sample, a 5xx-heavy status row, or a status row where every request failed.
+ */
 function isHealthy(model: Model, status?: StatusRow): boolean {
-	if (model.health?.status && model.health.status !== "healthy") return false;
-	if (model.health?.success_rate !== undefined && model.health.success_rate < MIN_SUCCESS_RATE) return false;
+	const health = model.health;
+	if (health?.status && health.status !== "healthy" && health.status !== "unknown") return false;
+	if (
+		health?.success_rate !== undefined &&
+		health.success_rate !== null &&
+		(health.requests ?? 0) >= MIN_HEALTH_SAMPLE &&
+		health.success_rate < MIN_SUCCESS_RATE
+	) {
+		return false;
+	}
 	if (status && (status.total_requests ?? 0) >= MIN_HEALTH_SAMPLE) {
 		if ((status.errors_5xx ?? 0) / (status.total_requests ?? 1) > MAX_5XX_RATE) return false;
+		if ((status.status_2xx ?? 0) === 0) return false;
 	}
 	return true;
 }
@@ -190,7 +216,8 @@ function isHealthy(model: Model, status?: StatusRow): boolean {
  *
  * Policy, in order: hard capability gates (health, Responses-API support,
  * context fit, modality, tools) → wallet cap (models the balance can't
- * afford for this request are dropped before ranking) → cost ranking for
+ * afford for this request are dropped before ranking) → free-community
+ * preference with automatic switchover on degradation, cost ranking for
  * fast/balanced, reasoning-first quality ranking for deep.
  */
 export function choose(
@@ -245,7 +272,10 @@ export function choose(
 	}
 
 	// Deep tier pays for quality: reasoning-capable models first, then the
-	// largest context, then the highest listed price (flagship proxy).
+	// largest context, then the highest listed price (flagship proxy). Free
+	// community models only win here on equal reasoning AND context — deep is
+	// deliberately the tier where paying for strength is allowed, and the
+	// wallet cap (not free preference) protects affordability.
 	if (tier === "deep") {
 		const ranked = [...pool].sort(
 			(a, b) =>
@@ -260,14 +290,18 @@ export function choose(
 		};
 	}
 
-	// Fast/balanced tiers pay for cost: lowest live token price wins,
-	// median price for balanced avoids both toy models and accidental flagships.
-	const ranked = [...pool].sort((a, b) => tokenCost(a) - tokenCost(b));
+	// Fast/balanced tiers prefer free community models, switching away when a
+	// community model degrades (it fails the health gate and the pool falls
+	// back to paid catalog models), then rank by live token price: lowest for
+	// fast, median for balanced avoids both toy models and accidental flagships.
+	const free = pool.filter(isFree);
+	const priced = free.length ? free : pool;
+	const ranked = [...priced].sort((a, b) => tokenCost(a) - tokenCost(b));
 	const selected = tier === "fast" ? ranked[0] : ranked[Math.floor((ranked.length - 1) / 2)];
 	if (!selected) throw new Error("no eligible model");
 	return {
 		id: selected.id,
-		reason: `${tier} tier; healthy model at ${tier === "fast" ? "lowest" : "median"} live token price${budgetNote}`,
+		reason: `${tier} tier; ${free.length ? "healthy free community model" : "healthy catalog model"} at ${tier === "fast" ? "lowest" : "median"} live token price${budgetNote}`,
 	};
 }
 

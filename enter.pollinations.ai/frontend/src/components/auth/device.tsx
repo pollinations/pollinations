@@ -118,8 +118,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                     form="device-code-form"
                     intent="neutral"
                     icon={<ArrowRightIcon />}
-                    // After a failed check the same code cannot succeed; wait for an edit.
-                    disabled={checking || error !== null}
+                    disabled={checking}
                 >
                     {checking ? "Checking code…" : "Continue"}
                 </Button>

@@ -44,7 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|claude-code\|codex\|dsh\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup

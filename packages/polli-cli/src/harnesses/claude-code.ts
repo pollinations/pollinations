@@ -2,11 +2,11 @@ import {
     CCR_INSTALL,
     type CcrConfig,
     ccrInstalled,
-    ensureService,
     gatewayBase,
     PROFILE_ID,
     PROVIDER_NAME,
     providerFor,
+    requireService,
     rpc,
     serviceRunning,
 } from "./ccr.js";
@@ -57,7 +57,7 @@ export const configureClaudeCode = async (
     ctx: HarnessContext,
     settings: { apiKey: string; model: string; models: HarnessModel[] },
 ) => {
-    const service = await ensureService(ctx);
+    const service = requireService(ctx);
     const config = await rpc<CcrConfig>(service, "getConfig");
     const before = structuredClone(config);
     config.Providers = [
@@ -110,7 +110,7 @@ const result = async (ctx: HarnessContext): Promise<HarnessResult> => {
             : `Install the router: ${CCR_INSTALL}`;
         return { ...base, configured: false };
     }
-    const service = await ensureService(ctx);
+    const service = requireService(ctx);
     const config = await rpc<CcrConfig>(service, "getConfig");
     const provider = providerFor(config);
     const profile = config.profile.profiles.find((p) => p.id === PROFILE_ID);
@@ -144,7 +144,7 @@ export const claudeCode: HarnessAdapter = {
         }
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels(model);
-        const service = await ensureService(ctx);
+        const service = requireService(ctx);
         const existing = providerFor(
             await rpc<CcrConfig>(service, "getConfig"),
         );
@@ -169,7 +169,7 @@ export const claudeCode: HarnessAdapter = {
                 outcome: "unchanged",
             };
         }
-        const service = await ensureService(ctx);
+        const service = requireService(ctx);
         const config = await rpc<CcrConfig>(service, "getConfig");
         const owned =
             providerFor(config) !== undefined ||

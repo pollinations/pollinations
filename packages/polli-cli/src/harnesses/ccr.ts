@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { BASE_URL } from "../lib/config.js";
 import { commandExists, readTextIfExists } from "./fs.js";
@@ -62,22 +61,18 @@ const readService = (ctx: HarnessContext) => {
     };
 };
 
-/** Start the detached CCR service (`ccr start --daemon`) unless one is running. */
-export const ensureService = async (ctx: HarnessContext) => {
-    let service = readService(ctx);
+/**
+ * The running CCR service. Not started here: CCR's default global profiles
+ * take over ~/.claude and ~/.codex the first time it runs with a provider, so
+ * starting it is the user's explicit step.
+ */
+export const requireService = (ctx: HarnessContext) => {
+    const service = readService(ctx);
     if (!service) {
-        spawn("ccr", ["start", "--daemon", "--no-open"], {
-            env: ctx.env,
-            shell: process.platform === "win32",
-            stdio: "ignore",
-        }).unref();
-        for (let i = 0; i < 40 && !service; i++) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            service = readService(ctx);
-        }
+        throw new Error(
+            "Claude Code Router is not running. Start it first: ccr start",
+        );
     }
-    if (!service)
-        throw new Error("Claude Code Router did not start. Run: ccr start");
     return service;
 };
 

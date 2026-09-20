@@ -133,6 +133,17 @@ describe("claude-code adapter", () => {
         );
     });
 
+    it("asks for a running router instead of starting one", async () => {
+        rmSync(join(ccrDir(ctx), "service.json"));
+        await expect(configureClaudeCode(ctx, settings)).rejects.toThrow(
+            "Start it first: ccr start",
+        );
+        expect(await claudeCode.status(ctx)).toMatchObject({
+            configured: false,
+            details: { service: false, next: "Start the router: ccr start" },
+        });
+    });
+
     it("adds a Pollinations provider and an isolated profile, leaving the rest alone", async () => {
         await configureClaudeCode(ctx, settings);
         const { provider, profile } = owned();

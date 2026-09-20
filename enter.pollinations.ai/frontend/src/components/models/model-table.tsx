@@ -1,5 +1,6 @@
 import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CopyValue } from "./copy-value.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -22,7 +23,6 @@ import {
 } from "./model-info.ts";
 import {
     getModelTitleTooltipContent,
-    ModelId,
     ModelRow,
     PerPollenEstimate,
 } from "./model-row.tsx";
@@ -221,7 +221,11 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </span>
                         )}
                     </div>
-                    <ModelId name={model.name} showCopyIcon />
+                    <CopyValue
+                        value={model.name}
+                        label={`Copy model id ${model.name}`}
+                        showCopyIcon
+                    />
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}

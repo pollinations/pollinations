@@ -1,9 +1,5 @@
 import {
-    CheckIcon,
     Chip,
-    ClipboardIcon,
-    CopyButton,
-    cn,
     InlineLink,
     RocketIcon,
     Surface,
@@ -12,6 +8,7 @@ import {
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
+import { CopyValue } from "./copy-value.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -65,58 +62,6 @@ function formatVideoDuration(model: ModelPrice): string | null {
 type ModelRowProps = {
     model: ModelPrice;
 };
-
-type ModelIdProps = {
-    name: string;
-    showCopyIcon?: boolean;
-};
-
-const MODEL_ID_TOOLTIP_MAX_WIDTH = 520;
-
-export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
-    <CopyButton
-        value={name}
-        tooltip={
-            showCopyIcon ? null : (
-                <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                    Click to copy
-                </span>
-            )
-        }
-        copiedTooltip={
-            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                Copied
-            </span>
-        }
-        aria-label={`Copy model id ${name}`}
-        tooltipAlign="start"
-        tooltipMaxWidth={MODEL_ID_TOOLTIP_MAX_WIDTH}
-        tooltipClassName="min-w-0 max-w-full"
-        className={(copied) =>
-            cn(
-                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
-                copied
-                    ? "text-intent-success-text"
-                    : "text-theme-text-muted hover:text-theme-text-soft",
-            )
-        }
-    >
-        {(copied) => (
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-                <span className="min-w-0 truncate">{name}</span>
-                {showCopyIcon &&
-                    (copied ? (
-                        <CheckIcon className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                        <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />
-                    ))}
-                {showCopyIcon && copied && (
-                    <span className="sr-only">Copied</span>
-                )}
-            </span>
-        )}
-    </CopyButton>
-);
 
 export const PerPollenEstimate: FC<{
     model: ModelPrice;
@@ -323,7 +268,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <OpenWebUiLink modelId={model.name} />
                         )}
                     </div>
-                    <ModelId name={model.name} />
+                    <CopyValue
+                        value={model.name}
+                        label={`Copy model id ${model.name}`}
+                    />
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}

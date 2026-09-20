@@ -1,7 +1,5 @@
 import {
     BeakerIcon,
-    CopyButton,
-    cn,
     InlineLink,
     KeyIcon,
     McpIcon,
@@ -11,6 +9,7 @@ import {
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config, genDocsUrl } from "../../config.ts";
+import { CopyValue } from "./copy-value.tsx";
 import { UsagePriceRows } from "./price-badge.tsx";
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
@@ -65,39 +64,10 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             </InlineLink>
                                         )}
                                     </p>
-                                    <CopyButton
+                                    <CopyValue
                                         value={endpoint}
-                                        tooltip={
-                                            <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                                                Click to copy
-                                            </span>
-                                        }
-                                        copiedTooltip={
-                                            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                                                Copied
-                                            </span>
-                                        }
-                                        aria-label={`Copy ${server.name} MCP endpoint`}
-                                        tooltipAlign="start"
-                                        tooltipMaxWidth={520}
-                                        tooltipClassName="min-w-0 max-w-full"
-                                        className={(copied) =>
-                                            cn(
-                                                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
-                                                copied
-                                                    ? "text-intent-success-text"
-                                                    : "text-theme-text-muted hover:text-theme-text-soft",
-                                            )
-                                        }
-                                    >
-                                        {() => (
-                                            <span className="inline-flex min-w-0 items-center gap-1.5">
-                                                <span className="min-w-0 truncate">
-                                                    {endpoint}
-                                                </span>
-                                            </span>
-                                        )}
-                                    </CopyButton>
+                                        label={`Copy ${server.name} MCP endpoint`}
+                                    />
                                 </div>
                             </div>
                             <div className="mt-3 flex @2xl:mt-0 @2xl:w-[clamp(312px,calc(32%_-_8px),352px)] @2xl:shrink-0 @2xl:pl-3">

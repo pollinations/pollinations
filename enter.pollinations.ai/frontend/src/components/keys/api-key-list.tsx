@@ -400,9 +400,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 ].join(" ")
                             }
                         >
-                            {(copied) =>
-                                copied ? "Copied!" : rotatedKey.key
-                            }
+                            {(copied) => (copied ? "Copied!" : rotatedKey.key)}
                         </CopyButton>
                     </div>
                 )}

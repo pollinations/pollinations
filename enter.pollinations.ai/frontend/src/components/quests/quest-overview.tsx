@@ -802,6 +802,32 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return { count, segments };
     }, [state.rewards]);
 
+    if (state.loading) {
+        return (
+            <div
+                role="status"
+                className="flex items-center gap-2 text-theme-text-muted"
+            >
+                <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <Text size="sm" tone="muted">
+                    Loading quests…
+                </Text>
+            </div>
+        );
+    }
+
+    if (
+        state.error &&
+        state.catalog.length === 0 &&
+        state.rewards.length === 0
+    ) {
+        return (
+            <Text role="alert" size="sm" className="text-intent-danger-text">
+                {state.error}
+            </Text>
+        );
+    }
+
     // While the automatic quest check is running, dim the stats and cards so
     // summary reads as "refreshing" — the numbers may be about to change. The
     // checking indicator itself stays outside this wrapper so it stays crisp.
@@ -922,15 +948,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 <Text size="sm" className="text-intent-danger-text">
                     {state.error}
                 </Text>
-            )}
-
-            {state.loading && (
-                <div className="flex items-center gap-2 text-theme-text-muted">
-                    <ClockIcon className="h-4 w-4 shrink-0" />
-                    <Text size="sm" tone="muted">
-                        Loading quests…
-                    </Text>
-                </div>
             )}
 
             <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>

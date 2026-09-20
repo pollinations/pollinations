@@ -4,17 +4,18 @@ import {
     Button,
     ButtonGroup,
     CheckIcon,
-    Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader,
     InlineLink,
+    Surface,
     TabButton,
     XIcon,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { AgentFormRow } from "./agent-form-row.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
@@ -110,20 +111,19 @@ export function AgentDialog({
     const submitLabel = agent ? "Save changes" : "Create agent";
 
     return (
-        <Dialog
+        <ResourceDialog
             open={open}
             onOpenChange={onOpenChange}
             size="lg"
             trigger={trigger}
             triggerAsChild
-            contentClassName="polli:sm:bg-transparent polli:sm:rounded-none polli:sm:shadow-none"
         >
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <DialogBody>
+                <DialogBody scrollbar="subtle">
                     <DialogHeader
                         inBody
                         title={agent ? "Edit agent" : "Create agent"}
@@ -146,7 +146,7 @@ export function AgentDialog({
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {!agent && (
-                        <div>
+                        <Surface>
                             <AgentFormRow
                                 label="Agent type"
                                 help="Prompt agents use a model and instructions. Code agents deploy a public GitHub repository."
@@ -188,16 +188,10 @@ export function AgentDialog({
                                     </TabButton>
                                 </ButtonGroup>
                             </AgentFormRow>
-                        </div>
+                        </Surface>
                     )}
 
-                    <div
-                        className={
-                            agent
-                                ? "space-y-3"
-                                : "space-y-3 border-t border-divider pt-4"
-                        }
-                    >
+                    <Surface className="space-y-3">
                         {form.type === "code_agent" && (
                             <CodeAgentFields
                                 form={form}
@@ -224,10 +218,10 @@ export function AgentDialog({
                                 }))
                             }
                         />
-                    </div>
+                    </Surface>
                     {(form.type === "prompt_agent" ||
                         (agent?.type === "code_agent" && onSync)) && (
-                        <div className="border-t border-divider pt-4">
+                        <Surface>
                             {form.type === "prompt_agent" && (
                                 <PromptAgentFields
                                     form={form}
@@ -257,42 +251,36 @@ export function AgentDialog({
                                     )}
                                 </div>
                             )}
-                        </div>
+                        </Surface>
                     )}
-                    <div className="border-t border-divider pt-4">
-                        <div
-                            className={
-                                form.type === "prompt_agent"
-                                    ? "grid gap-4 md:grid-cols-2"
-                                    : undefined
-                            }
-                        >
-                            {form.type === "prompt_agent" && (
+                    <div
+                        className={
+                            form.type === "prompt_agent"
+                                ? "grid gap-4 md:grid-cols-2"
+                                : undefined
+                        }
+                    >
+                        {form.type === "prompt_agent" && (
+                            <Surface>
                                 <PromptAgentTools
                                     form={form}
                                     disabled={isSubmitting}
                                     onChange={updateAgentForm}
                                 />
-                            )}
-                            <div
-                                className={
-                                    form.type === "prompt_agent"
-                                        ? "border-t border-divider pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-4"
-                                        : undefined
+                            </Surface>
+                        )}
+                        <Surface>
+                            <SafetyFeatureSelector
+                                value={form.requiredSafetyFeatures}
+                                disabled={isSubmitting}
+                                onChange={(requiredSafetyFeatures) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        requiredSafetyFeatures,
+                                    }))
                                 }
-                            >
-                                <SafetyFeatureSelector
-                                    value={form.requiredSafetyFeatures}
-                                    disabled={isSubmitting}
-                                    onChange={(requiredSafetyFeatures) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            requiredSafetyFeatures,
-                                        }))
-                                    }
-                                />
-                            </div>
-                        </div>
+                            />
+                        </Surface>
                     </div>
                 </DialogBody>
                 <DialogFooter className="polli:bg-transparent">
@@ -314,6 +302,6 @@ export function AgentDialog({
                     </Button>
                 </DialogFooter>
             </form>
-        </Dialog>
+        </ResourceDialog>
     );
 }

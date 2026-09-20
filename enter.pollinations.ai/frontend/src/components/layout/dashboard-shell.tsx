@@ -573,6 +573,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 </NavItem>
                             </DashboardNavGroup>
                         ))}
+                    <div className="mb-3 w-full">
+                        <ExploreNav
+                            active={activePage === "models"}
+                            category={activeModelCategory}
+                            onNavigate={onNavigate}
+                        />
+                    </div>
+                </nav>
+                <div className="mt-auto flex w-full flex-col gap-1 pt-1">
                     {navItems
                         .filter((item) => item.id === "news-faq")
                         .map((item) => (
@@ -586,21 +595,12 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 active={activePage === item.id}
                                 onClick={onNavigate}
                                 aria-label="Pollinations info"
-                                className="dashboard-rail-tab mt-3"
+                                className="dashboard-rail-tab"
                             >
                                 <PollinationsLogoIcon className="h-4 w-4" />
                                 Info
                             </NavItem>
                         ))}
-                    <div className="mb-3 w-full">
-                        <ExploreNav
-                            active={activePage === "models"}
-                            category={activeModelCategory}
-                            onNavigate={onNavigate}
-                        />
-                    </div>
-                </nav>
-                <div className="mt-auto flex w-full flex-col gap-1 pt-1">
                     <DashboardDocs />
                     <DashboardPlayground />
                     <BrandLinks links={brandLinks} />

@@ -133,7 +133,7 @@ function AccountPage() {
     return (
         <div className="flex flex-col gap-6">
             <Section title="Profile">
-                <Surface className="flex flex-col gap-5 p-6">
+                <Surface className="p-6">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <img
@@ -153,45 +153,27 @@ function AccountPage() {
                             <Heading as="h3" size="subsection">
                                 {displayName}
                             </Heading>
-                            {githubUsername && (
-                                <a
-                                    href={`https://github.com/${encodeURIComponent(githubUsername)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm text-theme-text-base transition-colors hover:text-theme-text-strong"
-                                >
-                                    @{githubUsername}
-                                </a>
-                            )}
                             <Text size="sm" tone="muted" className="truncate">
                                 {user.email}
                             </Text>
+                            <CopyButton
+                                value={user.id}
+                                tooltip={null}
+                                aria-label="Copy Pollinations ID"
+                                className="mt-1 flex max-w-full items-center gap-2 text-left font-mono text-xs text-theme-text-muted transition-colors hover:text-theme-text-strong"
+                            >
+                                {(copied) => (
+                                    <>
+                                        <span className="truncate">
+                                            {user.id}
+                                        </span>
+                                        <span className="shrink-0 font-sans font-medium">
+                                            {copied ? "Copied" : "Copy"}
+                                        </span>
+                                    </>
+                                )}
+                            </CopyButton>
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-2 border-t border-divider pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <Text tone="strong" weight="semibold">
-                                Pollinations ID
-                            </Text>
-                            <Text size="sm" tone="muted">
-                                Your unique account identifier.
-                            </Text>
-                        </div>
-                        <CopyButton
-                            value={user.id}
-                            tooltip={null}
-                            aria-label="Copy Pollinations ID"
-                            className="flex max-w-full items-center gap-2 rounded-lg bg-theme-bg-subtle px-3 py-2 text-left font-mono text-xs text-theme-text-base transition-colors hover:text-theme-text-strong"
-                        >
-                            {(copied) => (
-                                <>
-                                    <span className="truncate">{user.id}</span>
-                                    <span className="shrink-0 font-sans font-medium">
-                                        {copied ? "Copied" : "Copy"}
-                                    </span>
-                                </>
-                            )}
-                        </CopyButton>
                     </div>
                 </Surface>
             </Section>

@@ -1128,9 +1128,9 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "typesafe/jev": {
+    "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev"],
+        aliases: ["jev", "typesafe/jev"],
         provider: "openrouter",
         publisher: "TypeSafe",
         category: "text",

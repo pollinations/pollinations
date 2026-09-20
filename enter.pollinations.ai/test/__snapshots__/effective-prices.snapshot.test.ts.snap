@@ -2844,7 +2844,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0,
     },
   },
-  "typesafe/jev": {
+  "typesafe/jev-1.13": {
     "cost": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.00000004431,

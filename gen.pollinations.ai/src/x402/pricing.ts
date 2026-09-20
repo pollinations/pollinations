@@ -9,7 +9,7 @@ import {
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
 import {
-    getFixedHistoricalPrice,
+    getHistoricalPriceRange,
     getModelStats,
 } from "@shared/utils/model-stats.ts";
 import { HTTPException } from "hono/http-exception";
@@ -83,14 +83,17 @@ export async function quoteX402Request(
 export async function paymentSchemeForModel(
     env: CloudflareBindings,
     model: string,
-    currentPrice: number,
 ): Promise<X402Scheme> {
     const entry = await modelEntry(env, model);
     const stats = await getModelStats(env.KV, getLogger(["x402"]));
-    return getFixedHistoricalPrice(stats, entry.id, entry.aliases) ===
-        currentPrice
-        ? "exact"
-        : "upto";
+    const range = getHistoricalPriceRange(stats, entry.id, entry.aliases);
+    if (!range) {
+        throw new HTTPException(400, {
+            message:
+                "This model does not have enough pricing history for x402; use a Pollinations API key.",
+        });
+    }
+    return range.minimum === range.maximum ? "exact" : "upto";
 }
 
 function parseUsage(headers: Headers, quote: X402Quote): Usage {

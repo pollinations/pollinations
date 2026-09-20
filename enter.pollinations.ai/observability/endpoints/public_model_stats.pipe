@@ -5,10 +5,9 @@ DESCRIPTION >
     misbilled rows — e.g. a flat per-image rate multiplied by OpenAI
     output_tokens — used to pull avg_cost_usd thousands of times too high and
     402 callers. Cost remains hidden until a model has 3 successful priced
-    requests. Historical price bounds require 100 successful dev-price samples
-    so sparse models default to variable pricing. Models need 3 successful
-    requests from at least 2 distinct callers, which also keeps owner-only
-    models private.
+    requests. Historical price bounds also require 3 successful dev-price
+    samples. Models need 3 successful requests from at least 2 distinct callers,
+    which also keeps owner-only models private.
 
 TOKEN tinybird_read_public READ
 
@@ -53,8 +52,8 @@ SQL >
         countIf(response_status >= 200 AND response_status < 300 AND dev_price > 0) as price_sample_count,
         uniqIf(user_id, response_status >= 200 AND response_status < 300 AND user_id != 'undefined') as user_count,
         round(if(priced_success_count >= 3, medianIf(price, response_status >= 200 AND response_status < 300 AND price > 0), 0), 6) as avg_cost_usd,
-        round(if(price_sample_count >= 100, minIf(dev_price, response_status >= 200 AND response_status < 300 AND dev_price > 0), 0), 6) as min_price_usd,
-        round(if(price_sample_count >= 100, maxIf(dev_price, response_status >= 200 AND response_status < 300 AND dev_price > 0), 0), 6) as max_price_usd,
+        round(if(price_sample_count >= 3, minIf(dev_price, response_status >= 200 AND response_status < 300 AND dev_price > 0), 0), 6) as min_price_usd,
+        round(if(price_sample_count >= 3, maxIf(dev_price, response_status >= 200 AND response_status < 300 AND dev_price > 0), 0), 6) as max_price_usd,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
         countIf(response_status >= 400) as error_count
     FROM priced_calls

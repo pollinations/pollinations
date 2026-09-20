@@ -426,11 +426,7 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
     const pay = createMiddleware<Env>(async (c, next) => {
         const request = describeX402Request(c);
         const quote = await quoteX402Request(c.env, request);
-        const scheme = await paymentSchemeForModel(
-            c.env,
-            quote.model,
-            quote.maximum,
-        );
+        const scheme = await paymentSchemeForModel(c.env, quote.model);
         return paymentMiddleware(
             {
                 [`${request.method} *`]: {

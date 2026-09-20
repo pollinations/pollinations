@@ -6,6 +6,7 @@ import {
 import { validator } from "@shared/middleware/validator.ts";
 import {
     calculateUsageBilling,
+    getModels,
     getRegistryModelDefinition,
     type UsageType,
 } from "@shared/registry/registry.ts";
@@ -51,6 +52,13 @@ const tinybird = createMockTinybird();
 
 beforeEach(() => {
     tinybird.reset();
+    tinybird.state.modelStatsResponse = getModels().map((model) => ({
+        model,
+        avg_cost_usd: 0.001,
+        min_price_usd: 0.001,
+        max_price_usd: 0.002,
+        price_sample_count: 3,
+    }));
     const fetch = globalThis.fetch;
     vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
         const url = new URL(
@@ -374,7 +382,7 @@ test.each([
     expect(usd(offer.accepts[0])).toBeGreaterThanOrEqual(0.001);
 });
 
-test("offers exact payment only when stable history matches the current price", async () => {
+test("selects exact or upto from three historical prices", async () => {
     await env.KV.put(
         "model-stats-v3",
         JSON.stringify({
@@ -385,7 +393,7 @@ test("offers exact payment only when stable history matches the current price", 
                         avg_cost_usd: 0.002,
                         min_price_usd: 0.002,
                         max_price_usd: 0.002,
-                        price_sample_count: 100,
+                        price_sample_count: 3,
                     },
                 ],
             },
@@ -417,7 +425,7 @@ test("offers exact payment only when stable history matches the current price", 
                             avg_cost_usd: 0.003,
                             min_price_usd: 0.003,
                             max_price_usd: 0.003,
-                            price_sample_count: 100,
+                            price_sample_count: 3,
                         },
                     ],
                 },
@@ -425,16 +433,75 @@ test("offers exact payment only when stable history matches the current price", 
             }),
             { expirationTtl: 3600 },
         );
-        const stale = await generationApp.request(
+        const differentlyPriced = await generationApp.request(
             "/image/a%20blue%20flower?model=flux",
             {
                 headers: { "idempotency-key": crypto.randomUUID() },
             },
         );
-        const staleOffer = JSON.parse(
-            atob(stale.headers.get("payment-required") as string),
+        const differentlyPricedOffer = JSON.parse(
+            atob(differentlyPriced.headers.get("payment-required") as string),
         );
-        expect(staleOffer.accepts[0].scheme).toBe("upto");
+        expect(differentlyPricedOffer.accepts[0].scheme).toBe("exact");
+        expect(usd(differentlyPricedOffer.accepts[0])).toBe(0.002);
+
+        await env.KV.put(
+            "model-stats-v3",
+            JSON.stringify({
+                value: {
+                    data: [
+                        {
+                            model: "black-forest-labs/flux.1-schnell",
+                            avg_cost_usd: 0.0025,
+                            min_price_usd: 0.002,
+                            max_price_usd: 0.003,
+                            price_sample_count: 3,
+                        },
+                    ],
+                },
+                ttl: 3600,
+            }),
+            { expirationTtl: 3600 },
+        );
+        const variable = await generationApp.request(
+            "/image/a%20blue%20flower?model=flux",
+            {
+                headers: { "idempotency-key": crypto.randomUUID() },
+            },
+        );
+        const variableOffer = JSON.parse(
+            atob(variable.headers.get("payment-required") as string),
+        );
+        expect(variableOffer.accepts[0].scheme).toBe("upto");
+    } finally {
+        await env.KV.delete("model-stats-v3");
+    }
+});
+
+test("does not offer x402 without historical prices", async () => {
+    await env.KV.put(
+        "model-stats-v3",
+        JSON.stringify({
+            value: { data: [] },
+            ttl: 3600,
+        }),
+        { expirationTtl: 3600 },
+    );
+    try {
+        const response = await generationApp.request(
+            "/image/a%20blue%20flower?model=flux",
+            {
+                headers: { "idempotency-key": crypto.randomUUID() },
+            },
+        );
+        expect(response.status).toBe(400);
+        expect(response.headers.has("payment-required")).toBe(false);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "This model does not have enough pricing history for x402; use a Pollinations API key.",
+            },
+        });
     } finally {
         await env.KV.delete("model-stats-v3");
     }

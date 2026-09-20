@@ -1,11 +1,16 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { Button, type ButtonAppearance } from "../primitives/Button.tsx";
+import {
+    Button,
+    type ButtonAppearance,
+    type ButtonProps,
+} from "../primitives/Button.tsx";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 
 type ExternalLinkButtonBaseProps = {
     size?: "sm" | "md" | "lg";
     appearance?: ButtonAppearance;
+    intent?: ButtonProps["intent"];
     /** Set false for another Pollinations property that should behave as product navigation. */
     external?: boolean;
     showIcon?: boolean;

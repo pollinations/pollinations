@@ -420,6 +420,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     loading,
 }) => (
     <ExternalLinkButton
+        intent="neutral"
         onClick={onClick}
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"

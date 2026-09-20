@@ -429,102 +429,90 @@ export function CommunityEndpoints({
             <div className="flex flex-col gap-6">
                 {canPublish && !isLoading && (
                     <Section title="Profile">
-                        <Surface className="p-6">
-                            <form
-                                className="flex flex-col gap-4"
-                                onSubmit={(event) =>
-                                    void handleProviderSubmit(event)
-                                }
-                            >
-                                <div className="space-y-3">
-                                    <ProviderProfileField
-                                        label="Name"
-                                        help="Shown as the publisher on all your public models."
+                        <form
+                            className="flex flex-col gap-4"
+                            onSubmit={(event) =>
+                                void handleProviderSubmit(event)
+                            }
+                        >
+                            <div className="space-y-3">
+                                <ProviderProfileField
+                                    label="Name"
+                                    help="Shown as the publisher on all your public models."
+                                >
+                                    <Input
+                                        name="community-provider-name"
+                                        value={providerName}
+                                        placeholder="Your service"
+                                        autoComplete="organization"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerUrl.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderName(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    label="Website or privacy policy"
+                                    help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Name."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-url"
+                                        value={providerUrl}
+                                        placeholder="https://example.com"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        required={Boolean(providerName.trim())}
+                                        maxLength={
+                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                        }
+                                        onChange={(event) =>
+                                            setProviderUrl(event.target.value)
+                                        }
+                                    />
+                                </ProviderProfileField>
+                                <ProviderProfileField
+                                    label="Brand icon"
+                                    help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        className="w-full min-w-0"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </ProviderProfileField>
+                            </div>
+                            {!providerIsSaved && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        intent="neutral"
+                                        disabled={isSavingProvider}
+                                        onClick={resetProviderChanges}
                                     >
-                                        <Input
-                                            name="community-provider-name"
-                                            value={providerName}
-                                            placeholder="Your service"
-                                            autoComplete="organization"
-                                            className="w-full min-w-0"
-                                            required={Boolean(
-                                                providerUrl.trim(),
-                                            )}
-                                            maxLength={
-                                                COMMUNITY_PROVIDER_NAME_MAX_LENGTH
-                                            }
-                                            onChange={(event) =>
-                                                setProviderName(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
-                                    <ProviderProfileField
-                                        label="Website or privacy policy"
-                                        help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Name."
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={isSavingProvider}
                                     >
-                                        <Input
-                                            type="url"
-                                            name="community-provider-url"
-                                            value={providerUrl}
-                                            placeholder="https://example.com"
-                                            autoComplete="url"
-                                            className="w-full min-w-0"
-                                            required={Boolean(
-                                                providerName.trim(),
-                                            )}
-                                            maxLength={
-                                                COMMUNITY_PROVIDER_URL_MAX_LENGTH
-                                            }
-                                            onChange={(event) =>
-                                                setProviderUrl(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
-                                    <ProviderProfileField
-                                        label="Brand icon"
-                                        help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                                    >
-                                        <Input
-                                            type="url"
-                                            name="community-provider-icon-url"
-                                            value={providerIconUrl}
-                                            placeholder="https://media.pollinations.ai/…"
-                                            autoComplete="url"
-                                            className="w-full min-w-0"
-                                            onChange={(event) =>
-                                                setProviderIconUrl(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </ProviderProfileField>
+                                        {isSavingProvider ? "Saving…" : "Save"}
+                                    </Button>
                                 </div>
-                                {!providerIsSaved && (
-                                    <div className="flex items-center gap-3">
-                                        <Button
-                                            type="button"
-                                            intent="neutral"
-                                            disabled={isSavingProvider}
-                                            onClick={resetProviderChanges}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            disabled={isSavingProvider}
-                                        >
-                                            {isSavingProvider
-                                                ? "Saving…"
-                                                : "Save"}
-                                        </Button>
-                                    </div>
-                                )}
-                            </form>
-                        </Surface>
+                            )}
+                        </form>
                     </Section>
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}

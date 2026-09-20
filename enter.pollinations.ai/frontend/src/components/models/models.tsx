@@ -572,7 +572,11 @@ export const Models: FC = () => {
                 {(activePrimaryTab === "agent" ||
                     (activePrimaryTab === "models" &&
                         explicitModelSource !== "official")) && (
-                    <Alert intent="advisory" title="Community privacy">
+                    <Alert
+                        intent="advisory"
+                        title="Community privacy"
+                        className="polli:bg-transparent"
+                    >
                         Independent providers and configured fallbacks process
                         requests under their own policies.{" "}
                         <strong className="font-semibold text-theme-text-strong">

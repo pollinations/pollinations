@@ -568,7 +568,7 @@ const TEXT_BASE_SERVICES = {
             "mistral-small-2603",
             "mistral",
         ],
-        provider: "openrouter",
+        provider: "mistral",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
@@ -576,18 +576,18 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            // OpenRouter Mistral endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.015) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            // Mistral direct API, verified 2026-09-20.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
         description:
             "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 8, // Exact OpenRouter Mistral route limit.
+        maxReferenceImages: 8,
         tools: true,
         reasoning: true,
         contextLength: 262144,

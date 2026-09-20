@@ -511,14 +511,14 @@ export const TEXT_FALLBACKS = {
         },
     },
     "mistralai/mistral-small-4": {
-        "mistralai/mistral-small-4:openrouter:mistral-eu": {
+        "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.165) * 1.055,
-                promptCachedTokens: perMillion(0.0165) * 1.055,
-                promptImageTokens: perMillion(0.165) * 1.055,
-                completionTextTokens: perMillion(0.66) * 1.055,
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.015) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
             },
         },
     },

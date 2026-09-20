@@ -1558,30 +1558,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "mistralai/mistral-small-4": {
     "cost": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000015825,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000015825,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
   },
-  "mistralai/mistral-small-4:openrouter:mistral-eu": {
+  "mistralai/mistral-small-4:openrouter": {
     "cost": {
-      "completionTextTokens": 0.0000006963,
-      "promptCachedTokens": 0.0000000174075,
-      "promptImageTokens": 0.000000174075,
-      "promptTextTokens": 0.000000174075,
+      "completionTextTokens": 0.000000633,
+      "promptCachedTokens": 0.000000015825,
+      "promptImageTokens": 0.00000015825,
+      "promptTextTokens": 0.00000015825,
     },
     "price": {
-      "completionTextTokens": 0.0000006963,
-      "promptCachedTokens": 0.0000000174075,
-      "promptImageTokens": 0.000000174075,
-      "promptTextTokens": 0.000000174075,
+      "completionTextTokens": 0.000000633,
+      "promptCachedTokens": 0.000000015825,
+      "promptImageTokens": 0.00000015825,
+      "promptTextTokens": 0.00000015825,
     },
   },
   "moonshotai/kimi-k2.6": {

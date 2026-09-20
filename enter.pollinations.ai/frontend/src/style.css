@@ -18,6 +18,11 @@
     border-color: var(--polli-color-border);
 }
 
+/* The filter panel shares the search tint, but must remain opaque over results. */
+.catalog-search-panel {
+    background-color: oklch(from var(--polli-color-bg-subtle) l c h / 1);
+}
+
 /* Each idle navigation tab sits on the same soft-white surface as a card. */
 .dashboard-rail-tab:not([aria-current="page"]),
 .dashboard-rail-action {

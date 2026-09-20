@@ -738,7 +738,7 @@ describe("static provider fallbacks", () => {
                 TEXT_SERVICES["mistralai/mistral-small-4:openrouter"].cost[
                     unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-small-4"]["cost"]
                 ],
-            ).toBeCloseTo(cost * 1.055, 15);
+            ).toBeCloseTo(cost, 15);
         }
         for (const [route, model, provider] of OPENROUTER_ROUTES) {
             expect(findModelByName(route)?.config()).toMatchObject({

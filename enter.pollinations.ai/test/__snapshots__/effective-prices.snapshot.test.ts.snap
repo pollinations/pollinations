@@ -1572,16 +1572,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "mistralai/mistral-small-4:openrouter": {
     "cost": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000015825,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.000000633,
-      "promptCachedTokens": 0.000000015825,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "moonshotai/kimi-k2.6": {

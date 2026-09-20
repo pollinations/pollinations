@@ -1,4 +1,4 @@
-import { AccountIcon, NavItem } from "@pollinations/ui";
+import { GitHubIcon, NavItem } from "@pollinations/ui";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
@@ -139,13 +139,13 @@ export function SignedOutAccountArea({
     return (
         <>
             <NavItem
-                icon={AccountIcon}
                 flushLeft
                 className="dashboard-rail-tab"
                 aria-haspopup="dialog"
                 onClick={() => setOpen(true)}
             >
-                Sign in
+                Sign in with GitHub
+                <GitHubIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
             </NavItem>
             {open && (
                 <SignInScreen

@@ -71,6 +71,13 @@
     font-size: 0.75rem;
 }
 
+@media (width < 64rem) {
+    .dashboard-rail-tab {
+        min-height: 2.75rem;
+        font-size: 1rem;
+    }
+}
+
 .dashboard-rail-theme > [role="switch"] {
     height: 2.25rem;
     border: 0;

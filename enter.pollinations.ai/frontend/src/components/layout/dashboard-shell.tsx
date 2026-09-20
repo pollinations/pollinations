@@ -21,7 +21,6 @@ import {
     ScrollArea,
     SignOutIcon,
     useScrollLock,
-    XIcon,
 } from "@pollinations/ui";
 import logoMarkUrl from "@pollinations/ui/brand/mark.svg";
 import { AccountPollen } from "@pollinations/ui/wallet";
@@ -116,7 +115,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
-    const drawerCloseRef = useRef<HTMLButtonElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
     const location = useRouterState({ select: (state) => state.location });
@@ -177,7 +175,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     useEffect(() => {
         if (isDrawerOpen)
-            drawerCloseRef.current?.focus({ preventScroll: true });
+            drawerRef.current
+                ?.querySelector<HTMLElement>("nav a, nav button")
+                ?.focus({ preventScroll: true });
     }, [isDrawerOpen]);
 
     useEffect(() => {
@@ -260,6 +260,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             <div className="hidden lg:block">{rail}</div>
             <div
                 ref={drawerRef}
+                id="mobile-navigation"
+                role="dialog"
+                aria-modal={isDrawerOpen || undefined}
+                aria-label="Navigation"
                 className={cn(
                     "fixed inset-0 z-40 lg:hidden",
                     isDrawerOpen
@@ -272,7 +276,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-surface-opaque/85 backdrop-blur-sm transition-opacity ease-out",
+                        "absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
@@ -281,7 +285,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 w-[clamp(14.5rem,76vw,17rem)] transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 w-[min(20rem,calc(100vw-3rem))] bg-app-bg transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -289,15 +293,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     <div className="flex h-full flex-col overflow-hidden">
                         {rail}
                     </div>
-                    <button
-                        ref={drawerCloseRef}
-                        type="button"
-                        className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/80 text-theme-text-strong hover:bg-surface-opaque"
-                        onClick={closeDrawer}
-                        aria-label="Close navigation"
-                    >
-                        <XIcon className="h-5 w-5" />
-                    </button>
                 </div>
             </div>
             <div
@@ -306,6 +301,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             >
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
+                    expanded={isDrawerOpen}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
@@ -371,7 +367,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     >
         <RailScrollArea>
             <div className="flex min-h-full flex-col pr-2 pb-4">
-                <nav className="flex flex-col items-start gap-1 pt-14 lg:pt-3">
+                <nav className="flex flex-col items-start gap-1 pt-[max(1rem,env(safe-area-inset-top))] lg:pt-3">
                     {onSignOut ? (
                         <section aria-label="Account" className="mb-3 w-full">
                             <div className="flex items-center gap-2">
@@ -713,14 +709,17 @@ const ExploreNav: FC<{
 
 const MobileMenuButton: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
+    expanded: boolean;
     onOpen: () => void;
-}> = ({ buttonRef, onOpen }) => (
+}> = ({ buttonRef, expanded, onOpen }) => (
     <button
         ref={buttonRef}
         type="button"
         className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
+        aria-expanded={expanded}
+        aria-controls="mobile-navigation"
     >
         <MenuIcon className="h-5 w-5" />
     </button>

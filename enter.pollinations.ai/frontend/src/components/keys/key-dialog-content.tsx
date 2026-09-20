@@ -31,6 +31,7 @@ import {
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 
 type KeyDialogContentProps = {
+    header?: ReactNode;
     mode: "create" | "edit";
     app: boolean;
     publishable: boolean;
@@ -55,6 +56,7 @@ type KeyDialogContentProps = {
 
 /** The same key editor for Create and Edit; only saved values and actions vary. */
 export function KeyDialogContent({
+    header,
     mode,
     app,
     publishable,
@@ -139,7 +141,8 @@ export function KeyDialogContent({
     return (
         <>
             <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
-                <DialogBody scrollbar="subtle">
+                <DialogBody>
+                    {header && <div className="-mx-6 -mt-4">{header}</div>}
                     <DialogHeader
                         inBody
                         title={title}

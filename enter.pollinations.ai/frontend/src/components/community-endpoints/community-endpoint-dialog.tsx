@@ -413,7 +413,7 @@ export function CommunityEndpointDialog({
                 autoComplete="off"
                 data-form-type="other"
             >
-                <DialogBody scrollbar="subtle">
+                <DialogBody>
                     <DialogHeader
                         inBody
                         title={

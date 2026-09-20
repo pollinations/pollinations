@@ -4,12 +4,12 @@ import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import {
     Dialog,
-    DialogBody,
     DialogFooter,
     type DialogProps,
 } from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { CheckIcon } from "../../primitives/icons/index.tsx";
+import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
 
@@ -45,6 +45,7 @@ export function AuthModal({ children, size, dialog, onClose }: AuthModalProps) {
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
             positionerClassName="polli:bg-app-bg"
+            contentClassName="polli:overflow-hidden"
             size={size}
         >
             {children}
@@ -110,30 +111,30 @@ export function AuthFlowLayout({
             dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
             size={size}
         >
-            <AuthModalHeader>{headerAction}</AuthModalHeader>
-            <DialogBody>
-                {title && (
-                    <div className="polli:space-y-3">
-                        <Heading as="h1" size="section" id={headingId}>
-                            {title}
-                        </Heading>
-                        {subject}
-                        {description && (
-                            // The step instruction: body tone, so it reads as
-                            // the sentence's second half rather than a caption.
-                            <Text size="sm" tone="base">
-                                {description}
-                            </Text>
-                        )}
-                        {error && <ErrorBanner>{error}</ErrorBanner>}
-                    </div>
-                )}
-                {children}
-            </DialogBody>
-            <div className="polli:shrink-0 polli:bg-theme-bg-pale">
-                {actions && <DialogFooter>{actions}</DialogFooter>}
-                <AuthModalFootnote>{footnote}</AuthModalFootnote>
-            </div>
+            <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain">
+                <AuthModalHeader>{headerAction}</AuthModalHeader>
+                <div className="polli:space-y-4 polli:px-6 polli:py-4">
+                    {title && (
+                        <div className="polli:space-y-3">
+                            <Heading as="h1" size="section" id={headingId}>
+                                {title}
+                            </Heading>
+                            {subject}
+                            {description && (
+                                // The step instruction: body tone, so it reads as
+                                // the sentence's second half rather than a caption.
+                                <Text size="sm" tone="base">
+                                    {description}
+                                </Text>
+                            )}
+                            {error && <ErrorBanner>{error}</ErrorBanner>}
+                        </div>
+                    )}
+                    {children}
+                </div>
+            </ScrollArea>
+            {actions && <DialogFooter>{actions}</DialogFooter>}
+            <AuthModalFootnote>{footnote}</AuthModalFootnote>
         </AuthModal>
     );
 }
@@ -144,7 +145,7 @@ export function AuthModalFootnote({ children }: { children: ReactNode }) {
         <Text
             size="xs"
             tone="muted"
-            className="polli:px-6 polli:pb-5 polli:text-center"
+            className="polli:shrink-0 polli:px-6 polli:pb-5 polli:text-center"
         >
             {children}
         </Text>

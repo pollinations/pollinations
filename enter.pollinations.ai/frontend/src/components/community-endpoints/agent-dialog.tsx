@@ -123,7 +123,7 @@ export function AgentDialog({
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <DialogBody scrollbar="subtle">
+                <DialogBody>
                     <DialogHeader
                         inBody
                         title={agent ? "Edit agent" : "Create agent"}

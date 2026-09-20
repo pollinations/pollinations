@@ -120,8 +120,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const Shell = header ? AuthModal : DashboardDialog;
     return (
         <Shell onClose={onClose} size="lg">
-            {header}
             <KeyDialogContent
+                header={header}
                 mode="edit"
                 app={appKey}
                 publishable={isPublishable}

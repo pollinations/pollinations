@@ -120,25 +120,28 @@ export const githubSecretScanningRoutes = new Hono<Env>().post(
                     .filter(
                         (match) =>
                             match.type === POLLINATIONS_SECRET_TYPE &&
-                            match.token.startsWith("sk_"),
+                            (match.token.startsWith("sk_") ||
+                                match.token.startsWith("pk_")),
                     )
                     .map((match) => match.token),
             ),
         ];
         const hashes = await Promise.all(tokens.map(defaultKeyHasher));
         const db = drizzle(c.env.DB, { schema });
-        const statements = hashes.map((hash) =>
-            db
+        const statements = hashes.map((hash, index) => {
+            const token = tokens[index] ?? "";
+            const prefix = token.startsWith("pk_") ? "pk" : "sk";
+            return db
                 .update(schema.apikey)
                 .set({ enabled: false, updatedAt: new Date() })
                 .where(
                     and(
                         eq(schema.apikey.key, hash),
-                        eq(schema.apikey.prefix, "sk"),
+                        eq(schema.apikey.prefix, prefix),
                         eq(schema.apikey.enabled, true),
                     ),
-                ),
-        );
+                );
+        });
         const [firstStatement, ...remainingStatements] = statements;
         if (!firstStatement) return c.json({ success: true });
 

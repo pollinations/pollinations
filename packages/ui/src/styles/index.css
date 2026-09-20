@@ -69,7 +69,7 @@
 .polli-input,
 .polli-textarea {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -85,12 +85,13 @@
 
 .polli-input-shell {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
 
 .polli-input-shell:focus-within {
+    border-color: var(--polli-color-border);
     box-shadow: 0 0 0 1px var(--polli-color-border);
 }
 
@@ -124,8 +125,8 @@
 }
 
 .polli-textarea {
-    --polli-textarea-resizer-color: var(--polli-color-border);
-    scrollbar-color: var(--polli-color-border) transparent;
+    --polli-textarea-resizer-color: var(--polli-color-divider);
+    scrollbar-color: var(--polli-color-divider) transparent;
 }
 
 .polli-textarea:focus {

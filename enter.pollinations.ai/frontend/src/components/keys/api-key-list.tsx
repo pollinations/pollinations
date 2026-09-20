@@ -328,13 +328,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 open={keyCreateOpen}
                 onOpenChange={setKeyCreateOpen}
                 onSubmit={onCreate}
-                onComplete={() => {}}
             />
             <ApiKeyDialog
                 open={appCreateOpen}
                 onOpenChange={setAppCreateOpen}
                 onSubmit={onCreate}
-                onComplete={() => {}}
                 simplified
             />
         </>

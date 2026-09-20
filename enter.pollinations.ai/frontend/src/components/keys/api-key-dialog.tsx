@@ -20,7 +20,6 @@ const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
-    onComplete: () => void;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
@@ -38,7 +37,6 @@ function generateFunName(): string {
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
-    onComplete,
     open: isOpen,
     onOpenChange: setIsOpen,
     simplified = false,
@@ -107,10 +105,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     }
 
     function closeAfterCopy() {
-        setTimeout(() => {
-            onComplete();
-            setIsOpen(false);
-        }, 500);
+        setTimeout(() => setIsOpen(false), 500);
     }
 
     useEffect(() => {
@@ -162,10 +157,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 isSubmitting={isSubmitting}
                 showFields={isOpen}
                 onSubmit={handleSubmit}
-                onClose={() => {
-                    if (createdKey) onComplete();
-                    setIsOpen(false);
-                }}
+                onClose={() => setIsOpen(false)}
                 onCopied={closeAfterCopy}
                 onCopyError={() =>
                     setError(

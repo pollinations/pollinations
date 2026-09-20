@@ -1026,6 +1026,43 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
+    "qwen/qwen-image-2.1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-09-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Fal pricing verified 2026-09-20: $0.02 per output megapixel for
+        // text-to-image; edits bill $0.11/3 per input and output megapixel.
+        cost: {
+            completionImageTokens: 0.02, // per output megapixel
+        },
+        ...defineCostVariants(
+            {
+                edit: {
+                    promptImageTokens: 0.11 / 3, // per input megapixel
+                    completionImageTokens: 0.11 / 3, // per output megapixel
+                },
+            },
+            ({ input }) => (input?.hasImage ? "edit" : undefined),
+            {
+                edit: {
+                    label: "Image editing",
+                    description:
+                        "Applies when the request includes one or more input images.",
+                },
+            },
+            "Image generation",
+        ),
+        title: "Qwen Image 2.1",
+        description:
+            "Generates and edits images from prompts and up to ten references, with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "fal",

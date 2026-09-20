@@ -33,6 +33,7 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImage3API } from "./models/qwenImage3Model.ts";
+import { callQwenImage21API } from "./models/qwenImage21Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
@@ -942,6 +943,9 @@ const generateImage = async (
 
         case "qwen/qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
+
+        case "qwen/qwen-image-2.1":
+            return await callQwenImage21API(prompt, safeParams);
 
         case "qwen/qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);

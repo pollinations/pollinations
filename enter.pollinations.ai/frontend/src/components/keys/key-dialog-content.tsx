@@ -10,6 +10,7 @@ import {
     DialogHeader,
     FieldStack,
     InfoTip,
+    InlineLink,
     KeyChip,
     KeyIcon,
     XIcon,
@@ -21,6 +22,7 @@ import {
     ErrorBanner,
 } from "@pollinations/ui/auth";
 import type { FormEventHandler, ReactNode } from "react";
+import { genDocsUrl } from "../../config.ts";
 import { KeyNameField } from "./key-name-field.tsx";
 import {
     KeyPermissionsInputs,
@@ -141,7 +143,24 @@ export function KeyDialogContent({
                     <DialogHeader
                         inBody
                         title={title}
-                        description={description}
+                        description={
+                            createdKey !== undefined ? (
+                                description
+                            ) : (
+                                <>
+                                    {description}{" "}
+                                    <InlineLink
+                                        href={genDocsUrl(
+                                            publishable
+                                                ? "#tag/connect-user-wallets"
+                                                : "#tag/authentication",
+                                        )}
+                                    >
+                                        Read the guide
+                                    </InlineLink>
+                                </>
+                            )
+                        }
                     >
                         {existingKey && (
                             <div className="mt-3">

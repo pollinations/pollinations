@@ -111,9 +111,9 @@ export function AuthFlowLayout({
             dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
             size={size}
         >
-            <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain">
+            <ScrollArea className="polli:flex polli:min-h-0 polli:flex-1 polli:flex-col polli:overscroll-contain">
                 <AuthModalHeader>{headerAction}</AuthModalHeader>
-                <div className="polli:space-y-4 polli:px-6 polli:py-4">
+                <div className="polli:grow polli:space-y-4 polli:px-6 polli:py-4">
                     {title && (
                         <div className="polli:space-y-3">
                             <Heading as="h1" size="section" id={headingId}>
@@ -132,9 +132,17 @@ export function AuthFlowLayout({
                     )}
                     {children}
                 </div>
+                <div className="polli-auth-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                    {actions && (
+                        <DialogFooter className="polli:pointer-events-auto polli:bg-transparent">
+                            {actions}
+                        </DialogFooter>
+                    )}
+                    <div className="polli:pointer-events-auto">
+                        <AuthModalFootnote>{footnote}</AuthModalFootnote>
+                    </div>
+                </div>
             </ScrollArea>
-            {actions && <DialogFooter>{actions}</DialogFooter>}
-            <AuthModalFootnote>{footnote}</AuthModalFootnote>
         </AuthModal>
     );
 }

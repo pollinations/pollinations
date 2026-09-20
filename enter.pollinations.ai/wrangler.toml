@@ -54,8 +54,7 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [[env.local.services]]
 binding = "COMPOSIO_MCP"
-service = "pollinations-composio-mcp-staging"
-remote = true
+service = "pollinations-composio-mcp"
 
 [env.local.triggers]
 crons = []

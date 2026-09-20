@@ -1,9 +1,8 @@
-import { GitHubIcon, NavItem } from "@pollinations/ui";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
+import { DashboardSignInTrigger } from "../components/auth/dashboard-sign-in-trigger.tsx";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
@@ -115,7 +114,7 @@ function DashboardLayout() {
             }
             accountAvatarUrl={data.user?.image || undefined}
             onSignOut={data.user ? handleSignOut : undefined}
-            accountArea={data.user ? undefined : <SignedOutAccountArea />}
+            accountArea={data.user ? undefined : <DashboardSignInTrigger />}
             pollenBalances={
                 data.user
                     ? { paid: data.packBalance, quest: data.tierBalance }
@@ -124,42 +123,5 @@ function DashboardLayout() {
         >
             <Outlet />
         </DashboardShell>
-    );
-}
-
-export function SignedOutAccountArea({
-    callbackURL,
-    defaultOpen = false,
-}: {
-    callbackURL?: string;
-    defaultOpen?: boolean;
-} = {}) {
-    const [open, setOpen] = useState(defaultOpen);
-
-    return (
-        <>
-            <NavItem
-                flushLeft
-                className="dashboard-rail-tab"
-                aria-haspopup="dialog"
-                onClick={() => setOpen(true)}
-            >
-                Sign in with GitHub
-                <GitHubIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-            </NavItem>
-            {open && (
-                <SignInScreen
-                    title="Sign in"
-                    description="to your Pollinations account."
-                    callbackURL={callbackURL}
-                    onCancel={() => setOpen(false)}
-                >
-                    <p className="text-sm text-theme-text-muted">
-                        Continuing creates your Pollinations account if you
-                        don’t have one yet.
-                    </p>
-                </SignInScreen>
-            )}
-        </>
     );
 }

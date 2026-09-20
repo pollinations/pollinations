@@ -595,7 +595,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 active={activePage === item.id}
                                 onClick={onNavigate}
                                 aria-label="News and FAQ"
-                                className="dashboard-rail-tab"
+                                className="dashboard-rail-tab self-start"
                             >
                                 <PollinationsLogoIcon className="h-4 w-4" />
                                 News &amp; FAQ

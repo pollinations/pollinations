@@ -34,6 +34,7 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
+import { DashboardSignInTrigger } from "../auth/dashboard-sign-in-trigger.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -880,11 +881,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             quests={previewTotals.count}
                             pollen={previewTotals.pollen}
                         />
-                        {/* Same banner as the logged-in "ready to claim" line.
-                            Not a link yet; the real login CTA is a follow-up. */}
-                        <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                            Log in to start earning.
-                        </div>
+                        <Text>
+                            Sign in to your Pollinations account to track your
+                            quests and claim Pollen rewards.
+                        </Text>
+                        <DashboardSignInTrigger variant="page" />
                     </>
                 )}
                 <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">

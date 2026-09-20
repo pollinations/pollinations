@@ -256,7 +256,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <>
             <div className="flex flex-col gap-6">
                 <Section
-                    title="API"
+                    title="My keys"
                     id="api-keys"
                     action={sortedApiKeys.length > 0 && keyAction}
                 >
@@ -283,7 +283,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </p>
                 </Section>
                 <Section
-                    title="App"
+                    title="My apps"
                     id="app-keys"
                     action={sortedAppKeys.length > 0 && appAction}
                 >

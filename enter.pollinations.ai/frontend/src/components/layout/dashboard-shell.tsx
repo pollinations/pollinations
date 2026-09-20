@@ -366,7 +366,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
             <div className="flex min-h-full flex-col pr-2 pb-4">
                 <nav className="flex flex-col items-start gap-1 pt-[max(1rem,env(safe-area-inset-top))] lg:pt-3">
                     {onSignOut ? (
-                        <section aria-label="Account" className="mb-3 w-full">
+                        <section aria-label="Account" className="w-full">
                             <div className="flex items-center gap-2">
                                 <NavItem
                                     as={Link}
@@ -482,10 +482,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             </DashboardNavGroup>
                         ))}
                     {showCreate && (
-                        <DashboardNavGroup
-                            title="Your resources"
-                            className="mt-3"
-                        >
+                        <DashboardNavGroup title="Your resources">
                             <NavItem
                                 as={Link}
                                 to="/keys"

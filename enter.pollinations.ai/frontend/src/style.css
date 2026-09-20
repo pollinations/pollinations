@@ -69,8 +69,9 @@
 
 @media (width < 64rem) {
     .dashboard-rail-tab {
-        min-height: 2.75rem;
-        font-size: 1rem;
+        min-height: 3rem;
+        padding-inline: 1rem;
+        font-size: 1.0625rem;
     }
 }
 

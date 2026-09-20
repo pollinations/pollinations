@@ -2,10 +2,7 @@ import {
     Alert,
     BotIcon,
     Button,
-    ChevronIcon,
     ClockIcon,
-    Dropdown,
-    DropdownItem,
     EditableCombobox,
     ExternalLinkIcon,
     InlineLink,
@@ -54,6 +51,7 @@ import {
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
+import { ModelSortMenu } from "./model-sort-menu.tsx";
 import {
     type SectionType,
     sectionLabels,
@@ -91,49 +89,6 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
     agent: AGENT_QUERY_FILTER_KEYS,
     mcp: MCP_QUERY_FILTER_KEYS,
 };
-
-const SORT_OPTIONS: Array<{
-    value: ModelSort;
-    label: string;
-    accessibleLabel: string;
-}> = [
-    {
-        value: "popular",
-        label: "Most Popular",
-        accessibleLabel: "Most popular",
-    },
-    {
-        value: "newest",
-        label: "Last Added",
-        accessibleLabel: "Date added, newest first",
-    },
-    {
-        value: "price-low",
-        label: "Price: Low",
-        accessibleLabel: "Lowest price first",
-    },
-    {
-        value: "price-high",
-        label: "Price: High",
-        accessibleLabel: "Highest price first",
-    },
-    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
-    {
-        value: "title-desc",
-        label: "Name: Z–A",
-        accessibleLabel: "Name: Z to A",
-    },
-    {
-        value: "publisher",
-        label: "Publisher: A–Z",
-        accessibleLabel: "Publisher: A to Z",
-    },
-    {
-        value: "publisher-desc",
-        label: "Publisher: Z–A",
-        accessibleLabel: "Publisher: Z to A",
-    },
-];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -173,37 +128,6 @@ function categorizeModels(
         }
     }
     return categorized;
-}
-
-function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (
-        event.key !== "ArrowDown" &&
-        event.key !== "ArrowUp" &&
-        event.key !== "Home" &&
-        event.key !== "End"
-    ) {
-        return;
-    }
-
-    const items = Array.from(
-        event.currentTarget.querySelectorAll<HTMLElement>(
-            '[role="menuitemradio"]',
-        ),
-    );
-    if (items.length === 0) return;
-
-    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-    const nextIndex =
-        event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? items.length - 1
-              : event.key === "ArrowDown"
-                ? (currentIndex + 1) % items.length
-                : (currentIndex - 1 + items.length) % items.length;
-
-    event.preventDefault();
-    items[nextIndex]?.focus();
 }
 
 const isSourceSuggestion = (option: string): boolean =>
@@ -546,12 +470,6 @@ export const Models: FC = () => {
         });
     };
 
-    const activeSortLabel =
-        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Most Popular";
-    const activeSortAccessibleLabel =
-        SORT_OPTIONS.find(({ value }) => value === activeSort)
-            ?.accessibleLabel ?? "Most popular";
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -650,62 +568,10 @@ export const Models: FC = () => {
                         </div>
                         {activeTab !== "mcp" && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <Dropdown
-                                    align="end"
-                                    className="w-max p-2"
-                                    trigger={(open) => (
-                                        <Button
-                                            type="button"
-                                            size="md"
-                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                            className="shrink-0 justify-end gap-2"
-                                        >
-                                            <span className="text-right">
-                                                {activeSortLabel}
-                                            </span>
-                                            <ChevronIcon expanded={open} />
-                                        </Button>
-                                    )}
-                                >
-                                    {(close) => (
-                                        <div
-                                            role="menu"
-                                            aria-label="Sort models"
-                                            onKeyDown={handleSortMenuKeyDown}
-                                            className="flex flex-col gap-1"
-                                        >
-                                            {SORT_OPTIONS.map((option) => (
-                                                <DropdownItem
-                                                    key={option.value}
-                                                    role="menuitemradio"
-                                                    aria-label={
-                                                        option.accessibleLabel
-                                                    }
-                                                    aria-checked={
-                                                        activeSort ===
-                                                        option.value
-                                                    }
-                                                    onClick={() => {
-                                                        setActiveSort(
-                                                            option.value,
-                                                        );
-                                                        close();
-                                                    }}
-                                                    className={
-                                                        activeSort ===
-                                                        option.value
-                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                            : "justify-end text-right"
-                                                    }
-                                                >
-                                                    <span className="flex-1 text-right">
-                                                        {option.label}
-                                                    </span>
-                                                </DropdownItem>
-                                            ))}
-                                        </div>
-                                    )}
-                                </Dropdown>
+                                <ModelSortMenu
+                                    value={activeSort}
+                                    onChange={setActiveSort}
+                                />
                             </div>
                         )}
                     </div>
@@ -713,10 +579,7 @@ export const Models: FC = () => {
                 {(activePrimaryTab === "agent" ||
                     (activePrimaryTab === "models" &&
                         explicitModelSource !== "official")) && (
-                    <Alert
-                        intent="advisory"
-                        title="Community privacy"
-                    >
+                    <Alert intent="advisory" title="Community privacy">
                         Independent providers and configured fallbacks process
                         requests under their own policies.{" "}
                         <strong className="font-semibold text-theme-text-strong">

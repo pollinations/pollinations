@@ -44,18 +44,41 @@ export function useModelQuerySearch({
     models,
     initial = "source:official",
     pickable = false,
+    value,
     onTextChange,
 }: {
     models: ModelPrice[];
     initial?: string;
     pickable?: boolean;
+    /** Parent-owned model ID for pickers; filters remain local search state. */
+    value?: string;
     onTextChange?: (text: string) => void;
 }) {
-    const [search, setSearch] = useState(initial);
-    const [draft, setDraft] = useState<ModelQueryDraftFilter>();
+    const [localSearch, setSearch] = useState(initial);
+    const [localDraft, setDraft] = useState<ModelQueryDraftFilter>();
     const [editing, setEditing] = useState<ModelQueryFilterToken>();
     const [pendingRemoval, setPendingRemoval] = useState<number>();
     const [open, setOpen] = useState(false);
+
+    // A model picker owns its model ID in the form. Keep only the filter
+    // editing state here, so parent resets are reflected without another copy.
+    const controlledParts = [
+        ...getModelQueryFilterTokens(localSearch)
+            .filter(({ index }) => index !== localDraft?.index)
+            .map(({ token }) => token),
+        ...(value?.trim().split(/\s+/).filter(Boolean) ?? []),
+    ];
+    const draft =
+        value !== undefined && localDraft
+            ? { ...localDraft, index: controlledParts.length }
+            : localDraft;
+    const search =
+        value === undefined
+            ? localSearch
+            : [
+                  ...controlledParts,
+                  ...(draft ? [`${draft.key}:${draft.value}`] : []),
+              ].join(" ");
 
     const tokens = getModelQueryFilterTokens(search).filter(
         ({ index }) => index !== draft?.index,
@@ -67,7 +90,10 @@ export function useModelQuerySearch({
               ? replaceModelQueryFilterToken(search, draft.index, editing.token)
               : removeModelQueryFilterToken(search, draft.index);
     const query = draft ? cancelledDraft() : search.trim();
-    const visibleSearch = getModelQueryVisibleSearch(search, tokens, draft);
+    const visibleSearch =
+        value !== undefined && draft
+            ? draft.value
+            : getModelQueryVisibleSearch(search, tokens, draft);
     const parsed = parseModelQuery(query);
     const matches = (model: ModelPrice) => matchesModelQuery(model, parsed);
     const suggestions = getModelQuerySuggestions(
@@ -125,15 +151,16 @@ export function useModelQuerySearch({
         setSearch(next);
         setDraft(nextDraft);
         if (!nextDraft) setEditing(undefined);
-        onTextChange?.(
-            getModelQueryVisibleSearch(
-                next,
-                getModelQueryFilterTokens(next).filter(
-                    ({ index }) => index !== nextDraft?.index,
+        // A filter draft is search UI, never a selected model ID. Cancelling
+        // or completing a filter must leave the parent's model untouched.
+        if (!draft && !nextDraft) {
+            onTextChange?.(
+                getModelQueryVisibleSearch(
+                    next,
+                    getModelQueryFilterTokens(next),
                 ),
-                nextDraft,
-            ),
-        );
+            );
+        }
         setOpen(
             !value.endsWith(" ") &&
                 (!!nextDraft ||

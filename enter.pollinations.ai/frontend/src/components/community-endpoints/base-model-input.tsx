@@ -26,6 +26,7 @@ export function BaseModelInput({
         models: textModels,
         initial: ["source:official", value].filter(Boolean).join(" "),
         pickable: true,
+        value,
         onTextChange: onChange,
     });
 

@@ -243,18 +243,26 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-function QuestSummary({ quests, pollen }: { quests: number; pollen: number }) {
+function QuestSummary({
+    quests,
+    pollen,
+    preview = false,
+}: {
+    quests: number;
+    pollen: number;
+    preview?: boolean;
+}) {
     return (
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid grid-cols-2 gap-3${preview ? " grayscale" : ""}`}>
             <WalletBalanceCard
                 kind="paid"
-                label="Quests"
+                label={preview ? "Available quests" : "Quests"}
                 value={quests}
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
             />
             <WalletBalanceCard
                 kind="tier"
-                label="Pollen"
+                label={preview ? "Potential Pollen" : "Pollen"}
                 value={formatRewardAmount(pollen)}
             />
         </div>
@@ -805,7 +813,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 claimable banner + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
-            <Section title={state.anonymous ? "Available" : "Claimed"}>
+            <Section
+                title={state.anonymous ? "Rewards you can earn" : "Claimed"}
+            >
                 {!state.anonymous && (
                     <>
                         <div className={dimWhileChecking}>
@@ -876,6 +886,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 {/* The preview counts available quests and their possible rewards. */}
                 {state.anonymous && (
                     <QuestSummary
+                        preview
                         quests={previewTotals.count}
                         pollen={previewTotals.pollen}
                     />

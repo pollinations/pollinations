@@ -1,5 +1,5 @@
-import { Surface, Text } from "@pollinations/ui";
-import logoMarkUrl from "@pollinations/ui/brand/mark.svg";
+import { Text } from "@pollinations/ui";
+import { useRouterState } from "@tanstack/react-router";
 import { DashboardSignInTrigger } from "./dashboard-sign-in-trigger.tsx";
 
 export function DashboardSignInBanner({
@@ -7,29 +7,36 @@ export function DashboardSignInBanner({
 }: {
     defaultOpen?: boolean;
 }) {
+    const message = useRouterState({
+        select: ({ location }) => {
+            if (location.pathname === "/quests") {
+                return "Sign in to track your quests and claim Pollen rewards.";
+            }
+            if (location.pathname === "/models") {
+                const { category } = location.search as { category?: string };
+                if (category === "agent") {
+                    return "Sign in to use agents and create your own.";
+                }
+                if (category === "mcp") {
+                    return "Sign in to connect your tools to Pollinations.ai.";
+                }
+                return "Sign in to get an API key and use these models.";
+            }
+            return "Create your Pollinations.ai account to start building.";
+        },
+    });
+
     return (
-        <Surface
-            as="aside"
+        <aside
             aria-label="Sign in to Pollinations.ai"
-            variant="card"
             className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
-            <div className="flex min-w-0 items-center gap-3">
-                <span
-                    aria-hidden="true"
-                    className="block h-8 w-8 shrink-0 bg-current text-theme-text-muted"
-                    style={{
-                        mask: `url('${logoMarkUrl}') center / contain no-repeat`,
-                        WebkitMask: `url('${logoMarkUrl}') center / contain no-repeat`,
-                    }}
-                />
-                <Text size="sm" weight="medium">
-                    Sign in or create your Pollinations.ai account.
-                </Text>
-            </div>
+            <Text size="sm" tone="muted">
+                {message}
+            </Text>
             <div className="flex shrink-0">
                 <DashboardSignInTrigger defaultOpen={defaultOpen} />
             </div>
-        </Surface>
+        </aside>
     );
 }

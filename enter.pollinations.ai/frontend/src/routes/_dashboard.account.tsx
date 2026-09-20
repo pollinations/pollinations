@@ -277,8 +277,7 @@ function AccountPage() {
                 <Surface className="p-6">
                     <div className="flex flex-col gap-3">
                         <Text size="sm" tone="muted">
-                            This hosted Pollinations.ai service is operated by
-                            Myceli.AI OÜ.
+                            Operator: Myceli.AI OÜ
                         </Text>
                         <nav
                             aria-label="Policies"

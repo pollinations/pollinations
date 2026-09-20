@@ -27,6 +27,8 @@ export type EditableComboboxProps = Omit<InputProps, "onChange" | "value"> & {
      * the wrapped shell layout and replaces the standalone chevron trigger.
      */
     startContent?: ReactNode;
+    /** Optional class for the suggestions panel. */
+    contentClassName?: string;
 };
 
 export type EditableComboboxTokenProps = Omit<
@@ -75,6 +77,7 @@ export function EditableCombobox({
     onOpenChange,
     closeOnSelect,
     startContent,
+    contentClassName,
     className,
     disabled,
     name,
@@ -169,7 +172,12 @@ export function EditableCombobox({
                 )}
             </Combobox.Control>
             <Combobox.Positioner>
-                <Combobox.Content className="polli:z-[120] polli:overflow-hidden polli:rounded-lg polli:bg-surface-menu polli:p-1 polli:shadow-lg polli:focus:outline-none">
+                <Combobox.Content
+                    className={cn(
+                        "polli:z-[120] polli:overflow-hidden polli:rounded-lg polli:bg-surface-menu polli:p-1 polli:shadow-lg polli:focus:outline-none",
+                        contentClassName,
+                    )}
+                >
                     <ScrollArea className="polli:max-h-64">
                         <Combobox.List className="polli:flex polli:flex-col">
                             {visibleOptions.map((option) => (

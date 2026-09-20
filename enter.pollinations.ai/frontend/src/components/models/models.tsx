@@ -651,6 +651,7 @@ export const Models: FC = () => {
                                     }
                                     aria-label={`Search ${searchTarget}`}
                                     autoComplete="off"
+                                    contentClassName="polli:bg-theme-bg-subtle"
                                     startContent={
                                         <ModelFilterTokens
                                             tokens={renderedFilterTokens}

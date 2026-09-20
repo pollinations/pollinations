@@ -5,7 +5,6 @@ import {
     ButtonGroup,
     CheckIcon,
     ChevronIcon,
-    Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader,
@@ -27,6 +26,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelCapabilityFields } from "./model-capability-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
@@ -400,7 +400,7 @@ export function CommunityEndpointDialog({
         saveRequirementMet;
 
     return (
-        <Dialog
+        <ResourceDialog
             open={open}
             onOpenChange={onOpenChange}
             size="lg"
@@ -413,7 +413,7 @@ export function CommunityEndpointDialog({
                 autoComplete="off"
                 data-form-type="other"
             >
-                <DialogBody>
+                <DialogBody scrollbar="subtle">
                     <DialogHeader
                         inBody
                         title={
@@ -971,7 +971,7 @@ export function CommunityEndpointDialog({
                         </div>
                     )}
                 </DialogBody>
-                <DialogFooter>
+                <DialogFooter className="polli:bg-transparent">
                     <Button
                         icon={<XIcon />}
                         type="button"
@@ -997,6 +997,6 @@ export function CommunityEndpointDialog({
                     </Button>
                 </DialogFooter>
             </form>
-        </Dialog>
+        </ResourceDialog>
     );
 }

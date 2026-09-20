@@ -1,5 +1,5 @@
 import { Field, InlineLink, Input } from "@pollinations/ui";
-import { AgentFormRow } from "./agent-form-row.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import type { AgentFormState } from "./types.ts";
 
 type CodeAgentFieldsProps = {
@@ -14,7 +14,7 @@ export function CodeAgentFields({
     onChange,
 }: CodeAgentFieldsProps) {
     return (
-        <AgentFormRow
+        <ModelFormRow
             label="GitHub repository"
             help="Public repository with agent.ts at its root. Its name becomes the model ID and title; its description becomes the catalog description. Private code agents coming soon."
         >
@@ -45,6 +45,6 @@ export function CodeAgentFields({
                     Fork an example
                 </InlineLink>
             </div>
-        </AgentFormRow>
+        </ModelFormRow>
     );
 }

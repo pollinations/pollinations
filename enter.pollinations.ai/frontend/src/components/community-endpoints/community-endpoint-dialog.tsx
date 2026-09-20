@@ -11,14 +11,14 @@ import {
     DropdownItem,
     EditableCombobox,
     Field,
-    FieldStack,
     InlineLink,
     Input,
     ScrollArea,
+    Switch,
     TabButton,
     XIcon,
 } from "@pollinations/ui";
-import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
+import { AuthInfoCard } from "@pollinations/ui/auth";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -28,6 +28,7 @@ import { genDocsUrl } from "../../config.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelCapabilityFields } from "./model-capability-fields.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     basePriceKeysForModality,
@@ -544,9 +545,9 @@ export function CommunityEndpointDialog({
                     <AuthInfoCard>
                         <div className="space-y-3">
                             {form.modality === "text" && (
-                                <FieldStack
+                                <ModelFormRow
                                     label="Upstream API"
-                                    helper="Responses endpoints also work through Pollinations Chat Completions."
+                                    help="Responses endpoints also work through Pollinations Chat Completions."
                                 >
                                     <ButtonGroup aria-label="Upstream API">
                                         {(
@@ -574,17 +575,17 @@ export function CommunityEndpointDialog({
                                             </TabButton>
                                         ))}
                                     </ButtonGroup>
-                                </FieldStack>
+                                </ModelFormRow>
                             )}
 
                             <div className="space-y-3">
-                                <FieldStack
+                                <ModelFormRow
                                     label={
                                         form.modality === "video"
                                             ? "Video endpoint URL"
                                             : "Endpoint URL"
                                     }
-                                    helper={
+                                    help={
                                         form.modality === "text"
                                             ? "The exact URL called for the selected API."
                                             : form.modality === "video"
@@ -594,6 +595,7 @@ export function CommunityEndpointDialog({
                                 >
                                     <Field.Input asChild>
                                         <Input
+                                            className="w-full min-w-0"
                                             name="community-endpoint-url"
                                             type="url"
                                             inputMode="url"
@@ -617,14 +619,15 @@ export function CommunityEndpointDialog({
                                             }
                                         />
                                     </Field.Input>
-                                </FieldStack>
+                                </ModelFormRow>
                                 {isEndpointAgent && (
-                                    <FieldStack
+                                    <ModelFormRow
                                         label="Agent model ID"
-                                        helper="Model ID sent to the endpoint with each request."
+                                        help="Model ID sent to the endpoint with each request."
                                     >
                                         <Field.Input asChild>
                                             <Input
+                                                className="w-full min-w-0"
                                                 name="community-upstream-id"
                                                 value={form.upstreamModel}
                                                 autoComplete="off"
@@ -639,12 +642,12 @@ export function CommunityEndpointDialog({
                                                 }
                                             />
                                         </Field.Input>
-                                    </FieldStack>
+                                    </ModelFormRow>
                                 )}
                                 {!isEndpointAgent && (
-                                    <FieldStack
+                                    <ModelFormRow
                                         label="API bearer token"
-                                        helper={
+                                        help={
                                             isEdit
                                                 ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
                                                 : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
@@ -652,6 +655,7 @@ export function CommunityEndpointDialog({
                                     >
                                         <Field.Input asChild>
                                             <Input
+                                                className="w-full min-w-0"
                                                 name="community-api-bearer-token"
                                                 type="password"
                                                 value={form.bearerToken}
@@ -674,18 +678,18 @@ export function CommunityEndpointDialog({
                                                 }
                                             />
                                         </Field.Input>
-                                    </FieldStack>
+                                    </ModelFormRow>
                                 )}
 
                                 {!isEndpointAgent &&
                                     form.modality !== "video" && (
-                                        <FieldStack
+                                        <ModelFormRow
                                             label="Provider model ID"
-                                            helper={
+                                            help={
                                                 canFetchModels
                                                     ? providerModelHelper(
-                                                          modelOptions,
-                                                          modelListState,
+                                                          [],
+                                                          idleAction,
                                                       )
                                                     : "Model ID sent to the Responses endpoint. Model discovery is not required."
                                             }
@@ -752,7 +756,25 @@ export function CommunityEndpointDialog({
                                                     )
                                                 }
                                             />
-                                        </FieldStack>
+                                            {canFetchModels &&
+                                                modelListState.status !==
+                                                    "idle" && (
+                                                    <p
+                                                        role="status"
+                                                        className={
+                                                            modelListState.status ===
+                                                            "error"
+                                                                ? "mt-2 text-sm text-intent-danger-text"
+                                                                : "mt-2 text-sm text-theme-text-muted"
+                                                        }
+                                                    >
+                                                        {providerModelHelper(
+                                                            modelOptions,
+                                                            modelListState,
+                                                        )}
+                                                    </p>
+                                                )}
+                                        </ModelFormRow>
                                     )}
                             </div>
 
@@ -799,9 +821,9 @@ export function CommunityEndpointDialog({
                                     visiblePriceKeys={visiblePriceKeys}
                                     onChange={updateForm}
                                 />
-                                <FieldStack
+                                <ModelFormRow
                                     label="Accepted Pollen"
-                                    helper={
+                                    help={
                                         form.paidOnly
                                             ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
                                             : "Any Pollen: callers can pay with Quest or Paid Pollen."
@@ -841,53 +863,53 @@ export function CommunityEndpointDialog({
                                             Paid only
                                         </TabButton>
                                     </ButtonGroup>
-                                </FieldStack>
+                                </ModelFormRow>
                             </div>
                         </AuthInfoCard>
                     )}
                     <AuthInfoCard>
-                        <ul>
-                            <AuthAccessItem
-                                checked={rpmLimited}
-                                disabled={isSubmitting}
-                                onChange={(checked) => {
-                                    setRpmLimited(checked);
-                                    if (!checked) updateForm("perUserRpm", "");
-                                }}
-                                details={
-                                    rpmLimited ? (
-                                        <div className="space-y-2">
-                                            <Input
-                                                name="community-per-user-rpm"
-                                                aria-label="Requests per minute value"
-                                                type="number"
-                                                step="any"
-                                                required
-                                                disabled={isSubmitting}
-                                                value={form.perUserRpm}
-                                                onChange={(event) =>
-                                                    updateForm(
-                                                        "perUserRpm",
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className="w-[116px]"
-                                                hideNumberSteppers
-                                            />
-                                            <p>
-                                                Per user. Decimals allowed: 0.5
-                                                means one request every 2
-                                                minutes.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        "No limit."
-                                    )
-                                }
-                            >
-                                Requests per minute
-                            </AuthAccessItem>
-                        </ul>
+                        <ModelFormRow
+                            label="Requests per minute"
+                            help="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Turn off for no limit."
+                        >
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Switch
+                                    ariaLabel="Limit requests per minute per user"
+                                    checked={rpmLimited}
+                                    disabled={isSubmitting}
+                                    onChange={(checked) => {
+                                        setRpmLimited(checked);
+                                        if (!checked)
+                                            updateForm("perUserRpm", "");
+                                    }}
+                                />
+                                {rpmLimited ? (
+                                    <Field.Input asChild>
+                                        <Input
+                                            name="community-per-user-rpm"
+                                            aria-label="Requests per minute value"
+                                            type="number"
+                                            step="any"
+                                            required
+                                            disabled={isSubmitting}
+                                            value={form.perUserRpm}
+                                            onChange={(event) =>
+                                                updateForm(
+                                                    "perUserRpm",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="w-[116px]"
+                                            hideNumberSteppers
+                                        />
+                                    </Field.Input>
+                                ) : (
+                                    <span className="text-sm text-theme-text-muted">
+                                        No limit
+                                    </span>
+                                )}
+                            </div>
+                        </ModelFormRow>
                     </AuthInfoCard>
                     {!isEndpointAgent && (
                         <AuthInfoCard>
@@ -905,9 +927,9 @@ export function CommunityEndpointDialog({
                     )}
                     {isShared && (
                         <AuthInfoCard>
-                            <FieldStack
+                            <ModelFormRow
                                 label="Fallback models"
-                                helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                                help={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
                             >
                                 <div className="flex flex-col gap-2">
                                     {fallbackRows.map((selected, index) => (
@@ -986,7 +1008,7 @@ export function CommunityEndpointDialog({
                                         </Dropdown>
                                     ))}
                                 </div>
-                            </FieldStack>
+                            </ModelFormRow>
                         </AuthInfoCard>
                     )}
                     {testableModelId && (

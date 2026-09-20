@@ -2,8 +2,8 @@ import { Field, InfoTip, InlineLink, Textarea } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { config } from "../../config.ts";
-import { AgentFormRow } from "./agent-form-row.tsx";
 import { BaseModelInput } from "./base-model-input.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import type { AgentFormState } from "./types.ts";
 
 type PromptAgentFieldsProps = {
@@ -22,7 +22,7 @@ export function PromptAgentFields({
 }: PromptAgentFieldsProps) {
     return (
         <div className="space-y-3">
-            <AgentFormRow
+            <ModelFormRow
                 label="Base model"
                 help="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
             >
@@ -31,8 +31,8 @@ export function PromptAgentFields({
                     disabled={disabled}
                     onChange={(value) => onChange("baseModel", value)}
                 />
-            </AgentFormRow>
-            <AgentFormRow
+            </ModelFormRow>
+            <ModelFormRow
                 label="System prompt"
                 help="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
             >
@@ -50,7 +50,7 @@ export function PromptAgentFields({
                         }
                     />
                 </Field.Textarea>
-            </AgentFormRow>
+            </ModelFormRow>
         </div>
     );
 }

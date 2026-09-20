@@ -2,7 +2,6 @@ import {
     ButtonGroup,
     CheckIcon,
     Field,
-    FieldStack,
     Input,
     TabButton,
 } from "@pollinations/ui";
@@ -14,6 +13,7 @@ import {
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
+import { ModelFormRow } from "./model-form-row.tsx";
 import type { ModelListingFormState } from "./types.ts";
 
 const CAPABILITY_LABEL: Record<CommunityEndpointCapability, string> = {
@@ -62,9 +62,9 @@ export function ModelCapabilityFields({
     const canAdvertise = modality === "text";
     return (
         <div className="space-y-3">
-            <FieldStack
+            <ModelFormRow
                 label="Modality"
-                helper={
+                help={
                     disabled
                         ? "Existing models keep their registered modality."
                         : "Choose the API this endpoint serves."
@@ -96,14 +96,14 @@ export function ModelCapabilityFields({
                         </TabButton>
                     ))}
                 </ButtonGroup>
-            </FieldStack>
-            <FieldStack
+            </ModelFormRow>
+            <ModelFormRow
                 label="Accepted inputs"
-                helper="Select supported inputs. At least one is required."
+                help="Select supported inputs. At least one is required."
             >
                 <ul
                     aria-label="Accepted input modalities"
-                    className="space-y-2"
+                    className="flex flex-wrap gap-x-5 gap-y-2"
                 >
                     {COMMUNITY_MODALITY_SPEC[modality].inputModalities.map(
                         (input) => (
@@ -117,15 +117,15 @@ export function ModelCapabilityFields({
                         ),
                     )}
                 </ul>
-            </FieldStack>
+            </ModelFormRow>
             {canAdvertise && (
-                <FieldStack
+                <ModelFormRow
                     label="Capabilities"
-                    helper="Optional catalog claims about the upstream model."
+                    help="Optional catalog claims about the upstream model."
                 >
                     <ul
                         aria-label="Advertised capabilities"
-                        className="space-y-2"
+                        className="flex flex-wrap gap-x-5 gap-y-2"
                     >
                         {COMMUNITY_ENDPOINT_CAPABILITIES.map((capability) => (
                             <AuthAccessItem
@@ -137,16 +137,18 @@ export function ModelCapabilityFields({
                             </AuthAccessItem>
                         ))}
                     </ul>
-                </FieldStack>
+                </ModelFormRow>
             )}
             {canAdvertise && (
-                <FieldStack
-                    label="Context length (optional)"
-                    helper="Context window in tokens. Leave blank to advertise none."
+                <ModelFormRow
+                    label="Context length"
+                    optional
+                    help="Context window in tokens. Leave blank to advertise none."
                 >
                     <Field.Input asChild>
                         <Input
                             name="community-model-context-length"
+                            className="w-full min-w-0"
                             type="number"
                             min="1"
                             step="1"
@@ -157,7 +159,7 @@ export function ModelCapabilityFields({
                             }
                         />
                     </Field.Input>
-                </FieldStack>
+                </ModelFormRow>
             )}
         </div>
     );

@@ -2,7 +2,6 @@ import {
     ButtonGroup,
     CheckIcon,
     Field,
-    FieldStack,
     InlineLink,
     Input,
     TabButton,
@@ -13,22 +12,20 @@ import {
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
 import type { ReactElement, ReactNode } from "react";
-import { AgentFormRow } from "./agent-form-row.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import type { ModelListingFormState } from "./types.ts";
 
 function ListingInputRow({
-    isAgent,
     label,
     help,
-    helper,
+    action,
     optional = false,
     multiline = false,
     children,
 }: {
-    isAgent: boolean;
     label: string;
     help?: ReactNode;
-    helper?: ReactNode;
+    action?: ReactNode;
     optional?: boolean;
     multiline?: boolean;
     children: ReactElement;
@@ -38,14 +35,15 @@ function ListingInputRow({
     ) : (
         <Field.Input asChild>{children}</Field.Input>
     );
-    return isAgent ? (
-        <AgentFormRow label={label} help={help} optional={optional}>
+    return (
+        <ModelFormRow
+            label={label}
+            help={help}
+            optional={optional}
+            action={action}
+        >
             {input}
-        </AgentFormRow>
-    ) : (
-        <FieldStack label={label} helper={helper}>
-            {input}
-        </FieldStack>
+        </ModelFormRow>
     );
 }
 
@@ -102,31 +100,22 @@ export function ModelListingFields({
         <div className="space-y-3">
             {!hideIdentity && (
                 <>
-                    <div
-                        className={
-                            isAgent ? "space-y-3" : "grid gap-4 sm:grid-cols-2"
-                        }
-                    >
+                    <div className="space-y-3">
                         <ListingInputRow
-                            isAgent={isAgent}
                             label={isAgent ? "ID" : "Model ID"}
-                            help="Public ID: {username}/{id}."
-                            helper={
-                                isAgent ? (
-                                    "Public ID: {username}/{id}."
-                                ) : (
-                                    <>
-                                        Public ID: {"{username}"}/{"{model-id}"}
-                                        .{" "}
-                                        <InlineLink
-                                            href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            Naming tips
-                                        </InlineLink>
-                                        .
-                                    </>
+                            help={
+                                isAgent
+                                    ? "Public ID: {username}/{id}."
+                                    : "Public ID: {username}/{model-id}."
+                            }
+                            action={
+                                !isAgent && (
+                                    <InlineLink
+                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
+                                        size="sm"
+                                    >
+                                        Naming tips
+                                    </InlineLink>
                                 )
                             }
                         >
@@ -138,15 +127,13 @@ export function ModelListingFields({
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 required={required}
-                                className={
-                                    isAgent ? "w-full min-w-0" : undefined
-                                }
+                                className="w-full min-w-0"
                                 onChange={(event) =>
                                     onChange("name", event.target.value)
                                 }
                             />
                         </ListingInputRow>
-                        <ListingInputRow isAgent={isAgent} label="Title">
+                        <ListingInputRow label="Title">
                             <Input
                                 name="community-model-title"
                                 value={form.title}
@@ -154,9 +141,7 @@ export function ModelListingFields({
                                 autoComplete="off"
                                 maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
                                 required={required}
-                                className={
-                                    isAgent ? "w-full min-w-0" : undefined
-                                }
+                                className="w-full min-w-0"
                                 onChange={(event) =>
                                     onChange("title", event.target.value)
                                 }
@@ -165,16 +150,14 @@ export function ModelListingFields({
                     </div>
 
                     <ListingInputRow
-                        isAgent={isAgent}
                         label="Description"
-                        help="A short summary of what the agent does."
-                        optional={isAgent}
-                        multiline={isAgent}
-                        helper={
+                        help={
                             isAgent
-                                ? "Optional. What the agent does."
-                                : "Optional. What the model does."
+                                ? "A short summary of what the agent does."
+                                : "What the model does."
                         }
+                        optional
+                        multiline={isAgent}
                     >
                         {isAgent ? (
                             <Textarea
@@ -197,6 +180,7 @@ export function ModelListingFields({
                                 name="community-model-description"
                                 value={form.description}
                                 placeholder="Fast coding model, long context"
+                                className="w-full min-w-0"
                                 autoComplete="off"
                                 maxLength={
                                     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
@@ -210,15 +194,9 @@ export function ModelListingFields({
                 </>
             )}
 
-            {isAgent ? (
-                <AgentFormRow label="Visibility" help={visibilityHelp}>
-                    {visibilityOptions}
-                </AgentFormRow>
-            ) : (
-                <FieldStack label="Visibility" helper={visibilityHelp}>
-                    {visibilityOptions}
-                </FieldStack>
-            )}
+            <ModelFormRow label="Visibility" help={visibilityHelp}>
+                {visibilityOptions}
+            </ModelFormRow>
         </div>
     );
 }

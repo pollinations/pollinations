@@ -15,8 +15,8 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
-import { AgentFormRow } from "./agent-form-row.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields, PromptAgentTools } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
@@ -167,7 +167,7 @@ export function AgentDialog({
 
                     {!agent && (
                         <Surface>
-                            <AgentFormRow
+                            <ModelFormRow
                                 label="Agent type"
                                 help="Prompt agents use a model and instructions. Code agents deploy a public GitHub repository."
                             >
@@ -207,7 +207,7 @@ export function AgentDialog({
                                         Code agent
                                     </TabButton>
                                 </ButtonGroup>
-                            </AgentFormRow>
+                            </ModelFormRow>
                         </Surface>
                     )}
 

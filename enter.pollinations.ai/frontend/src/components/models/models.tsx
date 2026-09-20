@@ -92,15 +92,6 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
     mcp: MCP_QUERY_FILTER_KEYS,
 };
 
-const TabCount: FC<{ value: number }> = ({ value }) => (
-    <span
-        aria-hidden="true"
-        className="text-[0.8em] font-normal tabular-nums text-theme-text-muted"
-    >
-        {value}
-    </span>
-);
-
 const SORT_OPTIONS: Array<{
     value: ModelSort;
     label: string;
@@ -605,17 +596,9 @@ export const Models: FC = () => {
                                         key={section}
                                         active={activeTab === section}
                                         onClick={() => setActiveTab(section)}
-                                        ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
+                                        ariaLabel={sectionLabels[section]}
                                     >
-                                        <span className="inline-flex items-center gap-1.5">
-                                            {sectionLabels[section]}
-                                            <TabCount
-                                                value={
-                                                    modelSections[section]
-                                                        .length
-                                                }
-                                            />
-                                        </span>
+                                        {sectionLabels[section]}
                                     </TabButton>
                                 ))}
                             </div>

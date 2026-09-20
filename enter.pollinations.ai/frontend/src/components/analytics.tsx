@@ -33,8 +33,11 @@ function sourceAttribution(): Record<string, string> {
 
 export function Analytics() {
     const { data: session, isPending, error } = authClient.useSession();
+    // The real URL path, not the route id: /_dashboard is a pathless layout
+    // that contributes no segment, so the routeId ("/_dashboard/news") never
+    // matched the Referer path the server sees on the next request ("/news").
     const page = useRouterState({
-        select: (state) => state.matches.at(-1)?.routeId,
+        select: (state) => state.location.pathname,
     });
     const lastPage = useRef("");
     const userId = session?.user.id;

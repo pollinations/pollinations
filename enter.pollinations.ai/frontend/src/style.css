@@ -1,8 +1,8 @@
 @import "@pollinations/ui/app.css";
 
 .dashboard-add-button {
-    width: 3.5rem;
-    height: 3.5rem;
+    min-height: 2.75rem;
+    gap: 0.5rem;
 }
 
 .catalog-search .polli-input-shell,

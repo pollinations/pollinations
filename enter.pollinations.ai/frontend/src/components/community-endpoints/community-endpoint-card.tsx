@@ -2,7 +2,6 @@ import {
     Alert,
     BeakerIcon,
     BotIcon,
-    Button,
     CardIcon,
     CheckIcon,
     Chip,
@@ -10,6 +9,8 @@ import {
     CopyButton,
     currentPeriod,
     ExternalLinkIcon,
+    EyeIcon,
+    EyeOffIcon,
     GitHubIcon,
     GlobeIcon,
     IconButton,
@@ -18,6 +19,7 @@ import {
     Surface,
     TerminalIcon,
     TokensIcon,
+    UsageIcon,
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
@@ -55,6 +57,16 @@ export function CommunityEndpointCard({
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
+    const visibilityAction = endpoint.hidden
+        ? isPublic
+            ? "Relist"
+            : "Show"
+        : "Hide";
+    const visibilityActionLabel = `${visibilityAction} ${isAgent ? "agent" : "model"}`;
+    const visibilityTooltip = isToggling
+        ? "Saving visibility"
+        : visibilityActionLabel;
+    const hiddenByOwner = endpoint.hiddenReason === "Hidden by owner";
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
@@ -89,19 +101,20 @@ export function CommunityEndpointCard({
                 }
                 actions={
                     <>
-                        <Button
-                            type="button"
-                            size="sm"
-                            intent={endpoint.hidden ? "info" : "danger"}
+                        <IconButton
+                            title={visibilityTooltip}
+                            tooltip={visibilityTooltip}
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             disabled={isToggling}
                             onClick={onToggle}
                         >
-                            {isToggling
-                                ? "Saving…"
-                                : endpoint.hidden
-                                  ? "Relist"
-                                  : "Hide"}
-                        </Button>
+                            {endpoint.hidden ? (
+                                <EyeIcon className="h-4 w-4" />
+                            ) : (
+                                <EyeOffIcon className="h-4 w-4" />
+                            )}
+                        </IconButton>
                         {onEdit && (
                             <IconButton
                                 intent="info"
@@ -129,14 +142,19 @@ export function CommunityEndpointCard({
             />
 
             {endpoint.hidden && (
-                <Alert intent="danger" className="mt-3">
+                <Alert
+                    intent={hiddenByOwner ? "info" : "danger"}
+                    className="mt-3"
+                >
                     <div className="flex flex-col gap-1">
                         <span className="font-semibold">
                             {isAgent ? "Agent hidden" : "Model hidden"}
                         </span>
                         <span className="text-sm">
-                            {endpoint.hiddenReason ??
-                                "Hidden due to repeated failures."}
+                            {hiddenByOwner
+                                ? "Hidden by you; still callable by its exact model ID."
+                                : (endpoint.hiddenReason ??
+                                  "Hidden due to repeated failures.")}
                         </span>
                     </div>
                 </Alert>
@@ -228,6 +246,7 @@ export function CommunityEndpointCard({
                     }}
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
                 >
+                    <UsageIcon className="h-3.5 w-3.5 shrink-0" />
                     View activity
                 </Link>
                 {testableModelId && (

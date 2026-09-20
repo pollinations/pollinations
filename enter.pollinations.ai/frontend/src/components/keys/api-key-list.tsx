@@ -7,7 +7,6 @@ import {
     KeyChip,
     KeyIcon,
     PencilIcon,
-    PlusIcon,
     Section,
     Surface,
     TerminalIcon,
@@ -228,27 +227,23 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const keyAction = (
         <Button
             type="button"
-            size="icon"
             className="dashboard-add-button"
-            aria-label="Add Key"
-            title="Add Key"
             aria-haspopup="dialog"
             onClick={() => setKeyCreateOpen(true)}
         >
-            <PlusIcon className="h-6 w-6" />
+            <KeyIcon className="h-5 w-5" />
+            Add Key
         </Button>
     );
     const appAction = (
         <Button
             type="button"
-            size="icon"
             className="dashboard-add-button"
-            aria-label="Add App"
-            title="Add App"
             aria-haspopup="dialog"
             onClick={() => setAppCreateOpen(true)}
         >
-            <PlusIcon className="h-6 w-6" />
+            <AppIcon className="h-5 w-5" />
+            Add App
         </Button>
     );
 

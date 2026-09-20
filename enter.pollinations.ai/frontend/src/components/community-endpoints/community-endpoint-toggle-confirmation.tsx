@@ -1,4 +1,4 @@
-import { ConfirmationDialog, EyeIcon } from "@pollinations/ui";
+import { ConfirmationDialog, EyeIcon, EyeOffIcon } from "@pollinations/ui";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointToggleConfirmationProps = {
@@ -13,8 +13,9 @@ export function CommunityEndpointToggleConfirmation({
     onCancel,
 }: CommunityEndpointToggleConfirmationProps) {
     const hidden = !!endpoint?.hidden;
-    const action = hidden ? "Relist" : "Hide";
-    const kind = endpoint?.type === "endpoint_agent" ? "agent" : "model";
+    const isPrivate = endpoint?.visibility === "private";
+    const action = hidden ? (isPrivate ? "Show" : "Relist") : "Hide";
+    const kind = endpoint?.type === "proxy" ? "model" : "agent";
     return (
         <ConfirmationDialog
             open={!!endpoint}
@@ -27,13 +28,17 @@ export function CommunityEndpointToggleConfirmation({
                     </span>
                     ?{" "}
                     {hidden
-                        ? "It will appear in model listings again."
-                        : "It will be removed from model listings but remain callable by its exact model ID."}
+                        ? isPrivate
+                            ? "It stays private now and can appear in listings if you publish it later."
+                            : "It can return to public listings three hours after it was hidden."
+                        : isPrivate
+                          ? "It stays private and callable by its exact model ID, and remains out of listings if you publish it later."
+                          : "It will be removed from model listings but remain callable by its exact model ID."}
                 </>
             }
             confirmLabel={action}
-            intent={hidden ? "info" : "danger"}
-            confirmIcon={<EyeIcon />}
+            intent="neutral"
+            confirmIcon={hidden ? <EyeIcon /> : <EyeOffIcon />}
             onConfirm={onConfirm}
             onCancel={onCancel}
         />

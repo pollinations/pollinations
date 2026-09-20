@@ -25,6 +25,7 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
+import { DashboardLoading } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -424,10 +425,13 @@ export function CommunityEndpoints({
         </Button>
     );
 
+    if (isLoading)
+        return <DashboardLoading label="Loading models and agents…" />;
+
     return (
         <>
             <div className="flex flex-col gap-6">
-                {canPublish && !isLoading && (
+                {canPublish && (
                     <Section title="Publisher info">
                         <form
                             className="flex flex-col gap-4"
@@ -522,11 +526,7 @@ export function CommunityEndpoints({
                     action={agentEndpoints.length > 0 && agentAction}
                 >
                     <div className="flex flex-col gap-3">
-                        {isLoading ? (
-                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
-                                Loading…
-                            </Surface>
-                        ) : agentEndpoints.length === 0 ? (
+                        {agentEndpoints.length === 0 ? (
                             <Surface className="p-6 text-center">
                                 <div className="mb-2">{agentAction}</div>
                                 <p className="text-sm text-theme-text-muted">
@@ -538,7 +538,7 @@ export function CommunityEndpoints({
                             agentEndpoints.map(renderEndpointCard)
                         )}
                     </div>
-                    {!isLoading && !canPublish && (
+                    {!canPublish && (
                         <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
@@ -556,11 +556,7 @@ export function CommunityEndpoints({
                     action={modelEndpoints.length > 0 && modelAction}
                 >
                     <div className="flex flex-col gap-3">
-                        {isLoading ? (
-                            <Surface className="p-6 text-center text-sm text-theme-text-muted">
-                                Loading…
-                            </Surface>
-                        ) : modelEndpoints.length === 0 ? (
+                        {modelEndpoints.length === 0 ? (
                             <Surface className="p-6 text-center">
                                 <div className="mb-2">{modelAction}</div>
                                 {canPublish && (
@@ -573,26 +569,24 @@ export function CommunityEndpoints({
                             modelEndpoints.map(renderEndpointCard)
                         )}
                     </div>
-                    {!isLoading &&
-                        (modelEndpoints.length > 0 || !canPublish) && (
-                            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                                <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    {canPublish ? (
-                                        <>
-                                            Private models are callable only by
-                                            you and shown only when model lists
-                                            use your API key. Make one public to
-                                            list it for everyone in{" "}
-                                            <strong>/models</strong> and bill
-                                            callers at your configured pricing.
-                                        </>
-                                    ) : (
-                                        privateModelGuidance
-                                    )}
-                                </span>
-                            </p>
-                        )}
+                    {(modelEndpoints.length > 0 || !canPublish) && (
+                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                {canPublish ? (
+                                    <>
+                                        Private models are callable only by you
+                                        and shown only when model lists use your
+                                        API key. Make one public to list it for
+                                        everyone in <strong>/models</strong> and
+                                        bill callers at your configured pricing.
+                                    </>
+                                ) : (
+                                    privateModelGuidance
+                                )}
+                            </span>
+                        </p>
+                    )}
                 </Section>
             </div>
 

@@ -20,6 +20,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { DashboardLoading } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -168,6 +169,7 @@ export const Models: FC = () => {
     const lastPushedSearchRef = useRef(urlSearch);
     const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [catalogLoading, setCatalogLoading] = useState(true);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
     const allModels = useMemo(
@@ -284,7 +286,8 @@ export const Models: FC = () => {
                     console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
-                }),
+                })
+                .finally(() => setCatalogLoading(false)),
         [],
     );
 
@@ -467,6 +470,18 @@ export const Models: FC = () => {
             }),
         });
     };
+
+    if (catalogLoading && activePrimaryTab !== "mcp") {
+        return (
+            <DashboardLoading
+                label={
+                    activePrimaryTab === "agent"
+                        ? "Loading agents…"
+                        : "Loading models…"
+                }
+            />
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6">

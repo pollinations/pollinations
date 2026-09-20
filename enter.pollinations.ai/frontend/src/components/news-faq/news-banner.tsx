@@ -72,14 +72,6 @@ const PINNED_NEWS: Highlight[] = [
             "Earn 15 Pollen for your first external Paid Pollen request, 3 for reaching ten external app users, and 5 when other users spend 3 Paid Pollen through your apps. [View quests](/quests).",
     },
     {
-        date: "2026-07-15",
-        dateLabel: "Limited time",
-        emoji: "☀️",
-        title: "GPT-5.6 launch promotion",
-        description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
-    },
-    {
         date: "2026-06-30",
         dateLabel: "Alpha",
         emoji: "🧪",

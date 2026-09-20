@@ -104,7 +104,7 @@ function EditKeyPage() {
             <SignInScreen
                 title="Edit key permissions"
                 subject={subject}
-                description="Sign in to change them."
+                description="Sign in to your Pollinations account to change this key’s permissions."
             />
         );
     }

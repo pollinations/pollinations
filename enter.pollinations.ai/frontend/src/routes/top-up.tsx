@@ -112,7 +112,10 @@ function TopUpPage() {
 
     if (!user) {
         return (
-            <SignInScreen title="Top-up" description="Sign in to continue." />
+            <SignInScreen
+                title="Top-up"
+                description="Sign in to your Pollinations account to continue."
+            />
         );
     }
 

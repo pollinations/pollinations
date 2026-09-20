@@ -44,6 +44,7 @@ type HealthRow = {
 };
 
 const MIN_SAMPLE = 10;
+const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 
 /* ---------------------------------------------------------------------------
  * Classification — pure code, zero LLM spend on routing.
@@ -204,9 +205,9 @@ export async function select(
 
     if (eligible.length === 0) {
         return {
-            model: (catalog[0] ?? { id: "openai/gpt-5.4-nano" }).id,
+            model: DEFAULT_MODEL,
             tier: wantTier,
-            reason: `${wantTier}: no eligible healthy model — fell back to default`,
+            reason: `${wantTier}: no eligible healthy model — fell back to ${DEFAULT_MODEL}`,
         };
     }
 

@@ -1744,5 +1744,4 @@ describe("API Key Management", () => {
             expect(meta.description).toBe("before-rotate");
         });
     });
-
 });

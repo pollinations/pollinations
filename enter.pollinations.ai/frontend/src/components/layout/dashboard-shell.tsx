@@ -268,7 +268,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity ease-out",
+                        "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
@@ -277,7 +277,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 w-[clamp(14.5rem,76vw,17rem)] transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 w-[clamp(14.5rem,76vw,17rem)] bg-surface-translucent transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -288,7 +288,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     <button
                         ref={drawerCloseRef}
                         type="button"
-                        className="absolute top-3 left-full ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                        className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/80 text-theme-text-strong hover:bg-surface-opaque"
                         onClick={closeDrawer}
                         aria-label="Close navigation"
                     >

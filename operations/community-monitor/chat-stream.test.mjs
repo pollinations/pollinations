@@ -179,3 +179,24 @@ test("rejects an error event even if it includes choices", () => {
         "stream returned usage_missing: missing or invalid token usage",
     );
 });
+
+test("captures the model name the upstream writes into its chunks", () => {
+    const named =
+        'data: {"model":"codestral-latest","choices":[{"delta":{"content":"ok-marker"}}]}\n\n';
+    assert.deepEqual(parseChatStream(named + counts + done), {
+        content: "ok-marker",
+        usage,
+        servedModel: "codestral-latest",
+    });
+    assert.deepEqual(parseChatStream(named + counts), {
+        content: "ok-marker",
+        usage,
+        servedModel: "codestral-latest",
+        protocolError: "stream is missing [DONE]",
+    });
+    // Chunks without a model field leave the key out entirely.
+    assert.deepEqual(parseChatStream(content + counts + done), {
+        content: "ok-marker",
+        usage,
+    });
+});

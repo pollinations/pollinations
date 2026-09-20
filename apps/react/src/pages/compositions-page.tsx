@@ -12,19 +12,18 @@ import {
     InfoTip,
     LinkCard,
     LockIcon,
-    Markdown,
     MediaPlaceholder,
     MultiSelect,
     NavItem,
     PeriodPicker,
     type PeriodSelection,
-    Prose,
     Section,
     StatCard,
     Text,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
+import { Markdown, Prose } from "@pollinations/ui/markdown";
 import { useState } from "react";
 import { CONTROL_SIZES, PageIntro, PrimitiveExample } from "./reference-layout";
 

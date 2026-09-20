@@ -1,6 +1,7 @@
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import {
     COMPOSIO_TOOL_CALL_PRICE,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../shared/registry/mcp.ts";
 
@@ -267,6 +268,7 @@ async function proxyRouter(request, userId, payload, env, fetchImpl) {
     const headers = new Headers(request.headers);
     headers.set("x-api-key", env.COMPOSIO_API_KEY);
     headers.delete(MCP_USER_ID_HEADER);
+    headers.delete(MCP_USER_GITHUB_HEADER);
     if (transportSessionId) {
         headers.set("mcp-session-id", transportSessionId);
     } else {

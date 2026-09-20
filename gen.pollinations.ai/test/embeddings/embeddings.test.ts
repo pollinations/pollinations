@@ -475,7 +475,7 @@ describe("POST /v1/embeddings", () => {
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [TEST_OPENAI_LARGE_MODEL];
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
             await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
             mocks.azureOpenAI.state.failModel =
                 TEST_OPENAI_SMALL_PROVIDER_MODEL;
@@ -504,7 +504,7 @@ describe("POST /v1/embeddings", () => {
             await wait();
         } finally {
             source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     });
 

@@ -10,6 +10,7 @@ import {
 import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
 import {
+    ActivityEmptyState,
     ActivityFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
@@ -121,21 +122,25 @@ export const UsageSection: FC<UsageSectionProps> = ({
                     />
                 }
             >
-                <ActivityFilter
-                    label="Keys"
-                    missingLabel="Unavailable key"
-                    options={keySelectOptions}
-                    selected={selectedKeyIds}
-                    onChange={onSelectedKeyIdsChange}
-                    emptyMessage="No API key usage in this period"
-                />
-                <ActivityFilter
-                    label="Models"
-                    options={modelSelectOptions}
-                    selected={selectedModels}
-                    onChange={onSelectedModelsChange}
-                    emptyMessage="No model usage in this period"
-                />
+                {hasPeriodData && (
+                    <>
+                        <ActivityFilter
+                            label="Keys"
+                            missingLabel="Unavailable key"
+                            options={keySelectOptions}
+                            selected={selectedKeyIds}
+                            onChange={onSelectedKeyIdsChange}
+                            emptyMessage="No API key usage in this period"
+                        />
+                        <ActivityFilter
+                            label="Models"
+                            options={modelSelectOptions}
+                            selected={selectedModels}
+                            onChange={onSelectedModelsChange}
+                            emptyMessage="No model usage in this period"
+                        />
+                    </>
+                )}
             </ActivityToolbar>
 
             <UsageChartView
@@ -224,14 +229,14 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 };
 
 const UsageEmptyState: FC = () => (
-    <p className="text-sm text-ink-600">
-        No transactions in this selected period. Once you start using the API,
-        your deductions will appear here.{" "}
+    <ActivityEmptyState>
+        No usage in this period. Once you start using the API, your deductions
+        will appear here.{" "}
         <InlineLink href="/keys" showIcon={false}>
             Create an API key
         </InlineLink>
         .
-    </p>
+    </ActivityEmptyState>
 );
 
 type ModelBreakdownTableProps = {

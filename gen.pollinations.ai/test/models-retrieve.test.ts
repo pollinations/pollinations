@@ -1,13 +1,34 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
+    const { default: worker } = await import("../src/index.ts");
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}`, init),
+        { ENVIRONMENT: "test" } as CloudflareBindings,
+        context,
+    );
+    await waitOnExecutionContext(context);
+    return response;
+}
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+});
 
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
@@ -78,6 +99,31 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
         unknown
     >;
     expect(retrieved).toEqual(listed);
+});
+
+test("accepts client-safe model filter headers", async () => {
+    const response = await fetchWorker("/text/models", {
+        headers: { "Pollinations-Model-Source": "official" },
+    });
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        community: boolean;
+    }[];
+    expect(models.length).toBeGreaterThan(0);
+    expect(models.every(({ community }) => community === false)).toBe(true);
+});
+
+test("rejects invalid discovery filters", async () => {
+    const responses = await Promise.all([
+        fetchWorker("/models?source=other"),
+        fetchWorker("/models", {
+            headers: { "Pollinations-Model-Source": "other" },
+        }),
+    ]);
+
+    expect(responses.every(({ status }) => status === 400)).toBe(true);
 });
 
 test("exposes supported Chat parameters across rich listings", async () => {

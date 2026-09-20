@@ -50,6 +50,8 @@ interface ModelDefinition {
     transform?: TransformFn;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
+    /** Route typed decisions directly through TypeSafe System One. */
+    useSystemOneApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -94,6 +96,10 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: omitOpenAISampling,
+    },
+    {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
         name: "openai/gpt-oss-20b",
@@ -278,8 +284,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
-        name: "mistralai/mistral-small-4:openrouter:mistral-eu",
-        config: portkeyConfig["mistral-openrouter-eu"],
+        name: "mistralai/mistral-small-4:openrouter",
+        config: portkeyConfig["mistral-small-2603-openrouter"],
     },
     {
         name: "deepseek/deepseek-v4-flash",
@@ -488,6 +494,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
@@ -504,6 +518,11 @@ const models: ModelDefinition[] = [
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
+    },
+    {
+        name: "typesafe/jev",
+        config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
     },
     {
         name: "pollinations/midijourney",
@@ -579,6 +598,10 @@ const models: ModelDefinition[] = [
         name: "meituan/longcat-2.0",
         config: portkeyConfig["meituan/longcat-2.0"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "tencent/hy4-preview",
+        config: portkeyConfig["tencent/hy4-preview"],
     },
     {
         name: "thinkingmachines/inkling-small",
@@ -674,6 +697,14 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "tencent/hy3",
+        config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "tencent/hy3:openrouter:phala",
+        config: portkeyConfig["hy3-openrouter-phala"],
+    },
+    {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinking,
@@ -710,13 +741,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/llama-4-scout",
-        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-4-scout:openrouter:vertex-us-east5",
-        config: portkeyConfig["llama-scout-openrouter-vertex"],
+        name: "meta/llama-4-scout:openrouter:novita-bf16",
+        config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
     },
     {

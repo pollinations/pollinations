@@ -37,6 +37,14 @@ printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 
 Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
+```bash
+polli update    # npm install -g @pollinations/cli@latest, if installed globally
+```
+
+For npx or a local/project install, `update` prints instructions instead of creating a second global install.
+
+Interactive commands show an occasional update notice without waiting for the network. Set `NO_UPDATE_NOTIFIER=1` to disable it. Notices are skipped for scripts, pipes, and `--json`; updates are never installed automatically. Updating leaves credentials and harness settings untouched.
+
 ## Generate
 
 ```bash
@@ -92,6 +100,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents

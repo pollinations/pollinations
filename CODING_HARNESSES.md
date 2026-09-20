@@ -42,6 +42,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
+| [Codex](https://github.com/openai/codex) via [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now** — `polli harness codex on` | Drives the router's own provider commands (pinned commit, v0.6.0); the dedicated key lives in the router's protected credential store. |
+| [Claude Code](https://claude.com/claude-code) via [Claude Code Router](https://github.com/musistudio/claude-code-router) | **Available now** — `polli harness claude-code on` | Semi-automatic: starts the pinned router (3.1.1) and opens its management UI with exact values, then verifies read-only. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
@@ -57,6 +59,26 @@ bloom
 ```
 
 Bloom already uses Pollinations for its models. `on` creates a dedicated key and stores it in `~/.bloom/.env` (or `$BLOOM_HOME/.env`); `off` restores the previous file or removes only that key if the file changed later.
+
+## Codex (Codex Router)
+
+```bash
+npx @pollinations/cli@latest harness codex on
+polli harness codex status
+polli harness codex off
+```
+
+`on` requires the Codex CLI. It clones [Codex Router](https://github.com/duolahypercho/codex-router) into `~/.pollinations/harnesses/codex/codex-router` pinned to commit `5e1b49e` (v0.6.0) and refuses to drive any other version. It then registers the `pollinations` generic provider exclusively through the router's own commands (`providers generic add/enable`, `curate-models`), mints a dedicated child key, and publishes it into the router's documented protected credential file (`generic-provider-credentials/pollinations.key`, temp-write + rename, `0o600`) — verified afterwards with `providers generic credential pollinations status`. The curated catalog is the live first-party tool-calling model list; choose the active model with `--model <id>`, and add `--smoke` for one billable request proving quota works. An interrupted `on` is reconciled from a journal on the next run. `off` removes only the models, credential, and provider it created — a provider that existed before (or was enabled before) is kept in its previous state — and revokes the child key. Fully quit and reopen Codex afterwards.
+
+## Claude Code (Claude Code Router)
+
+```bash
+npx @pollinations/cli@latest harness claude-code on
+polli harness claude-code status
+polli harness claude-code off
+```
+
+`on` requires Claude Code 2.x. It installs [Claude Code Router](https://github.com/musistudio/claude-code-router) pinned to `@musistudio/claude-code-router@3.1.1` if missing, starts the service, then opens the management UI (`http://127.0.0.1:3458`) with exact values: provider `pollinations` → `https://gen.pollinations.ai/v1` (OpenAI Chat) plus a freshly minted child key (shown once), and a Claude Code agent profile on that provider with the chosen model. CCR's only supported way to create providers is that UI, so polli finishes by watching `config.sqlite` **read-only** until the new provider and profile verify (ownership is proven by a pre-state snapshot taken before the intent). Interrupting is safe: re-run `on` to continue, `status` shows the lifecycle state (`awaiting-provider`, `awaiting-profile`, `key-valid`, ...). `off` asks you to delete the two entries in the UI, verifies their absence read-only, then revokes the child key; it never writes to `config.sqlite`. Launch Claude Code through the profile with `ccr <profile-name-or-id> cli`.
 
 ## DeepSeek Harness
 

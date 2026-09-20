@@ -38,19 +38,15 @@
 
 .dashboard-rail-tab:not([aria-current="page"]):hover,
 .dashboard-rail-action:hover {
-    background-color: color-mix(
-        in oklab,
-        var(--polli-color-surface-opaque) 85%,
-        var(--polli-color-bg-active)
-    );
+    background-color: var(--polli-color-surface-menu);
 }
 
 .dashboard-rail-tab.dashboard-rail-external {
-    background-color: var(--polli-color-bg-subtle);
+    background-color: var(--polli-color-surface-menu);
 }
 
 .dashboard-rail-tab.dashboard-rail-external:hover {
-    background-color: var(--polli-color-bg-active);
+    background-color: var(--polli-color-surface-opaque);
 }
 
 /* Keep outbound links darker than the regular tabs, but off the dark desk. */

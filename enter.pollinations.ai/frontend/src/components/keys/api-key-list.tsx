@@ -386,10 +386,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </p>
                 {rotatedKey && (
                     <div className="flex items-center gap-2 rounded-md border border-divider bg-surface-opaque px-3 py-2 font-mono text-sm">
-                        <span className="min-w-0 flex-1 truncate">
-                            {rotatedKey.key}
-                        </span>
-                        <CopyButton value={rotatedKey.key} />
+                        <CopyButton
+                            value={rotatedKey.key}
+                            tooltip="Copy new key"
+                            tooltipClassName="inline-flex min-w-0 flex-1"
+                            aria-label="Copy rotated API key"
+                            className={(copied) =>
+                                [
+                                    "min-w-0 flex-1 truncate text-left font-mono text-sm cursor-pointer transition-all",
+                                    copied
+                                        ? "text-intent-success-text font-semibold"
+                                        : "text-theme-text-soft hover:text-theme-text-strong",
+                                ].join(" ")
+                            }
+                        >
+                            {(copied) =>
+                                copied ? "Copied!" : rotatedKey.key
+                            }
+                        </CopyButton>
                     </div>
                 )}
             </Dialog>

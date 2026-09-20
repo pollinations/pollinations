@@ -7,12 +7,6 @@
     gap: 0.25rem;
 }
 
-/* Inset outline keeps catalog card geometry unchanged. */
-.catalog-outline-card {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 1px var(--polli-color-divider);
-}
-
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);

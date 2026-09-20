@@ -188,7 +188,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const pricing = useModelPricingSelection(model);
 
     return (
-        <Surface className="catalog-outline-card">
+        <Surface className="transition-colors hover:bg-surface-opaque/90">
             <div className="flex items-center gap-2.5">
                 <ModelBrandIcon
                     model={model}

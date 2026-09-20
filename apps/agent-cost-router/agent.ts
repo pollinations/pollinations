@@ -20,7 +20,6 @@ type CatalogModel = {
     health?: {
         status?: string;
         success_rate?: number;
-        stale?: boolean;
     };
 };
 
@@ -31,7 +30,8 @@ type StatusRow = {
 };
 
 const FALLBACK_MODEL = "openai";
-const MIN_SUCCESS_RATE = 0.9;
+// health.success_rate is a 0-100 percentage, not a fraction.
+const MIN_SUCCESS_RATE = 90;
 const LIGHT_SCORE = 2;
 // A heavy prompt tops out around 3 (length cap) + 1.5 (code) + 1.5 (task
 // markers) — 3.5 keeps genuine design/prove work out of STANDARD.
@@ -92,8 +92,8 @@ async function pickModel(
     pollinations: AgentContext["pollinations"],
 ): Promise<{ model: string; reason: string }> {
     const [catalogRes, statusRes] = await Promise.all([
-        pollinations("/v1/models?status=all"),
-        pollinations("/v1/models/status?minutes=30").catch(() => undefined),
+        pollinations("/v1/models"),
+        pollinations("/models/status?minutes=30").catch(() => undefined),
     ]);
     if (!catalogRes.ok) {
         throw new Error(`Model catalog failed (${catalogRes.status})`);
@@ -129,7 +129,6 @@ async function pickModel(
         if (!(m.supported_endpoints ?? []).includes("/v1/responses")) continue;
         if (m.id.includes("router")) continue;
         const health = m.health ?? {};
-        if (health.stale) continue;
         if (health.status && health.status !== "healthy") continue;
         if (
             typeof health.success_rate === "number" &&
@@ -190,7 +189,7 @@ async function pickModel(
     const reason = [
         `${band} tier (input score ${score.toFixed(1)})`,
         `picked ${pick.id} at $${pick.costPerMillion.toFixed(2)}/1M tok`,
-        `health ${(success * 100).toFixed(1)}%`,
+        `health ${success.toFixed(1)}%`,
         `fresh p50 ${fmtLatency(pick.p50)}`,
     ].join(" · ");
 

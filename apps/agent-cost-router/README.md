@@ -6,7 +6,7 @@ Callable model: `SvirepyiBambr/cost-router`
 
 ## How it routes (no classifier call)
 
-1. Fetches the live catalog: `GET /v1/models?status=all` (pricing, capabilities, `health`) and `GET /v1/models/status?minutes=30` (fresh p50 latency for text events).
+1. Fetches the live catalog: `GET /v1/models` (pricing, capabilities, `health` — attached by default) and `GET /models/status?minutes=30` (fresh p50 latency for text events).
 2. Scores the input with a cheap heuristic — length pressure, fenced code blocks, complex-task markers (implement / design / prove / analyze / оптимизируй…), question count. No LLM classifier call, so routing adds no token cost.
 3. Maps the score to a band: `LIGHT` (< 2), `STANDARD` (< 4), `DEEP` (≥ 4). Each band is a price tercile of the healthy text models.
 4. Picks from the band by fresh p50 latency (models without traffic in the window lose to ones with it).

@@ -223,6 +223,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         community: model.community,
         health: model.health,
         agent: model.agent,
+        verified: model.verified,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),

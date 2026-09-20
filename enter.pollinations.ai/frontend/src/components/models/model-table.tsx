@@ -252,6 +252,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
+                            verified={Boolean(model.agent && model.verified)}
                         />
                         <BalanceAccessChip
                             access={balanceAccess}

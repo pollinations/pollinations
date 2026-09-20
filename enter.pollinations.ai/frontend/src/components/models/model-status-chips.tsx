@@ -10,6 +10,7 @@ type ModelStatusChipsProps = {
     showAlpha: boolean;
     alphaTooltip?: boolean;
     health?: ModelHealth;
+    verified?: boolean;
 };
 
 type BalanceAccessChipProps = {
@@ -22,8 +23,9 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showAlpha,
     alphaTooltip = true,
     health,
+    verified = false,
 }) => {
-    if (!showNew && !showAlpha && !health) return null;
+    if (!showNew && !showAlpha && !health && !verified) return null;
 
     const unknown = !health || health.status === "unknown";
     const healthy = !unknown && health.status === "healthy";
@@ -48,6 +50,19 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                         aria-hidden="true"
                         className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : healthy ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
                     />
+                </Tooltip>
+            )}
+            {verified && (
+                <Tooltip
+                    triggerAs="span"
+                    content="Official Pollinations agent"
+                    ariaLabel="Official Pollinations agent"
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="new" size="sm">
+                        Verified
+                    </Chip>
                 </Tooltip>
             )}
             {showNew && (

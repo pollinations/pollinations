@@ -75,6 +75,7 @@ export const ModelInfoSchema = z.object({
         .optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
+    verified: z.boolean().optional(),
     base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
@@ -186,6 +187,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
+    verified?: boolean;
 };
 
 function pricingInfoFromDefinition(
@@ -223,6 +225,7 @@ export function modelInfoFromDefinition(
         brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
+        verified: options.verified || undefined,
         per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:

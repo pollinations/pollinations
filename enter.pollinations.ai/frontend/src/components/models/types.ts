@@ -61,6 +61,7 @@ export type ModelPrice = {
     community?: boolean;
     health?: ModelHealth;
     agent?: boolean;
+    verified?: boolean;
     baseModel?: string;
     perUserRpm?: number | null;
     displayName?: string;

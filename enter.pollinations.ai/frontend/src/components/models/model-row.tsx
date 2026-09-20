@@ -430,6 +430,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
+                            verified={Boolean(model.agent && model.verified)}
                         />
                         <BalanceAccessChip
                             access={balanceAccess}

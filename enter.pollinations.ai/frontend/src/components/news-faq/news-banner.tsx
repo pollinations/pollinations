@@ -6,7 +6,7 @@ const HIGHLIGHTS_RAW_URL =
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
-const DYNAMIC_NEWS_COUNT = 24;
+const DYNAMIC_NEWS_COUNT = 20;
 
 interface Highlight {
     date?: string;
@@ -130,7 +130,7 @@ function parseHighlights(md: string): Highlight[] {
         });
 }
 
-function formatNewsDate(date: string): string {
+function formatNewsDate(date: string, includeYear = true): string {
     if (!date) return "";
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime())) return date;
@@ -138,7 +138,7 @@ function formatNewsDate(date: string): string {
         timeZone: "UTC",
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: includeYear ? "numeric" : undefined,
     });
 }
 
@@ -196,7 +196,7 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0) return null;
 
     return (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col">
             {highlights.map((item) => (
                 <DynamicNews key={`${item.date}-${item.title}`} item={item} />
             ))}
@@ -235,33 +235,45 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     </Surface>
 );
 
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <li className="flex min-w-0 items-center gap-3 py-1 text-sm">
-        {item.date && (
-            <time
-                dateTime={item.date}
-                className="w-24 shrink-0 text-xs tabular-nums text-theme-text-muted"
+const DynamicNews: FC<{ item: Highlight }> = ({ item }) => {
+    const description = item.description
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/`([^`]+)`/g, "$1");
+
+    return (
+        <li className="flex min-w-0 items-center gap-2 py-0.5 text-sm">
+            {item.date && (
+                <time
+                    dateTime={item.date}
+                    title={formatNewsDate(item.date)}
+                    className="w-12 shrink-0 text-xs tabular-nums text-theme-text-muted"
+                >
+                    {formatNewsDate(item.date, false)}
+                </time>
+            )}
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0">
+                    {item.emoji}
+                </span>
+            )}
+            <span
+                className="min-w-0 truncate"
+                title={`${item.title}${description ? ` — ${description}` : ""}`}
             >
-                {formatNewsDate(item.date)}
-            </time>
-        )}
-        {item.emoji && (
-            <span aria-hidden="true" className="shrink-0">
-                {item.emoji}
+                {item.href ? (
+                    <InlineLink href={item.href}>{item.title}</InlineLink>
+                ) : (
+                    <span className="font-medium text-theme-text-base">
+                        {item.title}
+                    </span>
+                )}
+                {description && (
+                    <span className="text-theme-text-muted">
+                        {" — "}
+                        {description}
+                    </span>
+                )}
             </span>
-        )}
-        {item.href ? (
-            <InlineLink
-                href={item.href}
-                title={item.title}
-                className="flex min-w-0 items-center"
-            >
-                <span className="truncate">{item.title}</span>
-            </InlineLink>
-        ) : (
-            <span className="truncate text-theme-text-base" title={item.title}>
-                {item.title}
-            </span>
-        )}
-    </li>
-);
+        </li>
+    );
+};

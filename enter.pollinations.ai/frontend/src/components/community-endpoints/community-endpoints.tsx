@@ -532,7 +532,7 @@ export function CommunityEndpoints({
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}
                 <Section
-                    title="My agents"
+                    title="Agents"
                     id="agents"
                     action={agentEndpoints.length > 0 && agentAction}
                 >
@@ -566,7 +566,7 @@ export function CommunityEndpoints({
                 </Section>
 
                 <Section
-                    title="My models"
+                    title="Models"
                     id="models"
                     action={modelEndpoints.length > 0 && modelAction}
                 >

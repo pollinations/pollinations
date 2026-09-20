@@ -549,17 +549,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 News &amp; FAQ
                             </NavItem>
                         ))}
-                    <div className="mb-3 w-full">
+                    <div className="flex w-full flex-col items-start gap-1">
                         <ExploreNav
                             active={activePage === "models"}
                             category={activeModelCategory}
                             onNavigate={onNavigate}
                         />
+                        <DashboardDocs />
+                        <DashboardPlayground />
                     </div>
                 </nav>
                 <div className="mt-auto flex w-full flex-col gap-1 pt-1">
-                    <DashboardDocs />
-                    <DashboardPlayground />
                     <BrandLinks links={brandLinks} />
                     <div
                         data-theme="accent"

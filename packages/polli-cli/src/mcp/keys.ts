@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { writeTextAtomic } from "../harnesses/fs.js";
 import { resolveHarnessKey } from "../harnesses/keys.js";
 
 /**
@@ -22,8 +23,8 @@ const loadKeyStore = (): Record<string, string> => {
 };
 
 const saveKeyStore = (store: Record<string, string>) => {
-    fs.mkdirSync(path.dirname(keyStorePath()), { recursive: true });
-    fs.writeFileSync(keyStorePath(), JSON.stringify(store, null, 2), "utf8");
+    // The store holds API keys — private dir, owner-only file (0o700/0o600).
+    writeTextAtomic(keyStorePath(), JSON.stringify(store, null, 2), 0o600);
 };
 
 /**

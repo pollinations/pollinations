@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import json5 from "json5";
+import { writeTextAtomic } from "../harnesses/fs.js";
 import { printInfo, printSuccess, printWarn } from "../lib/output.js";
 
 /**
@@ -157,6 +158,54 @@ export const withEnvVar = (
     return { lines, result: "kept" };
 };
 
+/**
+ * Catalog data and minted keys can reach `cmd.exe` on Windows (npm .cmd
+ * shims), so anything that may land on a command line is charset-checked
+ * before any process is spawned. The API never sends shell metacharacters —
+ * an input carrying one means a tampered or spoofed catalog, and we refuse
+ * it rather than pass it through.
+ */
+const SERVER_ID_RE = /^[a-z0-9][a-z0-9._-]*$/i;
+const API_KEY_RE = /^[A-Za-z0-9._-]+$/;
+const SHELL_UNSAFE = /[&|<>^%$"';`()\s!]/;
+
+export const assertSafeInstallInputs = (
+    server: McpServerRef,
+    apiKey?: string,
+): void => {
+    if (!SERVER_ID_RE.test(server.id)) {
+        throw new Error(
+            `Refusing to install: server id "${server.id}" is not a safe identifier.`,
+        );
+    }
+    if (SHELL_UNSAFE.test(server.name)) {
+        throw new Error(
+            `Refusing to install: server name contains forbidden characters.`,
+        );
+    }
+    let parsed: URL;
+    try {
+        parsed = new URL(server.url);
+    } catch {
+        throw new Error(`Refusing to install: server URL is not a valid URL.`);
+    }
+    if (parsed.protocol !== "https:") {
+        throw new Error(
+            `Refusing to install: server URL must be https (got ${parsed.protocol}).`,
+        );
+    }
+    if (SHELL_UNSAFE.test(server.url)) {
+        throw new Error(
+            `Refusing to install: server URL contains shell metacharacters.`,
+        );
+    }
+    if (apiKey !== undefined && !API_KEY_RE.test(apiKey)) {
+        throw new Error(
+            `Refusing to install: API key format is not recognized — not writing it to any client.`,
+        );
+    }
+};
+
 // ---------------------------------------------------------------------------
 // Adapters
 // ---------------------------------------------------------------------------
@@ -245,6 +294,16 @@ const runBinary = (
 ): { status: number | null; stderr: string } => {
     const isShim = process.platform === "win32" && /\.(cmd|bat)$/i.test(file);
     if (isShim) {
+        // Defense in depth: inputs are validated upstream
+        // (assertSafeInstallInputs), but refuse to hand anything carrying a
+        // cmd.exe metacharacter to a shell-parsed command line.
+        for (const arg of args) {
+            if (SHELL_UNSAFE.test(arg)) {
+                throw new Error(
+                    `Refusing to run: argument contains shell metacharacters.`,
+                );
+            }
+        }
         const cmdline = [file, ...args]
             .map((a) => (/\s/.test(a) ? `"${a}"` : a))
             .join(" ");
@@ -275,10 +334,11 @@ const writeEnvFileKey = (ctx: InstallContext) => {
         return;
     }
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(
+    // The env file holds the literal key — owner-only file.
+    writeTextAtomic(
         file,
         `${next.filter((l) => l.length > 0).join("\n")}\n`,
-        "utf8",
+        0o600,
     );
 };
 
@@ -554,7 +614,9 @@ const writeJsonConfig = (
         return { client: adapter.label, status: "unchanged" };
     }
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
+    // The JSON config embeds the bearer key — owner-only file, written via
+    // temp+rename so a crash never leaves a half-written config behind.
+    writeTextAtomic(file, `${JSON.stringify(doc, null, 2)}\n`, 0o600);
     printSuccess(
         `${adapter.label}: installed${existed ? "" : ` (created ${file})`}.`,
     );
@@ -565,6 +627,7 @@ export const installForClient = (
     adapter: JsonAdapter | CliAdapter,
     ctx: InstallContext,
 ): InstallOutcome => {
+    assertSafeInstallInputs(ctx.server, ctx.apiKey);
     const name = serverEntryName(ctx.server);
     if (adapter.kind === "json") return writeJsonConfig(adapter, ctx, name);
 
@@ -593,6 +656,7 @@ export const removeForClient = (
     adapter: JsonAdapter | CliAdapter,
     server: McpServerRef,
 ): RemoveOutcome => {
+    assertSafeInstallInputs(server);
     const name = serverEntryName(server);
     if (adapter.kind === "cli") {
         const binary = resolveBinary(adapter.binary);

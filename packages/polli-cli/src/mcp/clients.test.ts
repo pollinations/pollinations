@@ -1,10 +1,15 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
     ALL_CLIENTS,
     AUTH_ENV_VAR,
+    assertSafeInstallInputs,
     type CliAdapter,
     entryUrl,
     type InstallContext,
+    installForClient,
     type JsonAdapter,
     removeJsonServer,
     serverEntryName,
@@ -167,6 +172,95 @@ describe("withEnvVar", () => {
         expect(result).toBe("kept");
         expect(next).toEqual(lines);
     });
+});
+
+describe("assertSafeInstallInputs", () => {
+    const server = {
+        id: "computer",
+        url: "https://gen.pollinations.ai/mcp/computer",
+        name: "Computer",
+    };
+
+    it("accepts catalog-shaped input", () => {
+        expect(() =>
+            assertSafeInstallInputs(server, "sk_test_123"),
+        ).not.toThrow();
+    });
+
+    it("rejects shell metacharacters smuggled in the url", () => {
+        const payloads = [
+            "https://evil.example/x&calc",
+            "https://evil.example/x|calc",
+            "https://evil.example/x%PATH%",
+            'https://evil.example/x"calc"',
+            "https://evil.example/x calc",
+        ];
+        for (const url of payloads) {
+            expect(
+                () => assertSafeInstallInputs({ ...server, url }, "sk_k"),
+                url,
+            ).toThrow(/metacharacters|valid URL/);
+        }
+    });
+
+    it("rejects non-https and malformed urls", () => {
+        expect(() =>
+            assertSafeInstallInputs(
+                { ...server, url: "http://gen.pollinations.ai" },
+                "sk_k",
+            ),
+        ).toThrow(/https/);
+        expect(() =>
+            assertSafeInstallInputs({ ...server, url: "not a url" }, "sk_k"),
+        ).toThrow(/valid URL/);
+    });
+
+    it("rejects keys outside the recognized format", () => {
+        expect(() => assertSafeInstallInputs(server, "sk_$(whoami)")).toThrow(
+            /API key/,
+        );
+    });
+
+    it("rejects unsafe server ids", () => {
+        expect(() =>
+            assertSafeInstallInputs({ ...server, id: "../escape" }, "sk_k"),
+        ).toThrow(/identifier/);
+    });
+
+    it("validates the key only when one is given (remove path)", () => {
+        expect(() => assertSafeInstallInputs(server)).not.toThrow();
+    });
+});
+
+describe("install file permissions", () => {
+    it.runIf(process.platform !== "win32")(
+        "writes bearer-key configs owner-only (0o600)",
+        () => {
+            const dir = fs.mkdtempSync(
+                path.join(os.tmpdir(), "polli-mcp-test-"),
+            );
+            try {
+                const file = path.join(dir, "mcp.json");
+                const adapter: JsonAdapter = {
+                    kind: "json",
+                    id: "test",
+                    label: "Test",
+                    detect: () => true,
+                    root: "mcpServers",
+                    configPath: () => file,
+                    entry: (c) => ({
+                        url: c.server.url,
+                        headers: { Authorization: `Bearer ${c.apiKey}` },
+                    }),
+                };
+                const outcome = installForClient(adapter, ctx);
+                expect(outcome.status).toBe("installed");
+                expect(fs.statSync(file).mode & 0o777).toBe(0o600);
+            } finally {
+                fs.rmSync(dir, { recursive: true, force: true });
+            }
+        },
+    );
 });
 
 describe("json adapters", () => {

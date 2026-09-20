@@ -1037,6 +1037,7 @@ const IMAGE_BASE_SERVICES = {
         // Fal pricing verified 2026-09-20: $0.02 per output megapixel for
         // text-to-image; edits bill $0.11/3 per input and output megapixel.
         cost: {
+            promptImageTokens: 0, // text-to-image has no input images; edits bill them
             completionImageTokens: 0.02, // per output megapixel
         },
         ...defineCostVariants(

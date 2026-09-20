@@ -12,8 +12,8 @@ export function DashboardSignInTrigger({
         <>
             <Button
                 intent="brand"
-                size="lg"
-                className="polli:self-start polli:gap-3 polli:text-base"
+                size="md"
+                className="polli:gap-2"
                 aria-haspopup="dialog"
                 onClick={() => setOpen(true)}
             >

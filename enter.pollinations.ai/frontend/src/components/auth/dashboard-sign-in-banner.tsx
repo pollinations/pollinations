@@ -29,9 +29,9 @@ export function DashboardSignInBanner({
     return (
         <aside
             aria-label="Sign in to Pollinations.ai"
-            className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between"
+            className="flex w-full flex-wrap items-center gap-4"
         >
-            <Text size="sm" tone="muted">
+            <Text size="body" tone="muted">
                 {message}
             </Text>
             <div className="flex shrink-0">

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15243,
+  "title": "fix: use typesafe/jev-1.13 as the canonical model name",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15243",
+  "merged_at": "2026-09-20T23:40:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Names the public model `typesafe/jev-1.13`, matching the existing upstream version; preserves `jev` and `typesafe/jev` as aliases.\n- Updates the decisions default, Ask Jev client, source docs, and pricing snapshot key. Pricing and upstream routing stay the same.\n- Verifies existing API keys restricted to `typesafe/jev` can use the canonical name and both aliases.\n- Validation: 48 gateway tests, 9 Ask Jev tests, gateway typecheck, and Biome pass.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Jev got its full name",
+    "blurb": "Jev’s proper upstream name is now the one on the label: `typesafe/jev-1.13`. The old nicknames still answer when called, because migrations should not require interpretive dance.",
+    "summary": "The public Jev model is now canonically named `typesafe/jev-1.13`, matching its upstream version, while `jev` and `typesafe/jev` remain supported aliases across routing, pricing, docs, decisions, and Ask Jev.",
+    "impact": "Developers can use `typesafe/jev-1.13` in API requests—including with keys previously restricted to `typesafe/jev`—while existing requests using either alias continue to work with unchanged pricing and upstream routing.",
+    "keywords": [
+      "Jev",
+      "typesafe/jev-1.13",
+      "model aliases",
+      "text generation",
+      "API compatibility",
+      "Ask Jev"
+    ],
+    "visual_concept": "A cozy model-name garden where three plant labels—`typesafe/jev-1.13`, `typesafe/jev`, and `jev`—point to the same healthy code-flower. Polli, wearing tiny librarian glasses, carefully replaces the main label while a friendly CRT monitor robot confirms all three paths lead to the same bloom.",
+    "image_prompt": "A cozy pixel art garden scene where Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue wings, and tiny librarian glasses, updates the main label on a glowing code-flower to `typesafe/jev-1.13`; two smaller signs, `jev` and `typesafe/jev`, still point warmly to the same plant, while a cute CRT monitor robot watches beside a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-vines and tiny flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `CANONICAL`, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15243.jpg",
+    "prompt": "A cozy pixel art garden scene where Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue wings, and tiny librarian glasses, updates the main label on a glowing code-flower to `typesafe/jev-1.13`; two smaller signs, `jev` and `typesafe/jev`, still point warmly to the same plant, while a cute CRT monitor robot watches beside a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-vines and tiny flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `CANONICAL`, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-20T23:41:50.344434+00:00"
+}

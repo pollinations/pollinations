@@ -493,19 +493,17 @@ export const Models: FC = () => {
                           ? "MCP"
                           : "Models"
                 }
-                actionClassName="w-full sm:ml-auto sm:w-auto"
+                actionClassName="ml-auto"
                 action={
                     activePrimaryTab === "models" && (
-                        <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                            <InlineLink
-                                href="https://model-monitor.pollinations.ai"
-                                size="sm"
-                                className="inline-flex items-center gap-1.5 self-start sm:self-center"
-                            >
-                                <UsageIcon className="h-4 w-4" />
-                                Model health
-                            </InlineLink>
-                        </div>
+                        <InlineLink
+                            href="https://model-monitor.pollinations.ai"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                            <UsageIcon className="h-4 w-4" />
+                            Model health
+                        </InlineLink>
                     )
                 }
             >

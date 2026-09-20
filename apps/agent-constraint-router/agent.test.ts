@@ -111,6 +111,29 @@ test("routes a short urgent answer to the live-latency winner", async () => {
     assert.equal(result.bodyUsed, false);
 });
 
+test("normalizes an OpenWebUI-style text history to provider-safe input", async () => {
+    const { calls } = await run({
+        input: [
+            {
+                role: "system",
+                content: [{ type: "input_text", text: "Be concise." }],
+            },
+            {
+                role: "user",
+                content: [
+                    { type: "input_text", text: "Reply quickly: ready?" },
+                ],
+            },
+        ],
+        max_output_tokens: 16,
+    });
+    const forwarded = calls.find((call) => call.body)?.body;
+    assert.equal(
+        forwarded?.input,
+        "system: Be concise.\n\nuser: Reply quickly: ready?",
+    );
+});
+
 test("routes a strict JSON request to a structured-output model", async () => {
     const { calls } = await run({
         input: "Return a valid JSON object with a single ok field.",

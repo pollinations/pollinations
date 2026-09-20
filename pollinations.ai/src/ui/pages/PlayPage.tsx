@@ -6,11 +6,11 @@ import { useAuth } from "../../hooks/useAuth";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
-import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { findModelById } from "../components/play/model-selection";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
+import { InlineLink } from "../components/ui/inline-link";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
@@ -91,15 +91,9 @@ function PlayPage() {
                         <strong>{pageCopy.subtitleBold}</strong>
                         {pageCopy.subtitleSuffix}
                     </Body>
-                    <a
-                        href={LINKS.enterModels}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
-                    >
+                    <InlineLink href={LINKS.enterModels}>
                         {pageCopy.pricingLinkText}
-                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
-                    </a>
+                    </InlineLink>
                 </div>
 
                 <ModelSelector

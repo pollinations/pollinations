@@ -8,6 +8,7 @@ import { CopyIcon } from "../../assets/CopyIcon";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
 import { Button } from "../ui/button";
 import { Divider } from "../ui/divider";
+import { InlineLink } from "../ui/inline-link";
 import { Body, Heading, Label } from "../ui/typography";
 
 interface PlayGeneratorProps {
@@ -742,30 +743,22 @@ export function PlayGenerator({
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-2 mb-6">
-                <Button
+                <InlineLink
                     as="a"
                     href={LINKS.enterKeys}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="primary"
                     size="sm"
-                    className="bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
+                    className="inline-flex items-center gap-1.5"
                 >
                     {copy.getKeyButton}
-                    <ExternalLinkIcon className="w-3 h-3" />
-                </Button>
-                <Button
+                </InlineLink>
+                <InlineLink
                     as="a"
                     href={LINKS.enterApiDocs}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="secondary"
                     size="sm"
-                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                    className="inline-flex items-center gap-1.5"
                 >
                     {copy.fullApiDocsButton}
-                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
-                </Button>
+                </InlineLink>
                 <Button
                     type="button"
                     variant="secondary"
@@ -893,7 +886,7 @@ export function PlayGenerator({
                 href={LINKS.byopDocs}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-6 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
+                className="polli-link-surface relative pr-6 block p-6 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
             >
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">🔌</span>
@@ -905,10 +898,11 @@ export function PlayGenerator({
                             {copy.byopDescription}
                         </span>
                     </div>
-                    <span className="font-headline text-sm font-black text-dark shrink-0">
-                        &rarr;
-                    </span>
                 </div>
+                <ExternalLinkIcon
+                    className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
+                    aria-hidden="true"
+                />
             </a>
         </>
     );

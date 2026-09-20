@@ -8,6 +8,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
     plugins: [react(), tsconfigPaths(), svgr(), cloudflare()],
     resolve: {
+        dedupe: ["react", "react-dom"],
         alias: {
             "@shared": path.resolve(__dirname, "../shared"),
         },

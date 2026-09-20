@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { InlineLink } from "./ui/inline-link";
 
 export type QuestLeaderboardEntry = {
     githubLogin: string;
@@ -44,12 +46,9 @@ export function QuestLeaderboardContent({
                         {copy.questLeaderboardDescription}
                     </p>
                 </div>
-                <a
-                    href={QUESTS_PAGE_URL}
-                    className="w-fit bg-accent-strong px-2 py-1 font-headline text-xs font-black text-dark hover:underline"
-                >
+                <InlineLink href={QUESTS_PAGE_URL}>
                     {copy.questLeaderboardCta}
-                </a>
+                </InlineLink>
             </div>
 
             <dl
@@ -89,7 +88,7 @@ export function QuestLeaderboardContent({
                             href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-[1px] hover:translate-y-[1px]"
+                            className="polli-link-surface relative pr-6 flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-[1px] hover:translate-y-[1px]"
                         >
                             <span
                                 aria-hidden="true"
@@ -119,6 +118,10 @@ export function QuestLeaderboardContent({
                                 {entry.totalPollen}{" "}
                                 {copy.questLeaderboardRowPollenLabel}
                             </strong>
+                            <ExternalLinkIcon
+                                className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
+                                aria-hidden="true"
+                            />
                         </a>
                     </li>
                 ))}

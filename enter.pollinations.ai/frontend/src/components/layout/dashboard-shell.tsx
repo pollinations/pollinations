@@ -1,5 +1,6 @@
 import {
     AccountIcon,
+    AppIcon,
     BeakerIcon,
     BookIcon,
     BotIcon,
@@ -35,6 +36,7 @@ import type {
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
+import { DashboardSignInTrigger } from "../auth/dashboard-sign-in-trigger.tsx";
 import { OPEN_WEBUI_URL } from "../models/open-webui-link.tsx";
 import {
     DASHBOARD_NAV_ITEMS,
@@ -239,6 +241,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const rail = (
         <DashboardRail
             activePage={activePage}
+            activeSection={location.hash}
             accountActive={location.pathname === "/account"}
             activeModelCategory={activeModelCategory}
             showCreate={Boolean(onSignOut)}
@@ -248,6 +251,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             onSignOut={onSignOut}
             pollenBalances={pollenBalances}
             onNavigate={closeDrawer}
+            onSignIn={() => setIsDrawerOpen(false)}
         />
     );
 
@@ -333,6 +337,7 @@ function useDashboardShellBodyClass(): void {
 
 type DashboardRailProps = {
     activePage?: DashboardPage;
+    activeSection?: string;
     accountActive: boolean;
     activeModelCategory?: string;
     showCreate: boolean;
@@ -342,10 +347,12 @@ type DashboardRailProps = {
     onSignOut?: () => void;
     pollenBalances?: { paid: number; quest: number };
     onNavigate: () => void;
+    onSignIn: () => void;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
+    activeSection,
     accountActive,
     activeModelCategory,
     showCreate,
@@ -355,6 +362,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     onSignOut,
     pollenBalances,
     onNavigate,
+    onSignIn,
 }) => (
     <aside
         data-theme="neutral"
@@ -363,35 +371,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
     >
         <RailScrollArea>
             <div className="flex min-h-full flex-col pr-2 pb-4">
-                <nav className="flex flex-col items-start gap-1 pt-3">
-                    {navItems
-                        .filter((item) => item.id === "news-faq")
-                        .map((item) => (
-                            <NavItem
-                                key={item.id}
-                                as={Link}
-                                to={item.to}
-                                hash=""
-                                flushLeft
-                                data-theme="accent"
-                                active={activePage === item.id}
-                                onClick={onNavigate}
-                                aria-label="Pollinations info"
-                                className="dashboard-rail-tab"
-                            >
-                                <PollinationsLogoIcon className="h-4 w-4" />
-                                Info
-                            </NavItem>
-                        ))}
-                    <div className="mb-3 w-full">
-                        <ExploreNav
-                            active={activePage === "models"}
-                            category={activeModelCategory}
-                            onNavigate={onNavigate}
-                        />
-                    </div>
-                    {onSignOut && (
-                        <section aria-label="Account" className="w-full">
+                <nav className="flex flex-col items-start gap-1 pt-14 lg:pt-3">
+                    {onSignOut ? (
+                        <section aria-label="Account" className="mb-3 w-full">
                             <div className="flex items-center gap-2">
                                 <NavItem
                                     as={Link}
@@ -444,7 +426,40 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 </button>
                             </div>
                         </section>
+                    ) : (
+                        <section aria-label="Account" className="mb-3 w-full">
+                            <DashboardSignInTrigger
+                                variant="navigation"
+                                onOpen={onSignIn}
+                            />
+                        </section>
                     )}
+                    {navItems
+                        .filter((item) => item.id === "news-faq")
+                        .map((item) => (
+                            <NavItem
+                                key={item.id}
+                                as={Link}
+                                to={item.to}
+                                hash=""
+                                flushLeft
+                                data-theme="accent"
+                                active={activePage === item.id}
+                                onClick={onNavigate}
+                                aria-label="Pollinations info"
+                                className="dashboard-rail-tab"
+                            >
+                                <PollinationsLogoIcon className="h-4 w-4" />
+                                Info
+                            </NavItem>
+                        ))}
+                    <div className="mb-3 w-full">
+                        <ExploreNav
+                            active={activePage === "models"}
+                            category={activeModelCategory}
+                            onNavigate={onNavigate}
+                        />
+                    </div>
                     {navItems
                         .filter((item) => item.id === "pollen")
                         .map((pollen) => (
@@ -483,11 +498,30 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 flushLeft
                                 data-theme="accent"
                                 icon={KeyIcon}
-                                active={activePage === "keys"}
+                                active={
+                                    activePage === "keys" &&
+                                    activeSection !== "app-keys"
+                                }
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"
                             >
                                 My keys
+                            </NavItem>
+                            <NavItem
+                                as={Link}
+                                to="/keys"
+                                hash="app-keys"
+                                flushLeft
+                                data-theme="accent"
+                                icon={AppIcon}
+                                active={
+                                    activePage === "keys" &&
+                                    activeSection === "app-keys"
+                                }
+                                onClick={onNavigate}
+                                className="dashboard-rail-tab"
+                            >
+                                My apps
                             </NavItem>
                             <NavItem
                                 as={Link}
@@ -496,41 +530,58 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 flushLeft
                                 data-theme="accent"
                                 icon={BeakerIcon}
-                                active={activePage === "my-models"}
+                                active={
+                                    activePage === "my-models" &&
+                                    activeSection !== "agents"
+                                }
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"
                             >
                                 My models
                             </NavItem>
+                            <NavItem
+                                as={Link}
+                                to="/my-models"
+                                hash="agents"
+                                flushLeft
+                                data-theme="accent"
+                                icon={BotIcon}
+                                active={
+                                    activePage === "my-models" &&
+                                    activeSection === "agents"
+                                }
+                                onClick={onNavigate}
+                                className="dashboard-rail-tab"
+                            >
+                                My agents
+                            </NavItem>
                         </DashboardNavGroup>
                     )}
+                    {navItems
+                        .filter((candidate) => candidate.id === "activity")
+                        .map((activity) => (
+                            <NavItem
+                                key={activity.id}
+                                as={Link}
+                                to={activity.to}
+                                flushLeft
+                                data-theme="accent"
+                                icon={activity.icon}
+                                active={activePage === activity.id}
+                                onClick={onNavigate}
+                                className="dashboard-rail-tab"
+                            >
+                                {activity.label}
+                            </NavItem>
+                        ))}
                     {navItems
                         .filter((item) => item.id === "quests")
                         .map((item) => (
                             <DashboardNavGroup
                                 key={item.id}
-                                title="Activity and quests"
+                                title="Quests"
+                                className="mt-3"
                             >
-                                {navItems
-                                    .filter(
-                                        (candidate) =>
-                                            candidate.id === "activity",
-                                    )
-                                    .map((activity) => (
-                                        <NavItem
-                                            key={activity.id}
-                                            as={Link}
-                                            to={activity.to}
-                                            flushLeft
-                                            data-theme="accent"
-                                            icon={activity.icon}
-                                            active={activePage === activity.id}
-                                            onClick={onNavigate}
-                                            className="dashboard-rail-tab"
-                                        >
-                                            {activity.label}
-                                        </NavItem>
-                                    ))}
                                 <NavItem
                                     as={Link}
                                     to={item.to}
@@ -583,10 +634,11 @@ const RailScrollArea: FC<PropsWithChildren> = ({ children }) => (
 const DashboardNavGroup: FC<{
     title: string;
     children: ReactNode;
-}> = ({ title, children }) => (
+    className?: string;
+}> = ({ title, children, className }) => (
     <section
         aria-label={title}
-        className="flex w-full flex-col items-start gap-1"
+        className={cn("flex w-full flex-col items-start gap-1", className)}
     >
         {children}
     </section>

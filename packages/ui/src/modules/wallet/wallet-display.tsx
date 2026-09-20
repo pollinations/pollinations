@@ -46,6 +46,7 @@ export type WalletBalanceCardProps = {
     kind: WalletBalanceKind;
     label: ReactNode;
     value: ReactNode;
+    icon?: ReactNode;
     info?: ReactNode;
     footer?: ReactNode;
     className?: string;
@@ -55,6 +56,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
     kind,
     label,
     value,
+    icon,
     info,
     footer,
     className,
@@ -67,7 +69,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
         )}
     >
         <span className="polli:flex polli:items-center polli:gap-2">
-            <WalletKindIcon kind={kind} />
+            {icon ?? <WalletKindIcon kind={kind} />}
             <span
                 className={cn(
                     "polli:text-sm polli:font-bold polli:uppercase polli:tracking-wide",

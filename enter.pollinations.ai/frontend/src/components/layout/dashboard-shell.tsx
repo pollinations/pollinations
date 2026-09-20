@@ -586,13 +586,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 active={activePage === item.id}
                                 onClick={onNavigate}
                                 aria-label="News and FAQ"
-                                className="dashboard-rail-tab self-start"
+                                className="dashboard-rail-tab mt-4 self-start"
                             >
                                 <PollinationsLogoIcon className="h-4 w-4" />
                                 News &amp; FAQ
                             </NavItem>
                         ))}
-                    <div className="mt-3 mb-3 w-full">
+                    <div className="mb-3 w-full">
                         <ExploreNav
                             active={activePage === "models"}
                             category={activeModelCategory}

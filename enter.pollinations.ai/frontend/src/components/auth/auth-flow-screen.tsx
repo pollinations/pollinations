@@ -11,7 +11,7 @@ import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 export const footnotes = {
     dashboard: (
         <>
-            Manage your account on the{" "}
+            Manage your Pollinations account on the{" "}
             <InlineLink href="/">dashboard</InlineLink>.
         </>
     ),

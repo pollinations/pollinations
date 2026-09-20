@@ -450,7 +450,7 @@ export function Authorize() {
         }
     }
 
-    // The card reads as one sentence: "{title} · {who} · to access your account. {step}"
+    // The card reads as one sentence: "{title} · {who} · to access your Pollinations account. {step}"
     const title = isDeviceMode ? "Allow your device" : "Allow this app";
     const subject = isDeviceMode ? (
         <Surface>
@@ -469,7 +469,7 @@ export function Authorize() {
             redirectHostname={redirectHostname}
         />
     );
-    const access = "to access your account.";
+    const access = "to access your Pollinations account.";
 
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";

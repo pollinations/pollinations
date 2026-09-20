@@ -327,8 +327,8 @@ function AccountPage() {
                 <Surface className="p-6">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                         <Text tone="muted">
-                            Permanently close your account and revoke all
-                            access.
+                            Permanently close your Pollinations account and
+                            revoke all access.
                         </Text>
                         <Button
                             type="button"

@@ -271,8 +271,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
-                            your account. Keep these keys private. For a browser
-                            app, create an app key and use Pollinations Connect.
+                            your Pollinations account. Keep these keys private.
+                            For a browser app, create an app key and use
+                            Pollinations Connect.
                         </span>
                     </p>
                 </Section>

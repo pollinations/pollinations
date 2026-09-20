@@ -291,8 +291,8 @@ export function ModulesPage() {
                         <AppUserMenu />
                         {!isLoggedIn ? (
                             <span className="text-sm font-medium text-intent-danger-text">
-                                Authorize the app to load your account and
-                                per-key access.
+                                Authorize the app to load your Pollinations
+                                account and per-key access.
                             </span>
                         ) : null}
                     </div>

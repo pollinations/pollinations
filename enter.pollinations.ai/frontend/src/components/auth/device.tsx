@@ -95,7 +95,7 @@ export function Device({ prefilledCode }: DeviceProps) {
         verifyAndRedirect(code);
     }
 
-    const access = "to access your account.";
+    const access = "to access your Pollinations account.";
 
     if (isPending) return <AuthModalLoading title="Allow your device" />;
 

@@ -9,6 +9,11 @@
     text-underline-offset: 2px;
     transition: color 150ms;
 }
+/* Decorations do not propagate through inline-flex or truncated text boxes. */
+.polli-link :where(span, strong, em, b, i, code) {
+    text-decoration-line: underline;
+    text-underline-offset: inherit;
+}
 .polli-link[data-size="footer"] { font-size: 13px; }
 .polli-link[data-size="sm"] { font-size: 14px; }
 .polli-link:hover {

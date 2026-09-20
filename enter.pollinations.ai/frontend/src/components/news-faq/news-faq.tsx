@@ -16,10 +16,11 @@ export const NewsFaq: FC = () => (
             title="News"
             action={
                 <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">
-                    <span className="inline-flex items-center gap-1.5">
-                        <GitHubIcon className="h-4 w-4 shrink-0" />
-                        More on GitHub
-                    </span>
+                    <GitHubIcon
+                        aria-hidden="true"
+                        className="mr-1.5 inline-block h-4 w-4 align-text-bottom"
+                    />
+                    More on GitHub
                 </InlineLink>
             }
         >

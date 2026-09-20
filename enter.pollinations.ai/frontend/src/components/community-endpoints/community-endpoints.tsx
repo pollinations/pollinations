@@ -433,8 +433,9 @@ export function CommunityEndpoints({
             <div className="flex flex-col gap-6">
                 {canPublish && (
                     <Section title="Publisher info">
-                        <form
-                            className="flex flex-col gap-4"
+                        <Surface
+                            as="form"
+                            className="flex flex-col gap-4 p-6"
                             onSubmit={(event) =>
                                 void handleProviderSubmit(event)
                             }
@@ -516,7 +517,7 @@ export function CommunityEndpoints({
                                     </Button>
                                 </div>
                             )}
-                        </form>
+                        </Surface>
                     </Section>
                 )}
                 {error && <Alert intent="danger">{error}</Alert>}

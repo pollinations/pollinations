@@ -1,5 +1,5 @@
 import { Field, InfoTip, InlineLink, Textarea } from "@pollinations/ui";
-import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
+import { AuthAccessItem } from "@pollinations/ui/auth";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { config } from "../../config.ts";
 import { AgentFormRow } from "./agent-form-row.tsx";
@@ -21,39 +21,37 @@ export function PromptAgentFields({
     onChange,
 }: PromptAgentFieldsProps) {
     return (
-        <AuthInfoCard>
-            <div className="space-y-3">
-                <AgentFormRow
-                    label="Base model"
-                    help="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
-                >
-                    <BaseModelInput
-                        value={form.baseModel}
+        <div className="space-y-3">
+            <AgentFormRow
+                label="Base model"
+                help="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
+            >
+                <BaseModelInput
+                    value={form.baseModel}
+                    disabled={disabled}
+                    onChange={(value) => onChange("baseModel", value)}
+                />
+            </AgentFormRow>
+            <AgentFormRow
+                label="System prompt"
+                help="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
+            >
+                <Field.Textarea asChild>
+                    <Textarea
+                        name="prompt-agent-system-prompt"
+                        value={form.systemPrompt}
+                        placeholder="You are a helpful assistant that…"
+                        rows={1}
+                        style={{ minHeight: "2.625rem" }}
+                        maxLength={8000}
                         disabled={disabled}
-                        onChange={(value) => onChange("baseModel", value)}
+                        onChange={(e) =>
+                            onChange("systemPrompt", e.target.value)
+                        }
                     />
-                </AgentFormRow>
-                <AgentFormRow
-                    label="System prompt"
-                    help="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
-                >
-                    <Field.Textarea asChild>
-                        <Textarea
-                            name="prompt-agent-system-prompt"
-                            value={form.systemPrompt}
-                            placeholder="You are a helpful assistant that…"
-                            rows={1}
-                            style={{ minHeight: "2.625rem" }}
-                            maxLength={8000}
-                            disabled={disabled}
-                            onChange={(e) =>
-                                onChange("systemPrompt", e.target.value)
-                            }
-                        />
-                    </Field.Textarea>
-                </AgentFormRow>
-            </div>
-        </AuthInfoCard>
+                </Field.Textarea>
+            </AgentFormRow>
+        </div>
     );
 }
 
@@ -63,7 +61,7 @@ export function PromptAgentTools({
     onChange,
 }: PromptAgentFieldsProps) {
     return (
-        <AuthInfoCard title={null}>
+        <div className="space-y-3">
             <div className="flex items-center">
                 <p className="font-body text-sm font-semibold leading-5 text-theme-text-strong">
                     Tools
@@ -110,6 +108,6 @@ export function PromptAgentTools({
                     </AuthAccessItem>
                 ))}
             </ul>
-        </AuthInfoCard>
+        </div>
     );
 }

@@ -1,5 +1,7 @@
 import {
     Alert,
+    BeakerIcon,
+    BotIcon,
     Button,
     CardIcon,
     CheckIcon,
@@ -24,6 +26,7 @@ import type { ReactNode } from "react";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
+import { ResourceCardHeader } from "../resource-card-header.tsx";
 import {
     type CommunityEndpoint,
     type ManagedAgent,
@@ -64,68 +67,66 @@ export function CommunityEndpointCard({
                 endpoint.hidden ? "opacity-60" : ""
             }`}
         >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
-                            {endpoint.title}
-                        </h3>
-                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
-                            {isPublic ? (
-                                <GlobeIcon className="h-3 w-3" />
-                            ) : (
-                                <LockIcon className="h-3 w-3" />
-                            )}
-                            {VISIBILITY_LABELS[endpoint.visibility]}
-                        </Chip>
-                        {isAgent && (
-                            <Chip intent="news" size="sm">
-                                Agent
-                            </Chip>
+            <ResourceCardHeader
+                icon={
+                    isAgent ? (
+                        <BotIcon className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                        <BeakerIcon className="h-4 w-4" aria-hidden="true" />
+                    )
+                }
+                title={endpoint.title}
+                description={endpoint.description}
+                badges={
+                    <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                        {isPublic ? (
+                            <GlobeIcon className="h-3 w-3" />
+                        ) : (
+                            <LockIcon className="h-3 w-3" />
                         )}
-                    </div>
-                    {endpoint.description && (
-                        <p className="mt-1 text-sm text-theme-text-muted">
-                            {endpoint.description}
-                        </p>
-                    )}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                        type="button"
-                        size="sm"
-                        intent={endpoint.hidden ? "info" : "danger"}
-                        disabled={isToggling}
-                        onClick={onToggle}
-                    >
-                        {isToggling
-                            ? "Saving…"
-                            : endpoint.hidden
-                              ? "Relist"
-                              : "Hide"}
-                    </Button>
-                    {onEdit && (
-                        <IconButton
-                            intent="info"
-                            title={isAgent ? "Edit agent" : "Edit model"}
-                            tooltip={isAgent ? "Edit agent" : "Edit model"}
-                            tooltipAlign="center"
-                            onClick={onEdit}
+                        {VISIBILITY_LABELS[endpoint.visibility]}
+                    </Chip>
+                }
+                actions={
+                    <>
+                        <Button
+                            type="button"
+                            size="sm"
+                            intent={endpoint.hidden ? "info" : "danger"}
+                            disabled={isToggling}
+                            onClick={onToggle}
                         >
-                            <PencilIcon className="h-4 w-4" />
+                            {isToggling
+                                ? "Saving…"
+                                : endpoint.hidden
+                                  ? "Relist"
+                                  : "Hide"}
+                        </Button>
+                        {onEdit && (
+                            <IconButton
+                                intent="info"
+                                title={isAgent ? "Edit agent" : "Edit model"}
+                                tooltip={isAgent ? "Edit agent" : "Edit model"}
+                                tooltipAlign="center"
+                                tooltipClampToViewport={false}
+                                onClick={onEdit}
+                            >
+                                <PencilIcon className="h-4 w-4" />
+                            </IconButton>
+                        )}
+                        <IconButton
+                            intent="danger"
+                            title={isAgent ? "Delete agent" : "Delete model"}
+                            tooltip={isAgent ? "Delete agent" : "Delete model"}
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
+                            onClick={onDelete}
+                        >
+                            <XIcon className="h-4 w-4" />
                         </IconButton>
-                    )}
-                    <IconButton
-                        intent="danger"
-                        title={isAgent ? "Delete agent" : "Delete model"}
-                        tooltip={isAgent ? "Delete agent" : "Delete model"}
-                        tooltipAlign="center"
-                        onClick={onDelete}
-                    >
-                        <XIcon className="h-4 w-4" />
-                    </IconButton>
-                </div>
-            </div>
+                    </>
+                }
+            />
 
             {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
@@ -143,7 +144,7 @@ export function CommunityEndpointCard({
 
             <PendingChangeNotice endpoint={endpoint} />
 
-            <div className="mt-4 grid gap-2">
+            <div className="mt-3 grid gap-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"

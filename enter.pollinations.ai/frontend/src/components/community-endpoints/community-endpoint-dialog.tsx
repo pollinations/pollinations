@@ -14,6 +14,7 @@ import {
     EditableCombobox,
     Field,
     FieldStack,
+    InlineLink,
     Input,
     ScrollArea,
     TabButton,
@@ -25,6 +26,7 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { genDocsUrl } from "../../config.ts";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelCapabilityFields } from "./model-capability-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
@@ -422,9 +424,23 @@ export function CommunityEndpointDialog({
                                   : "Create model"
                         }
                         description={
-                            isEndpointAgent
-                                ? "Update its listing and connection."
-                                : "Connect your endpoint to Pollinations."
+                            <>
+                                {isEndpointAgent
+                                    ? "Update its listing and connection."
+                                    : "Connect your endpoint to Pollinations."}
+                                {!isEdit && (
+                                    <>
+                                        {" "}
+                                        <InlineLink
+                                            href={genDocsUrl(
+                                                "#tag/publish-a-model",
+                                            )}
+                                        >
+                                            Read the guide
+                                        </InlineLink>
+                                    </>
+                                )}
+                            </>
                         }
                     />
                     {error && <Alert intent="danger">{error}</Alert>}

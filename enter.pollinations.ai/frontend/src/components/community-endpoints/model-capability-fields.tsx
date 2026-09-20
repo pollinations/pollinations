@@ -142,7 +142,6 @@ export function ModelCapabilityFields({
             {canAdvertise && (
                 <ModelFormRow
                     label="Context length"
-                    optional
                     help="Context window in tokens. Leave blank to advertise none."
                 >
                     <Field.Input asChild>
@@ -154,6 +153,7 @@ export function ModelCapabilityFields({
                             step="1"
                             value={form.contextLength}
                             placeholder="Not advertised"
+                            hideNumberSteppers
                             onChange={(event) =>
                                 onChange("contextLength", event.target.value)
                             }

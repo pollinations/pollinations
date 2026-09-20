@@ -16,8 +16,9 @@ import type { ModelStats } from "./use-model-stats.ts";
 
 type ApiPricing = ModelInfo["pricing"];
 
-export type ApiModelInfo = Partial<ModelInfo> & {
+export type ApiModelInfo = Omit<Partial<ModelInfo>, "health"> & {
     id?: string;
+    /** Client rollup from `/models/status` (camelCase), not the OpenAPI snake_case shape. */
     health?: ModelHealth;
 };
 

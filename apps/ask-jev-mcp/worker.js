@@ -1,12 +1,11 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
-import { z } from "zod";
 import {
     buildUrl,
     createMCPResponse,
     createTextContent,
     fetchJsonWithAuth,
 } from "../../packages/mcp/src/utils/coreUtils.js";
-import { jevInputSchema } from "./jev.js";
+import { CreateDecisionRequestSchema } from "../../shared/schemas/decisions.ts";
 
 function buildServer() {
     const server = new McpServer(
@@ -22,7 +21,7 @@ function buildServer() {
                 "Choice criteria map options to descriptions; optional noul criteria.true/false define yes/no. " +
                 "Read score legends; handle counting, arithmetic, and date comparisons in code. " +
                 "Question and answer shapes: https://docs.typesafe.ai/api",
-            inputSchema: z.object(jevInputSchema),
+            inputSchema: CreateDecisionRequestSchema.omit({ model: true }),
         },
         async ({ state, questions }, context) => {
             const { answers } = await fetchJsonWithAuth(

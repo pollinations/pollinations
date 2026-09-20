@@ -1,6 +1,10 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import {
+    CreateDecisionRequestSchema,
+    DEFAULT_DECISION_MODEL,
+} from "@shared/schemas/decisions.ts";
+import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
     CreateResponseRequestSchema,
@@ -19,10 +23,6 @@ import {
 import { resolveModel } from "@/middleware/model.ts";
 import { textExecutionCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import {
-    CreateDecisionRequestSchema,
-    DEFAULT_DECISION_MODEL,
-} from "@/schemas/decisions.ts";
 import { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import {
     GenerateImageRequestQueryParamsSchema,

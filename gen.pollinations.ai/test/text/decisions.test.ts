@@ -3,13 +3,16 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest } from "@shared/test/fixtures/index.ts";
+import {
+    test as baseTest,
+    createTestApiKey,
+} from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { afterEach, expect } from "vitest";
+import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
@@ -38,7 +41,10 @@ const questions = {
     },
 };
 
-type UpstreamState = { requests: Record<string, unknown>[] };
+type UpstreamState = {
+    requests: Record<string, unknown>[];
+    response?: Response;
+};
 
 function createDecisionsMock() {
     const state: UpstreamState = { requests: [] };
@@ -46,6 +52,7 @@ function createDecisionsMock() {
         state,
         reset: () => {
             state.requests = [];
+            state.response = undefined;
         },
         handlerMap: {
             [DECISIONS_HOST]: async (request: Request) => {
@@ -54,10 +61,15 @@ function createDecisionsMock() {
                     authorization: request.headers.get("authorization"),
                     body: await request.json(),
                 });
+                if (state.response) return state.response.clone();
                 return Response.json({
                     model: "typesafe/jev-1.13-20260917",
                     answers,
-                    usage: { input_tokens: 452, output_tokens: 73 },
+                    usage: {
+                        input_tokens: 452,
+                        output_tokens: 73,
+                        cost: 0.000019,
+                    },
                     id: "gen-dec-upstream",
                     provider: "TypeSafe",
                 });
@@ -81,6 +93,16 @@ const test = baseTest.extend<{
         await fetchMock.enable("tinybird", "decisions");
         await use({ tinybird, decisions });
     },
+});
+
+beforeEach(async () => {
+    await env.KV.put(
+        "model-stats-v3",
+        JSON.stringify({
+            value: { data: [{ model: "typesafe/jev", avg_cost_usd: 0.001 }] },
+            ttl: 3600,
+        }),
+    );
 });
 
 afterEach(async () => {
@@ -253,4 +275,52 @@ test("jev is not offered on the plain text route", async ({
     expect(await response.text()).toContain("/alpha/decisions");
     await wait();
     expect(mocks.decisions.state.requests).toHaveLength(0);
+});
+
+for (const { code, tierBalance, pollenBudget } of [
+    { code: "INSUFFICIENT_BALANCE", tierBalance: 0, pollenBudget: 1 },
+    { code: "KEY_BUDGET_EXHAUSTED", tierBalance: 100, pollenBudget: 0 },
+]) {
+    test(`returns JSON HTTP 402 for ${code}`, async ({ mocks }) => {
+        const { key } = await createTestApiKey({
+            user: { tierBalance, packBalance: 0 },
+            pollenBudget,
+        });
+        const { response, wait } = await post("/alpha/decisions", key, {
+            state: "Balance failure",
+            questions,
+        });
+        expect(response.status).toBe(402);
+        expect(response.headers.get("content-type")).toContain(
+            "application/json",
+        );
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code },
+        });
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(0);
+        expect(
+            mocks.tinybird.state.events.some((event) => event.isBilledUsage),
+        ).toBe(false);
+    });
+}
+
+test("returns an upstream HTTP 502 when Jev omits usage", async ({
+    apiKey,
+    mocks,
+}) => {
+    mocks.decisions.state.response = Response.json({ answers });
+    const { response, wait } = await post("/alpha/decisions", apiKey, {
+        state: "Missing provider usage",
+        questions,
+    });
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { code: "BAD_GATEWAY", details: { name: "UpstreamError" } },
+    });
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(
+        mocks.tinybird.state.events.some((event) => event.isBilledUsage),
+    ).toBe(false);
 });

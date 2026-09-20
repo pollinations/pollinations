@@ -53,6 +53,11 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
+    CreateDecisionRequestSchema,
+    CreateDecisionResponseSchema,
+    DEFAULT_DECISION_MODEL,
+} from "@shared/schemas/decisions.ts";
+import {
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
     CreateImageEditRequestSchema,
@@ -71,11 +76,6 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import {
-    CreateDecisionRequestSchema,
-    CreateDecisionResponseSchema,
-    DEFAULT_DECISION_MODEL,
-} from "@/schemas/decisions.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -235,7 +235,7 @@ const decisionHandlers = factory.createHandlers(
         defaultModel: DEFAULT_DECISION_MODEL,
         supportedEndpoint: "/alpha/decisions",
     }),
-    every(textBalanceNotice, track("generate.text")),
+    track("generate.text"),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,

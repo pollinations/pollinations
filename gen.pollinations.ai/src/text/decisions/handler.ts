@@ -1,11 +1,12 @@
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
-import type { Context } from "hono";
-import type { Env } from "@/env.ts";
 import type {
     CreateDecisionRequest,
     CreateDecisionResponse,
-} from "@/schemas/decisions.ts";
+} from "@shared/schemas/decisions.ts";
+import type { Context } from "hono";
+import type { Env } from "@/env.ts";
 import { syncTextEnvironment } from "../environment.js";
+import { throwTextError } from "../errors.js";
 import { requestDecision } from "../systemOneClient.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 
@@ -28,7 +29,7 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
     const { result, requestUrl } = await requestDecision(
         { state, questions },
         options,
-    );
+    ).catch(throwTextError);
     c.set("upstreamRequestUrl", requestUrl);
 
     const body: CreateDecisionResponse = {

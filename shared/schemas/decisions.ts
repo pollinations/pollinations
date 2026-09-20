@@ -73,7 +73,7 @@ const NoulQuestionSchema = z.object({
         }),
 });
 
-export const DecisionQuestionSchema = z
+const DecisionQuestionSchema = z
     .discriminatedUnion("type", [
         ChoiceQuestionSchema,
         ScoreQuestionSchema,
@@ -141,11 +141,10 @@ const NoulAnswerSchema = z.object({
 });
 
 /**
- * Answers are described for documentation but parsed permissively: the shape
- * belongs to the provider, and a field added upstream must not fail a request
- * the caller already paid for.
+ * Response schemas document the API. The adapter forwards native answers
+ * without parsing them, preserving any extra fields added by the provider.
  */
-export const DecisionAnswerSchema = z
+const DecisionAnswerSchema = z
     .union([ChoiceAnswerSchema, ScoreAnswerSchema, NoulAnswerSchema])
     .meta({
         description:

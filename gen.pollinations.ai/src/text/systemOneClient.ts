@@ -12,13 +12,13 @@ const DOCS_URL = "https://docs.typesafe.ai/api";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
-export type SystemOneResponse = {
+type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
     usage: { input_tokens: number; output_tokens: number };
 };
 
-export type SystemOneRequest = {
+type SystemOneRequest = {
     state: unknown;
     questions: Record<string, unknown>;
 };

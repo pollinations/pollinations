@@ -34,14 +34,12 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
     pendingRemovalIndex,
     onEdit,
 }) => {
-    if (tokens.length === 0 && !draft) {
-        return (
-            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
-        );
-    }
-
     return (
         <>
+            <SearchIcon
+                aria-hidden="true"
+                className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted"
+            />
             {tokens.map((token) => {
                 const label = MODEL_FILTER_LABELS[token.filter.key];
                 const value = formatFilterValue(token.filter);

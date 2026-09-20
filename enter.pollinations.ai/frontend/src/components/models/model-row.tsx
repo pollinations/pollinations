@@ -277,8 +277,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <div
                 className={
                     brandLogoPath || CommunityModelIcon
-                        ? "flex-1 min-w-0 self-stretch py-3"
-                        : "flex-1 min-w-0 self-stretch py-3 pl-[25px]"
+                        ? "flex-1 min-w-0 self-stretch"
+                        : "flex-1 min-w-0 self-stretch pl-[25px]"
                 }
             >
                 <div className="flex h-full min-w-0 flex-col justify-center gap-1.5">
@@ -439,7 +439,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden py-3 pl-3 pr-1">
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

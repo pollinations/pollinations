@@ -1,6 +1,5 @@
 import {
     Alert,
-    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -8,19 +7,15 @@ import {
     Dropdown,
     DropdownItem,
     EditableCombobox,
-    ExternalLinkButton,
-    GitHubIcon,
+    ExternalLinkIcon,
     InlineLink,
-    McpIcon,
     Section,
     SparklesIcon,
     TabButton,
     TokensIcon,
-    TrendUpIcon,
     UsageIcon,
     WarningIcon,
 } from "@pollinations/ui";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -97,16 +92,6 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
     agent: AGENT_QUERY_FILTER_KEYS,
     mcp: MCP_QUERY_FILTER_KEYS,
 };
-
-const PRIMARY_TABS: Array<{
-    value: PrimaryTab;
-    label: string;
-    Icon: FC<{ className?: string }>;
-}> = [
-    { value: "models", label: "Models", Icon: BeakerIcon },
-    { value: "agent", label: "Agents", Icon: BotIcon },
-    { value: "mcp", label: "MCP", Icon: McpIcon },
-];
 
 const TabCount: FC<{ value: number }> = ({ value }) => (
     <span
@@ -330,11 +315,6 @@ export const Models: FC = () => {
         () => categorizeModels(modelModels),
         [modelModels],
     );
-    const primaryTabCounts: Record<PrimaryTab, number> = {
-        models: modelSections.all.length,
-        agent: agentModels.length,
-        mcp: MCP_SERVERS.length,
-    };
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -567,15 +547,6 @@ export const Models: FC = () => {
         });
     };
 
-    const setActivePrimaryTab = (primaryTab: PrimaryTab) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                category: primaryTab === "models" ? undefined : primaryTab,
-            }),
-        });
-    };
-
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
             search: (previous) => ({
@@ -594,93 +565,65 @@ export const Models: FC = () => {
     return (
         <div className="flex flex-col gap-6">
             <Section
-                title="Models"
-                framed
+                title={
+                    activePrimaryTab === "agent"
+                        ? "Agents"
+                        : activePrimaryTab === "mcp"
+                          ? "MCP"
+                          : "Models"
+                }
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
-                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                        <ExternalLinkButton
-                            href="https://model-monitor.pollinations.ai"
-                            className="self-start sm:self-center"
-                        >
-                            <span className="inline-flex items-center gap-1.5">
-                                <TrendUpIcon className="h-4 w-4" />
-                                Model Health
-                            </span>
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            href="https://github.com/pollinations/pollinations/issues/5321"
-                            className="self-start sm:self-center"
-                        >
-                            <span className="inline-flex items-center gap-1.5">
-                                <GitHubIcon className="h-4 w-4" />
-                                Vote for next model
-                            </span>
-                        </ExternalLinkButton>
-                    </div>
+                    activePrimaryTab === "models" && (
+                        <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                            <Button
+                                as="a"
+                                href="https://model-monitor.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                intent="neutral"
+                                size="sm"
+                                className="self-start sm:self-center"
+                            >
+                                <UsageIcon className="mr-1.5 h-4 w-4" />
+                                Model health
+                                <ExternalLinkIcon className="ml-1.5 h-4 w-4 opacity-60" />
+                            </Button>
+                        </div>
+                    )
                 }
             >
-                <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex w-full flex-col gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                            {PRIMARY_TABS.map((tab) => {
-                                const TabIcon = tab.Icon;
-                                return (
+                <div className="flex flex-col items-start gap-3">
+                    {activePrimaryTab === "models" && (
+                        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                                {MODEL_SECTION_ORDER.filter(
+                                    (section) =>
+                                        section === "all" ||
+                                        modelSections[section].length > 0,
+                                ).map((section) => (
                                     <TabButton
-                                        key={tab.value}
-                                        active={activePrimaryTab === tab.value}
-                                        onClick={() =>
-                                            setActivePrimaryTab(tab.value)
-                                        }
-                                        size="lg"
-                                        ariaLabel={`${tab.label}, ${primaryTabCounts[tab.value]} ${tab.value === "mcp" ? "servers" : tab.value === "agent" ? "agents" : "models"}`}
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
                                     >
                                         <span className="inline-flex items-center gap-1.5">
-                                            <TabIcon className="h-4 w-4" />
-                                            {tab.label}
+                                            {sectionLabels[section]}
                                             <TabCount
                                                 value={
-                                                    primaryTabCounts[tab.value]
+                                                    modelSections[section]
+                                                        .length
                                                 }
                                             />
                                         </span>
                                     </TabButton>
-                                );
-                            })}
-                        </div>
-                        {activePrimaryTab === "models" && (
-                            <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {MODEL_SECTION_ORDER.filter(
-                                        (section) =>
-                                            section === "all" ||
-                                            modelSections[section].length > 0,
-                                    ).map((section) => (
-                                        <TabButton
-                                            key={section}
-                                            active={activeTab === section}
-                                            onClick={() =>
-                                                setActiveTab(section)
-                                            }
-                                            ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
-                                        >
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {sectionLabels[section]}
-                                                <TabCount
-                                                    value={
-                                                        modelSections[section]
-                                                            .length
-                                                    }
-                                                />
-                                            </span>
-                                        </TabButton>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0 max-w-md flex-1 basis-[240px]">
+                        <div className="catalog-search min-w-0 flex-1 basis-[240px]">
                             <div>
                                 <EditableCombobox
                                     value={visibleSearch}
@@ -789,7 +732,7 @@ export const Models: FC = () => {
                         explicitModelSource !== "official")) && (
                     <aside
                         aria-label="Community privacy notice"
-                        className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
+                        className="flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
                     >
                         <WarningIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-warning-text" />
                         <span className="min-w-0">
@@ -820,9 +763,7 @@ export const Models: FC = () => {
                     </aside>
                 )}
                 {catalogError && activeTab !== "mcp" && (
-                    <Alert intent="danger" className="mb-4">
-                        {catalogError}
-                    </Alert>
+                    <Alert intent="danger">{catalogError}</Alert>
                 )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
@@ -852,7 +793,7 @@ export const Models: FC = () => {
                     </div>
                 )}
                 {activeTab !== "mcp" && (
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
                         {activeTab === "agent" && (
                             <p className="flex items-start gap-1.5">
                                 <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />

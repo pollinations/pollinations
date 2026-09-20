@@ -1,4 +1,4 @@
-import { Tooltip } from "@pollinations/ui";
+import { Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     CAPABILITY_ICON,
@@ -147,7 +147,7 @@ const TabContent: FC<{
 
     return (
         <>
-            <div className={isDesktop ? "flex flex-col gap-2 pb-1" : "pb-1"}>
+            <div className="flex flex-col gap-3">
                 {visibleModels.map((model) => (
                     <Row key={model.name} model={model} />
                 ))}
@@ -188,8 +188,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const pricing = useModelPricingSelection(model);
 
     return (
-        <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
-            <div className="flex items-center gap-2.5 p-4">
+        <Surface className="transition-colors hover:bg-surface-opaque/90">
+            <div className="flex items-center gap-2.5">
                 <ModelBrandIcon
                     model={model}
                     className="h-8 w-8 shrink-0 opacity-55"
@@ -261,7 +261,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="flex gap-2.5 px-4 pb-4 pt-0">
+            <div className="mt-3 flex gap-2.5">
                 {hasLeadingIcon && (
                     <>
                         <span
@@ -286,7 +286,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     />
                 </div>
             </div>
-        </div>
+        </Surface>
     );
 };
 

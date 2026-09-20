@@ -624,7 +624,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
     ).toBeCloseTo(0.0000001 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
-    ).toBeCloseTo(0.000000015 * 1.055, 12);
+    ).toBeCloseTo(0.000000015, 12);
     expect(
         getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
     ).toBeCloseTo(0.00000007 * 1.055, 12);

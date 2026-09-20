@@ -13,7 +13,13 @@ import {
 } from "@x402/core/http";
 import { validatePaymentPayload } from "@x402/core/schemas";
 import type { PaymentPayload } from "@x402/core/types";
-import { isUptoPermit2Payload } from "@x402/evm";
+import {
+    type ExactEvmPayloadV2,
+    isEIP3009Payload,
+    isPermit2Payload,
+    isUptoPermit2Payload,
+} from "@x402/evm";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { UptoEvmScheme } from "@x402/evm/upto/server";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context, MiddlewareHandler } from "hono";
@@ -24,6 +30,7 @@ import type { Env } from "@/env.ts";
 import { createX402Event } from "./accounting.ts";
 import type { PaymentResponseSnapshot } from "./coordinator.ts";
 import {
+    paymentSchemeForModel,
     priceActualUsage,
     quoteX402Request,
     usdPrice,
@@ -44,60 +51,69 @@ const FINAL_RESPONSE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 // invocation could still be generating or settling.
 const OPERATION_LEASE_MS = 16 * 60 * 1000;
 
+function malformedPaymentIdentity() {
+    return new HTTPException(400, {
+        message: "Malformed x402 payment identity",
+    });
+}
+
 function paymentFromHeader(value: string): PaymentPayload {
     let payment: PaymentPayload;
     try {
         payment = decodePaymentSignatureHeader(value);
         validatePaymentPayload(payment);
     } catch {
-        throw new HTTPException(400, {
-            message: "Malformed x402 Permit2 authorization identity",
-        });
+        throw malformedPaymentIdentity();
     }
     return payment;
 }
 
 function parsePaymentIdentity(payment: PaymentPayload) {
     const payload = payment.payload;
-    if (
-        payment.x402Version !== 2 ||
-        payment.accepted.scheme !== "upto" ||
-        !isUptoPermit2Payload(payload)
-    ) {
-        throw new HTTPException(400, {
-            message: "Malformed x402 Permit2 authorization identity",
-        });
+    if (payment.x402Version !== 2) {
+        throw malformedPaymentIdentity();
     }
 
     const { network } = payment.accepted;
-    const { from, nonce, spender } = payload.permit2Authorization;
+    let from: string;
+    let counterparty: string;
+    let nonce: string;
+    if (payment.accepted.scheme === "upto" && isUptoPermit2Payload(payload)) {
+        ({ from, nonce, spender: counterparty } = payload.permit2Authorization);
+    } else if (payment.accepted.scheme === "exact") {
+        const exact = payload as ExactEvmPayloadV2;
+        if (isPermit2Payload(exact)) {
+            ({
+                from,
+                nonce,
+                spender: counterparty,
+            } = exact.permit2Authorization);
+        } else if (isEIP3009Payload(exact)) {
+            ({ from, nonce, to: counterparty } = exact.authorization);
+        } else {
+            throw malformedPaymentIdentity();
+        }
+    } else {
+        throw malformedPaymentIdentity();
+    }
     if (
         !/^[^:]+:[^:]+$/.test(network) ||
         !/^0x[0-9a-fA-F]{40}$/.test(from) ||
-        !/^0x[0-9a-fA-F]{40}$/.test(spender)
+        !/^0x[0-9a-fA-F]{40}$/.test(counterparty)
     ) {
-        throw new HTTPException(400, {
-            message: "Malformed x402 Permit2 authorization identity",
-        });
+        throw malformedPaymentIdentity();
     }
 
     let canonicalNonce: bigint;
     try {
         canonicalNonce = BigInt(nonce);
     } catch {
-        throw new HTTPException(400, {
-            message: "Malformed x402 Permit2 authorization identity",
-        });
+        throw malformedPaymentIdentity();
     }
     if (canonicalNonce < 0n || canonicalNonce >= 1n << 256n) {
-        throw new HTTPException(400, {
-            message: "Malformed x402 Permit2 authorization identity",
-        });
+        throw malformedPaymentIdentity();
     }
-    return {
-        permit2Authorization: payload.permit2Authorization,
-        canonicalNonce,
-    };
+    return { from, counterparty, canonicalNonce };
 }
 
 async function sha256(value: string): Promise<string> {
@@ -116,14 +132,13 @@ async function paymentDetails(value: string) {
 }
 
 async function paymentDetailsFromPayload(payment: PaymentPayload) {
-    const { permit2Authorization, canonicalNonce } =
+    const { from, counterparty, canonicalNonce } =
         parsePaymentIdentity(payment);
     const { network } = payment.accepted;
-    const { from, spender } = permit2Authorization;
     const payer = `${network.toLowerCase()}|${from.toLowerCase()}`;
     return {
         payer,
-        identity: `${payer}|${spender.toLowerCase()}|${canonicalNonce}`,
+        identity: `${payer}|${counterparty.toLowerCase()}|${canonicalNonce}`,
         proof: await sha256(stableStringify(payment)),
     };
 }
@@ -321,7 +336,7 @@ export const runX402Operation = createMiddleware<Env>(async (c, next) => {
     const authorization =
         c.req.header("payment-signature") || c.req.header("x-payment");
     if (!authorization) {
-        return c.text("Malformed x402 Permit2 authorization identity", 400);
+        return c.text("Malformed x402 payment identity", 400);
     }
     const payment = await paymentDetails(authorization);
     const { fingerprint, stub } = await operationContext(c, payment.payer);
@@ -411,12 +426,17 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
     const pay = createMiddleware<Env>(async (c, next) => {
         const request = describeX402Request(c);
         const quote = await quoteX402Request(c.env, request);
+        const scheme = await paymentSchemeForModel(
+            c.env,
+            quote.model,
+            quote.maximum,
+        );
         return paymentMiddleware(
             {
                 [`${request.method} *`]: {
                     accepts: [
                         {
-                            scheme: "upto",
+                            scheme,
                             network,
                             payTo,
                             maxTimeoutSeconds: OPERATION_LEASE_MS / 1000,
@@ -424,7 +444,9 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
                         },
                     ],
                     description:
-                        "Pollinations generation, charged for actual usage up to the authorized ceiling.",
+                        scheme === "exact"
+                            ? "Pollinations generation at the advertised fixed price."
+                            : "Pollinations generation, charged for actual usage up to the authorized ceiling.",
                     extensions: {
                         [WEFT_REQUEST_EXTENSION_KEY]: () =>
                             requestInfo(request.body),
@@ -439,7 +461,10 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
                 name: "Pollinations Generation",
                 type: "api",
                 tags: ["ai", "inference"],
-                schemes: [{ network, server: new UptoEvmScheme() }],
+                schemes: [
+                    { network, server: new ExactEvmScheme() },
+                    { network, server: new UptoEvmScheme() },
+                ],
                 resumeVerifiedPayment: async (_context, candidate) =>
                     resumeX402Operation(
                         env,
@@ -461,14 +486,21 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
                         c.res,
                         c.var.x402Execution?.onStream,
                     );
-                c.header(
-                    SETTLEMENT_OVERRIDES_HEADER,
-                    JSON.stringify({
-                        amount: usdPrice(
-                            await priceActualUsage(c.env, quote, c.res.headers),
-                        ),
-                    }),
+                const actual = await priceActualUsage(
+                    c.env,
+                    quote,
+                    c.res.headers,
                 );
+                if (scheme === "upto") {
+                    c.header(
+                        SETTLEMENT_OVERRIDES_HEADER,
+                        JSON.stringify({ amount: usdPrice(actual) }),
+                    );
+                } else if (actual !== quote.maximum) {
+                    throw new Error(
+                        "Historically fixed x402 price changed during generation",
+                    );
+                }
             });
             if (response) c.res = response;
         });

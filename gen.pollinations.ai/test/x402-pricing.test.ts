@@ -374,6 +374,72 @@ test.each([
     expect(usd(offer.accepts[0])).toBeGreaterThanOrEqual(0.001);
 });
 
+test("offers exact payment only when stable history matches the current price", async () => {
+    await env.KV.put(
+        "model-stats-v3",
+        JSON.stringify({
+            value: {
+                data: [
+                    {
+                        model: "black-forest-labs/flux.1-schnell",
+                        avg_cost_usd: 0.002,
+                        min_price_usd: 0.002,
+                        max_price_usd: 0.002,
+                        price_sample_count: 100,
+                    },
+                ],
+            },
+            ttl: 3600,
+        }),
+        { expirationTtl: 3600 },
+    );
+    try {
+        const response = await generationApp.request(
+            "/image/a%20blue%20flower?model=flux",
+            {
+                headers: { "idempotency-key": crypto.randomUUID() },
+            },
+        );
+        expect(response.status).toBe(402);
+        const offer = JSON.parse(
+            atob(response.headers.get("payment-required") as string),
+        );
+        expect(offer.accepts[0].scheme).toBe("exact");
+        expect(usd(offer.accepts[0])).toBe(0.002);
+
+        await env.KV.put(
+            "model-stats-v3",
+            JSON.stringify({
+                value: {
+                    data: [
+                        {
+                            model: "black-forest-labs/flux.1-schnell",
+                            avg_cost_usd: 0.003,
+                            min_price_usd: 0.003,
+                            max_price_usd: 0.003,
+                            price_sample_count: 100,
+                        },
+                    ],
+                },
+                ttl: 3600,
+            }),
+            { expirationTtl: 3600 },
+        );
+        const stale = await generationApp.request(
+            "/image/a%20blue%20flower?model=flux",
+            {
+                headers: { "idempotency-key": crypto.randomUUID() },
+            },
+        );
+        const staleOffer = JSON.parse(
+            atob(stale.headers.get("payment-required") as string),
+        );
+        expect(staleOffer.accepts[0].scheme).toBe("upto");
+    } finally {
+        await env.KV.delete("model-stats-v3");
+    }
+});
+
 test.each([
     ["GET", "/image/flower?model=veo", undefined],
     ["GET", "/image/flower?model=gptimage", undefined],
@@ -581,6 +647,33 @@ function paymentPayload(
             },
         },
         extensions,
+    };
+}
+
+function exactPaymentPayload(nonce: `0x${string}`): PaymentPayload {
+    return {
+        x402Version: 2,
+        accepted: {
+            scheme: "exact",
+            network: "eip155:84532",
+            asset: "0x0000000000000000000000000000000000000001",
+            amount: "2000",
+            payTo: PAY_TO,
+            maxTimeoutSeconds: 60,
+            extra: {},
+        },
+        payload: {
+            signature: "0x1234",
+            authorization: {
+                from: "0x0000000000000000000000000000000000000002",
+                to: PAY_TO,
+                value: "2000",
+                validAfter: "0",
+                validBefore: "9999999999",
+                nonce,
+            },
+        },
+        extensions: {},
     };
 }
 
@@ -1082,6 +1175,22 @@ test("accepts hexadecimal Permit2 nonces for durable payment identity", async ()
 
     expect(response.status).toBe(200);
     expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
+});
+
+test("accepts exact EIP-3009 payments for durable operation identity", async () => {
+    const replayEnv = {
+        ...x402Env,
+        GENERATION_COORDINATOR: env.GENERATION_COORDINATOR,
+    } as unknown as CloudflareBindings;
+
+    await expect(
+        resumeX402Operation(
+            replayEnv,
+            crypto.randomUUID(),
+            request(),
+            paymentCandidate(exactPaymentPayload("0x2a")),
+        ),
+    ).resolves.toBeUndefined();
 });
 
 test("same operation and payment runs protected work once", async () => {

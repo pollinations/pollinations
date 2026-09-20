@@ -1,3 +1,4 @@
+import { getLogger } from "@logtape/logtape";
 import {
     calculatePriceForModelDefinition,
     type Usage,
@@ -7,6 +8,10 @@ import {
     USAGE_MISSING_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import {
+    getFixedHistoricalPrice,
+    getModelStats,
+} from "@shared/utils/model-stats.ts";
 import { HTTPException } from "hono/http-exception";
 import { getGenerationModelRegistry } from "../model-registry.ts";
 import { quoteGenerationRequest } from "../utils/request-pricing.ts";
@@ -25,6 +30,8 @@ export type X402Quote = {
     maximum: number;
     usage: Usage;
 };
+
+export type X402Scheme = "exact" | "upto";
 
 function normalizedUsd(amount: number): number {
     if (!Number.isFinite(amount) || amount < 0)
@@ -71,6 +78,19 @@ export async function quoteX402Request(
         });
     }
     return { ...quote, model: entry.id, maximum: normalizedUsd(quote.maximum) };
+}
+
+export async function paymentSchemeForModel(
+    env: CloudflareBindings,
+    model: string,
+    currentPrice: number,
+): Promise<X402Scheme> {
+    const entry = await modelEntry(env, model);
+    const stats = await getModelStats(env.KV, getLogger(["x402"]));
+    return getFixedHistoricalPrice(stats, entry.id, entry.aliases) ===
+        currentPrice
+        ? "exact"
+        : "upto";
 }
 
 function parseUsage(headers: Headers, quote: X402Quote): Usage {

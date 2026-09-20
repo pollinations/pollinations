@@ -161,11 +161,16 @@ export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 const footerButtonDefaults = { appearance: "block" as const };
 
 /** The scrollable content between a dialog's header and actions. */
-export function DialogBody({ className, style, ...props }: ScrollAreaProps) {
+export function DialogBody({
+    className,
+    style,
+    scrollbar = "native",
+    ...props
+}: ScrollAreaProps) {
     return (
         <ScrollArea
             {...props}
-            scrollbar="native"
+            scrollbar={scrollbar}
             style={{ scrollbarGutter: "stable both-edges", ...style }}
             className={cn(
                 "polli:min-h-0 polli:flex-1 polli:space-y-4 polli:overscroll-contain polli:px-6 polli:py-4",

@@ -4,12 +4,11 @@ import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import {
     Dialog,
-    DialogFooter,
+    DialogBody,
     type DialogProps,
 } from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { CheckIcon } from "../../primitives/icons/index.tsx";
-import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
 
@@ -111,9 +110,13 @@ export function AuthFlowLayout({
             dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
             size={size}
         >
-            <ScrollArea className="polli:flex polli:min-h-0 polli:flex-1 polli:flex-col polli:overscroll-contain">
+            <DialogBody
+                actions={actions}
+                footnote={<AuthModalFootnote>{footnote}</AuthModalFootnote>}
+                bodyClassName="polli:space-y-0 polli:p-0"
+            >
                 <AuthModalHeader>{headerAction}</AuthModalHeader>
-                <div className="polli:grow polli:space-y-4 polli:px-6 polli:py-4">
+                <div className="polli:space-y-4 polli:px-6 polli:py-4">
                     {title && (
                         <div className="polli:space-y-3">
                             <Heading as="h1" size="section" id={headingId}>
@@ -132,17 +135,7 @@ export function AuthFlowLayout({
                     )}
                     {children}
                 </div>
-                <div className="polli-auth-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
-                    {actions && (
-                        <DialogFooter className="polli:pointer-events-auto polli:bg-transparent">
-                            {actions}
-                        </DialogFooter>
-                    )}
-                    <div className="polli:pointer-events-auto">
-                        <AuthModalFootnote>{footnote}</AuthModalFootnote>
-                    </div>
-                </div>
-            </ScrollArea>
+            </DialogBody>
         </AuthModal>
     );
 }

@@ -44,7 +44,11 @@
     background-color: var(--polli-color-scrollbar-thumb);
 }
 
-.polli-auth-floating-controls::before {
+.polli-dialog-surface-app {
+    --polli-dialog-surface: var(--polli-color-app-bg);
+}
+
+.polli-dialog-floating-controls::before {
     content: "";
     position: absolute;
     inset: -2rem 0 0;
@@ -52,7 +56,7 @@
     background: linear-gradient(
         to bottom,
         transparent,
-        var(--polli-color-bg-pale) 40%
+        var(--polli-dialog-surface, var(--polli-color-bg-pale)) 40%
     );
 }
 

@@ -6,7 +6,6 @@ import {
     CopyButton,
     CopyField,
     DialogBody,
-    DialogFooter,
     DialogHeader,
     FieldStack,
     InfoTip,
@@ -138,128 +137,133 @@ export function KeyDialogContent({
             </Button>
         );
 
-    return (
+    const actions = (
         <>
-            <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
-                <DialogBody>
-                    {header && <div className="-mx-6 -mt-4">{header}</div>}
-                    <DialogHeader
-                        inBody
-                        title={title}
-                        description={
-                            createdKey !== undefined ? (
-                                description
-                            ) : (
-                                <>
-                                    {description}{" "}
-                                    <InlineLink
-                                        href={genDocsUrl(
-                                            publishable
-                                                ? "#tag/connect-user-wallets"
-                                                : "#tag/authentication",
-                                        )}
-                                    >
-                                        Read the guide
-                                    </InlineLink>
-                                </>
-                            )
-                        }
-                    >
-                        {existingKey && (
-                            <div className="mt-3">
-                                <KeyChip
-                                    prefix={existingKey.prefix}
-                                    value={existingKey.value}
-                                    label="Copy app key"
-                                />
-                            </div>
-                        )}
-                    </DialogHeader>
-                    {error && <ErrorBanner>{error}</ErrorBanner>}
-                    {createdKey !== undefined ? (
-                        <AuthInfoCard>
-                            <FieldStack
-                                label={
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <KeyTypeIcon
-                                            aria-hidden="true"
-                                            className="h-4 w-4"
-                                        />
-                                        {app ? "App key" : "Secret key"}
-                                    </span>
-                                }
-                                helper={
-                                    !app
-                                        ? "Keep this key in your backend. Don’t share it or include it in public code."
-                                        : undefined
-                                }
-                            >
-                                <CopyField
-                                    value={createdKey}
-                                    label={
-                                        app ? "Copy app key" : "Copy secret key"
-                                    }
-                                />
-                            </FieldStack>
-                        </AuthInfoCard>
-                    ) : showFields ? (
-                        <div className="space-y-4">
-                            <AuthInfoCard>
-                                <ul className="space-y-3 text-sm">
-                                    <KeyNameField
-                                        app={app}
-                                        value={name}
-                                        onChange={onNameChange}
-                                        disabled={isSubmitting}
-                                    />
-                                    {publishable && (
-                                        <AuthAccessItem
-                                            checked={earningsEnabled}
-                                            onChange={onEarningsEnabledChange}
-                                            disabled={isSubmitting}
-                                            ariaLabel="Earn 20% of the Pollen users spend in your app"
-                                            info={
-                                                <InfoTip
-                                                    text="When enabled, requests through your app cost users more than the base API rate. You receive 20% of what they pay as Pollen in your balance. Your own spending does not earn rewards."
-                                                    label="App earnings information"
-                                                />
-                                            }
-                                        >
-                                            Earn 20% of the Pollen users spend
-                                            in your app
-                                        </AuthAccessItem>
-                                    )}
-                                </ul>
-                            </AuthInfoCard>
-                            {publishable ? (
-                                <PublishableKeySettings
-                                    redirectUris={redirectUris}
-                                    onRedirectUrisChange={onRedirectUrisChange}
-                                    disabled={isSubmitting}
-                                />
-                            ) : (
-                                <KeyPermissionsInputs
-                                    value={permissions}
-                                    disabled={isSubmitting}
-                                />
-                            )}
-                        </div>
-                    ) : null}
-                </DialogBody>
-                <DialogFooter className="polli:bg-transparent">
-                    <Button
-                        icon={<XIcon />}
-                        type="button"
-                        intent="neutral"
-                        onClick={onClose}
-                        disabled={isSubmitting}
-                    >
-                        {createdKey !== undefined ? "Close" : "Cancel"}
-                    </Button>
-                    {submitAction}
-                </DialogFooter>
-            </form>
-            {footnote && <AuthModalFootnote>{footnote}</AuthModalFootnote>}
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                onClick={onClose}
+                disabled={isSubmitting}
+            >
+                {createdKey !== undefined ? "Close" : "Cancel"}
+            </Button>
+            {submitAction}
         </>
+    );
+
+    return (
+        <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
+            <DialogBody
+                actions={actions}
+                footnote={
+                    footnote && (
+                        <AuthModalFootnote>{footnote}</AuthModalFootnote>
+                    )
+                }
+            >
+                {header && <div className="-mx-6 -mt-4">{header}</div>}
+                <DialogHeader
+                    inBody
+                    title={title}
+                    description={
+                        createdKey !== undefined ? (
+                            description
+                        ) : (
+                            <>
+                                {description}{" "}
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        publishable
+                                            ? "#tag/connect-user-wallets"
+                                            : "#tag/authentication",
+                                    )}
+                                >
+                                    Read the guide
+                                </InlineLink>
+                            </>
+                        )
+                    }
+                >
+                    {existingKey && (
+                        <div className="mt-3">
+                            <KeyChip
+                                prefix={existingKey.prefix}
+                                value={existingKey.value}
+                                label="Copy app key"
+                            />
+                        </div>
+                    )}
+                </DialogHeader>
+                {error && <ErrorBanner>{error}</ErrorBanner>}
+                {createdKey !== undefined ? (
+                    <AuthInfoCard>
+                        <FieldStack
+                            label={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <KeyTypeIcon
+                                        aria-hidden="true"
+                                        className="h-4 w-4"
+                                    />
+                                    {app ? "App key" : "Secret key"}
+                                </span>
+                            }
+                            helper={
+                                !app
+                                    ? "Keep this key in your backend. Don’t share it or include it in public code."
+                                    : undefined
+                            }
+                        >
+                            <CopyField
+                                value={createdKey}
+                                label={app ? "Copy app key" : "Copy secret key"}
+                            />
+                        </FieldStack>
+                    </AuthInfoCard>
+                ) : showFields ? (
+                    <div className="space-y-4">
+                        <AuthInfoCard>
+                            <ul className="space-y-3 text-sm">
+                                <KeyNameField
+                                    app={app}
+                                    value={name}
+                                    onChange={onNameChange}
+                                    disabled={isSubmitting}
+                                />
+                                {publishable && (
+                                    <AuthAccessItem
+                                        checked={earningsEnabled}
+                                        onChange={onEarningsEnabledChange}
+                                        disabled={isSubmitting}
+                                        ariaLabel="Earn 20% of the Pollen users spend in your app"
+                                        info={
+                                            <InfoTip
+                                                text="When enabled, requests through your app cost users more than the base API rate. You receive 20% of what they pay as Pollen in your balance. Your own spending does not earn rewards."
+                                                label="App earnings information"
+                                            />
+                                        }
+                                    >
+                                        Earn 20% of the Pollen users spend in
+                                        your app
+                                    </AuthAccessItem>
+                                )}
+                            </ul>
+                        </AuthInfoCard>
+                        {publishable ? (
+                            <PublishableKeySettings
+                                redirectUris={redirectUris}
+                                onRedirectUrisChange={onRedirectUrisChange}
+                                disabled={isSubmitting}
+                            />
+                        ) : (
+                            <KeyPermissionsInputs
+                                value={permissions}
+                                disabled={isSubmitting}
+                            />
+                        )}
+                    </div>
+                ) : null}
+            </DialogBody>
+        </form>
     );
 }

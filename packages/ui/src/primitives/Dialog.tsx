@@ -160,16 +160,52 @@ export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
 const footerButtonDefaults = { appearance: "block" as const };
 
-/** The scrollable content between a dialog's header and actions. */
-export function DialogBody({ className, ...props }: ScrollAreaProps) {
+export type DialogBodyProps = ScrollAreaProps & {
+    actions?: ReactNode;
+    footnote?: ReactNode;
+    bodyClassName?: string;
+};
+
+/** Full-height scroll area with floating actions and an optional bottom link. */
+export function DialogBody({
+    children,
+    actions,
+    footnote,
+    bodyClassName,
+    className,
+    ...props
+}: DialogBodyProps) {
     return (
         <ScrollArea
             {...props}
             className={cn(
-                "polli:min-h-0 polli:flex-1 polli:space-y-4 polli:overscroll-contain polli:px-6 polli:py-4",
+                "polli:flex polli:min-h-0 polli:flex-1 polli:flex-col polli:overscroll-contain",
                 className,
             )}
-        />
+        >
+            <div
+                className={cn(
+                    "polli:grow polli:space-y-4 polli:px-6 polli:py-4",
+                    bodyClassName,
+                )}
+            >
+                {children}
+            </div>
+            {(actions || footnote) && (
+                <div className="polli-dialog-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                    {actions && (
+                        <DialogFooter className="polli:pointer-events-auto">
+                            {actions}
+                        </DialogFooter>
+                    )}
+                    {footnote && (
+                        <div className="polli:pointer-events-auto">
+                            {footnote}
+                        </div>
+                    )}
+                </div>
+            )}
+        </ScrollArea>
     );
 }
 
@@ -181,7 +217,7 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
                 className,
             )}
             {...props}

@@ -6,7 +6,6 @@ import {
     CheckIcon,
     ChevronIcon,
     DialogBody,
-    DialogFooter,
     DialogHeader,
     Dropdown,
     DropdownItem,
@@ -399,6 +398,34 @@ export function CommunityEndpointDialog({
         hasValidPerUserRpm &&
         saveRequirementMet;
 
+    const actions = (
+        <>
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                className="disabled:opacity-50"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+            >
+                Cancel
+            </Button>
+            <Button
+                icon={<BeakerIcon />}
+                type="submit"
+                intent="commit"
+                className="disabled:opacity-50"
+                disabled={!canSubmit}
+            >
+                {isSubmitting
+                    ? "Saving…"
+                    : isEdit
+                      ? "Save changes"
+                      : "Create model"}
+            </Button>
+        </>
+    );
+
     return (
         <ResourceDialog
             open={open}
@@ -413,7 +440,7 @@ export function CommunityEndpointDialog({
                 autoComplete="off"
                 data-form-type="other"
             >
-                <DialogBody>
+                <DialogBody actions={actions}>
                     <DialogHeader
                         inBody
                         title={
@@ -971,31 +998,6 @@ export function CommunityEndpointDialog({
                         </div>
                     )}
                 </DialogBody>
-                <DialogFooter className="polli:bg-transparent">
-                    <Button
-                        icon={<XIcon />}
-                        type="button"
-                        intent="neutral"
-                        className="disabled:opacity-50"
-                        onClick={() => onOpenChange(false)}
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        icon={<BeakerIcon />}
-                        type="submit"
-                        intent="commit"
-                        className="disabled:opacity-50"
-                        disabled={!canSubmit}
-                    >
-                        {isSubmitting
-                            ? "Saving…"
-                            : isEdit
-                              ? "Save changes"
-                              : "Create model"}
-                    </Button>
-                </DialogFooter>
             </form>
         </ResourceDialog>
     );

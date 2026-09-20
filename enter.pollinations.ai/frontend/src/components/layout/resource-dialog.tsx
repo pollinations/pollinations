@@ -8,7 +8,7 @@ export function ResourceDialog(
         <Dialog
             {...props}
             positionerClassName="polli:p-4"
-            contentClassName="my-auto h-auto max-h-[calc(100dvh-2rem)] polli:overflow-hidden polli:rounded-2xl polli:bg-app-bg"
+            contentClassName="my-auto h-auto max-h-[calc(100dvh-2rem)] polli:overflow-hidden polli:rounded-2xl polli:bg-app-bg polli-dialog-surface-app"
         />
     );
 }

@@ -5,7 +5,6 @@ import {
     ButtonGroup,
     CheckIcon,
     DialogBody,
-    DialogFooter,
     DialogHeader,
     InlineLink,
     Surface,
@@ -110,6 +109,27 @@ export function AgentDialog({
         hasRuntimeConfiguration;
     const submitLabel = agent ? "Save changes" : "Create agent";
 
+    const actions = (
+        <>
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                onClick={() => onOpenChange(false)}
+            >
+                Cancel
+            </Button>
+            <Button
+                icon={<BotIcon />}
+                type="submit"
+                intent="commit"
+                disabled={!canSubmit}
+            >
+                {isSubmitting ? "Saving…" : submitLabel}
+            </Button>
+        </>
+    );
+
     return (
         <ResourceDialog
             open={open}
@@ -123,7 +143,7 @@ export function AgentDialog({
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <DialogBody>
+                <DialogBody actions={actions}>
                     <DialogHeader
                         inBody
                         title={agent ? "Edit agent" : "Create agent"}
@@ -283,24 +303,6 @@ export function AgentDialog({
                         </Surface>
                     </div>
                 </DialogBody>
-                <DialogFooter className="polli:bg-transparent">
-                    <Button
-                        icon={<XIcon />}
-                        type="button"
-                        intent="neutral"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        icon={<BotIcon />}
-                        type="submit"
-                        intent="commit"
-                        disabled={!canSubmit}
-                    >
-                        {isSubmitting ? "Saving…" : submitLabel}
-                    </Button>
-                </DialogFooter>
             </form>
         </ResourceDialog>
     );

@@ -124,6 +124,7 @@ export {
 export {
     Dialog,
     DialogBody,
+    type DialogBodyProps,
     DialogDescription,
     DialogFooter,
     type DialogFooterProps,

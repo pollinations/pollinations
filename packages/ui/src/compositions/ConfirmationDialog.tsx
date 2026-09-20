@@ -3,7 +3,7 @@ import { Button } from "../primitives/Button.tsx";
 import {
     Dialog,
     DialogBody,
-    DialogFooter,
+    DialogHeader,
     type DialogProps,
 } from "../primitives/Dialog.tsx";
 import { CheckIcon, TrashIcon, XIcon } from "../primitives/icons/index.tsx";
@@ -35,7 +35,7 @@ export type ConfirmationDialogProps = {
     size?: DialogProps["size"];
 };
 
-/** One Cancel + action footer for every yes/no dialog. */
+/** One floating Cancel + confirm action for every yes/no dialog. */
 export function ConfirmationDialog({
     open,
     title,
@@ -50,14 +50,38 @@ export function ConfirmationDialog({
     onCancel,
     size = "md",
 }: ConfirmationDialogProps) {
+    const actions = (
+        <>
+            <Button
+                type="button"
+                intent="neutral"
+                icon={<XIcon />}
+                onClick={onCancel}
+                disabled={cancelDisabled}
+            >
+                Cancel
+            </Button>
+            <Button
+                type="button"
+                intent={intent}
+                icon={confirmIcon ?? defaultIcons[intent]}
+                onClick={onConfirm}
+                disabled={confirmDisabled}
+            >
+                {confirmLabel}
+            </Button>
+        </>
+    );
+
     return (
         <Dialog
             open={open}
             onOpenChange={(next) => !next && onCancel()}
-            title={title}
             size={size}
+            contentClassName="polli:overflow-hidden"
         >
-            <DialogBody>
+            <DialogBody actions={actions}>
+                <DialogHeader inBody title={title} />
                 {description && (
                     <p className="polli:text-sm polli:leading-relaxed">
                         {description}
@@ -65,26 +89,6 @@ export function ConfirmationDialog({
                 )}
                 {children}
             </DialogBody>
-            <DialogFooter>
-                <Button
-                    type="button"
-                    intent="neutral"
-                    icon={<XIcon />}
-                    onClick={onCancel}
-                    disabled={cancelDisabled}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    intent={intent}
-                    icon={confirmIcon ?? defaultIcons[intent]}
-                    onClick={onConfirm}
-                    disabled={confirmDisabled}
-                >
-                    {confirmLabel}
-                </Button>
-            </DialogFooter>
         </Dialog>
     );
 }

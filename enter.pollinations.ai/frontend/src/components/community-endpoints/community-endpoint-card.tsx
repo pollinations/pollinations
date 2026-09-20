@@ -22,7 +22,10 @@ import {
     TrendUpIcon,
     XIcon,
 } from "@pollinations/ui";
-import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+    communityEndpointPriceFieldsForModality,
+} from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
@@ -59,9 +62,23 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const visibilityAction = endpoint.hidden ? "Relist" : "Unlist";
     const visibilityActionLabel = `${visibilityAction} ${isAgent ? "agent" : "model"}`;
+    const relistAvailableAt =
+        endpoint.hidden && isPublic && endpoint.hiddenAt
+            ? new Date(endpoint.hiddenAt).getTime() +
+              COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+            : null;
+    const relistIsDelayed =
+        relistAvailableAt !== null && Date.now() < relistAvailableAt;
     const visibilityTooltip = isToggling
         ? "Saving visibility"
-        : visibilityActionLabel;
+        : relistIsDelayed
+          ? `Relist available at ${new Date(
+                relistAvailableAt,
+            ).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+            })}`
+          : visibilityActionLabel;
     const mutedClassName = endpoint.hidden ? "opacity-60" : undefined;
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
@@ -99,7 +116,7 @@ export function CommunityEndpointCard({
                             tooltip={visibilityTooltip}
                             tooltipAlign="center"
                             tooltipClampToViewport={false}
-                            disabled={isToggling}
+                            disabled={isToggling || relistIsDelayed}
                             onClick={onToggle}
                         >
                             {endpoint.hidden ? (

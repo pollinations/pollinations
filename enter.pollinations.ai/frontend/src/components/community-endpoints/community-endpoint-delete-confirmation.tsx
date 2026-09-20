@@ -1,4 +1,5 @@
 import { ConfirmationDialog } from "@pollinations/ui";
+import { ResourceConfirmationContent } from "./resource-confirmation-content.tsx";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointDeleteConfirmationProps = {
@@ -17,18 +18,13 @@ export function CommunityEndpointDeleteConfirmation({
         <ConfirmationDialog
             open={!!endpoint}
             title={`Delete ${kind}?`}
-            description={
-                <>
-                    Delete{" "}
-                    <span className="font-mono text-sm">
-                        {endpoint?.modelId}
-                    </span>
-                    ? This removes the {kind} and cannot be undone.
-                </>
-            }
             confirmLabel="Delete"
             onConfirm={onConfirm}
             onCancel={onCancel}
-        />
+        >
+            <ResourceConfirmationContent resource={endpoint?.modelId}>
+                This removes the {kind} and cannot be undone.
+            </ResourceConfirmationContent>
+        </ConfirmationDialog>
     );
 }

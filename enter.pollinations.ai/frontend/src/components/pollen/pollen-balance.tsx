@@ -1,11 +1,8 @@
 import {
     CardIcon,
-    ClockIcon,
     CopyButton,
-    GlobeIcon,
     InfoTip,
     InlineLink,
-    MailIcon,
     SproutIcon,
     Surface,
     WalletIcon,
@@ -27,6 +24,7 @@ type PollenBalanceProps = {
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
+const TERMS_URL = "https://pollinations.ai/terms";
 const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
@@ -227,37 +225,24 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             </Surface>
             <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="flex items-start gap-1.5">
-                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Paid Pollen never expires. See our{" "}
-                        <InlineLink href={REFUND_POLICY_URL}>
-                            Refund Policy
-                        </InlineLink>
-                        .
-                    </span>
+                <p>
+                    Taxes added at checkout.{" "}
+                    <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                    {" · "}
+                    <InlineLink href={REFUND_POLICY_URL}>
+                        Refund Policy
+                    </InlineLink>
                 </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>
-                        .
-                    </span>
+                <p>
+                    Payment help:{" "}
+                    <CopyButton
+                        value="billing@pollinations.ai"
+                        className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
+                    >
+                        {(copied) =>
+                            copied ? "Copied!" : "billing@pollinations.ai"
+                        }
+                    </CopyButton>
                 </p>
             </div>
         </>

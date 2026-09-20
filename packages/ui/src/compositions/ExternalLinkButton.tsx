@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
+import { isExternalHref } from "../lib/link.ts";
 import {
     Button,
     type ButtonAppearance,
@@ -31,11 +32,12 @@ export type ExternalLinkButtonProps =
     | ExternalLinkButtonAnchorProps
     | ExternalLinkButtonNativeButtonProps;
 
+/** Primary flow actions such as checkout or authorization. Use InlineLink for navigation. */
 export function ExternalLinkButton(props: ExternalLinkButtonProps) {
     const {
         size = "md",
         appearance,
-        external = true,
+        external = "href" in props ? isExternalHref(props.href) : true,
         showIcon = true,
         icon,
         className,

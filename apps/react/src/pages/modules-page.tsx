@@ -9,7 +9,7 @@ import {
     Alert,
     ButtonGroup,
     Chip,
-    ExternalLinkButton,
+    InlineLink,
     Surface,
     Table,
     TableBody,
@@ -625,12 +625,13 @@ export function ModulesPage() {
                         </Surface>
                     </section>
 
-                    <ExternalLinkButton
+                    <InlineLink
                         href="https://playground.pollinations.ai"
+                        size="sm"
                         className="self-start"
                     >
                         Try it out in Playground
-                    </ExternalLinkButton>
+                    </InlineLink>
                 </>
             ) : (
                 <section>

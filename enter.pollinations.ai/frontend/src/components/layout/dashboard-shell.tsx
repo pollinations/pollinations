@@ -34,7 +34,7 @@ import type {
     ReactNode,
     RefObject,
 } from "react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { OPEN_WEBUI_URL } from "../models/open-webui-link.tsx";
 import {
@@ -604,135 +604,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
     </aside>
 );
 
-const RailScrollArea: FC<PropsWithChildren> = ({ children }) => {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const scrollId = useId();
-    const dragStart = useRef<{ y: number; scrollTop: number } | null>(null);
-    const [thumb, setThumb] = useState({ top: 0, height: 0, maxScroll: 0 });
-
-    useEffect(() => {
-        const element = scrollRef.current;
-        if (!element) return;
-
-        const update = () => {
-            const maxScroll = Math.max(
-                0,
-                element.scrollHeight - element.clientHeight,
-            );
-            const height = maxScroll
-                ? Math.min(
-                      element.clientHeight,
-                      Math.max(
-                          28,
-                          element.clientHeight ** 2 / element.scrollHeight,
-                      ),
-                  )
-                : 0;
-            const top = maxScroll
-                ? (element.scrollTop / maxScroll) *
-                  (element.clientHeight - height)
-                : 0;
-            setThumb({ top, height, maxScroll });
-        };
-
-        const observer = new ResizeObserver(update);
-        observer.observe(element);
-        if (element.firstElementChild)
-            observer.observe(element.firstElementChild);
-        element.addEventListener("scroll", update, { passive: true });
-        update();
-
-        return () => {
-            observer.disconnect();
-            element.removeEventListener("scroll", update);
-        };
-    }, []);
-
-    return (
-        <div data-theme="accent" className="relative min-h-0 flex-1">
-            <ScrollArea
-                ref={scrollRef}
-                id={scrollId}
-                scrollbar="native"
-                className="h-full min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-                {children}
-            </ScrollArea>
-            {thumb.height > 0 && (
-                <div
-                    role="scrollbar"
-                    tabIndex={0}
-                    aria-label="Sidebar scroll position"
-                    aria-controls={scrollId}
-                    aria-orientation="vertical"
-                    aria-valuemin={0}
-                    aria-valuemax={Math.ceil(thumb.maxScroll)}
-                    aria-valuenow={Math.round(
-                        scrollRef.current?.scrollTop ?? 0,
-                    )}
-                    className="absolute left-0 z-10 w-1.5 cursor-grab rounded-r-full touch-none focus-visible:outline-2 focus-visible:outline-theme-bg-active active:cursor-grabbing"
-                    style={{
-                        top: thumb.top,
-                        height: thumb.height,
-                        backgroundColor: "var(--polli-color-scrollbar-thumb)",
-                    }}
-                    onPointerDown={(event) => {
-                        dragStart.current = {
-                            y: event.clientY,
-                            scrollTop: scrollRef.current?.scrollTop ?? 0,
-                        };
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                    }}
-                    onPointerMove={(event) => {
-                        const element = scrollRef.current;
-                        if (!dragStart.current || !element) return;
-                        const track = element.clientHeight - thumb.height;
-                        if (track > 0) {
-                            element.scrollTop =
-                                dragStart.current.scrollTop +
-                                ((event.clientY - dragStart.current.y) *
-                                    thumb.maxScroll) /
-                                    track;
-                        }
-                    }}
-                    onPointerUp={() => {
-                        dragStart.current = null;
-                    }}
-                    onPointerCancel={() => {
-                        dragStart.current = null;
-                    }}
-                    onKeyDown={(event) => {
-                        const element = scrollRef.current;
-                        if (!element) return;
-                        const step =
-                            event.key === "PageDown" || event.key === "PageUp"
-                                ? element.clientHeight
-                                : 40;
-                        switch (event.key) {
-                            case "ArrowDown":
-                            case "PageDown":
-                                element.scrollTop += step;
-                                break;
-                            case "ArrowUp":
-                            case "PageUp":
-                                element.scrollTop -= step;
-                                break;
-                            case "Home":
-                                element.scrollTop = 0;
-                                break;
-                            case "End":
-                                element.scrollTop = thumb.maxScroll;
-                                break;
-                            default:
-                                return;
-                        }
-                        event.preventDefault();
-                    }}
-                />
-            )}
-        </div>
-    );
-};
+const RailScrollArea: FC<PropsWithChildren> = ({ children }) => (
+    <div data-theme="accent" className="min-h-0 flex-1">
+        <ScrollArea
+            scrollbar="native"
+            className="h-full min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+            {children}
+        </ScrollArea>
+    </div>
+);
 
 const DashboardNavGroup: FC<{
     title: string;

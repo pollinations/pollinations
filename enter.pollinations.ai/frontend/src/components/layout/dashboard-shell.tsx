@@ -257,7 +257,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+        <div className="flex h-dvh overflow-hidden bg-theme-bg-pale text-theme-text-strong lg:bg-app-bg">
             <div className="hidden lg:block">{rail}</div>
             <div
                 ref={drawerRef}
@@ -293,7 +293,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     <button
                         ref={drawerCloseRef}
                         type="button"
-                        className="absolute top-3 left-full ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-theme-bg-pale/70 text-theme-text-strong hover:bg-theme-bg-pale"
+                        className="absolute top-3 left-full ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                         onClick={closeDrawer}
                         aria-label="Close navigation"
                     >
@@ -314,8 +314,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                     style={{ overflowY: isDrawerOpen ? "hidden" : undefined }}
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        {children}
+                    <main className="mx-auto w-full max-w-[1000px] lg:min-h-[calc(100dvh-4.5rem)] lg:rounded-2xl lg:bg-theme-bg-pale lg:p-8">
+                        <div className="mx-auto flex w-full max-w-[800px] flex-col gap-6">
+                            {children}
+                        </div>
                     </main>
                 </ScrollArea>
             </div>
@@ -714,7 +716,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-theme-bg-pale text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-theme-bg-pale lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

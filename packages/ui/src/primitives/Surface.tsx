@@ -42,7 +42,6 @@ export function Surface<T extends ElementType = "div">({
     return (
         <Component
             {...rest}
-            data-polli-surface={variant}
             className={cn("polli:min-w-0", variantClasses[variant], className)}
         >
             {children}

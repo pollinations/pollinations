@@ -69,7 +69,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         return (
             <Surface
                 key={apiKey.id}
-                className="transition-colors hover:bg-theme-bg-pale/90"
+                className="transition-colors hover:bg-surface-opaque/90"
             >
                 <ResourceCardHeader
                     icon={

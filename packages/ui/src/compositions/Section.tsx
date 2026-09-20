@@ -63,9 +63,8 @@ export const Section: FC<SectionProps> = ({
             </header>
             {framed ? (
                 <Surface
-                    variant="panel"
                     className={cn(
-                        "polli:flex polli:flex-col polli:gap-5",
+                        "polli:flex polli:flex-col polli:gap-5 polli:rounded-2xl polli:p-6",
                         panelClassName,
                     )}
                 >

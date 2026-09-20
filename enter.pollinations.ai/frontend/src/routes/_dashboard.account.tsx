@@ -277,7 +277,7 @@ function AccountPage() {
                 <Surface className="p-6">
                     <div className="flex flex-col gap-3">
                         <Text size="sm" tone="muted">
-                            Operator: Myceli.AI OÜ
+                            © 2026 Myceli.AI OÜ
                         </Text>
                         <nav
                             aria-label="Policies"

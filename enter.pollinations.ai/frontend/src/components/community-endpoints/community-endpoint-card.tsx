@@ -57,16 +57,13 @@ export function CommunityEndpointCard({
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
-    const visibilityAction = endpoint.hidden
-        ? isPublic
-            ? "Relist"
-            : "Show"
-        : "Hide";
+    const visibilityAction = endpoint.hidden ? "Relist" : "Unlist";
     const visibilityActionLabel = `${visibilityAction} ${isAgent ? "agent" : "model"}`;
     const visibilityTooltip = isToggling
         ? "Saving visibility"
         : visibilityActionLabel;
     const hiddenByOwner = endpoint.hiddenReason === "Hidden by owner";
+    const mutedClassName = endpoint.hidden ? "opacity-60" : undefined;
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
@@ -76,6 +73,7 @@ export function CommunityEndpointCard({
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
             <ResourceCardHeader
+                className={mutedClassName}
                 icon={
                     isAgent ? (
                         <BotIcon className="h-4 w-4" aria-hidden="true" />
@@ -145,16 +143,18 @@ export function CommunityEndpointCard({
                     <div className="flex flex-col gap-1">
                         <span className="font-semibold">
                             {hiddenByOwner
-                                ? "Hidden by you"
+                                ? "Unlisted by you"
                                 : isAgent
-                                  ? "Agent hidden"
-                                  : "Model hidden"}
+                                  ? "Agent unlisted"
+                                  : "Model unlisted"}
                         </span>
                         <span className="text-sm">
                             {hiddenByOwner
                                 ? `This ${isAgent ? "agent" : "model"} still works when called with its exact model ID.`
-                                : (endpoint.hiddenReason ??
-                                  "Hidden due to repeated failures.")}
+                                : (endpoint.hiddenReason?.replace(
+                                      /^Hidden\b/i,
+                                      "Unlisted",
+                                  ) ?? "Unlisted after repeated failures.")}
                         </span>
                     </div>
                 </Alert>
@@ -162,7 +162,7 @@ export function CommunityEndpointCard({
 
             <PendingChangeNotice endpoint={endpoint} />
 
-            <div className="mt-5 grid gap-2 px-2">
+            <div className={`mt-5 grid gap-2 px-2 ${mutedClassName ?? ""}`}>
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"
@@ -225,7 +225,9 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div
+                className={`mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 ${mutedClassName ?? ""}`}
+            >
                 <Link
                     data-size="footer"
                     to="/activity"

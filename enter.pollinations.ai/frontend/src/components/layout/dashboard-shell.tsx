@@ -573,7 +573,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 {activity.label}
                             </NavItem>
                         ))}
-                    <div className="mb-3 w-full">
+                    <div className="mt-4 mb-3 w-full">
                         <ExploreNav
                             active={activePage === "models"}
                             category={activeModelCategory}

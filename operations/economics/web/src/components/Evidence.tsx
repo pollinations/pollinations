@@ -81,6 +81,7 @@ export function EvidencePreview({
             }}
             labelledBy="document-preview-title"
             size="xl"
+            contentClassName="sm:h-[min(90dvh,64rem)]"
         >
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
                 <DialogTitle

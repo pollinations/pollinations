@@ -157,39 +157,27 @@ export function ModelListingFields({
                                 : "What the model does."
                         }
                         optional
-                        multiline={isAgent}
+                        multiline
                     >
-                        {isAgent ? (
-                            <Textarea
-                                name="community-model-description"
-                                value={form.description}
-                                placeholder="Research assistant with web tools"
-                                rows={1}
-                                style={{ minHeight: "2.625rem" }}
-                                autoComplete="off"
-                                maxLength={
-                                    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
-                                }
-                                className="w-full min-w-0"
-                                onChange={(event) =>
-                                    onChange("description", event.target.value)
-                                }
-                            />
-                        ) : (
-                            <Input
-                                name="community-model-description"
-                                value={form.description}
-                                placeholder="Fast coding model, long context"
-                                className="w-full min-w-0"
-                                autoComplete="off"
-                                maxLength={
-                                    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
-                                }
-                                onChange={(event) =>
-                                    onChange("description", event.target.value)
-                                }
-                            />
-                        )}
+                        <Textarea
+                            name="community-model-description"
+                            value={form.description}
+                            placeholder={
+                                isAgent
+                                    ? "Research assistant with web tools"
+                                    : "Fast coding model, long context"
+                            }
+                            rows={1}
+                            style={{ minHeight: "2.625rem" }}
+                            autoComplete="off"
+                            maxLength={
+                                COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
+                            }
+                            className="w-full min-w-0"
+                            onChange={(event) =>
+                                onChange("description", event.target.value)
+                            }
+                        />
                     </ListingInputRow>
                 </>
             )}

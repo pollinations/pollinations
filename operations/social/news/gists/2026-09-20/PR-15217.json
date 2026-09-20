@@ -1,0 +1,35 @@
+{
+  "pr_number": 15217,
+  "title": "feat: add native POST /alpha/decisions endpoint for Jev",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15217",
+  "merged_at": "2026-09-20T22:58:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds a native Jev endpoint so callers can submit typed decisions directly instead of encoding JSON inside a chat message. Follow-up to #15111.\n\n- Adds `POST /alpha/decisions` with `{state, questions}`, defaulting to `jev`, and returns native `answers` plus token usage. Uses the OpenRouter decisions request contract; provider cost is omitted from the public response.\n- Shares request/response schemas between Gen and Ask Jev MCP; removes the duplicate MCP question schema and switches the tool to the native endpoint.\n- Uses the existing durable executor, cache, authorization, and billing. Keeps `/v1/chat/completions` compatibility and rejects Jev on `/text`.\n- Preserves JSON HTTP 402 for exhausted balances/budgets; chat/text balance notices remain unchanged. Reuses `throwTextError` to preserve upstream failure statuses.\n- Verifies 53 focused Gen tests, including both balance errors, missing provider usage, chat compatibility, and existing balance notices; all 9 MCP tests; Gen typecheck; MCP bundle dry run; Biome. MCP tests now exercise the native contract and authentication forwarding.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Decisions, Minus the JSON Origami",
+    "blurb": "Jev now has a native decisions endpoint for typed questions and answers. The hive can stop folding a structured request into a chat message just to unfold it again.",
+    "summary": "Added POST /alpha/decisions for Jev, accepting typed {state, questions} requests and returning native answers with token usage while reusing the existing executor, cache, authorization, and billing flow.",
+    "impact": "Developers can call Jev through a purpose-built decisions contract instead of embedding JSON in chat messages, while Ask Jev MCP now forwards the same native authenticated request and existing chat compatibility remains available.",
+    "keywords": [
+      "Jev",
+      "decisions",
+      "API",
+      "MCP",
+      "OpenRouter",
+      "typed schemas",
+      "Gen"
+    ],
+    "visual_concept": "Depict a cozy garden-workbench where Polli helps a retro terminal turn a messy folded chat scroll full of JSON braces into neat labeled decision cards: state, questions, answers. A small CRT monitor robot can proudly sort the cards beside a blooming code-plant, representing the shared Gen and Ask Jev MCP schema and the new direct endpoint.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she helps a cheerful CRT-monitor robot sort neat glowing decision cards labeled “STATE”, “QUESTIONS”, and “ANSWERS” beside a retro terminal; a crumpled JSON chat scroll rests in a flower pot as a code-plant blooms. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15217.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she helps a cheerful CRT-monitor robot sort neat glowing decision cards labeled “STATE”, “QUESTIONS”, and “ANSWERS” beside a retro terminal; a crumpled JSON chat scroll rests in a flower pot as a code-plant blooms. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-20T22:59:20.052302+00:00"
+}

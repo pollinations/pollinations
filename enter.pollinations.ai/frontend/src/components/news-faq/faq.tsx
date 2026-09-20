@@ -120,10 +120,10 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                 {faqData.map((item, index) => {
                     const questionId = generateSlug(item.question);
                     return (
-                        <div
+                        <Surface
                             key={item.question}
                             id={questionId}
-                            className="pb-4 last:pb-0 scroll-mt-20"
+                            className="scroll-mt-20"
                         >
                             <button
                                 type="button"
@@ -136,17 +136,14 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <Surface
-                                    variant="card"
-                                    className="mt-3 flex flex-col gap-3 text-theme-text-base"
-                                >
+                                <div className="mt-3 flex flex-col gap-3 text-theme-text-base">
                                     <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
                                         "What can I create with Pollen",
                                     ) && <PollenExamples />}
-                                </Surface>
+                                </div>
                             )}
-                        </div>
+                        </Surface>
                     );
                 })}
             </div>

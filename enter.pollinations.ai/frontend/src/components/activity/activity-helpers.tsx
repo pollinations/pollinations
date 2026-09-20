@@ -4,7 +4,6 @@ import {
     DownloadIcon,
     MultiSelect,
     SproutIcon,
-    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
@@ -127,9 +126,9 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
 export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     children,
 }) => (
-    <Surface className="flex h-[180px] items-center justify-center text-center">
+    <div className="flex h-[180px] items-center justify-center text-center">
         <p className="max-w-md text-sm text-theme-text-muted">{children}</p>
-    </Surface>
+    </div>
 );
 
 export function downloadFile(url: string): void {

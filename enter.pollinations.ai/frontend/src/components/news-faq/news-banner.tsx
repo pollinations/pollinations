@@ -155,7 +155,7 @@ function formatNewsDate(date: string): string {
     });
 }
 
-/** Hand-curated, pinned announcements — stacked white cards. */
+/** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
     return (
         <div className="flex flex-col gap-3">

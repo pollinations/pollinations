@@ -274,7 +274,7 @@ export function BucketCard({
 
 // A bucket-agnostic total — one neutral well, used when paid/Quest split would
 // be noise rather than signal (e.g. quest counts are all "a quest"). Uses
-// Surface card so the bg + well shadow match the Setup/quest rows exactly. The
+// Surface card so the background matches the Setup/quest rows exactly. The
 // glyph defaults to the sparkle; pass `icon` (and an `iconClassName` tint) to
 // label a different metric — e.g. a green sprout for the logged-out pollen
 // total, which must read as "on offer", never as an owned (green-well) balance.
@@ -302,7 +302,7 @@ export function TotalCard({
     );
 }
 
-// The summary card frame shared by the logged-in view (your completed quests +
+// The summary layout shared by the logged-in view (your completed quests +
 // claimed pollen) and the logged-out preview (quests + pollen on offer). One
 // layout, two callers: the caller supplies the already-styled pollen card
 // node(s) — green/amber owned wells when logged in, neutral tiles when logged
@@ -312,8 +312,8 @@ export function TotalCard({
 //   • two   → one row, side by side, at every width.
 //   • three → three across once the container is wide enough (@lg); below that,
 //     the count takes a full-width row and the pollen pair folds underneath.
-// Width-driven via a container query (not the viewport) because the panel is
-// narrower than the screen when the sidebar is open.
+// Width-driven via a container query (not the viewport) because the content
+// area is narrower than the screen when the sidebar is open.
 function QuestSummaryGrid({
     totalLabel,
     totalValue,
@@ -962,7 +962,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.rewards]);
 
     // While the automatic quest check is running, dim the stats and cards so
-    // the panel reads as "refreshing" — the numbers may be about to change. The
+    // summary reads as "refreshing" — the numbers may be about to change. The
     // checking indicator itself stays outside this wrapper so it stays crisp.
     const dimWhileChecking = state.checking
         ? "pointer-events-none select-none opacity-50 transition-opacity duration-300"
@@ -970,11 +970,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Summary panel. The per-user accounting (completed/claimed cards +
+            {/* Summary. The per-user accounting (completed/claimed cards +
                 claimable banner + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
-            <Surface variant="panel">
+            <section aria-label="Quest summary">
                 {!state.anonymous && (
                     <>
                         {/* Responsive summary. Bucket cards are conditional on the
@@ -1071,7 +1071,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     pay) instead of this visitor's completed/claimed history. */}
                 {state.anonymous && (
                     <>
-                        {/* Same frame as the logged-in summary, but neutral tiles
+                        {/* Same layout as the logged-in summary, but neutral tiles
                             (not the green/amber owned wells) so the pollen on
                             offer never reads as a balance the visitor holds. The
                             bucket glyph still marks Quest (green sprout) vs paid
@@ -1140,7 +1140,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         </span>
                     </p>
                 </div>
-            </Surface>
+            </section>
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">
@@ -1149,23 +1149,18 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             )}
 
             {state.loading && (
-                <Surface
-                    variant="card"
-                    className="flex items-center gap-2 text-theme-text-muted"
-                >
+                <div className="flex items-center gap-2 text-theme-text-muted">
                     <ClockIcon className="h-4 w-4 shrink-0" />
                     <Text size="sm" tone="muted">
                         Loading quests…
                     </Text>
-                </Surface>
+                </div>
             )}
 
             <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
                 {bonusRewardCards.length > 0 && (
                     <Section
                         title="Bonus rewards"
-                        framed
-                        panelClassName="flex flex-col gap-2"
                         action={
                             <Chip
                                 intent="neutral"
@@ -1181,17 +1176,19 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             </Chip>
                         }
                     >
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={SparkleIcon}
-                                claiming={
-                                    state.claimingRewardId === card.rewardId
-                                }
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
+                        <div className="flex flex-col gap-2">
+                            {bonusRewardCards.map((card) => (
+                                <QuestRow
+                                    key={card.key}
+                                    card={card}
+                                    icon={SparkleIcon}
+                                    claiming={
+                                        state.claimingRewardId === card.rewardId
+                                    }
+                                    onClaim={handleClaimReward}
+                                />
+                            ))}
+                        </div>
                     </Section>
                 )}
                 {CATEGORIES.map((category) => {
@@ -1207,8 +1204,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         <Section
                             key={category.key}
                             title={category.label}
-                            framed
-                            panelClassName="flex flex-col gap-2"
                             action={
                                 <Chip
                                     intent="neutral"
@@ -1219,17 +1214,20 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 </Chip>
                             }
                         >
-                            {cards.map((card) => (
-                                <QuestRow
-                                    key={card.key}
-                                    card={card}
-                                    icon={category.icon}
-                                    claiming={
-                                        state.claimingRewardId === card.rewardId
-                                    }
-                                    onClaim={handleClaimReward}
-                                />
-                            ))}
+                            <div className="flex flex-col gap-2">
+                                {cards.map((card) => (
+                                    <QuestRow
+                                        key={card.key}
+                                        card={card}
+                                        icon={category.icon}
+                                        claiming={
+                                            state.claimingRewardId ===
+                                            card.rewardId
+                                        }
+                                        onClaim={handleClaimReward}
+                                    />
+                                ))}
+                            </div>
                         </Section>
                     );
                 })}

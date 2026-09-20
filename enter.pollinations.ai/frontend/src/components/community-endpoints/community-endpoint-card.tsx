@@ -63,7 +63,7 @@ export function CommunityEndpointCard({
 
     return (
         <Surface
-            className={`transition-colors hover:bg-surface-opaque/90 ${
+            className={`transition-colors hover:bg-theme-bg-pale/90 ${
                 endpoint.hidden ? "opacity-60" : ""
             }`}
         >

@@ -293,7 +293,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     <button
                         ref={drawerCloseRef}
                         type="button"
-                        className="absolute top-3 left-full ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                        className="absolute top-3 left-full ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-theme-bg-pale/70 text-theme-text-strong hover:bg-theme-bg-pale"
                         onClick={closeDrawer}
                         aria-label="Close navigation"
                     >
@@ -714,7 +714,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-theme-bg-pale text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-theme-bg-pale lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

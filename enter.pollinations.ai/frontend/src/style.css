@@ -11,6 +11,17 @@
     border-color: var(--polli-color-border);
 }
 
+/* Match Enter's cards to the warm surface used by the navigation pills. */
+[data-polli-surface="card"] {
+    background-color: var(--polli-color-bg-pale);
+}
+
+/* Nested dialog cards need a quiet edge against the same warm dialog surface. */
+[role="dialog"] [data-polli-surface="card"] {
+    outline: 1px solid
+        color-mix(in oklab, var(--polli-color-text-strong) 12%, transparent);
+}
+
 /* The dashboard rail has no group cards: each idle tab carries that tint. */
 .dashboard-rail-tab:not([aria-current="page"]),
 .dashboard-rail-action {

@@ -43,7 +43,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                     return (
                         <Surface
                             key={server.id}
-                            className="[--mcp-card-gap:0.625rem] [--mcp-icon-width:2rem] transition-colors hover:bg-surface-opaque/90 @2xl:flex @2xl:items-center"
+                            className="[--mcp-card-gap:0.625rem] [--mcp-icon-width:2rem] transition-colors hover:bg-theme-bg-pale/90 @2xl:flex @2xl:items-center"
                         >
                             <div className="flex items-center gap-[var(--mcp-card-gap)] @2xl:min-w-0 @2xl:flex-1">
                                 <McpIcon className="h-8 w-[var(--mcp-icon-width)] shrink-0 text-ink-900 opacity-55" />

@@ -5,10 +5,14 @@ import type {
     HarnessAdapter,
     HarnessContext,
     HarnessOnOptions,
+    HarnessResult,
 } from "../harnesses/types.js";
 import { fail, printInfo, printResult, printSuccess } from "../lib/output.js";
 
 const context = (): HarnessContext => ({ home: homedir(), env: process.env });
+
+const show = ({ details, ...result }: HarnessResult) =>
+    printResult({ ...result, ...details });
 
 const OFF_MESSAGES = {
     restored: "original config restored.",
@@ -22,7 +26,7 @@ const runOn = async (harness: HarnessAdapter, options: HarnessOnOptions) => {
         const model = result.model ? ` (model: ${result.model})` : "";
         printSuccess(`${harness.label} now uses Pollinations${model}.`);
         printInfo(harness.restartHint);
-        printResult(result);
+        show(result);
     } catch (error) {
         fail(`Failed to connect ${harness.label}`, error);
     }
@@ -34,7 +38,7 @@ const runOff = async (harness: HarnessAdapter) => {
         const outcome = result.outcome ?? "unchanged";
         printSuccess(`${harness.label}: ${OFF_MESSAGES[outcome]}`);
         if (outcome !== "unchanged") printInfo(harness.restartHint);
-        printResult(result);
+        show(result);
     } catch (error) {
         fail(`Failed to disconnect ${harness.label}`, error);
     }
@@ -42,7 +46,7 @@ const runOff = async (harness: HarnessAdapter) => {
 
 const runStatus = async (harness: HarnessAdapter) => {
     try {
-        printResult(await harness.status(context()));
+        show(await harness.status(context()));
     } catch (error) {
         fail(`Failed to inspect ${harness.label}`, error);
     }

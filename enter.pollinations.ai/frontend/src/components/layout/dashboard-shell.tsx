@@ -268,7 +268,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity ease-out",
+                        "absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}

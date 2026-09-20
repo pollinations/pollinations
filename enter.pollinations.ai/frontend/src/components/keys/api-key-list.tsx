@@ -1,12 +1,15 @@
 import {
     AppIcon,
     Chip,
+    CopyButton,
+    Dialog,
     GlobeIcon,
     IconButton,
     InlineLink,
     KeyIcon,
     LockIcon,
     PencilIcon,
+    RefreshIcon,
     Section,
     Surface,
     TerminalIcon,
@@ -22,6 +25,7 @@ import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
 import { KeyDisplay } from "./key-display.tsx";
+import { RotateConfirmation } from "./key-rotate-confirmation.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -32,14 +36,38 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRotate,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [rotateId, setRotateId] = useState<string | null>(null);
+    const [rotating, setRotating] = useState(false);
+    const [rotatedKey, setRotatedKey] = useState<{
+        id: string;
+        key: string;
+        name?: string | null;
+    } | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     async function handleDelete(): Promise<void> {
         if (deleteId) {
             await onDelete(deleteId);
             setDeleteId(null);
+        }
+    }
+
+    async function handleRotate(): Promise<void> {
+        if (!rotateId) return;
+        setRotating(true);
+        try {
+            const created = await onRotate(rotateId);
+            setRotatedKey({
+                id: created.id,
+                key: created.key,
+                name: created.name,
+            });
+            setRotateId(null);
+        } finally {
+            setRotating(false);
         }
     }
 
@@ -113,6 +141,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             onClick={() => setEditingKey(apiKey)}
                         >
                             <PencilIcon className="h-4 w-4" />
+                        </IconButton>
+                        <IconButton
+                            intent="info"
+                            title="Rotate key"
+                            tooltip="Rotate key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
+                            onClick={() => setRotateId(apiKey.id)}
+                        >
+                            <RefreshIcon className="h-4 w-4" />
                         </IconButton>
                         <IconButton
                             intent="danger"
@@ -329,6 +367,32 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteId(null)}
             />
+            <RotateConfirmation
+                rotateId={rotateId}
+                onConfirm={handleRotate}
+                onCancel={() => setRotateId(null)}
+                pending={rotating}
+            />
+            <Dialog
+                open={!!rotatedKey}
+                onOpenChange={(open) => !open && setRotatedKey(null)}
+                title="Key rotated"
+                size="sm"
+                contentClassName="p-6"
+            >
+                <p className="mb-4 mt-4 text-sm text-theme-text-muted">
+                    Your previous key is revoked. Copy the new secret now — it
+                    will not be shown again.
+                </p>
+                {rotatedKey && (
+                    <div className="flex items-center gap-2 rounded-md border border-divider bg-surface-opaque px-3 py-2 font-mono text-sm">
+                        <span className="min-w-0 flex-1 truncate">
+                            {rotatedKey.key}
+                        </span>
+                        <CopyButton value={rotatedKey.key} />
+                    </div>
+                )}
+            </Dialog>
             {editingKey && (
                 <EditApiKeyDialog
                     apiKey={editingKey}

@@ -7,6 +7,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/keys";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { rotateApiKey } from "../lib/rotate-api-key.ts";
 import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -68,6 +69,19 @@ function KeysPage() {
         await router.invalidate();
     }
 
+    async function handleRotateApiKey(id: string) {
+        const rotated = await rotateApiKey(id);
+        await router.invalidate();
+        return {
+            id: rotated.id,
+            key: rotated.key,
+            name: rotated.name,
+            createdAt: new Date().toISOString(),
+            permissions: null,
+            metadata: null,
+        };
+    }
+
     async function handleUpdateApiKey(
         id: string,
         updates: ApiKeyUpdateParams,
@@ -82,6 +96,7 @@ function KeysPage() {
             onCreate={handleCreateApiKey}
             onUpdate={handleUpdateApiKey}
             onDelete={handleDeleteApiKey}
+            onRotate={handleRotateApiKey}
         />
     );
 }

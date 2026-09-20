@@ -36,7 +36,7 @@ function apiErrorStatus(details: unknown, status: number): number {
 
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withUpstreamRequestUrl(
+export function withUpstreamRequestUrl(
     completion: ChatCompletion,
     requestUrl: URL,
 ): ChatCompletion {
@@ -203,6 +203,7 @@ export async function genericOpenAIClient(
 
         const preparedMessages = prepareMessages(messages);
         const {
+            key: _key,
             additionalHeaders: _additionalHeaders,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,

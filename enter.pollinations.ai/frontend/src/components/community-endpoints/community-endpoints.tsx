@@ -10,6 +10,7 @@ import {
     Section,
     Surface,
     TokensIcon,
+    Tooltip,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
@@ -411,34 +412,31 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Brand icon URL">
+                                <FieldStack
+                                    label="Brand icon URL"
+                                    action={
+                                        <Tooltip
+                                            ariaLabel="How to upload a brand icon"
+                                            className="text-xs text-theme-text-muted"
+                                            tapEnabled
+                                            content="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                        >
+                                            Upload help
+                                        </Tooltip>
+                                    }
+                                >
                                     <Input
                                         type="url"
                                         name="community-provider-icon-url"
                                         value={providerIconUrl}
                                         placeholder="https://media.pollinations.ai/…"
                                         autoComplete="url"
-                                        aria-describedby="community-provider-icon-help"
                                         onChange={(event) =>
                                             setProviderIconUrl(
                                                 event.target.value,
                                             )
                                         }
                                     />
-                                    <span
-                                        id="community-provider-icon-help"
-                                        className="text-xs text-theme-text-muted"
-                                    >
-                                        Upload an SVG with{" "}
-                                        <code>polli upload icon.svg</code> or
-                                        POST it to{" "}
-                                        <code>
-                                            https://media.pollinations.ai/upload
-                                        </code>
-                                        , then paste the returned URL. Uploads
-                                        expire after 30 days unless fetched
-                                        after day 15.
-                                    </span>
                                 </FieldStack>
                             </div>
                             <div>

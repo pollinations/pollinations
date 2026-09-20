@@ -44,7 +44,10 @@ async function insertApiKey(userId: string) {
 }
 
 describe("Device Authorization Flow", () => {
-    test("POST /api/device/code issues device and user codes", async () => {
+    test("POST /api/device/code issues device and user codes", async ({
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
         const res = await SELF.fetch(`${BASE}/api/device/code`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -79,6 +82,15 @@ describe("Device Authorization Flow", () => {
         };
         expect(info.status).toBe("pending");
         expect(info.scope).toBe("generate");
+        await mocks.clear();
+        expect(mocks.tinybird.state.productEvents).toEqual([
+            expect.objectContaining({
+                event: "device_code_issued",
+                user_id: "",
+                client_id: "test-cli",
+                flow_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+            }),
+        ]);
     });
 
     test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async () => {
@@ -151,6 +163,19 @@ describe("Device Authorization Flow", () => {
         const body = (await tokenRes.json()) as { error: string };
         expect(tokenRes.status).toBe(400);
         expect(body.error).toBe("access_denied");
+        await mocks.clear();
+        expect(
+            mocks.tinybird.state.productEvents.filter((row) =>
+                String(row.event).startsWith("device_"),
+            ),
+        ).toEqual([
+            expect.objectContaining({
+                event: "device_denied",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: expect.any(String),
+            }),
+        ]);
     }, 30000);
 
     test("expired code returns error on info and token", async () => {
@@ -274,6 +299,26 @@ describe("Device Authorization Flow", () => {
         const replayBody = (await replayRes.json()) as { error: string };
         expect(replayRes.status).toBe(400);
         expect(replayBody.error).toBe("invalid_grant");
+
+        await mocks.clear();
+        expect(
+            mocks.tinybird.state.productEvents.filter((row) =>
+                String(row.event).startsWith("device_"),
+            ),
+        ).toEqual([
+            expect.objectContaining({
+                event: "device_approved",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: session.user.id,
+            }),
+            expect.objectContaining({
+                event: "device_token_issued",
+                flow_id: device.id,
+                client_id: "test-client",
+                user_id: session.user.id,
+            }),
+        ]);
     }, 30000);
 
     test("approve with narrowed scope echoes the granted scope (RFC 6749 §5.1)", async ({

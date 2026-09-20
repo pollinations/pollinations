@@ -35,7 +35,7 @@ For all Pollinations-hosted MCP servers, see the
 | `generate3D` | Generate a GLB model | `/3d/{prompt}` |
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
 | `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
-| `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
+| `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 
 Generated media is returned as an MCP resource link using the API's existing

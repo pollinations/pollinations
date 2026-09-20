@@ -121,6 +121,16 @@ export function createDeepInfraModelConfig(
     );
 }
 
+export function createMistralModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.mistral.ai/v1",
+        textEnvironmentValue("MISTRAL_API_KEY"),
+        overrides,
+    );
+}
+
 export function createOpenRouterModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

@@ -5,27 +5,18 @@ description: Detect and analyze abusive accounts on Pollinations. IP clustering,
 
 # Requirements
 
-- **Tinybird CLI** (`tb`): Must be authenticated
-- Run queries from `enter.pollinations.ai/observability/` (has `.tinyb` config)
+- `sops` and `jq` (the prod Tinybird read token comes from SOPS)
 - **Cloudflare D1** access for banning users (via wrangler)
 
-**Tinybird query pattern:**
+**Tinybird query pattern** (prod workspace `pollinations_enter`, no row cap):
 ```bash
-cd enter.pollinations.ai/observability
-tb --cloud sql "SELECT ... FROM generation_event_v2 ..."
+enter.pollinations.ai/observability/scripts/tb-prod.sh "SELECT ... FROM generation_event_v2 ... FORMAT JSONCompact"
 ```
 
-> **Workspace**: This skill is **prod-only**. The `.tinyb` in `observability/` points to the `pollinations_enter` workspace (prod traffic). Staging traffic lives in `pollinations_enter_staging` and has no real abuse signal — don't waste time analyzing it. To pin a query to staging anyway (e.g. testing a new scoring query), set `TB_TOKEN=<staging_admin_token>` for that one command.
+> **Workspace**: prod-only — staging has no real traffic. `tb-prod.sh --check` confirms
+> events are fresh. Don't switch or save credentials just to run an audit.
 
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
-
-> **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API:
-> ```bash
-> TB_TOKEN=$(python3 -c "import json; print(json.load(open('.tinyb'))['token'])")
-> curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
->   -H "Authorization: Bearer $TB_TOKEN" \
->   --data-urlencode "q=SELECT ... FORMAT JSONCompact" | python3 -c "import json,sys; ..."
-> ```
 
 ---
 
@@ -83,8 +74,6 @@ FROM (
 )
 WHERE pack_spend = 0 AND err_pct >= 95
 ```
-
-> **Note**: `tb --cloud sql` caps output at 100 rows. For large result sets, use the Tinybird HTTP API with `FORMAT JSONCompact`.
 
 ---
 
@@ -222,7 +211,7 @@ WHERE abuse_score >= 90
 | **Cloudflare WARP/Workers** | IPv6 `2a06:98c0:3600::` — legit users behind Cloudflare | Check `ip_subnet` starts with `2a06:98c0` |
 | **VPN/proxy clusters** | Multiple real users behind same VPN exit | Check if cluster has paying users with real emails |
 | **Chinese CGNAT** | Mobile carriers (China Mobile/Unicom/Telecom) share IPs via NAT | Cross-reference with email pattern + spend |
-| **Free balance usage** | Accounts show small "spend" from non-pack balance, not real payment | Check `pack_spend` — only pack spend is real payment |
+| **Free balance usage** | Accounts show small "spend" from non-pack balance, not real payment | Check `pack_spend` — a strong signal, not proof of payment (see below) |
 | **High NSFW, legit user** | Some paying users generate NSFW content legitimately | Check pack spend > $5 — real customers |
 
 **Safe to ban (high confidence):**
@@ -242,6 +231,27 @@ WHERE abuse_score >= 90
 
 ---
 
+## Pack spend is not proof of payment
+
+`pack_balance` is the bucket paid users draw from, but money gets into it in more than one
+way. Besides Stripe purchases and auto-top-ups, **earnings land there too**: BYOP markup and
+community-model rewards are credited to the same bucket the *payer* used
+(`shared/billing/track-helpers.ts`), and some quest rewards are pack-bucket
+(`shared/billing/rewards.ts`). So `pack_spend > 0` means "spent from the paid bucket", not
+"paid us cash". The reverse check is incomplete too: Stripe checkout rows miss auto-top-ups,
+which never create a `checkout.session.*` event.
+
+Before calling an account a real customer (or clearing it) on spend alone, check the actual
+credit sources: Stripe checkout `pollen_credited`, auto-top-up `amount_usd`, historical
+Polar credits, and claimed rewards by bucket. No cash purchase is not an abuse signal by
+itself.
+
+Auto-top-up `amount_usd` is the Pollen principal credited, not what the customer paid (fees
+and tax sit on top). It proves a funding event happened; the exact dollars are on the Stripe
+invoice (`stripe_invoice_id`, `amount_paid`) — rarely needed for an abuse verdict.
+
+---
+
 # Banning Users
 
 ## How Banning Works
@@ -254,12 +264,33 @@ The ban system uses **Better Auth** fields on the `user` table in Cloudflare D1:
 | `ban_reason` | text | Shown in 403 error response |
 | `ban_expires` | integer (epoch ms) | `NULL` for permanent, epoch ms for temporary |
 
-**Enforcement** (`src/middleware/auth.ts`):
+**Enforcement** (`shared/auth/api-key.ts`, `shared/auth/ban.ts`):
 - `assertNotBanned()` runs on every authenticated request (session + API key)
 - If `banned = 1` and not expired → HTTP 403 with ban reason
 - If `ban_expires` is set and has passed → ban is automatically lifted
+- A ban also hides the user's community models, blocks checkout and auto top-up,
+  and sends the sign-in flow to the Account Suspended screen
 
 **There is no admin API for banning** — use `wrangler d1 execute` directly.
+
+## A ban is three statements, not one
+
+Setting `banned = 1` alone leaves the account logged in and still charging its
+card. Use all three, matching `fraudBanQueries()` in
+`enter.pollinations.ai/src/utils/stripe-fraud-ban.ts`:
+
+```sql
+UPDATE user SET banned = 1, ban_reason = '<reason>', ban_expires = NULL, auto_top_up_enabled = 0
+  WHERE id = '<USER_ID>' AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch());
+UPDATE user SET auto_top_up_enabled = 0 WHERE id = '<USER_ID>';
+DELETE FROM session WHERE user_id = '<USER_ID>';
+```
+
+Then expire any open Stripe Checkout sessions for the user's
+`stripe_customer_id`, or they can still complete a purchase already in flight.
+
+Verify afterwards: banned count, `ban_reason`, `auto_top_up_enabled = 0`, and
+zero rows left in `session`.
 
 ## Ban Commands
 
@@ -273,14 +304,47 @@ IDS=$(cat user_ids_to_ban.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
 npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Automated: bot farm abuse' WHERE id IN ($IDS)"
 
-# Unban a user (if false positive)
+# Unban a user (if false positive) - see the warning below first
 npx wrangler d1 execute production-pollinations-enter-db --remote \
-  --command "UPDATE user SET banned = 0, ban_reason = NULL WHERE id = '<USER_ID>'"
+  --command "UPDATE user SET banned = 0, ban_reason = NULL, ban_expires = NULL WHERE id = '<USER_ID>'"
 
 # Temporary ban (expires after 7 days)
 npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Temporary: rate abuse', ban_expires = $(date -v+7d +%s)000 WHERE id = '<USER_ID>'"
 ```
+
+## Unbanning: the trap
+
+If the account was banned by the payment-fraud policy, **clearing `banned` is not
+enough to remove it from the review queue**. The daily job rescores all attributable
+history but takes no enforcement action. Add a reviewed exception to the repository
+variable `FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated) to omit it from that queue.
+
+Auto top-up stays off after an unban; re-enable it deliberately if the user asks.
+
+## Payment-fraud bans
+
+Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
+scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
+
+- Scheduled and manually dispatched checks are read-only during calibration.
+  The report always passes `apply: false`; bans and refunds require manual decisions.
+- Every run posts accounts still needing review to the private Discord channel via
+  `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
+  nothing needs action.
+- A ban needs a **confirmed** signal: a fraudulent dispute, a fraud report, or an
+  early fraud warning. Radar's blocked and highest-risk flags raise the score but
+  never convict alone, because repeated declines of one legitimate card escalate
+  them.
+- Charges before 2026-05-01 carry no identity and are not scanned. Accounts whose
+  activity predates that must be reviewed and banned by hand.
+- One account is excluded by id in the source (a settled case). Add later
+  exceptions to `FRAUD_BAN_EXCLUDED_USER_IDS` instead of editing code.
+
+**Before a manual payment-fraud ban**, confirm the account owns its charges using
+the Checkout Session metadata our server wrote (`metadata.userId`). Never ban on a
+billing-email match: the buyer controls that field, which is why production
+refuses it.
 
 **D1 database names:**
 - Production: `production-pollinations-enter-db`
@@ -323,6 +387,7 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 | 2026-03-06 | Banned bot farm | 277 | IP cluster ≥100, 95%+ errors, $0 pack spend |
 | 2026-03-06 | Rate-limited bot farm | 42 | Same bot farm, no pack spend |
 | 2026-03-06 | Rate-limited bot farm | 59 | Multi-signal: IP clusters, gibberish suffixes, disposable emails, hammering |
+| 2026-09-16 | Banned card testers | 22 | Stripe fraud signals; 9 found by the scan, 13 by hand (pre-May charges). 176 card fingerprints added to the Radar block list |
 
 ---
 
@@ -330,6 +395,8 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 - **IP coverage**: Started 2026-03-06, ~19% user coverage initially. Re-run analysis as coverage grows.
 - **d1_user sync lag**: The `d1_user` table in Tinybird syncs periodically (not real-time). After banning on D1, Tinybird data is stale — verify actions on D1 directly.
-- **Pack spend is the strongest payment signal** for abuse review. Total generation spend can include non-pack balance-bucket usage, so filter on `pack_spend` to catch accounts with no real payment.
+- **Pack spend is the strongest payment signal, but not proof** — see "Pack spend is not
+  proof of payment". Filter on `pack_spend` to narrow the review, then check credit sources
+  before treating it as cash paid.
 - **Gibberish suffix usernames**: Bot farms use GitHub usernames with suffixes like `-boop`, `-a11y`, `-max`, `-sudo`, `-cmd`, `-stack`, `-pixel`, `-dot`, `-beep`, `-commits`, `-ops`, `-dotcom`, `-lang`, `-bit`. These are auto-generated.
 - Consider adding: account age signal, GitHub account age, user-agent clustering

@@ -5,6 +5,11 @@ import {
 } from "./cost-variants";
 import { openRouterGeminiBilling } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
+import {
+    PERPLEXITY_PRO_BILLING,
+    PERPLEXITY_REASONING_BILLING,
+    PERPLEXITY_SONAR_BILLING,
+} from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
@@ -14,18 +19,69 @@ export const TEXT_FALLBACKS = {
         "perplexity/sonar:openrouter:perplexity": {
             supportedParameters: CHAT_PARAMETERS.openRouterSonar,
             provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(1.0) * 1.055,
+                completionTextTokens: perMillion(1.0) * 1.055,
+            },
+            billing: {
+                adjustments: PERPLEXITY_SONAR_BILLING.adjustments?.map(
+                    ({ resolveUnitCost, ...rule }) => ({
+                        ...rule,
+                        unitCost: rule.unitCost * 1.055,
+                        ...(resolveUnitCost && {
+                            resolveUnitCost: (
+                                ...args: Parameters<typeof resolveUnitCost>
+                            ) => resolveUnitCost(...args) * 1.055,
+                        }),
+                    }),
+                ),
+            },
         },
     },
     "perplexity/sonar-pro": {
         "perplexity/sonar-pro:openrouter:perplexity": {
             supportedParameters: CHAT_PARAMETERS.openRouterSonar,
             provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(3.0) * 1.055,
+                completionTextTokens: perMillion(15.0) * 1.055,
+            },
+            billing: {
+                adjustments: PERPLEXITY_PRO_BILLING.adjustments?.map(
+                    ({ resolveUnitCost, ...rule }) => ({
+                        ...rule,
+                        unitCost: rule.unitCost * 1.055,
+                        ...(resolveUnitCost && {
+                            resolveUnitCost: (
+                                ...args: Parameters<typeof resolveUnitCost>
+                            ) => resolveUnitCost(...args) * 1.055,
+                        }),
+                    }),
+                ),
+            },
         },
     },
     "perplexity/sonar-reasoning-pro": {
         "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
             supportedParameters: CHAT_PARAMETERS.openRouterSonarReasoning,
             provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.0) * 1.055,
+                completionTextTokens: perMillion(8.0) * 1.055,
+            },
+            billing: {
+                adjustments: PERPLEXITY_REASONING_BILLING.adjustments?.map(
+                    ({ resolveUnitCost, ...rule }) => ({
+                        ...rule,
+                        unitCost: rule.unitCost * 1.055,
+                        ...(resolveUnitCost && {
+                            resolveUnitCost: (
+                                ...args: Parameters<typeof resolveUnitCost>
+                            ) => resolveUnitCost(...args) * 1.055,
+                        }),
+                    }),
+                ),
+            },
         },
     },
     "openai/gpt-6-astra": {
@@ -72,9 +128,9 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV41Flash,
             provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.006),
-                completionTextTokens: perMillion(0.6),
+                promptTextTokens: perMillion(0.2) * 1.055,
+                promptCachedTokens: perMillion(0.006) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
             },
         },
     },
@@ -99,6 +155,22 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(2),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(6),
+            },
+        },
+    },
+    "tencent/hy3": {
+        "tencent/hy3:openrouter:phala": {
+            supportedParameters: CHAT_PARAMETERS.openRouterHy3Phala,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-18").getTime(),
+            // Phala route rates (2026-09-18, includes the mandatory 5.5%
+            // OpenRouter credit fee); distinct provider from the Novita
+            // primary, and the highest uptime of Hy3's six endpoints
+            // (99.97%), with low latency (~1.6-2.5s) in local E2E testing.
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.04) * 1.055,
+                completionTextTokens: perMillion(0.64) * 1.055,
             },
         },
     },
@@ -208,6 +280,14 @@ export const TEXT_FALLBACKS = {
                 },
                 "≤32K context, implicit/no cache",
             ),
+            cost: {
+                promptTextTokens: perMillion(0.03),
+                promptCachedTokens: perMillion(0.006),
+                promptCacheWriteTokens: perMillion(0.038),
+                promptImageTokens: perMillion(0.03),
+                promptVideoTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.13),
+            },
         },
     },
     "qwen/qwen3.8-flash": {
@@ -220,9 +300,16 @@ export const TEXT_FALLBACKS = {
             // an Alibaba-wide outage or rate limit.
             // Direct Alibaba Singapore charges the same $0.15/M input, $0.016/M
             // implicit and explicit cache reads, $0.20/M cache creation, and
-            // $0.47/M output as the OpenRouter quote, with no context tiers,
-            // so the inherited cost block is exact and there is no fallback
-            // loss.
+            // $0.47/M output before OpenRouter credit fees, with no context
+            // tiers. Declare direct costs explicitly to omit that fee.
+            cost: {
+                promptTextTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.016),
+                promptCacheWriteTokens: perMillion(0.2),
+                promptImageTokens: perMillion(0.15),
+                promptVideoTokens: perMillion(0.15),
+                completionTextTokens: perMillion(0.47),
+            },
         },
     },
     "moonshotai/kimi-k2.6": {
@@ -254,6 +341,11 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterMistralLarge,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.5) * 1.055,
+                promptCachedTokens: perMillion(0.05) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
+            },
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -264,8 +356,12 @@ export const TEXT_FALLBACKS = {
             // This bypasses OpenRouter but deliberately keeps DeepInfra as the
             // inference provider, so it covers gateway/transport failures, not
             // a DeepInfra-wide outage or rate limit.
-            // Direct DeepInfra is $0.075/M input and $0.20/M output, exactly
-            // matching the caller's public quote: no fallback loss.
+            // Direct DeepInfra is $0.075/M input and $0.20/M output,
+            // without the OpenRouter credit fee in the public quote.
+            cost: {
+                promptTextTokens: perMillion(0.075),
+                completionTextTokens: perMillion(0.2),
+            },
         },
     },
     "google/gemma-4-26b-a4b-it": {
@@ -297,31 +393,25 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(5) * 1.055,
+                promptCachedTokens: perMillion(0.5) * 1.055,
+                promptCacheWriteTokens: perMillion(6.25) * 1.055,
+                completionTextTokens: perMillion(25) * 1.055,
+            },
         },
     },
     "meta/llama-4-scout": {
-        "meta/llama-4-scout:openrouter:vertex-us-east5": {
-            supportedParameters: CHAT_PARAMETERS.openRouterLlamaScout,
+        "meta/llama-4-scout:openrouter:novita-bf16": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
-            // The caller still pays the public DeepInfra quote ($0.10/M input
-            // and image, $0.30/M output). Vertex costs $0.25/M input/image and
-            // $0.70/M output, so Pollinations absorbs $0.15/M input/image and
-            // $0.40/M output whenever this fallback serves the request.
+            addedDate: new Date("2026-09-15").getTime(),
+            // OpenRouter Novita BF16, verified 2026-09-15. Callers retain the
+            // DeepInfra quote; Pollinations absorbs the higher fallback cost.
             cost: {
-                promptTextTokens: perMillion(0.25),
-                promptImageTokens: perMillion(0.25),
-                completionTextTokens: perMillion(0.7),
+                promptTextTokens: perMillion(0.18) * 1.055,
+                promptImageTokens: perMillion(0.18) * 1.055,
+                completionTextTokens: perMillion(0.59) * 1.055,
             },
-            // Vertex supports automatic tools but rejects required/named tool
-            // selection for this checkpoint; those calls stay on the primary.
-            supportsForcedToolChoice: false,
-            // Live probes accept up to five images; OpenRouter reports an
-            // 8,192-token output cap. Explicitly larger requests stay on the
-            // primary. If no limit is supplied, a rescued response may finish
-            // at Vertex's lower cap with the provider's `length` finish reason.
-            maxReferenceImages: 5,
-            maxCompletionTokens: 8192,
         },
     },
     "x-ai/grok-4.20": {
@@ -330,18 +420,18 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.2),
-                promptImageTokens: perMillion(1.25),
-                completionTextTokens: perMillion(2.5),
+                promptTextTokens: perMillion(1.25) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptImageTokens: perMillion(1.25) * 1.055,
+                completionTextTokens: perMillion(2.5) * 1.055,
             },
             ...defineCostVariants(
                 {
                     long_context: {
-                        promptTextTokens: perMillion(2.5),
-                        promptCachedTokens: perMillion(0.4),
-                        promptImageTokens: perMillion(2.5),
-                        completionTextTokens: perMillion(5),
+                        promptTextTokens: perMillion(2.5) * 1.055,
+                        promptCachedTokens: perMillion(0.4) * 1.055,
+                        promptImageTokens: perMillion(2.5) * 1.055,
+                        completionTextTokens: perMillion(5) * 1.055,
                     },
                 },
                 longContextAtLeast(200_000),
@@ -362,10 +452,10 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.2),
-                promptImageTokens: perMillion(1.25),
-                completionTextTokens: perMillion(2.5),
+                promptTextTokens: perMillion(1.25) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptImageTokens: perMillion(1.25) * 1.055,
+                completionTextTokens: perMillion(2.5) * 1.055,
             },
         },
     },
@@ -374,6 +464,12 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterHaiku,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(1.25) * 1.055,
+                completionTextTokens: perMillion(5) * 1.055,
+            },
         },
     },
     "anthropic/claude-fable-5": {
@@ -381,6 +477,12 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(10) * 1.055,
+                promptCachedTokens: perMillion(1) * 1.055,
+                promptCacheWriteTokens: perMillion(12.5) * 1.055,
+                completionTextTokens: perMillion(50) * 1.055,
+            },
         },
     },
     "meta/muse-glimmer-30b": {
@@ -389,10 +491,10 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.04),
-                promptImageTokens: perMillion(0.3),
-                completionTextTokens: perMillion(1.2),
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.04) * 1.055,
+                promptImageTokens: perMillion(0.3) * 1.055,
+                completionTextTokens: perMillion(1.2) * 1.055,
             },
         },
     },
@@ -402,21 +504,21 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(0.25),
+                promptTextTokens: perMillion(0.1) * 1.055,
+                promptCachedTokens: perMillion(0.05) * 1.055,
+                completionTextTokens: perMillion(0.25) * 1.055,
             },
         },
     },
     "mistralai/mistral-small-4": {
-        "mistralai/mistral-small-4:openrouter:mistral-eu": {
+        "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.165),
-                promptCachedTokens: perMillion(0.0165),
-                promptImageTokens: perMillion(0.165),
-                completionTextTokens: perMillion(0.66),
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.015) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
             },
         },
     },
@@ -426,21 +528,25 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(1.35),
-                promptCachedTokens: perMillion(0.135),
-                promptCacheWriteTokens: perMillion(1.35),
-                promptAudioTokens: perMillion(1.35),
-                promptImageTokens: perMillion(1.35),
-                promptVideoTokens: perMillion(1.35),
-                completionTextTokens: perMillion(6.75),
+                promptTextTokens: perMillion(1.35) * 1.055,
+                promptCachedTokens: perMillion(0.135) * 1.055,
+                promptCacheWriteTokens: perMillion(1.35) * 1.055,
+                promptAudioTokens: perMillion(1.35) * 1.055,
+                promptImageTokens: perMillion(1.35) * 1.055,
+                promptVideoTokens: perMillion(1.35) * 1.055,
+                completionTextTokens: perMillion(6.75) * 1.055,
             },
             billing: openRouterGeminiBilling({
-                searchCostPerThousandRequests: 14,
-                storageCostPerMillionTokenHours: 0.9,
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 0.9 * 1.055,
             }),
         },
     },
     "google/gemini-2.5-flash-lite": {
+        "google/gemini-2.5-flash-lite:openrouter:vertex-global": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-16").getTime(),
+        },
         "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
@@ -452,17 +558,17 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.15),
-                promptCachedTokens: perMillion(0.015),
-                promptCacheWriteTokens: perMillion(0.15),
-                promptAudioTokens: perMillion(0.15),
-                promptImageTokens: perMillion(0.15),
-                promptVideoTokens: perMillion(0.15),
-                completionTextTokens: perMillion(1.25),
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.015) * 1.055,
+                promptCacheWriteTokens: perMillion(0.15) * 1.055,
+                promptAudioTokens: perMillion(0.15) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                promptVideoTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(1.25) * 1.055,
             },
             billing: openRouterGeminiBilling({
-                searchCostPerThousandRequests: 14,
-                storageCostPerMillionTokenHours: 0.5,
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 0.5 * 1.055,
             }),
         },
     },
@@ -479,10 +585,10 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.98),
-                promptImageTokens: perMillion(0.98),
-                completionTextTokens: perMillion(3.95),
-                completionReasoningTokens: perMillion(3.95),
+                promptTextTokens: perMillion(0.98) * 1.055,
+                promptImageTokens: perMillion(0.98) * 1.055,
+                completionTextTokens: perMillion(3.95) * 1.055,
+                completionReasoningTokens: perMillion(3.95) * 1.055,
             },
         },
     },
@@ -492,9 +598,9 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(1.26),
-                promptCachedTokens: perMillion(0.234),
-                completionTextTokens: perMillion(3.96),
+                promptTextTokens: perMillion(1.26) * 1.055,
+                promptCachedTokens: perMillion(0.234) * 1.055,
+                completionTextTokens: perMillion(3.96) * 1.055,
             },
         },
     },
@@ -518,9 +624,9 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.18),
-                promptCachedTokens: perMillion(0.036),
-                completionTextTokens: perMillion(0.9),
+                promptTextTokens: perMillion(0.18) * 1.055,
+                promptCachedTokens: perMillion(0.036) * 1.055,
+                completionTextTokens: perMillion(0.9) * 1.055,
             },
         },
     },

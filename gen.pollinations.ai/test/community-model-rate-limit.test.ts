@@ -18,6 +18,8 @@ const FLUX = "black-forest-labs/flux.1-schnell";
 // own request limit instead of the 60 RPM floor.
 const QUOTA_BOUND_MODELS = new Set([
     "openai/gpt-image-2",
+    "openai/gpt-image-2.5-flare",
+    "openai/gpt-image-2.5-sunburst",
     "microsoft/mai-image-2.5-flash",
 ]);
 
@@ -55,6 +57,15 @@ describe("model rate limiting", () => {
         expect(
             IMAGE_SERVICES["openai/gpt-image-2:openai"].perUserRpm,
         ).toBeNull();
+        for (const model of ["flare", "sunburst"] as const) {
+            expect(
+                IMAGE_SERVICES[`openai/gpt-image-2.5-${model}`].perUserRpm,
+            ).toBe(12);
+            expect(
+                IMAGE_SERVICES[`openai/gpt-image-2.5-${model}:openai`]
+                    .perUserRpm,
+            ).toBeNull();
+        }
         expect(IMAGE_SERVICES["microsoft/mai-image-2.5-flash"].perUserRpm).toBe(
             12,
         );

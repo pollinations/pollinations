@@ -7,6 +7,7 @@ import {
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createMistralModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -73,6 +74,15 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
+    // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
+    // OpenRouter exposes no floating alias, so the version is pinned here.
+    "jev-1.13": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "typesafe/jev-1.13",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -223,6 +233,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "deepinfra/fp8",
     ),
+    "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
+        "tencent/hy3",
+        "phala",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -320,6 +335,23 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
+    // trivial schema, so a caller relying on the upstream default (no
+    // explicit max_tokens) can get finish_reason:"length", content:null
+    // under a normal budget. Matches this route's own max_completion_tokens
+    // cap. Callers who pass an explicit max_tokens still hit the same gap —
+    // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-preview": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-preview",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["tencent/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "meituan/longcat-2.0": () =>
         createOpenRouterModelConfig({
             model: "meituan/longcat-2.0",
@@ -336,6 +368,22 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: {
                 provider: {
                     only: ["Together"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    // Azure primary, OpenAI second: both OpenRouter tags bill the same
+    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
+    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
+    // The azure tag does not advertise tools, so tool requests are served by
+    // the openai tag at the same rate.
+    "openai/gpt-4o-mini": () =>
+        createOpenRouterModelConfig({
+            model: "openai/gpt-4o-mini",
+            defaultOptions: {
+                provider: {
+                    order: ["azure", "openai"],
+                    ignore: ["azure/swedencentral"],
                     allow_fallbacks: false,
                 },
             },
@@ -388,9 +436,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "novita/bf16",
+        16384,
     ),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
@@ -416,13 +465,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ),
-    "mistral-openrouter-eu": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral/eu",
-    ),
     "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
         "gemini-3.7-flash",
         "google-ai-studio/priority",
+    ),
+    "gemini-fast-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "google-vertex",
     ),
     "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
@@ -509,7 +558,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
         }),
 
-    // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
+    // -- Mistral Small ---------------------------------------------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
     // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
     // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
@@ -522,16 +571,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         }),
     "mistral-small-2603": () =>
+        createMistralModelConfig({
+            model: "mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["mistral"],
-                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-                    allow_fallbacks: false,
-                },
-            },
+            defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -681,6 +728,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/llama-4-scout": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/llama-4-scout",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                max_tokens: 16384,
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
@@ -698,13 +754,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
-    // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
-    "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
-    ),
-
     // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
     // Exact provider pins keep OpenRouter routing and billing deterministic.
     "qwen/qwen3-coder-next": createPinnedOpenRouterConfig(

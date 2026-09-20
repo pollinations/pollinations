@@ -39,6 +39,20 @@ export const IMAGE_FALLBACKS = {
             perUserRpm: null,
         },
     },
+    "openai/gpt-image-2.5-flare": {
+        "openai/gpt-image-2.5-flare:openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-14").getTime(),
+            perUserRpm: null,
+        },
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        "openai/gpt-image-2.5-sunburst:openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-14").getTime(),
+            perUserRpm: null,
+        },
+    },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",
@@ -65,6 +79,24 @@ export const IMAGE_FALLBACKS = {
                         countUnits: () => 1,
                     },
                 ],
+            },
+        },
+    },
+    "black-forest-labs/flux.2-max": {
+        "black-forest-labs/flux.2-max:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-13").getTime(),
+            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment),
+            // verified 2026-09-13: flat $0.07 per output megapixel (0.07 *
+            // 1.055 with the mandatory OpenRouter credit fee, #14895), no
+            // input charge and no flat execution fee — replaces the
+            // Replicate adjustment entirely rather than adding to it.
+            cost: {
+                promptImageTokens: 0,
+                completionImageTokens: 0.07 * 1.055,
+            },
+            billing: {
+                adjustments: [],
             },
         },
     },
@@ -126,12 +158,28 @@ export const IMAGE_FALLBACKS = {
         "x-ai/grok-imagine-video:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0.002 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.07 * 1.055, // per sec at 720p
+            },
         },
     },
     "x-ai/grok-imagine-video-1.5": {
         "x-ai/grok-imagine-video-1.5:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0.01, // per start-frame image
+                completionVideoSeconds: 0.14, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.08,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.25,
+                },
+            },
         },
     },
     "alibaba/wan-2.6": {

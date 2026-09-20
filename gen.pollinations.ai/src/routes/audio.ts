@@ -91,7 +91,7 @@ export const CreateSpeechRequestSchema = z
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenlabs/music-v2 3-300; google/lyria-3-clip-preview fixed at 30; elevenlabs/eleven-text-to-sound-v2 0.5-30)",
+                "Output duration in seconds (elevenlabs/music-v2 and elevenlabs/music-v2.5 3-300; google/lyria-3-clip-preview fixed at 30; elevenlabs/eleven-text-to-sound-v2 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -120,12 +120,12 @@ export const CreateSpeechRequestSchema = z
         }),
         instrumental: z.boolean().optional().meta({
             description:
-                "If true, guarantees instrumental output (elevenlabs/music-v2 only)",
+                "If true, guarantees instrumental output (elevenlabs/music-v2 and elevenlabs/music-v2.5 only)",
             example: false,
         }),
         store_for_inpainting: z.boolean().optional().meta({
             description:
-                "If true, stores the generated elevenlabs/music-v2 song and returns its song ID for later inpainting.",
+                "If true, stores an ElevenLabs Music v2 or v2.5 song and returns its song ID for later inpainting.",
             example: false,
         }),
         reference_audio: z.url().optional().meta({
@@ -136,7 +136,7 @@ export const CreateSpeechRequestSchema = z
         }),
         conditioning_ref: z.unknown().optional().meta({
             description:
-                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
+                "ElevenLabs Music v2 or v2.5 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
         }),
         composition_plan: z.unknown().optional().meta({
             description:
@@ -178,7 +178,15 @@ type AudioRefChunk = {
     };
 };
 
+const ELEVENLABS_MUSIC_MODEL_IDS = {
+    "elevenlabs/music-v2": "music_v2",
+    "elevenlabs/music-v2.5": "music_v2_5",
+} as const;
+
+type ElevenLabsMusicModelName = keyof typeof ELEVENLABS_MUSIC_MODEL_IDS;
+
 type GenerateMusicOptions = {
+    modelName: ElevenLabsMusicModelName;
     prompt: string;
     durationSeconds?: number;
     forceInstrumental?: boolean;
@@ -1266,6 +1274,7 @@ function createConditionedCompositionPlan(opts: {
 
 async function uploadMusicReference(opts: {
     file: File;
+    modelId: (typeof ELEVENLABS_MUSIC_MODEL_IDS)[ElevenLabsMusicModelName];
     apiKey: string;
     log: Logger;
 }): Promise<{
@@ -1280,9 +1289,9 @@ async function uploadMusicReference(opts: {
             : "reference.mp3";
     formData.append("file", opts.file, filename);
     // ElevenLabs does not return duration or usage headers for music uploads.
-    // The extracted v2 plan contains the provider-metered chunk durations and
+    // The extracted plan contains the provider-metered chunk durations and
     // does not add to the $0.15/minute ingestion price.
-    formData.append("extract_composition_plan", "music_v2");
+    formData.append("extract_composition_plan", opts.modelId);
 
     opts.log.info("ElevenLabs music upload: filename={filename}, size={size}", {
         filename,
@@ -1333,6 +1342,7 @@ export async function generateMusic(
     opts: GenerateMusicOptions,
 ): Promise<Response> {
     const {
+        modelName,
         prompt,
         durationSeconds,
         forceInstrumental,
@@ -1353,7 +1363,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = "music_v2";
+    const modelId = ELEVENLABS_MUSIC_MODEL_IDS[modelName];
     let uploadedSongId: string | undefined;
     let uploadedReferenceDuration: number | undefined;
     let compositionPlan = opts.compositionPlan;
@@ -1362,6 +1372,7 @@ export async function generateMusic(
     if (referenceAudio) {
         const upload = await uploadMusicReference({
             file: referenceAudio,
+            modelId,
             apiKey,
             log,
         });
@@ -1459,7 +1470,7 @@ export async function generateMusic(
             createAudioSecondsUsage(uploadedReferenceDuration),
         );
     }
-    const usageHeaders = buildUsageHeaders("elevenlabs/music-v2", usage);
+    const usageHeaders = buildUsageHeaders(modelName, usage);
     const responseHeaders: Record<string, string> = {
         "Content-Type": contentType,
         ...usageHeaders,
@@ -1736,8 +1747,8 @@ function requireElevenMusicOptions(
         storeForInpainting?: boolean;
     },
 ): void {
-    // elevenlabs/music-v2 supports every conditioning option.
-    if (model === "elevenlabs/music-v2") return;
+    // ElevenLabs Music v2 and v2.5 support every conditioning option.
+    if (model in ELEVENLABS_MUSIC_MODEL_IDS) return;
 
     // ElevenLabs-only options (everything except a plain reference clip).
     const usesElevenOnlyOptions =
@@ -1755,7 +1766,7 @@ function requireElevenMusicOptions(
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
-                    "conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2.",
+                    "conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5.",
             });
         }
         return;
@@ -1766,7 +1777,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
     });
 }
 
@@ -2621,10 +2632,11 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "elevenlabs/music-v2") {
+    if (model in ELEVENLABS_MUSIC_MODEL_IDS) {
         return withSafetyHeaders(
             c,
             await generateMusic({
+                modelName: model as ElevenLabsMusicModelName,
                 prompt: text,
                 durationSeconds: duration,
                 forceInstrumental: instrumental,
@@ -3333,7 +3345,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",

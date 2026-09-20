@@ -1,5 +1,5 @@
 # Pollinations AI - Auto-fix issues labeled "POLLI"
-# Trigger: Add "POLLI" label | Authorized by immutable GitHub user ID
+# Trigger: Add "POLLI" label | Authorized by immutable GitHub user ID (humans only, never bots)
 
 name: Repo / Auto-fix Polli issues
 
@@ -46,12 +46,14 @@ jobs:
               34513273, // fisventurous
               189873015, // sharktide
             ]);
-            const authorizedBotId = 247793354; // pollinations-ai[bot]
             const labeledBy = context.payload.sender.login;
             const labeledById = context.payload.sender.id;
 
-            // The bot may add this label from project-manager; usernames are display-only.
-            const isAuthorized = authorizedUserIds.has(labeledById) || labeledById === authorizedBotId;
+            // Only humans on the allowlist may trigger the write-capable agent.
+            // Bots (including our own app) are never authorized: the triage bot
+            // labels from LLM output over untrusted issue text.
+            const isBot = context.payload.sender.type === 'Bot';
+            const isAuthorized = !isBot && authorizedUserIds.has(labeledById);
 
             if (!isAuthorized) {
               await github.rest.issues.removeLabel({
@@ -60,12 +62,14 @@ jobs:
                 issue_number: context.issue.number,
                 name: 'POLLI'
               });
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`POLLI\` label.`
-              });
+              if (!isBot) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`POLLI\` label.`
+                });
+              }
               core.setOutput('authorized', 'false');
             } else {
               core.setOutput('authorized', 'true');

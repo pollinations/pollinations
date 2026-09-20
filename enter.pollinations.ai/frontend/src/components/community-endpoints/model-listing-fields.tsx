@@ -172,7 +172,7 @@ export function ModelListingFields({
 
                     <FieldStack
                         label="Description"
-                        helper="Optional. One line about what the model is good at."
+                        helper="Optional. What the model is good at."
                         alignLabelRow
                     >
                         <Input

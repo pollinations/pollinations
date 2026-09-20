@@ -1427,7 +1427,7 @@ describe("prompt-agent runtime", () => {
     it.each([
         false,
         true,
-    ])("reports an empty base-model response when stream:%s", async (stream) => {
+    ])("passes an empty base-model response through when stream:%s", async (stream) => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => {
@@ -1466,17 +1466,18 @@ describe("prompt-agent runtime", () => {
             stream,
         });
 
+        expect(response.status).toBe(200);
         if (stream) {
-            expect(response.status).toBe(200);
-            const body = await response.text();
-            expect(body).toContain("Agent produced no response");
-            expect(body).toContain('"type":"error"');
-            expect(body).toContain("data: [DONE]");
+            const events = responseStreamEvents(await response.text());
+            expect(events.at(-1)).toMatchObject({
+                type: "response.completed",
+                response: { status: "completed", output: [] },
+            });
             return;
         }
-        expect(response.status).toBe(502);
         await expect(response.json()).resolves.toMatchObject({
-            error: { message: "Agent produced no response" },
+            status: "completed",
+            output: [],
         });
     });
 

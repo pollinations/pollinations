@@ -1556,6 +1556,11 @@ export const accountRoutes = new Hono<Env>()
                         "application/json": {
                             schema: resolver(
                                 z.object({
+                                    id: z
+                                        .string()
+                                        .describe(
+                                            "Opaque ID for editing this key in the owner’s account",
+                                        ),
                                     valid: z
                                         .boolean()
                                         .describe(
@@ -1726,6 +1731,7 @@ export const accountRoutes = new Hono<Env>()
                 : null;
 
             return c.json({
+                id: apiKey.id,
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,

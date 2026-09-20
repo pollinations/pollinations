@@ -249,6 +249,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
+                            health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />

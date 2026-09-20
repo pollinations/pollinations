@@ -42,7 +42,7 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // Display name shown in the catalog and dashboard, separate from the callable
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
-export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 1000;
 export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
 export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.

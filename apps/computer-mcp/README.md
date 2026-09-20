@@ -25,13 +25,20 @@ folders in it. Nothing is shared between users. Files come in with `curl -o` (an
 one file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`
 URL (a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored), or with `git push` to a repository the
-user owns, using a token they provide in the remote URL. The service mints no
-credentials of its own. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+command's expiry argument is ignored). Commits default to the caller's GitHub account
+(`id+username@users.noreply.github.com`, forwarded by gen), which a repo's
+`git config user.name/user.email` overrides. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
+
+## Collective memory
+
+Pushes to the public [`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
+repository get a GitHub App installation token inside the Durable Object
+(`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`), so the shell never sees it.
+GitHub rulesets on every branch and tag block force pushes and deletions.
 
 ## How requests reach it
 

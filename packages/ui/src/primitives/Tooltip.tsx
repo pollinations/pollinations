@@ -147,9 +147,8 @@ export const Tooltip: FC<TooltipProps> = ({
         ? "polli:contents"
         : "polli:cursor-help";
 
-    // Thin popup. Portaling keeps fixed positioning viewport-based even when a
-    // trigger sits inside a transformed parent; typography opts out of trigger
-    // inheritance so bold labels do not make the whole tooltip shout.
+    // Portal past the trigger's layout; stay inside modal dialogs so the popup
+    // shares their stacking and accessible subtree.
     const popupClasses =
         "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
 
@@ -175,7 +174,11 @@ export const Tooltip: FC<TooltipProps> = ({
     ) : null;
     const tooltipPopup =
         popupNode && typeof document !== "undefined"
-            ? createPortal(popupNode, document.body)
+            ? createPortal(
+                  popupNode,
+                  triggerRef.current?.closest('[role="dialog"]') ??
+                      document.body,
+              )
             : popupNode;
     const contentNode = (
         <>

@@ -119,9 +119,6 @@ jobs:
               try { body = JSON.parse(raw); }
               catch { res.writeHead(400).end('{"error":"bad json"}'); return; }
 
-              if (body.model === "pollinations-router/polli") {
-                body.agent_model = "openai/gpt-6-astra";
-              }
               if (Array.isArray(body.messages)) {
                 body.messages = body.messages.map((m) => {
                   const next = { ...m, content: flatten(m.content) };
@@ -130,6 +127,9 @@ jobs:
                 });
               }
 
+              if (body.model === "pollinations-router/polli") {
+                body.metadata = { ...body.metadata, model: "openai/gpt-6-astra" };
+              }
               let r;
               try {
                 r = await fetch(UPSTREAM, {

@@ -8,11 +8,11 @@ import {
     FieldStack,
     GitHubIcon,
     Heading,
+    InlineLink,
     Input,
     Section,
     Surface,
     Text,
-    TrashIcon,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -93,7 +93,9 @@ function AccountPage() {
 
     if (!user) return null;
 
-    const displayName = user.name || githubUsername || "Pollinations user";
+    const displayName =
+        user.name?.trim() || githubUsername || "Pollinations user";
+    const checkingDiscord = discordAvailable && discordConnection === undefined;
 
     async function handleDiscordConnection(): Promise<void> {
         setConnectionPending(true);
@@ -130,163 +132,214 @@ function AccountPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <Section title="Profile" framed>
-                <div className="flex items-center gap-4">
-                    {user.image ? (
-                        <img
-                            src={user.image}
-                            alt={`${displayName} avatar`}
-                            className="h-16 w-16 shrink-0 rounded-full"
-                        />
-                    ) : (
-                        <div
-                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-surface-opaque text-theme-text-muted"
-                            aria-hidden="true"
-                        >
-                            <GitHubIcon className="h-7 w-7" />
-                        </div>
-                    )}
-                    <div className="min-w-0">
-                        <Heading as="h3" size="subsection">
-                            {displayName}
-                        </Heading>
-                        {githubUsername && (
-                            <a
-                                href={`https://github.com/${encodeURIComponent(githubUsername)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-theme-text-base transition-colors hover:text-theme-text-strong"
+            <Section title="Profile">
+                <Surface className="flex flex-col gap-5 p-6">
+                    <div className="flex items-center gap-4">
+                        {user.image ? (
+                            <img
+                                src={user.image}
+                                alt={`${displayName} avatar`}
+                                className="h-16 w-16 shrink-0 rounded-full"
+                            />
+                        ) : (
+                            <div
+                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-theme-bg-subtle text-theme-text-muted"
+                                aria-hidden="true"
                             >
-                                @{githubUsername}
-                            </a>
+                                <GitHubIcon className="h-7 w-7" />
+                            </div>
                         )}
-                        <Text size="sm" tone="muted" className="truncate">
-                            {user.email}
-                        </Text>
+                        <div className="min-w-0">
+                            <Heading as="h3" size="subsection">
+                                {displayName}
+                            </Heading>
+                            {githubUsername && (
+                                <a
+                                    href={`https://github.com/${encodeURIComponent(githubUsername)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-theme-text-base transition-colors hover:text-theme-text-strong"
+                                >
+                                    @{githubUsername}
+                                </a>
+                            )}
+                            <Text size="sm" tone="muted" className="truncate">
+                                {user.email}
+                            </Text>
+                        </div>
                     </div>
-                </div>
-                <Surface
-                    variant="card"
-                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <div>
-                        <Text tone="strong" weight="semibold">
-                            Pollinations ID
-                        </Text>
-                        <Text size="sm" tone="muted">
-                            Your unique account identifier.
-                        </Text>
+                    <div className="flex flex-col gap-2 border-t border-divider pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                Pollinations ID
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                Your unique account identifier.
+                            </Text>
+                        </div>
+                        <CopyButton
+                            value={user.id}
+                            tooltip={null}
+                            aria-label="Copy Pollinations ID"
+                            className="flex max-w-full items-center gap-2 rounded-lg bg-theme-bg-subtle px-3 py-2 text-left font-mono text-xs text-theme-text-base transition-colors hover:text-theme-text-strong"
+                        >
+                            {(copied) => (
+                                <>
+                                    <span className="truncate">{user.id}</span>
+                                    <span className="shrink-0 font-sans font-medium">
+                                        {copied ? "Copied" : "Copy"}
+                                    </span>
+                                </>
+                            )}
+                        </CopyButton>
                     </div>
-                    <CopyButton
-                        value={user.id}
-                        tooltip={null}
-                        aria-label="Copy Pollinations ID"
-                        className="flex max-w-full items-center gap-2 rounded-lg bg-theme-bg-pale px-3 py-2 text-left font-mono text-xs text-theme-text-base transition-colors hover:text-theme-text-strong"
-                    >
-                        {(copied) => (
-                            <>
-                                <span className="truncate">{user.id}</span>
-                                <span className="shrink-0 font-sans font-medium">
-                                    {copied ? "Copied" : "Copy"}
-                                </span>
-                            </>
-                        )}
-                    </CopyButton>
                 </Surface>
             </Section>
 
-            {discordAvailable && (
-                <Section title="Connected accounts" framed>
-                    <Surface
-                        variant="card"
-                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                        <div className="flex items-center gap-3">
-                            {discordConnection?.avatarUrl ? (
-                                <img
-                                    src={discordConnection.avatarUrl}
-                                    alt="Discord avatar"
-                                    className="h-10 w-10 shrink-0 rounded-full"
-                                />
-                            ) : (
-                                <DiscordIcon className="h-6 w-6 shrink-0" />
-                            )}
-                            <div>
-                                <Text tone="strong" weight="semibold">
-                                    Discord
-                                </Text>
+            <Section title="Connect Accounts">
+                <Surface className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                        {discordConnection?.avatarUrl ? (
+                            <img
+                                src={discordConnection.avatarUrl}
+                                alt="Discord avatar"
+                                className="h-10 w-10 shrink-0 rounded-full"
+                            />
+                        ) : (
+                            <DiscordIcon className="h-6 w-6 shrink-0" />
+                        )}
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                Discord
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                {!discordAvailable
+                                    ? "Discord linking isn't available in this environment."
+                                    : discordConnection
+                                      ? [
+                                            discordConnection.displayName,
+                                            discordConnection.username &&
+                                                `@${discordConnection.username}`,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" · ")
+                                      : checkingDiscord
+                                        ? "Checking connection..."
+                                        : "Connect your Discord identity for community features."}
+                            </Text>
+                            {discordConnection && (
                                 <Text size="sm" tone="muted">
-                                    {discordConnection
-                                        ? [
-                                              discordConnection.displayName,
-                                              discordConnection.username &&
-                                                  `@${discordConnection.username}`,
-                                          ]
-                                              .filter(Boolean)
-                                              .join(" · ")
-                                        : discordConnection === undefined
-                                          ? "Checking connection..."
-                                          : "Connect your Discord identity for community features."}
+                                    Discord ID: {discordConnection.id}
                                 </Text>
-                                {discordConnection && (
-                                    <Text size="sm" tone="muted">
-                                        Discord ID: {discordConnection.id}
-                                    </Text>
-                                )}
-                            </div>
+                            )}
                         </div>
-                        <Button
-                            type="button"
-                            className="shrink-0 self-start sm:self-center"
-                            disabled={
-                                discordConnection === undefined ||
-                                connectionPending
-                            }
-                            onClick={() => void handleDiscordConnection()}
-                        >
-                            {connectionPending
-                                ? "Working..."
-                                : discordConnection
-                                  ? "Disconnect Discord"
-                                  : discordConnection === undefined
-                                    ? "Checking..."
-                                    : "Connect Discord"}
-                        </Button>
-                    </Surface>
-                    {connectionError && (
-                        <Text size="sm" tone="muted">
-                            {connectionError}
-                        </Text>
-                    )}
-                </Section>
-            )}
+                    </div>
+                    <Button
+                        type="button"
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={
+                            !discordAvailable ||
+                            checkingDiscord ||
+                            connectionPending
+                        }
+                        onClick={() => void handleDiscordConnection()}
+                    >
+                        {connectionPending
+                            ? "Working..."
+                            : discordConnection
+                              ? "Disconnect Discord"
+                              : checkingDiscord
+                                ? "Checking..."
+                                : "Connect Discord"}
+                    </Button>
+                </Surface>
+                {connectionError && (
+                    <Text size="sm" tone="muted">
+                        {connectionError}
+                    </Text>
+                )}
+            </Section>
 
             <div id="connectors" className="scroll-mt-6">
                 <ConnectedApps />
             </div>
 
-            <Section title="Danger zone" framed>
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                    <Text tone="strong" weight="semibold">
-                        Delete Pollinations account
-                    </Text>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        className="shrink-0 self-start sm:self-center"
-                        onClick={() => setDeleteDialogOpen(true)}
+            <Section title="Help">
+                <Surface className="p-6">
+                    <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+                        <a
+                            href="https://discord.com/channels/885844321461485618/889573359111774329"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-theme-text-base hover:text-theme-text-strong"
+                        >
+                            <DiscordIcon
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                            />
+                            Get help
+                        </a>
+                        <a
+                            href="https://github.com/pollinations/pollinations/issues"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-theme-text-base hover:text-theme-text-strong"
+                        >
+                            <GitHubIcon
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                            />
+                            Report a bug
+                        </a>
+                    </div>
+                </Surface>
+            </Section>
+
+            <Section title="Legal">
+                <Surface className="p-6">
+                    <nav
+                        aria-label="Policies"
+                        className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium"
                     >
-                        Delete account
-                    </Button>
-                </div>
-                <div className="space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <TrashIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Permanently close your account and revoke access.
-                        </span>
-                    </p>
-                </div>
+                        <InlineLink
+                            href="https://pollinations.ai/terms"
+                            showIcon={false}
+                        >
+                            Terms of Service
+                        </InlineLink>
+                        <InlineLink
+                            href="https://pollinations.ai/privacy"
+                            showIcon={false}
+                        >
+                            Privacy Policy
+                        </InlineLink>
+                        <InlineLink
+                            href="https://pollinations.ai/refunds"
+                            showIcon={false}
+                        >
+                            Refund Policy
+                        </InlineLink>
+                    </nav>
+                </Surface>
+            </Section>
+
+            <Section title="Danger zone">
+                <Surface className="p-6">
+                    <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                        <Text tone="muted">
+                            Permanently close your account and revoke all
+                            access.
+                        </Text>
+                        <Button
+                            type="button"
+                            intent="danger"
+                            className="shrink-0 self-start sm:self-center"
+                            onClick={() => setDeleteDialogOpen(true)}
+                        >
+                            Delete account
+                        </Button>
+                    </div>
+                </Surface>
             </Section>
 
             <DeleteAccountDialog

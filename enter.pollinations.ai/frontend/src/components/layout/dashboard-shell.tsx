@@ -1,4 +1,5 @@
 import {
+    AccountIcon,
     AccountIdentity,
     BeakerIcon,
     BookIcon,
@@ -19,7 +20,6 @@ import {
     NavItem,
     PlayIcon,
     ScrollArea,
-    SignOutIcon,
     useScrollLock,
 } from "@pollinations/ui";
 import logoMarkUrl from "@pollinations/ui/brand/mark.svg";
@@ -70,7 +70,6 @@ type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
     accountName?: string;
     accountAvatarUrl?: string;
-    onSignOut?: () => void;
     pollenBalances?: { paid: number; quest: number };
 }>;
 
@@ -109,7 +108,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = PRIMARY_NAV_ITEMS,
     accountName,
     accountAvatarUrl,
-    onSignOut,
     pollenBalances,
     children,
 }) => {
@@ -243,11 +241,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             activePage={activePage}
             accountActive={location.pathname === "/account"}
             activeModelCategory={activeModelCategory}
-            showCreate={Boolean(onSignOut)}
+            showCreate={Boolean(accountName)}
             navItems={navItems}
             accountName={accountName}
             accountAvatarUrl={accountAvatarUrl}
-            onSignOut={onSignOut}
             pollenBalances={pollenBalances}
             onNavigate={closeDrawer}
             onSignIn={() => setIsDrawerOpen(false)}
@@ -338,7 +335,6 @@ type DashboardRailProps = {
     navItems: readonly DashboardNavItem[];
     accountName?: string;
     accountAvatarUrl?: string;
-    onSignOut?: () => void;
     pollenBalances?: { paid: number; quest: number };
     onNavigate: () => void;
     onSignIn: () => void;
@@ -352,7 +348,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
     navItems,
     accountName,
     accountAvatarUrl,
-    onSignOut,
     pollenBalances,
     onNavigate,
     onSignIn,
@@ -365,55 +360,35 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <RailScrollArea>
             <div className="flex min-h-full flex-col pr-2 pb-4">
                 <nav className="flex flex-col items-start gap-1 pt-[max(1rem,env(safe-area-inset-top))] lg:pt-3">
-                    {onSignOut ? (
+                    {accountName ? (
                         <section aria-label="Account" className="w-full">
-                            <div className="flex items-center gap-2">
-                                <Link
-                                    to="/account"
-                                    onClick={onNavigate}
-                                    aria-label={`Account: ${accountName ?? "Account"}`}
-                                    aria-current={
-                                        accountActive ? "page" : undefined
+                            <NavItem
+                                as={Link}
+                                to="/account"
+                                flushLeft
+                                data-theme="accent"
+                                icon={AccountIcon}
+                                active={accountActive}
+                                onClick={onNavigate}
+                                aria-label={`Account: ${accountName}`}
+                                className="dashboard-rail-tab"
+                            >
+                                <AccountIdentity
+                                    name={accountName}
+                                    avatarUrl={accountAvatarUrl}
+                                    secondaryContent={
+                                        pollenBalances ? (
+                                            <AccountPollen
+                                                source={{
+                                                    type: "wallet",
+                                                    balances: pollenBalances,
+                                                }}
+                                            />
+                                        ) : undefined
                                     }
-                                    className="min-w-0 flex-1 rounded-full"
-                                >
-                                    <AccountIdentity
-                                        name={accountName ?? "Account"}
-                                        avatarUrl={accountAvatarUrl}
-                                        secondaryContent={
-                                            pollenBalances ? (
-                                                <AccountPollen
-                                                    source={{
-                                                        type: "wallet",
-                                                        balances:
-                                                            pollenBalances,
-                                                    }}
-                                                />
-                                            ) : undefined
-                                        }
-                                        className={cn(
-                                            "w-full",
-                                            accountActive &&
-                                                "bg-theme-bg-active",
-                                        )}
-                                    />
-                                </Link>
-                                <button
-                                    type="button"
-                                    aria-label="Sign out"
-                                    title="Sign out"
-                                    onClick={() => {
-                                        onNavigate();
-                                        onSignOut();
-                                    }}
-                                    className="polli-control dashboard-rail-action flex shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:text-theme-text-strong"
-                                >
-                                    <SignOutIcon
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            </div>
+                                    className="polli:flex-row-reverse polli:bg-transparent polli:p-0 polli:pr-0"
+                                />
+                            </NavItem>
                         </section>
                     ) : (
                         <section aria-label="Account" className="mb-3 w-full">

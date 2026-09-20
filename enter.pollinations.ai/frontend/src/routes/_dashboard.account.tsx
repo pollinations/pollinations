@@ -11,6 +11,7 @@ import {
     InlineLink,
     Input,
     Section,
+    SignOutIcon,
     Surface,
     Text,
 } from "@pollinations/ui";
@@ -50,6 +51,7 @@ function AccountPage() {
     >();
     const [connectionPending, setConnectionPending] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [isSigningOut, setIsSigningOut] = useState(false);
 
     useEffect(() => {
         if (!discordAvailable) return;
@@ -97,6 +99,18 @@ function AccountPage() {
         user.name?.trim() || githubUsername || "Pollinations user";
     const checkingDiscord = discordAvailable && discordConnection === undefined;
 
+    async function handleSignOut(): Promise<void> {
+        if (isSigningOut) return;
+        setIsSigningOut(true);
+        try {
+            await authClient.signOut();
+            window.location.href = "/news";
+        } catch (error) {
+            console.error("Sign out failed:", error);
+            setIsSigningOut(false);
+        }
+    }
+
     async function handleDiscordConnection(): Promise<void> {
         setConnectionPending(true);
         setConnectionError(null);
@@ -133,7 +147,7 @@ function AccountPage() {
     return (
         <div className="flex flex-col gap-6">
             <Section title="Profile">
-                <Surface className="p-6">
+                <Surface className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <img
@@ -175,6 +189,17 @@ function AccountPage() {
                             </CopyButton>
                         </div>
                     </div>
+                    <Button
+                        type="button"
+                        intent="neutral"
+                        size="sm"
+                        icon={<SignOutIcon />}
+                        disabled={isSigningOut}
+                        className="shrink-0 self-start sm:self-center"
+                        onClick={() => void handleSignOut()}
+                    >
+                        {isSigningOut ? "Signing out…" : "Sign out"}
+                    </Button>
                 </Surface>
             </Section>
 

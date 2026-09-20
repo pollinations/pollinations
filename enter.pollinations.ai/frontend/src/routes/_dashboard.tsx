@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
@@ -90,19 +89,6 @@ export const Route = createFileRoute("/_dashboard")({
 
 function DashboardLayout() {
     const data = Route.useLoaderData();
-    const [isSigningOut, setIsSigningOut] = useState(false);
-
-    async function handleSignOut(): Promise<void> {
-        if (isSigningOut) return;
-        setIsSigningOut(true);
-        try {
-            await authClient.signOut();
-            window.location.href = "/news";
-        } catch (error) {
-            console.error("Sign out failed:", error);
-            setIsSigningOut(false);
-        }
-    }
 
     return (
         <DashboardShell
@@ -113,7 +99,6 @@ function DashboardLayout() {
                     : undefined
             }
             accountAvatarUrl={data.user?.image || undefined}
-            onSignOut={data.user ? handleSignOut : undefined}
             pollenBalances={
                 data.user
                     ? { paid: data.packBalance, quest: data.tierBalance }

@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-09-20",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:28:27.583723+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-09-20\n\nHey <@&1424461167883194418> — 109 PRs merged. The garden has been extremely productive.\n\n🤖 **Agents grew some memory**\n- New agent usage Quests, switchable agent/MCP KPIs, and clearer input/output modality declarations.\n- Computer MCP gained collective memory, caller-authored GitHub commits, plus `xan`, `html-to-markdown`, and file tools.\n- New prompt agents include CatGPT, Sirius Elevator, and Barnaby the Crow, who remembers things so you don’t have to pretend you do.\n\n🌻 **Models became easier to inspect**\n- Dashboard now shows healthy models by default; `/v1/models` and `/models` include model health.\n- Catalogs can filter by source and reliability; per-route health is available at `/models/status`.\n- Added `gpt-4o-mini`, `hy4-preview`, `hy3`, `flux.2-max`, ElevenLabs Music v2.5, and more. `gpt-image-2.5` now routes through Azure with OpenAI fallback.\n\n🛠️ **Developer surfaces, less ceremonial**\n- `polli update` updates global CLI installs; CLI usage can filter by key, model, and day range.\n- Inline media sharing and copyable code blocks landed, alongside better auth/error handling and refreshed API docs.\n\n🌱 **Community catalog kept blooming**\n- New apps across image, build, chat, writing, learn, and video/audio — including Pollen Craft, GitMuse, SQLCraft, Oracle Mystique, and PersonaMorph.\n\nDocs: https://github.com/pollinations/pollinations • API reference: https://text.pollinations.ai/openapi"
+}

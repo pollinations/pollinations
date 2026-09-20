@@ -450,6 +450,11 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             </div>
                         </section>
                     )}
+                    {!onSignOut && accountArea && (
+                        <section aria-label="Account" className="mb-3 w-full">
+                            {accountArea}
+                        </section>
+                    )}
                     {navItems
                         .filter((item) => item.id === "pollen")
                         .map((pollen) => (
@@ -559,9 +564,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         ))}
                 </nav>
                 <div className="mt-auto flex w-full flex-col gap-1 pt-1">
-                    {!showCreate && accountArea && (
-                        <div className="px-2">{accountArea}</div>
-                    )}
                     <DashboardDocs />
                     <DashboardPlayground />
                     <BrandLinks links={brandLinks} />

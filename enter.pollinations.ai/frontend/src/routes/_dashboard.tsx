@@ -1,13 +1,12 @@
-import { InlineLink } from "@pollinations/ui";
-import { GitHubSignInButton } from "@pollinations/ui/auth";
+import { AccountIcon, NavItem } from "@pollinations/ui";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
@@ -130,34 +129,37 @@ function DashboardLayout() {
 
 export function SignedOutAccountArea({
     callbackURL,
+    defaultOpen = false,
 }: {
     callbackURL?: string;
+    defaultOpen?: boolean;
 } = {}) {
-    const { isSigningIn, error, signIn } = useGitHubSignIn(callbackURL);
+    const [open, setOpen] = useState(defaultOpen);
 
     return (
-        <div className="flex flex-col gap-2">
-            <GitHubSignInButton
-                onClick={() => void signIn()}
-                isSigningIn={isSigningIn}
-            />
-            <p className="text-center text-xs text-theme-text-soft">
-                New here? Continuing creates your Pollinations account.
-            </p>
-            <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
-                By continuing, you agree to the{" "}
-                <InlineLink href="https://pollinations.ai/terms">
-                    Terms of Service
-                </InlineLink>{" "}
-                and acknowledge the{" "}
-                <InlineLink href="https://pollinations.ai/privacy">
-                    Privacy Policy
-                </InlineLink>
-                .
-            </p>
-            {error && (
-                <p className="px-2 text-xs text-intent-danger-text">{error}</p>
+        <>
+            <NavItem
+                icon={AccountIcon}
+                flushLeft
+                className="dashboard-rail-tab"
+                aria-haspopup="dialog"
+                onClick={() => setOpen(true)}
+            >
+                Sign in
+            </NavItem>
+            {open && (
+                <SignInScreen
+                    title="Sign in"
+                    description="to your Pollinations account."
+                    callbackURL={callbackURL}
+                    onCancel={() => setOpen(false)}
+                >
+                    <p className="text-sm text-theme-text-muted">
+                        Continuing creates your Pollinations account if you
+                        don’t have one yet.
+                    </p>
+                </SignInScreen>
             )}
-        </div>
+        </>
     );
 }

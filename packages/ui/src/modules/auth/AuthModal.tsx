@@ -74,6 +74,7 @@ export type AuthFlowLayoutProps = {
     footnote?: ReactNode;
     dialog?: AuthModalProps["dialog"];
     size?: DialogProps["size"];
+    onClose?: () => void;
 };
 
 const legalFootnote = (
@@ -101,6 +102,7 @@ export function AuthFlowLayout({
     footnote = legalFootnote,
     dialog,
     size,
+    onClose,
 }: AuthFlowLayoutProps) {
     const generatedId = useId();
     const headingId = titleId ?? generatedId;
@@ -108,6 +110,7 @@ export function AuthFlowLayout({
         <AuthModal
             dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
             size={size}
+            onClose={onClose}
         >
             <DialogBody
                 actions={actions}

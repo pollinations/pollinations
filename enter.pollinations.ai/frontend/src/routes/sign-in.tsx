@@ -59,7 +59,7 @@ function SignInPage() {
     return (
         <DashboardShell
             navItems={SIGNED_OUT_NAV_ITEMS}
-            accountArea={<SignedOutAccountArea />}
+            accountArea={<SignedOutAccountArea defaultOpen />}
         >
             <NewsFaq />
         </DashboardShell>

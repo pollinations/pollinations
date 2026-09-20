@@ -27,6 +27,7 @@ export function SignInScreen({
             subject={subject}
             description={description}
             error={error}
+            onClose={onCancel}
             actions={
                 <>
                     {onCancel && (

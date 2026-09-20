@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-09-20",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:28:27.583723+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: agents, model health, and 109 merges",
+  "text": "109 PRs merged this week. The broad theme was making the agent and model layers less magical in the bad sense of the word.\n\nAgents now have collective memory through the computer MCP, can author computer commits as the caller’s GitHub account, preserve omitted fields on update, retain upstream 4xx responses, and can expose declared input/output modalities. We also added agent-usage Quests, a Pollinations LLM provider, and a few prompt agents with actual personalities rather than another blank chat box.\n\nModel discovery now exposes health on `/v1/models` and `/models`, defaults the dashboard to healthy models, and adds per-route status through a thinner `/models/status` proxy. Catalog filtering can use source and reliability, while community-model monitoring, relisting evidence, and KV caching got tightened up.\n\nProvider resilience work included Azure routing with OpenAI fallback for `gpt-image-2.5`, restored Scout and Z-Image fallbacks, and Vertex Global before AI Studio for `gemini-fast`. New additions include ElevenLabs Music v2.5, GPT-4o-mini, Flux 2 Max, Tencent HY3/HY4, and several community apps.\n\nDeveloper-paper-cut cleanup: CLI usage filtering and global updates, inline media/code sharing, browser auth handling, better stream diagnostics, and regenerated API docs.\n\nCode: https://github.com/pollinations/pollinations\nDocs: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\nAgent guide: https://pollinations.ai/docs"
+}

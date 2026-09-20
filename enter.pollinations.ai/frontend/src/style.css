@@ -1,5 +1,12 @@
 @import "@pollinations/ui/app.css";
 
+.quest-summary-preview {
+    --polli-color-paid-pale: var(--polli-color-surface-opaque);
+    --polli-color-tier-pale: var(--polli-color-surface-opaque);
+    --polli-color-paid-deep: var(--polli-color-text-muted);
+    --polli-color-tier-deep: var(--polli-color-text-muted);
+}
+
 .dashboard-add-button {
     width: 4.25rem;
     height: 2.75rem;

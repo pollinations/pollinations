@@ -253,7 +253,9 @@ function QuestSummary({
     preview?: boolean;
 }) {
     return (
-        <div className={`grid grid-cols-2 gap-3${preview ? " grayscale" : ""}`}>
+        <div
+            className={`grid grid-cols-2 gap-3${preview ? " quest-summary-preview" : ""}`}
+        >
             <WalletBalanceCard
                 kind="paid"
                 label={preview ? "Available quests" : "Quests"}

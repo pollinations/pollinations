@@ -545,15 +545,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("excludes Mistral's non-standard endpoint variants", () => {
+    it("routes Mistral Small 4 to Mistral's direct API", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 
-        expect(result.options.model).toBe("mistralai/mistral-small-2603");
-        expect(result.options.provider).toEqual({
-            only: ["mistral"],
-            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-            allow_fallbacks: false,
+        expect(result.options.model).toBe("mistral-small-2603");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.mistral.ai/v1",
         });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {

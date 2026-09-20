@@ -70,12 +70,13 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it.each(["typesafe/jev-1.13", "typesafe/jev", "jev"])(
-        "resolves %s to the versioned canonical model",
-        (name) => {
-            expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
-        },
-    );
+    it.each([
+        "typesafe/jev-1.13",
+        "typesafe/jev",
+        "jev",
+    ])("resolves %s to the versioned canonical model", (name) => {
+        expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+    });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi

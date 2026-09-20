@@ -14,6 +14,7 @@ const ConnectionSchema = z.object({
     id: z.string(),
     toolkit: z.string(),
     name: z.string().nullable(),
+    description: z.string(),
     logo: z.string().nullable(),
     alias: z.string().nullable(),
     status: z.string(),

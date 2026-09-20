@@ -1,10 +1,4 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
-import {
-    fetchModelHealthRows,
-    type ModelHealth,
-    type ModelHealthRow,
-    modelHealthLookup,
-} from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -18,7 +12,6 @@ type ApiPricing = ModelInfo["pricing"];
 
 export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
-    health?: ModelHealth;
 };
 
 type PriceField =
@@ -97,17 +90,6 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     return parseModelCatalogResponse(await response.json());
 }
 
-export function withModelHealth(
-    models: ApiModelInfo[],
-    rows: ModelHealthRow[],
-): ApiModelInfo[] {
-    const lookup = modelHealthLookup(rows);
-    return models.map((model) => ({
-        ...model,
-        health: lookup(getCatalogModelId(model), getCatalogCategory(model)),
-    }));
-}
-
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
@@ -117,14 +99,7 @@ export async function fetchModelCatalog(
         modelCatalogExpiresAt = Date.now() + 60_000;
     }
     modelCatalogPromise ??= import("../../config.ts")
-        .then(async ({ config }) => {
-            const [rows, catalog] = await Promise.all([
-                // Health is decoration: without the feed every dot reads unknown.
-                fetchModelHealthRows(config.genBaseUrl).catch(() => []),
-                fetchCatalog(`${config.genBaseUrl}/models`),
-            ]);
-            return withModelHealth(catalog, rows);
-        })
+        .then(({ config }) => fetchCatalog(`${config.genBaseUrl}/models`))
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;

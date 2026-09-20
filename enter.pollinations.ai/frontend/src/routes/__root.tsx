@@ -4,6 +4,7 @@ import {
     HeadContent,
     Outlet,
 } from "@tanstack/react-router";
+import { Analytics } from "../components/analytics.tsx";
 
 type RouterContext = {};
 
@@ -17,6 +18,7 @@ function RootLayout() {
     return (
         <>
             <HeadContent />
+            <Analytics />
             <Outlet />
         </>
     );

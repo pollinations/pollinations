@@ -13,12 +13,8 @@ import {
     requireCompatibleVersion,
     requireSuccessfulCommand,
 } from "./process.js";
-import {
-    applyWithSnapshot,
-    hasSnapshot,
-    restoreOrStrip,
-} from "./snapshot.js";
 import { responseError, verifyHarnessSmoke } from "./smoke.js";
+import { applyWithSnapshot, hasSnapshot, restoreOrStrip } from "./snapshot.js";
 import type {
     HarnessAdapter,
     HarnessContext,
@@ -244,7 +240,11 @@ const assertNoCollisions = (ctx: HarnessContext) => {
     const models = asRecords(
         loadObject(files.userModels, { version: 1, models: [] }).models,
     );
-    if (models.some((entry) => entry.provider === PROVIDER && !isOurModel(entry))) {
+    if (
+        models.some(
+            (entry) => entry.provider === PROVIDER && !isOurModel(entry),
+        )
+    ) {
         throw new Error(
             `Codex Router already has user-owned ${PROVIDER} model entries; remove them first.`,
         );
@@ -416,7 +416,9 @@ const stripMetadata = (ctx: HarnessContext) => {
 
     const modelDoc = loadObject(files.userModels, { version: 1, models: [] });
     const models = asRecords(modelDoc.models);
-    const ourSlugs = models.filter(isOurModel).map((entry) => String(entry.slug));
+    const ourSlugs = models
+        .filter(isOurModel)
+        .map((entry) => String(entry.slug));
     const nextModels = models.filter((entry) => !isOurModel(entry));
     if (nextModels.length !== models.length) {
         modelDoc.models = nextModels;
@@ -584,7 +586,9 @@ const smokeCodexRouter = async (ctx: HarnessContext, model: string) => {
         (await pongResponse.json()) as Record<string, unknown>,
     );
     if (pong.trim().toLowerCase() !== "pong") {
-        throw new Error("Codex Router smoke check did not return exactly pong.");
+        throw new Error(
+            "Codex Router smoke check did not return exactly pong.",
+        );
     }
 
     const streamResponse = await postResponses(ctx, {
@@ -593,7 +597,10 @@ const smokeCodexRouter = async (ctx: HarnessContext, model: string) => {
         stream: true,
     });
     const stream = await streamResponse.text();
-    if (!stream.includes("STREAM_OK") || !/response\.(?:completed|done)/u.test(stream)) {
+    if (
+        !stream.includes("STREAM_OK") ||
+        !/response\.(?:completed|done)/u.test(stream)
+    ) {
         throw new Error("Codex Router streaming check did not complete.");
     }
 

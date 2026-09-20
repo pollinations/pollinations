@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { randomBytes, scryptSync } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { BASE_URL } from "../lib/config.js";
@@ -37,7 +37,8 @@ const NEXT_MAJOR = "4.0.0";
 type JsonRecord = Record<string, unknown>;
 
 interface OwnershipJournal {
-    version: 1;
+    version: 2;
+    salt: string;
     providerHash: string;
     profileHash: string;
     profileEnabledBefore: boolean;
@@ -65,8 +66,8 @@ const asRecords = (value: unknown): JsonRecord[] =>
         ? value.filter((entry): entry is JsonRecord => asRecord(entry) !== null)
         : [];
 
-const hash = (value: unknown) =>
-    createHash("sha256").update(JSON.stringify(value)).digest("hex");
+const hash = (value: unknown, salt: string) =>
+    scryptSync(JSON.stringify(value), salt, 32).toString("hex");
 
 const configDir = (ctx: HarnessContext) => {
     if (process.platform === "win32") {
@@ -81,7 +82,8 @@ const configDir = (ctx: HarnessContext) => {
     return join(home, ".claude-code-router");
 };
 
-const serviceFile = (ctx: HarnessContext) => join(configDir(ctx), "service.json");
+const serviceFile = (ctx: HarnessContext) =>
+    join(configDir(ctx), "service.json");
 const journalFile = (ctx: HarnessContext) =>
     join(ctx.home, ".pollinations", "harnesses", "claude-code-router.json");
 
@@ -90,7 +92,9 @@ const loadJournal = (ctx: HarnessContext): OwnershipJournal | null => {
     if (!text) return null;
     try {
         const value = JSON.parse(text) as Partial<OwnershipJournal>;
-        return value.version === 1 &&
+        return value.version === 2 &&
+            typeof value.salt === "string" &&
+            value.salt.length >= 16 &&
             typeof value.providerHash === "string" &&
             typeof value.profileHash === "string" &&
             typeof value.profileEnabledBefore === "boolean" &&
@@ -106,14 +110,16 @@ const saveJournal = (
     ctx: HarnessContext,
     update: ConfigUpdate,
     profileEnabledBefore: boolean,
-) =>
-    writeTextAtomic(
+) => {
+    const salt = randomBytes(16).toString("base64");
+    return writeTextAtomic(
         journalFile(ctx),
         `${JSON.stringify(
             {
-                version: 1,
-                providerHash: hash(update.provider),
-                profileHash: hash(update.profile),
+                version: 2,
+                salt,
+                providerHash: hash(update.provider, salt),
+                profileHash: hash(update.profile, salt),
                 profileEnabledBefore,
                 profileEnabledAfter:
                     profileConfigFrom(update.config).enabled !== false,
@@ -123,6 +129,7 @@ const saveJournal = (
         )}\n`,
         0o600,
     );
+};
 
 const providerFrom = (config: JsonRecord) =>
     asRecords(config.Providers).find((entry) => entry.id === PROVIDER_ID);
@@ -136,7 +143,8 @@ const profileFrom = (config: JsonRecord) => {
 
 const profileConfigFrom = (config: JsonRecord) => {
     const value = asRecord(config.profile);
-    if (!value) throw new Error("CCR returned an invalid profile configuration.");
+    if (!value)
+        throw new Error("CCR returned an invalid profile configuration.");
     return value;
 };
 
@@ -162,8 +170,8 @@ const entriesMatchJournal = (
         provider &&
             profile &&
             journal &&
-            hash(provider) === journal.providerHash &&
-            hash(profile) === journal.profileHash,
+            hash(provider, journal.salt) === journal.providerHash &&
+            hash(profile, journal.salt) === journal.profileHash,
     );
 
 const configurationMatchesJournal = (
@@ -199,10 +207,7 @@ const assertNoCollisions = (
     );
 };
 
-const providerEntry = (
-    models: HarnessModel[],
-    apiKey: string,
-): JsonRecord => ({
+const providerEntry = (models: HarnessModel[], apiKey: string): JsonRecord => ({
     id: PROVIDER_ID,
     provider: PROVIDER_ID,
     name: PROVIDER_NAME,
@@ -309,11 +314,15 @@ const serviceConnection = (ctx: HarnessContext): ServiceConnection => {
         if (typeof state.url !== "string") throw new Error("missing url");
         url = new URL(state.url);
     } catch {
-        throw new Error("CCR service.json is invalid; restart with: ccr start --no-open");
+        throw new Error(
+            "CCR service.json is invalid; restart with: ccr start --no-open",
+        );
     }
     const token = url.searchParams.get("ccr_web_token")?.trim();
     if (!token) {
-        throw new Error("CCR management token is missing; restart with: ccr start --no-open");
+        throw new Error(
+            "CCR management token is missing; restart with: ccr start --no-open",
+        );
     }
     return {
         endpoint: new URL("/api/ccr/rpc", url).toString(),
@@ -344,7 +353,8 @@ const rpc = async <T>(
         const message =
             payload && !payload.ok ? payload.error?.message : undefined;
         throw new Error(
-            message || `CCR management RPC ${method} failed with HTTP ${response.status}.`,
+            message ||
+                `CCR management RPC ${method} failed with HTTP ${response.status}.`,
         );
     }
     return payload.value;
@@ -371,12 +381,8 @@ const configuredModel = (profile: JsonRecord | undefined) => {
     return model.startsWith(prefix) ? model.slice(prefix.length) : undefined;
 };
 
-const providerKey = (
-    config: JsonRecord,
-    journal: OwnershipJournal | null,
-) => {
+const providerKey = (config: JsonRecord, journal: OwnershipJournal | null) => {
     const provider = providerFrom(config);
-    const profile = profileFrom(config);
     if (!configurationMatchesJournal(config, journal)) return null;
     const key = typeof provider?.api_key === "string" ? provider.api_key : "";
     return key.trim() || null;
@@ -387,7 +393,8 @@ const clientKey = (config: JsonRecord) => {
         (candidate) => candidate.id === PROFILE_KEY_ID,
     );
     const key = typeof entry?.key === "string" ? entry.key.trim() : "";
-    if (!key) throw new Error("CCR did not create the isolated profile client key.");
+    if (!key)
+        throw new Error("CCR did not create the isolated profile client key.");
     return key;
 };
 
@@ -421,7 +428,9 @@ const postMessages = async (
 
 const responseText = (payload: JsonRecord) =>
     asRecords(payload.content)
-        .filter((entry) => entry.type === "text" && typeof entry.text === "string")
+        .filter(
+            (entry) => entry.type === "text" && typeof entry.text === "string",
+        )
         .map((entry) => entry.text)
         .join("");
 
@@ -442,7 +451,9 @@ const smokeClaudeCodeRouter = async (
     });
     const pong = responseText((await pongResponse.json()) as JsonRecord);
     if (pong.trim().toLowerCase() !== "pong") {
-        throw new Error("Claude Code Router smoke check did not return exactly pong.");
+        throw new Error(
+            "Claude Code Router smoke check did not return exactly pong.",
+        );
     }
 
     const streamResponse = await postMessages(endpoint, key, {
@@ -510,7 +521,9 @@ const baseResult = (
         ...(!clientInstalled ? ["Install @anthropic-ai/claude-code"] : []),
         ...(installed && !ready ? ["Start CCR with ccr start --no-open"] : []),
         ...(!providerReady ? ["Pollinations provider is missing"] : []),
-        ...(!profileReady ? ["Pollinations Claude Code profile is missing"] : []),
+        ...(!profileReady
+            ? ["Pollinations Claude Code profile is missing"]
+            : []),
         ...(!key ? ["Pollinations provider key is missing"] : []),
         ...(!model ? ["Pollinations model selection is missing"] : []),
     ];
@@ -556,7 +569,8 @@ const statusFromService = async (ctx: HarnessContext) => {
 export const claudeCode: HarnessAdapter = {
     id: ID,
     label: LABEL,
-    description: "Add an isolated Pollinations profile through Claude Code Router",
+    description:
+        "Add an isolated Pollinations profile through Claude Code Router",
     restartHint: `Launch the isolated profile with: ccr "${PROFILE_NAME}"`,
 
     async on(ctx, options) {
@@ -610,7 +624,9 @@ export const claudeCode: HarnessAdapter = {
                 profile: profileFrom(configured),
             };
             if (!actualUpdate.provider || !actualUpdate.profile) {
-                throw new Error("CCR did not persist the Pollinations provider and profile.");
+                throw new Error(
+                    "CCR did not persist the Pollinations provider and profile.",
+                );
             }
             saveJournal(
                 ctx,
@@ -619,7 +635,9 @@ export const claudeCode: HarnessAdapter = {
             );
             const gateway = await rpc<JsonRecord>(ctx, "getGatewayStatus");
             if (gateway.state !== "running") {
-                throw new Error("CCR saved the profile but its gateway is not running.");
+                throw new Error(
+                    "CCR saved the profile but its gateway is not running.",
+                );
             }
             const smoke =
                 options.smoke === false

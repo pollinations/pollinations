@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { scryptSync } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -39,13 +39,15 @@ const baseConfig = () => ({
     routerEndpoint: "http://127.0.0.1:3456",
 });
 
+const TEST_SALT = "pollinations-claude-code-test";
 const digest = (value: unknown) =>
-    createHash("sha256").update(JSON.stringify(value)).digest("hex");
+    scryptSync(JSON.stringify(value), TEST_SALT, 32).toString("hex");
 
 const journalFor = (
     update: ReturnType<typeof configureClaudeCodeConfig>,
 ): Journal => ({
-    version: 1,
+    version: 2,
+    salt: TEST_SALT,
     providerHash: digest(update.provider),
     profileHash: digest(update.profile),
     profileEnabledBefore: false,
@@ -96,7 +98,9 @@ describe("claude code router harness", () => {
                 ),
             }),
         );
-        expect((update.config.profile as { enabled: boolean }).enabled).toBe(true);
+        expect((update.config.profile as { enabled: boolean }).enabled).toBe(
+            true,
+        );
     });
 
     it("refuses provider and profile id collisions without an ownership journal", () => {
@@ -170,7 +174,10 @@ describe("claude code router harness", () => {
             "sk_test",
             models[0].id,
         );
-        const stripped = stripClaudeCodeConfig(update.config, journalFor(update));
+        const stripped = stripClaudeCodeConfig(
+            update.config,
+            journalFor(update),
+        );
 
         expect(stripped.outcome).toBe("restored");
         expect(stripped.config).toEqual(original);

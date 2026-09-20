@@ -4,7 +4,12 @@ import { requireCompatibleVersion } from "./process.js";
 describe("harness version compatibility", () => {
     it("accepts a supported release", () => {
         expect(
-            requireCompatibleVersion("Router", "router v3.1.1", "3.1.1", "4.0.0"),
+            requireCompatibleVersion(
+                "Router",
+                "router v3.1.1",
+                "3.1.1",
+                "4.0.0",
+            ),
         ).toBe("3.1.1");
     });
 

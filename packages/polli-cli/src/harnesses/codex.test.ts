@@ -1,19 +1,15 @@
 import {
     existsSync,
     mkdirSync,
-    readFileSync,
     readdirSync,
+    readFileSync,
     writeFileSync,
 } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { mkdtemp, rm } from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-    codex,
-    configureCodexRouter,
-    disableCodexRouter,
-} from "./codex.js";
+import { codex, configureCodexRouter, disableCodexRouter } from "./codex.js";
 import type { HarnessContext, HarnessModel } from "./types.js";
 
 const models: HarnessModel[] = [
@@ -53,7 +49,9 @@ describe("codex router harness", () => {
                 baseUrl: "https://gen.pollinations.ai/v1",
             }),
         );
-        expect(readJson("provider-credentials.json").credentials).toContainEqual(
+        expect(
+            readJson("provider-credentials.json").credentials,
+        ).toContainEqual(
             expect.objectContaining({
                 id: "cred_pollinations_harness_codex",
                 secretRef: expect.objectContaining({ type: "provider-file" }),
@@ -74,7 +72,10 @@ describe("codex router harness", () => {
             file.startsWith("codex."),
         );
         expect(snapshot).toBeDefined();
-        const snapshots = readFileSync(join(snapshotDir, snapshot as string), "utf-8");
+        const snapshots = readFileSync(
+            join(snapshotDir, snapshot as string),
+            "utf-8",
+        );
         expect(snapshots).not.toContain("sk_test_codex");
     });
 
@@ -90,9 +91,9 @@ describe("codex router harness", () => {
         const result = disableCodexRouter(ctx);
 
         expect(result.outcome).toBe("restored");
-        expect(readFileSync(join(state, "generic-providers.json"), "utf-8")).toBe(
-            original,
-        );
+        expect(
+            readFileSync(join(state, "generic-providers.json"), "utf-8"),
+        ).toBe(original);
         expect(
             existsSync(
                 join(state, "generic-provider-credentials", "pollinations.key"),
@@ -170,9 +171,9 @@ describe("codex router harness", () => {
                 join(state, "generic-provider-credentials", "pollinations.key"),
             ),
         ).toBe(false);
-        expect(readFileSync(join(state, "generic-providers.json"), "utf-8")).toBe(
-            "[]\n",
-        );
+        expect(
+            readFileSync(join(state, "generic-providers.json"), "utf-8"),
+        ).toBe("[]\n");
     });
 
     it("stops before setup or login when codex-router is missing", async () => {

@@ -52,10 +52,7 @@ const parseVersion = (value: string) => {
         : null;
 };
 
-const compareVersions = (
-    left: readonly number[],
-    right: readonly number[],
-) => {
+const compareVersions = (left: readonly number[], right: readonly number[]) => {
     for (let index = 0; index < 3; index++) {
         const difference = (left[index] ?? 0) - (right[index] ?? 0);
         if (difference !== 0) return difference;

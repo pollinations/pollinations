@@ -1,6 +1,5 @@
 import {
     AccountIcon,
-    AppIcon,
     BeakerIcon,
     BookIcon,
     BotIcon,
@@ -241,7 +240,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const rail = (
         <DashboardRail
             activePage={activePage}
-            activeSection={location.hash}
             accountActive={location.pathname === "/account"}
             activeModelCategory={activeModelCategory}
             showCreate={Boolean(onSignOut)}
@@ -333,7 +331,6 @@ function useDashboardShellBodyClass(): void {
 
 type DashboardRailProps = {
     activePage?: DashboardPage;
-    activeSection?: string;
     accountActive: boolean;
     activeModelCategory?: string;
     showCreate: boolean;
@@ -348,7 +345,6 @@ type DashboardRailProps = {
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
-    activeSection,
     accountActive,
     activeModelCategory,
     showCreate,
@@ -497,30 +493,11 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 flushLeft
                                 data-theme="accent"
                                 icon={KeyIcon}
-                                active={
-                                    activePage === "keys" &&
-                                    activeSection !== "app-keys"
-                                }
+                                active={activePage === "keys"}
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"
                             >
                                 My keys
-                            </NavItem>
-                            <NavItem
-                                as={Link}
-                                to="/keys"
-                                hash="app-keys"
-                                flushLeft
-                                data-theme="accent"
-                                icon={AppIcon}
-                                active={
-                                    activePage === "keys" &&
-                                    activeSection === "app-keys"
-                                }
-                                onClick={onNavigate}
-                                className="dashboard-rail-tab"
-                            >
-                                My apps
                             </NavItem>
                             <NavItem
                                 as={Link}
@@ -529,30 +506,11 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 flushLeft
                                 data-theme="accent"
                                 icon={BeakerIcon}
-                                active={
-                                    activePage === "my-models" &&
-                                    activeSection !== "agents"
-                                }
+                                active={activePage === "my-models"}
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"
                             >
                                 My models
-                            </NavItem>
-                            <NavItem
-                                as={Link}
-                                to="/my-models"
-                                hash="agents"
-                                flushLeft
-                                data-theme="accent"
-                                icon={BotIcon}
-                                active={
-                                    activePage === "my-models" &&
-                                    activeSection === "agents"
-                                }
-                                onClick={onNavigate}
-                                className="dashboard-rail-tab"
-                            >
-                                My agents
                             </NavItem>
                         </DashboardNavGroup>
                     )}

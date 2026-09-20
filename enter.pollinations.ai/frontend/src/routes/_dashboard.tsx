@@ -3,7 +3,6 @@ import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import { DashboardSignInTrigger } from "../components/auth/dashboard-sign-in-trigger.tsx";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
@@ -115,7 +114,6 @@ function DashboardLayout() {
             }
             accountAvatarUrl={data.user?.image || undefined}
             onSignOut={data.user ? handleSignOut : undefined}
-            accountArea={data.user ? undefined : <DashboardSignInTrigger />}
             pollenBalances={
                 data.user
                     ? { paid: data.packBalance, quest: data.tierBalance }

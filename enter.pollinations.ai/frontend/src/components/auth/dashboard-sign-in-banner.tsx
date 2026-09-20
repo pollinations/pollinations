@@ -2,7 +2,11 @@ import { Surface, Text } from "@pollinations/ui";
 import logoMarkUrl from "@pollinations/ui/brand/mark.svg";
 import { DashboardSignInTrigger } from "./dashboard-sign-in-trigger.tsx";
 
-export function DashboardSignInBanner() {
+export function DashboardSignInBanner({
+    defaultOpen = false,
+}: {
+    defaultOpen?: boolean;
+}) {
     return (
         <Surface
             as="aside"
@@ -24,7 +28,7 @@ export function DashboardSignInBanner() {
                 </Text>
             </div>
             <div className="flex shrink-0">
-                <DashboardSignInTrigger variant="page" />
+                <DashboardSignInTrigger defaultOpen={defaultOpen} />
             </div>
         </Surface>
     );

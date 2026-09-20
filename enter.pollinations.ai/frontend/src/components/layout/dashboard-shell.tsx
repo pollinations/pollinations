@@ -70,7 +70,6 @@ type DashboardShellProps = PropsWithChildren<{
     accountName?: string;
     accountAvatarUrl?: string;
     onSignOut?: () => void;
-    accountArea?: ReactNode;
     pollenBalances?: { paid: number; quest: number };
 }>;
 
@@ -110,7 +109,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountName,
     accountAvatarUrl,
     onSignOut,
-    accountArea,
     pollenBalances,
     children,
 }) => {
@@ -245,7 +243,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             activeModelCategory={activeModelCategory}
             showCreate={Boolean(onSignOut)}
             navItems={navItems}
-            accountArea={accountArea}
             accountName={accountName}
             accountAvatarUrl={accountAvatarUrl}
             onSignOut={onSignOut}
@@ -340,7 +337,6 @@ type DashboardRailProps = {
     activeModelCategory?: string;
     showCreate: boolean;
     navItems: readonly DashboardNavItem[];
-    accountArea?: ReactNode;
     accountName?: string;
     accountAvatarUrl?: string;
     onSignOut?: () => void;
@@ -354,7 +350,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
     activeModelCategory,
     showCreate,
     navItems,
-    accountArea,
     accountName,
     accountAvatarUrl,
     onSignOut,
@@ -448,11 +443,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     />
                                 </button>
                             </div>
-                        </section>
-                    )}
-                    {!onSignOut && accountArea && (
-                        <section aria-label="Account" className="mb-3 w-full">
-                            {accountArea}
                         </section>
                     )}
                     {navItems

@@ -414,7 +414,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     className="dashboard-rail-tab min-w-0"
                                 >
                                     <span
-                                        className="min-w-0 truncate text-xs"
+                                        className="min-w-0 truncate"
                                         title={accountName}
                                     >
                                         {accountName ?? "Account"}

@@ -62,7 +62,6 @@ export function CommunityEndpointCard({
     const visibilityTooltip = isToggling
         ? "Saving visibility"
         : visibilityActionLabel;
-    const hiddenByOwner = endpoint.hiddenReason === "Hidden by owner";
     const mutedClassName = endpoint.hidden ? "opacity-60" : undefined;
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
@@ -73,7 +72,7 @@ export function CommunityEndpointCard({
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
             <ResourceCardHeader
-                className={mutedClassName}
+                contentClassName={mutedClassName}
                 icon={
                     isAgent ? (
                         <BotIcon className="h-4 w-4" aria-hidden="true" />
@@ -136,28 +135,9 @@ export function CommunityEndpointCard({
             />
 
             {endpoint.hidden && (
-                <Alert
-                    intent={hiddenByOwner ? "info" : "danger"}
-                    className="mt-3"
-                >
-                    <div className="flex flex-col gap-1">
-                        <span className="font-semibold">
-                            {hiddenByOwner
-                                ? "Unlisted by you"
-                                : isAgent
-                                  ? "Agent unlisted"
-                                  : "Model unlisted"}
-                        </span>
-                        <span className="text-sm">
-                            {hiddenByOwner
-                                ? `This ${isAgent ? "agent" : "model"} still works when called with its exact model ID.`
-                                : (endpoint.hiddenReason?.replace(
-                                      /^Hidden\b/i,
-                                      "Unlisted",
-                                  ) ?? "Unlisted after repeated failures.")}
-                        </span>
-                    </div>
-                </Alert>
+                <div className="mt-3">
+                    <Chip size="sm">Unlisted</Chip>
+                </div>
             )}
 
             <PendingChangeNotice endpoint={endpoint} />

@@ -573,15 +573,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 {activity.label}
                             </NavItem>
                         ))}
-                    <div className="mt-4 mb-3 w-full">
-                        <ExploreNav
-                            active={activePage === "models"}
-                            category={activeModelCategory}
-                            onNavigate={onNavigate}
-                        />
-                    </div>
-                </nav>
-                <div className="mt-auto flex w-full flex-col gap-1 pt-1">
                     {navItems
                         .filter((item) => item.id === "news-faq")
                         .map((item) => (
@@ -601,6 +592,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 News &amp; FAQ
                             </NavItem>
                         ))}
+                    <div className="mt-3 mb-3 w-full">
+                        <ExploreNav
+                            active={activePage === "models"}
+                            category={activeModelCategory}
+                            onNavigate={onNavigate}
+                        />
+                    </div>
+                </nav>
+                <div className="mt-auto flex w-full flex-col gap-1 pt-1">
                     <DashboardDocs />
                     <DashboardPlayground />
                     <BrandLinks links={brandLinks} />

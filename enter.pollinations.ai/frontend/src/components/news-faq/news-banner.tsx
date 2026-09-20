@@ -1,4 +1,4 @@
-import { cn, InlineLink, Surface } from "@pollinations/ui";
+import { InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -6,7 +6,7 @@ const HIGHLIGHTS_RAW_URL =
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
-const DYNAMIC_NEWS_COUNT = 6;
+const DYNAMIC_NEWS_COUNT = 24;
 
 interface Highlight {
     date?: string;
@@ -15,6 +15,7 @@ interface Highlight {
     emoji: string;
     title: string;
     description: string;
+    href?: string;
     /** Optional bullet list rendered under the description (pinned items only). */
     details?: string[];
 }
@@ -132,6 +133,7 @@ function parseHighlights(md: string): Highlight[] {
                 emoji: emojiTitleMatch?.[1] ?? "",
                 title: emojiTitleMatch?.[2]?.trim() ?? "",
                 description,
+                href: description.match(/\[[^\]]+\]\(([^)]+)\)/)?.[1],
             };
         });
 }
@@ -151,7 +153,7 @@ function formatNewsDate(date: string): string {
 /** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
@@ -164,7 +166,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     <Surface
         id="canonical-model-slugs"
         variant="card"
-        className="scroll-mt-4 leading-relaxed"
+        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
     >
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
             API update
@@ -202,11 +204,11 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0) return null;
 
     return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="flex flex-col gap-1">
             {highlights.map((item) => (
                 <DynamicNews key={`${item.date}-${item.title}`} item={item} />
             ))}
-        </div>
+        </ul>
     );
 };
 
@@ -242,23 +244,32 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface
-        variant="card"
-        className={cn("flex min-h-48 text-sm leading-relaxed")}
-    >
-        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
-            <div className="min-w-0">
-                <div className="font-semibold text-ink-900">{item.title}</div>
-                {item.date && (
-                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
-                        {formatNewsDate(item.date)}
-                    </div>
-                )}
-                <p className="mt-1 text-ink-700">
-                    {renderWithLinks(item.description)}
-                </p>
-            </div>
-        </div>
-    </Surface>
+    <li className="flex min-w-0 items-center gap-3 py-1 text-sm">
+        {item.date && (
+            <time
+                dateTime={item.date}
+                className="w-24 shrink-0 text-xs tabular-nums text-theme-text-muted"
+            >
+                {formatNewsDate(item.date)}
+            </time>
+        )}
+        {item.emoji && (
+            <span aria-hidden="true" className="shrink-0">
+                {item.emoji}
+            </span>
+        )}
+        {item.href ? (
+            <InlineLink
+                href={item.href}
+                title={item.title}
+                className="flex min-w-0 items-center"
+            >
+                <span className="truncate">{item.title}</span>
+            </InlineLink>
+        ) : (
+            <span className="truncate text-theme-text-base" title={item.title}>
+                {item.title}
+            </span>
+        )}
+    </li>
 );

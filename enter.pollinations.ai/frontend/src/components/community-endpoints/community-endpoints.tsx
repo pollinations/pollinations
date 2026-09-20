@@ -428,7 +428,7 @@ export function CommunityEndpoints({
         <>
             <div className="flex flex-col gap-6">
                 {canPublish && !isLoading && (
-                    <Section title="Profile">
+                    <Section title="Publisher info">
                         <form
                             className="flex flex-col gap-4"
                             onSubmit={(event) =>
@@ -437,7 +437,7 @@ export function CommunityEndpoints({
                         >
                             <div className="space-y-3">
                                 <ProviderProfileField
-                                    label="Name"
+                                    label="Publisher name"
                                     help="Shown as the publisher on all your public models."
                                 >
                                     <Input
@@ -457,7 +457,7 @@ export function CommunityEndpoints({
                                 </ProviderProfileField>
                                 <ProviderProfileField
                                     label="Website or privacy policy"
-                                    help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Name."
+                                    help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
                                 >
                                     <Input
                                         type="url"

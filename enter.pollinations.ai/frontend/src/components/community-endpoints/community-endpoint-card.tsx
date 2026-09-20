@@ -19,7 +19,7 @@ import {
     Surface,
     TerminalIcon,
     TokensIcon,
-    UsageIcon,
+    TrendUpIcon,
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
@@ -162,7 +162,7 @@ export function CommunityEndpointCard({
 
             <PendingChangeNotice endpoint={endpoint} />
 
-            <div className="mt-3 grid gap-2">
+            <div className="mt-5 grid gap-2 px-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"
@@ -225,7 +225,7 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     to="/activity"
                     search={{
@@ -246,7 +246,7 @@ export function CommunityEndpointCard({
                     }}
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
                 >
-                    <UsageIcon className="h-3.5 w-3.5 shrink-0" />
+                    <TrendUpIcon className="h-3.5 w-3.5 shrink-0" />
                     View activity
                 </Link>
                 {testableModelId && (

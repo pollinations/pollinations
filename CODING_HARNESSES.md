@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, Codex Router, and Claude Code Router are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -33,6 +33,8 @@ opencode upgrade
 openclaw update
 pi update self
 prime-agent update
+npm install -g @musistudio/claude-code-router
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/duolahypercho/codex-router/main/install.sh)" -- --target codex
 ```
 
 Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `>=22.19.0`. Upgrade Node before updating either harness if needed. Bloom requires Python 3.12 or newer. Stop a running DSH server before launching its replacement, and back up saved sessions before a major harness upgrade.
@@ -47,6 +49,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [Codex Router](https://github.com/duolahypercho/codex-router) (`codex`) | **Available now** — `polli harness codex on` | Routes Codex through Codex Router's own provider and model commands. Curates the live Pollinations catalog, keeps the existing ChatGPT login and native models, and restores `config.toml` byte for byte on `off`. |
+| [Claude Code Router](https://github.com/musistudio/claude-code-router) (`claude-code`) | **Available now** — `polli harness claude-code on` | Adds a Pollinations gateway provider and points the `claude-code` profile at it. Keeps the existing Claude login, settings, and unrelated providers. Needs Node.js 22.5+ for `node:sqlite`. |
 
 ## Bloom CLI
 
@@ -107,3 +111,55 @@ polli harness prime off
 ```
 
 `on` requires Prime Agent to be installed with its official installer. It registers the current compatible Pollinations model catalog in `~/.prime/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`.
+
+## Codex Router
+
+```bash
+npx @pollinations/cli@latest harness codex on
+polli harness codex status
+polli harness codex off
+```
+
+`on` requires both Codex Router and the Codex CLI. Install Codex Router with its official installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/duolahypercho/codex-router/main/install.sh | sh -s -- --target codex --guided
+```
+
+The adapter drives Codex Router's own configuration commands (`providers … generic add|edit|remove`, `curate-models … --apply`, `config-manager … enable|router-default-set|router-default-clear`) so the router keeps owning its LiteLLM translation layer. It registers a `pollinations` generic provider, curates the current compatible Pollinations catalog, stores a dedicated key in the router's protected credential store, and makes the chosen model the router default. Choose another default with `--model <id>`. Existing ChatGPT login, native models, profiles, and unrelated `config.toml` entries are preserved. `off` returns `config.toml`, the provider list, the credential store, the curated catalog, and the router default state to the exact bytes recorded before `on`.
+
+## Claude Code Router
+
+```bash
+npx @pollinations/cli@latest harness claude-code on
+polli harness claude-code status
+polli harness claude-code off
+```
+
+`on` requires both Claude Code Router (`ccr`) and the Claude Code CLI. Install Claude Code Router with `npm install -g @musistudio/claude-code-router`. Claude Code Router keeps its configuration in SQLite rather than a text file, so this adapter writes `config.sqlite` directly and takes its snapshot through SQLite's own `VACUUM INTO`. It adds a `Pollinations` gateway provider and points the `claude-code` profile at `Pollinations/<model>`, which is the selector format the router expects. Choose another default with `--model <id>`. Existing Claude login, settings, providers, and unrelated profiles are preserved. This adapter needs Node.js 22.5 or newer because it uses the built-in `node:sqlite` module, and it reports a clear error instead of a stack trace on older runtimes.
+
+## Verify a harness
+
+After `on`, restart the harness so it reloads its provider list, then send one cheap request through the new route:
+
+```bash
+polli harness codex status        # provider, key, curated catalog, and selected model
+polli harness claude-code status
+```
+
+```bash
+codex exec "Reply with exactly one word: pong"
+ccr default-claude-code -- --print "Reply with exactly one word: pong"
+```
+
+A one-word answer proves the request reached Pollinations through the router. To confirm tool calling as well, ask the harness to run a trivial tool, for example to create a scratch file and list it.
+
+## Troubleshoot a harness
+
+- `on` reports the harness is missing: install the client (or the router) with the official command printed in the error, then rerun `on`. Nothing was written.
+- Codex Router's model curation fails with a credential error while its own discovery switch is off: rerun `on`. The adapter resolves the credential explicitly for the catalog it curates, so it does not depend on that switch.
+- Claude Code Router cannot be read: start it once (`ccr start`) so it writes `config.sqlite` and creates the `claude-code` profile, then rerun `on`.
+- A model id is rejected: run `polli models` and pass an id from that list with `--model`.
+- Configuration looks wrong after an unrelated edit: `polli harness <harness> off` still removes the Pollinations provider, key, and selected model, and reports `stripped` instead of `restored`.
+- Version mismatch: update the harness with its own updater (see [Update a harness](#update-a-harness)), then rerun `on` to refresh the catalog and configuration. Polli configures harnesses; it never updates them.
+- Remove everything: `polli harness <harness> off` is the supported removal path. It keeps the router and any unrelated providers in place.

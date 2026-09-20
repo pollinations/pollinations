@@ -243,31 +243,21 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-function QuestSummary({
-    title,
-    quests,
-    pollen,
-}: {
-    title: string;
-    quests: number;
-    pollen: number;
-}) {
+function QuestSummary({ quests, pollen }: { quests: number; pollen: number }) {
     return (
-        <Section title={title}>
-            <div className="grid grid-cols-2 gap-3">
-                <WalletBalanceCard
-                    kind="paid"
-                    label="Quests"
-                    value={quests}
-                    icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
-                />
-                <WalletBalanceCard
-                    kind="tier"
-                    label="Pollen"
-                    value={formatRewardAmount(pollen)}
-                />
-            </div>
-        </Section>
+        <div className="grid grid-cols-2 gap-3">
+            <WalletBalanceCard
+                kind="paid"
+                label="Quests"
+                value={quests}
+                icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
+            />
+            <WalletBalanceCard
+                kind="tier"
+                label="Pollen"
+                value={formatRewardAmount(pollen)}
+            />
+        </div>
     );
 }
 
@@ -819,12 +809,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 claimable banner + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
-            <section aria-label="Quest summary">
+            <Section title={state.anonymous ? "Available" : "Claimed"}>
                 {!state.anonymous && (
                     <>
                         <div className={dimWhileChecking}>
                             <QuestSummary
-                                title="Claimed"
                                 quests={claimedStats.quests}
                                 pollen={claimedStats.pollen}
                             />
@@ -892,7 +881,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 {state.anonymous && (
                     <>
                         <QuestSummary
-                            title="Available"
                             quests={previewTotals.count}
                             pollen={previewTotals.pollen}
                         />
@@ -903,11 +891,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         </div>
                     </>
                 )}
-                {/* Multi-line footer styled like the keys panel's footer —
-                    text-[13px] + leading-snug keeps the two lines visually
-                    tight. Always shown — explains quests to logged-out
-                    visitors too. */}
-                <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
+                <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
@@ -933,7 +917,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         </span>
                     </p>
                 </div>
-            </section>
+            </Section>
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">

@@ -1,5 +1,5 @@
 import {
-    AccountIcon,
+    AccountIdentity,
     BeakerIcon,
     BookIcon,
     BotIcon,
@@ -368,40 +368,25 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     {onSignOut ? (
                         <section aria-label="Account" className="w-full">
                             <div className="flex items-center gap-2">
-                                <NavItem
-                                    as={Link}
+                                <Link
                                     to="/account"
-                                    flushLeft
-                                    data-theme="accent"
-                                    icon={AccountIcon}
-                                    active={accountActive}
                                     onClick={onNavigate}
                                     aria-label={`Account: ${accountName ?? "Account"}`}
-                                    className="dashboard-rail-tab min-w-0"
+                                    aria-current={
+                                        accountActive ? "page" : undefined
+                                    }
+                                    className="min-w-0 flex-1 rounded-full"
                                 >
-                                    <span
-                                        className="min-w-0 truncate"
-                                        title={accountName}
-                                    >
-                                        {accountName ?? "Account"}
-                                    </span>
-                                    {accountAvatarUrl ? (
-                                        <img
-                                            src={accountAvatarUrl}
-                                            alt=""
-                                            className="h-5 w-5 shrink-0 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <span
-                                            aria-hidden="true"
-                                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-theme-bg-pale text-micro"
-                                        >
-                                            {accountName
-                                                ?.slice(0, 1)
-                                                .toUpperCase() ?? "?"}
-                                        </span>
-                                    )}
-                                </NavItem>
+                                    <AccountIdentity
+                                        name={accountName ?? "Account"}
+                                        avatarUrl={accountAvatarUrl}
+                                        className={cn(
+                                            "w-full",
+                                            accountActive &&
+                                                "bg-theme-bg-active",
+                                        )}
+                                    />
+                                </Link>
                                 <button
                                     type="button"
                                     aria-label="Sign out"

@@ -8,7 +8,7 @@ import { test } from "./fixtures.ts";
 describe("POST /admin/revoke-key", () => {
     test("revokes a key by plaintext value", async ({ apiKey }) => {
         const response = await SELF.fetch(
-            "http://localhost:3000/admin/revoke-key",
+            "http://localhost:3000/api/admin/revoke-key",
             {
                 method: "POST",
                 headers: {
@@ -36,7 +36,7 @@ describe("POST /admin/revoke-key", () => {
     }) => {
         const hashed = await defaultKeyHasher(paidApiKey);
         const response = await SELF.fetch(
-            "http://localhost:3000/admin/revoke-key",
+            "http://localhost:3000/api/admin/revoke-key",
             {
                 method: "POST",
                 headers: {
@@ -60,7 +60,7 @@ describe("POST /admin/revoke-key", () => {
 
     test("rejects unauthenticated callers", async ({ apiKey }) => {
         const response = await SELF.fetch(
-            "http://localhost:3000/admin/revoke-key",
+            "http://localhost:3000/api/admin/revoke-key",
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -72,7 +72,7 @@ describe("POST /admin/revoke-key", () => {
 
     test("returns not_found for unknown hashes", async () => {
         const response = await SELF.fetch(
-            "http://localhost:3000/admin/revoke-key",
+            "http://localhost:3000/api/admin/revoke-key",
             {
                 method: "POST",
                 headers: {

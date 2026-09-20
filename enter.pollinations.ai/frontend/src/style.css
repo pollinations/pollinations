@@ -30,6 +30,12 @@
     background-color: oklch(from var(--polli-color-bg-subtle) l c h / 1);
 }
 
+/* Round drawer actions match the height of adjacent navigation pills. */
+.dashboard-rail-action {
+    width: 2rem;
+    height: 2rem;
+}
+
 /* Each idle navigation tab sits on the same soft-white surface as a card. */
 .dashboard-rail-tab:not([aria-current="page"]),
 .dashboard-rail-action {
@@ -72,6 +78,11 @@
         min-height: 3rem;
         padding-inline: 1rem;
         font-size: 1.0625rem;
+    }
+
+    .dashboard-rail-action {
+        width: 3rem;
+        height: 3rem;
     }
 }
 

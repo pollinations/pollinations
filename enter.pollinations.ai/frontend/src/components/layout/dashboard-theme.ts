@@ -16,7 +16,7 @@ export const DASHBOARD_NAV_ITEMS = [
     {
         id: "news-faq",
         to: "/news",
-        label: "Info",
+        label: "News & FAQ",
         icon: NewspaperIcon,
     },
     { id: "models", to: "/models", label: "Models", icon: BeakerIcon },

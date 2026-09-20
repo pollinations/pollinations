@@ -413,7 +413,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                         onNavigate();
                                         onSignOut();
                                     }}
-                                    className="polli-control dashboard-rail-action flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:text-theme-text-strong"
+                                    className="polli-control dashboard-rail-action flex shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:text-theme-text-strong"
                                 >
                                     <SignOutIcon
                                         className="h-4 w-4"
@@ -594,11 +594,11 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 data-theme="accent"
                                 active={activePage === item.id}
                                 onClick={onNavigate}
-                                aria-label="Pollinations info"
+                                aria-label="News and FAQ"
                                 className="dashboard-rail-tab"
                             >
                                 <PollinationsLogoIcon className="h-4 w-4" />
-                                Info
+                                News &amp; FAQ
                             </NavItem>
                         ))}
                     <DashboardDocs />
@@ -807,7 +807,7 @@ const DashboardDocs: FC = () => (
             tooltip="Copy all docs"
             copiedTooltip="Copied"
             aria-label="Copy all docs"
-            className="dashboard-rail-action flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:text-theme-text-strong"
+            className="dashboard-rail-action flex shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:text-theme-text-strong"
         >
             {(copied) =>
                 copied ? (

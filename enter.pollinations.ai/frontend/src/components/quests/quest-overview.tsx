@@ -34,6 +34,7 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
+import { DashboardLoading } from "../layout/dashboard-loading.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -803,22 +804,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.rewards]);
 
     if (state.loading) {
-        return (
-            <Surface variant="panel">
-                <div
-                    role="status"
-                    className="flex items-center gap-2 text-theme-text-muted"
-                >
-                    <ClockIcon
-                        aria-hidden="true"
-                        className="h-4 w-4 shrink-0"
-                    />
-                    <Text size="sm" tone="muted">
-                        Loading quests…
-                    </Text>
-                </div>
-            </Surface>
-        );
+        return <DashboardLoading label="Loading quests…" />;
     }
 
     if (

@@ -13,6 +13,7 @@ import {
     useNavigate,
 } from "@tanstack/react-router";
 import { apiClient } from "../api.ts";
+import { DashboardLoading } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -36,9 +37,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
     loader: () =>
         apiClient.stripe.billing.$get().then((r) => (r.ok ? r.json() : null)),
     pendingComponent: () => (
-        <output className="text-theme-text-muted">
-            Loading billing details…
-        </output>
+        <DashboardLoading label="Loading billing details…" />
     ),
     component: PollenPage,
 });

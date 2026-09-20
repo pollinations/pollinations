@@ -59,7 +59,7 @@ function PollenPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <Section title="Wallet" framed>
+            <Section title="Wallet">
                 <Await
                     promise={earnings}
                     fallback={<PollenBalance {...balances} />}
@@ -69,7 +69,7 @@ function PollenPage() {
                     )}
                 </Await>
             </Section>
-            <Section title="Top-up" framed id="buy-pollen">
+            <Section title="Top-up" id="buy-pollen">
                 <BuyPollenPanel
                     initialBillingState={billingState}
                     selectedPackAmount={selectedPack?.amountUsd ?? 5}

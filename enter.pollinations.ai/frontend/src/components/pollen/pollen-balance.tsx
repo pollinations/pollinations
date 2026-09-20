@@ -10,11 +10,7 @@ import {
     Surface,
     WalletIcon,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    WalletBalanceCard,
-    WalletKindIcon,
-} from "@pollinations/ui/wallet";
+import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
@@ -154,7 +150,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             {!compact && (
                 <>
                     {/* Total + 7d earnings below */}
-                    <div className="flex items-start justify-between gap-3 pt-3">
+                    <Surface className="flex items-start justify-between gap-3">
                         <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
                             Total
                         </span>
@@ -176,10 +172,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 </span>
                             )}
                         </div>
-                    </div>
+                    </Surface>
 
                     {/* Footer: learn more */}
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <div className="mt-2 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
@@ -198,61 +194,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </div>
                 </>
             )}
-        </div>
-    );
-};
-
-type SidebarWalletProps = {
-    tierBalance: number;
-    packBalance: number;
-    paidWeek?: number;
-    tierWeek?: number;
-    onClick?: () => void;
-};
-
-export const SidebarWallet: FC<SidebarWalletProps> = ({
-    tierBalance,
-    packBalance,
-    paidWeek = 0,
-    tierWeek = 0,
-}) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
-
-    return (
-        <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="paid" />
-                    Paid
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayPaidBalance)}
-                    </span>
-                    {paidWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(paidWeek)}
-                        </span>
-                    )}
-                </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="tier" />
-                    Quest
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayTierBalance)}
-                    </span>
-                    {tierWeek > 0 && (
-                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(tierWeek)}
-                        </span>
-                    )}
-                </span>
-            </div>
         </div>
     );
 };
@@ -284,7 +225,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     returnToTopUp={returnToTopUp}
                 />
             </Surface>
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+            <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />

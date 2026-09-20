@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-19",
+  "period_start": "2026-09-19",
+  "period_end": "2026-09-19",
+  "title": "Five more ways to build with Pollinations",
+  "summary": "A community-heavy day: new browser-only BYOP examples, creative apps, healthier model discovery, and analytics that can finally count what happened.\n\nThe app directory gained PersonaMorph for wallet-connected artistic photo edits and Oracle Mystique for illustrated three-card tarot readings. Both are small, opinionated examples of what happens when image generation, chat, OAuth, and somebody's very specific idea collide.\n\nThree Arabic RTL apps joined the directory: baboolharech, Text to Speech in video_audio, and aaarraaa. Each demonstrates the BYOP OAuth 2.1 PKCE flow entirely in the browser, so builders can explore authenticated image, speech, and login flows without first adopting the ancient tradition of maintaining a backend.\n\nThe /v1/models and /models endpoints now return cached health data by default, including 24-hour status, success rate, and request volume. Developers can make a more informed model choice before finding out the interesting way; the API safely reports unknown when the health feed is unavailable.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 15155,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15157,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15165,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15172,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15173,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15174,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15194,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15196,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15198,
+      "date": "2026-09-19"
+    },
+    {
+      "number": 15199,
+      "date": "2026-09-19"
+    }
+  ],
+  "generated_at": "2026-09-20T06:26:53.012936+00:00"
+}

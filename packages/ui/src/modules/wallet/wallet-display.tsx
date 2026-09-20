@@ -63,7 +63,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
 }) => (
     <div
         className={cn(
-            "polli:rounded-xl polli:p-4",
+            "polli:min-w-0 polli:rounded-xl polli:p-4",
             walletPanelClasses[kind],
             className,
         )}
@@ -82,7 +82,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
         </span>
         <div
             className={cn(
-                "polli-wallet-balance-value polli:mt-1 polli:font-bold polli:leading-none polli:tracking-tight polli:tabular-nums",
+                "polli-wallet-balance-value polli:[overflow-wrap:anywhere] polli:mt-1 polli:font-bold polli:leading-none polli:tracking-tight polli:tabular-nums",
                 walletTextClasses[kind],
             )}
         >

@@ -1,13 +1,12 @@
 import {
     Alert,
-    BeakerIcon,
-    BotIcon,
     Button,
     Field,
     GlobeIcon,
     InfoTip,
     InlineLink,
     Input,
+    PlusIcon,
     Section,
     Surface,
     TokensIcon,
@@ -402,23 +401,27 @@ export function CommunityEndpoints({
     const agentAction = (
         <Button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            size="icon"
+            className="dashboard-add-button"
+            aria-label="Add Agent"
+            title="Add Agent"
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            <BotIcon className="h-4 w-4" />
-            Add Agent
+            <PlusIcon className="h-6 w-6" />
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            size="icon"
+            className="dashboard-add-button"
+            aria-label="Add Model"
+            title="Add Model"
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            <BeakerIcon className="h-4 w-4" />
-            Add Model
+            <PlusIcon className="h-6 w-6" />
         </Button>
     );
 

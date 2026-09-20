@@ -1,5 +1,10 @@
 @import "@pollinations/ui/app.css";
 
+.dashboard-add-button {
+    width: 3.5rem;
+    height: 3.5rem;
+}
+
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);

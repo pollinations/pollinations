@@ -314,8 +314,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                     style={{ overflowY: isDrawerOpen ? "hidden" : undefined }}
                 >
-                    <main className="mx-auto w-full max-w-[1000px] lg:min-h-[calc(100dvh-4.5rem)] lg:rounded-2xl lg:bg-theme-bg-pale lg:p-8">
-                        <div className="mx-auto flex w-full max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto w-full max-w-[800px] lg:min-h-[calc(100dvh-4.5rem)] lg:rounded-2xl lg:bg-theme-bg-pale lg:p-8">
+                        <div className="flex w-full flex-col gap-6">
                             {children}
                         </div>
                     </main>

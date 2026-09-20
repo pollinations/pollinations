@@ -1,7 +1,7 @@
 import { Popover } from "@ark-ui/react/popover";
 import { Portal } from "@ark-ui/react/portal";
 import type { CSSProperties, FC, ReactNode } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { cn } from "../lib/cn.ts";
 
 const DEFAULT_PANEL = "polli:rounded-lg polli:bg-surface-menu polli:shadow-lg";
@@ -36,6 +36,7 @@ export const Dropdown: FC<DropdownProps> = ({
     className,
     panelStyle,
 }) => {
+    const triggerId = useId();
     const [internalOpen, setInternalOpen] = useState(false);
     const isControlled = openProp !== undefined;
     const open = isControlled ? openProp : internalOpen;
@@ -47,6 +48,7 @@ export const Dropdown: FC<DropdownProps> = ({
 
     return (
         <Popover.Root
+            ids={{ trigger: triggerId }}
             open={open}
             portalled={portalled}
             onOpenChange={(details) => setOpen(details.open)}
@@ -59,6 +61,7 @@ export const Dropdown: FC<DropdownProps> = ({
             <Portal disabled={!portalled}>
                 <Popover.Positioner>
                     <Popover.Content
+                        aria-labelledby={triggerId}
                         style={panelStyle}
                         className={cn(
                             "polli:z-[120] polli:overflow-hidden polli:focus:outline-none",

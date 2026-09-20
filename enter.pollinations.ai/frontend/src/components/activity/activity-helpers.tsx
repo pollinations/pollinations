@@ -42,6 +42,7 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
                 </span>
             ) : (
                 <MultiSelect
+                    ariaLabel={label}
                     fullWidth
                     options={[
                         ...options,

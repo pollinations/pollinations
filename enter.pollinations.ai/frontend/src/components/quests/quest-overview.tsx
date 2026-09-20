@@ -804,7 +804,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
     if (state.loading) {
         return (
-            <Section title="Quests">
+            <Surface variant="panel">
                 <div
                     role="status"
                     className="flex items-center gap-2 text-theme-text-muted"
@@ -817,7 +817,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         Loading quests…
                     </Text>
                 </div>
-            </Section>
+            </Surface>
         );
     }
 

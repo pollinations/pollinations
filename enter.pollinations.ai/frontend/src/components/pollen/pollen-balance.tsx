@@ -1,8 +1,10 @@
 import {
     CardIcon,
     CopyButton,
+    GlobeIcon,
     InfoTip,
     InlineLink,
+    MailIcon,
     SproutIcon,
     Surface,
     WalletIcon,
@@ -225,24 +227,36 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             </Surface>
             <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />
-                <p>
-                    Taxes added at checkout.{" "}
-                    <InlineLink href={TERMS_URL}>Terms</InlineLink>
-                    {" · "}
-                    <InlineLink href={REFUND_POLICY_URL}>
-                        Refund Policy
-                    </InlineLink>
+                <p className="flex items-start gap-1.5">
+                    <GlobeIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
+                    <span>
+                        Taxes added at checkout.{" "}
+                        <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                        {" · "}
+                        <InlineLink href={REFUND_POLICY_URL}>
+                            Refund Policy
+                        </InlineLink>
+                    </span>
                 </p>
-                <p>
-                    Payment help:{" "}
-                    <CopyButton
-                        value="billing@pollinations.ai"
-                        className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                    >
-                        {(copied) =>
-                            copied ? "Copied!" : "billing@pollinations.ai"
-                        }
-                    </CopyButton>
+                <p className="flex items-start gap-1.5">
+                    <MailIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
+                    <span>
+                        Payment help:{" "}
+                        <CopyButton
+                            value="billing@pollinations.ai"
+                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
+                        >
+                            {(copied) =>
+                                copied ? "Copied!" : "billing@pollinations.ai"
+                            }
+                        </CopyButton>
+                    </span>
                 </p>
             </div>
         </>

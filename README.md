@@ -112,10 +112,12 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run agentic coding tools such as Bloom CLI, Claude Code, Codex, DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness or router's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
+npx @pollinations/cli harness claude-code on
+npx @pollinations/cli harness codex on
 ```
 
 See [Coding Harnesses](./CODING_HARNESSES.md) for supported harnesses and how to add one.

@@ -11,7 +11,6 @@ import {
     DropdownItem,
     EditableCombobox,
     Field,
-    InfoTip,
     InlineLink,
     Input,
     ScrollArea,
@@ -819,20 +818,16 @@ export function CommunityEndpointDialog({
                         </AuthInfoCard>
                     )}
                     <AuthInfoCard>
-                        <div className="grid items-center gap-x-4 gap-y-3 sm:grid-cols-[max-content_minmax(0,1fr)]">
+                        <div className="space-y-3">
                             {isShared && (
-                                <>
-                                    <span className="inline-flex items-center text-sm font-semibold leading-5 text-theme-text-strong">
-                                        Accepted Pollen
-                                        <InfoTip
-                                            label="Accepted Pollen information"
-                                            text={
-                                                form.paidOnly
-                                                    ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
-                                                    : "Any Pollen: callers can pay with Quest or Paid Pollen."
-                                            }
-                                        />
-                                    </span>
+                                <ModelFormRow
+                                    label="Accepted Pollen"
+                                    help={
+                                        form.paidOnly
+                                            ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                            : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                                    }
+                                >
                                     <ButtonGroup aria-label="Accepted Pollen">
                                         <TabButton
                                             active={!form.paidOnly}
@@ -867,29 +862,30 @@ export function CommunityEndpointDialog({
                                             Paid only
                                         </TabButton>
                                     </ButtonGroup>
-                                </>
+                                </ModelFormRow>
                             )}
-                            <span className="inline-flex items-center text-sm font-semibold leading-5 text-theme-text-strong">
-                                Requests per minute
-                                <InfoTip
-                                    label="Requests per minute information"
-                                    text="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Leave empty for no limit."
+                            <ModelFormRow
+                                label="Requests per minute"
+                                help="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Leave empty for no limit."
+                            >
+                                <Input
+                                    name="community-per-user-rpm"
+                                    aria-label="Requests per minute value"
+                                    type="number"
+                                    step="any"
+                                    placeholder="Unlimited"
+                                    disabled={isSubmitting}
+                                    value={form.perUserRpm}
+                                    onChange={(event) =>
+                                        updateForm(
+                                            "perUserRpm",
+                                            event.target.value,
+                                        )
+                                    }
+                                    className="w-[116px]"
+                                    hideNumberSteppers
                                 />
-                            </span>
-                            <Input
-                                name="community-per-user-rpm"
-                                aria-label="Requests per minute value"
-                                type="number"
-                                step="any"
-                                placeholder="Unlimited"
-                                disabled={isSubmitting}
-                                value={form.perUserRpm}
-                                onChange={(event) =>
-                                    updateForm("perUserRpm", event.target.value)
-                                }
-                                className="w-[116px]"
-                                hideNumberSteppers
-                            />
+                            </ModelFormRow>
                         </div>
                     </AuthInfoCard>
                     {!isEndpointAgent && (

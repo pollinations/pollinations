@@ -182,6 +182,19 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     }, [isDrawerOpen]);
 
     useEffect(() => {
+        // Match Tailwind's lg layout, which replaces the drawer with the rail.
+        const desktopLayout = window.matchMedia("(min-width: 64rem)");
+        const closeOnDesktop = () => {
+            // The mobile trigger is hidden here, so do not restore focus to it.
+            if (desktopLayout.matches) setIsDrawerOpen(false);
+        };
+        closeOnDesktop();
+        desktopLayout.addEventListener("change", closeOnDesktop);
+        return () =>
+            desktopLayout.removeEventListener("change", closeOnDesktop);
+    }, []);
+
+    useEffect(() => {
         if (!isDrawerOpen) return;
 
         function handleKeyDown(event: KeyboardEvent): void {
@@ -249,10 +262,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             <div
                 ref={drawerRef}
                 className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                    "fixed inset-0 z-40 lg:hidden",
                     isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]",
+                        ? "pointer-events-auto visible transition-none"
+                        : "pointer-events-none invisible transition-[visibility] delay-[420ms]",
                 )}
                 aria-hidden={!isDrawerOpen}
                 inert={!isDrawerOpen}

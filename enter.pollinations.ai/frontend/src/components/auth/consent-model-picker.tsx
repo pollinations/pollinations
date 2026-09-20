@@ -74,7 +74,7 @@ export function ConsentModelPicker({
                     <Button
                         type="button"
                         size="xs"
-                        className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
+                        className="polli:bg-transparent px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
                         disabled={disabled || !anyShownSelected}
                         onClick={() =>
                             onChange(
@@ -92,7 +92,7 @@ export function ConsentModelPicker({
                     <Button
                         type="button"
                         size="xs"
-                        className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
+                        className="polli:bg-transparent px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
                         disabled={disabled || allShownSelected}
                         onClick={() =>
                             onChange(

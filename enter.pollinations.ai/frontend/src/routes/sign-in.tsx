@@ -60,7 +60,6 @@ function SignInPage() {
         <DashboardShell
             navItems={SIGNED_OUT_NAV_ITEMS}
             accountArea={<SignedOutAccountArea />}
-            showFooterLinks={false}
         >
             <NewsFaq />
         </DashboardShell>

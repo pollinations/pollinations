@@ -1,1 +1,83 @@
 @import "@pollinations/ui/app.css";
+
+.catalog-search .polli-input-shell,
+.catalog-search > .polli-input {
+    background-color: var(--polli-color-bg-subtle);
+    border-color: transparent;
+}
+
+.catalog-search .polli-input-shell:focus-within,
+.catalog-search > .polli-input:focus {
+    border-color: var(--polli-color-border);
+}
+
+/* The dashboard rail has no group cards: each idle tab carries that tint. */
+.dashboard-rail-tab:not([aria-current="page"]),
+.dashboard-rail-action {
+    background-color: var(--polli-color-bg-pale);
+}
+
+.dashboard-rail-tab:not([aria-current="page"]):hover,
+.dashboard-rail-action:hover {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-bg-pale) 85%,
+        var(--polli-color-bg-active)
+    );
+}
+
+.dashboard-rail-tab.dashboard-rail-external {
+    background-color: var(--polli-color-bg-subtle);
+}
+
+.dashboard-rail-tab.dashboard-rail-external:hover {
+    background-color: var(--polli-color-bg-active);
+}
+
+/* Keep outbound links darker than the regular tabs, but off the dark desk. */
+.dark .dashboard-rail-tab.dashboard-rail-external {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-app-bg) 65%,
+        var(--polli-color-surface-opaque)
+    );
+}
+
+.dark .dashboard-rail-tab.dashboard-rail-external:hover {
+    background-color: var(--polli-color-surface-opaque);
+}
+
+.dashboard-rail-slim-link {
+    padding-block: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.dashboard-rail-theme > [role="switch"] {
+    height: 2.25rem;
+    border: 0;
+    border-radius: 0 9999px 9999px 0;
+    background-color: var(--polli-color-bg-pale);
+}
+
+/* Keep Enter's surfaces flat without changing shared UI or focus indicators. */
+:root {
+    --polli-shadow-container: 0 0 #0000;
+    --polli-shadow-well: 0 0 #0000;
+}
+
+.shadow-sm,
+.shadow-md,
+[class~="polli:shadow-sm"],
+[class~="polli:shadow-md"],
+[class~="polli:shadow-lg"],
+[class~="polli:shadow-xl"] {
+    --tw-shadow: 0 0 #0000;
+}
+
+.polli-slider::-webkit-slider-thumb {
+    box-shadow: none;
+}
+
+.polli-slider::-moz-range-thumb {
+    box-shadow: none;
+}

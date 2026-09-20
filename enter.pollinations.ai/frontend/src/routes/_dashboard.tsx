@@ -1,13 +1,12 @@
 import { InlineLink } from "@pollinations/ui";
 import { GitHubSignInButton } from "@pollinations/ui/auth";
-import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
-import { SidebarWallet } from "../components/pollen";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
@@ -93,10 +92,6 @@ export const Route = createFileRoute("/_dashboard")({
 
 function DashboardLayout() {
     const data = Route.useLoaderData();
-    const balances = {
-        tierBalance: data.tierBalance,
-        packBalance: data.packBalance,
-    };
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     async function handleSignOut(): Promise<void> {
@@ -114,22 +109,18 @@ function DashboardLayout() {
     return (
         <DashboardShell
             navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
-            accountName={data.user?.name || data.githubUsername}
-            githubAvatarUrl={data.user?.image || ""}
+            accountName={
+                data.user
+                    ? data.user.name?.trim() || data.githubUsername || "Account"
+                    : undefined
+            }
+            accountAvatarUrl={data.user?.image || undefined}
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
-            showFooterLinks={Boolean(data.user)}
-            walletArea={
-                data.user ? (
-                    <Await
-                        promise={data.earnings}
-                        fallback={<SidebarWallet {...balances} />}
-                    >
-                        {(earnings) => (
-                            <SidebarWallet {...balances} {...earnings} />
-                        )}
-                    </Await>
-                ) : undefined
+            pollenBalances={
+                data.user
+                    ? { paid: data.packBalance, quest: data.tierBalance }
+                    : undefined
             }
         >
             <Outlet />

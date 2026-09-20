@@ -9,7 +9,10 @@ const src = readFileSync(dir + "agent.ts", "utf8");
 test("live catalog, no hardcoded model list", () => {
     assert.match(src, /\/v1\/models/);
     assert.match(src, /raw\.name \?\? raw\.id/);
-    assert.doesNotMatch(src, /gpt-5\.4-nano|mercury-2\.5|gemini-3\.8|grok-4\.3/);
+    assert.doesNotMatch(
+        src,
+        /gpt-5\.4-nano|mercury-2\.5|gemini-3\.8|grok-4\.3/,
+    );
 });
 
 test("capability-fit ladder (vision, long-context, default)", () => {
@@ -36,6 +39,9 @@ test("trace travels in the body, both endpoints", () => {
 });
 
 test("single self-contained file, platform imports only", () => {
-    assert.doesNotMatch(src, /^import .* from "(?!ai|@ai-sdk\/openai-compatible)/m);
+    assert.doesNotMatch(
+        src,
+        /^import .* from "(?!ai|@ai-sdk\/openai-compatible)/m,
+    );
     assert.match(src, /export default async function agent/);
 });

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15207,
+  "title": "Add Atelier — Pollinations Image Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15207",
+  "merged_at": "2026-09-20T06:10:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) to image\n- Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k\n\nFixes #15205",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A studio blooms in the hive",
+    "blurb": "Atelier has joined the image garden: a bilingual little studio for prompting, browsing the live model catalog, and nudging pixels around with reference images. English and 简体中文 now share an easel.",
+    "summary": "Added Atelier — Pollinations Image Studio, a bilingual English/简体中文 app built on the Pollinations image API with live model selection and reference-image editing.",
+    "impact": "People can use Atelier at image.xt1171.eu.org to generate images from prompts, choose from the current model catalog, and refine results with reference images in either supported language.",
+    "keywords": [
+      "Atelier",
+      "image studio",
+      "image API",
+      "bilingual",
+      "reference-image editing",
+      "community app"
+    ],
+    "visual_concept": "Depict Atelier as a cozy shared digital art studio: a retro terminal and easel show prompt-generated pastel artwork, with two small pixel labels for “EN” and “中文” and framed reference images ready for editing. Polli, wearing a painter’s beret, warmly helps arrange blooming code-flowers and image frames, making the studio feel like a community-made creative workspace.",
+    "image_prompt": "Cozy pixel art scene of Atelier, a tiny bilingual digital image studio with a retro CRT art terminal, an easel showing a prompt-generated pastel landscape, pixel labels “EN” and “中文,” and a wall of framed reference images for editing; code-flowers bloom from lime green (#ecf874) pots around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter’s beret and gently hangs a reference frame beside the glowing screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15207.jpg",
+    "prompt": "Cozy pixel art scene of Atelier, a tiny bilingual digital image studio with a retro CRT art terminal, an easel showing a prompt-generated pastel landscape, pixel labels “EN” and “中文,” and a wall of framed reference images for editing; code-flowers bloom from lime green (#ecf874) pots around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter’s beret and gently hangs a reference frame beside the glowing screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-20T06:11:34.542549+00:00",
+  "app_name": "Atelier — Pollinations Image Studio",
+  "app_url": "https://image.xt1171.eu.org"
+}

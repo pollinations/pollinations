@@ -275,20 +275,26 @@ function AccountPage() {
 
             <Section title="Legal">
                 <Surface className="p-6">
-                    <nav
-                        aria-label="Policies"
-                        className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium"
-                    >
-                        <InlineLink href="https://pollinations.ai/terms">
-                            Terms of Service
-                        </InlineLink>
-                        <InlineLink href="https://pollinations.ai/privacy">
-                            Privacy Policy
-                        </InlineLink>
-                        <InlineLink href="https://pollinations.ai/refunds">
-                            Refund Policy
-                        </InlineLink>
-                    </nav>
+                    <div className="flex flex-col gap-3">
+                        <Text size="sm" tone="muted">
+                            This hosted Pollinations.ai service is operated by
+                            Myceli.AI OÜ.
+                        </Text>
+                        <nav
+                            aria-label="Policies"
+                            className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium"
+                        >
+                            <InlineLink href="https://pollinations.ai/terms">
+                                Terms of Service
+                            </InlineLink>
+                            <InlineLink href="https://pollinations.ai/privacy">
+                                Privacy Policy
+                            </InlineLink>
+                            <InlineLink href="https://pollinations.ai/refunds">
+                                Refund Policy
+                            </InlineLink>
+                        </nav>
+                    </div>
                 </Surface>
             </Section>
 

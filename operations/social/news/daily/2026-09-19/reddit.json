@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-19",
+  "period_start": "2026-09-19",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:26:53.012936+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-19/images/reddit.jpg"
+    }
+  ],
+  "title": "Model health and five new build paths",
+  "text": "10 PRs landed today.\n\nThe useful infrastructure change is model health on both `/v1/models` and `/models` by default. Discovery now includes whether a model is actually doing well, rather than making clients infer it from a failure several requests later. That should make model pickers and fallback logic less superstitious.\n\nAnalytics also got two repairs: page-view beacons were being rejected with HTTP 415, and the funnel endpoint now exposes the sign-in loss split again. Visits and sign-in returns can be counted without pretending the browser never arrived.\n\nOn the build side, five more routes were added: `baboolharech`, `PersonaMorph`, and `aaarraaa` for image; `Oracle Mystique` for chat; and text-to-speech in `video_audio`. There are also browser-only BYOP examples aimed at Arabic-speaking builders.\n\nThe daily README and generated API docs were refreshed, which is unglamorous maintenance until someone tries to use a stale endpoint.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs\n\nThe health field is new enough that feedback from anyone maintaining a model selector, proxy, or fallback chain would be especially useful."
+}

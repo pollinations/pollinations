@@ -380,6 +380,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     <AccountIdentity
                                         name={accountName ?? "Account"}
                                         avatarUrl={accountAvatarUrl}
+                                        secondaryContent={
+                                            pollenBalances ? (
+                                                <AccountPollen
+                                                    source={{
+                                                        type: "wallet",
+                                                        balances:
+                                                            pollenBalances,
+                                                    }}
+                                                />
+                                            ) : undefined
+                                        }
                                         className={cn(
                                             "w-full",
                                             accountActive &&
@@ -426,19 +437,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"
                             >
-                                <span className="inline-flex items-center gap-1">
-                                    {pollen.label}
-                                    {pollenBalances && (
-                                        <span className="text-xs tabular-nums opacity-75">
-                                            <AccountPollen
-                                                source={{
-                                                    type: "wallet",
-                                                    balances: pollenBalances,
-                                                }}
-                                            />
-                                        </span>
-                                    )}
-                                </span>
+                                {pollen.label}
                             </NavItem>
                         ))}
                     {navItems

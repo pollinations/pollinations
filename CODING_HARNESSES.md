@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code Router, Codex Router, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -42,6 +42,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
+| [Claude Code Router](https://github.com/musistudio/claude-code-router) | **Available now** — `polli harness claude-code on` | Registers a live Pollinations provider in Claude Code Router's SQLite config with a dedicated key; smoke-tests a real chat round-trip before finishing. |
+| [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now** — `polli harness codex on` | Registers a generic provider and credential in the router's state dir, then runs the router's own `client-setup codex` so `~/.codex/config.toml` points at the local gateway. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
@@ -107,3 +109,24 @@ polli harness prime off
 ```
 
 `on` requires Prime Agent to be installed with its official installer. It registers the current compatible Pollinations model catalog in `~/.prime/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`.
+
+## Claude Code Router
+
+```bash
+npm install -g @musistudio/claude-code-router
+polli harness claude-code on
+ccr code
+```
+
+`on` requires Claude Code Router (`ccr`) to be installed. It inserts a `pollinations` provider into the router's config database (`%APPDATA%/claude-code-router/config.sqlite` on Windows, `~/.claude-code-router/config.sqlite` elsewhere) using the router's native generic-provider schema (`@ai-sdk/openai-compatible` pointing at `https://gen.pollinations.ai/v1`), stores the dedicated Pollinations key in that provider, and registers the current compatible Pollinations model catalog. Default model is `qwen/qwen3.7-flash` (`--model <id>` to choose another; models whose id starts with a gateway type prefix such as `openai/` or `anthropic/` are rejected because the router treats the first path segment as its own provider-type namespace). Before finishing, `on` sends one real chat request through the router and reports the reply. `off` removes only the Pollinations provider, its key, and `pollinations/*` transformers entries, leaving the rest of your routing config untouched.
+
+## Codex Router
+
+```bash
+git clone https://github.com/duolahypercho/codex-router
+cd codex-router && ./install.ps1   # Windows; ./install.sh elsewhere
+polli harness codex on
+codex
+```
+
+`on` requires the Codex Router checkout (its CLI is `src/control.mjs` behind `bin/model-router`). It writes a generic provider into `user-models.json` and a credential into `generic-provider-credentials/` under the router's state dir (`~/.codex/codex-router/` by default, `$CODEX_ROUTER_STATE_DIR` override), with the dedicated Pollinations key stored outside `config.toml` — the router's own privacy rule. It then runs the router's official `client-setup codex`, which adds the managed `[model_providers.codex-router]` block and gateway base URL to `~/.codex/config.toml` (or `$CODEX_HOME`). If that config is already managed by another router (for example Claude Code Router), `on` stops without touching it. `off` runs the router's `client-remove codex` and deletes only the Pollinations provider and credential files.

@@ -11,14 +11,14 @@ import {
     DropdownItem,
     EditableCombobox,
     Field,
+    InfoTip,
     InlineLink,
     Input,
     ScrollArea,
-    Switch,
     TabButton,
     XIcon,
 } from "@pollinations/ui";
-import { AuthInfoCard } from "@pollinations/ui/auth";
+import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -89,7 +89,9 @@ export function CommunityEndpointDialog({
         ? openWebUiTestableModelId(endpoint)
         : null;
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
-    const [rpmLimited, setRpmLimited] = useState(false);
+    const [rpmLimited, setRpmLimited] = useState(
+        !endpoint || endpoint.perUserRpm != null,
+    );
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
         useState<ActionState>(idleAction);
@@ -108,7 +110,7 @@ export function CommunityEndpointDialog({
     // never survive a dismissed dialog.
     useEffect(() => {
         setForm(open && endpoint ? endpointToForm(endpoint) : emptyForm);
-        setRpmLimited(open && endpoint?.perUserRpm != null);
+        setRpmLimited(!endpoint || endpoint.perUserRpm != null);
         setModelOptions([]);
         setModelListState(idleAction);
         setProviderModelMenuOpen(false);
@@ -868,12 +870,9 @@ export function CommunityEndpointDialog({
                         </AuthInfoCard>
                     )}
                     <AuthInfoCard>
-                        <ModelFormRow
-                            label="Requests per minute"
-                            help="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Turn off for no limit."
-                        >
-                            <div className="flex flex-wrap items-center gap-3">
-                                <Switch
+                        <div className="grid gap-2 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
+                            <ul>
+                                <AuthAccessItem
                                     ariaLabel="Limit requests per minute per user"
                                     checked={rpmLimited}
                                     disabled={isSubmitting}
@@ -882,34 +881,40 @@ export function CommunityEndpointDialog({
                                         if (!checked)
                                             updateForm("perUserRpm", "");
                                     }}
-                                />
-                                {rpmLimited ? (
-                                    <Field.Input asChild>
-                                        <Input
-                                            name="community-per-user-rpm"
-                                            aria-label="Requests per minute value"
-                                            type="number"
-                                            step="any"
-                                            required
-                                            disabled={isSubmitting}
-                                            value={form.perUserRpm}
-                                            onChange={(event) =>
-                                                updateForm(
-                                                    "perUserRpm",
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="w-[116px]"
-                                            hideNumberSteppers
+                                    info={
+                                        <InfoTip
+                                            label="Requests per minute information"
+                                            text="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Uncheck for no limit."
                                         />
-                                    </Field.Input>
-                                ) : (
-                                    <span className="text-sm text-theme-text-muted">
-                                        No limit
-                                    </span>
-                                )}
-                            </div>
-                        </ModelFormRow>
+                                    }
+                                >
+                                    Requests per minute
+                                </AuthAccessItem>
+                            </ul>
+                            {rpmLimited ? (
+                                <Input
+                                    name="community-per-user-rpm"
+                                    aria-label="Requests per minute value"
+                                    type="number"
+                                    step="any"
+                                    required
+                                    disabled={isSubmitting}
+                                    value={form.perUserRpm}
+                                    onChange={(event) =>
+                                        updateForm(
+                                            "perUserRpm",
+                                            event.target.value,
+                                        )
+                                    }
+                                    className="w-[116px]"
+                                    hideNumberSteppers
+                                />
+                            ) : (
+                                <span className="text-sm text-theme-text-muted">
+                                    No limit
+                                </span>
+                            )}
+                        </div>
                     </AuthInfoCard>
                     {!isEndpointAgent && (
                         <AuthInfoCard>

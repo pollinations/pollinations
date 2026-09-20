@@ -814,24 +814,32 @@ export function CommunityEndpointDialog({
                     </AuthInfoCard>
                     {isShared && (
                         <AuthInfoCard>
-                            <div className="space-y-3">
-                                <PriceGroups
-                                    form={form}
-                                    modality={form.modality}
-                                    imagePricing={form.imagePricing}
-                                    testState={testState}
-                                    visiblePriceKeys={visiblePriceKeys}
-                                    onChange={updateForm}
-                                />
-                                <ModelFormRow
-                                    label="Accepted Pollen"
-                                    help={
-                                        form.paidOnly
-                                            ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
-                                            : "Any Pollen: callers can pay with Quest or Paid Pollen."
-                                    }
-                                >
-                                    <ButtonGroup aria-label="Accepted balance">
+                            <PriceGroups
+                                form={form}
+                                modality={form.modality}
+                                imagePricing={form.imagePricing}
+                                testState={testState}
+                                visiblePriceKeys={visiblePriceKeys}
+                                onChange={updateForm}
+                            />
+                        </AuthInfoCard>
+                    )}
+                    <AuthInfoCard>
+                        <div className="grid items-center gap-x-4 gap-y-3 sm:grid-cols-[max-content_minmax(0,1fr)]">
+                            {isShared && (
+                                <>
+                                    <span className="inline-flex items-center text-sm font-semibold leading-5 text-theme-text-strong">
+                                        Accepted Pollen
+                                        <InfoTip
+                                            label="Accepted Pollen information"
+                                            text={
+                                                form.paidOnly
+                                                    ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                                    : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                                            }
+                                        />
+                                    </span>
+                                    <ButtonGroup aria-label="Accepted Pollen">
                                         <TabButton
                                             active={!form.paidOnly}
                                             onClick={() =>
@@ -865,12 +873,8 @@ export function CommunityEndpointDialog({
                                             Paid only
                                         </TabButton>
                                     </ButtonGroup>
-                                </ModelFormRow>
-                            </div>
-                        </AuthInfoCard>
-                    )}
-                    <AuthInfoCard>
-                        <div className="grid gap-2 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
+                                </>
+                            )}
                             <ul>
                                 <AuthAccessItem
                                     ariaLabel="Limit requests per minute per user"

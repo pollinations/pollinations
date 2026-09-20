@@ -162,7 +162,7 @@ export function CommunityEndpointCard({
 
             <PendingChangeNotice endpoint={endpoint} />
 
-            <div className="mt-5 grid gap-2 rounded-lg bg-theme-bg-pale p-3">
+            <div className="mt-5 grid gap-2 px-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"
@@ -216,19 +216,15 @@ export function CommunityEndpointCard({
                         )}
                     </>
                 )}
+                {priceGroups.map((group) => (
+                    <CommunityDetailRow
+                        key={group.key}
+                        icon={<CardIcon className="h-3.5 w-3.5" />}
+                        label={group.label}
+                        value={<CommunityPriceBadges group={group} />}
+                    />
+                ))}
             </div>
-            {priceGroups.length > 0 && (
-                <div className="mt-4 grid gap-2 px-2">
-                    {priceGroups.map((group) => (
-                        <CommunityDetailRow
-                            key={group.key}
-                            icon={<CardIcon className="h-3.5 w-3.5" />}
-                            label={group.label}
-                            value={<CommunityPriceBadges group={group} />}
-                        />
-                    ))}
-                </div>
-            )}
             <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     data-size="footer"

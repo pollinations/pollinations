@@ -139,7 +139,7 @@ export function KeyDialogContent({
     return (
         <>
             <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
-                <DialogBody>
+                <DialogBody scrollbar="subtle">
                     <DialogHeader
                         inBody
                         title={title}
@@ -243,7 +243,7 @@ export function KeyDialogContent({
                         </div>
                     ) : null}
                 </DialogBody>
-                <DialogFooter>
+                <DialogFooter className="polli:bg-transparent">
                     <Button
                         icon={<XIcon />}
                         type="button"

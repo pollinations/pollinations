@@ -1,4 +1,3 @@
-import { Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import {
@@ -6,6 +5,7 @@ import {
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { DEFAULT_KEY_LIMITS } from "./key-limit-input.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
@@ -145,7 +145,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ]);
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen} size="lg">
+        <ResourceDialog open={isOpen} onOpenChange={setIsOpen} size="lg">
             <KeyDialogContent
                 mode="create"
                 app={simplified}
@@ -173,6 +173,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     )
                 }
             />
-        </Dialog>
+        </ResourceDialog>
     );
 };

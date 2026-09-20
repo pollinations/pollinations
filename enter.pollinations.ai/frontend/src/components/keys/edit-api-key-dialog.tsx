@@ -1,8 +1,8 @@
 import { apiClient } from "@frontend/api.ts";
-import { Dialog } from "@pollinations/ui";
 import { AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import {
@@ -154,7 +154,11 @@ const DashboardDialog: FC<{
     size: "lg";
     children: ReactNode;
 }> = ({ onClose, size, children }) => (
-    <Dialog open onOpenChange={(open) => !open && onClose()} size={size}>
+    <ResourceDialog
+        open
+        onOpenChange={(open) => !open && onClose()}
+        size={size}
+    >
         {children}
-    </Dialog>
+    </ResourceDialog>
 );

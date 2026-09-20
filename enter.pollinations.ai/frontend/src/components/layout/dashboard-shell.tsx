@@ -6,6 +6,7 @@ import {
     CheckIcon,
     Chip,
     ClipboardIcon,
+    CloudUploadIcon,
     ColorModeToggle,
     CopyButton,
     cn,
@@ -504,7 +505,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 hash="models"
                                 flushLeft
                                 data-theme="accent"
-                                icon={BeakerIcon}
+                                icon={CloudUploadIcon}
                                 active={activePage === "my-models"}
                                 onClick={onNavigate}
                                 className="dashboard-rail-tab"

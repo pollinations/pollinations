@@ -249,30 +249,26 @@ function AccountPage() {
             <Section title="Help">
                 <Surface className="p-6">
                     <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
-                        <a
+                        <InlineLink
                             href="https://discord.com/channels/885844321461485618/889573359111774329"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-theme-text-base hover:text-theme-text-strong"
+                            className="inline-flex items-center gap-2"
                         >
                             <DiscordIcon
                                 className="h-4 w-4"
                                 aria-hidden="true"
                             />
                             Get help
-                        </a>
-                        <a
+                        </InlineLink>
+                        <InlineLink
                             href="https://github.com/pollinations/pollinations/issues"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-theme-text-base hover:text-theme-text-strong"
+                            className="inline-flex items-center gap-2"
                         >
                             <GitHubIcon
                                 className="h-4 w-4"
                                 aria-hidden="true"
                             />
                             Report a bug
-                        </a>
+                        </InlineLink>
                     </div>
                 </Surface>
             </Section>
@@ -283,22 +279,13 @@ function AccountPage() {
                         aria-label="Policies"
                         className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium"
                     >
-                        <InlineLink
-                            href="https://pollinations.ai/terms"
-                            showIcon={false}
-                        >
+                        <InlineLink href="https://pollinations.ai/terms">
                             Terms of Service
                         </InlineLink>
-                        <InlineLink
-                            href="https://pollinations.ai/privacy"
-                            showIcon={false}
-                        >
+                        <InlineLink href="https://pollinations.ai/privacy">
                             Privacy Policy
                         </InlineLink>
-                        <InlineLink
-                            href="https://pollinations.ai/refunds"
-                            showIcon={false}
-                        >
+                        <InlineLink href="https://pollinations.ai/refunds">
                             Refund Policy
                         </InlineLink>
                     </nav>

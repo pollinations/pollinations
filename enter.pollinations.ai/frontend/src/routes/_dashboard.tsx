@@ -146,17 +146,11 @@ export function SignedOutAccountArea({
             </p>
             <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
                 By continuing, you agree to the{" "}
-                <InlineLink
-                    href="https://pollinations.ai/terms"
-                    showIcon={false}
-                >
+                <InlineLink href="https://pollinations.ai/terms">
                     Terms of Service
                 </InlineLink>{" "}
                 and acknowledge the{" "}
-                <InlineLink
-                    href="https://pollinations.ai/privacy"
-                    showIcon={false}
-                >
+                <InlineLink href="https://pollinations.ai/privacy">
                     Privacy Policy
                 </InlineLink>
                 .

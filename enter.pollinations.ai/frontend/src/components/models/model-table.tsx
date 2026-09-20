@@ -1,4 +1,4 @@
-import { Surface, Tooltip } from "@pollinations/ui";
+import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     CAPABILITY_ICON,
@@ -223,14 +223,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     </div>
                     <ModelId name={model.name} showCopyIcon />
                     {model.brandUrl && model.publisher && (
-                        <a
+                        <InlineLink
                             href={model.brandUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            size="footer"
+                            className="inline-flex w-fit max-w-full items-center"
                         >
-                            {model.publisher}
-                        </a>
+                            <span className="truncate">{model.publisher}</span>
+                        </InlineLink>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">

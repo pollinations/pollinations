@@ -385,11 +385,7 @@ export function QuestRow({
         card.status !== "claimed" && card.description ? card.description : null;
     const issueLink =
         card.issueNumber != null && card.url ? (
-            <InlineLink
-                href={card.url}
-                showIcon={false}
-                className="text-sm tabular-nums"
-            >
+            <InlineLink href={card.url} className="text-sm tabular-nums">
                 #{card.issueNumber}
             </InlineLink>
         ) : null;
@@ -896,10 +892,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Complete → claim → credited to your{" "}
-                            <InlineLink href="/pollen" showIcon={false}>
-                                wallet
-                            </InlineLink>
-                            .
+                            <InlineLink href="/pollen">wallet</InlineLink>.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

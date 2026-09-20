@@ -1,4 +1,4 @@
-import { ExternalLinkButton, GitHubIcon, Section } from "@pollinations/ui";
+import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
 import {
@@ -15,12 +15,12 @@ export const NewsFaq: FC = () => (
         <Section
             title="News"
             action={
-                <ExternalLinkButton href={HIGHLIGHTS_GITHUB_URL}>
+                <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">
                     <span className="inline-flex items-center gap-1.5">
                         <GitHubIcon className="h-4 w-4 shrink-0" />
                         More on GitHub
                     </span>
-                </ExternalLinkButton>
+                </InlineLink>
             }
         >
             <NewsBanner />

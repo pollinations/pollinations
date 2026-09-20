@@ -1,4 +1,4 @@
-import { Surface, Text } from "@pollinations/ui";
+import { InlineLink, Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -41,11 +41,9 @@ export function AppAttribution({
                             className="mt-1.5 flex items-center gap-1.5"
                         >
                             <span>by</span>
-                            <a
+                            <InlineLink
                                 href={`https://github.com/${owner}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 font-medium hover:text-theme-text-strong"
+                                className="inline-flex items-center gap-1.5"
                             >
                                 <img
                                     src={`https://github.com/${owner}.png?size=40`}
@@ -57,7 +55,7 @@ export function AppAttribution({
                                     className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
                                 />
                                 <span className="underline">@{owner}</span>
-                            </a>
+                            </InlineLink>
                         </Text>
                     )}
                 </div>

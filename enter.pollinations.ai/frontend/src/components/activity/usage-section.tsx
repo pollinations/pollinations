@@ -232,10 +232,7 @@ const UsageEmptyState: FC = () => (
     <ActivityEmptyState>
         No usage in this period. Once you start using the API, your deductions
         will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an API key
-        </InlineLink>
-        .
+        <InlineLink href="/keys">Create an API key</InlineLink>.
     </ActivityEmptyState>
 );
 

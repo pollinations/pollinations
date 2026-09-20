@@ -4,6 +4,7 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    InlineLink,
     RocketIcon,
     Surface,
     Tooltip,
@@ -324,14 +325,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     <ModelId name={model.name} />
                     {model.brandUrl && model.publisher && (
-                        <a
+                        <InlineLink
                             href={model.brandUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            size="footer"
+                            className="inline-flex w-fit max-w-full items-center"
                         >
-                            {model.publisher}
-                        </a>
+                            <span className="truncate">{model.publisher}</span>
+                        </InlineLink>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||

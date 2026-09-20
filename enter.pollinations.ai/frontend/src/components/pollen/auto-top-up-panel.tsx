@@ -4,8 +4,8 @@ import {
     CardIcon,
     CheckIcon,
     cn,
-    ExternalLinkButton,
     InfoTip,
+    InlineLink,
     Switch,
     type SwitchStatus,
     Tooltip,
@@ -367,7 +367,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             title="Payment method"
                             value={formatPaymentMethod(billingState)}
                         />
-                        <ManageBillingButton
+                        <ManageBillingLink
                             onClick={openBillingPortal}
                             loading={isOpeningPortal}
                         />
@@ -395,14 +395,9 @@ function renderStatusMessage(
         return (
             <>
                 Further steps required in Stripe —{" "}
-                <a
-                    href={issue.invoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-theme-text-soft"
-                >
+                <InlineLink href={issue.invoiceUrl}>
                     complete in Stripe
-                </a>
+                </InlineLink>
             </>
         );
     }
@@ -410,26 +405,29 @@ function renderStatusMessage(
     return "On";
 }
 
-type ManageBillingButtonProps = {
+type ManageBillingLinkProps = {
     onClick: () => void;
     loading: boolean;
 };
 
-const ManageBillingButton: FC<ManageBillingButtonProps> = ({
+const ManageBillingLink: FC<ManageBillingLinkProps> = ({
     onClick,
     loading,
 }) => (
-    <ExternalLinkButton
-        intent="neutral"
+    <InlineLink
+        as="button"
+        type="button"
+        external
+        size="sm"
         onClick={onClick}
         disabled={loading}
-        className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
+        className="inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap"
     >
         <span className="inline-flex items-center gap-1.5">
             <CardIcon className="h-4 w-4 shrink-0" />
             <span>{loading ? "Opening..." : "Manage billing"}</span>
         </span>
-    </ExternalLinkButton>
+    </InlineLink>
 );
 
 function mapToggleStatusToSwitchStatus(

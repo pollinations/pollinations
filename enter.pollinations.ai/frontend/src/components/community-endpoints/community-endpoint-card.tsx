@@ -227,6 +227,7 @@ export function CommunityEndpointCard({
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
+                    data-size="footer"
                     to="/activity"
                     search={{
                         usageGranularity: "day",
@@ -244,7 +245,7 @@ export function CommunityEndpointCard({
                         earningsMetric: undefined,
                         earningsApps: undefined,
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                    className="polli-link inline-flex items-center gap-1.5"
                 >
                     <TrendUpIcon className="h-3.5 w-3.5 shrink-0" />
                     View activity

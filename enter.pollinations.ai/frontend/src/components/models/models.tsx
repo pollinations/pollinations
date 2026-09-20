@@ -1,10 +1,8 @@
 import {
     Alert,
     BotIcon,
-    Button,
     ClockIcon,
     EditableCombobox,
-    ExternalLinkIcon,
     InlineLink,
     Section,
     SparklesIcon,
@@ -484,19 +482,14 @@ export const Models: FC = () => {
                 action={
                     activePrimaryTab === "models" && (
                         <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                            <Button
-                                as="a"
+                            <InlineLink
                                 href="https://model-monitor.pollinations.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                intent="neutral"
                                 size="sm"
-                                className="self-start sm:self-center"
+                                className="inline-flex items-center gap-1.5 self-start sm:self-center"
                             >
-                                <UsageIcon className="mr-1.5 h-4 w-4" />
+                                <UsageIcon className="h-4 w-4" />
                                 Model health
-                                <ExternalLinkIcon className="ml-1.5 h-4 w-4 opacity-60" />
-                            </Button>
+                            </InlineLink>
                         </div>
                     )
                 }
@@ -586,17 +579,11 @@ export const Models: FC = () => {
                             Avoid sensitive data.
                         </strong>{" "}
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                            <InlineLink
-                                href="https://gen.pollinations.ai/docs#tag/Safety"
-                                showIcon={false}
-                            >
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
                                 Privacy filter
                             </InlineLink>
                             <span aria-hidden="true">·</span>
-                            <InlineLink
-                                href="https://pollinations.ai/privacy"
-                                showIcon={false}
-                            >
+                            <InlineLink href="https://pollinations.ai/privacy">
                                 Privacy Policy
                             </InlineLink>
                         </span>

@@ -1,4 +1,4 @@
-import { cn, Surface } from "@pollinations/ui";
+import { cn, InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -101,20 +101,13 @@ function renderWithLinks(text: string): ReactNode[] {
     for (const match of matches) {
         const idx = match.index ?? 0;
         const href = match[2];
-        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
-            <a
-                key={idx}
-                href={href}
-                target={isExternal ? "_blank" : undefined}
-                rel={isExternal ? "noopener noreferrer" : undefined}
-                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
-            >
+            <InlineLink key={idx} href={href}>
                 {match[1]}
-            </a>,
+            </InlineLink>,
         );
         lastIndex = idx + match[0].length;
     }
@@ -188,14 +181,9 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             The model catalog uses the new IDs. Existing IDs remain supported as
             aliases in API requests.
         </p>
-        <a
-            href="https://enter.pollinations.ai/models"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-        >
-            Browse models and their aliases →
-        </a>
+        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
+            Browse models and their aliases
+        </InlineLink>
     </Surface>
 );
 

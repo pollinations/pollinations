@@ -297,10 +297,7 @@ const EarningsEmptyState: FC = () => (
     <ActivityEmptyState>
         No earnings in this period. Once users spend Pollen through your apps or
         community models, earnings will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an App key
-        </InlineLink>
-        .
+        <InlineLink href="/keys">Create an App key</InlineLink>.
     </ActivityEmptyState>
 );
 

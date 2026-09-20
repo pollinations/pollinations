@@ -2,7 +2,6 @@ import {
     Alert,
     AppIcon,
     Button,
-    ExternalLinkButton,
     InlineLink,
     Input,
     LockIcon,
@@ -249,12 +248,13 @@ export function ConnectedApps() {
                         onBlur={() => setSearch(search.trim())}
                     />
                 </div>
-                <ExternalLinkButton
+                <InlineLink
                     href="https://composio.dev/toolkits"
+                    size="sm"
                     className="shrink-0"
                 >
                     Browse all apps
-                </ExternalLinkButton>
+                </InlineLink>
             </div>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}

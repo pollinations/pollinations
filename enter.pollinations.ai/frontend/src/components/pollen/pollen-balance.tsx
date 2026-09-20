@@ -250,7 +250,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         Payment help:{" "}
                         <CopyButton
                             value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
+                            className="polli-link"
                         >
                             {(copied) =>
                                 copied ? "Copied!" : "billing@pollinations.ai"

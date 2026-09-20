@@ -4,6 +4,7 @@ import {
     Chip,
     GlobeIcon,
     IconButton,
+    InlineLink,
     KeyChip,
     KeyIcon,
     PencilIcon,
@@ -155,14 +156,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span className="text-theme-text-muted">
                                 Redirect:{" "}
                             </span>
-                            <a
+                            <InlineLink
                                 href={primaryRedirectUri}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-theme-text-soft hover:text-theme-text-strong"
+                                className="inline-flex min-w-0 max-w-[200px] items-center"
                             >
-                                {primaryRedirectUri.replace(/^https?:\/\//, "")}
-                            </a>
+                                <span className="truncate">
+                                    {primaryRedirectUri.replace(
+                                        /^https?:\/\//,
+                                        "",
+                                    )}
+                                </span>
+                            </InlineLink>
                             {extraRedirectUriCount > 0 && (
                                 <Tooltip
                                     content={

@@ -334,7 +334,7 @@ export function CommunityEndpoints({
     }
 
     const publisherAccessRequestLink = (
-        <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL} showIcon={false}>
+        <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL}>
             publisher access request
         </InlineLink>
     );
@@ -347,10 +347,7 @@ export function CommunityEndpoints({
             models, agents, or both, submit a {publisherAccessRequestLink}. You
             can register, probe, and test private models without approval. For
             questions, ask in{" "}
-            <InlineLink
-                href="https://discord.gg/pollinations-ai-885844321461485618"
-                showIcon={false}
-            >
+            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
                 Discord
             </InlineLink>
             .

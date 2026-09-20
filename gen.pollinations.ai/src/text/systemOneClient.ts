@@ -45,7 +45,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev requires a user message with string content.",
+            "typesafe/jev-1.13 requires a user message with string content.",
         );
     }
     let payload: unknown;
@@ -53,7 +53,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev could not parse the user message content as JSON.",
+            "typesafe/jev-1.13 could not parse the user message content as JSON.",
         );
     }
     if (
@@ -62,7 +62,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev expects a JSON object with "state" and a "questions" map.',
+            'typesafe/jev-1.13 expects a JSON object with "state" and a "questions" map.',
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -114,7 +114,7 @@ export async function requestDecision(
     const endpoint = options.modelConfig?.directEndpoint;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev.",
+            "The decisions route is not configured for typesafe/jev-1.13.",
             500,
         );
     }

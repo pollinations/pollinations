@@ -133,7 +133,7 @@ const ANSWERS = {
 function decisionResponse(answers = ANSWERS) {
     return Response.json({
         id: "dec-test",
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 312, output_tokens: 48 },
@@ -159,7 +159,7 @@ test("sends native state and questions to the decisions endpoint", async (t) => 
         );
         const body = JSON.parse(init.body);
         assert.deepEqual(body, {
-            model: "typesafe/jev",
+            model: "typesafe/jev-1.13",
             state: "My payouts have been failing for 3 days.",
             questions: QUESTIONS,
         });
@@ -290,7 +290,7 @@ test("accepts native string, object, and array instructions and rubric values", 
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(content, {
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
         state: "My card was declined.",
         questions: richQuestions,
     });

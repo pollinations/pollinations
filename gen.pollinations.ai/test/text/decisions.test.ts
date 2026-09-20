@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { apikey } from "@shared/db/better-auth.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -12,6 +13,8 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
@@ -99,7 +102,9 @@ beforeEach(async () => {
     await env.KV.put(
         "model-stats-v3",
         JSON.stringify({
-            value: { data: [{ model: "typesafe/jev", avg_cost_usd: 0.001 }] },
+            value: {
+                data: [{ model: "typesafe/jev-1.13", avg_cost_usd: 0.001 }],
+            },
             ttl: 3600,
         }),
     );
@@ -137,7 +142,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     mocks,
 }) => {
     const { response, wait } = await post("/alpha/decisions", apiKey, {
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
         state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
         questions,
     });
@@ -147,7 +152,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(body).toMatchObject({
         id: expect.stringMatching(/^dec-/),
         // Our canonical id, not the provider's dated build.
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
         provider: "TypeSafe",
         answers,
         usage: { input_tokens: 452, output_tokens: 73 },
@@ -172,7 +177,7 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         responseStatus: 200,
-        modelRequested: "typesafe/jev",
+        modelRequested: "typesafe/jev-1.13",
         tokenCountPromptText: 452,
         tokenCountCompletionText: 73,
         isBilledUsage: true,
@@ -186,7 +191,7 @@ test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     });
     expect(withoutModel.response.status).toBe(200);
     await expect(withoutModel.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
     });
     await withoutModel.wait();
 
@@ -197,11 +202,38 @@ test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     });
     expect(viaAlias.response.status).toBe(200);
     await expect(viaAlias.response.json()).resolves.toMatchObject({
-        model: "typesafe/jev",
+        model: "typesafe/jev-1.13",
     });
     await viaAlias.wait();
 
     expect(mocks.decisions.state.requests).toHaveLength(2);
+});
+
+test("existing Jev key permissions allow the canonical model and both aliases", async ({
+    mocks,
+}) => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["typesafe/jev-1.13"],
+        user: { tierBalance: 100 },
+    });
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: ["typesafe/jev"] }) })
+        .where(eq(apikey.id, id));
+
+    for (const model of ["typesafe/jev-1.13", "typesafe/jev", "jev"]) {
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model,
+            state: `Request through ${model}`,
+            questions,
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "typesafe/jev-1.13",
+        });
+        await wait();
+    }
+    expect(mocks.decisions.state.requests).toHaveLength(3);
 });
 
 test("rejects a malformed question before calling upstream", async ({

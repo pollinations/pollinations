@@ -300,10 +300,55 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
-    // Sakana's only OpenRouter endpoint (2026-09-12): no max_tokens/sampling
-    // knobs are in its supported_parameters — the orchestrator controls
-    // output length itself. Only "auto" tool_choice works per
-    // supports_tool_choice, so "tools" is declared without "tool_choice".
+    // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
+    // seed or logprobs in supported_parameters. Forced tool_choice isn't
+    // supported (only "auto"/"none"), so "tools" is declared alone.
+    openRouterHy4Preview: [
+        ...CHAT,
+        "tools",
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "stop",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // Novita route (2026-09-18).
+    openRouterHy3: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
+    // Novita primary, adds min_p over Novita's parameter surface.
+    openRouterHy3Phala: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter sakana tag (2026-09-12): tools are declared without
+    // tool_choice because the endpoint doesn't support it, and
     // web_search_options is withheld: OpenRouter bills web_search per call
     // ($0.01), a non-token charge our cost model can't meter yet.
     openRouterFuguMax: [
@@ -408,4 +453,7 @@ export const CHAT_PARAMETERS = {
         "frequency_penalty",
     ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // The System One adapter forwards the native request untouched, so token
+    // caps, sampling and tools have no effect; only the SSE wrapper is ours.
+    typesafeJev: ["stream"],
 } satisfies Record<string, string[]>;

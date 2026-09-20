@@ -1,4 +1,10 @@
-import { AccountIcon, Button, GitHubIcon, NavItem } from "@pollinations/ui";
+import {
+    AccountIcon,
+    Button,
+    ExternalLinkIcon,
+    GitHubIcon,
+    NavItem,
+} from "@pollinations/ui";
 import { useState } from "react";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
@@ -22,13 +28,17 @@ export function DashboardSignInTrigger({
                 <NavItem
                     type="button"
                     flushLeft
-                    data-theme="accent"
+                    data-theme="neutral"
                     icon={AccountIcon}
-                    className="dashboard-rail-tab"
+                    className="dashboard-rail-tab dashboard-rail-external"
                     aria-haspopup="dialog"
                     onClick={openSignIn}
                 >
                     Sign in
+                    <ExternalLinkIcon
+                        className="h-3 w-3 text-theme-text-muted"
+                        aria-hidden="true"
+                    />
                 </NavItem>
             ) : (
                 <Button

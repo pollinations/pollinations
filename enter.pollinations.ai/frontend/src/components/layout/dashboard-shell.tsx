@@ -268,7 +268,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity ease-out",
+                        "absolute inset-0 bg-surface-opaque/85 backdrop-blur-sm transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
@@ -277,7 +277,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 w-[clamp(14.5rem,76vw,17rem)] bg-surface-translucent transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 w-[clamp(14.5rem,76vw,17rem)] transform-gpu transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}

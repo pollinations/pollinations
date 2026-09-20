@@ -99,7 +99,7 @@ test("signed-out views are recorded without a user and pass attribution through"
         return originalFetch(input, init);
     });
     const view = {
-        page: "/_dashboard/news",
+        page: "/news",
         referrer_host: "github.com",
         utm_source: "readme",
         utm_campaign: "launch",

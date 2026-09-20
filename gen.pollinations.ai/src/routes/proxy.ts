@@ -72,6 +72,11 @@ import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
+    CreateDecisionRequestSchema,
+    CreateDecisionResponseSchema,
+    DEFAULT_DECISION_MODEL,
+} from "@/schemas/decisions.ts";
+import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
@@ -89,6 +94,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -212,12 +218,28 @@ const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/chat/completions",
+    }),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+const decisionHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateDecisionRequestSchema),
+    resolveModel("generate.text", {
+        defaultModel: DEFAULT_DECISION_MODEL,
+        supportedEndpoint: "/alpha/decisions",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateDecision,
 );
 
 const responsesHandlers = factory.createHandlers(
@@ -692,6 +714,36 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/alpha/decisions",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Decision",
+            description: [
+                "Answer typed questions about a state and get calibrated probabilities instead of free text. Request-compatible with the OpenRouter decisions API.",
+                "",
+                "Each question is one of three types. `choice` selects among named options and returns the chosen key with per-option probabilities. `score` rates on an ordered scale and returns a fractional position plus a `legend` mapping each index back to its rung — read the legend before interpreting the score. `noul` returns the probability that a yes/no proposition is true.",
+                "",
+                "Questions are answered independently and returned under the keys you supplied. `state`, `instructions`, and criteria values accept a string or arbitrary JSON.",
+                "",
+                "Confidence can stay high when facts are missing, so supply the facts that matter. Counting, arithmetic, and date comparisons belong in your code, not in a question.",
+                "",
+                "Models that support this endpoint list `/alpha/decisions` in `supported_endpoints`. The response is JSON only; there is no streaming.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Decision answers with token usage",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateDecisionResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...decisionHandlers,
     )
     .post(
         "/v1/responses",

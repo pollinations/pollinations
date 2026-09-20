@@ -19,6 +19,10 @@ import {
 import { resolveModel } from "@/middleware/model.ts";
 import { textExecutionCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import {
+    CreateDecisionRequestSchema,
+    DEFAULT_DECISION_MODEL,
+} from "@/schemas/decisions.ts";
 import { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import {
     GenerateImageRequestQueryParamsSchema,
@@ -29,6 +33,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -78,11 +83,27 @@ generationExecutorRoutes.post(
     "/v1/chat/completions",
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/chat/completions",
+    }),
     track("generate.text"),
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/alpha/decisions",
+    textBodyLimit,
+    validator("json", CreateDecisionRequestSchema),
+    resolveModel("generate.text", {
+        defaultModel: DEFAULT_DECISION_MODEL,
+        supportedEndpoint: "/alpha/decisions",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateDecision,
 );
 
 generationExecutorRoutes.post(

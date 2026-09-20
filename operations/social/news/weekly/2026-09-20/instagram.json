@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-09-20",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:28:27.583723+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/instagram-3.jpg"
+    }
+  ],
+  "text": "109 PRs merged this week. Agents learned to remember and collaborate, model discovery started showing its working, and the app catalog quietly turned into a busy little market. Also: more fallbacks, clearer diagnostics, better quests, and fewer places for software to pretend an error never happened. 🌱🐝\n\nThe garden is public: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #aiagents #llm #generativeai #openai #developertools",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -435,32 +435,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </section>
                     )}
                     {navItems
-                        .filter((item) => item.id === "news-faq")
-                        .map((item) => (
-                            <NavItem
-                                key={item.id}
-                                as={Link}
-                                to={item.to}
-                                hash=""
-                                flushLeft
-                                data-theme="accent"
-                                active={activePage === item.id}
-                                onClick={onNavigate}
-                                aria-label="Pollinations info"
-                                className="dashboard-rail-tab"
-                            >
-                                <PollinationsLogoIcon className="h-4 w-4" />
-                                Info
-                            </NavItem>
-                        ))}
-                    <div className="mb-3 w-full">
-                        <ExploreNav
-                            active={activePage === "models"}
-                            category={activeModelCategory}
-                            onNavigate={onNavigate}
-                        />
-                    </div>
-                    {navItems
                         .filter((item) => item.id === "pollen")
                         .map((pollen) => (
                             <NavItem
@@ -580,7 +554,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             <DashboardNavGroup
                                 key={item.id}
                                 title="Quests"
-                                className="mt-3"
+                                className={showCreate ? "mt-3" : undefined}
                             >
                                 <NavItem
                                     as={Link}
@@ -603,6 +577,32 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 </NavItem>
                             </DashboardNavGroup>
                         ))}
+                    {navItems
+                        .filter((item) => item.id === "news-faq")
+                        .map((item) => (
+                            <NavItem
+                                key={item.id}
+                                as={Link}
+                                to={item.to}
+                                hash=""
+                                flushLeft
+                                data-theme="accent"
+                                active={activePage === item.id}
+                                onClick={onNavigate}
+                                aria-label="Pollinations info"
+                                className="dashboard-rail-tab mt-3"
+                            >
+                                <PollinationsLogoIcon className="h-4 w-4" />
+                                Info
+                            </NavItem>
+                        ))}
+                    <div className="mb-3 w-full">
+                        <ExploreNav
+                            active={activePage === "models"}
+                            category={activeModelCategory}
+                            onNavigate={onNavigate}
+                        />
+                    </div>
                 </nav>
                 <div className="mt-auto flex w-full flex-col gap-1 pt-1">
                     <DashboardDocs />

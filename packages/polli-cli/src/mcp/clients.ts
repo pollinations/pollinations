@@ -34,7 +34,6 @@ export interface McpClientResult {
 export interface McpClientAdapter {
     id: string;
     label: string;
-    description: string;
     /**
      * A Pollinations key already embedded in this client's config, if one can
      * be read back. Passed to `resolveHarnessKey` so re-installing reuses a
@@ -79,10 +78,9 @@ interface JsonTarget {
 const jsonClient = (adapter: {
     id: string;
     label: string;
-    description: string;
     target: JsonTarget;
 }): McpClientAdapter => {
-    const { id, label, description, target } = adapter;
+    const { id, label, target } = adapter;
 
     const readTable = (ctx: McpContext): JsonObject => {
         const existing = readJsonObject(target.file(ctx))[target.table];
@@ -112,7 +110,6 @@ const jsonClient = (adapter: {
     return {
         id,
         label,
-        description,
         existingKey: (ctx) => firstOwnedKey(readTable(ctx)),
         install: (ctx, servers, key) => {
             const kept: string[] = [];
@@ -194,7 +191,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "cursor",
         label: "Cursor",
-        description: "Cursor desktop app (~/.cursor/mcp.json)",
         target: {
             file: (ctx) => join(ctx.home, ".cursor", "mcp.json"),
             table: "mcpServers",
@@ -204,7 +200,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "opencode",
         label: "OpenCode",
-        description: "OpenCode (~/.config/opencode/opencode.json)",
         target: {
             file: (ctx) =>
                 join(
@@ -224,7 +219,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "copilot",
         label: "GitHub Copilot CLI",
-        description: "Copilot CLI (~/.copilot/mcp-config.json)",
         target: {
             file: (ctx) => join(ctx.home, ".copilot", "mcp-config.json"),
             table: "mcpServers",
@@ -238,7 +232,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "windsurf",
         label: "Windsurf",
-        description: "Windsurf (~/.codeium/windsurf/mcp_config.json)",
         target: {
             file: (ctx) =>
                 join(ctx.home, ".codeium", "windsurf", "mcp_config.json"),
@@ -252,7 +245,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "cline",
         label: "Cline",
-        description: "Cline (~/.cline/mcp.json)",
         target: {
             file: (ctx) => join(ctx.home, ".cline", "mcp.json"),
             table: "mcpServers",
@@ -266,7 +258,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "kiro",
         label: "Kiro",
-        description: "Kiro user-level MCP (~/.kiro/settings/mcp.json)",
         target: {
             file: (ctx) => join(ctx.home, ".kiro", "settings", "mcp.json"),
             table: "mcpServers",
@@ -276,7 +267,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "warp",
         label: "Warp",
-        description: "Warp file-based MCP (~/.warp/.mcp.json)",
         target: {
             file: (ctx) => join(ctx.home, ".warp", ".mcp.json"),
             table: "mcpServers",
@@ -289,7 +279,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "vscode",
         label: "VS Code",
-        description: "VS Code user MCP profile (User/mcp.json)",
         target: {
             file: (ctx) => join(vscodeUserDir(ctx), "mcp.json"),
             table: "servers",
@@ -329,8 +318,6 @@ const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "zed",
         label: "Zed",
-        description:
-            "Zed (context_servers via the mcp-remote bridge — Zed has no native HTTP transport with headers)",
         target: {
             file: (ctx) =>
                 join(
@@ -399,10 +386,9 @@ const run = (command: string, args: string[]) => {
 const cliClient = (adapter: {
     id: string;
     label: string;
-    description: string;
     target: CliTarget;
 }): McpClientAdapter => {
-    const { id, label, description, target } = adapter;
+    const { id, label, target } = adapter;
 
     const ensureCli = () => {
         if (!commandExists(target.command, process.env)) {
@@ -415,7 +401,6 @@ const cliClient = (adapter: {
     return {
         id,
         label,
-        description,
         existingKey: target.existingKey,
         preflight: ensureCli,
         install: (ctx, servers, key) => {
@@ -512,25 +497,26 @@ export const codexInstalledIds = (toml: string, baseUrl = BASE_URL) => {
 
 const CODEX_KEY_ENV = "POLLI_MCP_CODEX_API_KEY";
 
+const httpAddArgs = (server: McpServer, key: string) => [
+    "mcp",
+    "add",
+    "--scope",
+    "user",
+    "--transport",
+    "http",
+    server.id,
+    server.url,
+    "--header",
+    `Authorization: Bearer ${key}`,
+];
+
 const cliClients: McpClientAdapter[] = [
     cliClient({
         id: "claude-code",
         label: "Claude Code",
-        description: "Claude Code (claude mcp add, user scope)",
         target: {
             command: "claude",
-            addArgs: (server, key) => [
-                "mcp",
-                "add",
-                "--scope",
-                "user",
-                "--transport",
-                "http",
-                server.id,
-                server.url,
-                "--header",
-                `Authorization: Bearer ${key}`,
-            ],
+            addArgs: httpAddArgs,
             removeArgs: (serverId) => [
                 "mcp",
                 "remove",
@@ -545,8 +531,6 @@ const cliClients: McpClientAdapter[] = [
     cliClient({
         id: "codex",
         label: "Codex CLI",
-        description:
-            "Codex CLI (codex mcp add with bearer_token_env_var; the key lands in ~/.codex/.env)",
         target: {
             command: "codex",
             addArgs: (server) => [
@@ -579,21 +563,9 @@ const cliClients: McpClientAdapter[] = [
     cliClient({
         id: "gemini",
         label: "Gemini CLI",
-        description: "Gemini CLI (gemini mcp add, user scope)",
         target: {
             command: "gemini",
-            addArgs: (server, key) => [
-                "mcp",
-                "add",
-                "--scope",
-                "user",
-                "--transport",
-                "http",
-                server.id,
-                server.url,
-                "--header",
-                `Authorization: Bearer ${key}`,
-            ],
+            addArgs: httpAddArgs,
             removeArgs: (serverId) => ["mcp", "remove", serverId],
             installHint:
                 "Install it from https://github.com/google-gemini/gemini-cli.",
@@ -606,7 +578,6 @@ const cliClients: McpClientAdapter[] = [
     cliClient({
         id: "amp",
         label: "Amp",
-        description: "Amp (amp mcp add)",
         target: {
             command: "amp",
             addArgs: (server, key) => [
@@ -652,14 +623,11 @@ const PRIORITY = [
     "warp",
 ];
 
-const byId = new Map(
-    [...cliClients, ...jsonClients].map((client) => [client.id, client]),
-);
+const ALL = [...cliClients, ...jsonClients];
 
-export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.flatMap((id) => {
-    const client = byId.get(id);
-    return client ? [client] : [];
-});
+export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.map(
+    (id) => ALL.find((client) => client.id === id) as McpClientAdapter,
+);
 
 export const findClient = (id: string): McpClientAdapter | undefined =>
     MCP_CLIENTS.find((client) => client.id === id);

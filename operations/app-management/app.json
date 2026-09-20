@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Atelier — Pollinations Image Studio",
+    "url": "https://image.xt1171.eu.org",
+    "description": "Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/xiaotian1171/atelier-image-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-20",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15205",
+    "approvedDate": "2026-09-20",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "aaarraaa",
     "url": "https://aaarraaarr990-rgb.github.io/Monster",
     "description": "App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in",

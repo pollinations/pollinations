@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ aaarraaa](https://aaarraaarr990-rgb.github.io/Monster) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@aaarraaarr990-rgb](https://github.com/aaarraaarr990-rgb) |
 | [🎬 Text to speech](https://thinglover21-ux.github.io/My-app-mod) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@thinglover21-ux](https://github.com/thinglover21-ux) |
 | [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
@@ -37,7 +38,6 @@
 | [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) | Describe a database query in plain English, get clean SQL in your dialect (SQLite/PostgreSQL/MySQL/SQL Server). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ Codeverter](https://fadyabohamza-netizen.github.io/codeverter) | Convert code between 9+ programming languages with AI. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
-| [🛠️ Regexly](https://fadyabohamza-netizen.github.io/regexly) | Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

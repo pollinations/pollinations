@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
+import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import { DashboardSignInTrigger } from "../components/auth/dashboard-sign-in-trigger.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
@@ -61,7 +62,8 @@ function SignInPage() {
             navItems={SIGNED_OUT_NAV_ITEMS}
             accountArea={<DashboardSignInTrigger defaultOpen />}
         >
-            <NewsFaq showWelcome />
+            <DashboardSignInBanner />
+            <NewsFaq />
         </DashboardShell>
     );
 }

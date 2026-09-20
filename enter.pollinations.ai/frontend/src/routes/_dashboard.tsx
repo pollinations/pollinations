@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import { DashboardSignInTrigger } from "../components/auth/dashboard-sign-in-trigger.tsx";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
@@ -121,6 +122,7 @@ function DashboardLayout() {
                     : undefined
             }
         >
+            {!data.user && <DashboardSignInBanner />}
             <Outlet />
         </DashboardShell>
     );

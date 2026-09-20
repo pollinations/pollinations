@@ -34,7 +34,6 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { DashboardSignInTrigger } from "../auth/dashboard-sign-in-trigger.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -876,17 +875,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 )}
                 {/* The preview counts available quests and their possible rewards. */}
                 {state.anonymous && (
-                    <>
-                        <QuestSummary
-                            quests={previewTotals.count}
-                            pollen={previewTotals.pollen}
-                        />
-                        <Text>
-                            Sign in to your Pollinations account to track your
-                            quests and claim Pollen rewards.
-                        </Text>
-                        <DashboardSignInTrigger variant="page" />
-                    </>
+                    <QuestSummary
+                        quests={previewTotals.count}
+                        pollen={previewTotals.pollen}
+                    />
                 )}
                 <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">

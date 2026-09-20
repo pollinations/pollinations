@@ -1,6 +1,5 @@
-import { GitHubIcon, InlineLink, Section, Text } from "@pollinations/ui";
+import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
-import { DashboardSignInTrigger } from "../auth/dashboard-sign-in-trigger.tsx";
 import { FAQ } from "./faq.tsx";
 import {
     Announcements,
@@ -8,19 +7,8 @@ import {
     NewsBanner,
 } from "./news-banner.tsx";
 
-export const NewsFaq: FC<{ showWelcome?: boolean }> = ({
-    showWelcome = false,
-}) => (
+export const NewsFaq: FC = () => (
     <div className="flex flex-col gap-6">
-        {showWelcome && (
-            <Section title="Welcome to Pollinations">
-                <Text>
-                    Explore models, build with AI, and manage your Pollinations
-                    account.
-                </Text>
-                <DashboardSignInTrigger variant="page" />
-            </Section>
-        )}
         <Section title="Announcements">
             <Announcements />
         </Section>

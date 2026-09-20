@@ -382,7 +382,7 @@ export function TerminalIcon(props: IconProps) {
 export function ToolIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l2.1 2.1a1 1 0 0 0 1.4 0l4-4a6 6 0 0 1-8 8l-8 8a2.8 2.8 0 0 1-4-4l8-8a6 6 0 0 1 8-8l-4 4Z" />
         </svg>
     );
 }

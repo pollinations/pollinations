@@ -14,7 +14,6 @@ import {
     TabButton,
     TokensIcon,
     UsageIcon,
-    WarningIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -730,37 +729,31 @@ export const Models: FC = () => {
                 {(activePrimaryTab === "agent" ||
                     (activePrimaryTab === "models" &&
                         explicitModelSource !== "official")) && (
-                    <aside
-                        aria-label="Community privacy notice"
-                        className="flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
+                    <Alert
+                        intent="advisory"
+                        title="Community privacy"
                     >
-                        <WarningIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-warning-text" />
-                        <span className="min-w-0">
-                            <strong className="font-semibold text-theme-text-strong">
-                                Community privacy
-                            </strong>{" "}
-                            — Independent providers and configured fallbacks
-                            process requests under their own policies.{" "}
-                            <strong className="font-semibold text-theme-text-strong">
-                                Avoid sensitive data.
-                            </strong>{" "}
-                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                                <InlineLink
-                                    href="https://gen.pollinations.ai/docs#tag/Safety"
-                                    showIcon={false}
-                                >
-                                    Privacy filter
-                                </InlineLink>
-                                <span aria-hidden="true">·</span>
-                                <InlineLink
-                                    href="https://pollinations.ai/privacy"
-                                    showIcon={false}
-                                >
-                                    Privacy Policy
-                                </InlineLink>
-                            </span>
+                        Independent providers and configured fallbacks process
+                        requests under their own policies.{" "}
+                        <strong className="font-semibold text-theme-text-strong">
+                            Avoid sensitive data.
+                        </strong>{" "}
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                Privacy filter
+                            </InlineLink>
+                            <span aria-hidden="true">·</span>
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
                         </span>
-                    </aside>
+                    </Alert>
                 )}
                 {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger">{catalogError}</Alert>

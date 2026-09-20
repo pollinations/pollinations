@@ -533,7 +533,7 @@ export function CommunityEndpointDialog({
                         </AuthInfoCard>
                     )}
                     {form.visibility === "public" && (
-                        <Alert intent="warning" title="Public provider duties">
+                        <Alert intent="advisory" title="Public provider duties">
                             Requests are sent to your endpoint. You are
                             responsible for securing caller data and disclosing
                             how you retain, share, train on, or otherwise use

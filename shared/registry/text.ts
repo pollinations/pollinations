@@ -1149,7 +1149,12 @@ const TEXT_BASE_SERVICES = {
         title: "Jev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
-            "send the native state and questions as JSON in the last user message",
+            "post state and questions to /alpha/decisions, or send the same " +
+            "JSON in the last user message on /v1/chat/completions",
+        // Its own request shape, so it is offered on the decisions route and
+        // the chat adapter only — /text returns plain content and has nothing
+        // to return here.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

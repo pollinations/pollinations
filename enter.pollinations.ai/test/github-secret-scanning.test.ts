@@ -202,28 +202,30 @@ describe("GitHub secret scanning", () => {
         expect(response.status).toBe(401);
         expect(await isEnabled(apiKey)).toBe(true);
     });
-});
 
-test("disables matching publishable pk_ keys", async ({ pubApiKey, mocks }) => {
-    mocks.github.state.secretScanningPublicKeys = [
-        { key_identifier: KEY_ID, key: PUBLIC_KEY_PEM },
-    ];
-    await mocks.enable("github");
-    expect(await isEnabled(pubApiKey)).toBe(true);
-    const body = JSON.stringify([
-        {
-            token: pubApiKey,
-            type: "pollinations_api_key",
-            url: "https://github.com/example/repo/blob/main/app.js",
-            source: "content",
-        },
-    ]);
-    const response = await SELF.fetch(
-        "https://enter.pollinations.ai/api/webhooks/github-secret-scanning",
-        await signedRequest(body),
-    );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ success: true });
-    expect(await isEnabled(pubApiKey)).toBe(false);
-});
+    test("disables matching publishable pk_ keys", async ({
+        pubApiKey,
+        mocks,
+    }) => {
+        mocks.github.state.secretScanningPublicKeys = [
+            { key_identifier: KEY_ID, key: PUBLIC_KEY_PEM },
+        ];
+        await mocks.enable("github");
+        expect(await isEnabled(pubApiKey)).toBe(true);
+        const body = JSON.stringify([
+            {
+                token: pubApiKey,
+                type: "pollinations_api_key",
+                url: "https://github.com/example/repo/blob/main/app.js",
+                source: "content",
+            },
+        ]);
+        const response = await SELF.fetch(
+            "https://enter.pollinations.ai/api/webhooks/github-secret-scanning",
+            await signedRequest(body),
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ success: true });
+        expect(await isEnabled(pubApiKey)).toBe(false);
+    });
 });

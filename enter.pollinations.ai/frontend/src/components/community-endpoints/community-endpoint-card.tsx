@@ -60,25 +60,17 @@ export function CommunityEndpointCard({
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
-    const visibilityAction = endpoint.hidden ? "Relist" : "Unlist";
-    const visibilityActionLabel = `${visibilityAction} ${isAgent ? "agent" : "model"}`;
-    const relistAvailableAt =
-        endpoint.hidden && isPublic && endpoint.hiddenAt
+    const relistAt =
+        isPublic && endpoint.hiddenAt
             ? new Date(endpoint.hiddenAt).getTime() +
               COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-            : null;
-    const relistIsDelayed =
-        relistAvailableAt !== null && Date.now() < relistAvailableAt;
-    const visibilityTooltip = isToggling
-        ? "Saving visibility"
-        : relistIsDelayed
-          ? `Relist available at ${new Date(
-                relistAvailableAt,
-            ).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            })}`
-          : visibilityActionLabel;
+            : 0;
+    const relistIsDelayed = Date.now() < relistAt;
+    const visibilityTooltip = relistIsDelayed
+        ? `Relist available at ${new Date(relistAt).toLocaleTimeString([], { timeStyle: "short" })}`
+        : isToggling
+          ? "Saving visibility"
+          : `${endpoint.hidden ? "Relist" : "Unlist"} ${isAgent ? "agent" : "model"}`;
     const mutedClassName = endpoint.hidden ? "opacity-60" : undefined;
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
@@ -113,9 +105,6 @@ export function CommunityEndpointCard({
                     <>
                         <IconButton
                             title={visibilityTooltip}
-                            tooltip={visibilityTooltip}
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
                             disabled={isToggling || relistIsDelayed}
                             onClick={onToggle}
                         >
@@ -129,9 +118,6 @@ export function CommunityEndpointCard({
                             <IconButton
                                 intent="info"
                                 title={isAgent ? "Edit agent" : "Edit model"}
-                                tooltip={isAgent ? "Edit agent" : "Edit model"}
-                                tooltipAlign="center"
-                                tooltipClampToViewport={false}
                                 onClick={onEdit}
                             >
                                 <PencilIcon className="h-4 w-4" />
@@ -140,9 +126,6 @@ export function CommunityEndpointCard({
                         <IconButton
                             intent="danger"
                             title={isAgent ? "Delete agent" : "Delete model"}
-                            tooltip={isAgent ? "Delete agent" : "Delete model"}
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
                             onClick={onDelete}
                         >
                             <XIcon className="h-4 w-4" />
@@ -152,9 +135,9 @@ export function CommunityEndpointCard({
             />
 
             {endpoint.hidden && (
-                <div className="mt-3">
-                    <Chip size="sm">Unlisted</Chip>
-                </div>
+                <Chip className="mt-3" intent="danger" size="sm">
+                    Unlisted
+                </Chip>
             )}
 
             <PendingChangeNotice endpoint={endpoint} />

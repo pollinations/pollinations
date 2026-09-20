@@ -457,6 +457,23 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             </NavItem>
                         ))}
                     {navItems
+                        .filter((candidate) => candidate.id === "activity")
+                        .map((activity) => (
+                            <NavItem
+                                key={activity.id}
+                                as={Link}
+                                to={activity.to}
+                                flushLeft
+                                data-theme="accent"
+                                icon={activity.icon}
+                                active={activePage === activity.id}
+                                onClick={onNavigate}
+                                className="dashboard-rail-tab"
+                            >
+                                {activity.label}
+                            </NavItem>
+                        ))}
+                    {navItems
                         .filter((item) => item.id === "quests")
                         .map((item) => (
                             <DashboardNavGroup key={item.id} title="Quests">
@@ -511,48 +528,31 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             </NavItem>
                         </DashboardNavGroup>
                     )}
-                    {navItems
-                        .filter((candidate) => candidate.id === "activity")
-                        .map((activity) => (
-                            <NavItem
-                                key={activity.id}
-                                as={Link}
-                                to={activity.to}
-                                flushLeft
-                                data-theme="accent"
-                                icon={activity.icon}
-                                active={activePage === activity.id}
-                                onClick={onNavigate}
-                                className="dashboard-rail-tab"
-                            >
-                                {activity.label}
-                            </NavItem>
-                        ))}
-                    {navItems
-                        .filter((item) => item.id === "news-faq")
-                        .map((item) => (
-                            <NavItem
-                                key={item.id}
-                                as={Link}
-                                to={item.to}
-                                hash=""
-                                flushLeft
-                                data-theme="accent"
-                                active={activePage === item.id}
-                                onClick={onNavigate}
-                                aria-label="News and FAQ"
-                                className="dashboard-rail-tab mt-3 self-start"
-                            >
-                                <PollinationsLogoIcon className="h-4 w-4" />
-                                News &amp; FAQ
-                            </NavItem>
-                        ))}
-                    <div className="flex w-full flex-col items-start gap-1">
+                    <div className="mt-3 flex w-full flex-col items-start gap-1">
                         <ExploreNav
                             active={activePage === "models"}
                             category={activeModelCategory}
                             onNavigate={onNavigate}
                         />
+                        {navItems
+                            .filter((item) => item.id === "news-faq")
+                            .map((item) => (
+                                <NavItem
+                                    key={item.id}
+                                    as={Link}
+                                    to={item.to}
+                                    hash=""
+                                    flushLeft
+                                    data-theme="accent"
+                                    active={activePage === item.id}
+                                    onClick={onNavigate}
+                                    aria-label="News and FAQ"
+                                    className="dashboard-rail-tab self-start"
+                                >
+                                    <PollinationsLogoIcon className="h-4 w-4" />
+                                    News &amp; FAQ
+                                </NavItem>
+                            ))}
                         <DashboardDocs />
                         <DashboardPlayground />
                     </div>

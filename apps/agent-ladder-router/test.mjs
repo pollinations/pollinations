@@ -7,7 +7,7 @@ const dir = fileURLToPath(new URL("./", import.meta.url));
 const src = readFileSync(dir + "agent.ts", "utf8");
 
 test("live catalog, no hardcoded model list", () => {
-    assert.match(src, /\/v1\/models\?status=all/);
+    assert.match(src, /\/v1\/models/);
     assert.match(src, /raw\.name \?\? raw\.id/);
     assert.doesNotMatch(src, /gpt-5\.4-nano|mercury-2\.5|gemini-3\.8|grok-4\.3/);
 });

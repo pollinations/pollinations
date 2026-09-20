@@ -6,8 +6,8 @@ it picks which model answers each request, then answers as that model.
 **Routing idea (different from the other submissions): capability-fit
 ladder + cross-model escalation.** No LLM call is spent on routing:
 
-1. Fetch the live catalog (`/v1/models?status=all`) on every request —
-   no hardcoded model list.
+1. Fetch the live catalog (`/v1/models`, which includes a `health` field
+   per entry) on every request — no hardcoded model list.
 2. Keep text models serving the incoming endpoint, healthy first
    (`healthy` → `unknown` → `degraded`, never `unavailable` unless
    nothing else exists), sorted by live price.

@@ -179,7 +179,7 @@ export default async function agent({ request, pollinations }: AgentContext): Pr
 		? "/v1/chat/completions"
 		: "/v1/responses";
 
-	const catalogRes = await pollinations("/v1/models?status=all");
+	const catalogRes = await pollinations("/v1/models");
 	if (!catalogRes.ok) throw new Error(`Catalog fetch failed (${catalogRes.status})`);
 	const catalog = (await catalogRes.json()) as { data?: RawEntry[] } | RawEntry[];
 	const raw = Array.isArray(catalog) ? catalog : (catalog.data ?? []);

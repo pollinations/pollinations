@@ -1,5 +1,4 @@
 import {
-    AccountIcon,
     AccountIdentity,
     BeakerIcon,
     BookIcon,
@@ -367,11 +366,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 to="/account"
                                 flushLeft
                                 data-theme="accent"
-                                icon={AccountIcon}
                                 active={accountActive}
                                 onClick={onNavigate}
                                 aria-label={`Account: ${accountName}`}
-                                className="dashboard-rail-tab"
+                                className="dashboard-rail-tab polli:w-fit polli:p-1 polli:pr-3"
                             >
                                 <AccountIdentity
                                     name={accountName}
@@ -386,7 +384,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                             />
                                         ) : undefined
                                     }
-                                    className="polli:flex-row-reverse polli:bg-transparent polli:p-0 polli:pr-0"
+                                    className="flex-row-reverse polli:bg-transparent polli:p-0 polli:pr-0"
                                 />
                             </NavItem>
                         </section>

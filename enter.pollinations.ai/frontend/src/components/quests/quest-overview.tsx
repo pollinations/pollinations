@@ -814,7 +814,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
             <Section
-                title={state.anonymous ? "Rewards you can earn" : "Claimed"}
+                title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
                 {!state.anonymous && (
                     <>

@@ -623,7 +623,7 @@ const ExploreNav: FC<{
                 active={active && category !== "agent" && category !== "mcp"}
                 className="dashboard-rail-tab"
             >
-                Model catalog
+                Models
             </NavItem>
         </Link>
         <Link
@@ -641,7 +641,7 @@ const ExploreNav: FC<{
                 active={active && category === "agent"}
                 className="dashboard-rail-tab"
             >
-                Agent catalog
+                Agents
             </NavItem>
         </Link>
         <Link

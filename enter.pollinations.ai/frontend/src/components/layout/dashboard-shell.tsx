@@ -458,11 +458,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     {navItems
                         .filter((item) => item.id === "quests")
                         .map((item) => (
-                            <DashboardNavGroup
-                                key={item.id}
-                                title="Quests"
-                                className="mb-3"
-                            >
+                            <DashboardNavGroup key={item.id} title="Quests">
                                 <NavItem
                                     as={Link}
                                     to={item.to}
@@ -485,7 +481,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             </DashboardNavGroup>
                         ))}
                     {showCreate && (
-                        <DashboardNavGroup title="Your resources">
+                        <DashboardNavGroup
+                            title="Your resources"
+                            className="mt-3"
+                        >
                             <NavItem
                                 as={Link}
                                 to="/keys"
@@ -544,7 +543,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 active={activePage === item.id}
                                 onClick={onNavigate}
                                 aria-label="News and FAQ"
-                                className="dashboard-rail-tab mb-3 self-start"
+                                className="dashboard-rail-tab mt-3 self-start"
                             >
                                 <PollinationsLogoIcon className="h-4 w-4" />
                                 News &amp; FAQ

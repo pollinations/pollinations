@@ -442,7 +442,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                 icon={pollen.icon}
                                 active={activePage === pollen.id}
                                 onClick={onNavigate}
-                                className="dashboard-rail-tab mb-3"
+                                className="dashboard-rail-tab"
                             >
                                 <span className="inline-flex items-center gap-1">
                                     {pollen.label}
@@ -458,6 +458,35 @@ const DashboardRail: FC<DashboardRailProps> = ({
                                     )}
                                 </span>
                             </NavItem>
+                        ))}
+                    {navItems
+                        .filter((item) => item.id === "quests")
+                        .map((item) => (
+                            <DashboardNavGroup
+                                key={item.id}
+                                title="Quests"
+                                className="mb-3"
+                            >
+                                <NavItem
+                                    as={Link}
+                                    to={item.to}
+                                    flushLeft
+                                    data-theme="accent"
+                                    icon={item.icon}
+                                    active={activePage === item.id}
+                                    onClick={onNavigate}
+                                    className="dashboard-rail-tab"
+                                >
+                                    {item.label}
+                                    <Chip
+                                        intent="neutral"
+                                        size="sm"
+                                        className="ml-auto bg-transparent text-theme-text-soft"
+                                    >
+                                        3 new!
+                                    </Chip>
+                                </NavItem>
+                            </DashboardNavGroup>
                         ))}
                     {showCreate && (
                         <DashboardNavGroup title="Your resources">
@@ -543,35 +572,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             >
                                 {activity.label}
                             </NavItem>
-                        ))}
-                    {navItems
-                        .filter((item) => item.id === "quests")
-                        .map((item) => (
-                            <DashboardNavGroup
-                                key={item.id}
-                                title="Quests"
-                                className={showCreate ? "mt-3" : undefined}
-                            >
-                                <NavItem
-                                    as={Link}
-                                    to={item.to}
-                                    flushLeft
-                                    data-theme="accent"
-                                    icon={item.icon}
-                                    active={activePage === item.id}
-                                    onClick={onNavigate}
-                                    className="dashboard-rail-tab"
-                                >
-                                    {item.label}
-                                    <Chip
-                                        intent="neutral"
-                                        size="sm"
-                                        className="ml-auto bg-transparent text-theme-text-soft"
-                                    >
-                                        3 new!
-                                    </Chip>
-                                </NavItem>
-                            </DashboardNavGroup>
                         ))}
                     <div className="mb-3 w-full">
                         <ExploreNav

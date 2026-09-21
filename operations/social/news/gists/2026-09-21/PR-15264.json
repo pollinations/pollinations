@@ -1,0 +1,34 @@
+{
+  "pr_number": 15264,
+  "title": "fix: consistent polli help colors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15264",
+  "merged_at": "2026-09-21T13:53:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Apply the existing help styles to every subcommand, including nested harness commands. No new dependencies.\n- Preserve help text, plain/piped output and JSON behavior.\n- Bump @pollinations/cli to 0.1.16.\n- Verified: 147 tests, build, formatting, and built-CLI color/plain/JSON checks. Standalone typecheck has the same 33 existing diagnostics as unchanged main; no new errors.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Every command gets the good paint",
+    "blurb": "Polli's CLI help now wears the same colors all the way down the command tree. Even the nested harness commands have stopped freelancing their wardrobe.",
+    "summary": "Updated @pollinations/cli to 0.1.16 so the existing styled help output is applied consistently to every subcommand, including nested harness commands, while preserving plain, piped, and JSON output behavior.",
+    "impact": "CLI users now get the same readable colored help experience across the full command tree, with non-interactive and JSON workflows continuing to behave as before.",
+    "keywords": [
+      "polli-cli",
+      "cli",
+      "help",
+      "terminal",
+      "colors",
+      "harness"
+    ],
+    "visual_concept": "A cozy command-line garden where each branching command path has matching lime-green help signposts. Polli, wearing tiny terminal-green reading glasses, carefully paints the final nested sign to match the rest; a small retro CRT terminal shows a neat command tree, with flowers and code-vines growing around it.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny terminal-green reading glasses while painting matching help-color signposts along a branching command-tree garden; a retro CRT terminal glows beside nested code-vines and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: \"HELP\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15264.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny terminal-green reading glasses while painting matching help-color signposts along a branching command-tree garden; a retro CRT terminal glows beside nested code-vines and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: \"HELP\"."
+  },
+  "generated_at": "2026-09-21T13:55:44.568293+00:00"
+}

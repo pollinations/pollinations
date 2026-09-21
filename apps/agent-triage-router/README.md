@@ -42,10 +42,10 @@ Callable model: **`community/xiaotian1171/triage-router`**
    nova-micro is skipped (`no /v1/responses`) in favour of `openai/gpt-oss-20b`.
 4. **Forward.** The chosen model answers through `POST /v1/responses`, and the answer is
    returned to the caller unchanged apart from the trace below.
-5. **Escalate / normalise.** A 429 or 5xx from the chosen model re-runs the pick one tier
-   up (`fast → balanced → deep`) and reports the escalation. A 422 — an upstream that will
-   not accept a message array for `input` — is retried once against the same model with the
-   conversation flattened into a single prompt, so a model is never dropped over input syntax.
+5. **Escalate.** A 422, 429 or 5xx from the chosen model re-runs the pick one tier
+   up (`fast → balanced → deep`) and reports the escalation. Each attempt preserves the
+   conversation, attachments, and instructions. If no pool has a compatible model,
+   the router returns an error rather than ignoring the input requirements.
 
 ## Reading the decision
 
@@ -59,7 +59,6 @@ Every answer carries headers, so one call shows both the answer and the reasonin
 | `x-router-pool` | every candidate with its score in 1e-9 pollen/token and its health note |
 | `x-router-degraded` | candidates excluded for poor health |
 | `x-router-escalated-to` | set when a failed tier was escalated |
-| `x-router-input-normalized` | set when the prompt was flattened after a 422 |
 
 JSON answers also carry the same trace in the body as `router`, so a caller that never
 sees the headers can still check the routing:
@@ -116,7 +115,7 @@ one-line change.
 
 ## Deploy
 
-1. Fork this repository.
+1. Fork the standalone [Triage Router repository](https://github.com/xiaotian1171/triage-router), which has `agent.ts` at its root.
 2. In [My Models](https://enter.pollinations.ai/my-models), choose **Add Agent → Code agent** and enter your fork's URL.
 3. Edit `agent.ts`, push, then use **Sync** in the dashboard (or the workflow below).
 
@@ -131,8 +130,8 @@ For automatic sync after a push, enable GitHub Actions and set the repository **
 node --test agent.test.ts
 ```
 
-The tests drive the agent with a fake `pollinations` helper: nine cases cover tier selection,
-endpoint-aware selection, chat-body conversion, prompt normalisation after a 422, vision
-filtering, degradation avoidance, escalation and request pass-through.
+The tests drive the agent with a fake `pollinations` helper and cover tier selection,
+endpoint-aware selection, chat-body conversion, image-preserving escalation, vision
+filtering, degradation avoidance, traces, streaming and request pass-through.
 
 [Agent guide](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) · [More examples](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example)

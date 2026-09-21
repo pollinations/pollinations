@@ -1,11 +1,11 @@
 import {
     AccountIcon,
     Button,
+    CheckIcon,
     ChevronIcon,
     ClockIcon,
     Dropdown,
     DropdownItem,
-    Tooltip,
     TrendUpIcon,
 } from "@pollinations/ui";
 import type { KeyboardEvent } from "react";
@@ -21,29 +21,17 @@ const SORT_OPTIONS: Array<{
     },
     {
         value: "newest",
-        accessibleLabel: "Date added, newest first",
+        accessibleLabel: "Newest",
     },
     {
         value: "price-low",
-        accessibleLabel: "Lowest price first",
+        accessibleLabel: "Price: low to high",
     },
     {
         value: "price-high",
-        accessibleLabel: "Highest price first",
+        accessibleLabel: "Price: high to low",
     },
-    { value: "title", accessibleLabel: "Name: A to Z" },
-    {
-        value: "title-desc",
-        accessibleLabel: "Name: Z to A",
-    },
-    {
-        value: "publisher",
-        accessibleLabel: "Publisher: A to Z",
-    },
-    {
-        value: "publisher-desc",
-        accessibleLabel: "Publisher: Z to A",
-    },
+    { value: "title", accessibleLabel: "Name: A–Z" },
 ];
 
 function ModelSortIcon({ sort }: { sort: ModelSort }) {
@@ -128,15 +116,16 @@ export function ModelSortMenu({
 }) {
     const selectedLabel =
         SORT_OPTIONS.find((option) => option.value === value)
-            ?.accessibleLabel ?? "Most popular";
+            ?.accessibleLabel ?? value.replaceAll("-", " ");
     return (
         <Dropdown
             align="end"
-            className="w-20 p-1"
+            className="catalog-filter-menu w-48 p-1"
             trigger={(open) => (
                 <Button
                     type="button"
                     size="md"
+                    intent="neutral"
                     aria-label={`Sort models by ${selectedLabel}`}
                     title={`Sort: ${selectedLabel}`}
                     className="w-20 shrink-0 justify-center gap-1 px-2"
@@ -151,34 +140,26 @@ export function ModelSortMenu({
                     role="menu"
                     aria-label="Sort models"
                     onKeyDown={handleSortMenuKeyDown}
-                    className="flex flex-col gap-1"
+                    className="flex flex-col"
                 >
                     {SORT_OPTIONS.map((option) => (
-                        <Tooltip
+                        <DropdownItem
                             key={option.value}
-                            content={option.accessibleLabel}
-                            triggerAs="span"
-                            displayContents
-                            stopClickPropagation={false}
-                            className="w-full"
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={value === option.value}
+                            onClick={() => {
+                                onChange(option.value);
+                                close();
+                            }}
+                            className="catalog-filter-option"
                         >
-                            <DropdownItem
-                                role="menuitemradio"
-                                aria-label={option.accessibleLabel}
-                                aria-checked={value === option.value}
-                                onClick={() => {
-                                    onChange(option.value);
-                                    close();
-                                }}
-                                className={
-                                    value === option.value
-                                        ? "min-h-9 justify-center px-2 bg-theme-bg-active text-theme-text-strong"
-                                        : "min-h-9 justify-center px-2"
-                                }
-                            >
-                                <ModelSortIcon sort={option.value} />
-                            </DropdownItem>
-                        </Tooltip>
+                            {option.accessibleLabel}
+                            <CheckIcon
+                                aria-hidden="true"
+                                className={`ml-auto h-3.5 w-3.5 shrink-0 ${value === option.value ? "" : "invisible"}`}
+                            />
+                        </DropdownItem>
                     ))}
                 </div>
             )}

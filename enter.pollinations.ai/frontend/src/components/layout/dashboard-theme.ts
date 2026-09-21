@@ -45,16 +45,25 @@ export const DASHBOARD_NAV_ITEMS = [
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
 
-export function isDashboardPath(path: string): path is DashboardPath {
-    return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);
+export const PRIMARY_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter(
+    (item) =>
+        item.id !== "my-models" && item.id !== "keys" && item.id !== "models",
+);
+
+export function isDashboardPath(
+    path: string,
+): path is DashboardPath | "/account" {
+    return (
+        path === "/account" ||
+        DASHBOARD_NAV_ITEMS.some((item) => item.to === path)
+    );
 }
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
-    "models",
     "quests",
 ]);
 
-export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
+export const SIGNED_OUT_NAV_ITEMS = PRIMARY_NAV_ITEMS.filter((item) =>
     SIGNED_OUT_PAGES.has(item.id),
 );

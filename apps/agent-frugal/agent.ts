@@ -1,3 +1,16 @@
+// frugal — a cost-first, health-aware model router for Pollinations.
+//
+// For every request it estimates the cost of *this* request (measured input
+// length plus a tier-based output estimate), ranks the live catalog by that
+// cost, penalises models that are currently failing, and forwards the request
+// to the cheapest healthy model that can actually serve it. Classification is
+// pure code: no classifier model call, no tokens spent on routing.
+//
+// The decision is logged and, for non-streaming JSON answers, attached to the
+// response body as `frugal_trace` (the gateway in front of an agent caches
+// answers and drops per-response headers, so a body trace is the reliable
+// channel). Best-effort `X-Frugal-*` headers are set as well.
+
 type AgentContext = {
     request: Request;
     pollinations: (path: string, init?: RequestInit) => Promise<Response>;
@@ -9,9 +22,13 @@ type ResponsesBody = {
     model?: string;
     instructions?: string | null;
     input?: string | Array<unknown>;
+    messages?: Array<unknown>;
+    prompt?: string;
     tools?: Array<unknown>;
     max_output_tokens?: number;
+    max_tokens?: number;
     previous_response_id?: string;
+    stream?: boolean;
     [key: string]: unknown;
 };
 
@@ -45,6 +62,45 @@ type HealthRow = {
 
 const MIN_SAMPLE = 10;
 const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+
+/* ---------------------------------------------------------------------------
+ * Input normalisation — callers reach a router as a model, so the same agent
+ * can be called through the Responses, chat-completions or text endpoints.
+ * The gateway usually normalises these, but it is not guaranteed for code
+ * agents, so accept all three shapes and convert to a Responses body rather
+ * than rejecting a chat- or text-style call.
+ * ------------------------------------------------------------------------ */
+
+export function asResponses(body: ResponsesBody): ResponsesBody {
+    const { messages, prompt, max_tokens, ...rest } = body;
+    const maxOutput =
+        body.max_output_tokens !== undefined
+            ? {}
+            : max_tokens !== undefined
+              ? { max_output_tokens: max_tokens }
+              : {};
+
+    if (body.input !== undefined) return { ...rest, ...maxOutput };
+
+    let input: unknown;
+    if (Array.isArray(messages)) {
+        input = messages
+            .filter((message) => message && typeof message === "object")
+            .map((message) => {
+                const record = message as Record<string, unknown>;
+                const content = record.content;
+                if (typeof content !== "string") return record;
+                return {
+                    ...record,
+                    content: [{ type: "input_text", text: content }],
+                };
+            });
+    } else if (typeof prompt === "string") {
+        input = prompt;
+    }
+
+    return { ...rest, input: input ?? "", ...maxOutput };
+}
 
 /* ---------------------------------------------------------------------------
  * Classification — pure code, zero LLM spend on routing.
@@ -86,31 +142,34 @@ export function tierForBody(body: ResponsesBody): {
     return { tier, is_long: isLong };
 }
 
-function flatText(value: unknown): string {
+export function flatText(value: unknown): string {
     if (typeof value === "string") return value;
-    if (Array.isArray(value)) {
-        const parts: string[] = [];
-        for (const item of value) {
-            const obj = item as { text?: unknown; input_text?: unknown };
-            if (obj && typeof obj === "object") {
-                if (typeof obj.text === "string") parts.push(obj.text);
-                else if (typeof obj.input_text === "string")
-                    parts.push(obj.input_text);
-            }
-        }
-        return parts.join(" ");
+    if (Array.isArray(value))
+        return value
+            .map((item) => flatText(item))
+            .filter(Boolean)
+            .join(" ");
+    if (value && typeof value === "object") {
+        const obj = value as Record<string, unknown>;
+        if (typeof obj.text === "string") return obj.text;
+        if (typeof obj.input_text === "string") return obj.input_text;
+        if (obj.content !== undefined) return flatText(obj.content);
     }
     return "";
 }
 
-function countImages(value: unknown): number {
-    if (Array.isArray(value)) {
-        return value.filter(
-            (item) =>
-                item &&
-                typeof item === "object" &&
-                (item as { type?: string }).type === "input_image",
-        ).length;
+export function countImages(value: unknown): number {
+    if (Array.isArray(value))
+        return value.reduce((n, item) => n + countImages(item), 0);
+    if (value && typeof value === "object") {
+        const obj = value as Record<string, unknown>;
+        if (
+            obj.type === "input_image" ||
+            obj.image_url !== undefined ||
+            obj.input_image !== undefined
+        )
+            return 1;
+        if (obj.content !== undefined) return countImages(obj.content);
     }
     return 0;
 }
@@ -172,7 +231,7 @@ function isDead(row: HealthRow | undefined): boolean {
  * Model selection.
  * ------------------------------------------------------------------------ */
 
-type Pick = { model: string; tier: Tier; reason: string };
+export type Pick = { model: string; tier: Tier; reason: string };
 
 export async function select(
     body: ResponsesBody,
@@ -180,8 +239,10 @@ export async function select(
 ): Promise<Pick> {
     const { tier: wantTier } = tierForBody(body);
     const inputTokens = inputTokensFor(body);
-    const catalog = await getCatalog(pollinations);
-    const health = await getHealth(pollinations);
+    const [catalog, health] = await Promise.all([
+        getCatalog(pollinations),
+        getHealth(pollinations),
+    ]);
 
     const needTools = Array.isArray(body.tools) && body.tools.length > 0;
     const hasImages = countImages(body.input) > 0;
@@ -236,58 +297,82 @@ export async function select(
         else if (wantTier === "DEEP") slice = ranked.slice(third);
     }
 
-    const best = slice[0];
-    const penalty = healthPenalty(health.get(best.m.id));
+    const picked = slice[0];
+    if (!picked) {
+        return {
+            model: DEFAULT_MODEL,
+            tier: wantTier,
+            reason: `${wantTier}: empty candidate slice — fell back to ${DEFAULT_MODEL}`,
+        };
+    }
+    const penalty = healthPenalty(health.get(picked.m.id));
     return {
-        model: best.m.id,
+        model: picked.m.id,
         tier: wantTier,
-        reason: `${wantTier}: estimated ${inputTokens}+${outputTokensFor(wantTier)} tokens ≈ ${best.base.toFixed(10)} pollen ×${penalty.toFixed(2)} health (${best.adj.toFixed(10)}) — cheapest of ${slice.length}`,
+        reason: `${wantTier}: estimated ${inputTokens}+${outputTokensFor(wantTier)} tokens ≈ ${picked.base.toFixed(10)} pollen ×${penalty.toFixed(2)} health (${picked.adj.toFixed(10)}) — cheapest of ${slice.length}`,
     };
 }
 
 async function getCatalog(
     pollinations: AgentContext["pollinations"],
 ): Promise<CatalogModel[]> {
-    const r = await pollinations("/v1/models");
-    if (!r.ok) throw new Error(`catalog ${r.status}`);
-    const j = (await r.json()) as { data: CatalogModel[] };
-    return j.data.filter((m) => m.category === "text");
+    try {
+        const r = await pollinations("/v1/models");
+        if (!r.ok) return [];
+        const j = (await r.json()) as { data?: CatalogModel[] };
+        return (j.data ?? []).filter((m) => m.category === "text");
+    } catch {
+        // A missing catalog degrades to the default model, never an error.
+        return [];
+    }
 }
 
 async function getHealth(
     pollinations: AgentContext["pollinations"],
 ): Promise<Map<string, HealthRow>> {
-    const r = await pollinations("/models/status?minutes=30");
-    if (!r.ok) throw new Error(`health ${r.status}`);
-    const j = (await r.json()) as { data: HealthRow[] };
     const map = new Map<string, HealthRow>();
-    for (const row of j.data) {
-        if (
-            row.is_rollup === 1 &&
-            row.event_type === "generate.text" &&
-            !map.has(row.model)
-        ) {
-            map.set(row.model, row);
+    try {
+        const r = await pollinations("/models/status?minutes=30");
+        if (!r.ok) return map;
+        const j = (await r.json()) as { data?: HealthRow[] };
+        for (const row of j.data ?? []) {
+            if (
+                row.is_rollup === 1 &&
+                row.event_type === "generate.text" &&
+                !map.has(row.model)
+            ) {
+                map.set(row.model, row);
+            }
         }
+    } catch {
+        // The status feed is advisory: price-only routing beats failing.
     }
     return map;
 }
+
+/* ---------------------------------------------------------------------------
+ * Entry point.
+ * ------------------------------------------------------------------------ */
 
 export default async function agent({
     request,
     pollinations,
 }: AgentContext): Promise<Response> {
-    const body = (await request.json()) as ResponsesBody;
+    let raw: ResponsesBody = {};
+    try {
+        raw = (await request.json()) as ResponsesBody;
+    } catch {
+        raw = {};
+    }
+    const body = asResponses(raw);
     const picked = await select(body, pollinations);
 
-    console.log(
-        JSON.stringify({
-            router: "frugal",
-            tier: picked.tier,
-            model: picked.model,
-            reason: picked.reason,
-        }),
-    );
+    const trace = {
+        model: picked.model,
+        tier: picked.tier,
+        reason: picked.reason,
+    };
+    console.log(JSON.stringify({ router: "frugal", ...trace }));
 
     const upstream = await pollinations("/v1/responses", {
         method: "POST",
@@ -299,6 +384,26 @@ export default async function agent({
     headers.set("X-Frugal-Tier", picked.tier);
     headers.set("X-Frugal-Model", picked.model);
     headers.set("X-Frugal-Reason", picked.reason);
+
+    // Best-effort headers aside, the trace travels inside a JSON body because
+    // the gateway caches answers and strips per-response headers.
+    const type = upstream.headers.get("content-type") ?? "";
+    if (body.stream !== true && type.includes("application/json")) {
+        try {
+            const payload = (await upstream.json()) as Record<string, unknown>;
+            headers.delete("content-length");
+            return new Response(
+                JSON.stringify({ ...payload, frugal_trace: trace }),
+                {
+                    status: upstream.status,
+                    statusText: upstream.statusText,
+                    headers,
+                },
+            );
+        } catch {
+            // Non-JSON body despite the content type: pass it through.
+        }
+    }
     return new Response(upstream.body, {
         status: upstream.status,
         statusText: upstream.statusText,

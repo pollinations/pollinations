@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 import { ExternalLinkButton } from "../compositions/ExternalLinkButton.tsx";
 import { Button } from "./Button.tsx";
+import { DialogFooter } from "./Dialog.tsx";
 
 describe("Button appearances", () => {
     test("keeps the pill appearance by default", () => {
@@ -49,20 +50,22 @@ describe("Button appearances", () => {
         expect(html).not.toContain("<svg");
     });
 
+    test("preserves an explicit button appearance inside dialog footers", () => {
+        const button = <Button appearance="pill">Save</Button>;
+        const standalone = renderToStaticMarkup(button);
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+        expect(footer).toContain(standalone);
+    });
+
     test("makes disabled polymorphic links inert", () => {
-        // Button reads footer defaults through a hook, so call it inside a
-        // rendering component to capture the element it returns.
-        let element = <span />;
-        function Probe() {
-            element = Button({
-                as: "a",
-                href: "/unavailable",
-                disabled: true,
-                children: "Unavailable",
-            });
-            return element;
-        }
-        renderToStaticMarkup(<Probe />);
+        const element = Button({
+            as: "a",
+            href: "/unavailable",
+            disabled: true,
+            children: "Unavailable",
+        });
         const props = element.props as {
             "aria-disabled": boolean;
             href?: string;

@@ -3,7 +3,6 @@ import { Portal } from "@ark-ui/react/portal";
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
-import { ButtonDefaultsContext } from "./Button.tsx";
 import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
 import { headingClassName } from "./Typography.tsx";
 
@@ -158,8 +157,6 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 
 export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
-const footerButtonDefaults = { appearance: "block" as const };
-
 export type DialogBodyProps = ScrollAreaProps & {
     actions?: ReactNode;
     footnote?: ReactNode;
@@ -217,14 +214,12 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
+                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
                 className,
             )}
             {...props}
         >
-            <ButtonDefaultsContext.Provider value={footerButtonDefaults}>
-                {children}
-            </ButtonDefaultsContext.Provider>
+            {children}
         </div>
     );
 };

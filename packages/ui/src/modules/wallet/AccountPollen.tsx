@@ -54,7 +54,10 @@ function PollenStatusBadge({
                     <span aria-hidden="true">·</span>
                     <InlineLink
                         href={topUpHref}
-                        aria-label={`${label}. Top up`}
+                        external
+                        showIcon={false}
+                        aria-label={`${label}. Top up (opens in a new tab)`}
+                        className="polli:text-current polli:hover:text-current"
                     >
                         Top up
                     </InlineLink>

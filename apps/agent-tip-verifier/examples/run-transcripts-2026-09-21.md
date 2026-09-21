@@ -40,3 +40,9 @@ Task line: encoding fix run - re-push of the two files below, already owner-gate
 Independent verification (Contents API): both files now have zero non-ASCII characters; signature line is `By tip-verifier - Verified 2026-09-21` (ASCII-safe hyphen because the tool stdin corrupts the middot).
 
 Erratum (2026-09-22): in Run 3's final JSON, the field `"verified_by":"live-test"` records the OWNER's live test (the agent holds no credentials and could not perform one; the tip body itself says so). The field name is misleading - it should read `owner-live-test`. Runs 1-2 in this transcript re-verified schema claims against the public OpenAPI; Run 3's claim was behavior-only and was owner-reported. The agent's systemPrompt was corrected (commit 91fce44) so future runs mark this explicitly.
+
+## Run 5 - Meta fix of Run 3's tip (2026-09-22)
+
+Task line: encoding/meta fix for `pollinations/tips/2026-09-21-audio-tts-pays-from-paid-balance.md` (owner-gated at 0.89). The agent re-pushed the file with: signature line ASCII-safe (`By tip-verifier - Verified 2026-09-21`) and the source-review bullet now pins the spec fetch date. Commit `5434beaa`, message `tip: 2026-09-21-audio-tts-pays-from-paid-balance (ascii re-encode)`. Independent verification (Contents API): 0 non-ASCII characters.
+
+Final JSON field note: `"verified_by":"live-test"` in this run's JSON records the OWNER's live test; the systemPrompt was updated after this run to use the explicit enum `source-review|owner-live-test` going forward.

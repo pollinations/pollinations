@@ -119,12 +119,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter azure/openai route rates (2026-09-12). Image inputs
-            // are tokenized into promptTextTokens; no separate usage is
-            // reported or billed for image input.
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.6),
+            // OpenRouter Azure/OpenAI route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. Image inputs are tokenized
+            // into promptTextTokens; no separate image usage is reported.
+            promptTextTokens: perMillion(0.15) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "GPT-4o Mini",
         description:
@@ -2427,13 +2427,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
-            // publishes one prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.32) * 1.055,
-            promptCachedTokens: perMillion(0.032) * 1.055,
-            promptImageTokens: perMillion(0.32) * 1.055,
-            promptVideoTokens: perMillion(0.32) * 1.055,
-            completionTextTokens: perMillion(2.5) * 1.055,
+            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. OpenRouter publishes one
+            // prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.24) * 1.055,
+            promptCachedTokens: perMillion(0.024) * 1.055,
+            promptImageTokens: perMillion(0.24) * 1.055,
+            promptVideoTokens: perMillion(0.24) * 1.055,
+            completionTextTokens: perMillion(2.2) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:

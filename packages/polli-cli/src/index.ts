@@ -9,6 +9,7 @@ import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { harnessCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
+import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
@@ -75,6 +76,7 @@ program.addCommand(uploadCommand);
 
 // Discovery
 program.addCommand(modelsCommand);
+program.addCommand(mcpCommand);
 program.addCommand(docsCommand);
 
 // Self-update

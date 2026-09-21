@@ -65,11 +65,12 @@ const args = process.argv.slice(2);
 log(["providers", ...args]);
 const json = args.includes("--json");
 const out = (value) => { process.stdout.write(JSON.stringify(value) + "\\n"); };
+const missing = () => { process.stderr.write("Unknown generic provider: pollinations\\n"); process.exit(1); };
 if (args[0] !== "generic") process.exit(2);
 const action = args[1];
 const state = load();
 if (action === "show") {
-  if (!state.provider) process.exit(1);
+  if (!state.provider) missing();
   out({ provider: state.provider });
 } else if (action === "add") {
   const id = args[2];
@@ -77,11 +78,11 @@ if (action === "show") {
   state.provider = { id, displayName: flag("--name"), baseUrl: flag("--base-url"), adapter: flag("--adapter"), credentialRef: flag("--credential-ref"), description: flag("--description"), enabled: false, models: [] };
   save(state); out({ provider: state.provider });
 } else if (action === "enable" || action === "disable") {
-  if (!state.provider) process.exit(1);
+  if (!state.provider) missing();
   state.provider.enabled = action === "enable";
   save(state); out({ provider: state.provider });
 } else if (action === "remove") {
-  if (!state.provider) process.exit(1);
+  if (!state.provider) missing();
   state.provider = null; save(state); out({ removed: "pollinations" });
 } else if (action === "credential") {
   if (args[3] !== "status") process.exit(2);
@@ -98,7 +99,7 @@ const stateFile = join(stateDir, "fake-providers.json");
 const args = process.argv.slice(2);
 appendFileSync(join(stateDir, "fake-router.log"), JSON.stringify(["curate-models", ...args]) + "\\n");
 const state = JSON.parse(readFileSync(stateFile, "utf-8"));
-if (!state.provider) process.exit(1);
+if (!state.provider) { process.stderr.write("Unknown generic provider: pollinations\\n"); process.exit(1); }
 const flag = (name) => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
 if (flag("--models")) state.provider.models = flag("--models").split(",");
 if (flag("--remove")) {
@@ -379,5 +380,85 @@ describe("codex harness status", () => {
         const result = await codex.status(ctx);
         expect(result.state).toBe("key-invalid");
         expect(result.configured).toBe(false);
+    });
+});
+
+describe("codex harness regression (cross-review)", () => {
+    it("never deletes a pre-existing credential while rolling back an interrupted on", async () => {
+        writeFakeRouter();
+        // Provider predates polli; we only added a model, then crashed.
+        writeFileSync(
+            fakeStateFile(),
+            JSON.stringify({
+                provider: {
+                    id: "pollinations",
+                    description: "managed-by: polli-cli harness codex",
+                    enabled: false,
+                    models: ["openai/gpt-5.5"],
+                },
+            }),
+        );
+        mkdirSync(join(stateDir(), "generic-provider-credentials"), {
+            recursive: true,
+        });
+        writeFileSync(credentialFile(), "sk_user_key\n");
+        mkdirSync(join(home, ".pollinations", "harnesses", "codex"), {
+            recursive: true,
+        });
+        writeFileSync(
+            txPath(),
+            JSON.stringify({
+                step: "minted",
+                pre: { exists: true, owned: true, enabled: false },
+                models_delta: ["openai/gpt-5.5"],
+                started_at: "2026-09-21T00:00:00.000Z",
+            }),
+        );
+        codexDeps.resolveKey = vi
+            .fn()
+            .mockRejectedValue(new Error("account key missing"));
+
+        await expect(codex.on(ctx, {})).rejects.toThrow("account key missing");
+
+        // The user's own credential survived; only our model delta was rolled back.
+        expect(readFileSync(credentialFile(), "utf-8")).toBe("sk_user_key\n");
+        expect(readFakeState().provider).not.toBeNull();
+        const log = readLog();
+        expect(
+            log.some(
+                (args) =>
+                    args[0] === "curate-models" && args.includes("--remove"),
+            ),
+        ).toBe(true);
+        expect(
+            log.some(
+                (args) => args.includes("remove") && args[0] === "providers",
+            ),
+        ).toBe(false);
+    });
+
+    it("off rebuilds ownership from a committed tx when the baseline is lost", async () => {
+        writeFakeRouter();
+        await codex.on(ctx, {});
+        // Crash after commit: baseline and tx journal lost except a
+        // committed-step tx (as if only the baseline write was torn).
+        rmSync(manifestPath());
+        writeFileSync(
+            txPath(),
+            JSON.stringify({
+                step: "committed",
+                pre: { exists: false, owned: false, enabled: false },
+                models_delta: ["openai/gpt-5.4-nano", "openai/gpt-5.5"],
+                started_at: "2026-09-21T00:00:00.000Z",
+            }),
+        );
+
+        const result = await codex.off(ctx);
+        expect(result.exitCode ?? 0).toBe(0);
+        expect(["restored", "stripped"]).toContain(result.outcome);
+        expect(readFakeState().provider).toBeNull();
+        expect(existsSync(credentialFile())).toBe(false);
+        expect(revokeSpy).toHaveBeenCalledWith("codex");
+        expect(existsSync(txPath())).toBe(false);
     });
 });

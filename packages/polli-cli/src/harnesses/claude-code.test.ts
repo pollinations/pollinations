@@ -228,3 +228,41 @@ describe("claude-code harness status", () => {
         expect(result.configured).toBe(false);
     });
 });
+
+describe("claude-code harness regression (cross-review)", () => {
+    it("re-mints and waits when the verified setup's key stopped validating", async () => {
+        await completeSetup();
+        claudeCodeDeps.validateKey = vi.fn().mockResolvedValue(false);
+        const resolveKey = vi.fn().mockResolvedValue("sk_new_key");
+        claudeCodeDeps.resolveKey = resolveKey;
+
+        const waiting = await claudeCode.on(ctx, {});
+        // Replace flow: the stale stored key is NOT reused as existingKey.
+        expect(resolveKey).toHaveBeenCalledWith(
+            expect.objectContaining({ id: "claude-code" }),
+            expect.anything(),
+        );
+        expect(resolveKey.mock.calls[0][0].existingKey).toBeNull();
+        expect(waiting.configured).toBe(false);
+        expect(waiting.exitCode).toBe(3);
+
+        // User pastes the new key in the UI; the next on verifies.
+        claudeCodeDeps.validateKey = vi.fn().mockResolvedValue(true);
+        claudeCodeDeps.readConfig = () => ({
+            providers: [{ ...PROVIDER, api_key: "sk_new_key" }],
+            profiles: [PROFILE],
+        });
+        const repaired = await claudeCode.on(ctx, {});
+        expect(repaired.configured).toBe(true);
+    });
+
+    it("off ignores UI entries when there is no polli context", async () => {
+        // A provider named "pollinations" exists, but we never ran `on`:
+        // without a context journal nothing here is ours to act on.
+        claudeCodeDeps.readConfig = () => fullConfig;
+        const result = await claudeCode.off(ctx);
+        expect(result.outcome).toBe("unchanged");
+        expect(result.exitCode).toBe(4);
+        expect(result.state).not.toBe("manual-pending");
+    });
+});

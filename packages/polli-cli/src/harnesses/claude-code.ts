@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -7,6 +6,8 @@ import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    spawnCommand,
+    withLock,
     writeTextAtomic,
 } from "./fs.js";
 import { keyIsValid, resolveHarnessKey, revokeHarnessKeys } from "./keys.js";
@@ -94,7 +95,10 @@ export const claudeCodeDeps = {
     readConfig: undefined as
         | undefined
         | ((ctx: HarnessContext) => CcrConfig | null),
-    openUrl: undefined as undefined | ((url: string) => void),
+    openUrl: (url: string) => {
+        // `open` is a CLI dependency; a headless box simply keeps the URL.
+        import("open").then((module) => module.default(url)).catch(() => {});
+    },
     isInteractive: () => Boolean(process.stdout.isTTY),
     sleep: (ms: number) => new Promise((r) => setTimeout(r, ms)),
     waitCycles: 150, // 150 × 4 s ≈ 10 minutes of UI time
@@ -116,6 +120,7 @@ const polliStateDir = (ctx: HarnessContext) =>
     join(ctx.home, ".pollinations", "harnesses", ID);
 const contextPath = (ctx: HarnessContext) =>
     join(polliStateDir(ctx), "context.json");
+const lockDirPath = (ctx: HarnessContext) => join(polliStateDir(ctx), "lock");
 
 /** Mirror of CCR's home resolution at 3.1.1 (CCR_INTERNAL_HOME_DIR → HOME). */
 const ccrHome = (ctx: HarnessContext) => {
@@ -197,22 +202,35 @@ const providerBaseUrl = (provider: CcrProvider) =>
         ""
     ).replace(/\/+$/, "");
 
-/** Ours = right name, right endpoint, and not present before our intent. */
+const isOurProviderShape = (p: CcrProvider) =>
+    (p.name ?? "").trim().toLowerCase() === PROVIDER_NAME &&
+    providerBaseUrl(p) === PROVIDER_BASE_URL;
+
+const isOurProfileShape = (p: CcrProfile, provider: CcrProvider) =>
+    p.agent === "claude-code" &&
+    (p.providerId === provider.id || p.provider === provider.id);
+
+/**
+ * Ours = right name, right endpoint, and not present before our intent.
+ * A saved id only CANDIDATES an entry - its current routing fields are
+ * always re-validated, so an edited-away provider/profile stops being ours.
+ * Without a polli context (state === null) nothing is ours: `off` and
+ * `status` must never claim a manually created configuration.
+ */
 const findOurProvider = (
     config: CcrConfig,
     state: CcrContextState | null,
 ): CcrProvider | null => {
-    if (state?.provider_id) {
+    if (state === null) return null;
+    if (state.provider_id) {
         const byId = config.providers.find((p) => p.id === state.provider_id);
-        if (byId) return byId;
+        if (byId) return isOurProviderShape(byId) ? byId : null;
     }
     return (
         config.providers.find(
             (p) =>
-                (p.name ?? "").trim().toLowerCase() === PROVIDER_NAME &&
-                providerBaseUrl(p) === PROVIDER_BASE_URL &&
-                (state === null ||
-                    !state.pre_provider_ids.includes(p.id ?? "")),
+                isOurProviderShape(p) &&
+                !state.pre_provider_ids.includes(p.id ?? ""),
         ) ?? null
     );
 };
@@ -222,17 +240,16 @@ const findOurProfile = (
     state: CcrContextState | null,
     provider: CcrProvider | null,
 ): CcrProfile | null => {
-    if (!provider) return null;
-    if (state?.profile_id) {
+    if (!provider || state === null) return null;
+    if (state.profile_id) {
         const byId = config.profiles.find((p) => p.id === state.profile_id);
-        if (byId) return byId;
+        if (byId) return isOurProfileShape(byId, provider) ? byId : null;
     }
     return (
         config.profiles.find(
             (p) =>
-                p.agent === "claude-code" &&
-                (p.providerId === provider.id || p.provider === provider.id) &&
-                (state === null || !state.pre_profile_ids.includes(p.id ?? "")),
+                isOurProfileShape(p, provider) &&
+                !state.pre_profile_ids.includes(p.id ?? ""),
         ) ?? null
     );
 };
@@ -280,7 +297,7 @@ const ensureClaudeCli = (ctx: HarnessContext) => {
             "Claude Code was not found. Install it first (https://claude.com/claude-code), then re-run `polli harness claude-code on`.",
         );
     }
-    const ran = spawnSync("claude", ["--version"], {
+    const ran = spawnCommand("claude", ["--version"], {
         encoding: "utf-8",
         env: ctx.env,
     });
@@ -295,7 +312,7 @@ const ensureClaudeCli = (ctx: HarnessContext) => {
 
 const ccrVersion = (ctx: HarnessContext): string | null => {
     if (!commandExists("ccr", ctx.env)) return null;
-    const ran = spawnSync("ccr", ["--version"], {
+    const ran = spawnCommand("ccr", ["--version"], {
         encoding: "utf-8",
         env: ctx.env,
     });
@@ -315,9 +332,8 @@ const ensureCcr = (ctx: HarnessContext) => {
     printInfo(
         `Installing Claude Code Router ${CCR_VERSION}: npm i -g ${CCR_PACKAGE}@${CCR_VERSION} ...`,
     );
-    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-    const install = spawnSync(
-        npm,
+    const install = spawnCommand(
+        "npm",
         ["i", "-g", `${CCR_PACKAGE}@${CCR_VERSION}`],
         { stdio: "inherit", env: ctx.env },
     );
@@ -329,7 +345,7 @@ const ensureCcr = (ctx: HarnessContext) => {
 };
 
 const ensureService = async (ctx: HarnessContext) => {
-    const start = spawnSync("ccr", ["start"], {
+    const start = spawnCommand("ccr", ["start"], {
         encoding: "utf-8",
         env: { ...ctx.env, HOME: ctx.env.HOME ?? ctx.home },
         timeout: 60_000,
@@ -351,20 +367,24 @@ const ensureService = async (ctx: HarnessContext) => {
 /* ------------------------------------------------------------------ on */
 
 const printInstructions = (
-    ctx: HarnessContext,
-    state: CcrContextState,
     apiKey: string,
     model: string,
+    mode: "create" | "replace" = "create",
 ) => {
     printInfo("");
     printInfo("=== Finish the setup in the CCR management UI ===");
     printInfo(`URL: ${CCR_UI_URL}`);
     printInfo("");
-    printInfo("1. Providers → Add Provider:");
-    printInfo(`     name:      ${PROVIDER_NAME}`);
-    printInfo(`     endpoint:  ${PROVIDER_BASE_URL}`);
-    printInfo("     protocol:  OpenAI Chat (auto-detect)");
-    printInfo(`     API key:   ${apiKey}`);
+    if (mode === "replace") {
+        printInfo("1. Providers → edit the pollinations provider:");
+        printInfo(`     replace the API key with: ${apiKey}`);
+    } else {
+        printInfo("1. Providers → Add Provider:");
+        printInfo(`     name:      ${PROVIDER_NAME}`);
+        printInfo(`     endpoint:  ${PROVIDER_BASE_URL}`);
+        printInfo("     protocol:  OpenAI Chat (auto-detect)");
+        printInfo(`     API key:   ${apiKey}`);
+    }
     printWarn(
         "This key is shown ONCE. It lives in your Pollinations account as polli-harness-claude-code; `polli harness claude-code off` revokes it.",
     );
@@ -375,8 +395,24 @@ const printInstructions = (
     printInfo("     enabled:   true");
     printInfo("");
     printInfo("Waiting for the profile to verify (Ctrl+C to finish later)...");
-    void ctx;
-    void state;
+};
+
+/** Never write a live account credential into non-TTY (captured) output. */
+const printKeyInstructions = (
+    apiKey: string,
+    model: string,
+    mode: "create" | "replace",
+) => {
+    if (claudeCodeDeps.isInteractive()) {
+        printInstructions(apiKey, model, mode);
+        return;
+    }
+    printWarn(
+        "Non-interactive run: the freshly minted key polli-harness-claude-code is NOT printed (it would land in captured logs). Re-run `polli harness claude-code on` in a terminal to see it and finish the UI steps.",
+    );
+    printInfo(
+        `UI: ${CCR_UI_URL} - provider ${PROVIDER_NAME} → ${PROVIDER_BASE_URL} (OpenAI Chat), profile model ${model}, enabled.`,
+    );
 };
 
 export const claudeCode: HarnessAdapter = {
@@ -388,131 +424,168 @@ export const claudeCode: HarnessAdapter = {
         "Launch Claude Code through the profile: ccr <profile-name-or-id> cli",
 
     async on(ctx: HarnessContext, options: HarnessOnOptions) {
-        ensureClaudeCli(ctx);
-        ensureCcr(ctx);
-        await ensureService(ctx);
+        return withLock(lockDirPath(ctx), async () => {
+            ensureClaudeCli(ctx);
+            ensureCcr(ctx);
+            await ensureService(ctx);
 
-        const model = options.model ?? DEFAULT_MODEL;
-        await claudeCodeDeps.fetchModels(model);
+            const model = options.model ?? DEFAULT_MODEL;
+            await claudeCodeDeps.fetchModels(model);
 
-        let state = loadContext(ctx);
-        const config = readCcrConfig(ctx);
-        if (state === null) {
-            state = {
-                state: "service-up",
-                intent_at: new Date().toISOString(),
-                pre_provider_ids: config.providers.map((p) => p.id ?? ""),
-                pre_profile_ids: config.profiles.map((p) => p.id ?? ""),
+            let state = loadContext(ctx);
+            const config = readCcrConfig(ctx);
+            if (state === null) {
+                state = {
+                    state: "service-up",
+                    intent_at: new Date().toISOString(),
+                    pre_provider_ids: config.providers.map((p) => p.id ?? ""),
+                    pre_profile_ids: config.profiles.map((p) => p.id ?? ""),
+                    model,
+                };
+            }
+            state.model = model;
+            saveContext(ctx, state);
+
+            const evaluation = evaluate(config, state, model);
+            let replaceKey = false;
+            if (evaluation.state === "verified") {
+                // Structure alone is not success: the key must still validate,
+                // otherwise `on` could never repair a revoked key.
+                const key = evaluation.provider?.api_key;
+                const valid =
+                    typeof key === "string" &&
+                    (await claudeCodeDeps.validateKey(key));
+                if (valid) {
+                    state.state = "verified";
+                    state.provider_id = evaluation.provider?.id;
+                    state.profile_id = evaluation.profile?.id;
+                    saveContext(ctx, state);
+                    return statusResult(ctx, state, {
+                        configured: true,
+                        model,
+                        notes: ["Already verified; nothing to do."],
+                    });
+                }
+                replaceKey = true;
+                printWarn(
+                    "The setup is complete but its key no longer validates - minting a replacement; update it in the UI.",
+                );
+            }
+            if (evaluation.provider && !replaceKey) {
+                printInfo(
+                    `The provider exists but the profile is not fully configured for model ${model} - adjust it in the UI as below.`,
+                );
+            }
+
+            const existingKey =
+                !replaceKey &&
+                typeof evaluation.provider?.api_key === "string" &&
+                evaluation.provider.api_key.length > 5
+                    ? evaluation.provider.api_key
+                    : null;
+            const apiKey = await claudeCodeDeps.resolveKey(
+                { id: ID, label: LABEL, existingKey },
+                { browser: options.browser },
+            );
+
+            printKeyInstructions(
+                apiKey,
                 model,
-            };
-        }
-        state.model = model;
-        saveContext(ctx, state);
+                replaceKey ? "replace" : "create",
+            );
+            if (options.browser !== false) {
+                claudeCodeDeps.openUrl(CCR_UI_URL);
+            }
 
-        const evaluation = evaluate(config, state, model);
-        if (evaluation.state === "verified") {
-            state.state = "verified";
-            state.provider_id = evaluation.provider?.id;
-            state.profile_id = evaluation.profile?.id;
+            // Wait (read-only) until the user's UI entries verify AND the key
+            // in the config validates. A user who stops early can resume
+            // with another `on`; nothing is revoked.
+            const cycles = claudeCodeDeps.isInteractive()
+                ? claudeCodeDeps.waitCycles
+                : 1;
+            let keyWarningShown = false;
+            for (let cycle = 0; cycle < cycles; cycle += 1) {
+                const current = evaluate(readCcrConfig(ctx), state, model);
+                if (current.state === "verified") {
+                    const key = current.provider?.api_key;
+                    const valid =
+                        typeof key === "string" &&
+                        (await claudeCodeDeps.validateKey(key));
+                    if (valid) {
+                        state.state = "verified";
+                        state.provider_id = current.provider?.id;
+                        state.profile_id = current.profile?.id;
+                        saveContext(ctx, state);
+                        if (options.smoke) await smoke(ctx);
+                        return statusResult(ctx, state, {
+                            configured: true,
+                            model,
+                            notes: [
+                                "Provider and profile verified in CCR.",
+                                "Check usage: polli usage --key polli-harness-claude-code --days 1",
+                            ],
+                        });
+                    }
+                    if (!keyWarningShown) {
+                        keyWarningShown = true;
+                        printInfo(
+                            "The provider key in CCR does not validate - paste the key shown above exactly.",
+                        );
+                    }
+                }
+                if (current.state !== state.state) {
+                    state.state = current.state;
+                    state.provider_id =
+                        current.provider?.id ?? state.provider_id;
+                    saveContext(ctx, state);
+                    printInfo(`State: ${current.state}`);
+                }
+                await claudeCodeDeps.sleep(4000);
+            }
+
+            const pending = evaluate(readCcrConfig(ctx), state, model);
+            state.state = pending.state;
             saveContext(ctx, state);
             return statusResult(ctx, state, {
-                configured: true,
+                configured: false,
                 model,
-                notes: ["Already verified; nothing to do."],
+                state: pending.state,
+                exitCode: 3,
+                notes: [
+                    `Setup is waiting at "${pending.state}". Finish the steps above in ${CCR_UI_URL}, then re-run \`polli harness claude-code on\`.`,
+                ],
             });
-        }
-        if (evaluation.provider) {
-            printInfo(
-                `The provider exists but the profile is not fully configured for model ${model} - adjust it in the UI as below.`,
-            );
-        }
-
-        const existingKey =
-            typeof evaluation.provider?.api_key === "string" &&
-            evaluation.provider.api_key.length > 5
-                ? evaluation.provider.api_key
-                : null;
-        const apiKey = await claudeCodeDeps.resolveKey(
-            { id: ID, label: LABEL, existingKey },
-            { browser: options.browser },
-        );
-
-        printInstructions(ctx, state, apiKey, model);
-        if (options.browser !== false && claudeCodeDeps.openUrl) {
-            claudeCodeDeps.openUrl(CCR_UI_URL);
-        }
-
-        // Wait (read-only) until the user's UI entries verify. A user who
-        // stops early can resume with another `on`; nothing is revoked.
-        const cycles = claudeCodeDeps.isInteractive()
-            ? claudeCodeDeps.waitCycles
-            : 1;
-        for (let cycle = 0; cycle < cycles; cycle += 1) {
-            const current = evaluate(readCcrConfig(ctx), state, model);
-            if (current.state === "verified") {
-                state.state = "verified";
-                state.provider_id = current.provider?.id;
-                state.profile_id = current.profile?.id;
-                saveContext(ctx, state);
-                if (options.smoke) await smoke(ctx);
-                return statusResult(ctx, state, {
-                    configured: true,
-                    model,
-                    notes: [
-                        "Provider and profile verified in CCR.",
-                        "Check usage: polli usage --key polli-harness-claude-code --days 1",
-                    ],
-                });
-            }
-            if (current.state !== state.state) {
-                state.state = current.state;
-                state.provider_id = current.provider?.id ?? state.provider_id;
-                saveContext(ctx, state);
-                printInfo(`State: ${current.state}`);
-            }
-            await claudeCodeDeps.sleep(4000);
-        }
-
-        const pending = evaluate(readCcrConfig(ctx), state, model);
-        state.state = pending.state;
-        saveContext(ctx, state);
-        return statusResult(ctx, state, {
-            configured: false,
-            model,
-            state: pending.state,
-            exitCode: 3,
-            notes: [
-                `Setup is waiting at "${pending.state}". Finish the steps above in ${CCR_UI_URL}, then re-run \`polli harness claude-code on\`.`,
-            ],
         });
     },
 
     async off(ctx: HarnessContext) {
-        const state = loadContext(ctx);
-        const config = readCcrConfig(ctx);
-        const provider = findOurProvider(config, state);
-        const profile = findOurProfile(config, state, provider);
+        return withLock(lockDirPath(ctx), async () => {
+            const state = loadContext(ctx);
+            const config = readCcrConfig(ctx);
+            const provider = findOurProvider(config, state);
+            const profile = findOurProfile(config, state, provider);
 
-        if (provider || profile) {
-            return statusResult(ctx, state, {
+            if (provider || profile) {
+                return statusResult(ctx, state, {
+                    configured: false,
+                    outcome: "unchanged",
+                    state: "manual-pending",
+                    exitCode: 3,
+                    notes: [
+                        `Delete the "${PROVIDER_NAME}" provider and its Claude Code profile in ${CCR_UI_URL} first - CCR only supports deletion through its UI. Re-run \`polli harness claude-code off\` afterwards to revoke the key.`,
+                    ],
+                });
+            }
+
+            const had = state !== null;
+            await claudeCodeDeps.revokeKeys(ID);
+            clearContext(ctx);
+            return statusResult(ctx, null, {
                 configured: false,
-                outcome: "unchanged",
-                state: "manual-pending",
-                exitCode: 3,
-                notes: [
-                    `Delete the "${PROVIDER_NAME}" provider and its Claude Code profile in ${CCR_UI_URL} first - CCR only supports deletion through its UI. Re-run \`polli harness claude-code off\` afterwards to revoke the key.`,
-                ],
+                outcome: had ? "stripped" : "unchanged",
+                state: had ? "not-configured" : "not-configured",
+                exitCode: had ? 0 : 4,
             });
-        }
-
-        const had = state !== null;
-        await claudeCodeDeps.revokeKeys(ID);
-        clearContext(ctx);
-        return statusResult(ctx, null, {
-            configured: false,
-            outcome: had ? "stripped" : "unchanged",
-            state: had ? "not-configured" : "not-configured",
-            exitCode: had ? 0 : 4,
         });
     },
 

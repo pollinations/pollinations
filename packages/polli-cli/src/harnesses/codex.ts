@@ -7,6 +7,8 @@ import {
     readTextIfExists,
     removeIfExists,
     resolveHomePath,
+    spawnCommand,
+    withLock,
     writeTextAtomic,
 } from "./fs.js";
 import { keyIsValid, resolveHarnessKey, revokeHarnessKeys } from "./keys.js";
@@ -72,6 +74,7 @@ const routerDir = (ctx: HarnessContext) =>
 const manifestPath = (ctx: HarnessContext) =>
     join(polliStateDir(ctx), "manifest.json");
 const txPath = (ctx: HarnessContext) => join(polliStateDir(ctx), "tx.json");
+const lockDir = (ctx: HarnessContext) => join(polliStateDir(ctx), "lock");
 
 const codexHome = (ctx: HarnessContext) =>
     ctx.env.CODEX_HOME?.trim()
@@ -149,8 +152,17 @@ const runRouter = (
     return run;
 };
 
-/** Like runRouter, but a non-zero exit means "absent", not "broken". */
-const probeRouter = (
+/**
+ * The router's documented "no such provider" signal at the pinned commit
+ * ("Unknown generic provider: <id>", src/generic-providers.mjs). ONLY this
+ * message may be read as absence - timeouts, corrupt state, or script bugs
+ * must abort the operation, not masquerade as "nothing to clean up".
+ */
+const NOT_FOUND = /Unknown generic provider/;
+
+class ProviderMissing extends Error {}
+
+const runRouterOrMissing = (
     ctx: HarnessContext,
     command: keyof typeof ROUTER_SCRIPTS,
     args: string[],
@@ -158,7 +170,12 @@ const probeRouter = (
     try {
         return runRouter(ctx, command, args);
     } catch (error) {
-        if (error instanceof RouterError) return error.run;
+        if (
+            error instanceof RouterError &&
+            NOT_FOUND.test(`${error.run.stderr}\n${error.run.stdout}`)
+        ) {
+            throw new ProviderMissing();
+        }
         throw error;
     }
 };
@@ -206,71 +223,66 @@ const clearTx = (ctx: HarnessContext) => removeIfExists(txPath(ctx));
 
 /* ------------------------------------------------------ provider state */
 
+const showProvider = (ctx: HarnessContext) => {
+    try {
+        const run = runRouterOrMissing(ctx, "providers", [
+            "generic",
+            "show",
+            PROVIDER_ID,
+            "--json",
+        ]);
+        return (
+            (
+                JSON.parse(run.stdout) as {
+                    provider?: Record<string, unknown>;
+                }
+            ).provider ?? {}
+        );
+    } catch (error) {
+        if (error instanceof ProviderMissing) return null;
+        throw error;
+    }
+};
+
 const readProviderState = (ctx: HarnessContext): ProviderState => {
-    const run = probeRouter(ctx, "providers", [
-        "generic",
-        "show",
-        PROVIDER_ID,
-        "--json",
-    ]);
-    if (run.status !== 0) {
+    const provider = showProvider(ctx);
+    if (provider === null) {
         return { exists: false, owned: false, enabled: false };
     }
-    const parsed = JSON.parse(run.stdout) as {
-        provider?: {
-            description?: string;
-            enabled?: boolean;
-            baseUrl?: string;
-        };
-    };
-    const provider = parsed.provider ?? {};
     return {
         exists: true,
-        owned: (provider.description ?? "").includes(OWNERSHIP_MARKER),
+        owned: String(provider.description ?? "").includes(OWNERSHIP_MARKER),
         enabled: provider.enabled === true,
     };
 };
 
 const curatedModels = (ctx: HarnessContext): string[] => {
-    const run = probeRouter(ctx, "providers", [
-        "generic",
-        "show",
-        PROVIDER_ID,
-        "--json",
-    ]);
-    if (run.status !== 0) return [];
-    try {
-        const parsed = JSON.parse(run.stdout) as {
-            provider?: { models?: unknown; curatedModels?: unknown };
-        };
-        const provider = parsed.provider ?? {};
-        const list = Array.isArray(provider.curatedModels)
-            ? provider.curatedModels
-            : Array.isArray(provider.models)
-              ? provider.models
-              : [];
-        return list.filter((m): m is string => typeof m === "string");
-    } catch {
-        return [];
-    }
+    const provider = showProvider(ctx);
+    if (provider === null) return [];
+    const list = Array.isArray(provider.curatedModels)
+        ? provider.curatedModels
+        : Array.isArray(provider.models)
+          ? provider.models
+          : [];
+    return list.filter((m): m is string => typeof m === "string");
 };
 
 const credentialConfigured = (ctx: HarnessContext): boolean => {
-    const run = probeRouter(ctx, "providers", [
-        "generic",
-        "credential",
-        PROVIDER_ID,
-        "status",
-        "--json",
-    ]);
-    if (run.status !== 0) return false;
     try {
+        const run = runRouterOrMissing(ctx, "providers", [
+            "generic",
+            "credential",
+            PROVIDER_ID,
+            "status",
+            "--json",
+        ]);
         return (
             (JSON.parse(run.stdout) as { configured?: boolean }).configured ===
             true
         );
-    } catch {
-        return false;
+    } catch (error) {
+        if (error instanceof ProviderMissing) return false;
+        throw error;
     }
 };
 
@@ -290,7 +302,7 @@ const ensureCodexCli = (ctx: HarnessContext) => {
             "Codex CLI was not found. Install it first (https://github.com/openai/codex), then re-run `polli harness codex on`.",
         );
     }
-    const ran = spawnSync("codex", ["--version"], {
+    const ran = spawnCommand("codex", ["--version"], {
         encoding: "utf-8",
         env: ctx.env,
     });
@@ -348,7 +360,16 @@ const ensureRouter = (ctx: HarnessContext) => {
 };
 
 const ensureDoctor = (ctx: HarnessContext) => {
-    const run = probeRouter(ctx, "doctor", []);
+    let run: RouterRun;
+    try {
+        run = runRouter(ctx, "doctor", []);
+    } catch (error) {
+        if (error instanceof RouterError) {
+            run = error.run;
+        } else {
+            throw error;
+        }
+    }
     const failures = `${run.stdout}\n${run.stderr}`
         .split("\n")
         .filter((line) => /fail/i.test(line) && /codex/i.test(line));
@@ -372,21 +393,46 @@ const runSmoke = (ctx: HarnessContext, model: string) => {
 
 /* ------------------------------------------------------------ reconcile */
 
+/** Rollback mutation: an already-absent provider is fine, real errors are not. */
+const rollbackRouter = (
+    ctx: HarnessContext,
+    command: keyof typeof ROUTER_SCRIPTS,
+    args: string[],
+) => {
+    try {
+        runRouterOrMissing(ctx, command, args);
+    } catch (error) {
+        if (error instanceof ProviderMissing) return;
+        throw error;
+    }
+};
+
 /**
  * A previous `on` died before the commit boundary (credential publication).
  * Roll back ONLY what the tx proves we made, then let the fresh `on` proceed.
+ * The credential file is NEVER touched here: a pre-commit transaction did
+ * not publish one, so an existing file predates this transaction.
  */
 const reconcile = (ctx: HarnessContext, tx: CodexTx) => {
     printInfo(
         `Recovering an interrupted setup from ${tx.started_at} (step: ${tx.step})...`,
     );
     if (tx.step === "committed") {
+        // The key was published; only the baseline bookkeeping may be lost.
+        if (!loadBaseline(ctx) && tx.pre) {
+            saveBaseline(ctx, {
+                created_by_us: !tx.pre.exists,
+                enabled_at_first_on: tx.pre.enabled,
+                models_added_by_us: tx.models_delta,
+                first_on_at: tx.started_at,
+            });
+        }
         clearTx(ctx);
         return;
     }
     const now = readProviderState(ctx);
     if (tx.models_delta.length > 0 && now.exists && now.owned) {
-        probeRouter(ctx, "curate-models", [
+        rollbackRouter(ctx, "curate-models", [
             PROVIDER_ID,
             "--remove",
             tx.models_delta.join(","),
@@ -394,9 +440,8 @@ const reconcile = (ctx: HarnessContext, tx: CodexTx) => {
         ]);
     }
     if (now.exists && now.owned && tx.pre && !tx.pre.exists) {
-        probeRouter(ctx, "providers", ["generic", "remove", PROVIDER_ID]);
+        rollbackRouter(ctx, "providers", ["generic", "remove", PROVIDER_ID]);
     }
-    removeIfExists(credentialFile(ctx));
     clearTx(ctx);
 };
 
@@ -428,211 +473,255 @@ export const codex: HarnessAdapter = {
         "Fully quit and reopen Codex so it picks up the router provider.",
 
     async on(ctx: HarnessContext, options: HarnessOnOptions) {
-        const pending = loadTx(ctx);
-        if (pending) reconcile(ctx, pending);
+        return withLock(lockDir(ctx), async () => {
+            // Version gates come first: even crash recovery must never drive
+            // an unpinned router (finding: pin enforced before ANY router call).
+            ensureCodexCli(ctx);
+            ensureRouter(ctx);
+            ensureDoctor(ctx);
 
-        ensureCodexCli(ctx);
-        ensureRouter(ctx);
-        ensureDoctor(ctx);
+            const pending = loadTx(ctx);
+            if (pending) reconcile(ctx, pending);
 
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await codexDeps.fetchModels(model);
-        const modelIds = models.map((entry) => entry.id);
+            const model = options.model ?? DEFAULT_MODEL;
+            const models = await codexDeps.fetchModels(model);
+            const modelIds = models.map((entry) => entry.id);
 
-        const pre = readProviderState(ctx);
-        if (pre.exists && !pre.owned) {
-            refuse(
-                `A Codex Router provider "${PROVIDER_ID}" already exists and was not created by polli (no "${OWNERSHIP_MARKER}" marker). Refusing to touch it; remove or rename it yourself.`,
+            const pre = readProviderState(ctx);
+            if (pre.exists && !pre.owned) {
+                refuse(
+                    `A Codex Router provider "${PROVIDER_ID}" already exists and was not created by polli (no "${OWNERSHIP_MARKER}" marker). Refusing to touch it; remove or rename it yourself.`,
+                );
+            }
+
+            const tx: CodexTx = {
+                step: "intent",
+                pre,
+                models_delta: [],
+                started_at: new Date().toISOString(),
+            };
+            saveTx(ctx, tx);
+
+            if (!pre.exists) {
+                runRouter(ctx, "providers", [
+                    "generic",
+                    "add",
+                    PROVIDER_ID,
+                    "--name",
+                    PROVIDER_NAME,
+                    "--base-url",
+                    PROVIDER_BASE_URL,
+                    "--adapter",
+                    PROVIDER_ADAPTER,
+                    "--credential-ref",
+                    CREDENTIAL_REF,
+                    "--description",
+                    OWNERSHIP_MARKER,
+                ]);
+            }
+
+            tx.step = "minted";
+            saveTx(ctx, tx);
+            const apiKey = await codexDeps.resolveKey(
+                {
+                    id: ID,
+                    label: LABEL,
+                    existingKey:
+                        readTextIfExists(credentialFile(ctx))?.trim() ?? null,
+                },
+                { browser: options.browser },
             );
-        }
 
-        const tx: CodexTx = {
-            step: "intent",
-            pre,
-            models_delta: [],
-            started_at: new Date().toISOString(),
-        };
-        saveTx(ctx, tx);
+            // Commit boundary: publish the key into the router's documented
+            // credential file using its own protocol (temp file + rename,
+            // 0o600), guarded by the shared snapshot so `off` can restore
+            // byte-for-byte.
+            applyWithSnapshot(ctx, ID, [credentialFile(ctx)], () =>
+                writeTextAtomic(
+                    credentialFile(ctx),
+                    `${apiKey.trim()}\n`,
+                    0o600,
+                ),
+            );
+            tx.step = "committed";
+            // Record the full intended set NOW: if we die mid-curation, the
+            // committed-tx reconcile rebuilds the baseline with this
+            // (safe over-approximation: `off` removing uncurated ids is a
+            // no-op, the inverse would leak them).
+            tx.models_delta = modelIds;
+            saveTx(ctx, tx);
 
-        if (!pre.exists) {
-            runRouter(ctx, "providers", [
-                "generic",
-                "add",
+            if (!credentialConfigured(ctx)) {
+                throw new Error(
+                    `The router does not see the credential after it was written to ${credentialFile(ctx)}. The pinned router (${ROUTER_PIN.slice(0, 8)}) stores keys differently than expected - stopping instead of guessing. Please report this.`,
+                );
+            }
+
+            runRouter(ctx, "providers", ["generic", "enable", PROVIDER_ID]);
+
+            const before = curatedModels(ctx);
+            runRouter(ctx, "curate-models", [
                 PROVIDER_ID,
-                "--name",
-                PROVIDER_NAME,
-                "--base-url",
-                PROVIDER_BASE_URL,
-                "--adapter",
-                PROVIDER_ADAPTER,
-                "--credential-ref",
-                CREDENTIAL_REF,
-                "--description",
-                OWNERSHIP_MARKER,
+                "--models",
+                modelIds.join(","),
+                "--apply",
             ]);
-        }
+            const added = modelIds.filter((id) => !before.includes(id));
 
-        tx.step = "minted";
-        saveTx(ctx, tx);
-        const apiKey = await codexDeps.resolveKey(
-            {
-                id: ID,
-                label: LABEL,
-                existingKey:
-                    readTextIfExists(credentialFile(ctx))?.trim() ?? null,
-            },
-            { browser: options.browser },
-        );
+            const baseline = loadBaseline(ctx);
+            if (baseline) {
+                baseline.models_added_by_us = [
+                    ...new Set([...baseline.models_added_by_us, ...added]),
+                ];
+                saveBaseline(ctx, baseline);
+            } else {
+                saveBaseline(ctx, {
+                    created_by_us: !pre.exists,
+                    enabled_at_first_on: pre.enabled,
+                    models_added_by_us: added,
+                    first_on_at: tx.started_at,
+                });
+            }
+            clearTx(ctx);
 
-        // Commit boundary: publish the key into the router's documented
-        // credential file using its own protocol (temp file + rename, 0o600),
-        // guarded by the shared snapshot so `off` can restore byte-for-byte.
-        applyWithSnapshot(ctx, ID, [credentialFile(ctx)], () =>
-            writeTextAtomic(credentialFile(ctx), `${apiKey.trim()}\n`, 0o600),
-        );
-        tx.step = "committed";
-        saveTx(ctx, tx);
+            if (options.smoke) runSmoke(ctx, model);
 
-        if (!credentialConfigured(ctx)) {
-            throw new Error(
-                `The router does not see the credential after it was written to ${credentialFile(ctx)}. The pinned router (${ROUTER_PIN.slice(0, 8)}) stores keys differently than expected - stopping instead of guessing. Please report this.`,
-            );
-        }
-
-        runRouter(ctx, "providers", ["generic", "enable", PROVIDER_ID]);
-
-        const before = curatedModels(ctx);
-        runRouter(ctx, "curate-models", [
-            PROVIDER_ID,
-            "--models",
-            modelIds.join(","),
-            "--apply",
-        ]);
-        const added = modelIds.filter((id) => !before.includes(id));
-
-        const baseline = loadBaseline(ctx);
-        if (baseline) {
-            baseline.models_added_by_us = [
-                ...new Set([...baseline.models_added_by_us, ...added]),
-            ];
-            saveBaseline(ctx, baseline);
-        } else {
-            saveBaseline(ctx, {
-                created_by_us: !pre.exists,
-                enabled_at_first_on: pre.enabled,
-                models_added_by_us: added,
-                first_on_at: tx.started_at,
+            return result(ctx, {
+                configured: true,
+                model,
+                state: "configured",
+                notes: [
+                    `Router provider "${PROVIDER_ID}" enabled with ${modelIds.length} curated models; active model ${model}.`,
+                ],
             });
-        }
-        clearTx(ctx);
-
-        if (options.smoke) runSmoke(ctx, model);
-
-        return result(ctx, {
-            configured: true,
-            model,
-            state: "configured",
-            notes: [
-                `Router provider "${PROVIDER_ID}" enabled with ${modelIds.length} curated models; active model ${model}.`,
-            ],
         });
     },
 
     async off(ctx: HarnessContext) {
-        const baseline = loadBaseline(ctx);
-        const router = existsSync(join(routerDir(ctx), "package.json"));
+        return withLock(lockDir(ctx), async () => {
+            // A crash between commit and baseline write must not make off
+            // forget what we own: rebuild the baseline from the tx journal.
+            const pendingTx = loadTx(ctx);
+            if (pendingTx?.step === "committed") reconcile(ctx, pendingTx);
+            const baseline = loadBaseline(ctx);
+            const router = existsSync(join(routerDir(ctx), "package.json"));
 
-        if (!router) {
-            if (baseline || readTextIfExists(credentialFile(ctx)) !== null) {
+            // The pin policy applies to destructive paths too: never drive a
+            // router version we did not verify, even to remove things.
+            if (router && !routerPinned(ctx)) {
+                refuse(
+                    `Codex Router at ${routerDir(ctx)} is not at the supported pin ${ROUTER_PIN} (v${ROUTER_VERSION}). Refusing to run destructive operations against an unknown version.`,
+                );
+            }
+
+            if (!router) {
+                if (
+                    baseline ||
+                    readTextIfExists(credentialFile(ctx)) !== null
+                ) {
+                    return result(ctx, {
+                        configured: false,
+                        outcome: "unchanged",
+                        state: "manual-pending",
+                        exitCode: 3,
+                        notes: [
+                            `Codex Router is missing from ${routerDir(ctx)} but polli state remains. Re-run \`polli harness codex on\` to reinstall the router, then \`off\` again.`,
+                        ],
+                    });
+                }
                 return result(ctx, {
                     configured: false,
                     outcome: "unchanged",
+                    state: "router-missing",
+                    exitCode: 4,
+                });
+            }
+
+            const state = readProviderState(ctx);
+            if (state.exists && !state.owned && !baseline?.created_by_us) {
+                refuse(
+                    `The Codex Router provider "${PROVIDER_ID}" is not owned by polli. Refusing to remove it.`,
+                );
+            }
+            if (!baseline && !state.exists) {
+                return result(ctx, {
+                    configured: false,
+                    outcome: "unchanged",
+                    state: "not-configured",
+                    exitCode: 4,
+                });
+            }
+
+            const facts: CodexBaseline = baseline ?? {
+                created_by_us: false,
+                enabled_at_first_on: true,
+                models_added_by_us: [],
+                first_on_at: new Date().toISOString(),
+            };
+
+            if (state.exists && facts.models_added_by_us.length > 0) {
+                rollbackRouter(ctx, "curate-models", [
+                    PROVIDER_ID,
+                    "--remove",
+                    facts.models_added_by_us.join(","),
+                    "--apply",
+                ]);
+            }
+            if (
+                state.exists &&
+                (facts.created_by_us || !facts.enabled_at_first_on)
+            ) {
+                rollbackRouter(ctx, "providers", [
+                    "generic",
+                    "disable",
+                    PROVIDER_ID,
+                ]);
+            }
+
+            const outcome = restoreOrStrip(
+                ctx,
+                ID,
+                [credentialFile(ctx)],
+                () => {
+                    const had = readTextIfExists(credentialFile(ctx)) !== null;
+                    removeIfExists(credentialFile(ctx));
+                    return had;
+                },
+            );
+
+            if (facts.created_by_us && state.exists) {
+                rollbackRouter(ctx, "providers", [
+                    "generic",
+                    "remove",
+                    PROVIDER_ID,
+                ]);
+            }
+
+            const after = readProviderState(ctx);
+            if (
+                credentialConfigured(ctx) ||
+                (facts.created_by_us && after.exists)
+            ) {
+                return result(ctx, {
+                    configured: false,
+                    outcome,
                     state: "manual-pending",
                     exitCode: 3,
                     notes: [
-                        `Codex Router is missing from ${routerDir(ctx)} but polli state remains. Re-run \`polli harness codex on\` to reinstall the router, then \`off\` again.`,
+                        "Some polli-managed entries are still visible to the router. Inspect with `model-router codex providers generic show pollinations --json`.",
                     ],
                 });
             }
-            return result(ctx, {
-                configured: false,
-                outcome: "unchanged",
-                state: "router-missing",
-                exitCode: 4,
-            });
-        }
 
-        const state = readProviderState(ctx);
-        if (state.exists && !state.owned && !baseline?.created_by_us) {
-            refuse(
-                `The Codex Router provider "${PROVIDER_ID}" is not owned by polli. Refusing to remove it.`,
-            );
-        }
-        if (!baseline && !state.exists) {
+            await codexDeps.revokeKeys(ID);
+            removeIfExists(manifestPath(ctx));
+            clearTx(ctx);
+
             return result(ctx, {
                 configured: false,
-                outcome: "unchanged",
+                outcome: outcome === "unchanged" ? "stripped" : outcome,
                 state: "not-configured",
-                exitCode: 4,
             });
-        }
-
-        const facts: CodexBaseline = baseline ?? {
-            created_by_us: false,
-            enabled_at_first_on: true,
-            models_added_by_us: [],
-            first_on_at: new Date().toISOString(),
-        };
-
-        if (state.exists && facts.models_added_by_us.length > 0) {
-            probeRouter(ctx, "curate-models", [
-                PROVIDER_ID,
-                "--remove",
-                facts.models_added_by_us.join(","),
-                "--apply",
-            ]);
-        }
-        if (
-            state.exists &&
-            (facts.created_by_us || !facts.enabled_at_first_on)
-        ) {
-            probeRouter(ctx, "providers", ["generic", "disable", PROVIDER_ID]);
-        }
-
-        const outcome = restoreOrStrip(ctx, ID, [credentialFile(ctx)], () => {
-            const had = readTextIfExists(credentialFile(ctx)) !== null;
-            removeIfExists(credentialFile(ctx));
-            return had;
-        });
-
-        if (facts.created_by_us && state.exists) {
-            probeRouter(ctx, "providers", ["generic", "remove", PROVIDER_ID]);
-        }
-
-        const after = readProviderState(ctx);
-        if (
-            credentialConfigured(ctx) ||
-            (facts.created_by_us && after.exists)
-        ) {
-            return result(ctx, {
-                configured: false,
-                outcome,
-                state: "manual-pending",
-                exitCode: 3,
-                notes: [
-                    "Some polli-managed entries are still visible to the router. Inspect with `model-router codex providers generic show pollinations --json`.",
-                ],
-            });
-        }
-
-        await codexDeps.revokeKeys(ID);
-        removeIfExists(manifestPath(ctx));
-        clearTx(ctx);
-
-        return result(ctx, {
-            configured: false,
-            outcome: outcome === "unchanged" ? "stripped" : outcome,
-            state: "not-configured",
         });
     },
 

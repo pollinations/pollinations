@@ -71,7 +71,13 @@ export function PromptAgentTools({
                     label="Tools information"
                 />
             </div>
-            <ul className="space-y-3">
+            <ul
+                className="grid gap-x-4 gap-y-3"
+                style={{
+                    gridTemplateColumns:
+                        "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))",
+                }}
+            >
                 {MCP_SERVERS.map((server) => (
                     <AuthAccessItem
                         key={server.id}

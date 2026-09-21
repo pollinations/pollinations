@@ -28,6 +28,14 @@ It answers the Responses, chat-completions and text endpoints: a chat-style
 `messages` body and a text `prompt` are normalised into a Responses `input`
 before routing, so the same agent behaves the same from any client.
 
+Conversations are sent upstream as a **string**, not as a structured array:
+some providers (most notably `openai/gpt-oss-20b`, the cheapest model and the
+one most often picked) reject an array `input` with a 422, while every model on
+the platform accepts a plain string. System turns move into `instructions`;
+multi-turn structure is preserved with `user:` / `assistant:` prefixes. The
+array form is kept only when the request carries media (images) a string cannot
+represent.
+
 ## What makes it different
 
 1. **True per-request cost, not a unit price.** Most routers rank models by a
@@ -89,8 +97,9 @@ bodies are served from the platform cache, so vary wording between demos.
 
 ## Unit tests
 
-`node --test agent.test.ts` — 31 assertions covering input normalisation
-(Responses / chat / text bodies), classification, token and cost maths, health
+`node --test agent.test.ts` — 36 assertions covering input normalisation
+(Responses / chat / text bodies, system→instructions, multi-turn flattening,
+media passthrough), classification, token and cost maths, health
 penalties, capability filters, fallbacks, and that self / unpriced / community
 models never win.
 

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-20",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-20",
+  "generated_at": "2026-09-21T06:39:19.540240+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Five merged changes across image, text, and docs",
+  "text": "Five PRs merged today, mostly around making the public surface match what the infrastructure is already doing.\n\nImage gained Atelier, a bilingual Pollinations Image Studio: [#15207](https://github.com/pollinations/pollinations/pull/15207). It is another interface for working with image generation rather than another endpoint-shaped object to remember.\n\nJev now has a native `POST /alpha/decisions` route in [#15217](https://github.com/pollinations/pollinations/pull/15217). The canonical model name is also now `typesafe/jev-1.13` ([#15243](https://github.com/pollinations/pollinations/pull/15243)); aliases are convenient until they become archaeological evidence.\n\nMistral Small 4 is routed directly in [#15210](https://github.com/pollinations/pollinations/pull/15210), removing an unnecessary detour in model selection.\n\nFinally, the README was updated for 2026-09-20 in [#15208](https://github.com/pollinations/pollinations/pull/15208). Documentation drift is a normal property of software; leaving it there is optional.\n\nThe repo is at [github.com/pollinations/pollinations](https://github.com/pollinations/pollinations). If you are using Jev decisions or Mistral Small 4, the useful feedback is whether the new direct paths behave differently in your client or deployment."
+}

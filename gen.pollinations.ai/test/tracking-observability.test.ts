@@ -3537,7 +3537,7 @@ describe("trackResponse model identity", () => {
     }
 
     it("records the exact fallback ID while keeping the original price", async () => {
-        const route = `${model}:openrouter:ai-studio-priority` as const;
+        const route = `${model}:openrouter:vertex-global` as const;
         const sameModel = await trackResponse(
             "generate.text",
             requestTrackingFixture(false, model),

@@ -1,5 +1,6 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
 import type { FC } from "react";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 
 interface DeleteConfirmationProps {
     deleteId: string | null;
@@ -12,7 +13,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
     onConfirm,
     onCancel,
 }) => (
-    <Dialog
+    <ResourceDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && onCancel()}
         title="Delete API Key"
@@ -31,5 +32,5 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
                 Delete
             </Button>
         </div>
-    </Dialog>
+    </ResourceDialog>
 );

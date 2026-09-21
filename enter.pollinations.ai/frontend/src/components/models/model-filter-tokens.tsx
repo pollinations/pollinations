@@ -1,9 +1,18 @@
-import { EditableComboboxToken, SearchIcon } from "@pollinations/ui";
+import {
+    Dropdown,
+    DropdownItem,
+    EditableComboboxToken,
+    SearchIcon,
+} from "@pollinations/ui";
 import type { FC } from "react";
 import type {
     ModelQueryDraftFilter,
     ModelQueryFilter,
     ModelQueryFilterToken,
+} from "./model-query.ts";
+import {
+    getModelQueryDraftSuggestionValue,
+    getModelQuerySuggestions,
 } from "./model-query.ts";
 
 export const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
@@ -26,6 +35,7 @@ type ModelFilterTokensProps = {
     draft?: ModelQueryDraftFilter;
     pendingRemovalIndex?: number;
     onEdit: (token: ModelQueryFilterToken) => void;
+    onChange: (token: ModelQueryFilterToken, value: string) => void;
 };
 
 export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
@@ -33,6 +43,7 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
     draft,
     pendingRemovalIndex,
     onEdit,
+    onChange,
 }) => {
     return (
         <>
@@ -43,6 +54,54 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
             {tokens.map((token) => {
                 const label = MODEL_FILTER_LABELS[token.filter.key];
                 const value = formatFilterValue(token.filter);
+                if (
+                    token.filter.key === "source" ||
+                    token.filter.key === "status"
+                ) {
+                    return (
+                        <Dropdown
+                            key={`${token.index}:${token.filter.key}`}
+                            className="min-w-36 p-1"
+                            trigger={() => (
+                                <EditableComboboxToken
+                                    label={label}
+                                    value={value}
+                                    highlighted={
+                                        pendingRemovalIndex === token.index
+                                    }
+                                    aria-label={`Change ${label} filter: ${value}`}
+                                />
+                            )}
+                        >
+                            {(close) =>
+                                getModelQuerySuggestions(
+                                    `${token.filter.key}:`,
+                                    [],
+                                ).map((option) => {
+                                    const nextValue =
+                                        getModelQueryDraftSuggestionValue(
+                                            option,
+                                        ).trim();
+                                    return (
+                                        <DropdownItem
+                                            key={nextValue}
+                                            type="button"
+                                            aria-pressed={
+                                                token.filter.value === nextValue
+                                            }
+                                            onClick={() => {
+                                                onChange(token, nextValue);
+                                                close();
+                                            }}
+                                        >
+                                            {nextValue}
+                                        </DropdownItem>
+                                    );
+                                })
+                            }
+                        </Dropdown>
+                    );
+                }
                 return (
                     <EditableComboboxToken
                         key={`${token.index}:${token.token}`}

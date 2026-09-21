@@ -567,6 +567,23 @@ export const Models: FC = () => {
                                                 pendingRemovalIndex
                                             }
                                             onEdit={editFilter}
+                                            onChange={(token, value) => {
+                                                setSearch(
+                                                    replaceModelQueryFilterToken(
+                                                        getCancelledDraftSearch(),
+                                                        token.index,
+                                                        `${token.filter.key}:${value}`,
+                                                    ),
+                                                );
+                                                setDraftFilter(undefined);
+                                                setEditingFilterToken(
+                                                    undefined,
+                                                );
+                                                setPendingRemovalIndex(
+                                                    undefined,
+                                                );
+                                                setSearchOpen(false);
+                                            }}
                                         />
                                     }
                                 />

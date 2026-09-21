@@ -214,6 +214,17 @@ export function useModelQuerySearch({
                 draft={draft}
                 pendingRemovalIndex={pendingRemoval}
                 onEdit={editFilter}
+                onChange={(token, value) => {
+                    setSearch(
+                        replaceModelQueryFilterToken(
+                            cancelledDraft(),
+                            token.index,
+                            `${token.filter.key}:${value}`,
+                        ),
+                    );
+                    resetDraft();
+                    setOpen(false);
+                }}
             />
         ),
     };

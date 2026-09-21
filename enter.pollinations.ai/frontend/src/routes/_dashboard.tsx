@@ -1,4 +1,8 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import {
+    createFileRoute,
+    Outlet,
+    useRouterState,
+} from "@tanstack/react-router";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
@@ -89,6 +93,22 @@ export const Route = createFileRoute("/_dashboard")({
 
 function DashboardLayout() {
     const data = Route.useLoaderData();
+    const signInMessage = useRouterState({
+        select: ({ location }) => {
+            if (location.pathname === "/quests") {
+                return "Sign in to track your quests and claim Pollen rewards.";
+            }
+            if (location.pathname === "/models") {
+                const { category } = location.search as { category?: string };
+                if (category === "agent")
+                    return "Sign in to use agents and create your own.";
+                if (category === "mcp")
+                    return "Sign in to connect your tools to Pollinations.ai.";
+                return "Sign in to get an API key and use these models.";
+            }
+            return undefined;
+        },
+    });
 
     return (
         <DashboardShell
@@ -105,7 +125,7 @@ function DashboardLayout() {
                     : undefined
             }
         >
-            {!data.user && <DashboardSignInBanner />}
+            {!data.user && <DashboardSignInBanner message={signInMessage} />}
             <Outlet />
         </DashboardShell>
     );

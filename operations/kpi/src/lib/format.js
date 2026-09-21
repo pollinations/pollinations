@@ -19,7 +19,12 @@ export function formatValue(value, format = "number") {
 }
 
 export function calcChange(current, previous) {
-    if (!previous || !current) return null;
+    if (
+        !Number.isFinite(previous) ||
+        !Number.isFinite(current) ||
+        previous === 0
+    )
+        return null;
     // Divide by the magnitude, not the signed value: a margin going from
     // -$0.63 to -$0.89 got worse, and dividing by a negative base would
     // report it as a rise.

@@ -109,6 +109,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
+    "openai/gpt-4o-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGpt4oMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter azure/openai route rates (2026-09-12). Image inputs
+            // are tokenized into promptTextTokens; no separate usage is
+            // reported or billed for image input.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.6),
+        },
+        title: "GPT-4o Mini",
+        description:
+            "Affordable multimodal chat with vision input for everyday tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenAI vision limit: 10 images/chat request (provider cap).
+        tools: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "openai/gpt-5.4": {
         supportedParameters: CHAT_PARAMETERS.azureGpt54,
         aliases: [
@@ -541,7 +568,7 @@ const TEXT_BASE_SERVICES = {
             "mistral-small-2603",
             "mistral",
         ],
-        provider: "openrouter",
+        provider: "mistral",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
@@ -549,18 +576,18 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            // OpenRouter Mistral endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.015) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            // Mistral direct API, verified 2026-09-20.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
         description:
             "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 8, // Exact OpenRouter Mistral route limit.
+        maxReferenceImages: 8,
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -1101,6 +1128,42 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "typesafe/jev-1.13": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: ["jev", "typesafe/jev"],
+        provider: "openrouter",
+        publisher: "TypeSafe",
+        category: "text",
+        addedDate: new Date("2026-09-17").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Deliberately not paid-only, unlike the other OpenRouter routes:
+        // Quest Pollen must reach Jev, and $0.042/M in with free output
+        // bounds what a free-tier account can spend.
+        paidOnly: false,
+        cost: {
+            // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
+            // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
+            promptTextTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Jev",
+        description:
+            "Typed decisions with calibrated confidence instead of free text; " +
+            "post state and questions to /alpha/decisions, or send the same " +
+            "JSON in the last user message on /v1/chat/completions",
+        // Its own request shape, so it is offered on the decisions route and
+        // the chat adapter only — /text returns plain content and has nothing
+        // to return here.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        // 64k for state + questions together; 32k for state + the longest
+        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        contextLength: 64000,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],
@@ -1569,6 +1632,67 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "tencent/hy4-preview": {
+        supportedParameters: CHAT_PARAMETERS.openRouterHy4Preview,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Tencent (fp8) route rates (2026-09-12), including
+            // the mandatory 5.5% OpenRouter credit fee (#14895, merged
+            // 2026-09-15, after this branch was created).
+            promptTextTokens: perMillion(0.834) * 1.055,
+            promptCachedTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(2.501) * 1.055,
+        },
+        title: "Hy4 Preview",
+        description:
+            "Mixture-of-experts model for coding agents and complex tool-use workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "tencent/hy3": {
+        supportedParameters: CHAT_PARAMETERS.openRouterHy3,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-09-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Novita route rates (2026-09-18, includes the
+            // mandatory 5.5% OpenRouter credit fee). Ties GMICloud's flat
+            // rate but with materially better uptime (99.96% vs 99.91%) and
+            // roughly half the latency in local E2E testing. Tencent's own
+            // direct route bills a time-of-day rate the registry can't
+            // represent, and DeepInfra's discount pricing structure was
+            // passed over — both confirmed still true on re-check.
+            promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.035) * 1.055,
+            completionTextTokens: perMillion(0.58) * 1.055,
+        },
+        title: "Hy3",
+        description:
+            "Mixture-of-experts reasoning for agentic workflows and production tool-use",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        // Forced tool_choice:"required" isn't reliably supported on any of
+        // Hy3's OpenRouter routes: Novita/GMICloud/Phala silently ignore it
+        // (plain text, no tool call, no error) and AtlasCloud hard-400s.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "meituan/longcat-2.0": {

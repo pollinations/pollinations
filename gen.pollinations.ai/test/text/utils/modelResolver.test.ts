@@ -142,6 +142,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7",
+        });
+
+        expect(result.options.model).toBe("x-ai/grok-4.7");
+        expect(result.options.provider).toEqual({
+            only: ["xai"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

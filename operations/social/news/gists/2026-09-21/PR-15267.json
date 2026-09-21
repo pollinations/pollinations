@@ -1,0 +1,34 @@
+{
+  "pr_number": 15267,
+  "title": "fix: refresh verified provider costs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15267",
+  "merged_at": "2026-09-21T14:48:06Z",
+  "labels": [],
+  "pr_body_excerpt": "## Pricing changes\n\nAll values below are Pollinations recorded provider cost in **USD per 1M tokens**. OpenRouter rows include the account 5.5% credit-purchase fee exactly once.\n\n| Canonical model | Exact route | Input | Cached input | Output |\n|---|---|---:|---:|---:|\n| `openai/gpt-4o-mini` | OpenRouter Azure/OpenAI | $0.150000 → $0.158250 | $0.075000 → $0.079125 | $0.600000 → $0.633000 |\n| `qwen/qwen3.8-27b` | OpenRouter Chutes FP8 primary | $0.337600 → $0.253200 | $0.033760 → $0.025320 | $2.637500 → $2.321000 |\n| `qwen/qwen3.8-27b` | OpenRouter AkashML FP8 fallback | $0.337600* → $0.263750 | $0.033760* → $0.052750 | $2.637500* → $2.321000 |\n| `deepseek/deepseek-v4-flash` | Direct DeepInfra fallback | $0.080000 → $0.060000 | $0.016000 → $0.015000 | $0.180000 → $0.180000 |\n| `deepseek/deepseek-v4.1-flash` | OpenRouter DeepInfra FP8 fallback | $0.211000 → $0.147700 | $0.006330 → $0.004431 | $0.633000 → $0.443100 |\n| `nvidia/nemotron-3.5-lightning` | OpenRouter CoreWeave BF16 fallback | $0.105500 → $0.073850 | $0.052750 → $0.042200 | $0.263750 → $0.211000 |\n\n\\* Akash previously inherited the Chutes primary sheet. It now has its exact route-specific sheet. Qwen image/video input follows each route's published generic input rate.\n\n## Unchanged\n\nCanonical names, aliases, providers, `paidOnly`, `priceMultiplier`, capabilities, and fallback topology are unchanged.\n\n## Verification\n\n- Rechecked exact live provider catalogs and OpenRouter endpoint records on 2026-09-21.\n- Local E2E billing matched GPT-4o Mini and Qwen Chutes.\n- Direct probes matched AkashML, DeepInfra V4/V4.1, and CoreWeave.\n- Focused pricing/fallback tests, snapshot, Gen typecheck, and all CI checks pass.\n\nDraft note: published cache rates were verified; the paid long-prefix cache-hit experiment was not run.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The price tags got pollenated",
+    "blurb": "The hive rechecked its provider receipts and replaced a few inherited price tags with the real ones. Qwen’s AkashML route now has its own sheet, because apparently even fallback routes deserve correct arithmetic.",
+    "summary": "Refreshed recorded per-million-token provider costs for GPT-4o Mini, Qwen 3.8-27B on Chutes and AkashML, DeepSeek V4/V4.1 Flash, and Nemotron 3.5 Lightning, including a route-specific AkashML Qwen price sheet instead of the inherited Chutes rates.",
+    "impact": "Billing now reflects verified live route costs, with lower recorded rates across several Qwen, DeepSeek, and Nemotron paths and accurate cache/input/output pricing for each provider fallback.",
+    "keywords": [
+      "billing",
+      "pricing",
+      "text-models",
+      "openrouter",
+      "qwen",
+      "fallbacks"
+    ],
+    "visual_concept": "A cozy provider-cost verification garden: Polli is an attentive accountant-bee comparing route-specific price tags on branching code-plants, while a CRT monitor robot checks a glowing receipt. Separate Chutes and AkashML signposts make the corrected Qwen fallback sheet visible; flowers and neatly labeled token jars represent input, cached input, and output rates.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears tiny round accountant glasses and carefully compares price tags on branching code-plants labeled “CHUTES” and “AKASHML.” A cute chunky CRT-monitor robot holds a glowing token receipt beside jars marked “INPUT,” “CACHE,” and “OUTPUT,” with lime green (#ecf874) prominently glowing from the terminal and flower pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15267.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears tiny round accountant glasses and carefully compares price tags on branching code-plants labeled “CHUTES” and “AKASHML.” A cute chunky CRT-monitor robot holds a glowing token receipt beside jars marked “INPUT,” “CACHE,” and “OUTPUT,” with lime green (#ecf874) prominently glowing from the terminal and flower pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-21T14:49:03.586889+00:00"
+}

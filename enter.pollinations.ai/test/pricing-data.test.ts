@@ -624,7 +624,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
     ).toBeCloseTo(0.0000001 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
-    ).toBeCloseTo(0.000000015 * 1.055, 12);
+    ).toBeCloseTo(0.000000015, 12);
     expect(
         getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
     ).toBeCloseTo(0.00000007 * 1.055, 12);
@@ -1074,7 +1074,7 @@ test("Google text model providers match their configured routes", () => {
 
 // Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
 // input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev"]);
+const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {

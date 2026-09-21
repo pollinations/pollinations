@@ -284,8 +284,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
-        name: "mistralai/mistral-small-4:openrouter:mistral-eu",
-        config: portkeyConfig["mistral-openrouter-eu"],
+        name: "mistralai/mistral-small-4:openrouter",
+        config: portkeyConfig["mistral-small-2603-openrouter"],
     },
     {
         name: "deepseek/deepseek-v4-flash",
@@ -520,7 +520,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "typesafe/jev",
+        name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
         useSystemOneApi: true,
     },

@@ -52,11 +52,11 @@ Three requests routed differently, with reasons: see [`demos/`](demos/).
 
 ## Deploy your own
 
-1. Fork this repository.
+1. Fork the standalone [Polyrouter repository](https://github.com/afanasevmylife/polyrouter),
+   which has `agent.ts` at the root and includes the deployment workflow.
 2. In [My Models](https://enter.pollinations.ai/my-models), choose
-   **Add Agent -> Code agent** and enter your fork's URL - or run
-   `npx @pollinations/cli agents create --config code-agent.json`.
-3. Edit `agent.ts`, push, then **Sync** in the dashboard (or enable the
+   **Add Agent -> Code agent** and enter your fork's URL.
+3. Edit `agent.ts` in your fork, push, then **Sync** in the dashboard (or enable the
    included GitHub Action with the `POLLINATIONS_SYNC_URL` repository
    variable set to
    `https://gen.pollinations.ai/account/agents/YOUR_AGENT_ID/sync`).

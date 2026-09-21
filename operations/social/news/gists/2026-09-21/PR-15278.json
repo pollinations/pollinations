@@ -1,0 +1,35 @@
+{
+  "pr_number": 15278,
+  "title": "feat: add x-ai/grok-4.7 via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15278",
+  "merged_at": "2026-09-21T23:48:16Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15285\n\n- Adds `x-ai/grok-4.7` (xAI flagship for coding, agentic tasks and knowledge work) via OpenRouter, paid-only, no aliases. Text + image in, text out, reasoning, tools, structured outputs.\n- Route pinned to OpenRouter's `xai` endpoint, `allow_fallbacks: false`. No fallback: OpenRouter lists only xAI endpoints (`xai`, `xai/zdr`, and 2x-price priority tiers), and Azure availability for 4.7 is unconfirmed.\n- Cost $1.60 in / $0.40 cached / $4.80 out per 1M, x1.055 OpenRouter fee (#14895). Above 200K prompt tokens the rates double, declared as a `long_context` cost variant. 500K context, 450K max output.\n- `web_search_options` is not exposed: OpenRouter bills web search at $0.005 per call, which the cost model can't meter.\n- Existing Grok 4.20, 4.3 and 4.6 (Azure) are untouched. Reuses the existing xAI logo.\n\n**Verification**\n- 134 focused routing, registry-variant, and pricing tests pass; Gen typechecking and CI pass.\n- Live E2E passes text, streaming with terminal usage, forced tools, structured output, and image input.\n- A 206,248-prompt-token request selected the 200K+ tier and debited exactly 0.69444995 Pollen, including 1,152 cached tokens.\n\nRelated: #5321\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Grok joins the garden",
+    "blurb": "Grok 4.7 has landed through OpenRouter, carrying a very large notebook and an appetite for difficult coding jobs. Polli checked the tool belt, the reasoning gears, and the 500K-token backpack.",
+    "summary": "Added the paid-only `x-ai/grok-4.7` model via OpenRouter’s pinned `xai` route, with image input, reasoning, tools, structured outputs, a 500K context window, 450K maximum output, and a declared 200K+ long-context pricing tier.",
+    "impact": "Developers can now call Grok 4.7 for coding, agentic, and knowledge-work tasks with predictable xAI-only routing, including streaming, forced tools, structured output, image input, and correctly metered cached and long-context usage.",
+    "keywords": [
+      "grok-4.7",
+      "xai",
+      "openrouter",
+      "text-api",
+      "reasoning",
+      "tools",
+      "long-context"
+    ],
+    "visual_concept": "Depict Grok 4.7 as a friendly oversized pixel notebook/terminal with an xAI-style mark, a huge labeled 500K token backpack, and small tool and image icons to represent its multimodal agentic capabilities. Polli, wearing tiny engineer goggles, helps the terminal tend code-plants in a cozy garden; an OpenRouter-style signpost points only toward an xAI flower gate, conveying the deliberately pinned no-fallback route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny engineer goggles as she helps a friendly chunky retro terminal with a giant “500K” backpack water code-plants; a small xAI-marked flower gate and tool, reasoning-gear, and image icons sit beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: “GROK 4.7”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15278.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny engineer goggles as she helps a friendly chunky retro terminal with a giant “500K” backpack water code-plants; a small xAI-marked flower gate and tool, reasoning-gear, and image icons sit beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: “GROK 4.7”."
+  },
+  "generated_at": "2026-09-21T23:49:13.029064+00:00"
+}

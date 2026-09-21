@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-20",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-20",
+  "title": "A new bilingual image studio joins the garden",
+  "summary": "A new bilingual image studio landed, Jev gained a proper decisions endpoint, and Mistral Small 4 got a more direct route.\n\nAtelier — Pollinations Image Studio is now live at image.xt1171.eu.org. It offers English and 简体中文 interfaces, live selection from the current image-model catalog, and reference-image editing for iterating on a result instead of politely starting over from scratch.\n\nDevelopers can now send typed state-and-question requests to POST /alpha/decisions and receive native answers plus token usage, without packing structured work into chat messages. Ask Jev MCP uses the same authenticated path, while the existing chat route remains intact. Jev is also now canonically available as typesafe/jev-1.13, with the older names continuing to work.\n\nMistral Small 4 and its aliases now default directly to Mistral's mistral-small-2603 checkpoint, with OpenRouter retained as an automatic fallback. Same model, fewer layers of infrastructure doing interpretive dance.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 15207,
+      "date": "2026-09-20"
+    },
+    {
+      "number": 15208,
+      "date": "2026-09-20"
+    },
+    {
+      "number": 15210,
+      "date": "2026-09-20"
+    },
+    {
+      "number": 15217,
+      "date": "2026-09-20"
+    },
+    {
+      "number": 15243,
+      "date": "2026-09-20"
+    }
+  ],
+  "generated_at": "2026-09-21T06:39:19.540240+00:00"
+}

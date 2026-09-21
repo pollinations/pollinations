@@ -14,8 +14,11 @@ NODE observed_agent_runs
 SQL >
     %
     SELECT parent_request_id
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         -- A run started on Sunday can make its child calls on Monday.
@@ -47,8 +50,11 @@ SQL >
         ) AS agent_users,
         countIf(event_type = 'mcp.call') AS mcp_calls,
         uniqIf(user_id, event_type = 'mcp.call' AND user_id NOT IN ('', 'undefined')) AS mcp_users
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

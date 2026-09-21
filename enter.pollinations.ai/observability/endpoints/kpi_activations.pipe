@@ -25,6 +25,7 @@ SQL >
         user_id,
         minMerge(first_activity_time) AS first_activity_time
     FROM user_first_activity_mv
+    WHERE traffic_group = 'regular'
     GROUP BY user_id
 
 NODE kpi_weekly_activations

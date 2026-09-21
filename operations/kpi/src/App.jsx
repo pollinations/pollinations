@@ -31,6 +31,8 @@ const EXPORT_COLUMNS = [
     ["wau", "WAU"],
     ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
+    ["legacyRequests", "Legacy API requests"],
+    ["legacySuccesses", "Legacy API successful requests"],
     ["revenue", "Revenue"],
     ["pollenText", "Text Pollen spent (USD)"],
     ["pollenImage", "Image Pollen spent (USD)"],
@@ -263,6 +265,13 @@ function Dashboard({ accountUser }) {
                             Weekly KPIs for pollinations.ai. Figures are the
                             last full week ({weekLabel(currentWeek?.week)})
                             against the one before it.
+                        </Text>
+                        <Text as="p" size="sm" tone="soft">
+                            Usage, health and Pollen metrics cover regular
+                            users. Legacy APIs are reported separately;
+                            internal/dev traffic includes monitoring and is
+                            excluded. Signups and Stripe cash revenue still
+                            cover all accounts.
                         </Text>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-theme-text-muted">

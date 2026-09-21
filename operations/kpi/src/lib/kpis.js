@@ -8,8 +8,8 @@ const margin = (week) =>
 // Cash in against cost incurred. The two are not matched — packs are bought in
 // one week and burned over later ones — so this is a coverage ratio, not margin.
 const coverage = (week) =>
-    week.costUsd > 0 && Number.isFinite(week.revenue)
-        ? (week.revenue / week.costUsd) * 100
+    week.allTrafficCostUsd > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.allTrafficCostUsd) * 100
         : null;
 
 const failuresPerThousand = (availability) =>
@@ -103,10 +103,10 @@ export const KPIS = [
                     "USD value of Pollen consumed by generation requests this week, across Paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
             },
             {
-                name: "ARPA",
-                calc: (w) => w.revenue / w.wau,
+                name: "ARPA · all traffic",
+                calc: (w) => w.revenue / w.allTrafficWau,
                 tooltip:
-                    "Weekly revenue / WAU. Average revenue per active user — monetization efficiency.",
+                    "Stripe cash revenue / served accounts across all traffic groups. Includes legacy shared accounts and internal accounts; not regular-user monetization.",
             },
         ],
     },
@@ -142,11 +142,11 @@ export const KPIS = [
                     "Completed Pollen pack purchases this week. Source: Stripe checkout events in Tinybird.",
             },
             {
-                name: "Purchase rate",
+                name: "Purchases / accounts · all traffic",
                 format: "percent",
-                calc: (w) => (w.packPurchases / w.wau) * 100,
+                calc: (w) => (w.packPurchases / w.allTrafficWau) * 100,
                 tooltip:
-                    "Pack purchases / WAU × 100. Share of active users who bought a pack this week.",
+                    "Pack purchases / served accounts across all traffic groups × 100. Purchases and activity are not matched by account; this is not a buyer conversion rate.",
             },
         ],
     },
@@ -169,12 +169,12 @@ export const KPIS = [
     },
     {
         key: "cashCoverage",
-        name: "Cash coverage",
+        name: "Cash coverage · all traffic",
         category: "Efficiency",
         format: "percent",
         calc: coverage,
         tooltip:
-            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
+            "Stripe pack revenue / compute cost across all traffic groups × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
     },
     {
         key: "availability",
@@ -290,6 +290,22 @@ export const KPIS = [
                     "Distinct authenticated users of recorded MCP tool calls, deduplicated across Exa, FFmpeg, Computer, and Composio. Includes calls inside agents. Pollinations' own MCP server and discovery calls are not covered.",
             },
         ],
+    },
+    {
+        key: "legacyRequests",
+        name: "Legacy API · requests",
+        category: "Legacy APIs",
+        format: "compact",
+        tooltip:
+            "Requests through the shared legacy image and text API keys, including rejections. Separate from every regular-user usage metric; shared keys cannot establish end-user counts.",
+    },
+    {
+        key: "legacySuccesses",
+        name: "Legacy API · successful",
+        category: "Legacy APIs",
+        format: "compact",
+        tooltip:
+            "Successful (HTTP 2xx), non-cached final requests through the legacy image and text API keys. Excluded from regular-user usage, health and Pollen metrics.",
     },
     {
         key: "appSubmissions",

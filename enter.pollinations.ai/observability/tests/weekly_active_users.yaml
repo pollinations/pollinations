@@ -1,0 +1,6 @@
+- name: does_not_count_shared_or_internal_identities
+  description: Excludes internal and legacy traffic before aggregation while retaining explicit legacy totals.
+  expected_http_status: 200
+  parameters: start_date=2026-09-14&q=SELECT+week%2Cactive_users%2Ctotal_requests%2Cserved_users+FROM+_
+  expected_result: |
+    {"week": "2026-09-14", "active_users": 2, "total_requests": 4, "served_users": 2}

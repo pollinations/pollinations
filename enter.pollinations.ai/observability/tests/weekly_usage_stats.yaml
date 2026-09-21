@@ -1,0 +1,6 @@
+- name: separates_traffic_populations
+  description: Excludes internal and legacy traffic before aggregation while retaining explicit legacy totals.
+  expected_http_status: 200
+  parameters: start_date=2026-09-14&q=SELECT+week%2Ctotal_requests%2Csuccessful_requests%2Cactive_users%2Ctotal_tokens%2Crevenue_usd%2Ccost_usd%2Clegacy_requests%2Clegacy_successes%2Call_traffic_cost_usd%2Call_traffic_served_users+FROM+_
+  expected_result: |
+    {"week": "2026-09-14", "total_requests": 4, "successful_requests": 3, "active_users": 2, "total_tokens": 350, "revenue_usd": 6, "cost_usd": 3, "legacy_requests": 2, "legacy_successes": 1, "all_traffic_cost_usd": 8, "all_traffic_served_users": 3}

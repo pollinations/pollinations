@@ -78,11 +78,14 @@ SQL >
             ),
             NULL
         ) as tokens_per_second
-    FROM generation_event_v2
+    FROM generation_events_classified AS generation_event_v2
     -- No is_final filter here: the per-request columns carry their
     -- own, and own_calls needs the per-call rows this PR started emitting.
     -- Latency and throughput gate on 2xx, which a failed call never is.
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
+        {% if String(traffic_group, 'all') != 'all' %}
+        AND traffic_group = {{String(traffic_group, 'all')}}
+        {% end %}
     GROUP BY model, event_type
     ORDER BY total_requests DESC
 

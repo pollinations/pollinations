@@ -8,11 +8,14 @@ NODE user_first_activity_populate_node
 SQL >
     SELECT
         user_id,
+        traffic_group,
         minState(start_time) AS first_activity_time
-    FROM generation_event_v2
-    WHERE user_id != ''
+    FROM generation_events_classified
+    WHERE is_final
+      AND environment IN ('production', 'debug-prod-copy')
+      AND user_id != ''
       AND user_id != 'undefined'
-    GROUP BY user_id
+    GROUP BY user_id, traffic_group
 
 TYPE MATERIALIZED
 DATASOURCE user_first_activity_mv

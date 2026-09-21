@@ -7,7 +7,7 @@ DESCRIPTION >
 
 TOKEN tinybird_read READ
 
-NODE weekly_usage_stats_node
+NODE regular_usage
 SQL >
     %
     WITH
@@ -117,8 +117,11 @@ SQL >
             ),
             2
         ) AS community_availability
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
@@ -128,5 +131,40 @@ SQL >
         AND is_final  -- one row per request; attempts counted separately
     GROUP BY week
     ORDER BY week ASC
+
+NODE platform_usage
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        countIf(traffic_group = 'legacy') AS legacy_requests,
+        countIf(traffic_group = 'legacy' AND response_status >= 200 AND response_status < 300) AS legacy_successes,
+        sum(if(model_provider_used = 'community', community_model_reward_amount, total_cost)) AS all_traffic_cost_usd,
+        uniqIf(user_id, response_status != 402) AS all_traffic_served_users
+    FROM generation_events_classified
+    WHERE
+        {% if defined(start_date) %}
+        start_time >= toDate({{String(start_date)}})
+        AND start_time < toDate({{String(start_date)}}) + INTERVAL 7 DAY
+        {% else %}
+        start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+        {% end %}
+        AND environment IN ('production', 'debug-prod-copy')
+        AND is_final
+    GROUP BY week
+
+NODE weekly_usage_stats_node
+SQL >
+    SELECT
+        coalesce(regular.week, platform.week) AS week,
+        regular.* EXCEPT week,
+        coalesce(platform.legacy_requests, 0) AS legacy_requests,
+        coalesce(platform.legacy_successes, 0) AS legacy_successes,
+        platform.all_traffic_cost_usd,
+        platform.all_traffic_served_users
+    FROM regular_usage AS regular
+    FULL OUTER JOIN platform_usage AS platform ON regular.week = platform.week
+    ORDER BY week
+    SETTINGS join_use_nulls = 1
 
 TYPE endpoint

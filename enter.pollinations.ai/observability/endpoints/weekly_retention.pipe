@@ -10,8 +10,11 @@ SQL >
     SELECT
         user_id,
         toStartOfWeek(min(start_time), 1) AS cohort_week
-    FROM generation_event_v2
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+    FROM generation_events_classified
+    WHERE traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND is_final
+        AND start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
     GROUP BY user_id
 
 NODE weekly_activity
@@ -20,8 +23,11 @@ SQL >
     SELECT DISTINCT
         user_id,
         toStartOfWeek(start_time, 1) AS activity_week
-    FROM generation_event_v2
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+    FROM generation_events_classified
+    WHERE traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND is_final
+        AND start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
 
 NODE weekly_retention_node
 SQL >

@@ -1,3 +1,8 @@
+import {
+    isTrafficGroup,
+    type TrafficGroup,
+} from "../../../../shared/observability/traffic-groups.ts";
+
 /**
  * Dashboard list for the header picker.
  *
@@ -43,6 +48,11 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
-export function dashboardSrc(uid: string): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
+export function dashboardSrc(uid: string, trafficGroup = "regular"): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&var-traffic_group=${encodeURIComponent(trafficGroup)}`;
+}
+
+export function readTrafficGroup(search: string): TrafficGroup {
+    const value = new URLSearchParams(search).get("traffic");
+    return isTrafficGroup(value) ? value : "regular";
 }

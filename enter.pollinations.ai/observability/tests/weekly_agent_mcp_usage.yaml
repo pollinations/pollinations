@@ -1,0 +1,6 @@
+- name: excludes_internal_parent_and_child_calls
+  description: Excludes internal and legacy traffic before aggregation while retaining explicit legacy totals.
+  expected_http_status: 200
+  parameters: start_date=2026-09-14&q=SELECT+week%2Cagent_requests%2Cagent_users%2Cmcp_calls%2Cmcp_users+FROM+_
+  expected_result: |
+    {"week": "2026-09-14", "agent_requests": 1, "agent_users": 1, "mcp_calls": 1, "mcp_users": 1}

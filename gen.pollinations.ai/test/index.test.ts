@@ -681,6 +681,33 @@ fixtureTest(
 );
 
 describe("model status", () => {
+    it.each([
+        "regular",
+        "legacy",
+        "internal",
+        "all",
+    ])("keeps %s traffic in a distinct upstream cache entry", async (trafficGroup) => {
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json({ data: [] }));
+        const response = await fetchWorker(
+            `/models/status?minutes=15&traffic_group=${trafficGroup}`,
+        );
+        expect(response.status).toBe(200);
+        const url = upstream.mock.calls[0][0] as URL;
+        expect(url.searchParams.get("traffic_group")).toBe(trafficGroup);
+        expect(url.searchParams.get("minutes")).toBe("15");
+    });
+
+    it("rejects an unknown traffic group before calling Tinybird", async () => {
+        const upstream = vi.spyOn(globalThis, "fetch");
+        const response = await fetchWorker(
+            "/models/status?traffic_group=invalid",
+        );
+        expect(response.status).toBe(400);
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
     it("proxies the route health pipe with a 60 second edge cache", async () => {
         const upstream = vi
             .spyOn(globalThis, "fetch")
@@ -698,6 +725,7 @@ describe("model status", () => {
         const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
         expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
         expect(url.searchParams.get("minutes")).toBe("15");
+        expect(url.searchParams.get("traffic_group")).toBe("all");
         expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
     });
 

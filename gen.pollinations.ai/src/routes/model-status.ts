@@ -1,4 +1,5 @@
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import { isTrafficGroup } from "@shared/observability/traffic-groups.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -39,7 +40,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
-            "Cached for 60 seconds per window.",
+            "Cached for 60 seconds per window and traffic group.",
         ].join("\n"),
         parameters: [
             {
@@ -55,6 +56,18 @@ export const modelStatusRoutes = new Hono<Env>().get(
                     default: 60,
                 },
             },
+            {
+                name: "traffic_group",
+                in: "query",
+                required: false,
+                description:
+                    "Traffic population: regular users, legacy public APIs, internal development and monitoring, or all traffic (default).",
+                schema: {
+                    type: "string",
+                    enum: ["regular", "legacy", "internal", "all"],
+                    default: "all",
+                },
+            },
         ],
         responses: {
             200: {
@@ -67,6 +80,12 @@ export const modelStatusRoutes = new Hono<Env>().get(
         const url = new URL(MODEL_ROUTE_HEALTH_URL);
         const minutes = c.req.query("minutes");
         if (minutes !== undefined) url.searchParams.set("minutes", minutes);
+        const trafficGroup = c.req.query("traffic_group") ?? "all";
+        if (!isTrafficGroup(trafficGroup)) {
+            return c.json({ error: "Invalid traffic_group" }, 400);
+        }
+        // The upstream URL is the edge cache identity: never share populations.
+        url.searchParams.set("traffic_group", trafficGroup);
         const upstream = await fetch(url, {
             cf: { cacheTtl: 60, cacheEverything: true },
         });

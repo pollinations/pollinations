@@ -24,6 +24,7 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { TRAFFIC_GROUPS } from "../../../shared/observability/traffic-groups.ts";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -596,9 +597,12 @@ function WindowTabs({ value, onChange }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
+    const [trafficGroup, setTrafficGroup] = useState("regular");
     const [adminMode] = useState(isAdminPath);
-    const { models, lastUpdated, error, endpointStatus } =
-        useModelMonitor(aggregationWindow);
+    const { models, lastUpdated, error, endpointStatus } = useModelMonitor(
+        aggregationWindow,
+        trafficGroup,
+    );
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [initialFilter] = useState(loadFilterState);
@@ -823,6 +827,23 @@ function App() {
                         </Text>
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <label className="flex items-center gap-2 text-sm">
+                            Traffic
+                            <select
+                                aria-label="Traffic group"
+                                value={trafficGroup}
+                                onChange={(event) =>
+                                    setTrafficGroup(event.target.value)
+                                }
+                                className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 text-theme-text-strong"
+                            >
+                                {TRAFFIC_GROUPS.map(({ value, label }) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                         <WindowTabs
                             value={aggregationWindow}
                             onChange={setAggregationWindow}

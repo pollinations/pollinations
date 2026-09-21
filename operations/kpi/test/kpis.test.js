@@ -417,6 +417,7 @@ const marginWeek = {
     week: "2026-08-10",
     pollenRevenue: 3469,
     costUsd: 3740,
+    allTrafficCostUsd: 3740,
     revenue: 2278,
 };
 
@@ -425,14 +426,15 @@ describe("revenue row", () => {
         expect([0, 1, 2].map((i) => kpiView(revenue, i).name)).toEqual([
             "Revenue",
             "Pollen spent",
-            "ARPA",
+            "ARPA · all traffic",
         ]);
         expect(
             [0, 1, 2].map((i) =>
                 kpiValue(kpiView(revenue, i), {
                     revenue: 2278,
                     pollenRevenue: 3469,
-                    wau: 3352,
+                    wau: 1000,
+                    allTrafficWau: 3352,
                 }),
             ),
         ).toEqual([2278, 3469, 2278 / 3352]);
@@ -466,12 +468,55 @@ describe("gross margin row", () => {
 });
 
 describe("cash coverage row", () => {
+    it("retains infrastructure and legacy costs in total cash coverage", () => {
+        expect(
+            kpiValue(coverage, {
+                revenue: 100,
+                costUsd: 20,
+                allTrafficCostUsd: 200,
+            }),
+        ).toBe(50);
+    });
     it("compares Stripe cash against the week's compute cost", () => {
         expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
     });
 
     it("blanks a week with no cost rather than dividing by zero", () => {
-        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
+        expect(
+            kpiValue(coverage, {
+                revenue: 100,
+                costUsd: 0,
+                allTrafficCostUsd: 0,
+            }),
+        ).toBeNull();
+    });
+});
+
+describe("legacy volume", () => {
+    it("reports legacy requests separately without adding them to regular usage", () => {
+        const week = {
+            legacyRequests: 1000,
+            legacySuccesses: 700,
+            totalRequests: 12,
+        };
+        expect(
+            kpiValue(
+                KPIS.find((row) => row.key === "legacyRequests"),
+                week,
+            ),
+        ).toBe(1000);
+        expect(
+            kpiValue(
+                KPIS.find((row) => row.key === "legacySuccesses"),
+                week,
+            ),
+        ).toBe(700);
+        expect(
+            kpiValue(
+                KPIS.find((row) => row.key === "legacySuccesses"),
+                {},
+            ),
+        ).toBeUndefined();
     });
 });
 

@@ -140,11 +140,15 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 totalRequestsAll: row.total_requests,
             }));
             mergeInto(weekMap, raw.usage, (row) => ({
+                legacyRequests: row.legacy_requests,
+                legacySuccesses: row.legacy_successes,
                 tokens: row.total_tokens,
                 tokensPerUser: row.tokens_per_user,
                 textRequests: row.served_text_requests,
                 imageRequests: row.served_image_requests,
                 costUsd: row.cost_usd,
+                allTrafficCostUsd: row.all_traffic_cost_usd,
+                allTrafficWau: row.all_traffic_served_users,
                 // Pollen actually spent, in USD. Unlike Stripe cash this is
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.

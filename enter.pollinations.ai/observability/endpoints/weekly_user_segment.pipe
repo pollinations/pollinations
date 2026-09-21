@@ -20,8 +20,11 @@ SQL >
         -- weekly_active_users.
         uniq(if(response_status != 402, user_id, null)) AS served_users,
         countIf(response_status != 402) AS served_requests
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group = 'regular'
+        AND environment IN ('production', 'debug-prod-copy')
+        AND
         -- One row per request: a fallback attempt is part of a request, not
         -- another one, and it carries no user, price or tokens of its own.
         is_final

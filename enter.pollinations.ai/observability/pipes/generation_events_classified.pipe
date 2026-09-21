@@ -1,0 +1,35 @@
+DESCRIPTION >
+    Shared reporting classification. Exact key IDs, never credentials or key
+    names: renamed and deleted keys keep their historical classification.
+    Internal includes development, infrastructure, bots and synthetic monitoring.
+    Account ownership alone does not exclude public apps or other keys.
+    Changing these rules requires rebuilding dependent materialized views.
+
+NODE classified_events
+SQL >
+    SELECT
+        *,
+        multiIf(
+            api_key_id IN (
+                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image
+                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text
+            ), 'legacy',
+            api_key_id IN (
+                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- quixotic-hare: model monitor
+                'mjOXmaf8SPr1qF934NlXciCqRVOfL9Ut', -- DEV_ELLIOT
+                'okEg1Bb2vlXyg5o4O28UWRhtM88w2FRt', -- historical DEV_ELLIOT
+                'uQx4i6Fee3st84fJHhwDxCivNRXWji3O', -- TEST DEV
+                'POtjGzxhQ7BhrCJXnsc8Y9i6sb259GVh', -- ITACHI-DEV
+                '6jQv2VwRvCc5GbWpu1ZQqBTFAyhSuyIc', -- e2e-tests-prod
+                'XwIJkNmGGRxhVqVUI1aV15Micb7PoYP8', -- Internal Operations (local)
+                'I5jnMf7tp5HrkWnjHgexYya1SI6UthK4', -- POLLI VECTOR DB
+                'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE (Github bot)
+                '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY
+                '0JUUkMirP86ZkeBs82h721NTajBv51K8',  -- PLN_GITHUB_AUTOPOLLY_KEY
+                'kS0FWTaWOPLO9kCiFGGO7zo356bhTKeG', -- Operations - KPIs
+                'S30ZmRxlZ2YcR35DlMCslC4eFQBoETfr', -- Operations - Observability
+                'gW91jqzHRALr3ywf4hTUUd5w83H1jE95' -- Operations - Economics
+            ), 'internal',
+            'regular'
+        ) AS traffic_group
+    FROM generation_event_v2

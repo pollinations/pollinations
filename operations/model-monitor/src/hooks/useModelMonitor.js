@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     attachRouteHealth,
     mergeModelHealth,
@@ -27,7 +27,10 @@ const POLL_INTERVALS = {
     "5m": 60000, // Match the model status gateway cache
 };
 
-export function useModelMonitor(aggregationWindow = "60m") {
+export function useModelMonitor(
+    aggregationWindow = "60m",
+    trafficGroup = "regular",
+) {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
@@ -35,6 +38,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const [lastUpdated, setLastUpdated] = useState(null);
     const [catalogError, setCatalogError] = useState(null);
     const [healthError, setHealthError] = useState(null);
+    const healthRequest = useRef(null);
     const [endpointStatus, setEndpointStatus] = useState({
         catalog: null,
     });
@@ -71,25 +75,30 @@ export function useModelMonitor(aggregationWindow = "60m") {
     // row per model alongside the routes that make it up, so the headline and
     // its breakdown can never disagree about the same window.
     const fetchRouteStats = useCallback(async () => {
+        healthRequest.current?.abort();
+        const controller = new AbortController();
+        healthRequest.current = controller;
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
-            const response = await fetch(url);
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}&traffic_group=${trafficGroup}`;
+            const response = await fetch(url, { signal: controller.signal });
 
             if (!response.ok) {
                 throw new Error(`Model status API error: ${response.status}`);
             }
 
             const data = await response.json();
+            if (controller.signal.aborted) return;
             setRouteStats(data.data || []);
             setLastUpdated(new Date());
             setHealthError(null);
         } catch (err) {
+            if (controller.signal.aborted) return;
             console.error("Failed to fetch model health stats:", err);
             setHealthError("Failed to fetch health stats");
         }
-    }, [aggregationWindow]);
+    }, [aggregationWindow, trafficGroup]);
 
     const allModels = useMemo(() => {
         // The rollup rows carry the same shape model_health used to, so the
@@ -109,9 +118,16 @@ export function useModelMonitor(aggregationWindow = "60m") {
     }, [fetchModels, fetchRouteStats]);
 
     useEffect(() => {
+        // A population/window switch must never relabel the previous results.
+        setRouteStats([]);
+        setLastUpdated(null);
+        setHealthError(null);
         refresh();
         const interval = setInterval(refresh, pollInterval);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            healthRequest.current?.abort();
+        };
     }, [refresh, pollInterval]);
 
     return {

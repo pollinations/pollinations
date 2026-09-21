@@ -134,10 +134,13 @@ SQL >
             ),
             NULL
         ) as tokens_per_second
-    FROM generation_event_v2
+    FROM generation_events_classified AS generation_event_v2
     WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 60)}}, 1), 10080) minute
     -- provider is deliberately not a key: a route id already determines it, and
     -- keying on it would make it unaggregatable and leave rollup rows blank.
+        {% if String(traffic_group, 'all') != 'all' %}
+        AND traffic_group = {{String(traffic_group, 'all')}}
+        {% end %}
     GROUP BY GROUPING SETS (
         (model, event_type, model_used),
         (model, event_type)

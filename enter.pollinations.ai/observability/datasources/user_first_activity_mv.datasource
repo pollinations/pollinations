@@ -8,7 +8,8 @@ TOKEN "tinybird_read" READ
 
 SCHEMA >
     `user_id` String,
+    `traffic_group` LowCardinality(String),
     `first_activity_time` AggregateFunction(min, DateTime)
 
 ENGINE AggregatingMergeTree
-ENGINE_SORTING_KEY user_id
+ENGINE_SORTING_KEY user_id, traffic_group

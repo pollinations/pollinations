@@ -13,7 +13,7 @@ export default defineConfig([
         },
         format: ["esm", "cjs"],
         dts: true,
-        splitting: false,
+        splitting: true,
         sourcemap: true,
         // Scoped clean: remove tsup's own JS/dts outputs (incl. stale ones from
         // renamed modules) but PRESERVE the static files copied by the later build

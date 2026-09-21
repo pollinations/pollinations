@@ -3,12 +3,111 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { MultiSelect } from "../compositions/MultiSelect.tsx";
+import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
+import { Dropdown } from "./Dropdown.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { TableHeaderCell } from "./Table.tsx";
 
 describe("shared control accessibility", () => {
+    it("names dropdown dialogs from their own triggers", () => {
+        const markup = renderToStaticMarkup(
+            <div>
+                {["Models", "API keys"].map((label) => (
+                    <Dropdown
+                        key={label}
+                        open
+                        trigger={() => <button type="button">{label}</button>}
+                    >
+                        Options
+                    </Dropdown>
+                ))}
+            </div>,
+        );
+        const buttons = [...markup.matchAll(/<button\b[^>]*>/g)].map(
+            ([button]) => button,
+        );
+        const dialogs = [
+            ...markup.matchAll(/<div\b[^>]*role="dialog"[^>]*>/g),
+        ].map(([dialog]) => dialog);
+        expect(dialogs).toHaveLength(2);
+        const triggerIds = buttons.map(
+            (button) => button.match(/\bid="([^"]+)"/)?.[1],
+        );
+        expect(new Set(triggerIds).size).toBe(2);
+        dialogs.forEach((dialog, index) => {
+            expect(triggerIds[index]).toBeTruthy();
+            expect(dialog).toContain(`aria-labelledby="${triggerIds[index]}"`);
+            expect(buttons[index]).toContain('aria-expanded="true"');
+        });
+    });
+
+    it("exposes selected filters and preserves an external field label", () => {
+        const options = [
+            { value: "flux", label: "Flux" },
+            { value: "gpt", label: "GPT" },
+        ];
+        const render = (selected: string[], disabled = false) =>
+            renderToStaticMarkup(
+                <MultiSelect
+                    options={options}
+                    selected={selected}
+                    onChange={() => undefined}
+                    placeholder="All"
+                    ariaLabel="Filter by model"
+                    disabled={disabled}
+                />,
+            );
+        const all = render([]);
+        const filtered = render(["flux"]);
+        const selectedNames = (markup: string) =>
+            [
+                ...markup.matchAll(
+                    /<button\b[^>]*aria-pressed="true"[^>]*>([\s\S]*?)<\/button>/g,
+                ),
+            ].map(([, content]) =>
+                content
+                    .replace(/<[^>]+>/g, "")
+                    .replace("✓", "")
+                    .trim(),
+            );
+        expect(selectedNames(all)).toEqual(["All"]);
+        expect(selectedNames(filtered)).toEqual(["Flux"]);
+        expect(filtered).toContain('aria-pressed="false"');
+        expect(filtered).toMatch(/<span aria-hidden="true"[^>]*>✓<\/span>/);
+        for (const markup of [all, filtered, render([], true)]) {
+            expect(markup).toContain('aria-label="Filter by model"');
+        }
+    });
+
+    it("announces the selected day, week and month in the calendar", () => {
+        const selections = [
+            { granularity: "day", period: "2026-09-16", pressedDates: 1 },
+            { granularity: "week", period: "2026-W38", pressedDates: 7 },
+            { granularity: "month", period: "2026-09", pressedDates: 1 },
+        ] as const;
+        for (const { granularity, period, pressedDates } of selections) {
+            const markup = renderToStaticMarkup(
+                <PeriodPicker
+                    value={{ granularity, period }}
+                    onChange={() => undefined}
+                    maxDate={new Date("2026-09-20T00:00:00Z")}
+                />,
+            );
+            const selectedDates = [...markup.matchAll(/<button\b[^>]*>/g)]
+                .map(([button]) => button)
+                .filter(
+                    (button) =>
+                        button.includes("aria-label=") &&
+                        button.includes('aria-pressed="true"'),
+                );
+            expect(selectedDates).toHaveLength(pressedDates);
+            expect(markup).toContain('aria-pressed="false"');
+        }
+    });
+
     it("renders an account composition without an SDK provider or implicit sign-out action", () => {
         const markup = renderToStaticMarkup(
             <AccountMenu

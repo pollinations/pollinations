@@ -67,9 +67,14 @@ export function CommunityEndpointCard({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
-                            {endpoint.title}
-                        </h3>
+                        <div className="flex min-w-0 max-w-full basis-full items-center gap-2 sm:basis-auto">
+                            <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
+                                {endpoint.title}
+                            </h3>
+                            {testableModelId && (
+                                <OpenWebUiLink modelId={testableModelId} />
+                            )}
+                        </div>
                         <Chip intent={isPublic ? "news" : "neutral"} size="sm">
                             {isPublic ? (
                                 <GlobeIcon className="h-3 w-3" />
@@ -204,8 +209,10 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="mt-3">
                 <Link
+                    className="polli-link"
+                    data-size="footer"
                     to="/activity"
                     search={{
                         usageGranularity: "day",
@@ -223,13 +230,9 @@ export function CommunityEndpointCard({
                         earningsMetric: undefined,
                         earningsApps: undefined,
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
                 >
                     View activity
                 </Link>
-                {testableModelId && (
-                    <OpenWebUiLink modelId={testableModelId} variant="text" />
-                )}
             </div>
         </Surface>
     );

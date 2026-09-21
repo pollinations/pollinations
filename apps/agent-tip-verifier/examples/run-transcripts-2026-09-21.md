@@ -28,3 +28,13 @@ Three publishing runs, each with a distinct sensible choice: (1) decisions API s
 1. **The git shim of computer MCP rejects `git -c user.name=...`** — identity must be set with `git config` after clone (documented in the agent's Step 2).
 2. **cwd resets to /workspace between bash calls** (verified in `apps/computer-mcp/src/server.ts`: `cwd defaults to /workspace`), so every command must be self-contained with `cd /workspace/<repo> && ...`. Found by a Jules technical review of the first systemPrompt draft before any run.
 3. Gen caches identical responses — vary wording between test calls (documented in BUILD_YOUR_OWN_AGENT.md, confirmed during gate calibration).
+
+## Run 4 - Encoding fix (2026-09-22)
+
+Task line: encoding fix run - re-push of the two files below, already owner-gated (0.81 / 0.61). The agent confirmed both files existed (Step 3 check), re-pushed them ASCII-safe (content unchanged), and reported:
+
+- File: `pollinations/tips/2026-09-21-decisions-choice-dict-score-array.md` - committed, push sha `7e8c317b7` (commit includes both files)
+- File: `pollinations/tips/2026-09-21-agents-public-needs-approval.md` - included in same commit
+- Commit message: `tip: 2026-09-21-decisions-choice-dict-score-array (ascii re-encode)`
+
+Independent verification (Contents API): both files now have zero non-ASCII characters; signature line is `By tip-verifier - Verified 2026-09-21` (ASCII-safe hyphen because the tool stdin corrupts the middot).

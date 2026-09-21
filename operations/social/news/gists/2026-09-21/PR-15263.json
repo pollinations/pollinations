@@ -1,0 +1,34 @@
+{
+  "pr_number": 15263,
+  "title": "feat: add Pollen spend by category KPI and graph",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15263",
+  "merged_at": "2026-09-21T12:55:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a switchable Pollen-spend KPI for text, image, video, audio, realtime, embeddings, 3D, community, and tools/other; includes CSV export.\n- Adds a completed-week graph: top three regular categories by latest week, or one selected category. Community spend stays separate.\n- Reuses the existing weekly usage endpoint and chart. Counts successful billed final requests (Paid + Quest), not Stripe cash revenue or provider costs; video takes priority over soundtrack audio. Shows a decline to zero as -100%.\n- Verified: 41 tests, production build, browser chart/selector check, and 16 read-only SQL fixtures. Live weekly category totals reconcile with Paid + Quest spend.\n- Rollout: deploy the updated Tinybird pipe to staging first, verify, then production before the dashboard. No deployments performed in this PR.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Where the Pollen Went",
+    "blurb": "The hive dashboard can now sort its Pollen crumbs by what made them. Text, images, video, and the rest each get their own little trail through the garden.",
+    "summary": "Added switchable Pollen-spend KPIs, CSV export, and completed-week charts for text, image, video, audio, realtime, embeddings, 3D, community, and tools/other, using successful billed final Paid and Quest requests from the existing weekly usage endpoint.",
+    "impact": "Operators can now inspect the top three regular spend categories or a selected category by week, with community spend kept separate and video correctly taking priority over soundtrack audio.",
+    "keywords": [
+      "pollen",
+      "kpi",
+      "observability",
+      "analytics",
+      "weekly-usage",
+      "csv-export"
+    ],
+    "visual_concept": "A cozy observability garden where Polli, wearing tiny analyst glasses, studies a retro CRT dashboard showing different Pollen jars and a gentle weekly chart. Color-coded code-plants represent text, image, video, audio, embeddings, 3D, community, and tools, while a separate community flower bed makes the categorization visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, pointing at a glowing retro CRT dashboard with a simple weekly Pollen chart and labeled jars for text, image, video, audio, and community; code-plants grow in separate pastel garden beds, with community flowers kept in their own plot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'POLLEN BY CATEGORY', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15263.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, pointing at a glowing retro CRT dashboard with a simple weekly Pollen chart and labeled jars for text, image, video, audio, and community; code-plants grow in separate pastel garden beds, with community flowers kept in their own plot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'POLLEN BY CATEGORY', nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-21T12:56:21.539386+00:00"
+}

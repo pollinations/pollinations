@@ -65,7 +65,7 @@ export const Section: FC<SectionProps> = ({
                 <Surface
                     variant="panel"
                     className={cn(
-                        "polli:flex polli:flex-col polli:gap-5 polli:rounded-2xl polli:p-6",
+                        "polli:flex polli:flex-col polli:gap-5",
                         panelClassName,
                     )}
                 >

@@ -13,6 +13,8 @@ export default defineConfig([
         },
         format: ["esm", "cjs"],
         dts: true,
+        // Share React contexts across entry points so footer button defaults
+        // also reach buttons imported through auth, wallet, and gen modules.
         splitting: true,
         sourcemap: true,
         // Scoped clean: remove tsup's own JS/dts outputs (incl. stale ones from

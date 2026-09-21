@@ -556,7 +556,6 @@ export function Authorize() {
                     : { labelledBy: "authorize-dialog-title" }
             }
             tone={error ? "error" : undefined}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
                 <AuthAccountIdentity

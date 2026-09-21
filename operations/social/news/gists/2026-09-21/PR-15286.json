@@ -1,0 +1,34 @@
+{
+  "pr_number": 15286,
+  "title": "fix(enter): restore Models, Agents and MCP catalog tabs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15286",
+  "merged_at": "2026-09-21T23:54:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores the Models, Agents, and MCP tabs on the catalog page so all three catalogs are reachable before the drawer redesign ships.\n- Keeps the tabs count-free and reuses the existing category URLs and per-catalog search state.\n- Contains only the navigation fix extracted from #15271; the auth, key, model-management, and drawer redesigns remain separate.\n- Validation: scoped Biome and diff checks pass. The same tab implementation passed Enter typecheck/build on #15271; CI validates this main-based branch independently.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The catalog grew its tabs back",
+    "blurb": "The catalog’s Models, Agents, and MCP signposts are back where they belong. Three little tabs, saving everyone from an unnecessary scavenger hunt.",
+    "summary": "Restored the Models, Agents, and MCP navigation tabs on the Enter catalog page, reusing the existing category URLs and separate search state for each catalog.",
+    "impact": "Users can once again reach all three catalogs directly and keep their search context while switching between Models, Agents, and MCP.",
+    "keywords": [
+      "enter",
+      "catalog",
+      "models",
+      "agents",
+      "mcp",
+      "navigation"
+    ],
+    "visual_concept": "A cozy library-like catalog desk with three clearly labeled pixel tab signposts—Models, Agents, and MCP—growing from small flower pots. Polli, wearing a tiny librarian hat, gently points visitors toward the restored paths while a CRT monitor robot happily indexes cards beside vines and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny librarian hat as she restores three chunky catalog tabs labeled “MODELS”, “AGENTS”, and “MCP” above a retro terminal; a cheerful CRT monitor robot organizes glowing index cards among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel text, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15286.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny librarian hat as she restores three chunky catalog tabs labeled “MODELS”, “AGENTS”, and “MCP” above a retro terminal; a cheerful CRT monitor robot organizes glowing index cards among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel text, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-21T23:55:18.588745+00:00"
+}

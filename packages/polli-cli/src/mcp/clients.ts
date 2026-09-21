@@ -130,7 +130,7 @@ const jsonClient = (adapter: {
 
     const update = (
         ctx: McpContext,
-        mutate: (config: JsonObject, table: JsonObject) => string[],
+        mutate: (table: JsonObject) => string[],
     ): { installed: string[]; removed: string[]; file: string } => {
         const file = target.file(ctx);
         const config = readJsonObject(file);
@@ -140,7 +140,7 @@ const jsonClient = (adapter: {
                 ? (existing as JsonObject)
                 : {};
         config[target.table] = table;
-        const removed = mutate(config, table);
+        const removed = mutate(table);
         if (Object.keys(table).length === 0) delete config[target.table];
         writeJsonObject(file, config);
         return { installed: ownedEntryNames(table), removed, file };
@@ -152,7 +152,7 @@ const jsonClient = (adapter: {
         description,
         install: (ctx, servers, key) => {
             const skipped: string[] = [];
-            const { installed, file } = update(ctx, (_config, table) => {
+            const { installed, file } = update(ctx, (table) => {
                 for (const server of servers) {
                     const existing = table[server.id];
                     if (existing !== undefined && !isOwnedEntry(existing)) {
@@ -181,16 +181,13 @@ const jsonClient = (adapter: {
             };
         },
         remove: (ctx, serverIds) => {
-            const { installed, removed, file } = update(
-                ctx,
-                (_config, table) => {
-                    const names = serverIds?.length
-                        ? serverIds.filter((name) => isOwnedEntry(table[name]))
-                        : ownedEntryNames(table);
-                    for (const name of names) delete table[name];
-                    return names;
-                },
-            );
+            const { installed, removed, file } = update(ctx, (table) => {
+                const names = serverIds?.length
+                    ? serverIds.filter((name) => isOwnedEntry(table[name]))
+                    : ownedEntryNames(table);
+                for (const name of names) delete table[name];
+                return names;
+            });
             return {
                 client: id,
                 label,
@@ -499,11 +496,8 @@ export const codexInstalledIds = (toml: string, baseUrl = BASE_URL) => {
             current = null;
             continue;
         }
-        if (
-            current &&
-            /^\s*url\s*=/.test(line) &&
-            line.includes(`${baseUrl}/mcp/`)
-        ) {
+        const url = /^\s*url\s*=\s*["']([^"']+)["']/.exec(line)?.[1];
+        if (current && url?.startsWith(`${baseUrl}/mcp/`)) {
             ids.push(current);
         }
     }

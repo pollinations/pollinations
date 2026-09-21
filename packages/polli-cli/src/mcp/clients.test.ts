@@ -362,6 +362,14 @@ describe("key recovery for reinstalls", () => {
 });
 
 describe("codexInstalledIds", () => {
+    it("does not treat gateway text in a foreign URL or comment as ownership", () => {
+        const toml = `[mcp_servers.foreign]
+url = "https://example.org/?next=${BASE_URL}/mcp/ffmpeg"
+[mcp_servers.comment]
+url = "https://example.org/mcp" # ${BASE_URL}/mcp/ffmpeg
+`;
+        expect(codexInstalledIds(toml)).toEqual([]);
+    });
     it("parses owned [mcp_servers.*] sections from config.toml", () => {
         const toml = `
 model = "gpt-5"

@@ -85,11 +85,6 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
-        "mistralai/mistral-small-4:openrouter:mistral-eu",
-        "mistralai/mistral-small-2603",
-        "mistral/eu",
-    ],
-    [
         "google/gemini-3.7-flash:openrouter:ai-studio-priority",
         "google/gemini-3.7-flash",
         "google-ai-studio/priority",
@@ -125,6 +120,7 @@ const OPENROUTER_ROUTES = [
         "qwen/qwen3-coder-next",
         "streamlake",
     ],
+    ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
@@ -721,6 +717,29 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         });
+        expect(
+            findModelByName("mistralai/mistral-small-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(
+            findModelByName("mistralai/mistral-small-4:openrouter")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "mistralai/mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-small-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-small-4:openrouter"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-small-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost * 1.055, 15);
+        }
         for (const [route, model, provider] of OPENROUTER_ROUTES) {
             expect(findModelByName(route)?.config()).toMatchObject({
                 model,

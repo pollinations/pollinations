@@ -105,6 +105,43 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy4-preview",
+        });
+
+        expect(result.options.model).toBe("tencent/hy4-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["tencent/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Hy3 to Novita on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["novita"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3:openrouter:phala",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["phala"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
@@ -508,15 +545,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("excludes Mistral's non-standard endpoint variants", () => {
+    it("routes Mistral Small 4 to Mistral's direct API", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 
-        expect(result.options.model).toBe("mistralai/mistral-small-2603");
-        expect(result.options.provider).toEqual({
-            only: ["mistral"],
-            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-            allow_fallbacks: false,
+        expect(result.options.model).toBe("mistral-small-2603");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.mistral.ai/v1",
         });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {

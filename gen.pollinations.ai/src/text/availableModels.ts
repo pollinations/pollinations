@@ -600,6 +600,10 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "sakana/fugu-max",
+        config: portkeyConfig["sakana/fugu-max"],
+    },
+    {
         name: "tencent/hy4-preview",
         config: portkeyConfig["tencent/hy4-preview"],
     },

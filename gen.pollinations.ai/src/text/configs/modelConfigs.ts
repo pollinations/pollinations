@@ -335,6 +335,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "sakana/fugu-max": () =>
+        createOpenRouterModelConfig({
+            model: "sakana/fugu-max",
+            defaultOptions: {
+                provider: {
+                    only: ["sakana"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     // Reasoning defaults to "high" and burns ~1,300 tokens on even a
     // trivial schema, so a caller relying on the upstream default (no
     // explicit max_tokens) can get finish_reason:"length", content:null

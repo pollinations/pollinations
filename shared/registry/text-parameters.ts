@@ -347,6 +347,17 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter sakana tag (2026-09-12): tools are declared without
+    // tool_choice because the endpoint doesn't support it, and
+    // web_search_options is withheld: OpenRouter bills web_search per call
+    // ($0.01), a non-token charge our cost model can't meter yet.
+    openRouterFuguMax: [
+        "stream",
+        "tools",
+        "structured_outputs",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
     // excluded via provider.ignore so pricing stays fixed. Both tags report
     // max_completion_tokens (not max_tokens) as supported.

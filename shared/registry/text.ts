@@ -1695,6 +1695,43 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "sakana/fugu-max": {
+        supportedParameters: CHAT_PARAMETERS.openRouterFuguMax,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Sakana AI",
+        category: "text",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Sakana AI route rates (2026-09-12), including the
+            // mandatory 5.5% OpenRouter credit fee (#14895, merged
+            // 2026-09-15, after this branch was created). Excludes the
+            // separate $0.01-per-call web_search charge OpenRouter reports —
+            // web_search_options is not exposed on this model until that
+            // non-token charge has a billing path (see perplexity-billing.ts
+            // for the only precedent). Image inputs are tokenized into
+            // promptTextTokens; no separate usage is reported for them.
+            //
+            // UNVERIFIED IN PRODUCTION: every request to this model's only
+            // endpoint (the "sakana" tag) 403s with "not available in your
+            // region" from OpenRouter's own infrastructure — see PR review.
+            // Left in draft; do not merge until Sakana access is confirmed.
+            promptTextTokens: perMillion(2) * 1.055,
+            promptCachedTokens: perMillion(0.25) * 1.055,
+            completionTextTokens: perMillion(6) * 1.055,
+        },
+        title: "Fugu Max",
+        description:
+            "Multi-agent orchestration with long context for complex coding and research tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

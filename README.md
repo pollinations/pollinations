@@ -58,6 +58,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-20** – **🎨 Atelier Image Studio** Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org) <!-- app -->
+- **2026-09-20** – **✨ Jev Decisions API** Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-20** – **🤖 Jev 1.13** `typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)
 - **2026-09-19** – **💡 Model discovery now includes vitals** `/v1/models` and `/models` return each model’s recent health, success rate, and request volume—so choosing a model involves slightly less divination. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-19** – **🎨 PersonaMorph turns photos into personas** Connect a Pollinations wallet and use image edits to remake portraits as artistic identities. [Try it](https://personamorph-ai-production.up.railway.app) <!-- app -->
 - **2026-09-19** – **✨ Oracle Mystique deals three illustrated cards** Ask the AI tarot reader for a Past, Present, and Future spread, with generated card art and BYOP OAuth2. [Try it](https://oracle-mystique.up.railway.app) <!-- app -->
@@ -65,9 +68,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-09-18** – **🚀 FLUX.2 Max** High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})
 - **2026-09-18** – **🤖 Tencent HY3 and HY4 Preview** Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-18** – **💡 Typed decisions with Jev** Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-09-18** – **🚀 GPT-4o mini** `openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-17** – **✨ Your key has a pulse** Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)
-- **2026-09-17** – **📱 Model status, minus the weather report** Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

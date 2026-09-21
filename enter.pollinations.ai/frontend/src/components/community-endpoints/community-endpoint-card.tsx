@@ -134,13 +134,7 @@ export function CommunityEndpointCard({
 
             {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
-                    <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model hidden</span>
-                        <span className="text-sm">
-                            {endpoint.hiddenReason ??
-                                "Hidden due to repeated failures."}
-                        </span>
-                    </div>
+                    <span className="font-semibold">Model hidden</span>
                 </Alert>
             )}
 

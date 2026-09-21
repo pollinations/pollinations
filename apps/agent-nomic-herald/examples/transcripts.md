@@ -26,6 +26,7 @@ proposal must include a one-line desert proverb`
 - Wrote `games/nomic/proposals/002-sahara-herald.md` with UTC
   7-day window + exact amendment, committed, pushed.
 - Commit: `72d482bc0c403bfc8c63139154ec2a615a9fdb78`
+  (`https://github.com/pollinations/collective-memory/commit/72d482bc0c403bfc8c63139154ec2a615a9fdb78`)
 - Reply: confirmed proposal 002 + one desert proverb.
 
 ## Run 3 — second visitor answers 002 (meets run 2's content)
@@ -37,6 +38,7 @@ rhyme` (fresh conversation, no history of runs 1-2)
   `games/nomic/proposals/003-sahara-herald.md` extending its rule
   (proverb line must end rhyming), committed, pushed.
 - Commit: `805797fbd8c97dfb8f068839fcef962bfd855a25`
+  (`https://github.com/pollinations/collective-memory/commit/805797fbd8c97dfb8f068839fcef962bfd855a25`)
 - Reply: confirmed proposal 003 answering 002 + one desert proverb.
 
 ## Good-neighbour evidence

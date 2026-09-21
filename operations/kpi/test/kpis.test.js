@@ -494,29 +494,17 @@ describe("cash coverage row", () => {
 
 describe("legacy volume", () => {
     it("reports legacy requests separately without adding them to regular usage", () => {
+        const row = KPIS.find((row) => row.key === "legacyUsage");
         const week = {
             legacyRequests: 1000,
             legacySuccesses: 700,
             totalRequests: 12,
         };
-        expect(
-            kpiValue(
-                KPIS.find((row) => row.key === "legacyRequests"),
-                week,
-            ),
-        ).toBe(1000);
-        expect(
-            kpiValue(
-                KPIS.find((row) => row.key === "legacySuccesses"),
-                week,
-            ),
-        ).toBe(700);
-        expect(
-            kpiValue(
-                KPIS.find((row) => row.key === "legacySuccesses"),
-                {},
-            ),
-        ).toBeUndefined();
+        expect(kpiValue(kpiView(row, 0), week)).toBe(1000);
+        expect(kpiValue(kpiView(row, 1), week)).toBe(700);
+        expect(kpiValue(kpiView(row, 2), week)).toBe(1000);
+        expect(kpiValue(kpiView(row, 1), {})).toBeUndefined();
+        expect(kpiViewById(kpiViewId(row, 1)).key).toBe("legacySuccesses");
     });
 });
 

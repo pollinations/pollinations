@@ -292,20 +292,23 @@ export const KPIS = [
         ],
     },
     {
-        key: "legacyRequests",
-        name: "Legacy API · requests",
+        key: "legacyUsage",
         category: "Legacy APIs",
         format: "compact",
-        tooltip:
-            "Requests through the shared legacy image and text API keys, including rejections. Separate from every regular-user usage metric; shared keys cannot establish end-user counts.",
-    },
-    {
-        key: "legacySuccesses",
-        name: "Legacy API · successful",
-        category: "Legacy APIs",
-        format: "compact",
-        tooltip:
-            "Successful (HTTP 2xx), non-cached final requests through the legacy image and text API keys. Excluded from regular-user usage, health and Pollen metrics.",
+        views: [
+            {
+                key: "legacyRequests",
+                name: "Legacy API · requests",
+                tooltip:
+                    "Requests through the shared legacy image and text API keys, including rejections. Separate from every regular-user usage metric; shared keys cannot establish end-user counts.",
+            },
+            {
+                key: "legacySuccesses",
+                name: "Legacy API · successful",
+                tooltip:
+                    "Successful (HTTP 2xx), non-cached final requests through the legacy image and text API keys. Excluded from regular-user usage, health and Pollen metrics.",
+            },
+        ],
     },
     {
         key: "appSubmissions",

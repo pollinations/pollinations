@@ -1,3 +1,4 @@
+import JSON5 from "json5";
 import { readTextIfExists, writeTextAtomic } from "../harnesses/fs.js";
 import { BASE_URL } from "../lib/config.js";
 
@@ -7,7 +8,7 @@ export type JsonObject = Record<string, unknown>;
 export const readJsonObject = (path: string): JsonObject => {
     const text = readTextIfExists(path);
     if (!text?.trim()) return {};
-    const parsed = JSON.parse(text) as unknown;
+    const parsed = JSON5.parse(text) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error(`${path} does not contain a JSON object`);
     }

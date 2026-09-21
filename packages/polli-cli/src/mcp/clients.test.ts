@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { commandExists } from "../harnesses/fs.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -47,6 +48,39 @@ describe("client table", () => {
 });
 
 describe("json config clients", () => {
+    it("preserves settings when installing into OpenCode's existing JSONC file", async () => {
+        const ctx = freshCtx();
+        const dir = join(ctx.home, ".config", "opencode");
+        mkdirSync(dir, { recursive: true });
+        const file = join(dir, "opencode.jsonc");
+        writeFileSync(
+            file,
+            '{ // user settings\n "theme": "dark", "mcp": {}, }',
+        );
+        const result = await findClient("opencode")?.install(
+            ctx,
+            SERVERS,
+            "sk-test",
+        );
+        expect(result?.files).toEqual([file]);
+        expect(JSON.parse(readFileSync(file, "utf8")).theme).toBe("dark");
+    });
+
+    it("Amp reads the documented flat amp.mcpServers table", () => {
+        const ctx = freshCtx();
+        writeJsonObject(join(ctx.home, ".config", "amp", "settings.json"), {
+            "amp.mcpServers": {
+                pollinations: {
+                    url: SERVERS[0].url,
+                    headers: { Authorization: "Bearer sk-test" },
+                },
+            },
+        });
+        expect(findClient("amp")?.status(ctx).installed).toEqual([
+            "pollinations",
+        ]);
+        expect(findClient("amp")?.existingKey?.(ctx)).toBe("sk-test");
+    });
     it("cursor installs url+headers entries and reports status", async () => {
         const ctx = freshCtx();
         const cursor = findClient("cursor");
@@ -128,7 +162,7 @@ describe("json config clients", () => {
         ]);
     });
 
-    it("vscode writes servers + a password input instead of the literal key", async () => {
+    it("vscode writes authenticated HTTP servers without an extra prompt", async () => {
         const ctx = freshCtx();
         const vscode = findClient("vscode");
         const result = await vscode?.install(ctx, SERVERS, "sk-secret");
@@ -136,18 +170,10 @@ describe("json config clients", () => {
         const config = JSON.parse(readFileSync(file, "utf-8"));
         expect(file.endsWith(join("Code", "User", "mcp.json"))).toBe(true);
         expect(config.servers.pollinations.headers.Authorization).toBe(
-            `Bearer \${input:pollinations-mcp-key}`,
+            "Bearer sk-secret",
         );
-        expect(JSON.stringify(config)).not.toContain("sk-secret");
-        expect(config.inputs).toEqual([
-            {
-                type: "promptString",
-                id: "pollinations-mcp-key",
-                description: "Pollinations API key",
-                password: true,
-            },
-        ]);
-        expect(result?.notes.join(" ")).toContain("sk-secret");
+        expect(config.inputs).toBeUndefined();
+        expect(result?.notes.join(" ")).not.toContain("sk-secret");
     });
 
     it("opencode uses the mcp table with type remote", async () => {
@@ -167,7 +193,7 @@ describe("json config clients", () => {
         });
     });
 
-    it("zed wires servers through the mcp-remote bridge", async () => {
+    it("zed uses native authenticated HTTP", async () => {
         const ctx = freshCtx();
         const zed = findClient("zed");
         await zed?.install(ctx, [SERVERS[1]], "sk-test");
@@ -177,11 +203,10 @@ describe("json config clients", () => {
                 "utf-8",
             ),
         );
-        expect(config.context_servers.ffmpeg.command.path).toBe("npx");
-        expect(config.context_servers.ffmpeg.command.args).toContain(
-            `${BASE_URL}/mcp/ffmpeg`,
-        );
-        // Bridge entries are still recognized as Pollinations-owned.
+        expect(config.context_servers.ffmpeg).toEqual({
+            url: `${BASE_URL}/mcp/ffmpeg`,
+            headers: { Authorization: "Bearer sk-test" },
+        });
         expect(zed?.status(ctx).installed).toEqual(["ffmpeg"]);
         const removed = await zed?.remove(ctx);
         expect(removed?.removed).toEqual(["ffmpeg"]);
@@ -243,6 +268,46 @@ describe("json config clients", () => {
     });
 });
 
+describe("real Claude CLI", () => {
+    it.skipIf(!commandExists("claude", process.env))(
+        "reinstalls and removes only owned servers",
+        async () => {
+            const ctx = freshCtx();
+            const previous = process.env.CLAUDE_CONFIG_DIR;
+            process.env.CLAUDE_CONFIG_DIR = ctx.home;
+            try {
+                writeJsonObject(join(ctx.home, ".claude.json"), {
+                    mcpServers: {
+                        ffmpeg: {
+                            type: "http",
+                            url: "https://example.org/foreign",
+                        },
+                    },
+                });
+                const client = findClient("claude-code");
+                if (!client) throw new Error("Missing Claude Code adapter");
+                await client.install(ctx, SERVERS, "sk-test");
+                await client.install(ctx, SERVERS, "sk-test");
+                expect(client.status(ctx).installed).toEqual(["pollinations"]);
+                expect((await client.remove(ctx)).removed).toEqual([
+                    "pollinations",
+                ]);
+                const config = JSON.parse(
+                    readFileSync(join(ctx.home, ".claude.json"), "utf8"),
+                );
+                expect(config.mcpServers.ffmpeg.url).toBe(
+                    "https://example.org/foreign",
+                );
+            } finally {
+                if (previous === undefined)
+                    delete process.env.CLAUDE_CONFIG_DIR;
+                else process.env.CLAUDE_CONFIG_DIR = previous;
+            }
+        },
+        30000,
+    );
+});
+
 describe("key recovery for reinstalls", () => {
     it("cursor recovers the key from owned entry headers", async () => {
         const ctx = freshCtx();
@@ -270,18 +335,18 @@ describe("key recovery for reinstalls", () => {
         expect(findClient("cursor")?.existingKey?.(ctx)).toBeNull();
     });
 
-    it("zed recovers the key from the mcp-remote bridge args", async () => {
+    it("zed recovers the key from its HTTP headers", async () => {
         const ctx = freshCtx();
         const zed = findClient("zed");
         await zed?.install(ctx, [SERVERS[1]], "sk-bridge");
         expect(zed?.existingKey?.(ctx)).toBe("sk-bridge");
     });
 
-    it("vscode does not recover: the literal key lives in secret storage", async () => {
+    it("vscode recovers its key for reinstall", async () => {
         const ctx = freshCtx();
         const vscode = findClient("vscode");
         await vscode?.install(ctx, SERVERS, "sk-secret");
-        expect(vscode?.existingKey?.(ctx)).toBeNull();
+        expect(vscode?.existingKey?.(ctx)).toBe("sk-secret");
     });
 
     it("codex recovers the key from its .env file", () => {

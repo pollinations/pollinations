@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -46,8 +47,7 @@ export interface McpClientAdapter {
     /**
      * Recover the Pollinations key this adapter previously wrote into the
      * client's config, so a re-install reuses it instead of minting an
-     * orphan. Null when the client stores the key outside its config
-     * (VS Code secret storage) or none was written yet.
+     * orphan. Null when no key was written yet.
      */
     existingKey?(ctx: McpContext): string | null;
     /** Fail fast before any key is minted (e.g. missing client CLI). */
@@ -116,8 +116,6 @@ interface JsonTarget {
     table: string;
     /** Build the entry for one server. */
     entry: (server: McpServer, key: string) => JsonObject;
-    /** Extra config to merge alongside entries (e.g. VS Code inputs). */
-    prepare?: (config: JsonObject, key: string) => void;
     /** Post-install hints shown to the user. */
     notes?: (key: string) => string[];
 }
@@ -154,7 +152,7 @@ const jsonClient = (adapter: {
         description,
         install: (ctx, servers, key) => {
             const skipped: string[] = [];
-            const { installed, file } = update(ctx, (config, table) => {
+            const { installed, file } = update(ctx, (_config, table) => {
                 for (const server of servers) {
                     const existing = table[server.id];
                     if (existing !== undefined && !isOwnedEntry(existing)) {
@@ -166,7 +164,6 @@ const jsonClient = (adapter: {
                     }
                     table[server.id] = target.entry(server, key);
                 }
-                target.prepare?.(config, key);
                 return [];
             });
             return {
@@ -238,8 +235,6 @@ const vscodeUserDir = (ctx: McpContext): string => {
     );
 };
 
-const VSCODE_INPUT_ID = "pollinations-mcp-key";
-
 const jsonClients: McpClientAdapter[] = [
     jsonClient({
         id: "cursor",
@@ -256,12 +251,7 @@ const jsonClients: McpClientAdapter[] = [
         label: "OpenCode",
         description: "OpenCode (~/.config/opencode/opencode.json)",
         target: {
-            file: (ctx) =>
-                join(
-                    ctx.env.XDG_CONFIG_HOME ?? join(ctx.home, ".config"),
-                    "opencode",
-                    "opencode.json",
-                ),
+            file: opencodeConfigFile,
             table: "mcp",
             entry: (server, key) => ({
                 type: "remote",
@@ -343,44 +333,16 @@ const jsonClients: McpClientAdapter[] = [
         target: {
             file: (ctx) => join(vscodeUserDir(ctx), "mcp.json"),
             table: "servers",
-            entry: (server) => ({
+            entry: (server, key) => ({
                 type: "http",
-                url: server.url,
-                headers: {
-                    Authorization: `Bearer \${input:${VSCODE_INPUT_ID}}`,
-                },
+                ...urlEntry(server, key),
             }),
-            prepare: (config) => {
-                const inputs = Array.isArray(config.inputs)
-                    ? (config.inputs as JsonObject[])
-                    : [];
-                if (
-                    !inputs.some(
-                        (input) =>
-                            input &&
-                            typeof input === "object" &&
-                            input.id === VSCODE_INPUT_ID,
-                    )
-                ) {
-                    inputs.push({
-                        type: "promptString",
-                        id: VSCODE_INPUT_ID,
-                        description: "Pollinations API key",
-                        password: true,
-                    });
-                }
-                config.inputs = inputs;
-            },
-            notes: (key) => [
-                `VS Code stores the key in its secret storage: paste ${key} when it prompts for "Pollinations API key" on first connect.`,
-            ],
         },
     }),
     jsonClient({
         id: "zed",
         label: "Zed",
-        description:
-            "Zed (context_servers via the mcp-remote bridge — Zed has no native HTTP transport with headers)",
+        description: "Zed (native HTTP context_servers)",
         target: {
             file: (ctx) =>
                 join(
@@ -389,21 +351,7 @@ const jsonClients: McpClientAdapter[] = [
                     "settings.json",
                 ),
             table: "context_servers",
-            entry: (server, key) => ({
-                command: {
-                    path: "npx",
-                    args: [
-                        "-y",
-                        "mcp-remote@latest",
-                        server.url,
-                        "--header",
-                        `Authorization: Bearer ${key}`,
-                    ],
-                },
-            }),
-            notes: () => [
-                "Zed requires the mcp-remote bridge for authenticated HTTP servers; npx and node must be installed.",
-            ],
+            entry: urlEntry,
         },
     }),
 ];
@@ -422,6 +370,7 @@ interface CliTarget {
     installHint: string;
     /** Read installed Pollinations-owned server ids from the client's config. */
     installedIds: (ctx: McpContext) => string[];
+    configuredIds: (ctx: McpContext) => string[];
     /** Recover the key a previous install wrote (config headers or env file). */
     recoverKey?: (ctx: McpContext) => string | null;
     /** Extra wiring after a successful add (e.g. Codex env file). */
@@ -471,7 +420,21 @@ const cliClient = (adapter: {
             ensureCli();
             const files: string[] = [];
             const notes: string[] = target.notes?.() ?? [];
+            const owned = target.installedIds(ctx);
+            const configured = target.configuredIds(ctx);
             for (const server of servers) {
+                if (
+                    configured.includes(server.id) &&
+                    !owned.includes(server.id)
+                ) {
+                    notes.push(
+                        `Kept existing non-Pollinations server "${server.id}" - not overwritten.`,
+                    );
+                    continue;
+                }
+                if (owned.includes(server.id)) {
+                    run(target.command, target.removeArgs(server.id));
+                }
                 run(target.command, target.addArgs(server, key));
             }
             const extra = target.afterAdd?.(ctx, key);
@@ -511,15 +474,12 @@ const cliClient = (adapter: {
 };
 
 const jsonTableIds =
-    (file: (ctx: McpContext) => string, table: string, nested?: string) =>
+    (file: (ctx: McpContext) => string, table: string, ownedOnly = true) =>
     (ctx: McpContext): string[] => {
         const config = readJsonObject(file(ctx));
-        const container = nested
-            ? config[nested] &&
-              typeof config[nested] === "object" &&
-              (config[nested] as JsonObject)[table]
-            : config[table];
-        return ownedEntryNames(container);
+        return ownedOnly
+            ? ownedEntryNames(config[table])
+            : Object.keys((config[table] ?? {}) as JsonObject);
     };
 
 const codexConfigToml = (ctx: McpContext) =>
@@ -583,6 +543,11 @@ const cliClients: McpClientAdapter[] = [
                 (ctx) => join(ctx.home, ".claude.json"),
                 "mcpServers",
             ),
+            configuredIds: jsonTableIds(
+                (ctx) => join(ctx.home, ".claude.json"),
+                "mcpServers",
+                false,
+            ),
             recoverKey: (ctx) =>
                 recoverKeyFromTable(
                     readJsonObject(join(ctx.home, ".claude.json")).mcpServers,
@@ -609,6 +574,13 @@ const cliClients: McpClientAdapter[] = [
             installHint: "Install it from https://github.com/openai/codex.",
             installedIds: (ctx) =>
                 codexInstalledIds(readTextIfExists(codexConfigToml(ctx)) ?? ""),
+            configuredIds: (ctx) =>
+                Array.from(
+                    (readTextIfExists(codexConfigToml(ctx)) ?? "").matchAll(
+                        /^\s*\[mcp_servers\.([^\]]+)\]\s*$/gm,
+                    ),
+                    (match) => match[1].replaceAll('"', ""),
+                ),
             recoverKey: (ctx) => {
                 const envFile = join(
                     ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"),
@@ -652,9 +624,20 @@ const cliClients: McpClientAdapter[] = [
                 "--header",
                 `Authorization: Bearer ${key}`,
             ],
-            removeArgs: (serverId) => ["mcp", "remove", serverId],
+            removeArgs: (serverId) => [
+                "mcp",
+                "remove",
+                "--scope",
+                "user",
+                serverId,
+            ],
             installHint:
                 "Install it from https://github.com/google-gemini/gemini-cli.",
+            configuredIds: jsonTableIds(
+                (ctx) => join(ctx.home, ".gemini", "settings.json"),
+                "mcpServers",
+                false,
+            ),
             installedIds: jsonTableIds(
                 (ctx) => join(ctx.home, ".gemini", "settings.json"),
                 "mcpServers",
@@ -689,8 +672,17 @@ const cliClients: McpClientAdapter[] = [
                         "amp",
                         "settings.json",
                     ),
-                "mcpServers",
-                "amp",
+                "amp.mcpServers",
+            ),
+            configuredIds: jsonTableIds(
+                (ctx) =>
+                    join(
+                        ctx.env.XDG_CONFIG_HOME ?? join(ctx.home, ".config"),
+                        "amp",
+                        "settings.json",
+                    ),
+                "amp.mcpServers",
+                false,
             ),
             recoverKey: (ctx) => {
                 const config = readJsonObject(
@@ -700,11 +692,7 @@ const cliClients: McpClientAdapter[] = [
                         "settings.json",
                     ),
                 );
-                const amp =
-                    config.amp && typeof config.amp === "object"
-                        ? (config.amp as JsonObject)
-                        : {};
-                return recoverKeyFromTable(amp.mcpServers);
+                return recoverKeyFromTable(config["amp.mcpServers"]);
             },
         },
     }),

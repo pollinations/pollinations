@@ -71,7 +71,7 @@ const runInstall = async (
                 .join(", ")}.`,
         );
         for (const note of result.notes) printInfo(note);
-        printResult(result);
+        printResult({ ...result });
     } catch (error) {
         fail(`Failed to install MCP servers into ${client.label}`, error);
     }
@@ -93,7 +93,7 @@ const runRemove = async (client: McpClientAdapter, servers: string[]) => {
                 `${client.label}: removed ${removed.join(", ")}. Other MCP entries were left untouched.`,
             );
         }
-        printResult(result);
+        printResult({ ...result });
     } catch (error) {
         fail(`Failed to remove MCP servers from ${client.label}`, error);
     }

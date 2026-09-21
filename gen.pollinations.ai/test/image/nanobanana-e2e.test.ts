@@ -180,10 +180,26 @@ test("nanobanana bills exact Vertex usage end-to-end", async ({
     expect(mocks.vertex.state.requests).toHaveLength(1);
     expect(mocks.vertex.state.requests[0]).toMatchObject({
         body: {
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: "red square" }],
+                },
+            ],
             generationConfig: {
                 imageConfig: { aspectRatio: "1:1" },
+                maxOutputTokens: 2048,
+                responseModalities: ["TEXT", "IMAGE"],
                 seed: 42,
+                temperature: 0.7,
+                topP: 0.9,
             },
+            safetySettings: expect.arrayContaining([
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_ONLY_HIGH",
+                },
+            ]),
         },
     });
     expect(mocks.vertex.state.requests[0].url).toContain(
@@ -339,6 +355,12 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
                 imageConfig: { aspectRatio: "16:9", imageSize: "4K" },
                 thinkingConfig: { thinkingLevel: "HIGH" },
             },
+            safetySettings: expect.arrayContaining([
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_ONLY_HIGH",
+                },
+            ]),
         },
     });
     expect(mocks.tinybird.state.events).toHaveLength(1);

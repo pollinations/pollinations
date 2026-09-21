@@ -346,7 +346,7 @@ export async function callVertexAIGeminiImageAPI(
                 width: params.width,
                 height: params.height,
             },
-            { generator: config.generator, usage: data.usageMetadata },
+            { generator: config.generator, usage },
         );
     } catch (error) {
         logError("Failed to add Vertex Gemini image EXIF metadata", error);

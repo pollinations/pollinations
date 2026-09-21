@@ -14,6 +14,7 @@ import {
     buildGenericProvider,
     buildUserModelEntry,
     isRouterWired,
+    LEGACY_CREDENTIAL_IDS,
     stripUserModels,
     upsertCredentialEntry,
     upsertGenericProvider,
@@ -54,7 +55,7 @@ describe("generic provider document", () => {
     it("adds the pollinations provider with a credential reference", () => {
         const { doc } = upsertGenericProvider(
             null,
-            buildGenericProvider("cred_pollinations"),
+            buildGenericProvider("cred_pollinations_harness"),
         );
         expect(doc.version).toBe(1);
         expect(doc.providers).toHaveLength(1);
@@ -63,7 +64,7 @@ describe("generic provider document", () => {
             displayName: "Pollinations",
             baseUrl: "https://gen.pollinations.ai/v1",
             adapter: "openai-chat",
-            credentialRef: "cred_pollinations",
+            credentialRef: "cred_pollinations_harness",
             enabled: true,
         });
     });
@@ -71,11 +72,11 @@ describe("generic provider document", () => {
     it("is idempotent", () => {
         const first = upsertGenericProvider(
             null,
-            buildGenericProvider("cred_pollinations"),
+            buildGenericProvider("cred_pollinations_harness"),
         );
         const second = upsertGenericProvider(
             first.doc,
-            buildGenericProvider("cred_pollinations"),
+            buildGenericProvider("cred_pollinations_harness"),
         );
         expect(second.changed).toBe(false);
     });
@@ -83,10 +84,10 @@ describe("generic provider document", () => {
     it("keeps user-tuned description and an existing credentialRef on update", () => {
         const first = upsertGenericProvider(
             null,
-            buildGenericProvider("cred_pollinations"),
+            buildGenericProvider("cred_pollinations_harness"),
         );
         const tuned = {
-            ...buildGenericProvider("cred_pollinations"),
+            ...buildGenericProvider("cred_pollinations_harness"),
             description: "my own description",
         };
         (first.doc.providers[0] as Record<string, unknown>).description =
@@ -109,7 +110,7 @@ describe("credential store entry", () => {
     it("uses the generic provider-file secretRef and no inline secret", () => {
         const entry = buildCredentialEntry("codex", "2026-09-20T00:00:00Z");
         expect(entry).toMatchObject({
-            id: "cred_pollinations",
+            id: "cred_pollinations_harness",
             providerId: "pollinations",
             providerType: "generic",
             kind: "api_key",
@@ -121,6 +122,16 @@ describe("credential store entry", () => {
             target: "codex",
         });
         expect(JSON.stringify(entry)).not.toContain("sk_");
+    });
+
+    it("uses an id that satisfies the router's credential-id regex", () => {
+        // codex-router validates ids against ^cred_[A-Za-z0-9_-]{16,64}$ and
+        // silently drops the whole store when an entry fails the check — the
+        // historical `cred_pollinations` (12 chars) did exactly that.
+        expect(buildCredentialEntry("codex", "x").id).toMatch(
+            /^cred_[A-Za-z0-9_-]{16,64}$/,
+        );
+        expect(LEGACY_CREDENTIAL_IDS).toContain("cred_pollinations");
     });
 
     it("preserves createdAt on key rotation", () => {
@@ -165,7 +176,7 @@ describe("user models", () => {
         const second = upsertUserModel(first.doc, updated);
         expect(second.doc.models).toHaveLength(2);
         expect(
-            (second.doc.models[1] as Record<string, unknown>).contextWindow,
+            (second.doc.models?.[1] as Record<string, unknown>).contextWindow,
         ).toBe(200);
     });
 

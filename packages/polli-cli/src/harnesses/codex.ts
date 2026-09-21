@@ -23,7 +23,14 @@ const ID = "codex";
 const LABEL = "Codex (Codex Router)";
 const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 const PROVIDER_ID = "pollinations";
-const CREDENTIAL_ID = "cred_pollinations";
+// Codex Router's credential store validates ids against
+// ^cred_[A-Za-z0-9_-]{16,64}$ (src/provider-credential-store.mjs) and silently
+// drops the whole store when an entry fails — so the id must satisfy that
+// regex, not merely look reasonable (`cred_pollinations` is 12 chars and was
+// rejected: every upstream request then failed with an auth error).
+const CREDENTIAL_ID = "cred_pollinations_harness";
+/** Ids written by older polli-cli builds that the router's store rejects. */
+export const LEGACY_CREDENTIAL_IDS = ["cred_pollinations"];
 const BASE_URL = "https://gen.pollinations.ai/v1";
 const PROVIDER_LABEL = "Pollinations API key";
 /** Managed blocks `config-manager.mjs` writes around everything it owns. */
@@ -335,7 +342,25 @@ const writeState = (
         readJson(paths.credentialStore),
         buildCredentialEntry(secretTarget, now),
     );
-    writeJson(paths.credentialStore, credentials.doc);
+    // Older builds wrote `cred_pollinations`, which the router's store
+    // validator rejects (and then ignores the whole store). Replace it.
+    let credentialDoc: CredentialStoreDoc = credentials.doc;
+    if (
+        credentials.doc.credentials.some((entry) =>
+            LEGACY_CREDENTIAL_IDS.includes((entry as { id?: string }).id ?? ""),
+        )
+    ) {
+        credentialDoc = {
+            schemaVersion: credentialDoc.schemaVersion,
+            credentials: credentialDoc.credentials.filter(
+                (entry) =>
+                    !LEGACY_CREDENTIAL_IDS.includes(
+                        (entry as { id?: string }).id ?? "",
+                    ),
+            ),
+        };
+    }
+    writeJson(paths.credentialStore, credentialDoc);
 
     writeApiKey(ctx, apiKey);
 
@@ -367,7 +392,10 @@ const stripState = (ctx: HarnessContext): boolean => {
     const credentials = readJson<CredentialStoreDoc>(paths.credentialStore);
     if (credentials) {
         const next = credentials.credentials.filter(
-            (entry) => (entry as { id?: string }).id !== CREDENTIAL_ID,
+            (entry) =>
+                ![CREDENTIAL_ID, ...LEGACY_CREDENTIAL_IDS].includes(
+                    (entry as { id?: string }).id ?? "",
+                ),
         );
         if (next.length !== credentials.credentials.length) {
             writeJson(paths.credentialStore, {
@@ -403,8 +431,10 @@ const statusResult = (ctx: HarnessContext): HarnessResult => {
     const provider = providers?.providers.find(
         (entry) => (entry as { id?: string }).id === PROVIDER_ID,
     );
-    const credential = credentials?.credentials.find(
-        (entry) => (entry as { id?: string }).id === CREDENTIAL_ID,
+    const credential = credentials?.credentials.find((entry) =>
+        [CREDENTIAL_ID, ...LEGACY_CREDENTIAL_IDS].includes(
+            (entry as { id?: string }).id ?? "",
+        ),
     );
     const ours = (userModels?.models ?? []).filter(
         (entry) => (entry as { provider?: string }).provider === PROVIDER_ID,

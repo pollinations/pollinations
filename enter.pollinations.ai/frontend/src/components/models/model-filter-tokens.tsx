@@ -1,4 +1,5 @@
 import {
+    CheckIcon,
     Dropdown,
     DropdownItem,
     EditableComboboxToken,
@@ -61,11 +62,12 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
                     return (
                         <Dropdown
                             key={`${token.index}:${token.filter.key}`}
-                            className="min-w-36 p-1"
+                            className="catalog-filter-menu min-w-32 p-1"
                             trigger={() => (
                                 <EditableComboboxToken
                                     label={label}
                                     value={value}
+                                    className="catalog-filter-trigger capitalize"
                                     highlighted={
                                         pendingRemovalIndex === token.index
                                     }
@@ -93,8 +95,13 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
                                                 onChange(token, nextValue);
                                                 close();
                                             }}
+                                            className="catalog-filter-option capitalize"
                                         >
                                             {nextValue}
+                                            <CheckIcon
+                                                aria-hidden="true"
+                                                className={`ml-auto h-3.5 w-3.5 shrink-0 ${token.filter.value === nextValue ? "" : "invisible"}`}
+                                            />
                                         </DropdownItem>
                                     );
                                 })

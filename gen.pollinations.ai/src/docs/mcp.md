@@ -74,6 +74,46 @@ claude mcp add --transport http pollinations \
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
 with another endpoint from the table to use FFmpeg or Exa Search.
 
+### Install with the Polli CLI
+
+The Polli CLI can install any of the catalog servers into a coding agent with
+one command, reading the live catalog so new servers appear without a CLI
+release.
+
+```bash
+polli mcp list                    # show the live catalog
+polli mcp install cursor pollinations ffmpeg
+polli mcp install codex --all     # every server, one dedicated key per client
+polli mcp status                  # which clients have Pollinations servers
+polli mcp remove cursor           # remove only Pollinations-owned entries
+```
+
+Install mints a dedicated key per client (shown as `polli-harness-mcp-<client>`
+on [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys)); re-running
+reuses it, and `remove` leaves any unrelated MCP entries untouched. Clients that
+store secrets by reference use that instead of writing the key into config:
+Codex reads `POLLI_MCP_CODEX_API_KEY` from `~/.codex/.env`, and VS Code stores
+the key in its secret storage via a prompt input. Zed has no native HTTP
+transport with headers, so it goes through the `mcp-remote` bridge.
+
+Supported clients, in order of preference:
+
+| Client | Wiring |
+| --- | --- |
+| Claude Code | `claude mcp add` (user scope) |
+| Codex CLI | `codex mcp add` + `~/.codex/.env` |
+| VS Code / Copilot | `User/mcp.json` with a `promptString` input |
+| Cursor | `~/.cursor/mcp.json` |
+| OpenCode | `~/.config/opencode/opencode.json` |
+| Gemini CLI | `gemini mcp add` (user scope) |
+| Copilot CLI | `~/.copilot/mcp-config.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| Cline | `~/.cline/mcp.json` |
+| Amp | `amp mcp add` |
+| Kiro | `~/.kiro/settings/mcp.json` |
+| Zed | `~/.config/zed/settings.json` (mcp-remote) |
+| Warp | `~/.warp/.mcp.json` |
+
 ### Pollinations MCP
 
 The Pollinations server exposes the main Pollinations API as agent-friendly

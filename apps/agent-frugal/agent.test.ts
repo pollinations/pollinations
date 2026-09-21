@@ -87,12 +87,63 @@ test("asResponses converts chat messages into Responses input", () => {
     const out = asResponses({
         messages: [{ role: "user", content: "hello" }],
     });
-    const input = out.input as Array<Record<string, unknown>>;
-    assert.ok(Array.isArray(input), "input should be an array");
-    assert.equal(input.length, 1);
-    assert.equal(input[0].role, "user");
-    assert.deepEqual(input[0].content, [{ type: "input_text", text: "hello" }]);
+    assert.equal(out.input, "hello");
     assert.equal(out.messages, undefined, "messages must not be forwarded");
+});
+
+test("asResponses keeps system messages as instructions", () => {
+    const out = asResponses({
+        input: [
+            { role: "developer", content: "be terse" },
+            { role: "user", content: "hi" },
+        ],
+    });
+    assert.equal(out.input, "hi");
+    assert.equal(out.instructions, "be terse");
+});
+
+test("asResponses merges body instructions and system turns", () => {
+    const out = asResponses({
+        instructions: "defaults",
+        input: [
+            { role: "system", content: "system rule" },
+            { role: "user", content: "hi" },
+        ],
+    });
+    assert.equal(out.instructions, "defaults\n\nsystem rule");
+});
+
+test("asResponses flattens multi-turn input to a role-prefixed string", () => {
+    const out = asResponses({
+        input: [
+            { role: "user", content: "What is 2+2?" },
+            { role: "assistant", content: "4" },
+            { role: "user", content: "And 3+3?" },
+        ],
+    });
+    assert.equal(out.input, "user: What is 2+2?\nassistant: 4\nuser: And 3+3?");
+});
+
+test("asResponses flattens an array input that carries no media", () => {
+    const out = asResponses({
+        input: [
+            { role: "user", content: [{ type: "input_text", text: "hi" }] },
+        ],
+    });
+    assert.equal(out.input, "hi");
+});
+
+test("asResponses keeps the structured array when the input has media", () => {
+    const out = asResponses({
+        input: [
+            {
+                role: "user",
+                content: [{ type: "input_image" }, { text: "what is this?" }],
+            },
+        ],
+    });
+    assert.ok(Array.isArray(out.input), "media input must stay an array");
+    assert.equal((out.input as unknown[]).length, 1);
 });
 
 test("asResponses converts a text prompt into input", () => {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15269,
+  "title": "refactor(ui): unify shared controls, dialogs and links",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15269",
+  "merged_at": "2026-09-21T16:40:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Standardizes text links, input styling, dropdown surfaces, tooltips, and icons in the shared UI package so apps use consistent controls.\n- Makes dialog frames responsive and updates existing Enter and Economics dialogs to fit the available screen space. Dashboard forms and confirmations remain contained, with their existing footer buttons.\n- Places section headings and actions inside their panels and removes duplicated spacing styles.\n- Adds reusable confirmation dialogs, copyable fields, and key badges; updates the component showcase and accessibility tests.\n- Validation: 80 UI tests pass, UI and Enter frontend builds pass, and UI/showcase/Playground/WebSim/Economics typechecks pass. Enter's standalone typecheck still reports an existing model-catalog `health.success_rate` mismatch. Browser appearance review is manual.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One garden, matching buttons",
+    "blurb": "The shared UI kit got its hedges trimmed: links, inputs, menus, tooltips, icons, and dialogs now grow from the same set of controls. Dialogs also learned the ancient art of fitting on smaller screens.",
+    "summary": "Standardized shared links, inputs, dropdowns, tooltips, icons, and panel spacing, while adding responsive dialog frames plus reusable confirmation dialogs, copyable fields, and key badges across Enter and related apps.",
+    "impact": "Users will encounter more consistent controls and screen-fitting account, API-key, endpoint, and Economics dialogs, while developers can reuse the new shared UI compositions with accessibility coverage.",
+    "keywords": [
+      "ui",
+      "shared-components",
+      "responsive-dialogs",
+      "accessibility",
+      "enter",
+      "design-system"
+    ],
+    "visual_concept": "A cozy shared garden workbench represents the unified UI kit: matching buttons, link signs, dropdown pots, tooltip fireflies, copyable key badges, and a responsive dialog frame all fit together neatly. Polli acts as the observant gardener, adjusting a dialog window so it fits the little CRT monitor, with code-plants and small flowers showing that the same components are growing across several apps.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny gardener glasses while carefully resizing a glowing dialog window on a retro CRT monitor; matching pixel buttons, links, dropdown pots, copyable key badges, tooltip fireflies, and code-plants grow neatly around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"ONE UI KIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15269.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny gardener glasses while carefully resizing a glowing dialog window on a retro CRT monitor; matching pixel buttons, links, dropdown pots, copyable key badges, tooltip fireflies, and code-plants grow neatly around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"ONE UI KIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-21T16:42:00.092786+00:00"
+}

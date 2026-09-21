@@ -2,8 +2,6 @@ import { CardIcon, ClockIcon, InfoTip, Input, Text } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 import { useEffect, useId, useState } from "react";
 
-export const DEFAULT_KEY_LIMITS = { pollenBudget: 5, expiryDays: 7 };
-
 const limits = {
     budget: {
         label: "Budget",
@@ -11,7 +9,7 @@ const limits = {
         name: "pollen-budget",
         unit: "pollen",
         min: 0,
-        step: 0.01,
+        step: "any",
         empty: "Unlimited",
         helper: "Spending cap for this key. Leave empty for no cap.",
     },
@@ -42,6 +40,11 @@ export function KeyLimitInput({
     const inputId = useId();
     const limit = limits[kind];
     const [draft, setDraft] = useState(value === null ? "" : String(value));
+    // A spent key may already be below zero. Preserve that balance on edit,
+    // while new budgets and further reductions still have a lower bound.
+    const [min] = useState(() =>
+        kind === "budget" ? Math.min(0, value ?? 0) : limit.min,
+    );
 
     useEffect(() => {
         setDraft(value === null ? "" : String(value));
@@ -57,7 +60,7 @@ export function KeyLimitInput({
                         id={inputId}
                         name={limit.name}
                         type="number"
-                        min={limit.min}
+                        min={min}
                         step={limit.step}
                         value={draft}
                         placeholder={limit.empty}

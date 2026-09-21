@@ -7,7 +7,6 @@ import {
 } from "unique-names-generator";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
-import { DEFAULT_KEY_LIMITS } from "./key-limit-input.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
@@ -60,7 +59,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                   allowedModels: [],
                   accountPermissions: [],
               }
-            : DEFAULT_KEY_LIMITS,
+            : {},
     );
     const {
         setAllowedModels,
@@ -113,8 +112,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             if (!simplified) {
                 setAllowedModels(null);
                 setAccountPermissions([]);
-                setPollenBudget(DEFAULT_KEY_LIMITS.pollenBudget);
-                setExpiryDays(DEFAULT_KEY_LIMITS.expiryDays);
+                setPollenBudget(null);
+                setExpiryDays(null);
             }
             return;
         }

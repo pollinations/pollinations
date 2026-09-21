@@ -50,6 +50,8 @@ interface ModelDefinition {
     transform?: TransformFn;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
+    /** Route typed decisions directly through TypeSafe System One. */
+    useSystemOneApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -282,8 +284,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
-        name: "mistralai/mistral-small-4:openrouter:mistral-eu",
-        config: portkeyConfig["mistral-openrouter-eu"],
+        name: "mistralai/mistral-small-4:openrouter",
+        config: portkeyConfig["mistral-small-2603-openrouter"],
     },
     {
         name: "deepseek/deepseek-v4-flash",
@@ -516,6 +518,11 @@ const models: ModelDefinition[] = [
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
+    },
+    {
+        name: "typesafe/jev-1.13",
+        config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
     },
     {
         name: "pollinations/midijourney",

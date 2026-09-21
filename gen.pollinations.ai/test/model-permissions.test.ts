@@ -425,8 +425,12 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
+    // Jev is the one OpenRouter route free-tier accounts may select, so it is
+    // visible to both keys and cannot take part in this comparison.
     const openRouterModelNames = getVisibleTextModels().filter(
-        (model) => getRegistryModelDefinition(model).provider === "openrouter",
+        (model) =>
+            getRegistryModelDefinition(model).provider === "openrouter" &&
+            model !== "typesafe/jev-1.13",
     );
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));

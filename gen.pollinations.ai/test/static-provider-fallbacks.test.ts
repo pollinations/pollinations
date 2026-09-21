@@ -85,11 +85,6 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
-        "mistralai/mistral-small-4:openrouter:mistral-eu",
-        "mistralai/mistral-small-2603",
-        "mistral/eu",
-    ],
-    [
         "google/gemini-3.7-flash:openrouter:ai-studio-priority",
         "google/gemini-3.7-flash",
         "google-ai-studio/priority",
@@ -424,7 +419,12 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("keeps provider-specific fallback costs", () => {
+    it("keeps exact provider route costs", () => {
+        expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (0.6 / 1_000_000) * 1.055,
+        });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
         ]);
@@ -434,7 +434,8 @@ describe("static provider fallbacks", () => {
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
         ).toMatchObject({
-            promptTextTokens: 0.08 / 1_000_000,
+            promptTextTokens: 0.06 / 1_000_000,
+            promptCachedTokens: 0.015 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
         expect(
@@ -442,9 +443,34 @@ describe("static provider fallbacks", () => {
                 "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
             ].cost,
         ).toMatchObject({
-            promptTextTokens: (0.2 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.006 / 1_000_000) * 1.055,
-            completionTextTokens: (0.6 / 1_000_000) * 1.055,
+            promptTextTokens: (0.14 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.0042 / 1_000_000) * 1.055,
+            completionTextTokens: (0.42 / 1_000_000) * 1.055,
+        });
+        expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
+            promptTextTokens: (0.24 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.024 / 1_000_000) * 1.055,
+            promptImageTokens: (0.24 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.24 / 1_000_000) * 1.055,
+            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.25 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.05 / 1_000_000) * 1.055,
+            promptImageTokens: (0.25 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.25 / 1_000_000) * 1.055,
+            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES[
+                "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
+            ].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.07 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.04 / 1_000_000) * 1.055,
+            completionTextTokens: (0.2 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
@@ -722,6 +748,29 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         });
+        expect(
+            findModelByName("mistralai/mistral-small-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(
+            findModelByName("mistralai/mistral-small-4:openrouter")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "mistralai/mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-small-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-small-4:openrouter"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-small-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost * 1.055, 15);
+        }
         for (const [route, model, provider] of OPENROUTER_ROUTES) {
             expect(findModelByName(route)?.config()).toMatchObject({
                 model,

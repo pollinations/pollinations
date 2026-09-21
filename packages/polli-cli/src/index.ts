@@ -18,7 +18,7 @@ import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
-import { setOutputMode } from "./lib/output.js";
+import { configureHelp, setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
 import { notifyUpdate } from "./lib/update-notice.js";
 
@@ -27,15 +27,6 @@ const pkg = JSON.parse(
 ) as { name: string; version: string };
 
 const program = new Command();
-
-program.configureHelp({
-    styleTitle: (s) => chalk.hex("#a78bfa").bold(s),
-    styleCommandText: (s) => chalk.bold(s),
-    styleSubcommandText: (s) => chalk.bold(s),
-    styleOptionText: (s) => chalk.cyan(s),
-    styleArgumentText: (s) => chalk.yellow(s),
-    styleDescriptionText: (s) => chalk.dim(s),
-});
 
 program
     .name("polli")
@@ -90,6 +81,8 @@ program.addCommand(docsCommand);
 
 // Self-update
 program.addCommand(updateCommand);
+
+configureHelp(program);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {

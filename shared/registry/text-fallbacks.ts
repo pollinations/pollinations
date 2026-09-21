@@ -117,8 +117,9 @@ export const TEXT_FALLBACKS = {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.08),
-                promptCachedTokens: perMillion(0.016),
+                // DeepInfra standard-tier rates (2026-09-21).
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.015),
                 completionTextTokens: perMillion(0.18),
             },
         },
@@ -128,9 +129,11 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV41Flash,
             provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(0.2) * 1.055,
-                promptCachedTokens: perMillion(0.006) * 1.055,
-                completionTextTokens: perMillion(0.6) * 1.055,
+                // OpenRouter DeepInfra FP8 rates (2026-09-21), including the
+                // account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.14) * 1.055,
+                promptCachedTokens: perMillion(0.0042) * 1.055,
+                completionTextTokens: perMillion(0.42) * 1.055,
             },
         },
     },
@@ -179,6 +182,16 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.qwen38Akash,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                // OpenRouter AkashML FP8 rates (2026-09-21), including the
+                // account's 5.5% credit-purchase fee. OpenRouter publishes one
+                // prompt rate and no separate image/video rates.
+                promptTextTokens: perMillion(0.25) * 1.055,
+                promptCachedTokens: perMillion(0.05) * 1.055,
+                promptImageTokens: perMillion(0.25) * 1.055,
+                promptVideoTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(2.2) * 1.055,
+            },
         },
     },
     "qwen/qwen3.7-flash": {
@@ -504,21 +517,23 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.1) * 1.055,
-                promptCachedTokens: perMillion(0.05) * 1.055,
-                completionTextTokens: perMillion(0.25) * 1.055,
+                // OpenRouter CoreWeave BF16 rates (2026-09-21), including the
+                // account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.07) * 1.055,
+                promptCachedTokens: perMillion(0.04) * 1.055,
+                completionTextTokens: perMillion(0.2) * 1.055,
             },
         },
     },
     "mistralai/mistral-small-4": {
-        "mistralai/mistral-small-4:openrouter:mistral-eu": {
+        "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.165) * 1.055,
-                promptCachedTokens: perMillion(0.0165) * 1.055,
-                promptImageTokens: perMillion(0.165) * 1.055,
-                completionTextTokens: perMillion(0.66) * 1.055,
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.015) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
             },
         },
     },

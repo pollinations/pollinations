@@ -85,29 +85,34 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
-        "google/gemini-3.7-flash:openrouter:ai-studio-priority",
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
+        "google/gemini-3-flash-preview",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-3.7-flash:openrouter:vertex-global",
         "google/gemini-3.7-flash",
-        "google-ai-studio/priority",
+        "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        "google/gemini-3.8-flash:openrouter:vertex-global",
+        "google/gemini-3.8-flash",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
         "google/gemini-2.5-flash-lite",
-        "google-vertex",
+        "google-vertex/eu",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
-        "google/gemini-2.5-flash-lite",
-        "google-ai-studio",
-    ],
-    [
-        "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global",
         "google/gemini-3.5-flash-lite",
-        "google-ai-studio/flex",
+        "google-vertex/global",
     ],
     [
-        "google/gemini-3.1-pro-preview:openrouter:ai-studio",
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global",
         "google/gemini-3.1-pro-preview",
-        "google-ai-studio",
+        "google-vertex/global",
     ],
     [
         "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16",
@@ -173,12 +178,15 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it("includes the registry credit fee once in Gemini long-context and search costs", () => {
+    it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {
         const primary = TEXT_SERVICES["google/gemini-3.1-pro-preview"];
         const fallback =
-            TEXT_SERVICES["google/gemini-3.1-pro-preview:openrouter:ai-studio"];
+            TEXT_SERVICES[
+                "google/gemini-3.1-pro-preview:openrouter:vertex-global"
+            ];
+        expect(primary.priceMultiplier).toBe(1.055);
+        expect(fallback.priceMultiplier).toBe(1);
         for (const definition of [primary, fallback]) {
-            expect(definition.priceMultiplier).toBe(1);
             const billed = calculateUsageBilling({
                 model: "google/gemini-3.1-pro-preview",
                 usage: {
@@ -186,16 +194,33 @@ describe("static provider fallbacks", () => {
                     completionTextTokens: 1_000,
                 },
                 servedBy: definition,
-                output: {
-                    usage: {
-                        server_tool_use_details: { web_search_requests: 1 },
-                    },
-                },
+                quotedBy: primary,
+                output:
+                    definition.provider === "openrouter"
+                        ? {
+                              usage: {
+                                  server_tool_use_details: {
+                                      web_search_requests: 1,
+                                  },
+                              },
+                          }
+                        : {
+                              choices: [
+                                  {
+                                      groundingMetadata: {
+                                          webSearchQueries: ["latest"],
+                                      },
+                                  },
+                              ],
+                          },
             });
-            // Long-context input/output plus one search, including credit fees.
-            const expected = (0.2 * 4 + 0.001 * 18 + 0.014) * 1.055;
-            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(expected, 8);
+            const directCost = 0.2 * 4 + 0.001 * 18 + 0.014;
+            const expectedCost =
+                definition.provider === "openrouter"
+                    ? directCost * 1.055
+                    : directCost;
+            expect(billed.cost.totalCost).toBeCloseTo(expectedCost, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(directCost * 1.055, 8);
             expect(billed.priceDefinition.promptTextTokens).toBe(
                 (4 / 1_000_000) * 1.055,
             );
@@ -486,18 +511,17 @@ describe("static provider fallbacks", () => {
             completionImageTokens: 0.03,
         });
         expect(
-            TEXT_SERVICES[
-                "google/gemini-3.7-flash:openrouter:ai-studio-priority"
-            ].cost,
+            TEXT_SERVICES["google/gemini-3.7-flash:openrouter:vertex-global"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: (1.35 / 1_000_000) * 1.055,
+            promptCacheWriteTokens: (0.75 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[
-                "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex"
+                "google/gemini-3.5-flash-lite:openrouter:vertex-global"
             ].cost,
         ).toMatchObject({
-            promptCacheWriteTokens: (0.15 / 1_000_000) * 1.055,
+            promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,

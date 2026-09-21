@@ -1,9 +1,11 @@
 import {
     Alert,
+    BeakerIcon,
     BotIcon,
     ClockIcon,
     EditableCombobox,
     InlineLink,
+    McpIcon,
     Section,
     SparklesIcon,
     TabButton,
@@ -72,6 +74,12 @@ const MODEL_SECTION_ORDER: SectionType[] = [
 
 type PrimaryTab = "models" | "agent" | "mcp";
 type SearchParam = "q" | "agentQ" | "mcpQ";
+
+const PRIMARY_TABS = [
+    { value: "models", label: "Models", Icon: BeakerIcon },
+    { value: "agent", label: "Agents", Icon: BotIcon },
+    { value: "mcp", label: "MCP", Icon: McpIcon },
+] as const;
 
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
 const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
@@ -508,6 +516,31 @@ export const Models: FC = () => {
                 }
             >
                 <div className="flex flex-col items-start gap-3">
+                    <fieldset
+                        className="flex min-w-0 flex-wrap gap-1.5"
+                        aria-label="Catalog type"
+                    >
+                        {PRIMARY_TABS.map(({ value, label, Icon }) => (
+                            <TabButton
+                                key={value}
+                                active={activePrimaryTab === value}
+                                onClick={() =>
+                                    setActiveTab(
+                                        value === "models" ? "all" : value,
+                                    )
+                                }
+                                ariaLabel={label}
+                            >
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Icon
+                                        className="h-4 w-4"
+                                        aria-hidden="true"
+                                    />
+                                    {label}
+                                </span>
+                            </TabButton>
+                        ))}
+                    </fieldset>
                     {activePrimaryTab === "models" && (
                         <div className="flex w-full flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap gap-1.5">

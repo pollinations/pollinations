@@ -1,0 +1,35 @@
+{
+  "pr_number": 15252,
+  "title": "fix: FFmpeg inputs and Connected Apps discovery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15252",
+  "merged_at": "2026-09-21T08:16:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes FFmpeg failing to find downloaded `input0`/`input1` files by running in `/work`; clarifies the tool's input arguments.\n- Presents Composio as **Connected Apps**, explicitly described as working **through Composio**. Keeps the existing server ID, endpoint, account ownership, and pricing.\n- Adds concrete Gmail/GitHub examples, agent-enablement guidance, and instructions to retry expired sign-in links with Connect.\n- Tracks discovery, connection-management, and failed MCP requests with zero-cost receipts, plus structured connection-link and active-account logs. HTTP status remains distinct from tool outcomes in Composio's execution logs; no arguments, credentials, or app content are logged.\n- Validation: 17 MCP unit tests, 15 Gen MCP/docs tests, both Worker dry-run builds, frontend build, Biome, and a real FFmpeg staging-container conversion passed. Standalone frontend typecheck reports errors in untouched model-catalog, generated bindings, and code-agent files.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The inputs found their way home",
+    "blurb": "FFmpeg now does its work from the folder where its downloaded inputs actually live. Connected Apps also says what it means: your Gmail and GitHub can join an agent through Composio, without turning the logs into a diary.",
+    "summary": "Fixed the FFmpeg MCP server to run in `/work` so downloaded `input0` and `input1` files resolve correctly, while clarifying Composio-powered Connected Apps discovery, Gmail/GitHub setup, reconnect guidance, and privacy-safe MCP connection logging.",
+    "impact": "FFmpeg conversions can now reliably use downloaded input files, and people configuring agent access can discover, connect, and retry Gmail or GitHub apps through Composio with clearer guidance and zero-cost activity receipts that never record arguments, credentials, or app content.",
+    "keywords": [
+      "ffmpeg",
+      "mcp",
+      "connected-apps",
+      "composio",
+      "gmail",
+      "github",
+      "observability"
+    ],
+    "visual_concept": "A cozy workshop scene: Polli helps a chunky CRT-monitor robot route two labeled film/audio input reels into a tiny FFmpeg workstation rooted in a flowerpot marked `/work`, where the conversion output blooms as a healthy code-plant. Nearby, a simple Connected Apps board shows Gmail and GitHub icons linked through a Composio bridge, while a small receipt printer emits harmless status slips; this represents reliable local file discovery, clearer app connection discovery, and privacy-conscious activity tracking.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and warmly helps a cute chunky CRT-monitor robot feed two labeled input reels into a retro FFmpeg workstation growing from a lime green (#ecf874) flowerpot marked `/work`, while a Connected Apps noticeboard links Gmail and GitHub through a small Composio bridge and code-flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: `CONNECTED APPS`, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15252.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and warmly helps a cute chunky CRT-monitor robot feed two labeled input reels into a retro FFmpeg workstation growing from a lime green (#ecf874) flowerpot marked `/work`, while a Connected Apps noticeboard links Gmail and GitHub through a small Composio bridge and code-flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: `CONNECTED APPS`, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-21T08:18:35.444165+00:00"
+}

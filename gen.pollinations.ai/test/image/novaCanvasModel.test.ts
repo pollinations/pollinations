@@ -46,19 +46,16 @@ describe("callNovaCanvasAPI", () => {
 
         await expect(
             callNovaCanvasAPI("too long", {
-                model: "nova-canvas",
+                model: "amazon/nova-canvas-v1",
                 width: 1024,
                 height: 1024,
                 seed: 42,
             } as ImageParams),
         ).rejects.toMatchObject({
-            name: "HttpError",
+            name: "UpstreamError",
             status: 400,
             message: expect.stringContaining("expected maxLength: 1024"),
-            details: {
-                validation: true,
-                body: expect.stringContaining("expected maxLength: 1024"),
-            },
+            responseBody: expect.stringContaining("expected maxLength: 1024"),
         });
     });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     fmtMarginPct,
+    fmtMonthDay,
     fmtMonthYear,
     fmtNumber,
     fmtPct,
@@ -74,6 +75,15 @@ describe("fmtSmartNumber", () => {
     it("uses a readable floor for tiny nonzero values", () => {
         expect(fmtSmartNumber(0.000000000000000444)).toBe("<0.01");
         expect(fmtSmartNumber(0.0009)).toBe("<0.01");
+    });
+});
+
+describe("fmtMonthDay", () => {
+    it("keeps calendar dates compact without repeating the selected year", () => {
+        expect(fmtMonthDay("2026-08-27 16:26:09")).toBe("Aug 27");
+        expect(fmtMonthDay("2026-09-01")).toBe("Sep 1");
+        expect(fmtMonthDay("")).toBe("–");
+        expect(fmtMonthDay("unknown")).toBe("unknown");
     });
 });
 

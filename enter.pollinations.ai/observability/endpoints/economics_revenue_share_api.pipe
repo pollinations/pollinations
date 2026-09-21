@@ -1,0 +1,134 @@
+DESCRIPTION >
+    Revenue Share economics for the private Economics app. Returns one
+    deduplicated monthly summary, one row per creator, and one compact source
+    ledger row per creator app or community model.
+
+TOKEN "operations_read" READ
+
+NODE latest_users
+SQL >
+    SELECT
+        id,
+        ifNull(argMax(github_username, synced_at), '') AS github_username
+    FROM d1_user
+    GROUP BY id
+
+NODE latest_events
+SQL >
+    SELECT
+        event_id,
+        argMax(
+            tuple(
+                month,
+                funding,
+                gross_usage,
+                external_model_cost,
+                app_recipient_id,
+                app_id,
+                app_name,
+                app_creator_earnings,
+                model_recipient_id,
+                model_id,
+                model_name,
+                model_creator_earnings,
+                model
+            ),
+            tuple(recorded_at, version_id)
+        ) AS latest
+    FROM economics_revenue_share_events
+    GROUP BY event_id
+
+NODE effective_events
+SQL >
+    SELECT
+        event_id,
+        tupleElement(latest, 1) AS month,
+        tupleElement(latest, 2) AS funding,
+        tupleElement(latest, 3) AS gross_usage,
+        tupleElement(latest, 4) AS external_model_cost,
+        tupleElement(latest, 5) AS app_recipient_id,
+        tupleElement(latest, 6) AS app_id,
+        tupleElement(latest, 7) AS app_name,
+        tupleElement(latest, 8) AS app_creator_earnings,
+        tupleElement(latest, 9) AS model_recipient_id,
+        tupleElement(latest, 10) AS model_id,
+        tupleElement(latest, 11) AS model_name,
+        tupleElement(latest, 12) AS model_creator_earnings,
+        tupleElement(latest, 13) AS model,
+        gross_usage - app_creator_earnings - model_creator_earnings - external_model_cost
+            AS pollinations_profit
+    FROM latest_events
+
+NODE expanded_rows
+SQL >
+    SELECT
+        month, funding, gross_usage,
+        tupleElement(attribution, 1) AS row_type,
+        tupleElement(attribution, 2) AS recipient_id,
+        tupleElement(attribution, 3) AS source_type,
+        tupleElement(attribution, 4) AS source_id,
+        tupleElement(attribution, 5) AS source_name,
+        tupleElement(attribution, 6) AS sources,
+        tupleElement(attribution, 7) AS creator_earnings,
+        if(row_type = 'source', toFloat64(0), pollinations_profit) AS attributed_profit
+    FROM effective_events
+    ARRAY JOIN arrayFilter(x -> tupleElement(x, 1) = 'summary' OR tupleElement(x, 2) != '', [
+        tuple('summary', '', '', '', '',
+            CAST([], 'Array(Tuple(String, String, String, String))'),
+            app_creator_earnings + model_creator_earnings),
+        tuple('creator', app_recipient_id, '', '', '',
+            arrayConcat(
+                [tuple('app', app_id, app_name, model)],
+                if(model_recipient_id = app_recipient_id,
+                    [tuple('model', model_id, model_name, model)],
+                    CAST([], 'Array(Tuple(String, String, String, String))'))
+            ),
+            app_creator_earnings + if(model_recipient_id = app_recipient_id, model_creator_earnings, 0)),
+        tuple('creator', if(model_recipient_id = app_recipient_id, '', model_recipient_id), '', '', '',
+            [tuple('model', model_id, model_name, model)], model_creator_earnings),
+        tuple('source', app_recipient_id, 'app', app_id, app_name,
+            [tuple('app', app_id, app_name, model)], app_creator_earnings),
+        tuple('source', model_recipient_id, 'model', model_id, model_name,
+            [tuple('model', model_id, model_name, model)], model_creator_earnings)
+    ]) AS attribution
+
+NODE all_rows
+SQL >
+    SELECT
+        row_type, month, recipient_id,
+        toJSONString(arraySort(groupUniqArrayArray(sources))) AS sources_json,
+        sumIf(gross_usage, funding = 'paid') AS paid_usage,
+        sumIf(creator_earnings, funding = 'paid') AS paid_creator_earnings,
+        sumIf(attributed_profit, funding = 'paid') AS paid_pollinations_profit,
+        sumIf(gross_usage, funding = 'quest') AS quest_usage,
+        sumIf(creator_earnings, funding = 'quest') AS quest_creator_earnings,
+        countIf(funding = 'paid') AS paid_requests,
+        countIf(funding = 'quest') AS quest_requests
+    FROM expanded_rows
+    GROUP BY row_type, month, recipient_id, source_type, source_id, source_name
+
+NODE economics_revenue_share_api_node
+SQL >
+    SELECT
+        toString(rows.row_type) AS row_type,
+        rows.month,
+        rows.recipient_id,
+        if(rows.row_type = 'summary', '', users.github_username) AS github_username,
+        multiIf(
+            rows.row_type = 'summary', '',
+            users.github_username != '', users.github_username,
+            rows.recipient_id
+        ) AS recipient_name,
+        rows.sources_json,
+        rows.paid_usage,
+        rows.paid_creator_earnings,
+        rows.paid_pollinations_profit,
+        rows.quest_usage,
+        rows.quest_creator_earnings,
+        rows.paid_requests,
+        rows.quest_requests
+    FROM all_rows AS rows
+    LEFT JOIN latest_users AS users ON rows.recipient_id = users.id
+    ORDER BY month DESC, row_type, paid_creator_earnings DESC, recipient_name
+
+TYPE ENDPOINT

@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
@@ -10,15 +10,18 @@ import {
 } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 type ReplicateFallbackModel =
-    | "kontext-replicate"
-    | "flux-2-pro-replicate"
-    | "qwen-image-3-replicate"
-    | "p-image-edit-replicate"
-    | "krea-replicate";
+    | "black-forest-labs/flux.1-kontext-pro:replicate"
+    | "black-forest-labs/flux.2-pro:replicate"
+    // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
+    // so this id carries no ":replicate" suffix, unlike every other case here.
+    | "black-forest-labs/flux.2-max"
+    | "qwen/qwen-image-3:replicate"
+    | "prunaai/p-image-edit:replicate"
+    | "krea/krea-2-medium:replicate";
 
 const COMMON_RATIOS = [
     "1:1",
@@ -66,13 +69,16 @@ async function runReplicateImage(
             string | string[]
         >({ model, input });
         const url = Array.isArray(output) ? output[0] : output;
-        if (!url) throw new HttpError(`${label} returned no image`, 502);
+        if (!url)
+            throw UpstreamError.fromProvider(502, {
+                message: `${label} returned no image`,
+            });
         const response = await fetchUpstream(url, {
             errorLabel: `Failed to download ${label} output`,
         });
         return Buffer.from(await response.arrayBuffer());
     } catch (error) {
-        throw toReplicateHttpError(error, `${label} generation failed`);
+        throw toReplicateUpstreamError(error, `${label} generation failed`);
     }
 }
 
@@ -108,12 +114,11 @@ export async function callReplicateFallbackImage(
     let completionImageTokens = 1;
 
     switch (model) {
-        case "flux-2-pro-replicate": {
+        case "black-forest-labs/flux.2-pro:replicate": {
             if (params.image.length > 8) {
-                throw new HttpError(
-                    "FLUX.2 Pro supports at most 8 reference images",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "FLUX.2 Pro supports at most 8 reference images",
+                });
             }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
@@ -133,7 +138,31 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "kontext-replicate": {
+        case "black-forest-labs/flux.2-max": {
+            if (params.image.length > 8) {
+                throw UpstreamError.fromProvider(400, {
+                    message: "FLUX.2 Max supports at most 8 reference images",
+                });
+            }
+            const images = await prepareFluxImages(params.image);
+            promptImageTokens = images.megapixels;
+            completionImageTokens = (params.width * params.height) / 1_000_000;
+            buffer = await runReplicateImage(
+                "black-forest-labs/flux-2-max",
+                {
+                    prompt,
+                    input_images: images.dataUris,
+                    aspect_ratio: "custom",
+                    width: params.width,
+                    height: params.height,
+                    output_format: "png",
+                    seed: params.seed,
+                },
+                "FLUX.2 Max",
+            );
+            break;
+        }
+        case "black-forest-labs/flux.1-kontext-pro:replicate": {
             const images = await prepareFluxImages(params.image.slice(0, 1));
             buffer = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
@@ -153,7 +182,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "qwen-image-3-replicate": {
+        case "qwen/qwen-image-3:replicate": {
             const image = params.image[0]
                 ? await toDataUri(params.image[0])
                 : undefined;
@@ -172,18 +201,16 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "p-image-edit-replicate": {
+        case "prunaai/p-image-edit:replicate": {
             if (params.image.length === 0) {
-                throw new HttpError(
-                    "p-image-edit requires at least one input image",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "p-image-edit requires at least one input image",
+                });
             }
             if (params.image.length > 5) {
-                throw new HttpError(
-                    "p-image-edit supports at most 5 input images",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "p-image-edit supports at most 5 input images",
+                });
             }
             buffer = await runReplicateImage(
                 "prunaai/p-image-edit",
@@ -197,9 +224,11 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "krea-replicate": {
+        case "krea/krea-2-medium:replicate": {
             if (params.image.length > 0) {
-                throw new HttpError("Krea does not accept image input", 400);
+                throw UpstreamError.fromProvider(400, {
+                    message: "Krea does not accept image input",
+                });
             }
             buffer = await runReplicateImage(
                 "krea/krea-2-medium",
@@ -213,10 +242,9 @@ export async function callReplicateFallbackImage(
             break;
         }
         default:
-            throw new HttpError(
-                `Unsupported Replicate fallback model: ${model}`,
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message: `Unsupported Replicate fallback model: ${model}`,
+            });
     }
 
     return {

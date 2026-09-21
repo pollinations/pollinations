@@ -1,11 +1,16 @@
 import { env, SELF } from "cloudflare:test";
-import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
+import {
+    claimReward,
+    recordRewards,
+    rewardKey,
+} from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
+import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
@@ -208,14 +213,14 @@ async function seedByopConnections(
     await db.insert(schema.apikey).values({
         id: appKeyId,
         key: `pk_${prefix}`,
-        userId: ownerUserId,
+        referenceId: ownerUserId,
         createdAt: now,
         updatedAt: now,
     });
     const userKeys = userIds.map((userId, index) => ({
         id: `${prefix}-user-key-${index}`,
         key: `sk_${prefix}_${index}`,
-        userId,
+        referenceId: userId,
         byopClientKeyId: appKeyId,
         createdAt: now,
         updatedAt: now,
@@ -426,7 +431,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         balanceBucket: "tier",
     });
     expectStableCatalogFields("app_active", {
-        state: "available",
+        state: "completed",
         rewardAmount: 7,
         balanceBucket: "tier",
     });
@@ -438,11 +443,11 @@ test("catalog returns quest definitions without ledger stats", async ({
     expect(byId.get("early_adopter")?.title).toBe("Early adopter");
     expectStableCatalogFields("github_established", {
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 2,
         balanceBucket: "tier",
     });
     expect(byId.get("github_established")?.goal).toEqual({
-        target: 730,
+        target: 1095,
         unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
@@ -452,7 +457,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_users_10", {
         state: "available",
-        rewardAmount: 15,
+        rewardAmount: 3,
         balanceBucket: "tier",
     });
     expect(byId.get("app_users_10")?.goal).toEqual({
@@ -460,9 +465,13 @@ test("catalog returns quest definitions without ledger stats", async ({
         unit: "users",
     });
     expectStableCatalogFields("app_pollen_10", {
-        state: "coming_soon",
-        rewardAmount: 25,
+        state: "available",
+        rewardAmount: 5,
         balanceBucket: "tier",
+    });
+    expect(byId.get("app_pollen_10")?.goal).toEqual({
+        target: 3,
+        unit: "pollen",
     });
 });
 
@@ -705,7 +714,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 0.25);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/rewards",
@@ -729,9 +738,8 @@ test("quest check records product rewards and claim endpoint credits one", async
         }[];
     };
 
-    // History shape, not exact amounts: nothing claimed yet (every reward's
-    // claimedAt is null, asserted below), no internal fields leak, and the
-    // first-API-key reward is present so we can claim it below.
+    // History shape, not exact catalog: no internal fields leak, the API-key
+    // reward auto-claims, and another earned reward remains manually claimable.
     expect(payload.rewards.length).toBeGreaterThan(0);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -739,16 +747,22 @@ test("quest check records product rewards and claim endpoint credits one", async
         expect(reward).not.toHaveProperty("sourceRef");
         expect(reward).not.toHaveProperty("metadata");
         expect(reward).not.toHaveProperty("metadataJson");
-        expect(reward.claimedAt).toBeNull();
         expect(typeof reward.earnedAt).toBe("string");
     }
     const firstApiKeyReward = payload.rewards.find(
         (reward) => reward.questId === "first_api_key",
     );
-
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
+    expect(firstApiKeyReward.claimedAt).not.toBeNull();
+
+    const topUpReward = payload.rewards.find(
+        (reward) => reward.questId === TOP_UP_SINCE_LAUNCH_QUEST_ID,
+    );
+
+    if (!topUpReward) throw new Error("Expected top-up reward");
+    expect(topUpReward.claimedAt).toBeNull();
     const claimResponse = await SELF.fetch(
-        `http://localhost:3000/api/quests/rewards/${firstApiKeyReward.id}/claim`,
+        `http://localhost:3000/api/quests/rewards/${topUpReward.id}/claim`,
         {
             method: "POST",
             headers: {
@@ -763,14 +777,14 @@ test("quest check records product rewards and claim endpoint credits one", async
     };
     expect(claimPayload.claimed).toBe(true);
     expect(claimPayload.reward.claimedAt).not.toBeNull();
-    expect(claimPayload.reward.pollenAmount).toBe(0.25);
+    expect(claimPayload.reward.pollenAmount).toBe(5);
 
     const [claimedBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(claimedBalance?.tierBalance).toBeCloseTo(
-        (user.tierBalance ?? 0) + 0.25,
+        (user.tierBalance ?? 0) + 5.25,
     );
 });
 
@@ -1063,7 +1077,7 @@ test("D1 quest check only records the requested user", async ({
         name: "Window User Key",
         key: "sk_api_key_window_user",
         prefix: "sk",
-        userId: secondUserId,
+        referenceId: secondUserId,
         createdAt: new Date(),
         updatedAt: new Date(),
     });
@@ -1112,7 +1126,7 @@ test("nine-month Early Adopter quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("app growth quests record connection, paid usage, and ten-user reach", async ({
+test("app growth quests reward paid usage and ten-user reach, not the first connection", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1123,6 +1137,7 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
         {
             userId: user.id,
             pollenUsed: 11,
+            paidPollenUsed: 3.01,
             paidRequests: 1,
         },
     ];
@@ -1153,7 +1168,7 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
     );
     expect(ownerQuestIds).toEqual(
         new Set([
-            "app_active",
+            "app_pollen_10",
             "app_paid_request",
             "app_users_10",
             "app_listed",
@@ -1192,7 +1207,7 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
     ]);
 });
 
-test("app milestones use inclusive thresholds while coming-soon Pollen stays inert", async ({
+test("app milestones award their rewards at inclusive thresholds", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1203,7 +1218,8 @@ test("app milestones use inclusive thresholds while coming-soon Pollen stays ine
         {
             userId: user.id,
             pollenUsed: 10,
-            paidRequests: 0,
+            paidPollenUsed: 3,
+            paidRequests: 1,
         },
     ];
 
@@ -1212,16 +1228,27 @@ test("app milestones use inclusive thresholds while coming-soon Pollen stays ine
     await checkQuestsForUser(env, user.id);
 
     const rewards = await db
-        .select({ questId: schema.rewards.questId })
+        .select({
+            questId: schema.rewards.questId,
+            pollenAmount: schema.rewards.pollenAmount,
+        })
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("app_users_10")).toBe(true);
-    expect(questIds.has("app_pollen_10")).toBe(false);
-    expect(questIds.has("app_paid_request")).toBe(false);
+    expect(questIds.has("app_pollen_10")).toBe(true);
+    expect(questIds.has("app_paid_request")).toBe(true);
+    expect(questIds.has("app_active")).toBe(false);
+    expect(rewards).toEqual(
+        expect.arrayContaining([
+            { questId: "app_users_10", pollenAmount: 3 },
+            { questId: "app_pollen_10", pollenAmount: 5 },
+            { questId: "app_paid_request", pollenAmount: 15 },
+        ]),
+    );
 });
 
-test("app milestones do not record below their thresholds", async ({
+test("app milestones do not record below their thresholds, even with Quest Pollen usage", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1231,7 +1258,8 @@ test("app milestones do not record below their thresholds", async ({
     mocks.tinybird.state.appUsageResponse = [
         {
             userId: user.id,
-            pollenUsed: 9.99,
+            pollenUsed: 100,
+            paidPollenUsed: 2.99,
             paidRequests: 0,
         },
     ];
@@ -1245,6 +1273,12 @@ test("app milestones do not record below their thresholds", async ({
         target: 10,
         unit: "users",
     });
+    expect(result.progress).toContainEqual({
+        questId: "app_pollen_10",
+        current: 2.99,
+        target: 3,
+        unit: "pollen",
+    });
 
     const rewards = await db
         .select({ questId: schema.rewards.questId })
@@ -1254,6 +1288,85 @@ test("app milestones do not record below their thresholds", async ({
     expect(questIds.has("app_paid_request")).toBe(false);
     expect(questIds.has("app_users_10")).toBe(false);
     expect(questIds.has("app_pollen_10")).toBe(false);
+});
+
+test("app spending quest does not use gross Pollen when Paid usage is missing", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    mocks.tinybird.state.appUsageResponse = [
+        { userId: user.id, pollenUsed: 100, paidRequests: 1 },
+    ];
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "app_pollen_10"));
+    expect(rewards).toHaveLength(0);
+});
+
+test("existing app rewards retain their original amounts and remain claimable once", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("tinybird");
+    const originalRewards = [
+        { questId: "app_active", amount: 7 },
+        { questId: "app_users_10", amount: 15 },
+        { questId: "app_pollen_10", amount: 3 },
+    ];
+    mocks.tinybird.state.appUsageResponse = [
+        { userId: user.id, pollenUsed: 3, paidPollenUsed: 3, paidRequests: 0 },
+    ];
+    await recordRewards(
+        db,
+        originalRewards.map(({ questId, amount }) => ({
+            idempotencyKey: rewardKey(questId, user.githubId),
+            userId: user.id,
+            questId,
+            title: questId,
+            amount,
+            bucket: "tier",
+        })),
+    );
+    await seedByopConnections(user.id, 10, "existing-app-rewards");
+
+    const result = await checkQuestsForUser(
+        env,
+        user.id,
+        questIndex.QUEST_GROUPS.filter((group) => group.id === "app-growth"),
+    );
+    expect(result.success).toBe(true);
+    expect(result.recorded).toBe(0);
+
+    const rewards = await db
+        .select()
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(rewards).toHaveLength(3);
+    for (const reward of rewards) {
+        const claim = { rewardId: reward.id, userId: user.id };
+        const claimed = await claimReward(db, claim);
+        expect(claimed.claimed).toBe(true);
+        expect(claimed.reward?.pollenAmount).toBe(
+            originalRewards.find(
+                (original) => original.questId === reward.questId,
+            )?.amount,
+        );
+        expect((await claimReward(db, claim)).claimed).toBe(false);
+    }
+    const [balance] = await db
+        .select({ value: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 25);
 });
 
 test("quest check records model-usage rewards per modality", async ({
@@ -1291,6 +1404,85 @@ test("quest check records model-usage rewards per modality", async ({
                 call.query.user_id === user.id,
         ),
     ).toBe(true);
+});
+
+for (const { usedAgent, createdUsedAgent, expected } of [
+    { usedAgent: 0, createdUsedAgent: 0, expected: [] },
+    { usedAgent: 1, createdUsedAgent: 0, expected: ["use_agent"] },
+    { usedAgent: 0, createdUsedAgent: 1, expected: ["create_used_agent"] },
+    {
+        usedAgent: 1,
+        createdUsedAgent: 1,
+        expected: ["create_used_agent", "use_agent"],
+    },
+]) {
+    test(`agent quests award each milestone once: ${usedAgent}/${createdUsedAgent}`, async ({
+        mocks,
+        sessionToken: _sessionToken,
+    }) => {
+        const user = await getOnlyUser();
+        const db = drizzle(env.DB, { schema });
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.agentUsageResponse = [
+            { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
+            { userId: user.id, usedAgent, createdUsedAgent },
+        ];
+        const groups = [{ id: "agent-usage", ...agentUsage }];
+        const result = await checkQuestsForUser(env, user.id, groups);
+        expect(result.success).toBe(true);
+        expect(result.recorded).toBe(expected.length);
+        expect((await checkQuestsForUser(env, user.id, groups)).recorded).toBe(
+            0,
+        );
+
+        const rewards = await db
+            .select()
+            .from(schema.rewards)
+            .where(eq(schema.rewards.userId, user.id));
+        expect(rewards.map((r) => r.questId).sort()).toEqual(expected);
+        for (const reward of rewards) {
+            expect(reward.pollenAmount).toBe(
+                reward.questId === "use_agent" ? 0.25 : 2,
+            );
+            expect(reward.balanceBucket).toBe("tier");
+            expect(reward.claimedAt).toBeNull();
+        }
+        expect(mocks.tinybird.state.pipeCalls).toContainEqual({
+            url: expect.stringContaining("/v0/pipes/quest_agent_usage.json"),
+            query: {
+                user_id: user.id,
+                github_username: user.githubUsername ?? "",
+            },
+        });
+        for (const reward of rewards) {
+            const claim = { rewardId: reward.id, userId: user.id };
+            expect((await claimReward(db, claim)).claimed).toBe(true);
+            expect((await claimReward(db, claim)).claimed).toBe(false);
+        }
+        expect((await getOnlyUser()).tierBalance).toBeCloseTo(
+            (user.tierBalance ?? 0) +
+                rewards.reduce((sum, reward) => sum + reward.pollenAmount, 0),
+        );
+        expect((await checkQuestsForUser(env, user.id, groups)).recorded).toBe(
+            0,
+        );
+    });
+}
+
+test("agent quests ignore another user's milestone rows", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.agentUsageResponse = [
+        { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
+    ];
+    const result = await checkQuestsForUser(env, user.id, [
+        { id: "agent-usage", ...agentUsage },
+    ]);
+    expect(result.success).toBe(true);
+    expect(result.recorded).toBe(0);
 });
 
 test("quest check ignores Tinybird rows for other users", async ({
@@ -1383,7 +1575,7 @@ test("github established-account quest records once per GitHub identity", async 
         {
             idempotencyKey: `quest:github_established:github:${user.githubId}`,
             userId: user.id,
-            pollenAmount: 3,
+            pollenAmount: 2,
             balanceBucket: "tier",
         },
     ]);
@@ -1423,7 +1615,7 @@ test("github established-account quest waits until the threshold", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 729 * 24 * 60 * 60 * 1000,
+        Date.now() - 1094 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await mocks.enable("github", "tinybird");
 
@@ -1432,8 +1624,8 @@ test("github established-account quest waits until the threshold", async ({
 
     expect(beforeThreshold.progress).toContainEqual({
         questId: "github_established",
-        current: 729,
-        target: 730,
+        current: 1094,
+        target: 1095,
         unit: "days",
     });
 
@@ -1449,7 +1641,7 @@ test("github established-account quest waits until the threshold", async ({
     ).toBe(true);
 
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 730 * 24 * 60 * 60 * 1000,
+        Date.now() - 1095 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await checkQuestsForUser(env, user.id);
 

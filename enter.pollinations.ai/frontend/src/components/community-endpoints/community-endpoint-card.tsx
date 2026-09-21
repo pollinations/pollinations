@@ -8,6 +8,7 @@ import {
     CopyButton,
     currentPeriod,
     ExternalLinkIcon,
+    GitHubIcon,
     GlobeIcon,
     IconButton,
     LockIcon,
@@ -20,10 +21,13 @@ import {
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ManagedAgent,
+    openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
@@ -31,14 +35,16 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    agent?: ManagedAgent;
     isToggling: boolean;
     onToggle: () => void;
-    onEdit: () => void;
+    onEdit?: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
+    agent,
     isToggling,
     onToggle,
     onEdit,
@@ -46,8 +52,11 @@ export function CommunityEndpointCard({
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
+    const hasUpstreamEndpoint =
+        endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
         <Surface
@@ -95,15 +104,17 @@ export function CommunityEndpointCard({
                               ? "Relist"
                               : "Hide"}
                     </Button>
-                    <IconButton
-                        intent="info"
-                        title={isAgent ? "Edit agent" : "Edit model"}
-                        tooltip={isAgent ? "Edit agent" : "Edit model"}
-                        tooltipAlign="center"
-                        onClick={onEdit}
-                    >
-                        <PencilIcon className="h-4 w-4" />
-                    </IconButton>
+                    {onEdit && (
+                        <IconButton
+                            intent="info"
+                            title={isAgent ? "Edit agent" : "Edit model"}
+                            tooltip={isAgent ? "Edit agent" : "Edit model"}
+                            tooltipAlign="center"
+                            onClick={onEdit}
+                        >
+                            <PencilIcon className="h-4 w-4" />
+                        </IconButton>
+                    )}
                     <IconButton
                         intent="danger"
                         title="Delete model"
@@ -137,15 +148,28 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {endpoint.type !== "prompt_agent" && (
+                {agent?.type === "code_agent" && (
+                    <CommunityDetailRow
+                        icon={<GitHubIcon className="h-3.5 w-3.5" />}
+                        label="Source"
+                        value={`${agent.repository}/agent.ts @ ${agent.deployedCommitSha.slice(0, 7)}`}
+                        copyLabel="Copy source"
+                    />
+                )}
+                {hasUpstreamEndpoint && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
-                        value={endpoint.baseUrl}
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
                         copyLabel="Copy endpoint"
                     />
                 )}
-                {endpoint.type !== "prompt_agent" && (
+                {hasUpstreamEndpoint && (
                     <>
                         {endpoint.type === "proxy" && (
                             <CommunityDetailRow
@@ -180,11 +204,18 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     to="/activity"
                     search={{
-                        ...currentPeriod(),
+                        usageGranularity: "day",
+                        usagePeriod: currentPeriod().period,
+                        usageBucket: undefined,
+                        usageAnchor: undefined,
+                        earningsGranularity: "day",
+                        earningsPeriod: currentPeriod().period,
+                        earningsBucket: undefined,
+                        earningsAnchor: undefined,
                         earningsModels: [endpoint.modelId],
                         usageMetric: undefined,
                         usageKeys: undefined,
@@ -196,6 +227,9 @@ export function CommunityEndpointCard({
                 >
                     View activity
                 </Link>
+                {testableModelId && (
+                    <OpenWebUiLink modelId={testableModelId} variant="text" />
+                )}
             </div>
         </Surface>
     );

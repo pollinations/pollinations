@@ -60,11 +60,19 @@ export function resolveModelConfig(
     const definedOptions = Object.fromEntries(
         Object.entries(options).filter(([_, v]) => v !== undefined),
     );
+    const defaults = {
+        ...((config.defaultOptions || {}) as Record<string, unknown>),
+    };
+    // Either caller-supplied token limit must win before alias conversion.
+    if (options.max_tokens != null || options.max_completion_tokens != null) {
+        delete defaults.max_tokens;
+        delete defaults.max_completion_tokens;
+    }
 
     return {
         messages,
         options: {
-            ...((config.defaultOptions || {}) as Record<string, unknown>),
+            ...defaults,
             ...definedOptions,
             model: usedModel,
             modelConfig: config,

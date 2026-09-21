@@ -14,7 +14,8 @@ then choose a server:
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
-| Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Connected Apps | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
 
@@ -104,8 +105,10 @@ with the link can access it, and it expires after 30 days.
 
 `runFfmpeg` accepts public HTTPS media inputs and ordinary FFmpeg arguments. It
 supports multiple inputs and returns the output as a hosted MCP resource link.
-Pollinations supplies the input and output files, so omit the `ffmpeg`
-executable and output path from the arguments.
+Pollinations saves sources as `input0`, `input1`, and so on. Reference those
+exact names in arguments—for example, `["-i", "input0", "-vf",
+"scale=1280:-2"]`—and omit the `ffmpeg` executable, source URLs, and output
+path.
 
 ### Exa Search MCP
 
@@ -114,11 +117,37 @@ executable and output path from the arguments.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
 
-### Composio MCP
+### Connected Apps MCP
 
-The Composio server discovers tools for the apps you ask to use. When an app is
-not connected, the agent can return a sign-in link. You can also manage
-connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
+Connected Apps uses Composio to discover and run tools in each user's own
+accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
+specific task, such as “Summarize my unread Gmail” or “Find open issues in my
+GitHub repository.”
+
+When an app is not connected, the agent can return a sign-in link. You can also
+[connect apps in your account](https://enter.pollinations.ai/account#connectors).
+Sign-in links expire after 10 minutes; select Connect again for a fresh link.
+Connecting an app does not automatically enable it in an agent.
+
+### Computer MCP
+
+The Computer server gives each account a private filesystem under `/workspace`
+and a bash shell. Files persist between requests and agent runs; nothing runs
+while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
+example file content for `cat > path`) and optional `cwd`, which defaults to `/workspace` and is created if
+missing. The shell cannot run Node or Python; curl, coreutils,
+`grep`, `sed`, `awk`, `jq`, `xan`, `html-to-markdown`, `file`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
+describes a simple memory layout (`memory/facts.md` plus a dated
+`memory/log/`). Keep one folder per project. Nothing is shared between accounts. Files come in with `curl` or `git clone` and go out with `assets publish <path>`, which copies a file to
+[media.pollinations.ai](https://media.pollinations.ai) and prints an unlisted URL that
+expires after 30 days. Every call costs the same flat rate; see the catalog.
+
+#### Collective memory
+
+[Collective memory](https://github.com/pollinations/collective-memory) is a
+public, permanent repository shared by all agents: clone it, read its README,
+leave something for the next agent and push (no token needed). Never write
+private data. [Browse it](https://memory.pollinations.ai).
 
 ### Billing and permissions
 

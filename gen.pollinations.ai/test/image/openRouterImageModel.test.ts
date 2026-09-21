@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
+    callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -25,7 +26,7 @@ WIDE_PNG.writeUInt32BE(1440, 20);
 const WIDE_PNG_DATA_URI = `data:image/png;base64,${WIDE_PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
-    model: "grok-imagine-pro",
+    model: "x-ai/grok-imagine-image-quality",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -98,7 +99,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
         });
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
-            actualModel: "grok-imagine-pro",
+            actualModel: "x-ai/grok-imagine-image-quality",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -150,7 +151,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             callOpenRouterGrokImagineProAPI("test prompt", baseParams),
         ).rejects.toMatchObject({
             status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });
 });
@@ -173,7 +174,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
 
         const result = await callOpenRouterGrokImagineImage2API("test prompt", {
             ...baseParams,
-            model: "grok-imagine-image-2.0",
+            model: "x-ai/grok-imagine-image-2.0",
             quality,
             resolution,
             image: [
@@ -210,7 +211,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             ],
         });
         expect(result.trackingData).toEqual({
-            actualModel: "grok-imagine-image-2.0",
+            actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
                 promptImageTokens: 3,
                 completionImageTokens: 1,
@@ -222,7 +223,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         await expect(
             callOpenRouterGrokImagineImage2API("test prompt", {
                 ...baseParams,
-                model: "grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0",
                 image: ["one", "two", "three", "four"],
             }),
         ).rejects.toMatchObject({
@@ -250,11 +251,93 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         await expect(
             callOpenRouterGrokImagineImage2API("test prompt", {
                 ...baseParams,
-                model: "grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0",
             }),
         ).rejects.toMatchObject({
             status: 400,
             message: "Request refused by content policy",
+        });
+    });
+});
+
+describe("OpenRouter FLUX.2 Max", () => {
+    function mockFlux2MaxFetch(requests: Record<string, unknown>[]) {
+        return vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (
+                    href === REFERENCE_IMAGE_URL ||
+                    href === WIDE_REFERENCE_IMAGE_URL
+                ) {
+                    return new Response(
+                        href === WIDE_REFERENCE_IMAGE_URL ? WIDE_PNG : PNG,
+                        { headers: { "Content-Type": "image/png" } },
+                    );
+                }
+                if (href !== OPENROUTER_IMAGE_URL) {
+                    return new Response("unexpected URL", { status: 404 });
+                }
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    data: [{ b64_json: "AQID" }],
+                    usage: { cost: 0.05 },
+                });
+            });
+    }
+
+    it("downloads and inlines reference images as data URIs (BFL rejects redirects on raw URLs)", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockFlux2MaxFetch(requests);
+
+        const result = await callOpenRouterFlux2MaxAPI("test prompt", {
+            ...baseParams,
+            model: "black-forest-labs/flux.2-max:openrouter",
+            image: [REFERENCE_IMAGE_URL, WIDE_REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "black-forest-labs/flux.2-max",
+            prompt: "test prompt",
+            n: 1,
+            seed: 42,
+            provider: {
+                only: ["black-forest-labs/us-3"],
+                allow_fallbacks: false,
+            },
+            aspect_ratio: "1:1",
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+                {
+                    type: "image_url",
+                    image_url: {
+                        url: `data:image/png;base64,${WIDE_PNG.toString("base64")}`,
+                    },
+                },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux.2-max:openrouter",
+            usage: { completionImageTokens: 1.048576 },
+        });
+    });
+
+    it("rejects more than 8 reference images", async () => {
+        await expect(
+            callOpenRouterFlux2MaxAPI("test prompt", {
+                ...baseParams,
+                model: "black-forest-labs/flux.2-max:openrouter",
+                image: Array(9).fill("https://example.com/ref.png"),
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "FLUX.2 Max supports at most 8 reference images",
         });
     });
 });
@@ -316,7 +399,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "nanobanana",
+            model: "google/gemini-2.5-flash-image",
             width: 1024,
             height: 1024,
         });
@@ -335,7 +418,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "nanobanana",
+            actualModel: "google/gemini-2.5-flash-image",
             usage: {
                 promptTextTokens: 9,
                 completionImageTokens: 1290,
@@ -363,7 +446,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "nanobanana-2",
+            model: "google/gemini-3.1-flash-image",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -385,7 +468,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "nanobanana-2",
+            actualModel: "google/gemini-3.1-flash-image",
             usage: {
                 promptTextTokens: 12,
                 completionTextTokens: 12,
@@ -411,7 +494,7 @@ describe("OpenRouter Gemini image", () => {
 
         await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "nanobanana-2",
+            model: "google/gemini-3.1-flash-image",
             width,
             height,
             reasoning: "fast",
@@ -441,7 +524,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "nanobanana-2-lite",
+            model: "google/gemini-3.1-flash-lite-image",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -463,7 +546,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "nanobanana-2-lite",
+            actualModel: "google/gemini-3.1-flash-lite-image",
             usage: {
                 promptTextTokens: 10,
                 completionReasoningTokens: 4,
@@ -492,7 +575,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "nanobanana-pro",
+            model: "google/gemini-3-pro-image",
             width: 3840,
             height: 2160,
             reasoning: "pro",
@@ -513,7 +596,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "nanobanana-pro",
+            actualModel: "google/gemini-3-pro-image",
             usage: {
                 promptTextTokens: 14,
                 completionReasoningTokens: 8,
@@ -537,7 +620,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("edit prompt", {
             ...baseParams,
-            model: "nanobanana",
+            model: "google/gemini-2.5-flash-image",
             width: 1280,
             height: 720,
             image: [REFERENCE_IMAGE_URL],
@@ -596,7 +679,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "nanobanana",
+                model: "google/gemini-2.5-flash-image",
             }),
         ).rejects.toMatchObject({ status: 502 });
     });
@@ -619,7 +702,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "nanobanana",
+                model: "google/gemini-2.5-flash-image",
             }),
         ).rejects.toMatchObject({
             status: 400,
@@ -637,7 +720,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("edit prompt", {
                 ...baseParams,
-                model: "nanobanana",
+                model: "google/gemini-2.5-flash-image",
                 image: [
                     REFERENCE_IMAGE_URL,
                     REFERENCE_IMAGE_URL,
@@ -694,7 +777,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         const result = await callOpenRouterSeedreamProAPI("test prompt", {
             ...baseParams,
-            model: "seedream-pro",
+            model: "bytedance/seedream-4.5",
             width: 2048,
             height: 2048,
         });
@@ -721,7 +804,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         });
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
-            actualModel: "seedream-pro",
+            actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -739,7 +822,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         await callOpenRouterSeedreamProAPI("wide prompt", {
             ...baseParams,
-            model: "seedream-pro",
+            model: "bytedance/seedream-4.5",
             width: 4096,
             height: 2304,
             aspectRatio: "16:9",
@@ -761,7 +844,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 
         await callOpenRouterSeedreamProAPI("edit prompt", {
             ...baseParams,
-            model: "seedream-pro",
+            model: "bytedance/seedream-4.5",
             image: [WIDE_REFERENCE_IMAGE_URL, REFERENCE_IMAGE_URL],
         });
 
@@ -787,7 +870,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         );
         const params = {
             ...baseParams,
-            model: "seedream-pro",
+            model: "bytedance/seedream-4.5",
         } satisfies ImageParams;
 
         await expect(
@@ -850,7 +933,7 @@ describe("OpenRouter Recraft vector", () => {
 
         const result = await callOpenRouterRecraftVectorAPI("vector prompt", {
             ...baseParams,
-            model: "recraft-v4.1-vector",
+            model: "recraft/recraft-v4.1-vector",
             width: 1280,
             height: 720,
         });
@@ -878,7 +961,7 @@ describe("OpenRouter Recraft vector", () => {
         expect(result.buffer.toString()).toBe(svg);
         expect(result.mimeType).toBe("image/svg+xml");
         expect(result.trackingData).toEqual({
-            actualModel: "recraft-v4.1-vector",
+            actualModel: "recraft/recraft-v4.1-vector",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -893,7 +976,7 @@ describe("OpenRouter Recraft vector", () => {
 
         const result = await callOpenRouterRecraftVectorAPI("edit prompt", {
             ...baseParams,
-            model: "recraft-v4.1-vector",
+            model: "recraft/recraft-v4.1-vector",
             image: ["https://example.com/input.svg"],
         });
 
@@ -933,11 +1016,11 @@ describe("OpenRouter Recraft vector", () => {
         await expect(
             callOpenRouterRecraftVectorAPI("vector prompt", {
                 ...baseParams,
-                model: "recraft-v4.1-vector",
+                model: "recraft/recraft-v4.1-vector",
             }),
         ).rejects.toMatchObject({
             status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });
 
@@ -961,11 +1044,14 @@ describe("OpenRouter Recraft vector", () => {
         await expect(
             callOpenRouterRecraftVectorAPI("vector prompt", {
                 ...baseParams,
-                model: "recraft-v4.1-vector",
+                model: "recraft/recraft-v4.1-vector",
             }),
         ).rejects.toMatchObject({
             status: 429,
             upstreamStatus: 429,
+            responseBody: JSON.stringify({
+                error: { message: "Recraft upstream returned 429", code: 429 },
+            }),
             requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });

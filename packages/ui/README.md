@@ -33,7 +33,7 @@ export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface>
-                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+                <AppUserMenu />
             </Surface>
         </PolliProvider>
     );
@@ -132,7 +132,11 @@ Wallet colors and utilities are bundled into the main stylesheet
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
   compositions. These can be used without Pollinations auth.
-- `@pollinations/ui/auth` exports SDK-free auth modal pieces:
+- `@pollinations/ui/auth` exports `PollinationsSignInButton` (official brand
+  asset, outlined amber styling, accessible provider label) and `DashboardSignIn`
+  (the shared satellite-app sign-in page). Apps supply the sign-in action; these
+  components do not issue credentials or choose an authentication method.
+- `@pollinations/ui/auth` also exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
 - `@pollinations/ui/auth/sdk` exports identity/session components that read
@@ -153,6 +157,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
+- `@pollinations/ui/markdown` exports `Markdown` and `Prose`, kept off the
+  root entry so react-markdown only loads where documents render.
 - `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
@@ -164,8 +170,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
-  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
-  `Prose`, `Section`, `StatCard`.
+  `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
+  `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell
@@ -185,8 +191,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
-  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
-  layers.
+  `@pollinations/ui/markdown`, `@pollinations/ui/app-user-menu/sdk`) are
+  built directly from those source layers.
 
 ## Theming
 

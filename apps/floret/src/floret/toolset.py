@@ -364,6 +364,10 @@ async def dispatch(
 
         if name == "text_to_speech":
             model = call_args.get("model", "openai-audio")
+            from floret.registry import get_audio_endpoint
+
+            endpoint = routing.audio_endpoint if routing and routing.audio else None
+            endpoint = endpoint or get_audio_endpoint(model)
             res = (
                 await gen.text_to_speech(
                     **{
@@ -372,7 +376,7 @@ async def dispatch(
                         if key not in {"duration", "seed"}
                     }
                 )
-                if model in {"openai-audio", "openai-audio-large"}
+                if endpoint == "/v1/chat/completions"
                 else await gen.generate_audio(**call_args)
             )
             art = {
@@ -392,9 +396,11 @@ async def dispatch(
             endpoint = "voice-changer" if name == "change_voice" else "voice-isolator"
             call_args.setdefault(
                 "model",
-                "eleven-voice-changer"
-                if name == "change_voice"
-                else "eleven-voice-isolator",
+                (
+                    "eleven-voice-changer"
+                    if name == "change_voice"
+                    else "eleven-voice-isolator"
+                ),
             )
             res = await gen.transform_audio(endpoint=endpoint, **call_args)
             art = {
@@ -454,6 +460,7 @@ def parse_args(raw: str | dict[str, Any]) -> dict[str, Any]:
     if isinstance(raw, dict):
         return raw
     try:
-        return json.loads(raw or "{}")
+        parsed = json.loads(raw or "{}")
     except json.JSONDecodeError:
         return {}
+    return parsed if isinstance(parsed, dict) else {}

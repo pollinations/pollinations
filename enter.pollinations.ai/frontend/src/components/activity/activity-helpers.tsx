@@ -1,5 +1,16 @@
-import { Button, DownloadIcon, MultiSelect, Tooltip } from "@pollinations/ui";
-import type { FC } from "react";
+import {
+    Button,
+    CardIcon,
+    DownloadIcon,
+    MultiSelect,
+    SproutIcon,
+    Surface,
+    Tooltip,
+} from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import type { FC, KeyboardEvent, ReactNode } from "react";
+import { formatActivityPollen } from "./format-activity-pollen";
+import type { Metric } from "./types";
 
 type ActivityFilterProps = {
     label: string;
@@ -7,6 +18,7 @@ type ActivityFilterProps = {
     selected: string[];
     onChange: (selected: string[]) => void;
     emptyMessage: string;
+    missingLabel?: string;
 };
 
 export const ActivityFilter: FC<ActivityFilterProps> = ({
@@ -15,19 +27,37 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
     selected,
     onChange,
     emptyMessage,
+    missingLabel,
 }) => (
-    <div className="flex w-full items-center gap-3">
-        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+    <div className="flex min-w-0 flex-col gap-1.5">
+        <span className="px-1 text-xs font-medium text-theme-text-muted">
             {label}
         </span>
-        <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-            {options.length === 0 ? (
+        <div
+            data-theme={selected.length ? undefined : "neutral"}
+            className="min-w-0"
+        >
+            {options.length === 0 && selected.length === 0 ? (
                 <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
                     {emptyMessage}
                 </span>
             ) : (
                 <MultiSelect
-                    options={options}
+                    fullWidth
+                    options={[
+                        ...options,
+                        ...selected
+                            .filter(
+                                (id) =>
+                                    !options.some(
+                                        (option) => option.value === id,
+                                    ),
+                            )
+                            .map((id) => ({
+                                value: id,
+                                label: missingLabel ?? id,
+                            })),
+                    ]}
                     selected={selected}
                     onChange={onChange}
                     placeholder="All"
@@ -37,6 +67,23 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
         </div>
     </div>
 );
+
+export function clearActivitySelectionOnEscape(
+    event: KeyboardEvent<HTMLElement>,
+    clear: () => void,
+): void {
+    // Portalled calendars/filters own Escape; React still bubbles their events here.
+    if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        !(event.target instanceof Element) ||
+        !event.currentTarget.contains(event.target)
+    )
+        return;
+    event.preventDefault();
+    clear();
+    if (event.target instanceof SVGElement) event.target.blur();
+}
 
 type CsvDownloadButtonProps = {
     disabled: boolean;
@@ -54,9 +101,10 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             as="button"
             onClick={onClick}
             disabled={disabled}
-            className="flex items-center gap-1.5"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
         >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
+            <DownloadIcon className="h-4 w-4 shrink-0" />
             CSV
         </Button>
     );
@@ -74,6 +122,15 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
         button
     );
 };
+
+/** Same height as the chart and loading states so the card never jumps. */
+export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
+    children,
+}) => (
+    <Surface className="flex h-[180px] items-center justify-center text-center">
+        <p className="max-w-md text-sm text-theme-text-muted">{children}</p>
+    </Surface>
+);
 
 export function downloadFile(url: string): void {
     const anchor = document.createElement("a");
@@ -114,4 +171,46 @@ export function formatActivityChartDate(
             }),
         }),
     };
+}
+
+export function PollenUsageBadges(usage: {
+    metric: Metric;
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
+}) {
+    const isPollen = usage.metric === "pollen";
+    const paid = isPollen
+        ? formatActivityPollen(usage.paidPollen)
+        : usage.paidRequests.toLocaleString();
+    const quest = isPollen
+        ? formatActivityPollen(usage.tierPollen)
+        : usage.tierRequests.toLocaleString();
+    const unit = isPollen ? "Pollen" : "requests";
+    return (
+        <div className="grid min-w-44 grid-cols-2 items-center justify-items-start gap-2">
+            <PaidChip
+                size="sm"
+                className="gap-2 whitespace-nowrap tabular-nums"
+                title={`Paid ${unit}`}
+                aria-label={`${paid} Paid ${unit}`}
+            >
+                <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {paid}
+            </PaidChip>
+            <TierChip
+                size="sm"
+                className="gap-2 whitespace-nowrap tabular-nums"
+                title={`Quest ${unit}`}
+                aria-label={`${quest} Quest ${unit}`}
+            >
+                <SproutIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                />
+                {quest}
+            </TierChip>
+        </div>
+    );
 }

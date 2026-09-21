@@ -1,22 +1,32 @@
+import { env } from "cloudflare:test";
+import { validator } from "@shared/middleware/validator.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
     CreateResponseResponseSchema,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
+import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
+import type { Env } from "@/env.ts";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     buildDirectResponsesRequestBody,
     validateDirectResponsesRequest,
 } from "@/text/responses/request.ts";
-import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
+import {
+    createResponsesStreamUsageValidator,
+    requireResponsesStreamUsage,
+} from "@/text/responses/stream.ts";
 import {
     getResponsesEventUsage,
+    isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
 
@@ -48,6 +58,58 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("preserves the complete raw provider error envelope", async () => {
+        const directRequest = request();
+        const body = JSON.stringify(
+            {
+                error: { message: "Rate limited" },
+                token: "test-only",
+                trace: "x".repeat(20000),
+            },
+            null,
+            2,
+        );
+        const fetcher = vi.fn(async () => new Response(body, { status: 429 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                authorizedTarget(directRequest),
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+    });
+
+    it("keeps a managed agent's caller-facing status instead of remapping it", async () => {
+        const directRequest = request();
+        const body = JSON.stringify({
+            error: {
+                message:
+                    "Model 'openai/gpt-5-nano' is not allowed for this API key",
+                code: "agent_error",
+            },
+        });
+        const fetcher = vi.fn(async () => new Response(body, { status: 403 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                {
+                    ...authorizedTarget(directRequest),
+                    callerFacingStatus: true,
+                },
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 403,
+            upstreamStatus: 403,
+            message:
+                "Model 'openai/gpt-5-nano' is not allowed for this API key",
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],
@@ -179,6 +241,7 @@ describe("direct Responses transport", () => {
                     input: "Hello",
                     store: false,
                     max_output_tokens: 64000,
+                    max_tool_calls: 4,
                     provider: { sort: "price" },
                     tools: [
                         {
@@ -193,10 +256,12 @@ describe("direct Responses transport", () => {
                     "Bearer openrouter-test-key",
                 );
                 expect(init?.signal).toBeUndefined();
+                expect(init?.redirect).toBe("manual");
                 return Response.json(body);
             },
         );
         const directRequest = request({
+            max_tool_calls: 4,
             tools: [
                 {
                     type: "function",
@@ -224,6 +289,19 @@ describe("direct Responses transport", () => {
                 output: [],
             }),
         ).toThrow();
+    });
+
+    it("accepts a failed Responses envelope with null usage", () => {
+        expect(
+            CreateResponseResponseSchema.parse({
+                id: "resp_failed",
+                object: "response",
+                model: "qwen/qwen3.7-plus",
+                status: "failed",
+                output: [],
+                usage: null,
+            }),
+        ).toMatchObject({ status: "failed", usage: null });
     });
 
     it("rejects malformed usage detail fields consumed by billing", () => {
@@ -279,6 +357,46 @@ describe("direct Responses transport", () => {
         );
     });
 
+    it("accepts an explicit error as a terminal unbillable stream outcome", () => {
+        const validator = createResponsesStreamUsageValidator();
+        const error = { type: "error", code: "agent_error", message: "failed" };
+        validator.feed(
+            encoder.encode(`event: error\ndata: ${JSON.stringify(error)}\n\n`),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+        expect(isResponsesFailure(error)).toBe(true);
+    });
+
+    it("continues event numbering when missing usage fails a stream", async () => {
+        const source = new Response(
+            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"partial","sequence_number":7}\n\n',
+        ).body as ReadableStream<Uint8Array<ArrayBuffer>>;
+        const output = await new Response(
+            requireResponsesStreamUsage(source),
+        ).text();
+        expect(output).toContain('"sequence_number":8');
+        expect(output).toContain('"code":"usage_missing"');
+        expect(output).not.toContain("[DONE]");
+    });
+
+    it("accepts response.failed with null usage as an unbillable outcome", () => {
+        const validator = createResponsesStreamUsageValidator();
+        const failed = {
+            type: "response.failed",
+            response: { status: "failed", usage: null },
+        };
+        validator.feed(
+            encoder.encode(
+                `event: response.failed\ndata: ${JSON.stringify(failed)}\n\n`,
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+        expect(isResponsesFailure(failed)).toBe(true);
+        expect(getResponsesEventUsage(failed)).toBeNull();
+    });
+
     it("normalizes terminal type from the SSE event field for tracking", () => {
         const event = normalizeResponsesTerminalEvent(
             {
@@ -302,5 +420,59 @@ describe("direct Responses transport", () => {
                 completionTextTokens: 1,
             }),
         });
+    });
+});
+
+it.each([
+    [
+        {
+            tools: [
+                {
+                    type: "function",
+                    name: "weather",
+                    parameters: { type: "object", properties: {} },
+                },
+            ],
+        },
+        "tool calling",
+    ],
+    [{ text: { format: { type: "json_object" } } }, "structured output"],
+    [{ max_output_tokens: 16385 }, "16384 output tokens"],
+])("Scout capability errors use the Responses invalid-request envelope: %j", async (options, message) => {
+    const app = new Hono<Env>();
+    app.use("*", async (c, next) => {
+        c.set("model", {
+            requested: "llama-scout",
+            resolved: "meta/llama-4-scout",
+            definition: TEXT_SERVICES["meta/llama-4-scout"],
+        });
+        await next();
+    });
+    app.post(
+        "/v1/responses",
+        validator("json", CreateResponseRequestSchema),
+        generateCreateResponse,
+    );
+    const response = await app.request(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama-scout",
+                input: "Hello",
+                safe: false,
+                ...options,
+            }),
+        },
+        env,
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+        error: {
+            type: "invalid_request_error",
+            code: "unsupported_parameter",
+            message: expect.stringContaining(message),
+        },
     });
 });

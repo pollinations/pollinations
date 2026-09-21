@@ -7,7 +7,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
+import {
+    firstContentPolicyMessage,
+    providerErrorText,
+} from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
 /** Formats the served target marker in Portkey's header shape. */
@@ -59,10 +62,9 @@ export function isNetworkFailure(error: unknown): boolean {
 }
 
 /**
- * The upstream failure shapes the generation clients throw. The image client
- * throws the provider's status as-is; the text client remaps it before throwing
- * (429 → 502, see remapUpstreamStatus) and keeps the original in
- * `upstreamStatus`, so the unremapped one is normally preferred. A successful
+ * Generation clients preserve the original provider status in `upstreamStatus`
+ * when mapping gateway failures (e.g. 429 → 502). Prefer that original status
+ * for retries. A successful
  * upstream status is the exception: if its body is malformed, the client wraps
  * that provider failure in a retryable status such as 502.
  */
@@ -145,13 +147,10 @@ function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
 }
 
 /**
- * Every place a provider might have put its reason. Content-policy detection is
- * a case-insensitive substring match, so the whole details bag is worth handing
- * over rather than the one field each client happens to parse out — the image
- * client nests the raw body under `details.body`, the text client puts the
- * parsed body in `details` itself.
+ * Read provider error fields consistently with the image boundary, without
+ * mistaking echoed request inputs for a content-policy rejection.
  */
-function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
+function upstreamFailureText(failure: UpstreamFailure): (string | undefined)[] {
     const { details } = failure;
     let detailsText: string | null = null;
     if (typeof details === "string") {
@@ -163,7 +162,15 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
             // A details bag we cannot serialize still leaves error.message.
         }
     }
-    return [detailsText, failure.message ?? null];
+    return [
+        providerErrorText(detailsText),
+        providerErrorText(
+            typeof failure.responseBody === "string"
+                ? failure.responseBody
+                : undefined,
+        ),
+        providerErrorText(failure.message),
+    ];
 }
 
 /**

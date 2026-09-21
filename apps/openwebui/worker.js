@@ -3,7 +3,7 @@ import { Container, getContainer } from "@cloudflare/containers";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
-const GEN_URL = "https://gen.pollinations.ai/v1";
+const GEN_URL = required("GEN_URL");
 
 function required(name) {
     const value = workerEnv[name];
@@ -42,8 +42,7 @@ export class OpenWebUIContainer extends Container {
         OAUTH_CLIENT_ID: required("OAUTH_CLIENT_ID"),
         OAUTH_CLIENT_SECRET: "",
         OAUTH_CODE_CHALLENGE_METHOD: "S256",
-        OPENID_PROVIDER_URL:
-            "https://enter.pollinations.ai/.well-known/oauth-authorization-server",
+        OPENID_PROVIDER_URL: `${required("ENTER_URL")}/.well-known/oauth-authorization-server`,
         OPENID_REDIRECT_URI: `${WEBUI_URL}/oauth/oidc/callback`,
         OAUTH_SCOPES: "profile",
         OAUTH_USERNAME_CLAIM: "name",
@@ -58,12 +57,22 @@ export class OpenWebUIContainer extends Container {
         ENABLE_SIGNUP: "false",
         // Anyone with a Pollinations account may chat; they pay with their own pollen.
         DEFAULT_USER_ROLE: "user",
+        // Models fetched from a connection have no row in the model table, and
+        // get_filtered_models() shows unconfigured models to admins only. Without
+        // this every non-admin gets an empty model picker.
+        BYPASS_MODEL_ACCESS_CONTROL: "true",
         // Without this the model picker defaults to the alphabetically first
         // community model.
         DEFAULT_MODELS: "openai",
+        // Titles, tags and follow-ups need text, even when the chat model generates media.
+        // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
+        // 3-12 s per title/tags/follow-up call. Seed value only; the live value is
+        // the `task.model.external` row in the config table.
+        TASK_MODEL_EXTERNAL: "openai/gpt-5.4-nano",
 
         // Model backend: gen.pollinations.ai, bearer = the user's OAuth sk_.
         ENABLE_OLLAMA_API: "false",
+        ENABLE_RESPONSES_API_STATEFUL: "false",
         OPENAI_API_BASE_URLS: GEN_URL,
         OPENAI_API_KEYS: "",
         OPENAI_API_CONFIGS: JSON.stringify({
@@ -72,16 +81,73 @@ export class OpenWebUIContainer extends Container {
                 auth_type: "system_oauth",
                 key: "",
                 prefix_id: "",
-                model_ids: [],
+                api_type: required("API_TYPE"),
+                model_ids: required("MODEL_IDS"),
                 connection_type: "external",
                 tags: [],
             },
         }),
 
-        // Never download local embedding/whisper models onto the ephemeral disk.
-        RAG_EMBEDDING_ENGINE: "openai",
-        RAG_OPENAI_API_BASE_URL: GEN_URL,
+        // Open WebUI injects its own builtin tools (time, chat history, ask_user)
+        // into every request that originates from its UI, unless the model says
+        // otherwise. Models fetched from a connection have no row in the model
+        // table, so utils/models.py applies this default metadata to them
+        // wholesale. Without it every chat carries tool specs, which managed
+        // agents and community models that do not support tool calling reject.
+        // The MCP tool server below is unaffected: it is opt-in per chat.
+        DEFAULT_MODEL_METADATA: JSON.stringify({
+            capabilities: { builtin_tools: false },
+        }),
+
+        // Pollinations MCP as a tool server, on the same per-user consent key as
+        // the model connection above: generation from a tool call is billed to
+        // the signed-in user, and getBalance reports their own wallet.
+        // access_grants is required — without it the server is admin-only.
+        // Both of these are seeded into the DB only on a first boot with an
+        // empty config table; afterwards the stored row wins and editing this
+        // does nothing (Config.seed_defaults inserts missing keys only).
+        TOOL_SERVER_CONNECTIONS: JSON.stringify(
+            workerEnv.MCP_URL
+                ? [
+                      {
+                          url: workerEnv.MCP_URL,
+                          path: "",
+                          type: "mcp",
+                          auth_type: "system_oauth",
+                          key: "",
+                          config: {
+                              enable: true,
+                              access_grants: [
+                                  {
+                                      principal_type: "user",
+                                      principal_id: "*",
+                                      permission: "read",
+                                  },
+                              ],
+                          },
+                          info: {
+                              id: "pollinations",
+                              name: "Pollinations",
+                              description:
+                                  "Generate images, video, audio, text and embeddings from your own wallet.",
+                          },
+                      },
+                  ]
+                : [],
+        ),
+
+        // RAG embeds with the bundled SentenceTransformers model, not gen.
+        // The RAG, image and audio subsystems all authenticate with a single
+        // static key rather than the per-user OAuth token the chat connection
+        // uses, so pointing them at gen would bill every user's documents to
+        // one wallet. Local embedding keeps that off a shared budget; the cost
+        // is a ~90 MB model download onto the ephemeral disk after a restart.
         ENABLE_VERSION_UPDATE_CHECK: "false",
+
+        // Cache the gen /v1/models fetch per user. The upstream default is 1 s,
+        // so every page load refetched and rebuilt the ~360-model list, which
+        // took 6-8 s on the 0.5 vCPU instance and gated the whole page.
+        MODELS_CACHE_TTL: "300",
     };
 }
 
@@ -91,7 +157,18 @@ function openwebui(env) {
 
 export default {
     async fetch(request, env) {
-        return openwebui(env).fetch(request);
+        const response = await openwebui(env).fetch(request);
+        if (response.webSocket) return response;
+        // Send the full chat URL as the referrer when a user follows a link
+        // out of a chat, so enter's top-up and key pages can bring them back
+        // to that chat. The browser default would send the origin only.
+        const headers = new Headers(response.headers);
+        headers.set("Referrer-Policy", "no-referrer-when-downgrade");
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+        });
     },
 
     // Keepalive: a request every 5 minutes resets sleepAfter.

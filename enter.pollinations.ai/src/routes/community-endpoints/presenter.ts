@@ -18,7 +18,6 @@ type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 export function toCommunityEndpointResponse(
     row: CommunityEndpointRow,
     ownerGithubUsername: string,
-    agentRuntimeUrl: string,
 ): CommunityEndpointResponse {
     const modelId = communityModelId(ownerGithubUsername, row.name);
     let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
@@ -64,8 +63,6 @@ export function toCommunityEndpointResponse(
         name: row.name,
         title: row.title,
         description: row.description,
-        baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
-        upstreamModel: row.upstreamModel,
         requiredSafetyFeatures: row.requiredSafetyFeatures,
         visibility:
             proxyState?.visibility ??
@@ -82,7 +79,7 @@ export function toCommunityEndpointResponse(
         updatedAt: row.updatedAt.toISOString(),
     };
 
-    if (row.type === "prompt_agent") {
+    if (row.type === "prompt_agent" || row.type === "code_agent") {
         return CommunityEndpointResponseSchema.parse({
             ...common,
             type: row.type,
@@ -97,17 +94,31 @@ export function toCommunityEndpointResponse(
             ...common,
             type: row.type,
             perUserRpm: payload.perUserRpm,
+            api: payload.api,
+            inputModalities: payload.inputModalities,
+            outputModalities: payload.outputModalities,
+            url: row.baseUrl,
+            upstreamModel: row.upstreamModel,
         });
     }
 
     if (!proxyState) throw new Error(`Invalid proxy payload for ${row.id}`);
     const payload = proxyState.payload;
     const pendingPayload = proxyState.pending?.payload ?? null;
-    const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
+    const {
+        bearerTokenCiphertext: _credential,
+        prices,
+        api,
+        ...proxy
+    } = payload;
     return CommunityEndpointResponseSchema.parse({
         ...common,
         type: row.type,
         ...proxy,
+        ...(payload.modality === "text"
+            ? { api, url: row.baseUrl }
+            : { baseUrl: row.baseUrl }),
+        upstreamModel: row.upstreamModel,
         advertised: normalizeCommunityEndpointAdvertised(
             payload.advertised,
             payload.modality,

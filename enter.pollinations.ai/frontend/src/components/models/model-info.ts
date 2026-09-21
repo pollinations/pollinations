@@ -14,6 +14,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
+    Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
     Krea: "krea",
@@ -35,7 +36,9 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
@@ -58,8 +61,10 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
-    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
+    if (model.community) {
+        return model.brandIconUrl;
+    }
+    const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
@@ -87,7 +92,8 @@ export type DisplayCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export const getModelCapabilities = (
     model: ModelPrice,
@@ -99,6 +105,7 @@ export const getModelCapabilities = (
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
+    if (hasPollinationsTools(model)) keys.push("pollinations_models");
 
     return keys;
 };
@@ -111,6 +118,7 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };

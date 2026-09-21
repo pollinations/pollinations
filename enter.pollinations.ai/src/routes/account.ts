@@ -1394,7 +1394,7 @@ export const accountRoutes = new Hono<Env>()
                     enabled: apikeyTable.enabled,
                 })
                 .from(apikeyTable)
-                .where(eq(apikeyTable.userId, user.id))
+                .where(eq(apikeyTable.referenceId, user.id))
                 .all();
             const parsedPermissions = keys.map((key) => {
                 if (!key.permissions) return null;
@@ -1528,7 +1528,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(
                     and(
                         eq(apikeyTable.id, id),
-                        eq(apikeyTable.userId, user.id),
+                        eq(apikeyTable.referenceId, user.id),
                     ),
                 )
                 .get();
@@ -1556,6 +1556,11 @@ export const accountRoutes = new Hono<Env>()
                         "application/json": {
                             schema: resolver(
                                 z.object({
+                                    id: z
+                                        .string()
+                                        .describe(
+                                            "Opaque ID for editing this key in the owner’s account",
+                                        ),
                                     valid: z
                                         .boolean()
                                         .describe(
@@ -1726,6 +1731,7 @@ export const accountRoutes = new Hono<Env>()
                 : null;
 
             return c.json({
+                id: apiKey.id,
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,

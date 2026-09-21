@@ -3,7 +3,6 @@ import {
     useAccountKey,
     useAccountKeyUsage,
     useAccountProfile,
-    useAuthActions,
     useModelCatalog,
 } from "@pollinations/sdk/react";
 import {
@@ -236,7 +235,6 @@ export function ModulesPage() {
         useModelCatalog({
             baseUrl: GEN_BASE_URL,
         });
-    const { enterUrl } = useAuthActions();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const accountKey = useAccountKey({ enabled: isLoggedIn });
     const keyUsage = useAccountKeyUsage({
@@ -290,7 +288,7 @@ export function ModulesPage() {
                     className="flex flex-col items-start gap-5"
                 >
                     <div className="flex flex-wrap items-center gap-3">
-                        <AppUserMenu dashboardHref={enterUrl} />
+                        <AppUserMenu />
                         {!isLoggedIn ? (
                             <span className="text-sm font-medium text-intent-danger-text">
                                 Authorize the app to load your account and
@@ -476,9 +474,9 @@ export function ModulesPage() {
                                                     {modelId(selectedModel)}
                                                 </CatalogValue>
                                             </CatalogTableRow>
-                                            <CatalogTableRow label="Brand">
+                                            <CatalogTableRow label="Publisher">
                                                 <CatalogValue>
-                                                    {selectedModel.brand ??
+                                                    {selectedModel.publisher ??
                                                         "Not listed"}
                                                 </CatalogValue>
                                             </CatalogTableRow>

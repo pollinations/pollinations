@@ -1,3 +1,4 @@
+import type { ModelHealth } from "@shared/model-health.ts";
 import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
 
 export type ModelCategory =
@@ -55,17 +56,21 @@ export type ModelPriceAdjustment = PublicPriceInfo;
 
 export type ModelPrice = {
     name: string;
+    aliases?: string[];
     type: ModelCategory;
     community?: boolean;
+    health?: ModelHealth;
     agent?: boolean;
     baseModel?: string;
     perUserRpm?: number | null;
     displayName?: string;
     description?: string;
-    brand?: string;
+    publisher?: string;
     brandUrl?: string;
+    brandIconUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
     free?: boolean;

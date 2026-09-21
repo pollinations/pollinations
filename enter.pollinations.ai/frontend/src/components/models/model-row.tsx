@@ -15,6 +15,7 @@ import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    ModelBrandIcon,
 } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
@@ -36,6 +37,7 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
+import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     ModelPricingControls,
     ModelPricingLedger,
@@ -239,7 +241,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    // One launcher per row: anything you can chat with opens in Open WebUI,
+    // everything else keeps the Play playground.
+    const openWebUiSupported = isOpenWebUiChattable(model);
     const playSupported =
+        !openWebUiSupported &&
         model.type !== "3d" &&
         model.type !== "embedding" &&
         model.type !== "realtime";
@@ -254,29 +260,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
-                {CommunityModelIcon ? (
-                    <CommunityModelIcon
-                        aria-hidden="true"
-                        className="h-8 w-8 text-ink-900 opacity-55"
-                    />
-                ) : (
-                    brandLogoPath && (
-                        <span
-                            aria-hidden="true"
-                            className="h-8 w-8 bg-current opacity-55 text-ink-900"
-                            style={{
-                                maskImage: `url(${brandLogoPath})`,
-                                WebkitMaskImage: `url(${brandLogoPath})`,
-                                maskRepeat: "no-repeat",
-                                WebkitMaskRepeat: "no-repeat",
-                                maskPosition: "center",
-                                WebkitMaskPosition: "center",
-                                maskSize: "contain",
-                                WebkitMaskSize: "contain",
-                            }}
-                        />
-                    )
-                )}
+                <ModelBrandIcon model={model} />
             </div>
 
             {/* Hairline separating the brand logo from the model info —
@@ -334,16 +318,19 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 </a>
                             </Tooltip>
                         )}
+                        {openWebUiSupported && (
+                            <OpenWebUiLink modelId={model.name} />
+                        )}
                     </div>
                     <ModelId name={model.name} />
-                    {model.brandUrl && model.brand && (
+                    {model.brandUrl && model.publisher && (
                         <a
                             href={model.brandUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                         >
-                            {model.brand}
+                            {model.publisher}
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
@@ -440,6 +427,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
+                            health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />

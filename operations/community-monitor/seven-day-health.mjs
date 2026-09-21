@@ -5,7 +5,7 @@ const GEN = "https://gen.pollinations.ai";
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co";
 const WINDOW_DAYS = 7;
 const MIN_ELIGIBLE_REQUESTS = 20;
-const MIN_SUCCESS_RATE = 0.7;
+const MIN_SUCCESS_RATE = 0.75;
 const MIN_CURRENT_SUCCESS_RATE = 0.8;
 const OUTPUT_PATH =
     process.env.SEVEN_DAY_HEALTH_PATH ??
@@ -19,7 +19,7 @@ if (!token) {
 
 const sql = `
 SELECT
-    resolved_model_requested AS model,
+    replaceRegexpOne(resolved_model_requested, '^community/', '') AS model,
     countIf(is_final) AS total_final,
     countIf(is_final AND response_status >= 200 AND response_status < 300) AS successes,
     countIf(is_final AND response_status >= 500) AS failures_5xx,
@@ -29,6 +29,12 @@ SELECT
         AND response_status >= 400 AND response_status < 500
         AND startsWith(error_message, 'Image provider error:')
     ) AS provider_4xx,
+    countIf(
+        is_final
+        AND event_type = 'generate.image'
+        AND response_status >= 400 AND response_status < 500
+        AND startsWith(error_message, 'Community image endpoint responded ')
+    ) AS unclassified_upstream_4xx,
     countIf(
         is_final AND fallback_used
         AND response_status >= 200 AND response_status < 300
@@ -109,12 +115,8 @@ const catalog = Array.isArray(catalogPayload)
     : (catalogPayload.data ?? []);
 const activeCommunityModels = new Map(
     catalog
-        .filter(
-            (model) =>
-                model.community &&
-                (model.category === "text" || model.category === "image"),
-        )
-        .map((model) => [model.name, model]),
+        .filter((model) => model.community && !model.agent)
+        .map((model) => [model.name.replace(/^community\//, ""), model]),
 );
 
 const healthPayload = await healthResponse.json();
@@ -160,13 +162,14 @@ const models = healthPayload.data
                   ? health48h
                   : null;
         return {
-            model: row.model,
+            model: model.name,
             category: model.category,
             totalFinalRequests: Number(row.total_final),
             eligibleRequests,
             successes,
             failures5xx,
             provider4xx,
+            unclassifiedUpstream4xx: Number(row.unclassified_upstream_4xx),
             fallbackSaved: Number(row.fallback_saved),
             successRate,
             successPercent:
@@ -203,6 +206,9 @@ const output = {
     minimumSuccessPercent: MIN_SUCCESS_RATE * 100,
     minimumCurrentSuccessPercent: MIN_CURRENT_SUCCESS_RATE * 100,
     activeCommunityModelCount: activeCommunityModels.size,
+    // Current upstream input/content errors need attribution, not automatic
+    // inclusion in the outage denominator. Do not silently drop them either.
+    needsDiagnosis: models.filter((model) => model.unclassifiedUpstream4xx > 0),
     candidates,
     freshnessProtected,
     needsProbe,

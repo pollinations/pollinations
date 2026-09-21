@@ -50,7 +50,7 @@ Collection steps:
    ```
 
 3. Use the invoice endpoints for closed-month obligations and downloads.
-4. Save bounded evidence to `data/inbox/` and use this skill to
+4. Save bounded evidence to `<collection-dir>/evidence/` and use this skill to
    extract or reconcile it.
 5. Preserve positive consumption rows by project and SKU. Map managed AI to
    `inference`, L4 compute to `gpu`, and CPU/network/storage to `infra`.

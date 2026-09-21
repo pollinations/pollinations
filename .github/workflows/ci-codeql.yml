@@ -21,20 +21,20 @@ jobs:
     steps:
       - &checkout_repository
         name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - &initialize_codeql
         name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - &autobuild
         name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   # Keep the pre-rename categories available while historical branch results
   # still reference them. This can be removed after those stale analyses are
@@ -51,6 +51,6 @@ jobs:
       - *autobuild
 
       - name: Perform legacy CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: .github/workflows/codeql.yml:analyze/language:${{ matrix.language }}

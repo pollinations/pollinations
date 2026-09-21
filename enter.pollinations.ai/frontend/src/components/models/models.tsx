@@ -40,7 +40,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
@@ -116,9 +116,6 @@ const TabCount: FC<{ value: number }> = ({ value }) => (
     </span>
 );
 
-const MODEL_SLUG_LIST_URL =
-    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
-
 const SORT_OPTIONS: Array<{
     value: ModelSort;
     label: string;
@@ -151,12 +148,12 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Name: Z to A",
     },
     {
-        value: "brand",
+        value: "publisher",
         label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
     },
     {
-        value: "brand-desc",
+        value: "publisher-desc",
         label: "Publisher: Z–A",
         accessibleLabel: "Publisher: Z to A",
     },
@@ -242,6 +239,7 @@ const isSourceSuggestion = (option: string): boolean =>
 const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
     access: "Access",
     source: "Source",
+    status: "Status",
     publisher: "Publisher",
     id: "ID",
     type: "Type",
@@ -315,7 +313,7 @@ export const Models: FC = () => {
     const urlSearch = modelSearch[searchParam] ?? "";
     const initialSearch =
         activePrimaryTab === "models"
-            ? ensureModelQuerySource(urlSearch)
+            ? ensureModelQueryDefaults(urlSearch)
             : urlSearch;
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
@@ -374,17 +372,20 @@ export const Models: FC = () => {
     );
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
-    const modelModels = useMemo(
-        () =>
-            allModels.filter(
-                (model) =>
-                    !model.agent &&
-                    (explicitModelSource === undefined ||
-                        Boolean(model.community) ===
-                            (explicitModelSource === "community")),
-            ),
-        [allModels, explicitModelSource],
-    );
+    const modelModels = useMemo(() => {
+        const statusQuery = {
+            terms: [],
+            filters: parsedQuery.filters.filter(({ key }) => key === "status"),
+        };
+        return allModels.filter(
+            (model) =>
+                !model.agent &&
+                matchesModelQuery(model, statusQuery) &&
+                (explicitModelSource === undefined ||
+                    Boolean(model.community) ===
+                        (explicitModelSource === "community")),
+        );
+    }, [allModels, explicitModelSource, parsedQuery]);
     const modelSections = useMemo(
         () => categorizeModels(modelModels),
         [modelModels],
@@ -599,7 +600,7 @@ export const Models: FC = () => {
         setEditingFilterToken(undefined);
         const nextSearch =
             activePrimaryTab === "models"
-                ? ensureModelQuerySource(urlSearch)
+                ? ensureModelQueryDefaults(urlSearch)
                 : urlSearch;
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
@@ -679,31 +680,6 @@ export const Models: FC = () => {
                     </div>
                 }
             >
-                <Alert className="mb-4 shadow-well !bg-surface-opaque !text-theme-text-base">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-soft">
-                        Upcoming change
-                    </div>
-                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
-                        <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>
-                            We're standardizing model IDs on September 7
-                        </span>
-                    </div>
-                    Model IDs will use the publisher and official model name—for
-                    example, <code className="font-semibold">flux</code> →{" "}
-                    <code className="font-semibold">
-                        black-forest-labs/flux.1-schnell
-                    </code>
-                    . You can use the new IDs now. Existing IDs will keep
-                    working.
-                    <a
-                        href={MODEL_SLUG_LIST_URL}
-                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                    >
-                        <GitHubIcon className="h-4 w-4 shrink-0" />
-                        <span>View all model ID changes →</span>
-                    </a>
-                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex w-full flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">

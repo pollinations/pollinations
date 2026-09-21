@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Revenue-share generation events used by the private Economics app.
+    One row preserves the app and community-model attribution for one billed
+    request; endpoint queries deduplicate repeated event_id versions.
+
+TOKEN "tinybird_read" READ
+TOKEN "operations_ingest" APPEND
+
+SCHEMA >
+    `event_id` String,
+    `version_id` String,
+    `month` LowCardinality(String),
+    `recorded_at` DateTime64(3),
+    `funding` LowCardinality(String),
+    `gross_usage` Float64,
+    `external_model_cost` Float64,
+    `app_recipient_id` String,
+    `app_id` String,
+    `app_name` String,
+    `app_creator_earnings` Float64,
+    `model_recipient_id` String,
+    `model_id` String,
+    `model_name` String,
+    `model_creator_earnings` Float64,
+    `model` LowCardinality(String)
+
+ENGINE MergeTree
+ENGINE_PARTITION_KEY toYYYYMM(toDate(concat(month, '-01')))
+ENGINE_SORTING_KEY event_id, recorded_at, version_id

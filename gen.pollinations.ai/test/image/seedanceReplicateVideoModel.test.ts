@@ -52,7 +52,7 @@ describe("Seedance Pro via Replicate", () => {
         });
 
         await callSeedanceProAPI("animate this frame", {
-            model: "seedance-pro",
+            model: "bytedance/seedance-1-pro-fast",
             width: 1280,
             height: 720,
             dimensionsExplicit: true,

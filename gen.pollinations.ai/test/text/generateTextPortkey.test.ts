@@ -1,4 +1,10 @@
+import { env } from "cloudflare:test";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { withModelFallback } from "../../src/fallback.ts";
+import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 
 const azureModelConfig = {
@@ -6,13 +12,184 @@ const azureModelConfig = {
     "azure-api-key": "test-key",
     "azure-resource-name": "myceli-prod-eastus",
     "azure-deployment-id": "gpt-5.6-luna",
+    authKey: "test-key",
+    responsesEndpoint:
+        "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+    responsesAuthHeader: "api-key",
 };
 
 afterEach(() => {
     vi.restoreAllMocks();
+    syncTextEnvironment(env);
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        429, 503,
+    ])("rescues Scout upstream %i at the primary price", async (status) => {
+        syncTextEnvironment({
+            ...env,
+            AI_GATEWAY_API_KEY: "test-vercel-key",
+        });
+        const primary = "meta/llama-4-scout" as const;
+        const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
+        const routes: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const body = JSON.parse(String(init?.body));
+                if (
+                    String(input) ===
+                    "https://openrouter.ai/api/v1/chat/completions"
+                ) {
+                    expect(body.model).toBe("meta-llama/llama-4-scout");
+                    expect(body.provider.allow_fallbacks).toBe(false);
+                    const route = body.provider.only[0];
+                    routes.push(route);
+                    expect(route).toBe("novita/bf16");
+                } else {
+                    expect(String(input)).toBe(
+                        "https://ai-gateway.vercel.sh/v1/chat/completions",
+                    );
+                    expect(body.model).toBe("meta/llama-4-scout");
+                    expect(body.providerOptions).toEqual({
+                        gateway: { only: ["deepinfra"] },
+                    });
+                    expect(
+                        new Headers(init?.headers).get("Authorization"),
+                    ).toBe("Bearer test-vercel-key");
+                    routes.push("vercel-deepinfra");
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status },
+                    );
+                }
+                expect(body.max_tokens).toBe(128);
+                return Response.json({
+                    model: "meta-llama/llama-4-scout",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Red." },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Images are included in provider prompt_tokens.
+                    usage: {
+                        prompt_tokens: 167,
+                        completion_tokens: 3,
+                        total_tokens: 170,
+                    },
+                });
+            },
+        );
+        const { result, candidate, index } = await withModelFallback(
+            [primary, ...TEXT_SERVICES[primary].fallbacks].map((id) => ({
+                id,
+                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+            })),
+            ({ id }) =>
+                generateTextPortkey(
+                    [{ role: "user", content: "Name the color." }],
+                    { model: id, max_tokens: 128 },
+                ),
+        );
+        expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
+        expect(candidate.id).toBe(fallback);
+        expect(index).toBe(1);
+        expect(result.choices?.[0]?.message?.content).toBe("Red.");
+        const billing = calculateUsageBilling({
+            model: primary,
+            usage: openaiUsageToUsage(
+                result.usage as Parameters<typeof openaiUsageToUsage>[0],
+            ),
+            servedBy: TEXT_SERVICES[fallback],
+            quotedBy: TEXT_SERVICES[primary],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+            12,
+        );
+        // Customer charges use the ledger's eight-decimal precision.
+        expect(billing.price.totalPrice).toBe(0.0000176);
+    });
+
+    it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(String(input));
+                hosts.push(url.hostname);
+                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
+                expect(new Headers(init?.headers).has("api-key")).toBe(true);
+                if (
+                    url.hostname ===
+                    "myceli-prod-eastus.cognitiveservices.azure.com"
+                ) {
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json({
+                    model: "grok-4.6",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Example" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Observed Sweden usage: reasoning is additive to completion_tokens.
+                    usage: {
+                        prompt_tokens: 91,
+                        completion_tokens: 22,
+                        total_tokens: 353,
+                        prompt_tokens_details: {
+                            text_tokens: 15,
+                            image_tokens: 76,
+                        },
+                        completion_tokens_details: { reasoning_tokens: 240 },
+                    },
+                });
+            },
+        );
+        const { result, index } = await withModelFallback(
+            ["x-ai/grok-4.6", ...TEXT_SERVICES["x-ai/grok-4.6"].fallbacks].map(
+                (id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                }),
+            ),
+            ({ id }) =>
+                generateTextPortkey(
+                    [{ role: "user", content: "Read the image." }],
+                    { model: id },
+                ),
+        );
+        expect(index).toBe(1);
+        expect(hosts).toEqual([
+            "myceli-prod-eastus.cognitiveservices.azure.com",
+            "myceli-prod-swedencentral.cognitiveservices.azure.com",
+        ]);
+        const usage = openaiUsageToUsage(
+            result.usage as Parameters<typeof openaiUsageToUsage>[0],
+        );
+        expect(usage).toMatchObject({
+            promptTextTokens: 15,
+            promptImageTokens: 76,
+            completionTextTokens: 22,
+            completionReasoningTokens: 240,
+        });
+        const billing = calculateUsageBilling({
+            model: "x-ai/grok-4.6",
+            usage,
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"],
+            quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.001754, 12);
+        expect(billing.price.totalPrice).toBe(0.0013155);
+    });
+
     it("calls OpenRouter directly and preserves its request and response fields", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
@@ -157,7 +334,11 @@ describe("generateTextPortkey", () => {
         );
     });
 
-    it("sets an owned request deadline below the public gateway limit", async () => {
+    it.each([
+        undefined,
+        false,
+        true,
+    ])("sets the request deadline and preserves explicit parallel_tool_calls (%s)", async (parallel_tool_calls) => {
         const fetcher = vi.fn(
             async (_input: RequestInfo | URL, init?: RequestInit) => {
                 const headers = new Headers(init?.headers);
@@ -165,9 +346,11 @@ describe("generateTextPortkey", () => {
                 expect(headers.get("x-portkey-strict-open-ai-compliance")).toBe(
                     "false",
                 );
-                expect(JSON.parse(String(init?.body))).not.toHaveProperty(
-                    "parallel_tool_calls",
-                );
+                const body = JSON.parse(String(init?.body));
+                expect(body.parallel_tool_calls).toBe(parallel_tool_calls);
+                if (parallel_tool_calls === undefined) {
+                    expect(body).not.toHaveProperty("parallel_tool_calls");
+                }
 
                 return Response.json({
                     model: "provider-model",
@@ -190,7 +373,7 @@ describe("generateTextPortkey", () => {
                     provider: "openai",
                     model: "provider-model",
                 },
-                parallel_tool_calls: false,
+                parallel_tool_calls,
                 portkeyGatewayUrl: "https://portkey.test",
             },
             fetcher,
@@ -248,38 +431,37 @@ describe("generateTextPortkey", () => {
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
-    it("preserves seeded GPT-5.6 requests on Chat Completions", async () => {
-        const fetcher = vi.fn(
-            async (_input: RequestInfo | URL, init?: RequestInit) => {
-                expect(JSON.parse(String(init?.body))).toMatchObject({
+    it("still rejects stop for a Responses-backed model", async () => {
+        const portkeyFetcher = vi.fn();
+        const responsesFetcher = vi.spyOn(globalThis, "fetch");
+
+        let error: unknown;
+        try {
+            await generateTextPortkey(
+                [{ role: "user", content: "hello" }],
+                {
                     model: "gpt-5.6-luna",
-                    seed: 42,
-                });
-                return Response.json({
-                    choices: [
-                        {
-                            message: { role: "assistant", content: "ok" },
-                        },
-                    ],
-                });
-            },
-        );
+                    stop: ["END"],
+                    modelConfig: azureModelConfig,
+                },
+                portkeyFetcher,
+            );
+        } catch (thrown) {
+            error = thrown;
+        }
+        expect(error).toMatchObject({
+            status: 400,
+            errorCode: "unsupported_parameter",
+        });
 
-        await generateTextPortkey(
-            [{ role: "user", content: "hello" }],
-            {
-                model: "gpt-5.6-luna",
-                seed: 42,
-                modelConfig: azureModelConfig,
-                portkeyGatewayUrl: "https://portkey.test",
-            },
-            fetcher,
-        );
-
-        expect(fetcher).toHaveBeenCalledOnce();
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+        expect(responsesFetcher).not.toHaveBeenCalled();
     });
 
-    it("routes an unseeded GPT-5.6 request through Azure Responses", async () => {
+    it.each([
+        "openai/gpt-5.6-luna",
+        "gpt-5.6-luna",
+    ])("strips sampling before routing %s through Responses", async (model) => {
         const portkeyFetcher = vi.fn();
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
@@ -287,11 +469,25 @@ describe("generateTextPortkey", () => {
                 expect(String(input)).toBe(
                     "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
                 );
-                expect(JSON.parse(String(init?.body))).toMatchObject({
+                const body = JSON.parse(String(init?.body));
+                expect(body).toMatchObject({
                     model: "gpt-5.6-luna",
+                    max_output_tokens: 128,
                 });
+                for (const key of [
+                    "temperature",
+                    "top_p",
+                    "seed",
+                    "repetition_penalty",
+                    "max_tokens",
+                    "max_completion_tokens",
+                ]) {
+                    expect(body).not.toHaveProperty(key);
+                }
                 return Response.json({
                     id: "resp_1",
+                    object: "response",
+                    model: "gpt-5.6-luna",
                     status: "completed",
                     output: [
                         {
@@ -299,13 +495,23 @@ describe("generateTextPortkey", () => {
                             content: [{ type: "output_text", text: "ok" }],
                         },
                     ],
+                    usage: {
+                        input_tokens: 1,
+                        output_tokens: 1,
+                        total_tokens: 2,
+                    },
                 });
             });
 
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "gpt-5.6-luna",
+                model,
+                temperature: 0.7,
+                top_p: 0.9,
+                seed: 42,
+                repetition_penalty: 1.1,
+                max_tokens: 128,
                 modelConfig: azureModelConfig,
             },
             portkeyFetcher,
@@ -314,50 +520,5 @@ describe("generateTextPortkey", () => {
         expect(fetchSpy).toHaveBeenCalledOnce();
         expect(portkeyFetcher).not.toHaveBeenCalled();
         expect(completion.choices?.[0]?.message?.content).toBe("ok");
-    });
-
-    it("uses Responses for seeded requests that require tools and reasoning", async () => {
-        const portkeyFetcher = vi.fn();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (_input, init) => {
-                const body = JSON.parse(String(init?.body));
-                expect(body).toMatchObject({
-                    model: "gpt-5.6-luna",
-                    parallel_tool_calls: false,
-                    reasoning: { effort: "max" },
-                    tools: [{ type: "function", name: "weather" }],
-                });
-                expect(body).not.toHaveProperty("seed");
-                return Response.json({
-                    id: "resp_2",
-                    status: "completed",
-                    output: [],
-                });
-            });
-
-        await generateTextPortkey(
-            [{ role: "user", content: "weather" }],
-            {
-                model: "gpt-5.6-luna",
-                modelConfig: azureModelConfig,
-                seed: 42,
-                parallel_tool_calls: false,
-                reasoning_effort: "max",
-                tools: [
-                    {
-                        type: "function",
-                        function: {
-                            name: "weather",
-                            parameters: { type: "object" },
-                        },
-                    },
-                ],
-            },
-            portkeyFetcher,
-        );
-
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 });

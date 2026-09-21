@@ -1,19 +1,42 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
 
+async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
+    const { default: worker } = await import("../src/index.ts");
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}`, init),
+        { ENVIRONMENT: "test" } as CloudflareBindings,
+        context,
+    );
+    await waitOnExecutionContext(context);
+    return response;
+}
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+});
+
 test("retrieves a model by canonical ID", async () => {
-    const response = await fetchWorker("/v1/models/openai-fast");
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     expect(response.status).toBe(200);
     const body = (await response.json()) as Record<string, unknown>;
-    expect(body.id).toBe("openai-fast");
+    expect(body.id).toBe("openai/gpt-5-nano");
     expect(body.object).toBe("model");
     expect(typeof body.created).toBe("number");
     // Stable registry metadata, not the request wall clock
@@ -21,6 +44,12 @@ test("retrieves a model by canonical ID", async () => {
         Math.floor(Date.now() / 1000),
     );
     expect(typeof body.owned_by).toBe("string");
+    expect(body).toMatchObject({
+        aliases: expect.any(Array),
+        category: "text",
+        community: false,
+        title: expect.any(String),
+    });
 });
 
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
@@ -44,9 +73,11 @@ test("resolves an alias to the canonical ID with identical metadata", async () =
         id: string;
         created: number;
     };
-    expect(aliasBody.id).toBe("openai-fast");
+    expect(aliasBody.id).toBe("openai/gpt-5-nano");
 
-    const byId = await fetchWorker("/v1/models/openai-fast");
+    const byId = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     const idBody = (await byId.json()) as { created: number };
     expect(aliasBody.created).toBe(idBody.created);
 });
@@ -57,15 +88,107 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
-    const listed = list.data.find((m) => m.id === "openai-fast");
+    const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 
-    const retrieveResponse = await fetchWorker("/v1/models/openai-fast");
+    const retrieveResponse = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     const retrieved = (await retrieveResponse.json()) as Record<
         string,
         unknown
     >;
     expect(retrieved).toEqual(listed);
+});
+
+test("accepts client-safe model filter headers", async () => {
+    const response = await fetchWorker("/text/models", {
+        headers: { "Pollinations-Model-Source": "official" },
+    });
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        community: boolean;
+    }[];
+    expect(models.length).toBeGreaterThan(0);
+    expect(models.every(({ community }) => community === false)).toBe(true);
+});
+
+test("rejects invalid discovery filters", async () => {
+    const responses = await Promise.all([
+        fetchWorker("/models?source=other"),
+        fetchWorker("/models", {
+            headers: { "Pollinations-Model-Source": "other" },
+        }),
+    ]);
+
+    expect(responses.every(({ status }) => status === 400)).toBe(true);
+});
+
+test("exposes supported Chat parameters across rich listings", async () => {
+    const responses = await Promise.all([
+        fetchWorker("/models"),
+        fetchWorker("/text/models"),
+    ]);
+    const listings = await Promise.all(
+        responses.map(async (response) => {
+            expect(response.status).toBe(200);
+            return (await response.json()) as Record<string, unknown>[];
+        }),
+    );
+
+    for (const models of listings) {
+        for (const model of models.filter(
+            (m) => m.category === "text" && !m.community,
+        )) {
+            expect(model.supported_parameters, String(model.name)).toEqual(
+                expect.any(Array),
+            );
+            expect(model, String(model.name)).not.toHaveProperty(
+                "default_parameters",
+            );
+        }
+        const byName = (name: string) =>
+            models.find((model) => model.name === name);
+        expect(byName("openai/gpt-5.4")).toMatchObject({
+            supported_parameters: expect.not.arrayContaining([
+                "temperature",
+                "top_p",
+            ]),
+        });
+        expect(byName("openai/gpt-oss-20b")).toMatchObject({
+            supported_parameters: expect.arrayContaining([
+                "temperature",
+                "top_p",
+            ]),
+        });
+        expect(byName("anthropic/claude-sonnet-4.6")).toMatchObject({
+            supported_parameters: expect.arrayContaining([
+                "temperature",
+                "top_p",
+                "reasoning_effort",
+            ]),
+        });
+    }
+});
+
+test("keeps supported Chat parameters identical for aliases and list entries", async () => {
+    const listResponse = await fetchWorker("/v1/models");
+    expect(listResponse.status).toBe(200);
+    const list = (await listResponse.json()) as {
+        data: Record<string, unknown>[];
+    };
+    const listed = list.data.find((model) => model.id === "openai/gpt-5.4");
+    expect(listed).toBeDefined();
+    expect(listed).not.toHaveProperty("default_parameters");
+
+    const aliasResponse = await fetchWorker("/v1/models/gpt-5.4");
+    expect(aliasResponse.status).toBe(200);
+    const alias = (await aliasResponse.json()) as Record<string, unknown>;
+    expect(alias.id).toBe("openai/gpt-5.4");
+    expect(alias.supported_parameters).toEqual(listed?.supported_parameters);
+    expect(alias).not.toHaveProperty("default_parameters");
 });
 
 test("advertises direct Responses support through supported_endpoints", async () => {
@@ -97,7 +220,7 @@ test("returns 404 when API key permissions exclude the model", async ({
     expect(excluded.status).toBe(404);
 
     const allowed = await fetchWorker(
-        `/v1/models/${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/v1/models/${encodeURIComponent(RESTRICTED_TEXT_TEST_MODEL)}`,
         {
             headers: { Authorization: `Bearer ${restrictedApiKey}` },
         },
@@ -119,7 +242,7 @@ test("hides paid-only models from callers without paid balance", async ({
     });
     expect(withBalance.status).toBe(200);
     const body = (await withBalance.json()) as { id: string };
-    expect(body.id).toBe("krea");
+    expect(body.id).toBe("krea/krea-2-medium");
 });
 
 test("shows Grok 4.6 to callers without paid balance", async ({ apiKey }) => {
@@ -129,7 +252,7 @@ test("shows Grok 4.6 to callers without paid balance", async ({ apiKey }) => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { id: string };
-    expect(body.id).toBe("grok-4.6");
+    expect(body.id).toBe("x-ai/grok-4.6");
 });
 
 test("applies the same 404 rule to aliases of hidden models", async ({

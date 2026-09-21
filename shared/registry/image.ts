@@ -4,15 +4,15 @@ import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "zimage" as const;
+export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
-    "krea": {
-        aliases: ["krea-2", "krea/krea-2-medium"],
+    "krea/krea-2-medium": {
+        aliases: ["krea-2", "krea"],
         provider: "fal",
-        brand: "Krea",
+        publisher: "Krea",
         category: "image",
         addedDate: new Date("2026-08-01").getTime(),
         priceMultiplier: 1,
@@ -26,12 +26,12 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "dreamshaper": {
+    "lykon/dreamshaper-8-lcm": {
         // "sana" is kept as an alias so existing callers and the legacy image
         // proxy worker keep working unchanged.
-        aliases: ["sana", "lykon/dreamshaper-8-lcm"],
+        aliases: ["sana", "dreamshaper"],
         provider: "vast",
-        brand: "Lykon",
+        publisher: "Lykon",
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
@@ -45,10 +45,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "kontext": {
-        aliases: ["black-forest-labs/flux.1-kontext-pro"],
+    "black-forest-labs/flux.1-kontext-pro": {
+        aliases: ["kontext"],
         provider: "azure",
-        brand: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -62,10 +62,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
-    "flux-2-pro": {
-        aliases: ["black-forest-labs/flux.2-pro"],
+    "black-forest-labs/flux.2-pro": {
+        aliases: ["flux-2-pro"],
         provider: "azure",
-        brand: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-08-31").getTime(),
         priceMultiplier: 0.75,
@@ -100,10 +100,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
     },
-    "flux-2-flex": {
-        aliases: ["black-forest-labs/flux.2-flex"],
+    "black-forest-labs/flux.2-flex": {
+        aliases: ["flux-2-flex"],
         provider: "azure",
-        brand: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-08-31").getTime(),
         priceMultiplier: 0.75,
@@ -121,20 +121,81 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "nanobanana": {
-        aliases: ["google/gemini-2.5-flash-image"],
+    "black-forest-labs/flux.2-max": {
+        aliases: [],
+        provider: "replicate",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-09-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate pricing, verified 2026-09-13: $0.04/run execution fee
+        // plus $0.03 per input and per output megapixel.
+        cost: {
+            promptImageTokens: 0.03,
+            completionImageTokens: 0.03,
+        },
+        billing: {
+            adjustments: [
+                {
+                    id: "replicate.flux_2_max.run.v1",
+                    description: "Replicate FLUX.2 Max execution fee",
+                    kind: "image",
+                    unit: "generation",
+                    unitCost: 0.04,
+                    publicPricing: {
+                        label: "Execution fee",
+                        quantity: 1,
+                        unit: "generation",
+                    },
+                    countUnits: () => 1,
+                },
+            ],
+        },
+        title: "FLUX.2 Max",
+        description:
+            "Flagship-tier generation and multi-reference editing with the highest consistency and prompt adherence in the FLUX.2 line",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
+    },
+    "microsoft/mai-image-2.5-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
+        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
+        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(1.75),
+            completionImageTokens: perMillion(19.5),
+        },
+        title: "MAI Image 2.5 Flash",
+        description:
+            "Quick photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
+    },
+    "google/gemini-2.5-flash-image": {
+        aliases: ["nanobanana"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.3), // per 1M tokens
-            promptImageTokens: perMillion(0.3), // per 1M tokens
-            completionTextTokens: perMillion(2.5), // text output tokens
-            completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
+            promptTextTokens: perMillion(0.3) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.3) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(2.5) * 1.055, // text output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1290 tokens/image
         },
         title: "Nano Banana",
         description:
@@ -143,20 +204,20 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
     },
-    "nanobanana-2": {
-        aliases: ["nanobanana2", "google/gemini-3.1-flash-image"],
+    "google/gemini-3.1-flash-image": {
+        aliases: ["nanobanana2", "nanobanana-2"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.5), // per 1M tokens
-            promptImageTokens: perMillion(0.5), // per 1M tokens
-            completionTextTokens: perMillion(3), // text/reasoning output tokens
-            completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
+            promptTextTokens: perMillion(0.5) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.5) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(3) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(60) * 1.055, // per 1M tokens, 2520 tokens/image
         },
         title: "Nano Banana 2",
         description:
@@ -165,24 +226,20 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
-    "nanobanana-2-lite": {
-        aliases: [
-            "nanobanana2lite",
-            "nanobanana-lite",
-            "google/gemini-3.1-flash-lite-image",
-        ],
+    "google/gemini-3.1-flash-lite-image": {
+        aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
-            promptTextTokens: perMillion(0.25), // per 1M tokens
-            promptImageTokens: perMillion(0.25), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
-            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
+            promptTextTokens: perMillion(0.25) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.25) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(1.5) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
         title: "Nano Banana 2 Lite",
         description:
@@ -191,10 +248,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
-    "nanobanana-pro": {
-        aliases: ["google/gemini-3-pro-image"],
+    "google/gemini-3-pro-image": {
+        aliases: ["nanobanana-pro"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -203,10 +260,10 @@ const IMAGE_BASE_SERVICES = {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(2), // per 1M tokens
-            promptImageTokens: perMillion(2), // per 1M tokens
-            completionTextTokens: perMillion(12), // text/reasoning output tokens
-            completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
+            promptTextTokens: perMillion(2) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(2) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(12) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(120) * 1.055, // per 1M tokens, 1120 tokens per 1K image
         },
         title: "Nano Banana Pro",
         description:
@@ -215,10 +272,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
-    "seedream5": {
-        aliases: ["bytedance/seedream-5.0-lite"],
+    "bytedance/seedream-5.0-lite": {
+        aliases: ["seedream5"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
@@ -234,14 +291,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
-    "seedream5-pro": {
-        aliases: [
-            "seedream-5-pro",
-            "seedream-pro-5",
-            "bytedance/seedream-5.0-pro",
-        ],
+    "bytedance/seedream-5.0-pro": {
+        aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
@@ -255,10 +308,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
-    "seedream": {
-        aliases: ["bytedance/seedream-4.0"],
+    "bytedance/seedream-4.0": {
+        aliases: ["seedream"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -272,16 +325,16 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
-    "seedream-pro": {
-        aliases: ["bytedance/seedream-4.5"],
+    "bytedance/seedream-4.5": {
+        aliases: ["seedream-pro"],
         provider: "openrouter",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.04, // per image
+            completionImageTokens: 0.04 * 1.055, // per image
         },
         title: "Seedream 4.5",
         description: "Premium photorealism for lifelike scenes and portraits",
@@ -295,10 +348,10 @@ const IMAGE_BASE_SERVICES = {
     // therefore independent of the resolution preset the handler picks, and all
     // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
     // flat per-image cost is correct regardless of aspect ratio / resolution.
-    "ideogram-v4-turbo": {
-        aliases: ["ideogram-ai/ideogram-v4-turbo"],
+    "ideogram-ai/ideogram-v4-turbo": {
+        aliases: ["ideogram-v4-turbo"],
         provider: "replicate",
-        brand: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -311,10 +364,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-balanced": {
-        aliases: ["ideogram-ai/ideogram-v4-balanced"],
+    "ideogram-ai/ideogram-v4-balanced": {
+        aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
-        brand: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -327,10 +380,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "ideogram-v4-quality": {
-        aliases: ["ideogram-ai/ideogram-v4-quality"],
+    "ideogram-ai/ideogram-v4-quality": {
+        aliases: ["ideogram-v4-quality"],
         provider: "replicate",
-        brand: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -344,10 +397,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini", "openai/gpt-image-1-mini"],
+    "openai/gpt-image-1-mini": {
+        aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 0.75,
@@ -363,10 +416,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gptimage-large": {
-        aliases: ["gpt-image-1.5", "gpt-image-large", "openai/gpt-image-1.5"],
+    "openai/gpt-image-1.5": {
+        aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         priceMultiplier: 0.75,
@@ -385,10 +438,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "gpt-image-2": {
-        aliases: ["openai/gpt-image-2"],
+    "openai/gpt-image-2": {
+        aliases: ["gpt-image-2"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
@@ -407,10 +460,56 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
-    "flux": {
-        aliases: ["black-forest-labs/flux.1-schnell"],
+    "openai/gpt-image-2.5-flare": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        perUserRpm: 12,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Flare",
+        description:
+            "Fast image generation and precise editing with reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        perUserRpm: 12,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Sunburst",
+        description:
+            "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
+    "black-forest-labs/flux.1-schnell": {
+        aliases: ["flux"],
         provider: "vast",
-        brand: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -423,10 +522,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "zimage": {
-        aliases: ["z-image", "z-image-turbo", "tongyi-mai/z-image-turbo"],
+    "tongyi-mai/z-image-turbo": {
+        aliases: ["z-image", "z-image-turbo", "zimage"],
         provider: "vast",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
@@ -440,7 +539,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "veo": {
+    "google/veo-3.1-fast": {
         aliases: [
             "veo-3.1-fast",
             "veo-720p",
@@ -448,10 +547,10 @@ const IMAGE_BASE_SERVICES = {
             "veo-1080p",
             "veo-3.1-fast-1080p",
             "veo-1080",
-            "google/veo-3.1-fast",
+            "veo",
         ],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
@@ -491,7 +590,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-omni-1.1-flash": {
         aliases: [],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "video",
         addedDate: new Date("2026-08-28").getTime(),
         paidOnly: true,
@@ -516,10 +615,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
-    "seedance-pro": {
-        aliases: ["bytedance/seedance-1-pro-fast"],
+    "bytedance/seedance-1-pro-fast": {
+        aliases: ["seedance-pro"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -564,10 +663,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
-    "seedance-2.0": {
-        aliases: ["seedance-2", "bytedance/seedance-2.0"],
+    "bytedance/seedance-2.0": {
+        aliases: ["seedance-2", "seedance-2.0"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
@@ -610,10 +709,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
-    "seedance-2.0-mini": {
-        aliases: ["bytedance/seedance-2.0-mini"],
+    "bytedance/seedance-2.0-mini": {
+        aliases: ["seedance-2.0-mini"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -650,10 +749,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
-    "seedance-2.0-fast": {
-        aliases: ["bytedance/seedance-2.0-fast"],
+    "bytedance/seedance-2.0-fast": {
+        aliases: ["seedance-2.0-fast"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -674,10 +773,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
-    "wan": {
-        aliases: ["wan2.6", "wan-i2v", "alibaba/wan-2.6"],
+    "alibaba/wan-2.6": {
+        aliases: ["wan2.6", "wan-i2v", "wan"],
         provider: "replicate",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
@@ -699,10 +798,10 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
         allowedDurations: [5, 10, 15],
     },
-    "wan-fast": {
-        aliases: ["wan2.2", "wan-2.2", "alibaba/wan-2.2-fast"],
+    "alibaba/wan-2.2-fast": {
+        aliases: ["wan2.2", "wan-2.2", "wan-fast"],
         provider: "replicate",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -724,17 +823,17 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
-    "wan-pro": {
+    "alibaba/wan-2.7": {
         aliases: [
             "wan2.7",
             "wan-2.7",
             "wan-pro-1080p",
             "wan2.7-1080p",
             "wan-pro-1080",
-            "alibaba/wan-2.7",
+            "wan-pro",
         ],
         provider: "replicate",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
@@ -791,10 +890,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
-    "wan-3.0": {
-        aliases: ["alibaba/wan-3.0"],
+    "alibaba/wan-3.0": {
+        aliases: ["wan-3.0"],
         provider: "fal",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
@@ -846,10 +945,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
-    "wan-image": {
-        aliases: ["wan2.7-image", "wan-img", "alibaba/wan-2.7-image"],
+    "alibaba/wan-2.7-image": {
+        aliases: ["wan2.7-image", "wan-img", "wan-image"],
         provider: "replicate",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
@@ -865,14 +964,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "wan-image-pro": {
-        aliases: [
-            "wan2.7-image-pro",
-            "wan-img-pro",
-            "alibaba/wan-2.7-image-pro",
-        ],
+    "alibaba/wan-2.7-image-pro": {
+        aliases: ["wan2.7-image-pro", "wan-img-pro", "wan-image-pro"],
         provider: "replicate",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
@@ -889,16 +984,16 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 9, // Pollinations route cap.
     },
-    "qwen-image": {
+    "qwen/qwen-image": {
         aliases: [
             "qwen-image-plus",
             "qwen-image-2512",
             "qwen-image-edit",
             "qwen-image-edit-plus",
-            "qwen/qwen-image",
+            "qwen-image",
         ],
         provider: "replicate",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
@@ -931,10 +1026,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
-    "qwen-image-3": {
-        aliases: ["qwen/qwen-image-3"],
+    "qwen/qwen-image-3": {
+        aliases: ["qwen-image-3"],
         provider: "fal",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -970,10 +1065,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
-    "grok-imagine": {
-        aliases: ["grok-imagine-image", "x-ai/grok-imagine-image"],
+    "x-ai/grok-imagine-image": {
+        aliases: ["grok-imagine-image", "grok-imagine"],
         provider: "xai",
-        brand: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
         priceMultiplier: 1,
@@ -988,23 +1083,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
-    "grok-imagine-pro": {
+    "x-ai/grok-imagine-image-quality": {
         aliases: [
             "grok-aurora",
             "aurora",
             "grok-imagine-image-quality",
             "grok-imagine-image-pro",
-            "x-ai/grok-imagine-image-quality",
+            "grok-imagine-pro",
         ],
         provider: "openrouter",
-        brand: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01, // per input image on edits
-            completionImageTokens: 0.05, // per 1K image
+            promptImageTokens: 0.01 * 1.055, // per input image on edits
+            completionImageTokens: 0.05 * 1.055, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:
@@ -1013,32 +1108,32 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
-    "grok-imagine-image-2.0": {
-        aliases: ["x-ai/grok-imagine-image-2.0"],
+    "x-ai/grok-imagine-image-2.0": {
+        aliases: ["grok-imagine-image-2.0"],
         provider: "openrouter",
-        brand: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
         cost: {
-            promptImageTokens: 0.01,
-            completionImageTokens: 0.06, // medium, 1K
+            promptImageTokens: 0.01 * 1.055,
+            completionImageTokens: 0.06 * 1.055, // medium, 1K
         },
         ...defineCostVariants(
             {
                 low_1k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.04,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.04 * 1.055,
                 },
                 low_2k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.06,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
                 },
                 medium_2k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.08,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.08 * 1.055,
                 },
             },
             ({ input }) => {
@@ -1071,21 +1166,21 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
-    "recraft-v4.1-vector": {
+    "recraft/recraft-v4.1-vector": {
         aliases: [
             "recraft-vector",
             "recraft-svg",
             "recraft-v4.1-svg",
-            "recraft/recraft-v4.1-vector",
+            "recraft-v4.1-vector",
         ],
         provider: "openrouter",
-        brand: "Recraft",
+        publisher: "Recraft",
         category: "image",
         addedDate: new Date("2026-07-24").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.08, // fixed per output SVG
+            completionImageTokens: 0.08 * 1.055, // fixed per output SVG
         },
         title: "Recraft V4.1 Vector",
         description:
@@ -1094,10 +1189,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
-    "grok-video-pro": {
-        aliases: ["grok-imagine-video", "x-ai/grok-imagine-video"],
-        provider: "openrouter",
-        brand: "xAI",
+    "x-ai/grok-imagine-video": {
+        aliases: ["grok-imagine-video", "grok-video-pro"],
+        provider: "fal",
+        publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1116,25 +1211,25 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
-    "grok-imagine-video-1.5": {
-        aliases: ["x-ai/grok-imagine-video-1.5"],
+    "x-ai/grok-imagine-video-1.5": {
+        aliases: ["grok-imagine-video-1.5"],
         provider: "openrouter",
-        brand: "xAI",
+        publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01, // per start-frame image
-            completionVideoSeconds: 0.14, // per sec at 720p
+            promptImageTokens: 0.01 * 1.055, // per start-frame image
+            completionVideoSeconds: 0.14 * 1.055, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.08,
+                    completionVideoSeconds: 0.08 * 1.055,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.25,
+                    completionVideoSeconds: 0.25 * 1.055,
                 },
             },
             matchResolution("480p", "1080p"),
@@ -1164,10 +1259,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
-    "seedance-2.5": {
-        aliases: ["bytedance/seedance-2.5"],
+    "bytedance/seedance-2.5": {
+        aliases: ["seedance-2.5"],
         provider: "replicate",
-        brand: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-09").getTime(),
         priceMultiplier: 1,
@@ -1233,16 +1328,16 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 4,
         defaultDuration: 4,
     },
-    "happyhorse-1.1": {
-        aliases: ["happyhorse", "happy-horse-1.1", "alibaba/happyhorse-1.1"],
+    "alibaba/happyhorse-1.1": {
+        aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
         provider: "openrouter",
-        brand: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.0988, // per sec at 720p
+            completionVideoSeconds: 0.0988 * 1.055, // per sec at 720p
         },
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
@@ -1254,10 +1349,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
-    "minimax-h3": {
-        aliases: ["minimax/minimax-h3"],
+    "minimax/minimax-h3": {
+        aliases: ["minimax-h3"],
         provider: "fal",
-        brand: "MiniMax",
+        publisher: "MiniMax",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -1296,10 +1391,55 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
-    "klein": {
-        aliases: ["flux-klein", "black-forest-labs/flux.2-klein-4b"],
+    "minimax/minimax-h3-max-turbo": {
+        aliases: [],
+        provider: "fal",
+        publisher: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
+        cost: {
+            completionVideoSeconds: 0.00625, // 480p per output second.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.01 },
+                "1080p": { completionVideoSeconds: 0.02 },
+            },
+            matchResolution("768p", "1080p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p", "1080p"],
+        title: "MiniMax H3 Max Turbo",
+        description:
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 5,
+        maxDuration: 15,
+        defaultDuration: 5,
+        allowedDurations: [5, 10, 15],
+    },
+    "black-forest-labs/flux.2-klein-4b": {
+        aliases: ["flux-klein", "klein"],
         provider: "vast",
-        brand: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
@@ -1313,10 +1453,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
-    "p-image": {
-        aliases: ["pruna-image", "pruna", "prunaai/p-image"],
+    "prunaai/p-image": {
+        aliases: ["pruna-image", "pruna", "p-image"],
         provider: "deepinfra",
-        brand: "Pruna",
+        publisher: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1329,10 +1469,10 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "p-image-edit": {
-        aliases: ["pruna-edit", "pruna-image-edit", "prunaai/p-image-edit"],
+    "prunaai/p-image-edit": {
+        aliases: ["pruna-edit", "pruna-image-edit", "p-image-edit"],
         provider: "deepinfra",
-        brand: "Pruna",
+        publisher: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1348,16 +1488,16 @@ const IMAGE_BASE_SERVICES = {
     },
     // Pruna p-video is one Replicate model priced per second by resolution:
     // 720p $0.02/s and 1080p $0.04/s in standard mode.
-    "p-video": {
+    "prunaai/p-video": {
         aliases: [
             "pruna-video",
             "p-video-720p",
             "p-video-1080p",
             "pruna-video-1080p",
-            "prunaai/p-video",
+            "p-video",
         ],
         provider: "replicate",
-        brand: "Pruna",
+        publisher: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1392,10 +1532,10 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
-    "nova-canvas": {
-        aliases: ["amazon-nova-canvas", "amazon/nova-canvas-v1"],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-canvas-v1": {
+        aliases: ["amazon-nova-canvas", "nova-canvas"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1426,10 +1566,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
     },
-    "nova-reel": {
-        aliases: ["amazon-nova-reel", "amazon/nova-reel-v1"],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-reel-v1": {
+        aliases: ["amazon-nova-reel", "nova-reel"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,

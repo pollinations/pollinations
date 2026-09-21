@@ -8,33 +8,59 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
-    gptimage: {
-        "gptimage-openai": {
+    "google/veo-3.1-fast": {
+        "google/veo-3.1-fast:replicate": {
+            provider: "replicate",
+            // https://replicate.com/google/veo-3.1-fast: $0.10/s silent,
+            // $0.15/s with audio at either resolution. Keep the caller's
+            // Google quote; absorb the approved $0–$0.05/s fallback difference.
+            cost: {
+                completionVideoSeconds: 0.1,
+                completionAudioSeconds: 0.05,
+            },
+        },
+    },
+    "openai/gpt-image-1-mini": {
+        "openai/gpt-image-1-mini:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
         },
     },
-    "gptimage-large": {
-        "gptimage-large-openai": {
+    "openai/gpt-image-1.5": {
+        "openai/gpt-image-1.5:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
         },
     },
-    "gpt-image-2": {
-        "gpt-image-2-openai": {
+    "openai/gpt-image-2": {
+        "openai/gpt-image-2:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             perUserRpm: null,
         },
     },
-    kontext: {
-        "kontext-replicate": {
+    "openai/gpt-image-2.5-flare": {
+        "openai/gpt-image-2.5-flare:openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-14").getTime(),
+            perUserRpm: null,
+        },
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        "openai/gpt-image-2.5-sunburst:openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-14").getTime(),
+            perUserRpm: null,
+        },
+    },
+    "black-forest-labs/flux.1-kontext-pro": {
+        "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "flux-2-pro": {
-        "flux-2-pro-replicate": {
+    "black-forest-labs/flux.2-pro": {
+        "black-forest-labs/flux.2-pro:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
             billing: {
@@ -56,8 +82,26 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
-    "qwen-image-3": {
-        "qwen-image-3-replicate": {
+    "black-forest-labs/flux.2-max": {
+        "black-forest-labs/flux.2-max:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-13").getTime(),
+            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment),
+            // verified 2026-09-13: flat $0.07 per output megapixel (0.07 *
+            // 1.055 with the mandatory OpenRouter credit fee, #14895), no
+            // input charge and no flat execution fee — replaces the
+            // Replicate adjustment entirely rather than adding to it.
+            cost: {
+                promptImageTokens: 0,
+                completionImageTokens: 0.07 * 1.055,
+            },
+            billing: {
+                adjustments: [],
+            },
+        },
+    },
+    "qwen/qwen-image-3": {
+        "qwen/qwen-image-3:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -72,64 +116,80 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
-    "p-image-edit": {
-        "p-image-edit-replicate": {
+    "prunaai/p-image-edit": {
+        "prunaai/p-image-edit:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "nanobanana-2": {
-        "nanobanana-2-openrouter-ai-studio": {
+    "google/gemini-3.1-flash-image": {
+        "google/gemini-3.1-flash-image:openrouter:ai-studio": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "nanobanana-pro": {
-        "nanobanana-pro-openrouter-vertex": {
+    "google/gemini-3-pro-image": {
+        "google/gemini-3-pro-image:openrouter:vertex-global": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    flux: {
-        "flux-deepinfra": {
+    "black-forest-labs/flux.1-schnell": {
+        "black-forest-labs/flux.1-schnell:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: { completionImageTokens: 0.0005 },
         },
     },
-    krea: {
-        "krea-replicate": {
+    "krea/krea-2-medium": {
+        "krea/krea-2-medium:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    seedream5: {
-        "seedream5-fal": {
+    "bytedance/seedream-5.0-lite": {
+        "bytedance/seedream-5.0-lite:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             maxReferenceImages: 10,
         },
     },
-    "grok-video-pro": {
-        "grok-video-pro-fal": {
+    "x-ai/grok-imagine-video": {
+        "x-ai/grok-imagine-video:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0.002 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.07 * 1.055, // per sec at 720p
+            },
+        },
+    },
+    "x-ai/grok-imagine-video-1.5": {
+        "x-ai/grok-imagine-video-1.5:fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0.01, // per start-frame image
+                completionVideoSeconds: 0.14, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.08,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.25,
+                },
+            },
+        },
+    },
+    "alibaba/wan-2.6": {
+        "alibaba/wan-2.6:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "grok-imagine-video-1.5": {
-        "grok-imagine-video-1.5-fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-01").getTime(),
-        },
-    },
-    wan: {
-        "wan-fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-01").getTime(),
-        },
-    },
-    "wan-fast": {
-        "wan-fast-fal": {
+    "alibaba/wan-2.2-fast": {
+        "alibaba/wan-2.2-fast:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-02").getTime(),
             // Fal charges $0.05 per fixed 5-second 480p generation. The
@@ -137,8 +197,8 @@ export const IMAGE_FALLBACKS = {
             // this fallback has no loss for either text-to-video or image-to-video.
         },
     },
-    "seedance-pro": {
-        "seedance-pro-fal": {
+    "bytedance/seedance-1-pro-fast": {
+        "bytedance/seedance-1-pro-fast:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             cost: { completionVideoSeconds: 0.0216 },
@@ -164,8 +224,8 @@ export const IMAGE_FALLBACKS = {
             ),
         },
     },
-    zimage: {
-        "zimage-fal": {
+    "tongyi-mai/z-image-turbo": {
+        "tongyi-mai/z-image-turbo:fal": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
             // Fal bills $0.005 per output megapixel. The token line stays at

@@ -13,7 +13,7 @@ Real-time health monitoring for Pollinations model endpoints.
 ## Endpoints Monitored
 
 - **Model catalog**: `https://gen.pollinations.ai/models`
-- **Model health**: `https://gen.pollinations.ai/v1/models/status`
+- **Model health**: `https://gen.pollinations.ai/models/status`
 
 ## Development
 

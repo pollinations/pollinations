@@ -1,4 +1,4 @@
-import type { Data, OpCloudRow } from "../types";
+import type { Data, VendorLedgerRow } from "../types";
 import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
@@ -31,14 +31,14 @@ function classifiedMode(types: ReadonlySet<string>): ComputeMode {
     return "unclassified";
 }
 
-function carriesComputeCost(row: OpCloudRow) {
+function carriesComputeCost(row: VendorLedgerRow) {
     return Math.abs(Number(row.paid)) > 0.0001 || Number(row.credit) < -0.0001;
 }
 
 export function computeModeIndex(data: Data): ComputeModeIndex {
     const typesByProviderMonth = new Map<string, Set<string>>();
 
-    for (const row of data.opCloud ?? []) {
+    for (const row of data.vendorLedger ?? []) {
         const type = row.type.trim().toLowerCase();
         if (type !== "inference" && type !== "gpu") continue;
         if (!carriesComputeCost(row)) continue;
@@ -94,7 +94,7 @@ export function providerMonthComputeMode(
 export function directDeliveryData(data: Data): Data {
     return {
         ...data,
-        opCloud: (data.opCloud ?? []).filter(
+        vendorLedger: (data.vendorLedger ?? []).filter(
             (row) =>
                 (row.type.trim().toLowerCase() === "inference" ||
                     row.type.trim().toLowerCase() === "gpu") &&
@@ -115,7 +115,7 @@ export function managedInferenceData(
 ): Data {
     return {
         ...data,
-        opCloud: (data.opCloud ?? []).filter(
+        vendorLedger: (data.vendorLedger ?? []).filter(
             (row) =>
                 row.type.trim().toLowerCase() === "inference" &&
                 canonicalVendor(row.vendor) !== "community",

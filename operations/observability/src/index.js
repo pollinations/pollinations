@@ -1,36 +1,25 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container } from "@cloudflare/containers";
+import { createObservabilityApp } from "./app.ts";
 
 const CONTAINER_NAME = "primary";
 const ROOT_URL =
     workerEnv.GF_SERVER_ROOT_URL || "https://observability.pollinations.ai";
 const DOMAIN = new URL(ROOT_URL).host;
-const BRAND_ASSET_PATHS = new Set([
-    "/favicon.ico",
-    "/favicon-16x16.png",
-    "/favicon-32x32.png",
-    "/apple-touch-icon.png",
-    "/android-chrome-192x192.png",
-    "/android-chrome-512x512.png",
-    "/icon-192.png",
-    "/icon-512.png",
-    "/manifest.json",
-    "/og-image.png",
-]);
-
+const HEALTH_URL = new URL("/grafana/api/health", ROOT_URL).href;
 const BRAND_HEAD_TAGS = `
 <meta name="description" content="Pollinations operations dashboards">
 <meta property="og:title" content="pollinations.ai">
 <meta property="og:description" content="Pollinations operations dashboards">
-<meta property="og:image" content="/og-image.png">
+<meta property="og:image" content="/grafana/public/img/og-image.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="/og-image.png">
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/manifest.json">`;
+<meta name="twitter:image" content="/grafana/public/img/og-image.png">
+<link rel="icon" type="image/x-icon" href="/grafana/public/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/grafana/public/img/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/grafana/public/img/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/grafana/public/img/apple-touch-icon.png">
+<link rel="manifest" href="/grafana/public/img/manifest.json">`;
 
 function requiredSecret(name) {
     const value = workerEnv[name];
@@ -43,16 +32,31 @@ function requiredSecret(name) {
 export class ObservabilityGrafana extends Container {
     defaultPort = 3000;
     requiredPorts = [3000];
+    // The default probe hits /, which Grafana redirects to its public HTTPS URL.
+    pingEndpoint = `${DOMAIN}/grafana/api/health`;
     sleepAfter = "10m";
     envVars = {
         GF_SECURITY_ADMIN_USER: workerEnv.GF_ADMIN_USER || "admin",
         GF_SECURITY_ADMIN_PASSWORD: requiredSecret("GF_ADMIN_PASSWORD"),
         GF_SECURITY_ADMIN_EMAIL: workerEnv.GF_ADMIN_EMAIL || "hi@myceli.ai",
-        GF_SERVER_ROOT_URL: ROOT_URL,
+        GF_SERVER_ROOT_URL: `${new URL(ROOT_URL).origin}/grafana/`,
         GF_SERVER_DOMAIN: DOMAIN,
         GF_USERS_ALLOW_SIGN_UP: "false",
         GF_AUTH_ANONYMOUS_ENABLED: "false",
-        GF_AUTH_DISABLE_LOGIN_FORM: "false",
+        GF_AUTH_DISABLE_LOGIN_FORM: "true",
+        GF_AUTH_BASIC_ENABLED: "false",
+        GF_AUTH_PROXY_ENABLED: "true",
+        GF_AUTH_PROXY_HEADER_NAME: "X-WEBAUTH-USER",
+        GF_AUTH_PROXY_HEADER_PROPERTY: "username",
+        GF_AUTH_PROXY_AUTO_SIGN_UP: "true",
+        GF_AUTH_PROXY_HEADERS: "Role:X-WEBAUTH-ROLE",
+        GF_AUTH_PROXY_SYNC_TTL: "0",
+        GF_AUTH_PROXY_ENABLE_LOGIN_TOKEN: "false",
+        GF_AUTH_GENERIC_OAUTH_ENABLED: "false",
+        GF_AUTH_DISABLE_SIGNOUT_MENU: "true",
+        GF_SECURITY_ALLOW_EMBEDDING: "true",
+        GF_SERVER_SERVE_FROM_SUB_PATH: "true",
+        GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),
@@ -63,10 +67,12 @@ export class ObservabilityGrafana extends Container {
     };
 }
 
-async function grafana(env) {
+async function grafanaFetch(request, env) {
     const container = env.OBSERVABILITY_GRAFANA.getByName(CONTAINER_NAME);
     await container.startAndWaitForPorts();
-    return container;
+    // The SDK uses HTTP for the private hop. Let the browser follow redirects;
+    // following Grafana's public HTTPS redirects inside the container fails.
+    return container.fetch(new Request(request, { redirect: "manual" }));
 }
 
 class BrandHeadInjector {
@@ -77,30 +83,37 @@ class BrandHeadInjector {
 
 export default {
     async fetch(request, env) {
-        const container = await grafana(env);
         const url = new URL(request.url);
-
-        if (BRAND_ASSET_PATHS.has(url.pathname)) {
-            url.pathname = `/public/img${url.pathname}`;
-            return container.fetch(new Request(url, request));
+        if (url.pathname === "/api/health") {
+            const response = await grafanaFetch(new Request(HEALTH_URL), env);
+            return new Response(response.body, {
+                status: response.status,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-store",
+                },
+            });
         }
 
-        const response = await container.fetch(request);
-        const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("text/html")) {
-            return new HTMLRewriter()
-                .on("head", new BrandHeadInjector())
-                .transform(response);
-        }
-
-        return response;
+        const app = createObservabilityApp(async (verifiedRequest) => {
+            const response = await grafanaFetch(verifiedRequest, env);
+            if (
+                (response.headers.get("content-type") || "").includes(
+                    "text/html",
+                )
+            ) {
+                return new HTMLRewriter()
+                    .on("head", new BrandHeadInjector())
+                    .transform(response);
+            }
+            return response;
+        });
+        return app.fetch(request, env);
     },
 
     async scheduled(_controller, env, ctx) {
-        const healthRequest = new Request(`${ROOT_URL}/api/health`);
         ctx.waitUntil(
-            grafana(env)
-                .then((container) => container.fetch(healthRequest))
+            grafanaFetch(new Request(HEALTH_URL), env)
                 .then((response) => {
                     if (!response.ok) {
                         console.warn(

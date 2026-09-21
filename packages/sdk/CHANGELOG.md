@@ -4,9 +4,20 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.7] - 2026-09-05
+
+### Added
+- `ChatOptions.routing` for per-capability model overrides on router models,
+  with the `CHAT_ROUTING_CAPABILITIES` constant and `ChatRouting` types.
+- `resolution` on image and video generation options and `ModelInfo.resolutions`.
+
 ### Changed
 - `PolliProvider` now uses OAuth authorization-code + PKCE, keeping delegated
   API tokens out of callback URLs without changing its public API.
+- Chat streaming uses `eventsource-parser` for standard SSE event boundaries,
+  multiline data, and comments. Events need a terminating blank line; incomplete
+  events at EOF are discarded. Stops at `[DONE]` and releases the connection;
+  cancellation and streamed error handling are preserved.
 
 ## [5.1.0-alpha.6] - 2026-08-23
 

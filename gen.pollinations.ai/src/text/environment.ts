@@ -12,11 +12,15 @@ const TEXT_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "MISTRAL_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
     "PORTKEY_GATEWAY_URL",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
+
+type TextEnvironmentKey = (typeof TEXT_ENV_KEYS)[number];
+const syncedTextEnvironment: Partial<Record<TextEnvironmentKey, string>> = {};
 
 export function syncTextEnvironment(env: CloudflareBindings): void {
     // Text provider config still reads process.env. In Workers all bindings are
@@ -25,7 +29,14 @@ export function syncTextEnvironment(env: CloudflareBindings): void {
     for (const key of TEXT_ENV_KEYS) {
         const value = env[key];
         if (typeof value === "string") {
+            syncedTextEnvironment[key] = value;
             process.env[key] = value;
         }
     }
+}
+
+export function textEnvironmentValue(
+    key: TextEnvironmentKey,
+): string | undefined {
+    return syncedTextEnvironment[key] ?? process.env[key];
 }

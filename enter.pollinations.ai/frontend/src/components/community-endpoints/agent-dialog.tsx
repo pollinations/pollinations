@@ -1,19 +1,24 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ButtonGroup,
     CheckIcon,
-    DialogTitle,
-    FieldStack,
-    ScrollArea,
+    DialogBody,
+    DialogHeader,
+    InlineLink,
+    Surface,
     TabButton,
+    XIcon,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { genDocsUrl } from "../../config.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
+import { ModelFormRow } from "./model-form-row.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
-import { PromptAgentFields } from "./prompt-agent-fields.tsx";
+import { PromptAgentFields, PromptAgentTools } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type AgentFormState,
@@ -102,11 +107,28 @@ export function AgentDialog({
         (form.type === "code_agent" ||
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
-    const submitLabel = agent
-        ? "Save Agent"
-        : form.visibility === "public"
-          ? "Publish Agent"
-          : "Add Private Agent";
+    const submitLabel = agent ? "Save changes" : "Create agent";
+
+    const actions = (
+        <>
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                onClick={() => onOpenChange(false)}
+            >
+                Cancel
+            </Button>
+            <Button
+                icon={<BotIcon />}
+                type="submit"
+                intent="commit"
+                disabled={!canSubmit}
+            >
+                {isSubmitting ? "Saving…" : submitLabel}
+            </Button>
+        </>
+    );
 
     return (
         <ResourceDialog
@@ -116,98 +138,81 @@ export function AgentDialog({
             trigger={trigger}
             triggerAsChild
         >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {agent ? "Edit Agent" : "Add Agent"}
-                </DialogTitle>
-                <p className="mt-1 text-sm text-theme-text-muted">
-                    Configure and list an agent as a{" "}
-                    <code>
-                        {"{username}"}/{"{model-id}"}
-                    </code>{" "}
-                    model.
-                </p>
-            </div>
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
+                <DialogBody actions={actions}>
+                    <DialogHeader
+                        inBody
+                        title={agent ? "Edit agent" : "Create agent"}
+                        description={
+                            <>
+                                Choose a prompt and model, or deploy code from
+                                GitHub.{" "}
+                                {!agent && (
+                                    <InlineLink
+                                        href={genDocsUrl(
+                                            "#tag/publish-an-agent",
+                                        )}
+                                    >
+                                        Read the guide
+                                    </InlineLink>
+                                )}
+                            </>
+                        }
+                    />
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {!agent && (
-                        <FieldStack
-                            label="Agent type"
-                            helper={
-                                "Use a prompt and model, or deploy code from GitHub."
-                            }
-                            alignLabelRow
-                        >
-                            <ButtonGroup aria-label="Agent type">
-                                <TabButton
-                                    active={form.type === "prompt_agent"}
-                                    disabled={isSubmitting}
-                                    onClick={() =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            type: "prompt_agent",
-                                        }))
-                                    }
-                                    size="sm"
-                                    className="min-w-28 gap-1.5"
-                                >
-                                    {form.type === "prompt_agent" && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Prompt agent
-                                </TabButton>
-                                <TabButton
-                                    active={form.type === "code_agent"}
-                                    disabled={isSubmitting}
-                                    onClick={() =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            type: "code_agent",
-                                        }))
-                                    }
-                                    size="sm"
-                                    className="min-w-28 gap-1.5"
-                                >
-                                    {form.type === "code_agent" && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Code agent
-                                </TabButton>
-                            </ButtonGroup>
-                        </FieldStack>
+                        <Surface>
+                            <ModelFormRow
+                                label="Agent type"
+                                help="Prompt agents use a model and instructions. Code agents deploy a public GitHub repository."
+                            >
+                                <ButtonGroup aria-label="Agent type">
+                                    <TabButton
+                                        active={form.type === "prompt_agent"}
+                                        disabled={isSubmitting}
+                                        onClick={() =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                type: "prompt_agent",
+                                            }))
+                                        }
+                                        size="sm"
+                                        className="min-w-28 gap-1.5"
+                                    >
+                                        {form.type === "prompt_agent" && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        Prompt agent
+                                    </TabButton>
+                                    <TabButton
+                                        active={form.type === "code_agent"}
+                                        disabled={isSubmitting}
+                                        onClick={() =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                type: "code_agent",
+                                            }))
+                                        }
+                                        size="sm"
+                                        className="min-w-28 gap-1.5"
+                                    >
+                                        {form.type === "code_agent" && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        Code agent
+                                    </TabButton>
+                                </ButtonGroup>
+                            </ModelFormRow>
+                        </Surface>
                     )}
 
-                    <ModelListingFields
-                        form={form}
-                        modality="text"
-                        canPublish={canPublish}
-                        isAgent
-                        allowPerUserRpm={false}
-                        hideIdentity={form.type === "code_agent"}
-                        required
-                        onChange={(key, value) =>
-                            setForm((current) => ({
-                                ...current,
-                                [key]: value,
-                            }))
-                        }
-                    />
-
-                    {form.type === "code_agent" && (
-                        <p className="text-sm text-theme-text-muted">
-                            The repository name becomes the model ID and title.
-                            Its description becomes the catalog description.
-                        </p>
-                    )}
-
-                    <div className="space-y-4 border-t border-divider pt-4">
-                        {form.type === "code_agent" ? (
+                    <Surface className="space-y-3">
+                        {form.type === "code_agent" && (
                             <CodeAgentFields
                                 form={form}
                                 disabled={isSubmitting || !!agent}
@@ -218,58 +223,86 @@ export function AgentDialog({
                                     }))
                                 }
                             />
-                        ) : (
-                            <PromptAgentFields
-                                form={form}
-                                disabled={isSubmitting}
-                                onChange={updateAgentForm}
-                            />
                         )}
-                        {agent?.type === "code_agent" && onSync && (
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    disabled={
-                                        isSubmitting || syncStatus === "syncing"
-                                    }
-                                    onClick={() => void handleSync()}
-                                >
-                                    {syncStatus === "syncing"
-                                        ? "Syncing…"
-                                        : "Sync from GitHub"}
-                                </Button>
-                                {syncStatus === "synced" && (
-                                    <output className="text-sm text-theme-text-muted">
-                                        Synced from GitHub.
-                                    </output>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    <SafetyFeatureSelector
-                        value={form.requiredSafetyFeatures}
-                        disabled={isSubmitting}
-                        onChange={(requiredSafetyFeatures) =>
-                            setForm((current) => ({
-                                ...current,
-                                requiredSafetyFeatures,
-                            }))
+
+                        <ModelListingFields
+                            form={form}
+                            canPublish={canPublish}
+                            isAgent
+                            hideIdentity={form.type === "code_agent"}
+                            required
+                            onChange={(key, value) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    [key]: value,
+                                }))
+                            }
+                        />
+                    </Surface>
+                    {(form.type === "prompt_agent" ||
+                        (agent?.type === "code_agent" && onSync)) && (
+                        <Surface>
+                            {form.type === "prompt_agent" && (
+                                <PromptAgentFields
+                                    form={form}
+                                    disabled={isSubmitting}
+                                    onChange={updateAgentForm}
+                                />
+                            )}
+                            {agent?.type === "code_agent" && onSync && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        disabled={
+                                            isSubmitting ||
+                                            syncStatus === "syncing"
+                                        }
+                                        onClick={() => void handleSync()}
+                                    >
+                                        {syncStatus === "syncing"
+                                            ? "Syncing…"
+                                            : "Sync from GitHub"}
+                                    </Button>
+                                    {syncStatus === "synced" && (
+                                        <output className="font-body text-xs font-normal leading-normal text-theme-text-muted">
+                                            Synced from GitHub.
+                                        </output>
+                                    )}
+                                </div>
+                            )}
+                        </Surface>
+                    )}
+                    <div
+                        className={
+                            form.type === "prompt_agent"
+                                ? "grid gap-4 md:grid-cols-2"
+                                : undefined
                         }
-                    />
-                </ScrollArea>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
-                    <Button
-                        type="button"
-                        intent="danger"
-                        onClick={() => onOpenChange(false)}
                     >
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={!canSubmit}>
-                        {isSubmitting ? "Saving…" : submitLabel}
-                    </Button>
-                </div>
+                        {form.type === "prompt_agent" && (
+                            <Surface>
+                                <PromptAgentTools
+                                    form={form}
+                                    disabled={isSubmitting}
+                                    onChange={updateAgentForm}
+                                />
+                            </Surface>
+                        )}
+                        <Surface>
+                            <SafetyFeatureSelector
+                                value={form.requiredSafetyFeatures}
+                                disabled={isSubmitting}
+                                onChange={(requiredSafetyFeatures) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        requiredSafetyFeatures,
+                                    }))
+                                }
+                            />
+                        </Surface>
+                    </div>
+                </DialogBody>
             </form>
         </ResourceDialog>
     );

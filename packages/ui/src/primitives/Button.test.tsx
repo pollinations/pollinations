@@ -59,13 +59,29 @@ describe("Button appearances", () => {
         expect(footer).toContain(standalone);
     });
 
+    test("applies block defaults only inside a dialog footer", () => {
+        const button = <Button>Save</Button>;
+        expect(renderToStaticMarkup(button)).toContain("polli:rounded-full");
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+        expect(footer).toContain("polli:rounded-md");
+        expect(footer).not.toContain("polli:rounded-full");
+    });
+
     test("makes disabled polymorphic links inert", () => {
-        const element = Button({
-            as: "a",
-            href: "/unavailable",
-            disabled: true,
-            children: "Unavailable",
-        });
+        // Render within React so Button can read its footer defaults.
+        let element = <span />;
+        function Probe() {
+            element = Button({
+                as: "a",
+                href: "/unavailable",
+                disabled: true,
+                children: "Unavailable",
+            });
+            return element;
+        }
+        renderToStaticMarkup(<Probe />);
         const props = element.props as {
             "aria-disabled": boolean;
             href?: string;

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15270,
+  "title": "refactor(enter): simplify model catalog and reusable search",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15270",
+  "merged_at": "2026-09-21T20:01:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Simplifies the model, agent, and MCP catalogs with consistent search, pricing, copy actions, and loading states. Reads metadata and health directly from the generation catalog, removing the duplicate health feed and fixing the health type mismatch.\n- Fixes Source and Status selectors so switching values preserves search text and other filters. Reuses the controls in model search fields and adds regression coverage.\n- Uses quiet, borderless filter dropdowns with selection checkmarks. Reduces the sort menu to five labeled options: popularity, newest, price in either direction, and name A–Z.\n- Places compact Open WebUI launchers beside model and agent names in My models, aligns activity-link styling, and removes the redundant hidden-model explanation.\n- Validation: 58 catalog, query, sort, category, and filter tests pass; Enter typecheck, frontend build, and scoped Biome checks pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The catalog stopped shedding skins",
+    "blurb": "The model, agent, and MCP shelves got one set of search and filter controls instead of several almost-identical ones wandering around the garden. Prices, copy buttons, loading states, and live catalog health now stay where they belong.",
+    "summary": "Refactored the Enter model, agent, and MCP catalogs around reusable search and filter controls, live generation-catalog metadata and health, five clear sort options, copy actions, loading states, and compact Open WebUI launchers.",
+    "impact": "People browsing My Models can keep their search text and active filters while changing Source or Status, compare pricing and availability from a consistent catalog view, and launch compatible models or agents in Open WebUI directly from their names.",
+    "keywords": [
+      "enter",
+      "model-catalog",
+      "search",
+      "filters",
+      "open-webui",
+      "model-health",
+      "frontend"
+    ],
+    "visual_concept": "A cozy garden-library catalog where Polli is tending a single well-organized row of model seed packets instead of duplicate shelves. Search magnifying glasses, filter tokens with checkmarks, price tags, a small copy clipboard, and a glowing CRT portal for Open WebUI make the catalog improvements visible; code-plants and flowers reinforce the unified, live source of truth.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing tiny librarian glasses while organizing a glowing model-seed catalog; she keeps a magnifying glass search bar and checked filter tokens aligned beside price tags, a copy clipboard, and a little CRT portal labeled \"OPEN WEBUI,\" with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15270.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing tiny librarian glasses while organizing a glowing model-seed catalog; she keeps a magnifying glass search bar and checked filter tokens aligned beside price tags, a copy clipboard, and a little CRT portal labeled \"OPEN WEBUI,\" with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-21T20:02:16.599329+00:00"
+}

@@ -147,6 +147,7 @@ mcpCommand.addCommand(
 
 mcpCommand.addCommand(
     new Command("remove")
+        .alias("off")
         .description(
             "Remove Pollinations-owned MCP entries from a client (other entries are kept)",
         )

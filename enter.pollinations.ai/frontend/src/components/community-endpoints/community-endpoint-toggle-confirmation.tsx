@@ -1,4 +1,5 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { ConfirmationDialog, EyeIcon, EyeOffIcon } from "@pollinations/ui";
+import { ResourceConfirmationContent } from "./resource-confirmation-content.tsx";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointToggleConfirmationProps = {
@@ -12,33 +13,29 @@ export function CommunityEndpointToggleConfirmation({
     onConfirm,
     onCancel,
 }: CommunityEndpointToggleConfirmationProps) {
+    const hidden = !!endpoint?.hidden;
+    const isPrivate = endpoint?.visibility === "private";
+    const action = hidden ? "Relist" : "Unlist";
+    const kind = endpoint?.type === "proxy" ? "model" : "agent";
     return (
-        <Dialog
+        <ConfirmationDialog
             open={!!endpoint}
-            onOpenChange={(open) => !open && onCancel()}
-            title={endpoint?.hidden ? "Relist Model" : "Hide Model"}
-            size="sm"
-            contentClassName="p-6"
+            title={`${action} ${kind}?`}
+            confirmLabel={action}
+            intent="neutral"
+            confirmIcon={hidden ? <EyeIcon /> : <EyeOffIcon />}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
         >
-            <p className="mb-6 mt-4">
-                {endpoint?.hidden ? "Relist" : "Hide"}{" "}
-                <span className="font-mono text-sm">{endpoint?.modelId}</span>?{" "}
-                {endpoint?.hidden
-                    ? "It will appear in model listings again."
-                    : "It will be removed from model listings but remain callable by its exact model ID."}
-            </p>
-            <div className="flex justify-end gap-2">
-                <Button type="button" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    intent={endpoint?.hidden ? "info" : "danger"}
-                    onClick={onConfirm}
-                >
-                    {endpoint?.hidden ? "Relist" : "Hide"}
-                </Button>
-            </div>
-        </Dialog>
+            <ResourceConfirmationContent resource={endpoint?.modelId}>
+                {hidden
+                    ? isPrivate
+                        ? `This ${kind} stays private and can appear in listings if you publish it later.`
+                        : `This ${kind} will return to public listings.`
+                    : isPrivate
+                      ? `This ${kind} stays private and remains unlisted if you publish it later.`
+                      : `This ${kind} will be removed from public listings but remain callable by its exact model ID.`}
+            </ResourceConfirmationContent>
+        </ConfirmationDialog>
     );
 }

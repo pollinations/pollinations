@@ -1,0 +1,35 @@
+{
+  "pr_number": 15041,
+  "title": "feat: polyrouter - complexity/cost/health model router code agent",
+  "author": "afanasevmylife",
+  "url": "https://github.com/pollinations/pollinations/pull/15041",
+  "merged_at": "2026-09-21T13:26:03Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n`polyrouter` - a code agent that routes each request to **the cheapest healthy model that fits the request's complexity**, then forwards the conversation unchanged. Callers see only the chosen model's answer.\n\n- **Source repository:** https://github.com/afanasevmylife/polyrouter\n- **Callable model:** `afanasevmylife/polyrouter` (registered, deployed at commit `973f149`, verified live)\n\n## Design\n\n1. **Classify (pure code)**: prompt length, code fences, reasoning keywords, conversation length, images, tools -> `fast` / `balanced` / `deep`. Classification spends no LLM call, so routing adds no extra model cost or latency.\n2. **Live data**: `/v1/models?status=all` and `/v1/models/status?minutes=30` in parallel via `pollinations()` - pricing, capabilities, health, p95 latency, tokens/sec.\n3. **Pick**: healthy text models meeting capability needs (image input, `tool_calling`; `deep` also requires `reasoning`), sorted by unit price with live p95 tiebreak - fast = cheapest, balanced = median-priced, deep = strongest. Empty band escalates upward. Per-model retries stay with the gateway (sequences, #14937); this agent only chooses *between* models.\n\n## Outcome checklist\n\n- [x] Works as a normal model - verified live through `POST /v1/responses` with `model: afanasevmylife/polyrouter`\n- [x] Routing visible: `polyrouter_trace` body field (model, tier, reason, skip counts) + `x-polyrouter-*` headers\n- [x] Three live requests routed differently, transcripts in `demos/`:\n  - simple prompt -> `community/morriszdweck/osaii-swarm` (fast: cheapest healthy of 34)\n  - code+reasoning prompt -> `community/pollinations-router/midijourney` (deep: strongest healthy reasoning model)\n  - tool-calling request -> `meta/muse-glimmer-30b` (balanced: median-priced healthy tool_calling model)\n- [x] `node --experimental-strip-types --test agent.test.ts` - 10/10 (classifier, capability/health filters, escalation, latency tiebreak, forwarding)\n\n## Alpha feedback (platform usability)\n\n1. **",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cheapest bee for the job",
+    "blurb": "Polyrouter joined the garden as a code agent with a practical instinct: check what is healthy, check what the request needs, then send it to the right-priced brain. No extra LLM call required to decide who gets the difficult homework.",
+    "summary": "Added the live callable model `afanasevmylife/polyrouter`, a code agent that classifies requests as fast, balanced, or deep in pure code, reads live model pricing and 30-minute health data, and forwards the unchanged conversation to a healthy text model with the required capabilities.",
+    "impact": "Calls to `POST /v1/responses` using `afanasevmylife/polyrouter` now receive a selected model's normal answer, with `polyrouter_trace` plus `x-polyrouter-*` headers showing the chosen model, tier, reason, and skipped candidates.",
+    "keywords": [
+      "polyrouter",
+      "model-routing",
+      "code-agent",
+      "model-health",
+      "pricing",
+      "responses-api",
+      "community"
+    ],
+    "visual_concept": "Depict Polyrouter as a cozy garden routing station: Polli studies three labeled paths—FAST, BALANCED, and DEEP—leading to small healthy glowing CRT terminals, while a price tag, heart-health indicator, code scroll, image icon, and tool wrench show the signals used for routing. Polli should look warmly analytical rather than dominant, wearing a tiny dispatcher headset and guiding a code-message envelope toward the best-fit terminal amid code-plants and flowers.",
+    "image_prompt": "A cozy pixel art garden routing station where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny dispatcher headset and guides a code-message envelope along three flower-lined signs reading \"FAST\", \"BALANCED\", and \"DEEP\" toward healthy glowing CRT terminals; price tags, heart icons, a wrench, and code-plants make the routing logic visible, with lime green (#ecf874) prominently glowing around the selected path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, dark purple (#110518) pixel outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15041.jpg",
+    "prompt": "A cozy pixel art garden routing station where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny dispatcher headset and guides a code-message envelope along three flower-lined signs reading \"FAST\", \"BALANCED\", and \"DEEP\" toward healthy glowing CRT terminals; price tags, heart icons, a wrench, and code-plants make the routing logic visible, with lime green (#ecf874) prominently glowing around the selected path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky retro sprites, dark purple (#110518) pixel outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-21T13:27:06.674960+00:00"
+}

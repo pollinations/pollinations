@@ -1,6 +1,5 @@
 import {
     Alert,
-    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -12,7 +11,6 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
-    McpIcon,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -22,7 +20,6 @@ import {
     UsageIcon,
     WarningIcon,
 } from "@pollinations/ui";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -96,16 +93,6 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
     agent: AGENT_QUERY_FILTER_KEYS,
     mcp: MCP_QUERY_FILTER_KEYS,
 };
-
-const PRIMARY_TABS: Array<{
-    value: PrimaryTab;
-    label: string;
-    Icon: FC<{ className?: string }>;
-}> = [
-    { value: "models", label: "Models", Icon: BeakerIcon },
-    { value: "agent", label: "Agents", Icon: BotIcon },
-    { value: "mcp", label: "MCP", Icon: McpIcon },
-];
 
 const TabCount: FC<{ value: number }> = ({ value }) => (
     <span
@@ -390,11 +377,6 @@ export const Models: FC = () => {
         () => categorizeModels(modelModels),
         [modelModels],
     );
-    const primaryTabCounts: Record<PrimaryTab, number> = {
-        models: modelSections.all.length,
-        agent: agentModels.length,
-        mcp: MCP_SERVERS.length,
-    };
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -627,15 +609,6 @@ export const Models: FC = () => {
         });
     };
 
-    const setActivePrimaryTab = (primaryTab: PrimaryTab) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                category: primaryTab === "models" ? undefined : primaryTab,
-            }),
-        });
-    };
-
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
             search: (previous) => ({
@@ -682,32 +655,6 @@ export const Models: FC = () => {
             >
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex w-full flex-col gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                            {PRIMARY_TABS.map((tab) => {
-                                const TabIcon = tab.Icon;
-                                return (
-                                    <TabButton
-                                        key={tab.value}
-                                        active={activePrimaryTab === tab.value}
-                                        onClick={() =>
-                                            setActivePrimaryTab(tab.value)
-                                        }
-                                        size="lg"
-                                        ariaLabel={`${tab.label}, ${primaryTabCounts[tab.value]} ${tab.value === "mcp" ? "servers" : tab.value === "agent" ? "agents" : "models"}`}
-                                    >
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <TabIcon className="h-4 w-4" />
-                                            {tab.label}
-                                            <TabCount
-                                                value={
-                                                    primaryTabCounts[tab.value]
-                                                }
-                                            />
-                                        </span>
-                                    </TabButton>
-                                );
-                            })}
-                        </div>
                         {activePrimaryTab === "models" && (
                             <div className="flex w-full flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap gap-1.5">

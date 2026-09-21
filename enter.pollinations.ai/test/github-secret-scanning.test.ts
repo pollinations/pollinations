@@ -167,7 +167,7 @@ describe("GitHub secret scanning", () => {
         expect(response.status).toBe(200);
         expect(repeated.status).toBe(200);
         expect(await isEnabled(apiKey)).toBe(false);
-        expect(await isEnabled(pubApiKey)).toBe(false);
+        expect(await isEnabled(pubApiKey)).toBe(true);
         const rejected = await SELF.fetch(
             "https://enter.pollinations.ai/api/account/key",
             {
@@ -203,7 +203,7 @@ describe("GitHub secret scanning", () => {
         expect(await isEnabled(apiKey)).toBe(true);
     });
 
-    test("disables matching publishable pk_ keys", async ({
+    test("does not auto-revoke publishable pk_ keys", async ({
         pubApiKey,
         mocks,
     }) => {
@@ -226,6 +226,6 @@ describe("GitHub secret scanning", () => {
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ success: true });
-        expect(await isEnabled(pubApiKey)).toBe(false);
+        expect(await isEnabled(pubApiKey)).toBe(true);
     });
 });

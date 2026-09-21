@@ -1,10 +1,4 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
-import {
-    fetchModelHealthRows,
-    type ModelHealth,
-    type ModelHealthRow,
-    modelHealthLookup,
-} from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -18,7 +12,6 @@ type ApiPricing = ModelInfo["pricing"];
 
 export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
-    health?: ModelHealth;
 };
 
 type PriceField =
@@ -100,7 +93,10 @@ export function mergeModelCatalogs(
 }
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const response = await fetch(url, {
+    const catalogUrl = new URL(url);
+    // Keep the full accessible catalog so the search bar can offer status:all.
+    catalogUrl.searchParams.set("reliability", "all");
+    const response = await fetch(catalogUrl, {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -108,17 +104,6 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
         throw new Error(`Failed to fetch models (${response.status})`);
     }
     return parseModelCatalogResponse(await response.json());
-}
-
-export function withModelHealth(
-    models: ApiModelInfo[],
-    rows: ModelHealthRow[],
-): ApiModelInfo[] {
-    const lookup = modelHealthLookup(rows);
-    return models.map((model) => ({
-        ...model,
-        health: lookup(getCatalogModelId(model), getCatalogCategory(model)),
-    }));
 }
 
 export async function fetchModelCatalog(
@@ -131,15 +116,13 @@ export async function fetchModelCatalog(
     }
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
-            const [rows, ...catalogs] = await Promise.all([
-                // Health is decoration: without the feed every dot reads unknown.
-                fetchModelHealthRows(config.genBaseUrl).catch(() => []),
+            const catalogs = await Promise.all([
                 fetchCatalog(`${config.genBaseUrl}/models`),
                 ...(config.communityCatalogUrl
                     ? [fetchCatalog(config.communityCatalogUrl)]
                     : []),
             ]);
-            return withModelHealth(mergeModelCatalogs(catalogs), rows);
+            return mergeModelCatalogs(catalogs);
         })
         .catch((error) => {
             modelCatalogPromise = null;
@@ -221,7 +204,13 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
-        health: model.health,
+        health: model.health
+            ? {
+                  status: model.health.status,
+                  successRate: model.health.success_rate,
+                  requests: model.health.requests,
+              }
+            : undefined,
         agent: model.agent,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,

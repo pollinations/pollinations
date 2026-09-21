@@ -1,9 +1,10 @@
+import { isModelReliable } from "@shared/model-health.ts";
 import { getModelCapabilities, getModelDisplayName } from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
-export type ModelStatus = "all" | "healthy";
+export type ModelStatus = "all" | "healthy" | "reliable";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
@@ -33,7 +34,7 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const STATUS_VALUES: readonly ModelStatus[] = ["all", "healthy"];
+const STATUS_VALUES: readonly ModelStatus[] = ["all", "reliable", "healthy"];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
@@ -67,7 +68,9 @@ function parseModelQueryFilter(
         case "source":
             return isModelSource(value) ? { key, value } : undefined;
         case "status":
-            return value === "all" || value === "healthy"
+            return value === "all" ||
+                value === "healthy" ||
+                value === "reliable"
                 ? { key, value }
                 : undefined;
         case "publisher":
@@ -122,7 +125,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:healthy"].filter(
+        ...["source:official", "status:reliable"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,
@@ -303,7 +306,12 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
         case "source":
             return Boolean(model.community) === (filter.value === "community");
         case "status":
-            return filter.value === "all" || model.health?.status === "healthy";
+            return (
+                filter.value === "all" ||
+                (filter.value === "reliable"
+                    ? isModelReliable(model.health?.successRate)
+                    : model.health?.status === "healthy")
+            );
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

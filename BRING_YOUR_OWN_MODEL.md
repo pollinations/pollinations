@@ -152,7 +152,11 @@ Endpoint agents also select one upstream API and exact URL. Managed prompt agent
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Pollinations monitors public text and image models using live traffic and active probes. Sustained failures can hide a model from listings while exact-ID calls continue to work. Owners can relist a fixed model, and the monitor can automatically relist models it hid after recovery is verified. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+Model lists show models with more than 90% success across their last 50 eligible requests within seven days. Fallback rescues count as successes. Final 4xx and the owner's own requests are excluded; monitor probes count. There is no minimum sample size, and models without recent data remain listed.
+
+Models filtered for reliability still work by exact ID and can serve as fallbacks. Use `?reliability=all` on a model-list endpoint to include them. Manual hiding and private models remain separate; this option does not bypass access controls.
+
+The monitor helps diagnose issues and selectively probes text/image models, normally no more than once every four hours with longer gaps after repeated failures. It no longer hides or relists models. Listing visibility updates automatically as new requests change the sample. View time-windowed diagnostics at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
 ## Trust Boundary
 

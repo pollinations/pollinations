@@ -69,7 +69,7 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
     const requests = [];
     let failing = true;
     const server = http.createServer(async (req, res) => {
-        if (req.url === "/models") {
+        if (req.url === "/models?reliability=all") {
             res.setHeader("content-type", "application/json");
             res.end(
                 JSON.stringify([

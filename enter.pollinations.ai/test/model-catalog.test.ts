@@ -1,40 +1,72 @@
 import {
+    fetchModelCatalog,
     getModelPricesFromCatalog,
     mergeModelCatalogs,
     parseModelCatalogResponse,
-    withModelHealth,
 } from "@frontend/components/models/model-catalog.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-it("derives health from the model's rollup row and keeps it for filtering", () => {
-    const row = (model: string, status_2xx: number, errors_5xx: number) => ({
-        model,
-        event_type: "generate.text",
-        is_rollup: 1,
-        status_2xx,
-        errors_5xx,
-    });
-    const rows = [
-        { ...row("healthy/model", 0, 100), is_rollup: 0 },
-        row("healthy/model", 96, 4),
-        row("degraded/model", 95, 5),
-        row("down/model", 80, 20),
-    ];
-    const models = getModelPricesFromCatalog(
-        withModelHealth(
-            [
-                { name: "healthy/model", category: "text" },
-                { name: "degraded/model", category: "text" },
-                { name: "down/model", category: "text" },
-                { name: "quiet/model", category: "image" },
-            ],
-            rows,
-        ),
-    );
+vi.mock("../frontend/src/config.ts", () => ({
+    config: {
+        genBaseUrl: "https://gen.example",
+        communityCatalogUrl: "https://gen.example/models?source=community",
+    },
+}));
+
+it("fetches the full catalog for show-all without a separate health request", async () => {
+    const fetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input) => {
+            const url = new URL(String(input));
+            expect(url.pathname).toBe("/models");
+            expect(url.searchParams.get("reliability")).toBe("all");
+            return Response.json([
+                {
+                    name: "example/model",
+                    health: { status: "down", success_rate: 0, requests: 1 },
+                },
+            ]);
+        });
+    try {
+        const catalog = await fetchModelCatalog({ refresh: true });
+        expect(fetch).toHaveBeenCalled();
+        expect(catalog[0].health).toEqual({
+            status: "down",
+            success_rate: 0,
+            requests: 1,
+        });
+    } finally {
+        fetch.mockRestore();
+    }
+});
+
+it("preserves catalog reliability across text, image, video and 3D without a second health feed", () => {
+    const models = getModelPricesFromCatalog([
+        {
+            name: "text/model",
+            category: "text",
+            health: { status: "healthy", requests: 50, success_rate: 98 },
+        },
+        {
+            name: "video/model",
+            category: "video",
+            health: { status: "degraded", requests: 50, success_rate: 90 },
+        },
+        {
+            name: "3d/model",
+            category: "3d",
+            health: { status: "down", requests: 5, success_rate: 0 },
+        },
+        {
+            name: "image/model",
+            category: "image",
+            health: { status: "unknown", requests: 0, success_rate: null },
+        },
+    ]);
     expect(models.map((model) => model.health)).toEqual([
-        { status: "healthy", requests: 100, successRate: 96 },
-        { status: "degraded", requests: 100, successRate: 95 },
-        { status: "down", requests: 100, successRate: 80 },
+        { status: "healthy", requests: 50, successRate: 98 },
+        { status: "degraded", requests: 50, successRate: 90 },
+        { status: "down", requests: 5, successRate: 0 },
         { status: "unknown", requests: 0, successRate: null },
     ]);
 });

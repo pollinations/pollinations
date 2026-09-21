@@ -38,8 +38,21 @@ LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
 catalog header.
 
-Model lists carry no health data. Recent request counts, error rates, latency
-and fallback breakdowns per model are served separately by
+Lists default to `reliability=reliable`: more than 90% success across the last
+50 eligible final requests within seven days. There is no minimum sample size.
+Models without observations remain listed. Successful fallbacks count as successes
+for the requested model; final 4xx and community-owner traffic are excluded,
+while monitor probes count. Each entry includes `health` with `status`,
+`success_rate` (null without observations), and `requests` (at most 50).
+This sample refreshes roughly every 60 seconds; unavailable analytics fails open.
+
+Use `?reliability=all` or `Pollinations-Model-Reliability: all` to see all
+otherwise accessible models. The query takes precedence over the header.
+This only affects discovery: exact-ID calls, retrieval and fallback routing
+remain available. Authentication, key permissions, paid access and manual
+hiding still apply. Owners can manage all their models in My Models.
+
+Time-windowed traffic, latency and fallback breakdowns are served separately by
 `/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:

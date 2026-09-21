@@ -112,7 +112,7 @@ if (!onlyModel && modelsFileArgIndex === -1) {
 
 // Pricing is public, no auth needed: https://gen.pollinations.ai/models
 async function fetchCatalog() {
-    const response = await fetch(`${GEN}/models`, {
+    const response = await fetch(`${GEN}/models?reliability=all`, {
         signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok)
@@ -134,7 +134,7 @@ function estimateCost(model) {
 }
 
 // Basic billing-integrity sanity checks on a single probe response. These are
-// NOT health/hide signals (CYCLE.md's 5xx/timeout rules own that) --
+// NOT availability signals (the catalog uses final request outcomes) --
 // they flag "the numbers we're about to pay this owner on look implausible
 // for a short, cache-busted prompt", for a human to investigate. Thresholds are
 // deliberately loose (calibrated against real tokenizer variance seen across

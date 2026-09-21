@@ -1,4 +1,4 @@
-import { modelHealthLookup } from "@shared/model-health.ts";
+import { isModelReliable, modelHealthLookup } from "@shared/model-health.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import type {
@@ -58,5 +58,15 @@ export async function filterCatalogEntries(
     );
 
     const lookup = await getModelHealthLookup();
-    return filtered.map((entry) => attachModelHealth(entry, lookup));
+    const reliability =
+        query.reliability ??
+        headers["pollinations-model-reliability"] ??
+        "reliable";
+    return filtered
+        .map((entry) => attachModelHealth(entry, lookup))
+        .filter(
+            (entry) =>
+                reliability === "all" ||
+                isModelReliable(entry.info.health?.success_rate),
+        );
 }

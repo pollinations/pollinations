@@ -28,10 +28,10 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     const unknown = !health || health.status === "unknown";
     const healthy = !unknown && health.status === "healthy";
     const healthLabel = unknown
-        ? "No requests in the last 24 hours"
+        ? "No recent reliability data"
         : healthy
-          ? "Healthy over the last 24 hours"
-          : "Elevated errors over the last 24 hours";
+          ? `Healthy across the last ${health.requests} eligible requests (up to seven days)`
+          : `Elevated errors across the last ${health.requests} eligible requests (up to seven days)`;
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 

@@ -62,19 +62,16 @@ describe("shared control accessibility", () => {
             );
         const all = render([]);
         const filtered = render(["flux"]);
-        const selectedNames = (markup: string) =>
+        const selectedButtons = (markup: string) =>
             [
                 ...markup.matchAll(
                     /<button\b[^>]*aria-pressed="true"[^>]*>([\s\S]*?)<\/button>/g,
                 ),
-            ].map(([, content]) =>
-                content
-                    .replace(/<[^>]+>/g, "")
-                    .replace("✓", "")
-                    .trim(),
-            );
-        expect(selectedNames(all)).toEqual(["All"]);
-        expect(selectedNames(filtered)).toEqual(["Flux"]);
+            ].map(([, content]) => content);
+        expect(selectedButtons(all)).toHaveLength(1);
+        expect(selectedButtons(all)[0]).toContain("All");
+        expect(selectedButtons(filtered)).toHaveLength(1);
+        expect(selectedButtons(filtered)[0]).toContain("Flux");
         expect(filtered).toContain('aria-pressed="false"');
         expect(filtered).toMatch(/<span aria-hidden="true"[^>]*>✓<\/span>/);
         for (const markup of [all, filtered, render([], true)]) {

@@ -1065,9 +1065,15 @@ describe("tracking observability", () => {
     });
 
     it.each([
-        false,
-        true,
-    ])("tracks a streamed policy rejection as unbilled 4xx (choice error %s)", async (nested) => {
+        [false, "Gemini blocked the request: PROHIBITED_CONTENT", 422],
+        [true, "Gemini blocked the request: PROHIBITED_CONTENT", 422],
+        [false, "I can't help with that request.", 422],
+        [
+            false,
+            "Upstream error from DeepInfra: Tool call id was 2tpesxk_0 but must be a-z, A-Z, 0-9, with a length of 9.",
+            400,
+        ],
+    ] as const)("tracks a streamed rejection as unbilled 4xx (%s, %s)", async (nested, message, status) => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1078,7 +1084,7 @@ describe("tracking observability", () => {
         const consumePollen = vi.fn(async (_amount: number) => {});
         const error = {
             code: 400,
-            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            message,
             metadata: { error_type: "invalid_request" },
         };
         const event = nested
@@ -1123,9 +1129,12 @@ describe("tracking observability", () => {
             "generation_event_v2",
         );
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
-            responseStatus: 422,
+            responseStatus: status,
             isBilledUsage: false,
-            errorResponseCode: "content_policy_violation",
+            errorResponseCode:
+                status === 422
+                    ? "content_policy_violation"
+                    : "upstream_finish_reason_error",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });

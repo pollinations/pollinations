@@ -5,8 +5,8 @@ import {
     totalPromptTokens,
 } from "./cost-variants";
 import {
+    GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
-    openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -655,27 +655,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3-flash-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.5) * 1.055,
-            promptCachedTokens: perMillion(0.05) * 1.055,
-            promptCacheWriteTokens: perMillion(0.5) * 1.055,
-            promptAudioTokens: perMillion(1.0) * 1.055,
-            promptImageTokens: perMillion(0.5) * 1.055,
-            promptVideoTokens: perMillion(0.5) * 1.055,
-            completionTextTokens: perMillion(3.0) * 1.055,
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.05),
+            promptCacheWriteTokens: perMillion(0.5),
+            promptAudioTokens: perMillion(1.0),
+            promptImageTokens: perMillion(0.5),
+            promptVideoTokens: perMillion(0.5),
+            completionTextTokens: perMillion(3.0),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3 Flash Preview",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -689,31 +686,26 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
-        // Standard OpenRouter rates for the pinned google-vertex/global route
-        // after the 50%-off launch promo ended 2026-08-27. These mirror
-        // Google's promotional pricing through 2026-12-31; list rates double
-        // on 2027-01-01 and need another update then.
+        // Google's promotional pricing runs through 2026-12-31; list rates
+        // double on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.75) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            promptCacheWriteTokens: perMillion(0.75) * 1.055,
-            promptAudioTokens: perMillion(0.75) * 1.055,
-            promptImageTokens: perMillion(0.75) * 1.055,
-            promptVideoTokens: perMillion(0.75) * 1.055,
-            completionTextTokens: perMillion(3.75) * 1.055,
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 0.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -727,29 +719,25 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
-        // Standard OpenRouter rates for the pinned google-vertex/global route.
         // Google's introductory pricing ends 2026-12-31.
         cost: {
-            promptTextTokens: perMillion(0.75) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            promptCacheWriteTokens: perMillion(0.75) * 1.055,
-            promptAudioTokens: perMillion(0.75) * 1.055,
-            promptImageTokens: perMillion(0.75) * 1.055,
-            promptVideoTokens: perMillion(0.75) * 1.055,
-            completionTextTokens: perMillion(3.75) * 1.055,
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 0.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.8 Flash",
         description:
             "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
@@ -763,7 +751,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
@@ -772,25 +760,22 @@ const TEXT_BASE_SERVICES = {
             "gemini-3.5-flash-lite",
             "gemini-flash-lite-3.5",
         ],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.3) * 1.055,
-            promptCachedTokens: perMillion(0.03) * 1.055,
-            promptCacheWriteTokens: perMillion(0.3) * 1.055,
-            promptAudioTokens: perMillion(0.3) * 1.055,
-            promptImageTokens: perMillion(0.3) * 1.055,
-            promptVideoTokens: perMillion(0.3) * 1.055,
-            completionTextTokens: perMillion(2.5) * 1.055,
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
@@ -804,27 +789,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini25,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini25,
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptCachedTokens: perMillion(0.01) * 1.055, // per 1M tokens
-            promptCacheWriteTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptAudioTokens: perMillion(0.3) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptVideoTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(0.4) * 1.055, // per 1M tokens
+            promptTextTokens: perMillion(0.1), // per 1M tokens
+            promptCachedTokens: perMillion(0.01), // per 1M tokens
+            promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
+            promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.1), // per 1M tokens
+            promptVideoTokens: perMillion(0.1), // per 1M tokens
+            completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -1880,38 +1862,34 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.1-pro-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(2.0) * 1.055,
-            promptCachedTokens: perMillion(0.2) * 1.055,
-            // OpenRouter bills Gemini cache writes as normal input plus the
-            // five-minute storage charge applied by the billing rule below.
-            promptCacheWriteTokens: perMillion(2.0) * 1.055,
-            promptAudioTokens: perMillion(2.0) * 1.055,
-            promptImageTokens: perMillion(2.0) * 1.055,
-            promptVideoTokens: perMillion(2.0) * 1.055,
-            completionTextTokens: perMillion(12.0) * 1.055,
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.0),
+            promptAudioTokens: perMillion(2.0),
+            promptImageTokens: perMillion(2.0),
+            promptVideoTokens: perMillion(2.0),
+            completionTextTokens: perMillion(12.0),
         },
-        // The pinned OpenRouter Google Vertex route reprices the whole request
-        // from 200K prompt tokens. Image tokens retain their separately
-        // advertised base rate; cache storage remains an independent
-        // adjustment below.
+        // Vertex reprices the whole request from 200K prompt tokens. Image
+        // tokens retain their separately advertised base rate.
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(4.0) * 1.055,
-                    promptCachedTokens: perMillion(0.4) * 1.055,
-                    promptCacheWriteTokens: perMillion(4.0) * 1.055,
-                    promptAudioTokens: perMillion(4.0) * 1.055,
-                    promptVideoTokens: perMillion(4.0) * 1.055,
-                    completionTextTokens: perMillion(18.0) * 1.055,
+                    promptTextTokens: perMillion(4.0),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(4.0),
+                    promptAudioTokens: perMillion(4.0),
+                    promptVideoTokens: perMillion(4.0),
+                    completionTextTokens: perMillion(18.0),
                 },
             },
             longContextAtLeast(200_000),
@@ -1924,10 +1902,7 @@ const TEXT_BASE_SERVICES = {
             },
             "<200K context",
         ),
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 4.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro Preview",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",

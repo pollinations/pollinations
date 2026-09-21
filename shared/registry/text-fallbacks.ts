@@ -537,49 +537,41 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "google/gemini-3.7-flash": {
-        "google/gemini-3.7-flash:openrouter:ai-studio-priority": {
-            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
+    "google/gemini-3-flash-preview": {
+        "google/gemini-3-flash-preview:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini3,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
             cost: {
-                promptTextTokens: perMillion(1.35) * 1.055,
-                promptCachedTokens: perMillion(0.135) * 1.055,
-                promptCacheWriteTokens: perMillion(1.35) * 1.055,
-                promptAudioTokens: perMillion(1.35) * 1.055,
-                promptImageTokens: perMillion(1.35) * 1.055,
-                promptVideoTokens: perMillion(1.35) * 1.055,
-                completionTextTokens: perMillion(6.75) * 1.055,
+                promptTextTokens: perMillion(0.5) * 1.055,
+                promptCachedTokens: perMillion(0.05) * 1.055,
+                promptCacheWriteTokens: perMillion(0.5) * 1.055,
+                promptAudioTokens: perMillion(1.0) * 1.055,
+                promptImageTokens: perMillion(0.5) * 1.055,
+                promptVideoTokens: perMillion(0.5) * 1.055,
+                completionTextTokens: perMillion(3.0) * 1.055,
             },
             billing: openRouterGeminiBilling({
                 searchCostPerThousandRequests: 14 * 1.055,
-                storageCostPerMillionTokenHours: 0.9 * 1.055,
+                storageCostPerMillionTokenHours: 1.0 * 1.055,
             }),
         },
     },
-    "google/gemini-2.5-flash-lite": {
-        "google/gemini-2.5-flash-lite:openrouter:vertex-global": {
+    "google/gemini-3.7-flash": {
+        "google/gemini-3.7-flash:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
             provider: "openrouter",
-            addedDate: new Date("2026-09-16").getTime(),
-        },
-        "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
-        },
-    },
-    "google/gemini-3.5-flash-lite": {
-        "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex": {
-            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.15) * 1.055,
-                promptCachedTokens: perMillion(0.015) * 1.055,
-                promptCacheWriteTokens: perMillion(0.15) * 1.055,
-                promptAudioTokens: perMillion(0.15) * 1.055,
-                promptImageTokens: perMillion(0.15) * 1.055,
-                promptVideoTokens: perMillion(0.15) * 1.055,
-                completionTextTokens: perMillion(1.25) * 1.055,
+                promptTextTokens: perMillion(0.75) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                promptCacheWriteTokens: perMillion(0.75) * 1.055,
+                promptAudioTokens: perMillion(0.75) * 1.055,
+                promptImageTokens: perMillion(0.75) * 1.055,
+                promptVideoTokens: perMillion(0.75) * 1.055,
+                completionTextTokens: perMillion(3.75) * 1.055,
             },
             billing: openRouterGeminiBilling({
                 searchCostPerThousandRequests: 14 * 1.055,
@@ -587,11 +579,109 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
-    "google/gemini-3.1-pro-preview": {
-        "google/gemini-3.1-pro-preview:openrouter:ai-studio": {
-            supportedParameters: CHAT_PARAMETERS.gemini3AiStudio,
+    "google/gemini-3.8-flash": {
+        "google/gemini-3.8-flash:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.75) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                promptCacheWriteTokens: perMillion(0.75) * 1.055,
+                promptAudioTokens: perMillion(0.75) * 1.055,
+                promptImageTokens: perMillion(0.75) * 1.055,
+                promptVideoTokens: perMillion(0.75) * 1.055,
+                completionTextTokens: perMillion(3.75) * 1.055,
+            },
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 0.5 * 1.055,
+            }),
+        },
+    },
+    "google/gemini-2.5-flash-lite": {
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu": {
+            supportedParameters: CHAT_PARAMETERS.gemini25,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                promptCachedTokens: perMillion(0.01) * 1.055,
+                promptCacheWriteTokens: perMillion(0.1) * 1.055,
+                promptAudioTokens: perMillion(0.3) * 1.055,
+                promptImageTokens: perMillion(0.1) * 1.055,
+                promptVideoTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0.4) * 1.055,
+            },
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 1.0 * 1.055,
+            }),
+        },
+    },
+    "google/gemini-3.5-flash-lite": {
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.03) * 1.055,
+                promptCacheWriteTokens: perMillion(0.3) * 1.055,
+                promptAudioTokens: perMillion(0.3) * 1.055,
+                promptImageTokens: perMillion(0.3) * 1.055,
+                promptVideoTokens: perMillion(0.3) * 1.055,
+                completionTextTokens: perMillion(2.5) * 1.055,
+            },
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 1.0 * 1.055,
+            }),
+        },
+    },
+    "google/gemini-3.1-pro-preview": {
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini3,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(2.0) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptCacheWriteTokens: perMillion(2.0) * 1.055,
+                promptAudioTokens: perMillion(2.0) * 1.055,
+                promptImageTokens: perMillion(2.0) * 1.055,
+                promptVideoTokens: perMillion(2.0) * 1.055,
+                completionTextTokens: perMillion(12.0) * 1.055,
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4.0) * 1.055,
+                        promptCachedTokens: perMillion(0.4) * 1.055,
+                        promptCacheWriteTokens: perMillion(4.0) * 1.055,
+                        promptAudioTokens: perMillion(4.0) * 1.055,
+                        promptVideoTokens: perMillion(4.0) * 1.055,
+                        completionTextTokens: perMillion(18.0) * 1.055,
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (200K+)",
+                        description:
+                            "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                    },
+                },
+                "<200K context",
+            ),
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 4.5 * 1.055,
+            }),
         },
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {

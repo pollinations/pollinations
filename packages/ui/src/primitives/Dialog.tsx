@@ -3,6 +3,7 @@ import { Portal } from "@ark-ui/react/portal";
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { ButtonDefaultsContext } from "./Button.tsx";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
@@ -155,6 +156,8 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 
 export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
+const footerButtonDefaults = { appearance: "block" as const };
+
 export const DialogFooter: FC<DialogFooterProps> = ({
     children,
     className,
@@ -163,12 +166,14 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
                 className,
             )}
             {...props}
         >
-            {children}
+            <ButtonDefaultsContext.Provider value={footerButtonDefaults}>
+                {children}
+            </ButtonDefaultsContext.Provider>
         </div>
     );
 };

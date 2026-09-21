@@ -1,9 +1,10 @@
 import type { PropsWithChildren, MouseEvent as ReactMouseEvent } from "react";
+import { createContext, useContext } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
 type ButtonIntent = "danger" | "info" | "neutral";
-export type ButtonAppearance = "pill" | "raised";
+export type ButtonAppearance = "pill" | "raised" | "block";
 
 const pillSizes = {
     icon: "polli:h-12 polli:w-12 polli:p-0",
@@ -21,8 +22,18 @@ const raisedSizes = {
     lg: "polli:px-8 polli:py-4 polli:text-lg",
 } as const;
 
+// Rectangular, stretch-to-fill actions for dialog and flow footers.
+const blockSizes = {
+    icon: "polli:h-11 polli:w-11 polli:p-0",
+    xs: "polli:min-h-8 polli:px-2 polli:py-1 polli:text-xs",
+    sm: "polli:min-h-9 polli:px-3 polli:py-1.5",
+    md: "polli:min-h-11 polli:px-4 polli:py-2",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3",
+} as const;
+
 const appearanceClasses: Record<ButtonAppearance, string> = {
     pill: "polli:rounded-full",
+    block: "polli:rounded-md polli:min-w-40 polli:max-sm:flex-1 polli:max-sm:self-stretch",
     raised:
         "polli:rounded-xl polli:border-r-[3px] polli:border-b-[3px] polli:border-solid " +
         "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",
@@ -57,6 +68,20 @@ type BaseButtonProps = {
     disabled?: boolean;
 };
 
+const sizeMaps: Record<
+    ButtonAppearance,
+    Record<keyof typeof pillSizes, string>
+> = {
+    pill: pillSizes,
+    raised: raisedSizes,
+    block: blockSizes,
+};
+
+/** Containers such as `DialogFooter` set the appearance for every button inside. */
+export const ButtonDefaultsContext = createContext<{
+    appearance?: ButtonAppearance;
+}>({});
+
 const buttonClasses = ({
     intent,
     appearance = "pill",
@@ -65,7 +90,7 @@ const buttonClasses = ({
     disabled,
 }: BaseButtonProps & { disabled?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
-    const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
+    const sizeClasses = sizeMaps[appearance];
     return cn(
         "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-medium polli:leading-normal polli:box-border",
         disabled
@@ -93,6 +118,7 @@ export function Button<T extends React.ElementType = "button">({
     disabled,
     ...buttonProps
 }: ButtonProps<T>) {
+    const defaults = useContext(ButtonDefaultsContext);
     const Component: React.ElementType = as || "button";
     const isButton = Component === "button";
     const isAnchor = Component === "a";
@@ -125,7 +151,7 @@ export function Button<T extends React.ElementType = "button">({
             onClick={handleClick}
             className={buttonClasses({
                 intent,
-                appearance,
+                appearance: appearance ?? defaults.appearance,
                 size,
                 className,
                 disabled,

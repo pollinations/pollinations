@@ -12,7 +12,6 @@ import {
     TokensIcon,
     UsageIcon,
 } from "@pollinations/ui";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -238,11 +237,6 @@ export const Models: FC = () => {
         () => categorizeModels(modelModels),
         [modelModels],
     );
-    const primaryTabCounts: Record<PrimaryTab, number> = {
-        models: modelSections.all.length,
-        agent: agentModels.length,
-        mcp: MCP_SERVERS.length,
-    };
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -535,7 +529,7 @@ export const Models: FC = () => {
                                         value === "models" ? "all" : value,
                                     )
                                 }
-                                ariaLabel={`${label}, ${primaryTabCounts[value]}`}
+                                ariaLabel={label}
                             >
                                 <span className="inline-flex items-center gap-1.5">
                                     <Icon
@@ -543,12 +537,6 @@ export const Models: FC = () => {
                                         aria-hidden="true"
                                     />
                                     {label}
-                                    <span
-                                        aria-hidden="true"
-                                        className="text-[0.8em] font-normal tabular-nums text-theme-text-muted"
-                                    >
-                                        {primaryTabCounts[value]}
-                                    </span>
                                 </span>
                             </TabButton>
                         ))}

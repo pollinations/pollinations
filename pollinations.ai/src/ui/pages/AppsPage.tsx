@@ -19,6 +19,7 @@ import { GithubIcon } from "../assets/SocialIcons";
 import { BackToTop } from "../components/ui/back-to-top";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { InlineLink } from "../components/ui/inline-link";
 import { LazyMarkdownGfm } from "../components/ui/lazy-markdown";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -76,7 +77,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition"
+                className="polli-link-surface relative pr-6 flex items-center justify-between px-4 py-3 bg-white hover:brightness-110 transition"
             >
                 <span className="font-headline text-xs font-black uppercase text-dark flex items-center">
                     {app.emoji && (
@@ -86,6 +87,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                     )}
                     <span>{app.name}</span>
                 </span>
+                <ExternalLinkIcon
+                    className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
+                    aria-hidden="true"
+                />
             </a>
 
             <div className="flex flex-col flex-1 px-4 py-3 bg-white/60">
@@ -127,14 +132,6 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                             className="bg-white text-dark px-1.5 py-0.5 rounded text-xs font-mono"
                                         />
                                     ),
-                                    a: ({ node, ...props }) => (
-                                        <a
-                                            {...props}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-dark hover:underline"
-                                        />
-                                    ),
                                     del: ({ node, ...props }) => (
                                         <del
                                             {...props}
@@ -169,11 +166,10 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
 
                 <div className="flex flex-wrap gap-2 mt-auto items-center">
                     {!repoName && githubUsername && (
-                        <a
+                        <InlineLink
+                            size="footer"
                             href={`https://github.com/${githubUsername}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 max-w-[200px]"
                             title={copy.viewOnGithub.replace(
                                 "{name}",
                                 app.github,
@@ -182,35 +178,30 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             <span className="text-muted">
                                 {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-dark">
-                                {app.github}
-                            </span>
+                            <span className="truncate">{app.github}</span>
                             <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
-                        </a>
+                        </InlineLink>
                     )}
                     {!repoName && !githubUsername && app.github && (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-white border border-cream rounded-tag max-w-[200px]">
                             <span className="text-muted">
                                 {copy.authorPrefix}
                             </span>
-                            <span className="truncate text-dark">
-                                {app.github}
-                            </span>
+                            <span className="truncate">{app.github}</span>
                         </div>
                     )}
                     {repoName && (
-                        <a
+                        <InlineLink
+                            size="footer"
                             href={app.repo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 max-w-[200px]"
                             title={copy.viewOnGithub.replace(
                                 "{name}",
                                 repoName,
                             )}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">
-                                <span className="truncate flex-1 min-w-0 text-dark">
+                                <span className="truncate flex-1 min-w-0">
                                     {repoName}
                                 </span>
                                 <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
@@ -220,7 +211,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     ⭐ {app.stars}
                                 </span>
                             )}
-                        </a>
+                        </InlineLink>
                     )}
                     {app.platform && PLATFORM_COPY_KEY[app.platform] && (
                         <Badge variant="muted" className="ml-auto">
@@ -329,18 +320,14 @@ export default function AppsPage() {
                                     {pageCopy.submitCtaDescription}
                                 </p>
                             </div>
-                            <Button
+                            <InlineLink
                                 as="a"
                                 href={LINKS.githubSubmitApp}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                                size="sm"
+                                className="inline-flex items-center gap-1.5"
                             >
                                 {pageCopy.submitCtaButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                            </Button>
+                            </InlineLink>
                         </div>
                         <div className="flex items-center gap-4 p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <div className="flex-1">
@@ -351,18 +338,14 @@ export default function AppsPage() {
                                     {pageCopy.pollenCtaDescription}
                                 </p>
                             </div>
-                            <Button
+                            <InlineLink
                                 as="a"
                                 href={LINKS.byopDocs}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                                size="sm"
+                                className="inline-flex items-center gap-1.5"
                             >
                                 {pageCopy.pollenCtaButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                            </Button>
+                            </InlineLink>
                         </div>
                         <div className="flex items-center gap-4 p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <div className="flex-1">
@@ -373,18 +356,14 @@ export default function AppsPage() {
                                     {pageCopy.docsCtaDescription}
                                 </p>
                             </div>
-                            <Button
+                            <InlineLink
                                 as="a"
                                 href={LINKS.enterDocs}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="primary"
-                                size="default"
-                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                                size="sm"
+                                className="inline-flex items-center gap-1.5"
                             >
                                 {pageCopy.docsCtaButton}
-                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
-                            </Button>
+                            </InlineLink>
                         </div>
                     </div>
 

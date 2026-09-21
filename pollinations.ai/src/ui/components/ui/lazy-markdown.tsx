@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { InlineLink } from "./inline-link";
 
 const ReactMarkdown = lazy(() => import("react-markdown"));
 
@@ -8,7 +9,13 @@ type MarkdownProps = ComponentProps<typeof ReactMarkdown>;
 export function LazyMarkdown(props: MarkdownProps) {
     return (
         <Suspense fallback={<span>{props.children}</span>}>
-            <ReactMarkdown {...props} />
+            <ReactMarkdown
+                {...props}
+                components={{
+                    ...props.components,
+                    a: ({ node, ...link }) => <InlineLink {...link} />,
+                }}
+            />
         </Suspense>
     );
 }
@@ -21,9 +28,5 @@ export function LazyMarkdownGfm(props: Omit<MarkdownProps, "remarkPlugins">) {
         import("remark-gfm").then((m) => setGfm([m.default]));
     }, []);
 
-    return (
-        <Suspense fallback={<span>{props.children}</span>}>
-            <ReactMarkdown {...props} remarkPlugins={gfm} />
-        </Suspense>
-    );
+    return <LazyMarkdown {...props} remarkPlugins={gfm} />;
 }

@@ -77,6 +77,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                                                 id: "ca_test",
                                                 toolkit: "github",
                                                 name: "GitHub",
+                                                description: "Code hosting",
                                                 logo: "https://logos.composio.test/github",
                                                 alias: null,
                                                 status: "ACTIVE",

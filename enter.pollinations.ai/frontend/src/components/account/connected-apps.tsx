@@ -2,11 +2,11 @@ import {
     Alert,
     AppIcon,
     Button,
-    CheckIcon,
-    ExternalLinkButton,
     InlineLink,
     Input,
     LockIcon,
+    LogInIcon,
+    LogOutIcon,
     SearchIcon,
     Section,
     Surface,
@@ -19,6 +19,7 @@ type Connection = {
     id: string;
     toolkit: string;
     name: string | null;
+    description: string;
     logo: string | null;
     alias: string | null;
 };
@@ -46,8 +47,6 @@ type AppCardProps = {
     name: string;
     logo: string | null;
     details?: ReactNode;
-    actionLabel: string;
-    pendingLabel: string;
     pending: boolean;
     onAction: () => void;
     connected?: boolean;
@@ -57,71 +56,48 @@ function AppCard({
     name,
     logo,
     details,
-    actionLabel,
-    pendingLabel,
     pending,
     onAction,
     connected = false,
 }: AppCardProps) {
+    const actionLabel = connected ? "Disconnect" : "Connect";
     return (
-        <Surface
-            variant="card"
-            className={`flex h-full justify-between gap-3 ${
-                connected ? "items-center" : "min-h-24 items-start"
-            }`}
-        >
-            <div
-                className={`flex min-w-0 gap-3 ${
-                    connected ? "items-center" : "items-start"
-                }`}
-            >
+        <Surface className="flex min-h-16 items-center justify-between gap-3 p-4">
+            <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] shadow-sm ring-1 ring-[rgba(0,0,0,0.18)]">
                     {logo ? (
                         <img
                             src={logo}
                             alt=""
                             loading="lazy"
-                            className="h-7 w-7 object-contain drop-shadow-sm"
+                            className="h-7 w-7 object-contain"
                         />
                     ) : (
                         <AppIcon className="h-5 w-5 text-black/50" />
                     )}
                 </div>
-                <div
-                    className={
-                        connected
-                            ? "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-                            : "min-w-0"
-                    }
-                >
+                <div className="min-w-0">
                     <Text tone="strong" weight="semibold">
                         {name}
                     </Text>
-                    {connected && details}
-                    {connected ? (
-                        <div className="flex items-center gap-1.5">
-                            <CheckIcon className="h-3.5 w-3.5 shrink-0 text-intent-success-text" />
-                            <Text size="sm" tone="muted">
-                                Ready to use
-                            </Text>
-                        </div>
-                    ) : (
-                        details
-                    )}
+                    {details}
                 </div>
             </div>
             <Button
                 type="button"
                 size="sm"
                 intent={connected ? "danger" : undefined}
-                className={`shrink-0 ${
-                    connected ? "self-center" : "self-start"
-                }`}
+                className="inline-flex shrink-0 items-center gap-1.5"
                 disabled={pending}
                 aria-label={`${actionLabel} ${name}`}
                 onClick={onAction}
             >
-                {pending ? pendingLabel : actionLabel}
+                {connected ? (
+                    <LogOutIcon className="h-4 w-4" />
+                ) : (
+                    <LogInIcon className="h-4 w-4" />
+                )}
+                {pending ? `${actionLabel}ing...` : actionLabel}
             </Button>
         </Surface>
     );
@@ -248,9 +224,15 @@ export function ConnectedApps() {
         ? availableToolkits
         : availableToolkits.slice(0, 6);
     const searchQuery = search.trim();
+    const normalizedSearch = searchQuery.toLowerCase();
+    const displayedConnections = connections.filter((connection) =>
+        [connection.name, connection.alias, connection.toolkit]
+            .filter(Boolean)
+            .some((value) => value?.toLowerCase().includes(normalizedSearch)),
+    );
 
     return (
-        <Section title="Connect apps" framed>
+        <Section title="Connected apps">
             <Text>
                 Let Pollinations agents read Gmail, search GitHub, update
                 Sheets, and post to Slack through Composio.
@@ -260,6 +242,29 @@ export function ConnectedApps() {
                 connected account. Try “Summarize my unread Gmail” or “Find open
                 issues in my GitHub repository.”
             </Text>
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="catalog-search relative min-w-64 flex-1">
+                    <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                    <Input
+                        value={search}
+                        placeholder="Search apps…"
+                        aria-label="Search apps"
+                        autoComplete="off"
+                        className="w-full pl-9"
+                        onChange={(event) =>
+                            setSearch(event.currentTarget.value)
+                        }
+                        onBlur={() => setSearch(search.trim())}
+                    />
+                </div>
+                <InlineLink
+                    href="https://composio.dev/toolkits"
+                    size="sm"
+                    className="shrink-0"
+                >
+                    Browse all apps
+                </InlineLink>
+            </div>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}
             {connectionsError && (
@@ -272,117 +277,72 @@ export function ConnectedApps() {
                 </Text>
             )}
 
-            {!connectionsLoading && connections.length > 0 && (
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                        <Text tone="strong" weight="semibold">
-                            Connected
-                        </Text>
-                        <Text size="sm" tone="muted">
-                            {connections.length}{" "}
-                            {connections.length === 1 ? "app" : "apps"}
-                        </Text>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        {connections.map((connection) => (
-                            <AppCard
-                                key={connection.id}
-                                name={
-                                    connection.name ||
-                                    readableSlug(connection.toolkit)
-                                }
-                                logo={connection.logo}
-                                details={
-                                    connection.alias ? (
+            {toolkitsError && <Alert intent="danger">{toolkitsError}</Alert>}
+
+            <div className="flex flex-col gap-2" aria-live="polite">
+                {!connectionsLoading &&
+                    displayedConnections.map((connection) => (
+                        <AppCard
+                            key={connection.id}
+                            name={
+                                connection.name ||
+                                readableSlug(connection.toolkit)
+                            }
+                            logo={connection.logo}
+                            details={
+                                <>
+                                    <Text size="sm" tone="muted">
+                                        {connection.description ||
+                                            toolkits.find(
+                                                ({ slug }) =>
+                                                    slug === connection.toolkit,
+                                            )?.description ||
+                                            `Use ${connection.name || readableSlug(connection.toolkit)} with Pollinations agents.`}
+                                    </Text>
+                                    {connection.alias && (
                                         <Text size="sm" tone="muted">
                                             {connection.alias}
                                         </Text>
-                                    ) : undefined
-                                }
-                                actionLabel="Disconnect"
-                                pendingLabel="Disconnecting..."
-                                pending={pendingId === connection.id}
-                                onAction={() => void disconnect(connection)}
-                                connected
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="space-y-3">
-                <Text tone="strong" weight="semibold">
-                    Available
-                </Text>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative min-w-64 max-w-lg flex-1">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                        <Input
-                            value={search}
-                            placeholder="Search apps…"
-                            aria-label="Search available apps"
-                            autoComplete="off"
-                            className="w-full pl-9"
-                            onChange={(event) =>
-                                setSearch(event.currentTarget.value)
+                                    )}
+                                </>
                             }
-                            onBlur={() => setSearch(search.trim())}
+                            pending={pendingId === connection.id}
+                            onAction={() => void disconnect(connection)}
+                            connected
                         />
-                    </div>
-                    <ExternalLinkButton
-                        href="https://composio.dev/toolkits"
-                        className="shrink-0"
-                    >
-                        Browse all apps
-                    </ExternalLinkButton>
-                </div>
-                <Text size="sm" tone="muted">
-                    Sign-in links expire after 10 minutes. If a link expires or
-                    you leave before finishing, return here and select Connect
-                    again for a fresh link.
-                </Text>
-            </div>
-
-            {toolkitsError && <Alert intent="danger">{toolkitsError}</Alert>}
-
-            {!toolkitsLoading && !toolkitsError && (
-                <div aria-live="polite">
-                    {displayedToolkits.length > 0 ? (
-                        <div className="space-y-3">
-                            <div className="grid items-stretch gap-2 sm:grid-cols-2">
-                                {displayedToolkits.map((toolkit) => (
-                                    <AppCard
-                                        key={toolkit.slug}
-                                        name={toolkit.name}
-                                        logo={toolkit.logo}
-                                        details={
-                                            <Text
-                                                size="sm"
-                                                tone="muted"
-                                                className="line-clamp-2"
-                                            >
-                                                {toolkit.description}
-                                            </Text>
-                                        }
-                                        actionLabel="Connect"
-                                        pendingLabel="Connecting..."
-                                        pending={pendingId === toolkit.slug}
-                                        onAction={() =>
-                                            void connect(toolkit.slug)
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
+                    ))}
+                {!toolkitsLoading &&
+                    !toolkitsError &&
+                    displayedToolkits.map((toolkit) => (
+                        <AppCard
+                            key={toolkit.slug}
+                            name={toolkit.name}
+                            logo={toolkit.logo}
+                            details={
+                                <Text
+                                    size="sm"
+                                    tone="muted"
+                                    className="line-clamp-2"
+                                >
+                                    {toolkit.description}
+                                </Text>
+                            }
+                            pending={pendingId === toolkit.slug}
+                            onAction={() => void connect(toolkit.slug)}
+                        />
+                    ))}
+                {!connectionsLoading &&
+                    !toolkitsLoading &&
+                    !toolkitsError &&
+                    displayedConnections.length === 0 &&
+                    displayedToolkits.length === 0 && (
                         <Text size="sm" tone="muted">
                             {searchQuery
                                 ? `No apps found for “${searchQuery}”. Try another search.`
                                 : "No more apps to show. Search for another app to connect."}
                         </Text>
                     )}
-                </div>
-            )}
+            </div>
 
             {toolkitsLoading && (
                 <Text size="sm" tone="muted" role="status">
@@ -390,7 +350,13 @@ export function ConnectedApps() {
                 </Text>
             )}
 
-            <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+            <Text size="sm" tone="muted">
+                Sign-in links expire after 10 minutes. If a link expires or you
+                leave before finishing, return here and select Connect again for
+                a fresh link.
+            </Text>
+
+            <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
                 <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span className="space-y-0.5">
                     <span className="block">

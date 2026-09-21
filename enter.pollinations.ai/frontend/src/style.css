@@ -1,1 +1,31 @@
 @import "@pollinations/ui/app.css";
+
+.quest-summary-preview {
+    --polli-color-paid-pale: var(--polli-color-surface-opaque);
+    --polli-color-tier-pale: var(--polli-color-surface-opaque);
+    --polli-color-paid-deep: var(--polli-color-text-muted);
+    --polli-color-tier-deep: var(--polli-color-text-muted);
+}
+
+/* Keep Enter's surfaces flat without changing shared UI or focus indicators. */
+:root {
+    --polli-shadow-container: 0 0 #0000;
+    --polli-shadow-well: 0 0 #0000;
+}
+
+.shadow-sm,
+.shadow-md,
+[class~="polli:shadow-sm"],
+[class~="polli:shadow-md"],
+[class~="polli:shadow-lg"],
+[class~="polli:shadow-xl"] {
+    --tw-shadow: 0 0 #0000;
+}
+
+.polli-slider::-webkit-slider-thumb {
+    box-shadow: none;
+}
+
+.polli-slider::-moz-range-thumb {
+    box-shadow: none;
+}

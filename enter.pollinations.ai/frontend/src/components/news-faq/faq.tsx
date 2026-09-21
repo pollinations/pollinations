@@ -1,6 +1,6 @@
 import { Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
@@ -69,11 +69,8 @@ type FAQProps = {
 export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
     const hash = useRouterState({ select: (state) => state.location.hash });
-    const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
-        const slug = generateSlug(faqData[index]?.question ?? "");
-        const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
             if (next.has(index)) {
@@ -83,12 +80,6 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             }
             return next;
         });
-        if (!isOpen || hash === slug) {
-            void navigate({
-                to: "/news",
-                hash: isOpen ? "" : slug,
-            });
-        }
     };
 
     // Auto-expand FAQ item when navigating via anchor link
@@ -120,33 +111,42 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                 {faqData.map((item, index) => {
                     const questionId = generateSlug(item.question);
                     return (
-                        <div
+                        <Surface
                             key={item.question}
                             id={questionId}
-                            className="pb-4 last:pb-0 scroll-mt-20"
+                            className="scroll-mt-20"
                         >
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}
+                                aria-expanded={openIndices.has(index)}
+                                aria-controls={
+                                    openIndices.has(index)
+                                        ? `${questionId}-answer`
+                                        : undefined
+                                }
                                 className="w-full text-left flex justify-between items-start gap-4 text-theme-text-soft hover:text-theme-text-strong transition-colors"
                             >
                                 <span className="flex-1">{item.question}</span>
-                                <span className="text-2xl flex-shrink-0 font-normal">
+                                <span
+                                    aria-hidden="true"
+                                    className="text-2xl flex-shrink-0 font-normal"
+                                >
                                     {openIndices.has(index) ? "−" : "+"}
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <Surface
-                                    variant="card"
+                                <div
+                                    id={`${questionId}-answer`}
                                     className="mt-3 flex flex-col gap-3 text-theme-text-base"
                                 >
                                     <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
                                         "What can I create with Pollen",
                                     ) && <PollenExamples />}
-                                </Surface>
+                                </div>
                             )}
-                        </div>
+                        </Surface>
                     );
                 })}
             </div>

@@ -1,4 +1,4 @@
-import { cn, Surface } from "@pollinations/ui";
+import { InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -6,7 +6,7 @@ const HIGHLIGHTS_RAW_URL =
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
-const DYNAMIC_NEWS_COUNT = 6;
+const DYNAMIC_NEWS_COUNT = 20;
 
 interface Highlight {
     date?: string;
@@ -15,6 +15,7 @@ interface Highlight {
     emoji: string;
     title: string;
     description: string;
+    href?: string;
     /** Optional bullet list rendered under the description (pinned items only). */
     details?: string[];
 }
@@ -71,14 +72,6 @@ const PINNED_NEWS: Highlight[] = [
             "Earn 15 Pollen for your first external Paid Pollen request, 3 for reaching ten external app users, and 5 when other users spend 3 Paid Pollen through your apps. [View quests](/quests).",
     },
     {
-        date: "2026-07-15",
-        dateLabel: "Limited time",
-        emoji: "☀️",
-        title: "GPT-5.6 launch promotion",
-        description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
-    },
-    {
         date: "2026-06-30",
         dateLabel: "Alpha",
         emoji: "🧪",
@@ -101,20 +94,13 @@ function renderWithLinks(text: string): ReactNode[] {
     for (const match of matches) {
         const idx = match.index ?? 0;
         const href = match[2];
-        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
-            <a
-                key={idx}
-                href={href}
-                target={isExternal ? "_blank" : undefined}
-                rel={isExternal ? "noopener noreferrer" : undefined}
-                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
-            >
+            <InlineLink key={idx} href={href}>
                 {match[1]}
-            </a>,
+            </InlineLink>,
         );
         lastIndex = idx + match[0].length;
     }
@@ -139,11 +125,12 @@ function parseHighlights(md: string): Highlight[] {
                 emoji: emojiTitleMatch?.[1] ?? "",
                 title: emojiTitleMatch?.[2]?.trim() ?? "",
                 description,
+                href: description.match(/\[[^\]]+\]\(([^)]+)\)/)?.[1],
             };
         });
 }
 
-function formatNewsDate(date: string): string {
+function formatNewsDate(date: string, includeYear = true): string {
     if (!date) return "";
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime())) return date;
@@ -151,14 +138,14 @@ function formatNewsDate(date: string): string {
         timeZone: "UTC",
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: includeYear ? "numeric" : undefined,
     });
 }
 
-/** Hand-curated, pinned announcements — stacked white cards. */
+/** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
@@ -171,7 +158,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     <Surface
         id="canonical-model-slugs"
         variant="card"
-        className="scroll-mt-4 leading-relaxed"
+        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
     >
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
             API update
@@ -188,14 +175,9 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             The model catalog uses the new IDs. Existing IDs remain supported as
             aliases in API requests.
         </p>
-        <a
-            href="https://enter.pollinations.ai/models"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-        >
-            Browse models and their aliases →
-        </a>
+        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
+            Browse models and their aliases
+        </InlineLink>
     </Surface>
 );
 
@@ -214,11 +196,11 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0) return null;
 
     return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="flex flex-col">
             {highlights.map((item) => (
                 <DynamicNews key={`${item.date}-${item.title}`} item={item} />
             ))}
-        </div>
+        </ul>
     );
 };
 
@@ -253,24 +235,45 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     </Surface>
 );
 
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface
-        variant="card"
-        className={cn("flex min-h-48 text-sm leading-relaxed")}
-    >
-        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
-            <div className="min-w-0">
-                <div className="font-semibold text-ink-900">{item.title}</div>
-                {item.date && (
-                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
-                        {formatNewsDate(item.date)}
-                    </div>
+const DynamicNews: FC<{ item: Highlight }> = ({ item }) => {
+    const description = item.description
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/`([^`]+)`/g, "$1");
+
+    return (
+        <li className="flex min-w-0 items-center gap-2 py-0.5 text-sm">
+            {item.date && (
+                <time
+                    dateTime={item.date}
+                    title={formatNewsDate(item.date)}
+                    className="w-12 shrink-0 text-xs tabular-nums text-theme-text-muted"
+                >
+                    {formatNewsDate(item.date, false)}
+                </time>
+            )}
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0">
+                    {item.emoji}
+                </span>
+            )}
+            <span
+                className="min-w-0 truncate"
+                title={`${item.title}${description ? ` — ${description}` : ""}`}
+            >
+                {item.href ? (
+                    <InlineLink href={item.href}>{item.title}</InlineLink>
+                ) : (
+                    <span className="font-medium text-theme-text-base">
+                        {item.title}
+                    </span>
                 )}
-                <p className="mt-1 text-ink-700">
-                    {renderWithLinks(item.description)}
-                </p>
-            </div>
-        </div>
-    </Surface>
-);
+                {description && (
+                    <span className="text-theme-text-muted">
+                        {" — "}
+                        {description}
+                    </span>
+                )}
+            </span>
+        </li>
+    );
+};

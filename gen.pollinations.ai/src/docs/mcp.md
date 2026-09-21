@@ -29,6 +29,31 @@ Get current endpoints and pricing from the live catalog:
 curl https://gen.pollinations.ai/mcp
 ```
 
+### Install into coding agents with the Polli CLI
+
+The [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) wires the
+catalog into coding agents and IDEs for you. It fetches the live server list,
+mints a dedicated API key per client, and merges the entries into the client's
+config without touching your other MCP servers:
+
+```bash
+npx @pollinations/cli mcp list                  # live server catalog
+npx @pollinations/cli mcp install cursor --all  # every server into Cursor
+npx @pollinations/cli mcp install claude-code pollinations ffmpeg
+npx @pollinations/cli mcp status                # what each client has
+npx @pollinations/cli mcp remove cursor ffmpeg  # remove selected entries
+npx @pollinations/cli mcp remove cursor         # remove all Pollinations entries
+```
+
+Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
+
+Keys are stored locally in plaintext in client configs and reused on reinstall.
+Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.
+Files written by Polli use owner-only permissions on Unix. Do not share or commit
+configs containing keys. Removal only deletes Pollinations entries; other servers
+are left untouched.
+
 ### Use with hosted agents
 
 Add MCP servers to an agent in

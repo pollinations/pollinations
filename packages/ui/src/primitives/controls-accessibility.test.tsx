@@ -3,6 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { AuthAccessItem, ErrorBanner } from "../modules/auth/AuthModal.tsx";
+import { GitHubSignInButton } from "../modules/auth/GitHubSignInButton.tsx";
+import { PollinationsSignInButton } from "../modules/auth/PollinationsSignInButton.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
 import { IconButton } from "./IconButton.tsx";
@@ -152,4 +155,57 @@ describe("shared control accessibility", () => {
         expect(footerMarkup).toContain("Cancel");
         expect(footerMarkup).toContain('data-testid="dialog-footer"');
     });
+    it("names provider sign-in actions and exposes their pending state", () => {
+        const ready = renderToStaticMarkup(<PollinationsSignInButton />);
+        expect(ready).toContain("Connect with Pollinations");
+        expect(ready).not.toContain('aria-busy="true"');
+        expect(ready).not.toContain('disabled=""');
+
+        const pending = renderToStaticMarkup(
+            <PollinationsSignInButton isPending>
+                Checking sign-in…
+            </PollinationsSignInButton>,
+        );
+        expect(pending).toContain("Checking sign-in…");
+        expect(pending).toContain('aria-busy="true"');
+        expect(pending).toContain('disabled=""');
+
+        const githubReady = renderToStaticMarkup(<GitHubSignInButton />);
+        expect(githubReady).toContain("Sign in with GitHub");
+        expect(githubReady).not.toContain('disabled=""');
+        const githubPending = renderToStaticMarkup(
+            <GitHubSignInButton isSigningIn />,
+        );
+        expect(githubPending).toContain("Signing in…");
+        expect(githubPending).toContain('aria-busy="true"');
+        expect(githubPending).toContain('disabled=""');
+    });
+
+    it("announces authentication errors", () => {
+        const markup = renderToStaticMarkup(
+            <ErrorBanner>Sign-in failed.</ErrorBanner>,
+        );
+        expect(markup).toContain('role="alert"');
+        expect(markup).toContain("Sign-in failed.");
+    });
+});
+
+it("renders editable and required permissions as labelled native checkboxes", () => {
+    const editable = renderToStaticMarkup(
+        <AuthAccessItem
+            checked
+            onChange={() => {}}
+            ariaLabel="Share account activity"
+        >
+            Balance and usage
+        </AuthAccessItem>,
+    );
+    const required = renderToStaticMarkup(
+        <AuthAccessItem checked>AI generation</AuthAccessItem>,
+    );
+    expect(editable).toContain('type="checkbox"');
+    expect(editable).toContain('aria-label="Share account activity"');
+    expect(editable).toContain('checked=""');
+    expect(editable).not.toContain('disabled=""');
+    expect(required).toContain('disabled=""');
 });

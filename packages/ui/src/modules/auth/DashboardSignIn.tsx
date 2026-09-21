@@ -1,48 +1,85 @@
-import { Alert } from "../../compositions/Alert.tsx";
-import { AppHeader } from "../../compositions/AppHeader.tsx";
+import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
-import { Heading } from "../../primitives/Typography.tsx";
+import { RefreshIcon } from "../../primitives/icons/index.tsx";
+import { Surface } from "../../primitives/Surface.tsx";
+import { Text } from "../../primitives/Typography.tsx";
+import { AuthFlowLayout, ErrorBanner } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
+
+const signInErrors = {
+    admin_required: {
+        title: "Admin access required",
+        message:
+            "Your pollinations.ai account does not have admin access. Switch accounts on Pollinations, then try again.",
+    },
+    cancelled: {
+        title: "Sign-in cancelled",
+        message: "Sign-in was cancelled. You can try again.",
+    },
+    invalid_state: {
+        title: "Sign-in link expired",
+        message: "Your pollinations.ai sign-in link expired. Please try again.",
+    },
+    unavailable: {
+        title: "Couldn’t sign in",
+        message:
+            "Couldn’t complete your pollinations.ai sign-in. Please try again.",
+    },
+} as const;
 
 export function DashboardSignIn({
     appName,
     onSignIn,
+    isPending = false,
+    sessionError,
 }: {
     appName: string;
     onSignIn: () => void;
+    isPending?: boolean;
+    sessionError?: string | null;
 }) {
     const code =
         typeof window === "undefined"
             ? null
             : new URLSearchParams(window.location.search).get("auth_error");
-    const messages: Record<string, string> = {
-        admin_required: "This dashboard requires a Pollinations admin account.",
-        cancelled: "Sign-in was cancelled. You can try again.",
-        invalid_state: "This sign-in link expired. Please try again.",
-        unavailable: "Sign-in could not be completed. Please try again.",
-    };
-    const message =
-        code && Object.hasOwn(messages, code) ? messages[code] : null;
+    const error = sessionError
+        ? { title: "Couldn’t check your session", message: sessionError }
+        : code && Object.hasOwn(signInErrors, code)
+          ? signInErrors[code as keyof typeof signInErrors]
+          : null;
     return (
-        <div className="polli:min-h-screen polli:bg-app-bg">
-            <AppHeader navLabel={`${appName} links`}>
-                <ColorModeToggle />
-            </AppHeader>
-            <main className="polli:mx-auto polli:flex polli:w-full polli:max-w-md polli:flex-col polli:gap-12 polli:px-6 polli:py-24 polli:text-center polli:sm:py-32">
-                <Heading as="h1" size="section" className="polli:text-4xl">
-                    {appName}
-                </Heading>
-                <div className="polli:flex polli:flex-col polli:gap-4">
-                    <Heading as="h2" size="subsection">
-                        Sign in
-                    </Heading>
-                    {message && <Alert>{message}</Alert>}
-                    <PollinationsSignInButton
+        <AuthFlowLayout
+            headerAction={<ColorModeToggle />}
+            title={!isPending && error ? error.title : "Sign in"}
+            actions={
+                isPending ? (
+                    <output>Checking sign-in…</output>
+                ) : sessionError ? (
+                    <Button
+                        icon={<RefreshIcon />}
+                        onClick={() => window.location.reload()}
                         className="polli:w-full"
-                        onClick={onSignIn}
-                    />
-                </div>
-            </main>
-        </div>
+                    >
+                        Reload
+                    </Button>
+                ) : (
+                    <PollinationsSignInButton onClick={onSignIn}>
+                        {error ? "Try again" : "Sign in with Pollinations"}
+                    </PollinationsSignInButton>
+                )
+            }
+        >
+            {!isPending && error && <ErrorBanner>{error.message}</ErrorBanner>}
+            <Surface>
+                <Text size="sm" weight="semibold" tone="strong">
+                    {appName}
+                </Text>
+            </Surface>
+            {!(!isPending && error) && (
+                <Text size="sm" tone="muted">
+                    Sign in with your pollinations.ai admin account.
+                </Text>
+            )}
+        </AuthFlowLayout>
     );
 }

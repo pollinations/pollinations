@@ -1,12 +1,14 @@
 import {
     AppIcon,
+    Button,
     Chip,
     GlobeIcon,
     IconButton,
     InlineLink,
+    KeyChip,
     KeyIcon,
-    LockIcon,
     PencilIcon,
+    PlusIcon,
     Section,
     Surface,
     TerminalIcon,
@@ -17,11 +19,10 @@ import {
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
-import { genDocsUrl } from "../../config.ts";
+import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { KeyDisplay } from "./key-display.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -33,6 +34,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onUpdate,
     onDelete,
 }) => {
+    const [keyCreateOpen, setKeyCreateOpen] = useState(false);
+    const [appCreateOpen, setAppCreateOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
@@ -70,63 +73,61 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 key={apiKey.id}
                 className="transition-colors hover:bg-surface-opaque/90"
             >
-                <div className="flex items-center gap-2 mb-2">
-                    <Chip size="sm">
-                        {isApp ? (
-                            <>
-                                <AppIcon className="h-3.5 w-3.5" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-3.5 w-3.5" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-3.5 w-3.5" />
-                                Secret
-                            </>
-                        )}
-                    </Chip>
-                    <span className="text-sm font-medium truncate">
-                        {apiKey.name}
-                    </span>
-                    <span className="flex-1" />
-                    {isPublishable && plaintextKey ? (
-                        <KeyDisplay
-                            fullKey={plaintextKey}
-                            start={apiKey.start ?? ""}
-                        />
-                    ) : (
-                        <span className="font-mono text-xs text-theme-text-muted shrink-0">
-                            {apiKey.start}...
-                        </span>
-                    )}
-                    <div className="flex gap-1 shrink-0 ml-2 items-center">
-                        <IconButton
-                            intent="info"
-                            title="Edit key"
-                            tooltip="Edit key"
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
-                            onClick={() => setEditingKey(apiKey)}
-                        >
-                            <PencilIcon className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton
-                            intent="danger"
-                            title="Delete key"
-                            tooltip="Delete key"
-                            tooltipAlign="center"
-                            tooltipClampToViewport={false}
-                            onClick={() => setDeleteId(apiKey.id)}
-                        >
-                            <XIcon className="h-4 w-4" />
-                        </IconButton>
-                    </div>
+                <ResourceCardHeader
+                    icon={
+                        <>
+                            {isApp ? (
+                                <AppIcon className="h-4 w-4" />
+                            ) : isPublishable ? (
+                                <GlobeIcon className="h-4 w-4" />
+                            ) : (
+                                <KeyIcon className="h-4 w-4" />
+                            )}
+                            <span className="sr-only">
+                                {isApp
+                                    ? "App key"
+                                    : isPublishable
+                                      ? "Publishable key"
+                                      : "Secret key"}
+                            </span>
+                        </>
+                    }
+                    title={apiKey.name}
+                    actions={
+                        <>
+                            <IconButton
+                                intent="info"
+                                title="Edit key"
+                                tooltip="Edit key"
+                                tooltipAlign="center"
+                                tooltipClampToViewport={false}
+                                aria-haspopup="dialog"
+                                onClick={() => setEditingKey(apiKey)}
+                            >
+                                <PencilIcon className="h-4 w-4" />
+                            </IconButton>
+                            <IconButton
+                                intent="danger"
+                                title="Delete key"
+                                tooltip="Delete key"
+                                tooltipAlign="center"
+                                tooltipClampToViewport={false}
+                                aria-haspopup="dialog"
+                                onClick={() => setDeleteId(apiKey.id)}
+                            >
+                                <XIcon className="h-4 w-4" />
+                            </IconButton>
+                        </>
+                    }
+                />
+                <div className="mt-1 min-w-0">
+                    <KeyChip
+                        prefix={apiKey.start ?? ""}
+                        value={isPublishable ? plaintextKey : undefined}
+                        label="Copy app key"
+                    />
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                     <span>
                         <span className="text-theme-text-muted">Created: </span>
                         <span className="text-theme-text-muted">
@@ -155,14 +156,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span className="text-theme-text-muted">
                                 Redirect:{" "}
                             </span>
-                            <a
+                            <InlineLink
                                 href={primaryRedirectUri}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-theme-text-soft hover:text-theme-text-strong"
+                                className="inline-flex min-w-0 max-w-[200px] items-center"
                             >
-                                {primaryRedirectUri.replace(/^https?:\/\//, "")}
-                            </a>
+                                <span className="truncate">
+                                    {primaryRedirectUri.replace(
+                                        /^https?:\/\//,
+                                        "",
+                                    )}
+                                </span>
+                            </InlineLink>
                             {extraRedirectUriCount > 0 && (
                                 <Tooltip
                                     content={
@@ -225,32 +229,45 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         );
     }
 
+    const keyAction = (
+        <Button
+            type="button"
+            className="dashboard-add-button"
+            aria-label="Add Key"
+            title="Add Key"
+            aria-haspopup="dialog"
+            onClick={() => setKeyCreateOpen(true)}
+        >
+            <PlusIcon className="h-4 w-4" />
+            <KeyIcon className="h-5 w-5" />
+        </Button>
+    );
+    const appAction = (
+        <Button
+            type="button"
+            className="dashboard-add-button"
+            aria-label="Add App"
+            title="Add App"
+            aria-haspopup="dialog"
+            onClick={() => setAppCreateOpen(true)}
+        >
+            <PlusIcon className="h-4 w-4" />
+            <AppIcon className="h-5 w-5" />
+        </Button>
+    );
+
     return (
         <>
             <div className="flex flex-col gap-6">
                 <Section
-                    title="API"
-                    framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <KeyIcon className="h-4 w-4" />
-                                    Add Key
-                                </span>
-                            }
-                        />
-                    }
+                    title="Secrets"
+                    id="api-keys"
+                    action={sortedApiKeys.length > 0 && keyAction}
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
-                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first API key
-                                </p>
+                                <div className="mb-2">{keyAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     Use API keys for your own private
                                     server-side integrations.
@@ -259,38 +276,25 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
-                            your account.
+                            your Pollinations account. Keep these keys private.
+                            For a browser app, create an app key and use
+                            Pollinations Connect.
                         </span>
                     </p>
                 </Section>
                 <Section
-                    title="App"
-                    framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <AppIcon className="h-4 w-4" />
-                                    Add App
-                                </span>
-                            }
-                            simplified
-                        />
-                    }
+                    title="Apps"
+                    id="app-keys"
+                    action={sortedAppKeys.length > 0 && appAction}
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
-                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first app key
-                                </p>
+                                <div className="mb-2">{appAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     Use app keys when your users bring their own
                                     Pollinations account.
@@ -299,26 +303,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
                         <p className="flex items-start gap-1.5">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 For apps where users sign in with their own
                                 Pollinations account and spend their own Pollen.
+                                Connect your app with the Pollinations SDK.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 Turn on earnings to receive a share of pollen
-                                users spend in your app.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
-                                >
-                                    Read the guide
-                                </InlineLink>
+                                users spend in your app.
                             </span>
                         </p>
                     </div>
@@ -336,6 +334,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     onClose={() => setEditingKey(null)}
                 />
             )}
+            <ApiKeyDialog
+                open={keyCreateOpen}
+                onOpenChange={setKeyCreateOpen}
+                onSubmit={onCreate}
+            />
+            <ApiKeyDialog
+                open={appCreateOpen}
+                onOpenChange={setAppCreateOpen}
+                onSubmit={onCreate}
+                simplified
+            />
         </>
     );
 };

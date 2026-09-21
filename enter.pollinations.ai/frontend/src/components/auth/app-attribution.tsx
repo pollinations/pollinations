@@ -1,63 +1,70 @@
-import { InfoTip } from "@pollinations/ui";
+import { InlineLink, Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
     githubUsername?: string;
-    found?: boolean;
 };
 
 type AppAttributionProps = {
     attribution: Attribution | null;
-    isDeviceMode: boolean;
-    userCode?: string;
     redirectHostname: string;
 };
 
+/**
+ * The requesting app, shown the same way before and after sign-in: its name
+ * as a name plate in the pixel face, the owner with their GitHub avatar, the
+ * callback host on the right.
+ */
 export function AppAttribution({
     attribution,
-    isDeviceMode,
-    userCode,
     redirectHostname,
 }: AppAttributionProps) {
-    const displayName =
-        attribution?.appName ??
-        (isDeviceMode ? "A device" : redirectHostname || "An app");
-    const tipText = [
-        "Same as copy-pasting an API key into their app.",
-        "Only share with apps you trust.",
-    ].join("\n");
+    // A callback hostname identifies the destination, not the app. Keep it in
+    // the details row even when lookup has not supplied an app name.
+    const displayName = attribution?.appName || "This app";
+    const owner = attribution?.githubUsername;
     return (
-        <>
-            <p className="text-theme-text-strong">
-                <span className="font-bold text-lg">{displayName}</span>
-            </p>
-            {attribution?.githubUsername && (
-                <p className="text-sm text-theme-text-base mt-1">
-                    by{" "}
-                    <a
-                        href={`https://github.com/${attribution.githubUsername}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium underline hover:text-theme-text-strong"
+        <Surface>
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <Text
+                        size="body"
+                        tone="strong"
+                        className="break-words font-pixel tracking-wide"
                     >
-                        @{attribution.githubUsername}
-                    </a>
-                </p>
-            )}
-            {!isDeviceMode && attribution?.appName && redirectHostname && (
-                <p className="text-xs text-theme-text-base font-mono mt-1">
-                    {redirectHostname}
-                </p>
-            )}
-            {isDeviceMode && userCode && (
-                <p className="text-xs text-theme-text-base font-mono mt-1">
-                    Code: {userCode}
-                </p>
-            )}
-            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
-                To access your Pollinations account{" "}
-                <InfoTip text={tipText} label="API key sharing warning" />
-            </p>
-        </>
+                        {displayName}
+                    </Text>
+                    {owner && (
+                        <Text
+                            size="sm"
+                            tone="muted"
+                            className="mt-1.5 flex items-center gap-1.5"
+                        >
+                            <span>by</span>
+                            <InlineLink
+                                href={`https://github.com/${owner}`}
+                                className="inline-flex items-center gap-1.5"
+                            >
+                                <img
+                                    src={`https://github.com/${owner}.png?size=40`}
+                                    alt=""
+                                    width={20}
+                                    height={20}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
+                                />
+                                <span className="underline">@{owner}</span>
+                            </InlineLink>
+                        </Text>
+                    )}
+                </div>
+                {redirectHostname && (
+                    <Text size="xs" tone="muted" className="shrink-0 font-mono">
+                        {redirectHostname}
+                    </Text>
+                )}
+            </div>
+        </Surface>
     );
 }

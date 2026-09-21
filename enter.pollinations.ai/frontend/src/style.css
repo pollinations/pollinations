@@ -1,5 +1,11 @@
 @import "@pollinations/ui/app.css";
 
+.resource-dialog {
+    margin-block: auto;
+    height: auto;
+    max-height: calc(100dvh - 2rem);
+}
+
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);

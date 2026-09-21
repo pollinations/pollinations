@@ -1,0 +1,36 @@
+{
+  "pr_number": 15246,
+  "title": "Add Bees Pollination to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15246",
+  "merged_at": "2026-09-21T02:05:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Bees Pollination](https://halimyassine.github.io/bees-pollination-app) to image\n- Bees Pollination is a simple AI image generation app powered by Pollinations. Users connect their Pollinations account, enter a text prompt, and generate an image directly in the browser using the Pol\n\nFixes #15237",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A garden for generated pixels",
+    "blurb": "Bees Pollination has joined the image garden: connect an account, describe a scene, and let the browser grow it into pixels. One more small app where an idea can turn into an image before the tea gets cold.",
+    "summary": "Added Bees Pollination to the image app directory, a browser-based Pollinations image generator where users connect their account, enter a text prompt, and generate images directly in the app.",
+    "impact": "People can now discover and use Bees Pollination from the image collection for a simple account-connected, prompt-to-image workflow in the browser.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "browser-app",
+      "prompts",
+      "bees-pollination",
+      "pollinations-account"
+    ],
+    "visual_concept": "Depict Bees Pollination as a cozy browser-based image garden: Polli tends flowering prompt cards that bloom into tiny framed generated landscapes beside a retro web terminal. Polli is the guide connecting a user's idea to the garden, with a tiny gardener hat; use code-plants and a visible browser window to represent the app directory addition.",
+    "image_prompt": "A cozy pixel art scene of the cute Polli bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat and tending a browser window where prompt cards bloom into framed AI images; code-plants, flowers, and a retro terminal grow around it, with pixel-font text “BEES POLLINATION.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15246.jpg",
+    "prompt": "A cozy pixel art scene of the cute Polli bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat and tending a browser window where prompt cards bloom into framed AI images; code-plants, flowers, and a retro terminal grow around it, with pixel-font text “BEES POLLINATION.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-21T02:06:46.991392+00:00",
+  "app_name": "Bees Pollination",
+  "app_url": "https://halimyassine.github.io/bees-pollination-app"
+}

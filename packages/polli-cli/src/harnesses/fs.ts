@@ -65,3 +65,20 @@ export const writeTextAtomic = (path: string, text: string, mode?: number) => {
 export const removeIfExists = (path: string) => {
     if (existsSync(path)) unlinkSync(path);
 };
+
+/** A file set's contents, read before a change that may have to be undone. */
+export const captureFiles = (paths: string[]) =>
+    paths.map((path) => [path, readTextIfExists(path)] as const);
+
+/**
+ * Put captured files back exactly as they were. `null` means the file did not
+ * exist, so it is removed again rather than left as an empty file.
+ */
+export const restoreCapturedFiles = (
+    captured: readonly (readonly [string, string | null])[],
+) => {
+    for (const [path, text] of captured) {
+        if (text === null) removeIfExists(path);
+        else writeTextAtomic(path, text);
+    }
+};

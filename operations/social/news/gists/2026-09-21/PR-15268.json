@@ -1,0 +1,35 @@
+{
+  "pr_number": 15268,
+  "title": "fix: restore Vertex primary routes for Gemini",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15268",
+  "merged_at": "2026-09-21T16:29:53Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Routes six Gemini text models and four Gemini image models directly through Vertex AI.\n- Keeps the best observed OpenRouter route per model as fallback, based on seven-day production error data.\n- Restores the proven Vertex request behavior from #12651 and #12708–#12712: native search, schema sanitization, image tiers, thinking, seeds, safety, and reference limits.\n- Adds strict usage validation and keeps normalized public usage in image metadata.\n- Fixes non-safety image failover, fallback tool-schema compatibility, and provider-neutral cache billing.\n\n## Pricing and routing notes\n\n- Token prices stay unchanged across primary and fallback routes.\n- Vertex adjustment pricing is now explicit: Gemini 2.5 Flash Lite grounded prompts are $0.036925 each (previously $0.01477 through OpenRouter), and Gemini 3.1 Pro cache storage is $4.7475 per 1M tokens for Vertex's one-hour TTL (previously $0.395625 for OpenRouter's five-minute TTL).\n- Gemini 2.5 Flash Lite intentionally uses Vertex `global` as primary; its proven OpenRouter `google-vertex/eu` route remains the fallback.\n\n## Tests\n\n- Gen full suite: 2,224 passed, 6 skipped; typecheck passed.\n- Enter full suite: 1,270 passed; affected pricing and fallback tests passed after the latest main merge.\n- Live Vertex probes: all 10 migrated models passed end to end.\n- Live 4K Gemini 3.1 Flash Image probe: HTTP 200, PNG, `STOP`, 2,520 image tokens.\n- Enter full typecheck still reports the pre-existing `ModelHealth.success_rate` mismatch in the unmodified model catalog.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Gemini finds its way home",
+    "blurb": "Six Gemini text models and four image models are back on their proven Vertex AI routes, with their best seven-day OpenRouter paths waiting in the hedge as fallbacks. The routing garden is once again growing the features Gemini actually brought.",
+    "summary": "Restored Vertex AI as the primary route for six Gemini text models and four Gemini image models, preserving native search, schema sanitization, image tiers, thinking, seeds, safety controls, reference limits, validated usage, and per-model OpenRouter fallbacks.",
+    "impact": "Gemini requests now use the proven Vertex behavior first—including successful 4K Gemini 3.1 Flash Image generation—while automatically retaining the best observed OpenRouter route for each model if a fallback is needed.",
+    "keywords": [
+      "Gemini",
+      "Vertex AI",
+      "image generation",
+      "text models",
+      "routing",
+      "fallbacks",
+      "usage billing"
+    ],
+    "visual_concept": "A cozy routing greenhouse: Polli tends ten labeled Gemini code-plants growing from a central Vertex AI watering system, while a small backup path leads to an OpenRouter tool shed. The scene represents primary provider restoration with resilient fallback routes; glowing image frames, text scrolls, seed packets, and a usage meter symbolize image tiers, native tools, seeds, and normalized billing metadata.",
+    "image_prompt": "A cozy pixel-art greenhouse routing garden where the cute pollinations bee mascot, with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener hat while watering ten Gemini code-plants from a glowing Vertex AI pipe; a friendly backup path leads to a little OpenRouter shed, with a retro monitor showing a crisp pixel landscape and simple pixel text: “PRIMARY + FALLBACK.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, soft pastel gradients, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15268.jpg",
+    "prompt": "A cozy pixel-art greenhouse routing garden where the cute pollinations bee mascot, with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener hat while watering ten Gemini code-plants from a glowing Vertex AI pipe; a friendly backup path leads to a little OpenRouter shed, with a retro monitor showing a crisp pixel landscape and simple pixel text: “PRIMARY + FALLBACK.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, soft pastel gradients, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-21T16:31:06.557047+00:00"
+}

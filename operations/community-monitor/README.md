@@ -11,7 +11,7 @@ not in this repo's CI. The Discord bots share that host.
 
 Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
-- `probe.mjs` — one low-load probe sweep across community text/image models (see
+- `probe.mjs` + `probe-schedule.mjs` — selective community text/image checks (see
   "Probe load" below).
 - `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
   Final request outcomes count successful fallback rescues; image-provider 4xx
@@ -116,7 +116,7 @@ and refresh `update-from-repo.sh` before restarting the service so the next
 cycle knows the complete file set.
 
 ```bash
-scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe-schedule.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
 ssh community-monitor "mkdir -p /home/ubuntu/monitor/.claude"
 scp operations/community-monitor/.claude/settings.json \
@@ -140,24 +140,34 @@ ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
 unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
 D1/wrangler access needed on the box):
 
-- Every listed community text model gets exactly one cache-busted streaming
-  chat request per cycle. Text probes omit `max_tokens` so reasoning models can
+- The agent selects low-traffic, unhealthy, reported, or monitor-hidden models
+  using customer traffic (excluding owner/probe traffic), then runs
+  `node probe.mjs --models-file /home/ubuntu/monitor/probe-candidates.json`.
+  An empty selection runs no probes. Healthy busy models are skipped. Both
+  text and image checks have a four-hour base interval; successive failures
+  double it to at most seven days (`min(4 * 2^failures, 168)` hours).
+  Success, including a fallback rescue, resets it to four hours. The script
+  stores cadence in `state.json`'s `spend.probes`, separately from health
+  decisions. A failed check slows retries; it does not classify the provider.
+  The agent's 30-minute wake-up/reply schedule is unchanged.
+- Selected, due text models get one cache-busted streaming chat request.
+  Text probes omit `max_tokens` so reasoning models can
   finish, and pass only when the unique marker appears in final completion
   content inside a valid OpenAI-compatible SSE stream. Malformed JSON events,
   missing or unterminated `[DONE]`, and post-terminal data fail the probe.
   Coverage matters more than synthetic volume;
   additional requests can consume a meaningful share of low-capacity provider
   quotas and make a sweep outlive the monitor cycle.
-- Community image models use a separate low-load schedule: exactly one
-  image request per model every four hours. Models advertising `image` in
+- Selected, due image models get one image request. Models advertising `image` in
   `input_modalities` alternate `/v1/images/edits` and `/v1/images/generations`,
   starting with edits; the others test generation only. Edits send an embedded
   512px PNG, avoiding external fixture hosts. Both use a cache-busted prompt,
   default output dimensions, and `b64_json` validation. A newly listed model
   is tested immediately. Use
   `node probe.mjs --model '<community/owner/name>'` for an explicit freshness check; this
-  bypasses the cadence but still sends only one request. Targeted checks print
-  JSON without replacing the latest full sweep or changing its cadence state.
+  bypasses the cadence but still sends only one request. Reserve this for a
+  specific new report or fix, never routine confirmations. Targeted checks print
+  JSON without replacing routine results, but update the same cadence state.
   Image freshness checks default to generation; add `--operation edit` to test
   edits (and `--category image` for a hidden exact ID). Results include the
   public `requestPath`, timestamp, and request ID when returned. Match the
@@ -225,7 +235,7 @@ monitor relists only its own hides through one deterministic gate: three
 consecutive passing same-operation probes on separate cycles spanning at least
 90 minutes, plus no veto from the latest hour's traffic by callers other than
 the owner and the probe (at least 90% when they made ten or more requests).
-Image recovery probes retain the four-hour routine cadence. Audio/video/embedding
+Text and image recovery probes follow the four-hour base interval and failure backoff. Audio/video/embedding
 recovery needs 90% across at least ten requests from three non-owner callers in
 two consecutive cycles. Owner requests use the same gate; owners and maintainers
 retain manual control.

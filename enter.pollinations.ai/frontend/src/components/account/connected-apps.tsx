@@ -62,7 +62,7 @@ function AppCard({
 }: AppCardProps) {
     const actionLabel = connected ? "Disconnect" : "Connect";
     return (
-        <Surface className="flex min-h-20 items-center justify-between gap-3 p-6">
+        <Surface className="flex min-h-16 items-center justify-between gap-3 p-4">
             <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] shadow-sm ring-1 ring-[rgba(0,0,0,0.18)]">
                     {logo ? (
@@ -232,7 +232,7 @@ export function ConnectedApps() {
     );
 
     return (
-        <Section title="Connect Apps">
+        <Section title="Connected apps">
             <div className="flex flex-wrap items-center gap-2">
                 <div className="catalog-search relative min-w-64 flex-1">
                     <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />

@@ -12,7 +12,6 @@ import {
     Input,
     Section,
     SignOutIcon,
-    Surface,
     Text,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
@@ -147,7 +146,7 @@ function AccountPage() {
     return (
         <div className="flex flex-col gap-6">
             <Section title="Profile">
-                <Surface className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <img
@@ -200,11 +199,11 @@ function AccountPage() {
                     >
                         {isSigningOut ? "Signing out…" : "Sign out"}
                     </Button>
-                </Surface>
+                </div>
             </Section>
 
-            <Section title="Connect Accounts">
-                <Surface className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <Section title="Community">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                         {discordConnection?.avatarUrl ? (
                             <img
@@ -259,7 +258,7 @@ function AccountPage() {
                                 ? "Checking..."
                                 : "Connect Discord"}
                     </Button>
-                </Surface>
+                </div>
                 {connectionError && (
                     <Text size="sm" tone="muted">
                         {connectionError}
@@ -271,64 +270,53 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
-            <Section title="Help">
-                <Surface className="p-6">
-                    <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
-                        <InlineLink
-                            href="https://discord.com/channels/885844321461485618/889573359111774329"
-                            className="inline-flex items-center gap-2"
-                        >
-                            <DiscordIcon
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                            />
-                            Get help
-                        </InlineLink>
-                        <InlineLink
-                            href="https://github.com/pollinations/pollinations/issues"
-                            className="inline-flex items-center gap-2"
-                        >
-                            <GitHubIcon
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                            />
-                            Report a bug
-                        </InlineLink>
-                    </div>
-                </Surface>
-            </Section>
+            <div className="flex flex-col gap-4 border-theme-border border-t px-1 pt-5">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+                    <InlineLink
+                        href="https://discord.com/channels/885844321461485618/889573359111774329"
+                        className="inline-flex items-center gap-2"
+                    >
+                        <DiscordIcon className="h-4 w-4" aria-hidden="true" />
+                        Get help
+                    </InlineLink>
+                    <InlineLink
+                        href="https://github.com/pollinations/pollinations/issues"
+                        className="inline-flex items-center gap-2"
+                    >
+                        <GitHubIcon className="h-4 w-4" aria-hidden="true" />
+                        Report a bug
+                    </InlineLink>
+                </div>
 
-            <Section title="Danger zone">
-                <Surface className="p-6">
-                    <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                        <Text tone="muted">
-                            Permanently close your Pollinations account and
-                            revoke all access.
-                        </Text>
-                        <Button
-                            type="button"
-                            intent="danger"
-                            className="shrink-0 self-start sm:self-center"
-                            onClick={() => setDeleteDialogOpen(true)}
-                        >
-                            Delete account
-                        </Button>
-                    </div>
-                </Surface>
-            </Section>
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                    <Text size="sm" tone="muted">
+                        Permanently close your Pollinations account and revoke
+                        all access.
+                    </Text>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete account
+                    </Button>
+                </div>
 
-            <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-4 py-2 text-center text-sm text-theme-text-muted">
-                <span>© 2026 Myceli.AI OÜ</span>
-                <InlineLink href="https://pollinations.ai/terms">
-                    Terms of Service
-                </InlineLink>
-                <InlineLink href="https://pollinations.ai/privacy">
-                    Privacy Policy
-                </InlineLink>
-                <InlineLink href="https://pollinations.ai/refunds">
-                    Refund Policy
-                </InlineLink>
-            </footer>
+                <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 border-theme-border border-t pt-4 text-sm text-theme-text-muted">
+                    <span>© 2026 Myceli.AI OÜ</span>
+                    <InlineLink href="https://pollinations.ai/terms">
+                        Terms of Service
+                    </InlineLink>
+                    <InlineLink href="https://pollinations.ai/privacy">
+                        Privacy Policy
+                    </InlineLink>
+                    <InlineLink href="https://pollinations.ai/refunds">
+                        Refund Policy
+                    </InlineLink>
+                </footer>
+            </div>
 
             <DeleteAccountDialog
                 open={deleteDialogOpen}

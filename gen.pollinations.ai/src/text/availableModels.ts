@@ -437,6 +437,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3-flash-preview",
         config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "google/gemini-3-flash-preview:openrouter:vertex-global",
+        config: portkeyConfig["gemini-3-flash-openrouter-vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -445,15 +455,17 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.7-flash",
         config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             // Gemini 3.7 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "google/gemini-3.7-flash:openrouter:ai-studio-priority",
-        config: portkeyConfig["gemini-openrouter-ai-studio-priority"],
+        name: "google/gemini-3.7-flash:openrouter:vertex-global",
+        config: portkeyConfig["gemini-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -462,8 +474,18 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.8-flash",
         config: portkeyConfig["google/gemini-3.8-flash"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             // Gemini 3.8 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-3.8-flash:openrouter:vertex-global",
+        config: portkeyConfig["gemini-3.8-openrouter-vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -471,16 +493,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.5-flash-lite",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
-        name: "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
-        config: portkeyConfig[
-            "gemini-flash-lite-3.5-openrouter-ai-studio-flex"
-        ],
+        name: "google/gemini-3.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-flash-lite-3.5-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -489,22 +511,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-2.5-flash-lite",
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
-        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
-            createGeminiThinkingTransform("v2.5"),
-        ),
-    },
-    {
-        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
-        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
-        transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -641,14 +657,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.1-pro-preview",
         config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "google/gemini-3.1-pro-preview:openrouter:ai-studio",
-        config: portkeyConfig["gemini-large-openrouter-ai-studio"],
+        name: "google/gemini-3.1-pro-preview:openrouter:vertex-global",
+        config: portkeyConfig["gemini-large-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),

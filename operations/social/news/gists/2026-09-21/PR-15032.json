@@ -1,0 +1,34 @@
+{
+  "pr_number": 15032,
+  "title": "feat(polli-cli): polli mcp installs MCP servers into 13 coding agents",
+  "author": "afanasevmylife",
+  "url": "https://github.com/pollinations/pollinations/pull/15032",
+  "merged_at": "2026-09-21T15:27:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds live MCP catalog discovery and install/status/remove commands for 13 clients.\n- Reuses dedicated per-client keys and preserves foreign MCP entries. Keys are stored locally in plaintext; Codex references its .env key.\n- Fixes repeat installs, Amp/Gemini settings, JSONC, native Zed HTTP, OpenCode config paths, and Codex ownership detection.\n- 179 local CLI tests and build pass, including real Claude CLI repeat-install/removal. Not every client was exercised end to end.\n- Credits #15067 (xiaotian1171) for repeat-install/JSON5 ideas and #15128 (aikhusus2025-ctrl) for Amp/Zed configuration.\n\nCloses #15014",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MCP moves into the workshop",
+    "blurb": "Polli CLI can now introduce the MCP catalog to 13 coding agents without rearranging their existing furniture. It keeps its own keys, leaves foreign server entries alone, and has learned that repeat installs are a normal part of life.",
+    "summary": "Added `polli mcp` catalog discovery plus install, status, and remove commands for 13 coding clients, with per-client local keys, foreign-entry preservation, and client-specific support for JSONC/JSON5, native Zed HTTP, OpenCode paths, Amp/Gemini settings, and Codex `.env` ownership.",
+    "impact": "Developers can connect Pollinations MCP servers to supported coding agents from the CLI, rerun installs safely, inspect or remove Polli-managed entries, and keep existing third-party MCP configuration intact.",
+    "keywords": [
+      "polli-cli",
+      "mcp",
+      "coding-agents",
+      "developer-tools",
+      "mcp-catalog",
+      "configuration"
+    ],
+    "visual_concept": "A cozy garden-shed hackerspace represents the local CLI setup: Polli, wearing a tiny mechanic tool belt, carefully plugs labeled MCP seed-cables into a row of small retro coding-agent terminals. The Monitor Robot eagerly checks a glowing MCP catalog map while distinct existing flower-pot server entries remain untouched, showing safe ownership and repeatable installation.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings wears a tiny mechanic tool belt while connecting glowing lime green (#ecf874) MCP seed-cables to a friendly row of 13 small retro coding-agent terminals; a chunky CRT Monitor Robot holds a catalog map and code-plants bloom beside untouched flower-pot server configs. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"MCP READY\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15032.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings wears a tiny mechanic tool belt while connecting glowing lime green (#ecf874) MCP seed-cables to a friendly row of 13 small retro coding-agent terminals; a chunky CRT Monitor Robot holds a catalog map and code-plants bloom beside untouched flower-pot server configs. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"MCP READY\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-21T15:28:28.718632+00:00"
+}

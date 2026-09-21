@@ -69,6 +69,12 @@ const DEFAULT_MODEL = "openai/gpt-5.4-nano";
  * The gateway usually normalises these, but it is not guaranteed for code
  * agents, so accept all three shapes and convert to a Responses body rather
  * than rejecting a chat- or text-style call.
+ *
+ * The conversation is then flattened to a string. Not every model accepts an
+ * array `input`: openai/gpt-oss-20b — the cheapest model, and therefore the one
+ * frugal reaches for most often — rejects it with a 422, while every model we
+ * tested accepts a plain string. System turns move into `instructions`; the
+ * structured array survives only when it carries media a string cannot.
  * ------------------------------------------------------------------------ */
 
 export function asResponses(body: ResponsesBody): ResponsesBody {
@@ -80,26 +86,50 @@ export function asResponses(body: ResponsesBody): ResponsesBody {
               ? { max_output_tokens: max_tokens }
               : {};
 
-    if (body.input !== undefined) return { ...rest, ...maxOutput };
+    // Conversation sources, in priority order: a Responses body already has
+    // `input`; otherwise accept chat `messages` or a bare `prompt`.
+    let source: unknown = body.input;
+    if (source === undefined && Array.isArray(messages)) source = messages;
+    if (source === undefined && typeof prompt === "string") source = prompt;
 
-    let input: unknown;
-    if (Array.isArray(messages)) {
-        input = messages
-            .filter((message) => message && typeof message === "object")
-            .map((message) => {
-                const record = message as Record<string, unknown>;
-                const content = record.content;
-                if (typeof content !== "string") return record;
-                return {
-                    ...record,
-                    content: [{ type: "input_text", text: content }],
-                };
-            });
-    } else if (typeof prompt === "string") {
-        input = prompt;
+    const instructions: string[] = [];
+    if (typeof rest.instructions === "string" && rest.instructions) {
+        instructions.push(rest.instructions);
     }
 
-    return { ...rest, input: input ?? "", ...maxOutput };
+    let input: unknown = source;
+    if (typeof source !== "string" && Array.isArray(source)) {
+        const turns: string[] = [];
+        const kept: unknown[] = [];
+        let hasMedia = false;
+        for (const item of source) {
+            if (!item || typeof item !== "object") continue;
+            const record = item as Record<string, unknown>;
+            if (record.role === "system" || record.role === "developer") {
+                const text = flatText(record.content ?? record);
+                if (text) instructions.push(text);
+                continue;
+            }
+            if (countImages(record.content) > 0) hasMedia = true;
+            kept.push(record);
+            const text = flatText(record.content ?? record);
+            if (text) {
+                const role =
+                    typeof record.role === "string" && record.role
+                        ? record.role
+                        : "user";
+                turns.push(`${role}: ${text}`);
+            }
+        }
+        if (hasMedia) input = kept;
+        else if (turns.length === 0) input = "";
+        else if (turns.length === 1) input = turns[0].replace(/^user: /, "");
+        else input = turns.join("\n");
+    }
+
+    const out: ResponsesBody = { ...rest, input: input ?? "", ...maxOutput };
+    if (instructions.length) out.instructions = instructions.join("\n\n");
+    return out;
 }
 
 /* ---------------------------------------------------------------------------
@@ -118,7 +148,8 @@ export function tierForBody(body: ResponsesBody): {
 
     const isContinued =
         typeof body.previous_response_id === "string" ||
-        (Array.isArray(body.input) && body.input.length > 2);
+        (typeof text === "string" &&
+            (text.match(/^(?:user|assistant): /gm)?.length ?? 0) >= 2);
     const greedy = (body.max_output_tokens ?? 0) > 1600;
     const images = countImages(body.input);
     const hasTools = Array.isArray(body.tools) && body.tools.length > 0;

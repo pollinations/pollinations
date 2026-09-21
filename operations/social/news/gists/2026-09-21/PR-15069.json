@@ -1,0 +1,35 @@
+{
+  "pr_number": 15069,
+  "title": "feat(agents): triage-router, a health- and price-aware model router code agent",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/15069",
+  "merged_at": "2026-09-21T13:47:05Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15017\n\nA code agent that picks a model per request and answers as that model. Source of the agent: **https://github.com/xiaotian1171/triage-router** (deployed from there; the reviewed example lives in `apps/agent-triage-router/`).\n\n**Callable model:** `community/xiaotian1171/triage-router`\n\n## What it routes on\n\nAll three signals are read live at request time inside the agent:\n\n| Signal | Source | Used for |\n| --- | --- | --- |\n| Task tier | the request itself (length, code, tools, images, reasoning words) | choosing which pool to draw from |\n| Model health | `GET /models/status?minutes=30` (rollup rows) | moving traffic off a model that is currently degrading |\n| Price | `GET /v1/models` (`promptTextTokens` + `completionTextTokens`) | picking the cheapest model that clears the tier |\n| Endpoint + modality + context | `supported_endpoints`, `input_modalities`, `context_length` from `GET /v1/models` | skipping models that cannot serve the request |\n\n`score = price x penalty`, where `penalty` turns the last 30 minutes of health into a multiplier on the advertised price:\n\n```\npenalty = (1 + 6*5xxRate) * (1 + 3*rescueRate) * latencyFactor * slowTail * throughput\n```\n\nOnly 2xx and 5xx count as outcomes - a 4xx is a caller-side mistake and says nothing about model health. Models with fewer than 5 requests in the window are treated as unproven. A 422/429/5xx re-runs the pick one tier up (`fast -> balanced -> deep`), preserving the request, including images, roles and instructions. Requests fail explicitly when no compatible pool model is available.\n\n## Three live routing decisions, three different models\n\nCallable at `https://gen.pollinations.ai/v1/responses` (and through `/v1/chat/completions`, since the same agent answers both):\n\n```bash\ncurl -s https://gen.pollinations.ai/v1/responses \\\n  -H \"Authorization: Bearer $POLLINATIONS_KEY\" -H \"content-type: application/json\" \\\n  -d '{\"model\":\"community/xiaotian1171/triage-router\",\"input\":\"Reply with one word: the colour",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The router checks the weather",
+    "blurb": "A community code agent now picks its model like a careful bee picks a flower: by task, health, compatibility, and price. If a route gets thorny, it climbs to a stronger model pool without dropping your request.",
+    "summary": "Added the callable community/xiaotian1171/triage-router agent, which selects compatible fast, balanced, or deep models live using request complexity, 30-minute model health, token prices, supported endpoints/modalities, and context length.",
+    "impact": "Requests sent through /v1/responses or /v1/chat/completions can automatically land on the cheapest healthy compatible model, escalating from fast to balanced to deep after 422, 429, or 5xx responses while preserving images, roles, and instructions.",
+    "keywords": [
+      "community",
+      "agents",
+      "model-routing",
+      "model-health",
+      "pricing",
+      "responses-api",
+      "chat-completions"
+    ],
+    "visual_concept": "Depict triage-router as a cozy garden path selector: three labeled flower paths for FAST, BALANCED, and DEEP lead to different retro model terminals, while a small health-and-price signpost helps choose the best route. Polli, wearing a tiny dispatcher headset and carrying a clipboard, observes the routes as the eager CRT Monitor Robot checks green health bars; code-vines and flowers make the routing system feel alive rather than corporate.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny dispatcher headset and holding a clipboard beside a lime green (#ecf874) garden signpost pointing to three glowing retro terminals labeled FAST, BALANCED, and DEEP; a cute chunky CRT-monitor robot excitedly checks health bars and price tags while code-plants bloom around the paths. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and a warm cream background; pixel-font text: \"BEST ROUTE\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15069.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny dispatcher headset and holding a clipboard beside a lime green (#ecf874) garden signpost pointing to three glowing retro terminals labeled FAST, BALANCED, and DEEP; a cute chunky CRT-monitor robot excitedly checks health bars and price tags while code-plants bloom around the paths. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle scanlines and a warm cream background; pixel-font text: \"BEST ROUTE\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-21T13:48:11.503605+00:00"
+}

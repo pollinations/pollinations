@@ -775,9 +775,18 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        config: portkeyConfig["mistral-large-openrouter-zdr"],
-        transform: stripReasoning,
+        name: "mistralai/mistral-large-3:mistral",
+        config: portkeyConfig["mistral-large-direct"],
+        transform: pipe(stripReasoning, (messages, options) => {
+            const { seed, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(seed === undefined ? {} : { random_seed: seed }),
+                },
+            };
+        }),
     },
     {
         name: "qwen/qwen3guard-gen-8b",

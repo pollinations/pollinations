@@ -428,10 +428,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ),
+    "mistral-large-direct": () =>
+        createMistralModelConfig({ model: "mistral-large-2512" }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",

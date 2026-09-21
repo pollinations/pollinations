@@ -302,7 +302,7 @@ export const CHAT_PARAMETERS = {
         "top_k",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
-    openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
     // seed or logprobs in supported_parameters. Forced tool_choice isn't
     // supported (only "auto"/"none"), so "tools" is declared alone.

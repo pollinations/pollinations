@@ -9,6 +9,7 @@ import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { harnessCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
+import { machineCommand } from "./commands/machine.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
@@ -77,6 +78,9 @@ program.addCommand(myModelsCommand);
 
 // Coding harness integrations
 program.addCommand(harnessCommand);
+
+// Hosted machines
+program.addCommand(machineCommand);
 
 // Generation
 program.addCommand(createGenCommand());

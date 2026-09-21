@@ -496,10 +496,10 @@ export function Authorize() {
                 actions={
                     <Button
                         intent="neutral"
-                        icon={<ArrowLeftIcon />}
+                        icon={isDeviceMode ? <XIcon /> : <ArrowLeftIcon />}
                         onClick={handleDeny}
                     >
-                        Go back
+                        {isDeviceMode ? "Decline" : "Go back"}
                     </Button>
                 }
             />
@@ -520,9 +520,10 @@ export function Authorize() {
     return (
         <AuthFlowScreen
             size="lg"
+            footnote="legal"
             title={title}
             subject={subject}
-            description={`${access} Choose what it can use, you can revoke it any time.`}
+            description={`${access} Choose what it can use; you can revoke access at any time. Only connect apps you trust.`}
             actions={
                 <>
                     <Button

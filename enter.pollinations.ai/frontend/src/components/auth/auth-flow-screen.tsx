@@ -9,6 +9,8 @@ import {
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
 export const footnotes = {
+    // Use AuthFlowLayout's shared legal notice.
+    legal: undefined,
     dashboard: (
         <>
             Manage your Pollinations account on the{" "}
@@ -44,7 +46,7 @@ type AuthFlowScreenProps = Omit<
     ComponentProps<typeof AuthFlowLayout>,
     "headerAction" | "footnote"
 > & {
-    /** Results say "back", errors say "help"; otherwise legal when signed out, dashboard when signed in. */
+    /** Consent keeps "legal"; results say "back", errors say "help". */
     footnote?: keyof typeof footnotes;
     /** Wallet the screen already loads; skips the shared balance request. */
     balance?: AccountBalance | null;

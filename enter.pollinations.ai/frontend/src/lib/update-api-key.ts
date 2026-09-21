@@ -17,9 +17,10 @@ export async function updateApiKey(
         },
     });
     if (!response.ok) {
-        const { error } = (await response.json()) as unknown as {
-            error: { message: string };
-        };
-        throw new Error(error.message);
+        const result = await response.json().catch(() => null);
+        throw new Error(
+            (result as { error?: { message?: string } } | null)?.error
+                ?.message || "Failed to save key. Please try again.",
+        );
     }
 }

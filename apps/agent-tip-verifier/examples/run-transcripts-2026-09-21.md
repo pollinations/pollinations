@@ -38,3 +38,5 @@ Task line: encoding fix run - re-push of the two files below, already owner-gate
 - Commit message: `tip: 2026-09-21-decisions-choice-dict-score-array (ascii re-encode)`
 
 Independent verification (Contents API): both files now have zero non-ASCII characters; signature line is `By tip-verifier - Verified 2026-09-21` (ASCII-safe hyphen because the tool stdin corrupts the middot).
+
+Erratum (2026-09-22): in Run 3's final JSON, the field `"verified_by":"live-test"` records the OWNER's live test (the agent holds no credentials and could not perform one; the tip body itself says so). The field name is misleading - it should read `owner-live-test`. Runs 1-2 in this transcript re-verified schema claims against the public OpenAPI; Run 3's claim was behavior-only and was owner-reported. The agent's systemPrompt was corrected (commit 91fce44) so future runs mark this explicitly.

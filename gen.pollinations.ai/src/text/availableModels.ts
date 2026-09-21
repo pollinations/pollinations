@@ -446,6 +446,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3-flash-preview:openrouter:vertex-global",
         config: portkeyConfig["gemini-3-flash-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -464,6 +465,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.7-flash:openrouter:vertex-global",
         config: portkeyConfig["gemini-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -482,6 +484,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.8-flash:openrouter:vertex-global",
         config: portkeyConfig["gemini-3.8-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -499,6 +502,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.5-flash-lite:openrouter:vertex-global",
         config: portkeyConfig["gemini-flash-lite-3.5-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -516,6 +520,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
         config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -661,6 +666,7 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.1-pro-preview:openrouter:vertex-global",
         config: portkeyConfig["gemini-large-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),

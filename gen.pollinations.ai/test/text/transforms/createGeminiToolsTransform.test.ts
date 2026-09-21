@@ -1,3 +1,4 @@
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
@@ -71,6 +72,22 @@ describe("Vertex Gemini routing with OpenRouter fallback", () => {
             provider: "openrouter",
             directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
+    });
+
+    it.each(
+        routes,
+    )("publishes direct Vertex parameters for %s and OpenRouter parameters for its fallback", (_model, _upstreamModel, fallback) => {
+        const primary = fallback.split(
+            ":openrouter:",
+        )[0] as keyof typeof TEXT_SERVICES;
+        const direct = TEXT_SERVICES[primary].supportedParameters ?? [];
+        const openRouter = TEXT_SERVICES[fallback].supportedParameters ?? [];
+
+        expect(direct).toContain("reasoning_effort");
+        expect(direct).not.toContain("reasoning");
+        expect(direct).not.toContain("include_reasoning");
+        expect(openRouter).toContain("reasoning");
+        expect(openRouter).toContain("include_reasoning");
     });
 
     it.each(

@@ -31,6 +31,7 @@ beforeEach(() => {
 type VertexState = {
     requests: Array<{ url: string; body: Record<string, unknown> }>;
     usageMetadata: Record<string, unknown> | undefined;
+    response: Record<string, unknown> | undefined;
     status: number;
 };
 
@@ -43,6 +44,7 @@ function createNanobananaMocks() {
     const vertexState: VertexState = {
         requests: [],
         usageMetadata: undefined,
+        response: undefined,
         status: 200,
     };
     const openRouterState: OpenRouterState = {
@@ -64,6 +66,9 @@ function createNanobananaMocks() {
                             { error: { message: "Vertex unavailable" } },
                             { status: vertexState.status },
                         );
+                    }
+                    if (vertexState.response) {
+                        return Response.json(vertexState.response);
                     }
                     return Response.json({
                         candidates: [
@@ -88,6 +93,7 @@ function createNanobananaMocks() {
             reset: () => {
                 vertexState.requests = [];
                 vertexState.usageMetadata = undefined;
+                vertexState.response = undefined;
                 vertexState.status = 200;
             },
         },
@@ -188,7 +194,6 @@ test("nanobanana bills exact Vertex usage end-to-end", async ({
             ],
             generationConfig: {
                 imageConfig: { aspectRatio: "1:1" },
-                maxOutputTokens: 2048,
                 responseModalities: ["TEXT", "IMAGE"],
                 seed: 42,
                 temperature: 0.7,
@@ -202,6 +207,14 @@ test("nanobanana bills exact Vertex usage end-to-end", async ({
             ]),
         },
     });
+    expect(
+        (
+            mocks.vertex.state.requests[0].body.generationConfig as Record<
+                string,
+                unknown
+            >
+        ).maxOutputTokens,
+    ).toBeUndefined();
     expect(mocks.vertex.state.requests[0].url).toContain(
         "models/gemini-2.5-flash-image:generateContent",
     );
@@ -271,6 +284,86 @@ test("nanobanana falls back to its proven OpenRouter Vertex route", async ({
         fallbackUsed: true,
         isFinal: true,
         responseStatus: 200,
+    });
+});
+
+test("nanobanana falls back when Vertex returns no image for a retryable reason", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vertex", "openrouter");
+    mocks.vertex.state.response = {
+        candidates: [{ finishReason: "MAX_TOKENS" }],
+    };
+    mocks.openrouter.state.usage = {
+        prompt_tokens: 11,
+        completion_tokens: 1290,
+        total_tokens: 1301,
+        cost: 0.0387033,
+        prompt_tokens_details: {},
+        completion_tokens_details: {
+            reasoning_tokens: 0,
+            image_tokens: 1290,
+        },
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/red%20square?model=google/gemini-2.5-flash-image&width=1024&height=1024&seed=42",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.vertex.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests).toHaveLength(1);
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-2.5-flash-image:openrouter:vertex-global",
+    );
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isFinal: false,
+    });
+});
+
+test("nanobanana does not fall back after a Vertex safety rejection", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vertex", "openrouter");
+    mocks.vertex.state.response = {
+        candidates: [
+            {
+                finishReason: "SAFETY",
+                safetyRatings: [
+                    {
+                        blocked: true,
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    },
+                ],
+            },
+        ],
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/red%20square?model=google/gemini-2.5-flash-image&width=1024&height=1024&seed=42",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.text()).resolves.toContain(
+        "HARM_CATEGORY_DANGEROUS_CONTENT",
+    );
+    await wait();
+
+    expect(mocks.vertex.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 400,
+        isFinal: true,
+        errorResponseCode: "content_policy_violation",
     });
 });
 
@@ -363,6 +456,14 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
             ]),
         },
     });
+    expect(
+        (
+            mocks.vertex.state.requests[0].body.generationConfig as Record<
+                string,
+                unknown
+            >
+        ).maxOutputTokens,
+    ).toBeUndefined();
     expect(mocks.tinybird.state.events).toHaveLength(1);
     const event = mocks.tinybird.state.events[0];
     expect(event).toMatchObject({

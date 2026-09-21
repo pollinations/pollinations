@@ -210,23 +210,39 @@ function imageSize(
 
 function noImageError(response: VertexResponse): UpstreamError {
     const candidate = response.candidates?.[0];
+    const finishReason = candidate?.finishReason?.toUpperCase();
     const explanation = candidate?.content?.parts
         ?.map((part) => part.text)
         .filter((text): text is string => Boolean(text))
         .join("\n");
+    const hasBlockedSafetyRating =
+        candidate?.safetyRatings?.some((rating) => rating.blocked) ?? false;
     const blocked = candidate?.safetyRatings
         ?.filter((rating) => rating.blocked)
         .map((rating) => rating.category)
         .filter(Boolean)
         .join(", ");
-    return UpstreamError.fromProvider(400, {
+    const contentRejection =
+        hasBlockedSafetyRating ||
+        [
+            "SAFETY",
+            "PROHIBITED_CONTENT",
+            "SPII",
+            "BLOCKLIST",
+            "IMAGE_SAFETY",
+            "IMAGE_PROHIBITED_CONTENT",
+        ].includes(finishReason ?? "");
+
+    return UpstreamError.fromProvider(contentRejection ? 400 : 502, {
         message:
             explanation ||
             blocked ||
-            candidate?.finishReason ||
+            finishReason ||
             "Vertex AI returned no image",
         responseBody: JSON.stringify(response),
-        errorCode: "content_policy_violation",
+        ...(contentRejection && {
+            errorCode: "content_policy_violation",
+        }),
     });
 }
 
@@ -292,7 +308,6 @@ export async function callVertexAIGeminiImageAPI(
             responseModalities: ["TEXT", "IMAGE"],
             temperature: 0.7,
             topP: 0.9,
-            maxOutputTokens: 2048,
             seed: params.seed,
             imageConfig: {
                 aspectRatio: closestByRatio(

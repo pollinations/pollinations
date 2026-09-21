@@ -91,7 +91,9 @@ function positiveUsageCounter(
 }
 
 const countVertexCacheWriteTokens = positiveUsageCounter(
-    (event) => event.usage?.cache_creation_input_tokens,
+    (event) =>
+        event.usage?.cache_creation_input_tokens ??
+        event.usage?.prompt_tokens_details?.cache_write_tokens,
 );
 
 // OpenRouter reports the complete cached prefix in cache_write_tokens. Its

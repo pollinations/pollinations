@@ -284,18 +284,39 @@ describe("generateTextPortkey", () => {
                     return Response.json({
                         id: "generation-fallback",
                         model: "google/gemini-2.5-flash-lite",
+                        provider: "Google",
+                        service_tier: null,
+                        system_fingerprint: "fp_test",
                         choices: [
                             {
                                 index: 0,
                                 message: { role: "assistant", content: "ok" },
                                 finish_reason: "stop",
+                                native_finish_reason: "STOP",
                             },
                         ],
                         usage: {
                             prompt_tokens: 5,
                             completion_tokens: 1,
                             total_tokens: 6,
-                            cost: 9e-7,
+                            cost: 0.0000009,
+                            is_byok: false,
+                            prompt_tokens_details: {
+                                cached_tokens: 0,
+                                cache_write_tokens: 0,
+                                audio_tokens: 0,
+                                video_tokens: 0,
+                            },
+                            cost_details: {
+                                upstream_inference_cost: 0.0000009,
+                                upstream_inference_prompt_cost: 0.0000005,
+                                upstream_inference_completions_cost: 0.0000004,
+                            },
+                            completion_tokens_details: {
+                                reasoning_tokens: 0,
+                                image_tokens: 0,
+                                audio_tokens: 0,
+                            },
                         },
                     });
                 },
@@ -323,7 +344,35 @@ describe("generateTextPortkey", () => {
         expect(index).toBe(1);
         expect(result).toMatchObject({
             id: "generation-fallback",
-            choices: [{ message: { content: "ok" } }],
+            provider: "Google",
+            service_tier: null,
+            system_fingerprint: "fp_test",
+            choices: [
+                {
+                    message: { content: "ok" },
+                    native_finish_reason: "STOP",
+                },
+            ],
+            usage: {
+                cost: 0.0000009,
+                is_byok: false,
+                prompt_tokens_details: {
+                    cached_tokens: 0,
+                    cache_write_tokens: 0,
+                    audio_tokens: 0,
+                    video_tokens: 0,
+                },
+                cost_details: {
+                    upstream_inference_cost: 0.0000009,
+                    upstream_inference_prompt_cost: 0.0000005,
+                    upstream_inference_completions_cost: 0.0000004,
+                },
+                completion_tokens_details: {
+                    reasoning_tokens: 0,
+                    image_tokens: 0,
+                    audio_tokens: 0,
+                },
+            },
         });
     });
 

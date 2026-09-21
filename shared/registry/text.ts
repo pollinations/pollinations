@@ -655,7 +655,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3-flash-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
         provider: "google",
         publisher: "Google",
@@ -686,7 +686,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "google",
         publisher: "Google",
@@ -719,7 +719,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],
         provider: "google",
         publisher: "Google",
@@ -751,7 +751,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
@@ -789,7 +789,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini25,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini25,
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         provider: "google",
         publisher: "Google",
@@ -1862,7 +1862,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.1-pro-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
         provider: "google",
         publisher: "Google",

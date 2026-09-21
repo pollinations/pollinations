@@ -1,0 +1,35 @@
+{
+  "pr_number": 15141,
+  "title": "feat: add tiered health router code agent",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15141",
+  "merged_at": "2026-09-21T11:33:29Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\nA code agent that classifies each request's difficulty with a cheap LLM call (`FAST`/`BALANCED`/`DEEP`), then resolves that tier against the **live** model catalog and its last-30-minute health — not three hardcoded model IDs.\n\n- Modality-aware: image/audio/video parts narrow the candidate pool to models whose `input_modalities` actually declare support\n- Health-aware: prefers models at or below 10% 5xx over at least 10 requests, then unproven models, then the least unhealthy; ranks by error rate and p95 latency\n- No retry loop — gen already retries a model's own declared fallbacks; this router's job is picking well up front\n\nRepository: https://github.com/tomdacatto/tiered-health-router\nCallable model: **`community/tomdacatto/tiered-health-router`**\n\n## Why this axis\n\nOther submissions on this issue route by live free-model health, code-only complexity scoring, or a capability-fit price ladder with retry escalation. This one routes by *task difficulty*, judged by a model reading the request rather than a length/keyword heuristic, then still resolves that tier against live pricing/health instead of hardcoded IDs.\n\n## Live demo evidence\n\nThree real requests against the deployed agent, each landing on a different model — full commands and responses in [`demos/README.md`](https://github.com/tomdacatto/pollinations/blob/quest/15017-router-agent/apps/agent-tiered-health-router/demos/README.md):\n\n| Request | Model used |\n|---|---|\n| \"What is the capital of Iceland?\" | `qwen/qwen3.7-flash` (cheapest eligible) |\n| Compare 3 caching strategies, recommend one | `Mistral-Large-3` |\n| Design a cross-region rate limiter under clock skew | `gpt-5.4` |\n\n## Alpha feedback\n\n- Custom response headers (`X-Router-*`) don't survive on `/v1/responses` either — a prior PR on this issue found they're dropped by the Chat Completions conversion specifically; testing against `/v1/responses` directly still showed them missing. No dashboard viewer for a code agent's `console.log` ou",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The router reads the room",
+    "blurb": "A community code agent now asks a cheap model how gnarly your request is before choosing where to send it. Easy questions get a quick path; clock-skew rate limiters get the grown-up chair.",
+    "summary": "Added the callable community model `community/tomdacatto/tiered-health-router`, which classifies requests as FAST, BALANCED, or DEEP with a cheap LLM call and selects a live catalog model using modality support plus the last 30 minutes of health, error-rate, and p95-latency data.",
+    "impact": "Developers can route simple prompts to economical eligible models while deeper requests can land on stronger options such as Mistral-Large-3 or gpt-5.4, with image, audio, and video inputs limited to models that explicitly support those modalities.",
+    "keywords": [
+      "community",
+      "code-agent",
+      "routing",
+      "model-catalog",
+      "health",
+      "multimodal",
+      "tiered-routing"
+    ],
+    "visual_concept": "Depict the tiered router as a cozy garden-path switchboard: three labeled paths, FAST, BALANCED, and DEEP, lead from a request terminal to different healthy model houses. Polli is the calm route keeper wearing tiny librarian glasses and consulting a glowing live-health map, while a CRT monitor robot eagerly points at green, healthy signal flowers; code-plants and modality icons for image, audio, and video show that the route is chosen from actual capability and health data rather than fixed destinations.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she tends a garden-path routing board with three pixel-font signs: “FAST”, “BALANCED”, and “DEEP”; a cute CRT-monitor robot points excitedly at lime-green health flowers and a retro terminal showing image, audio, and video icons, while code-plants grow beside three warm model cottages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15141.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she tends a garden-path routing board with three pixel-font signs: “FAST”, “BALANCED”, and “DEEP”; a cute CRT-monitor robot points excitedly at lime-green health flowers and a retro terminal showing image, audio, and video icons, while code-plants grow beside three warm model cottages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-21T11:34:29.942334+00:00"
+}

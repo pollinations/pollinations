@@ -16,10 +16,17 @@ curl https://gen.pollinations.ai/v1/responses \
   }'
 ```
 
-The chosen model appears in the `X-Frugal-Model` header and in the platform log;
-when a trace survives to the caller it names the tier, the model, the estimated
-token counts, the pre- and post-health-adjusted estimated cost, and how many
-candidates it was chosen from.
+The decision travels with the answer: a non-streaming JSON response carries a
+`frugal_trace` object naming the tier, the model, and the full reason string
+(estimated token counts, pre- and post-health-adjusted cost, and how many
+candidates it beat). It is also written to the platform log. Best-effort
+`X-Frugal-Tier` / `X-Frugal-Model` / `X-Frugal-Reason` headers are set too, but
+the gateway caches answers and strips per-response headers, so `frugal_trace` is
+the channel that always survives.
+
+It answers the Responses, chat-completions and text endpoints: a chat-style
+`messages` body and a text `prompt` are normalised into a Responses `input`
+before routing, so the same agent behaves the same from any client.
 
 ## What makes it different
 
@@ -82,9 +89,10 @@ bodies are served from the platform cache, so vary wording between demos.
 
 ## Unit tests
 
-`node --experimental-strip-types --test`-compatible suite (21 assertions):
-classification, token/cost math, health penalties, and that self / unpriced /
-community models never win.
+`node --test agent.test.ts` — 31 assertions covering input normalisation
+(Responses / chat / text bodies), classification, token and cost maths, health
+penalties, capability filters, fallbacks, and that self / unpriced / community
+models never win.
 
 ## Files
 
@@ -92,6 +100,7 @@ community models never win.
   Worker API via `pollinations(path, init)`, so it satisfies the quest's
   "only `ai` and `@ai-sdk/openai-compatible` may be imported" constraint (it
   imports nothing).
+- `agent.test.ts` — the unit suite (`node --test agent.test.ts`).
 
 ## Deploy
 

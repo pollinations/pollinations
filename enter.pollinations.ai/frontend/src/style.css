@@ -1,1 +1,64 @@
 @import "@pollinations/ui/app.css";
+
+/* Round drawer actions match the height of adjacent navigation pills. */
+.dashboard-rail-action {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Each idle navigation tab sits on the same soft-white surface as a card. */
+.dashboard-rail-tab:not([aria-current="page"]),
+.dashboard-rail-action {
+    background-color: var(--polli-color-surface-opaque);
+}
+
+.dashboard-rail-tab:not([aria-current="page"]):hover,
+.dashboard-rail-action:hover {
+    background-color: var(--polli-color-surface-menu);
+}
+
+.dashboard-rail-tab.dashboard-rail-external {
+    background-color: var(--polli-color-surface-menu);
+}
+
+.dashboard-rail-tab.dashboard-rail-external:hover {
+    background-color: var(--polli-color-surface-opaque);
+}
+
+/* Keep outbound links darker than the regular tabs, but off the dark desk. */
+.dark .dashboard-rail-tab.dashboard-rail-external {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-app-bg) 65%,
+        var(--polli-color-surface-opaque)
+    );
+}
+
+.dark .dashboard-rail-tab.dashboard-rail-external:hover {
+    background-color: var(--polli-color-surface-opaque);
+}
+
+.dashboard-rail-slim-link {
+    padding-block: 0.25rem;
+    font-size: 0.75rem;
+}
+
+@media (width < 64rem) {
+    .dashboard-rail-tab {
+        min-height: 3rem;
+        padding-inline: 1rem;
+        font-size: 1.0625rem;
+    }
+
+    .dashboard-rail-action {
+        width: 3rem;
+        height: 3rem;
+    }
+}
+
+.dashboard-rail-theme > [role="switch"] {
+    height: 2.25rem;
+    border: 0;
+    border-radius: 0 9999px 9999px 0;
+    background-color: var(--polli-color-bg-pale);
+}

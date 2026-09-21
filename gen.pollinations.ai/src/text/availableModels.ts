@@ -363,6 +363,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6"],
     },
     {
+        name: "x-ai/grok-4.7",
+        config: portkeyConfig["x-ai/grok-4.7"],
+    },
+    {
         name: "x-ai/grok-4.6:azure:sweden",
         config: portkeyConfig["grok-4.6-azure-sweden"],
     },

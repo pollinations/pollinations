@@ -61,6 +61,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -84,6 +85,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -207,6 +209,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -1066,6 +1069,54 @@ const TEXT_BASE_SERVICES = {
         reasoning: true,
         // Azure's Global Standard deployment is capped at 200K context.
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "x-ai/grok-4.7": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "xAI",
+        category: "text",
+        addedDate: new Date("2026-09-21").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter xAI route rates (2026-09-21), including the mandatory
+        // 5.5% OpenRouter credit fee. Image inputs are tokenized into
+        // promptTextTokens; no separate usage is reported. Excludes the
+        // $0.005-per-call web search charge (not exposed on this model).
+        cost: {
+            promptTextTokens: perMillion(1.6) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            completionTextTokens: perMillion(4.8) * 1.055,
+        },
+        // xAI reprices the whole request from 200K prompt tokens.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(3.2) * 1.055,
+                    promptCachedTokens: perMillion(0.8) * 1.055,
+                    completionTextTokens: perMillion(9.6) * 1.055,
+                },
+            },
+            longContextAtLeast(200_000),
+            {
+                long_context: {
+                    label: "Long context (200K+)",
+                    description:
+                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                },
+            },
+            "<200K context",
+        ),
+        title: "Grok 4.7",
+        description:
+            "Frontier reasoning for long-running coding, agentic tasks, and knowledge work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 500000,
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {

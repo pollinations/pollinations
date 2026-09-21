@@ -86,7 +86,7 @@ describe("harness keys", () => {
                 },
                 {},
             ),
-        ).rejects.toMatchObject({ status: 503 });
+        ).rejects.toMatchObject({ cause: { status: 503 } });
         expect(requests).toEqual(["GET /account/key"]);
     });
 });

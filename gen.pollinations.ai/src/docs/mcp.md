@@ -74,6 +74,41 @@ claude mcp add --transport http pollinations \
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
 with another endpoint from the table to use FFmpeg or Exa Search.
 
+#### One-command install with the Polli CLI
+
+#### One-command install with the Polli CLI
+
+The `@pollinations/cli` package ships `polli mcp`, which reads the live
+catalog (`GET /mcp`) and installs one, several, or all hosted servers into
+your client with a dedicated Pollinations key per client:
+
+```bash
+# Install every catalog server into Claude Code (user scope)
+polli mcp install claude-code
+
+# Only specific servers
+polli mcp install opencode pollinations ffmpeg
+
+# Show what is installed per client
+polli mcp status
+
+# Remove only Pollinations-owned entries (original config restored when possible)
+polli mcp off opencode ffmpeg
+```
+
+Clients supported: `claude-code`, `codex` (bearer token via `POLLI_MCP_CODEX_API_KEY`
+in `$CODEX_HOME/.env`), `vscode` (current workspace `.vscode/mcp.json`, key via
+prompt input), `cursor`, `opencode`, `gemini`, `copilot-cli` (`~/.copilot/mcp-config.json`,
+tools `["*"]`), `windsurf`, `cline`, `amp` (`amp.mcpServers` in
+`~/.config/amp/settings.json`), `kiro` (`~/.kiro/settings/mcp.json`), `zed`
+(`context_servers` in `~/.config/zed/settings.json`), `warp` (`~/.warp/.mcp.json`).
+Config
+formats are written per client (Claude Code `type: http`, Gemini `httpUrl`,
+Windsurf `serverUrl`, Cline `streamableHttp`); the installer is idempotent,
+strips only entries whose URL lives under `gen.pollinations.ai`, and keeps a
+snapshot so `off` can restore the file exactly as it was before the first
+install.
+
 ### Pollinations MCP
 
 The Pollinations server exposes the main Pollinations API as agent-friendly

@@ -57,6 +57,15 @@ export const resolveApiKey = (flagKey?: string): string | undefined =>
 export const BASE_URL =
     process.env.POLLINATIONS_BASE_URL ?? "https://gen.pollinations.ai";
 
+/**
+ * Security boundary for MCP entry ownership (which config entries are ours).
+ * Deliberately NOT env-overridable: `POLLINATIONS_BASE_URL` may point at
+ * mirrors/test doubles, and an environment-controlled boundary would let a
+ * hostile env var claim foreign entries as ours — then `off` would strip
+ * them. API calls keep using `BASE_URL`; ownership never moves.
+ */
+export const OWNERSHIP_URL = "https://gen.pollinations.ai";
+
 export const ENTER_URL =
     process.env.POLLINATIONS_ENTER_URL ?? "https://enter.pollinations.ai";
 

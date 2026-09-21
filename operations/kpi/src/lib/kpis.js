@@ -111,6 +111,28 @@ export const KPIS = [
         ],
     },
     {
+        key: "pollenByCategory",
+        category: "Usage",
+        format: "currency",
+        views: [
+            ["pollenText", "Text"],
+            ["pollenImage", "Image"],
+            ["pollenVideo", "Video"],
+            ["pollenAudio", "Audio"],
+            ["pollenRealtime", "Realtime"],
+            ["pollenEmbedding", "Embeddings"],
+            ["pollen3d", "3D"],
+            ["pollenCommunity", "Community"],
+            ["pollenOther", "Tools / other"],
+        ].map(([key, label]) => ({
+            key,
+            label,
+            name: `Pollen spent · ${label}`,
+            tooltip:
+                "USD value of Paid + Quest Pollen consumed by successful billed final requests. Whole-request spend, not Stripe cash revenue or provider cost. Categories use recorded output usage and endpoint: video takes priority over audio, then image, then text; realtime, embeddings and 3D are separate. Community-served requests are in Community only. Tools / other includes MCP. Source: Tinybird (weekly_usage_stats).",
+        })),
+    },
+    {
         key: "packPurchases",
         category: "Revenue",
         views: [
@@ -280,6 +302,24 @@ export const KPIS = [
 
 export function kpiValue(kpi, week) {
     return kpi.calc ? kpi.calc(week) : week[kpi.key];
+}
+
+export const POLLEN_CATEGORIES = KPIS.find(
+    (row) => row.key === "pollenByCategory",
+).views;
+
+export function pollenSpendSeries(weeks, selected = "top") {
+    if (selected !== "top")
+        return POLLEN_CATEGORIES.filter((view) => view.key === selected);
+    const latest = weeks.at(-1) ?? {};
+    return POLLEN_CATEGORIES.filter(
+        ({ key }) =>
+            key !== "pollenCommunity" &&
+            key !== "pollenOther" &&
+            Number.isFinite(latest[key]),
+    )
+        .sort((a, b) => latest[b.key] - latest[a.key])
+        .slice(0, 3);
 }
 
 /** The active definition of a row, given how many times it has been cycled. */

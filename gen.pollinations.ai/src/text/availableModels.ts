@@ -520,7 +520,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "typesafe/jev",
+        name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
         useSystemOneApi: true,
     },

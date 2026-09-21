@@ -60,7 +60,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             <InlineLink
                                                 href={`${config.baseUrl}${server.accountPath}`}
                                             >
-                                                Manage connectors
+                                                Connect apps
                                             </InlineLink>
                                         )}
                                     </p>

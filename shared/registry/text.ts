@@ -119,12 +119,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter azure/openai route rates (2026-09-12). Image inputs
-            // are tokenized into promptTextTokens; no separate usage is
-            // reported or billed for image input.
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.6),
+            // OpenRouter Azure/OpenAI route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. Image inputs are tokenized
+            // into promptTextTokens; no separate image usage is reported.
+            promptTextTokens: perMillion(0.15) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "GPT-4o Mini",
         description:
@@ -1128,9 +1128,9 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "typesafe/jev": {
+    "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev"],
+        aliases: ["jev", "typesafe/jev"],
         provider: "openrouter",
         publisher: "TypeSafe",
         category: "text",
@@ -1149,7 +1149,12 @@ const TEXT_BASE_SERVICES = {
         title: "Jev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
-            "send the native state and questions as JSON in the last user message",
+            "post state and questions to /alpha/decisions, or send the same " +
+            "JSON in the last user message on /v1/chat/completions",
+        // Its own request shape, so it is offered on the decisions route and
+        // the chat adapter only — /text returns plain content and has nothing
+        // to return here.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -2422,13 +2427,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
-            // publishes one prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.32) * 1.055,
-            promptCachedTokens: perMillion(0.032) * 1.055,
-            promptImageTokens: perMillion(0.32) * 1.055,
-            promptVideoTokens: perMillion(0.32) * 1.055,
-            completionTextTokens: perMillion(2.5) * 1.055,
+            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. OpenRouter publishes one
+            // prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.24) * 1.055,
+            promptCachedTokens: perMillion(0.024) * 1.055,
+            promptImageTokens: perMillion(0.24) * 1.055,
+            promptVideoTokens: perMillion(0.24) * 1.055,
+            completionTextTokens: perMillion(2.2) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:

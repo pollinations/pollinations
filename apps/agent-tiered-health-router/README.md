@@ -15,13 +15,15 @@ model list.
 3. Eligible text models are split into three price bands (cheapest third /
    middle third / top third); `DEEP` additionally prefers models whose
    `capabilities` include `"reasoning"` when the top band has any.
-4. Within the chosen band, the agent drops models over a 10% 5xx rate in the
-   last 30 minutes (ignoring rows with fewer than 10 requests — too little
-   traffic to mean anything) and picks the fastest (lowest p95 latency)
-   survivor.
+4. Within the chosen band, prefer models with a 5xx rate at or below 10%
+   over at least 10 requests, ordered by error rate then p95 latency.
+   Otherwise try models with too little traffic to judge, then the least
+   unhealthy candidate.
 5. If the request includes an image, audio, or video part, the candidate
    pool is filtered to models whose `input_modalities` actually support it,
-   before the price/health selection above runs.
+   before the price/health selection above runs. Tool requests require
+   `tool_calling`. Agents are excluded to avoid routing loops; an empty
+   compatible pool returns an error rather than dropping these requirements.
 6. The request is forwarded to `/v1/responses` with only the `model` field
    changed — everything else the caller sent passes through untouched.
 

@@ -24,6 +24,7 @@ type ResponsesRequest = Record<string, unknown> & {
 
 type CatalogModel = {
     id: string;
+    agent?: boolean;
     category: string;
     input_modalities?: string[];
     supported_endpoints?: string[];
@@ -131,6 +132,7 @@ async function fetchCatalog(
     const json = (await response.json()) as { data: CatalogModel[] };
     return json.data.filter(
         (model) =>
+            !model.agent &&
             model.category === "text" &&
             model.supported_endpoints?.includes("/v1/responses"),
     );
@@ -253,12 +255,17 @@ async function selectModel(
         fetchHealth(pollinations),
     ]);
 
-    const modalityMatch = catalog.filter((model) =>
-        [...modalities].every((needed) =>
-            (model.input_modalities ?? ["text"]).includes(needed),
-        ),
+    const needsTools = Array.isArray(body.tools) && body.tools.length > 0;
+    const eligible = catalog.filter(
+        (model) =>
+            (!needsTools || model.capabilities?.includes("tool_calling")) &&
+            [...modalities].every((needed) =>
+                (model.input_modalities ?? ["text"]).includes(needed),
+            ),
     );
-    const eligible = modalityMatch.length > 0 ? modalityMatch : catalog;
+    if (eligible.length === 0) {
+        throw new Error("No compatible model can serve this request");
+    }
 
     const candidates = tierCandidates(eligible, tier);
     const picked = pickHealthiest(

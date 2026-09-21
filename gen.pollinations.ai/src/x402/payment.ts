@@ -9,6 +9,7 @@ import {
 } from "@weftlabs/sdk/facilitator/middleware";
 import {
     decodePaymentSignatureHeader,
+    type PaymentOption,
     SETTLEMENT_OVERRIDES_HEADER,
 } from "@x402/core/http";
 import { validatePaymentPayload } from "@x402/core/schemas";
@@ -30,10 +31,9 @@ import type { Env } from "@/env.ts";
 import { createX402Event } from "./accounting.ts";
 import type { PaymentResponseSnapshot } from "./coordinator.ts";
 import {
-    paymentSchemeForModel,
-    priceActualUsage,
     quoteX402Request,
     usdPrice,
+    type X402Quote,
     type X402Request,
 } from "./pricing.ts";
 import {
@@ -331,82 +331,93 @@ export const finalX402Operation = createMiddleware<Env>(async (c, next) => {
     }
 });
 
-export const runX402Operation = createMiddleware<Env>(async (c, next) => {
-    const startTime = new Date();
-    const authorization =
-        c.req.header("payment-signature") || c.req.header("x-payment");
-    if (!authorization) {
-        return c.text("Malformed x402 payment identity", 400);
-    }
-    const payment = await paymentDetails(authorization);
-    const { fingerprint, stub } = await operationContext(c, payment.payer);
-    const claimId = crypto.randomUUID();
-    const start = await stub.startPaymentOperation(
-        fingerprint,
-        payment.identity,
-        payment.proof,
-        claimId,
-        Date.now() + OPERATION_LEASE_MS,
-    );
-    if (start.status === "fingerprint-conflict") {
-        return c.text(
-            "Idempotency-Key was already used for another request",
-            409,
-        );
-    }
-    if (start.status === "payment-conflict") {
-        return c.text(
-            "Idempotency-Key was already used with another payment",
-            409,
-        );
-    }
-    if (start.status === "running") {
-        return c.text("The idempotent operation is still running", 409);
-    }
-    if (start.status === "generated") {
-        return restoredResponse(start.response);
-    }
-
-    if (c.var.auth) c.var.auth.paymentPayer = payment.payer;
-
-    // Production requests run this inside a coordinator alarm. After an alarm
-    // crash the lease prevents an overlapping provider call; it does not claim
-    // strict at-most-once execution across a crash before the result is saved.
-    await next();
-    if (!c.res.ok) return;
-    const body = new Uint8Array(await c.res.clone().arrayBuffer());
-    if (body.byteLength > MAX_X402_RESPONSE_BYTES) {
-        return c.text(
-            "Generated response is too large for durable resume",
-            502,
-        );
-    }
-    const response: PaymentResponseSnapshot = {
-        status: c.res.status,
-        statusText: c.res.statusText,
-        headers: Array.from(c.res.headers.entries()),
-        body,
-    };
-    if (
-        !(await stub.completePaymentOperation(
+export const runX402Operation = (quote?: X402Quote) =>
+    createMiddleware<Env>(async (c, next) => {
+        const startTime = new Date();
+        const authorization =
+            c.req.header("payment-signature") || c.req.header("x-payment");
+        if (!authorization) {
+            return c.text("Malformed x402 payment identity", 400);
+        }
+        const payment = await paymentDetails(authorization);
+        const { fingerprint, stub } = await operationContext(c, payment.payer);
+        const claimId = crypto.randomUUID();
+        const start = await stub.startPaymentOperation(
             fingerprint,
             payment.identity,
             payment.proof,
             claimId,
-            response,
-            Date.now() + FINAL_RESPONSE_TTL_MS,
-            await createX402Event(
-                c.env,
-                describeX402Request(c),
-                c.res,
+            Date.now() + OPERATION_LEASE_MS,
+        );
+        if (start.status === "fingerprint-conflict") {
+            return c.text(
+                "Idempotency-Key was already used for another request",
+                409,
+            );
+        }
+        if (start.status === "payment-conflict") {
+            return c.text(
+                "Idempotency-Key was already used with another payment",
+                409,
+            );
+        }
+        if (start.status === "running") {
+            return c.text("The idempotent operation is still running", 409);
+        }
+        if (start.status === "generated") {
+            return restoredResponse(start.response);
+        }
+        if (!quote)
+            throw new Error("Verified generated response is unavailable");
+
+        if (c.var.auth) c.var.auth.paymentPayer = payment.payer;
+
+        // Production requests run this inside a coordinator alarm. After an alarm
+        // crash the lease prevents an overlapping provider call; it does not claim
+        // strict at-most-once execution across a crash before the result is saved.
+        await next();
+        if (!c.res.ok) return;
+        const accounting = await createX402Event(
+            c.env,
+            describeX402Request(c),
+            quote,
+            c.res,
+            claimId,
+            startTime,
+        );
+        if (quote.scheme === "upto") {
+            c.header(
+                SETTLEMENT_OVERRIDES_HEADER,
+                JSON.stringify({ amount: usdPrice(accounting.totalPrice) }),
+            );
+        }
+        const body = new Uint8Array(await c.res.clone().arrayBuffer());
+        if (body.byteLength > MAX_X402_RESPONSE_BYTES) {
+            return c.text(
+                "Generated response is too large for durable resume",
+                502,
+            );
+        }
+        const response: PaymentResponseSnapshot = {
+            status: c.res.status,
+            statusText: c.res.statusText,
+            headers: Array.from(c.res.headers.entries()),
+            body,
+        };
+        if (
+            !(await stub.completePaymentOperation(
+                fingerprint,
+                payment.identity,
+                payment.proof,
                 claimId,
-                startTime,
-            ),
-        ))
-    ) {
-        return c.text("Payment operation ownership expired", 503);
-    }
-});
+                response,
+                Date.now() + FINAL_RESPONSE_TTL_MS,
+                accounting,
+            ))
+        ) {
+            return c.text("Payment operation ownership expired", 503);
+        }
+    });
 
 function paymentMiddlewareFor(env: CloudflareBindings) {
     const payTo = env.WEFT_PAY_TO as string;
@@ -425,22 +436,52 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
     // know whether the handler returns chat JSON, image bytes, or audio bytes.
     const pay = createMiddleware<Env>(async (c, next) => {
         const request = describeX402Request(c);
-        const quote = await quoteX402Request(c.env, request);
-        const scheme = await paymentSchemeForModel(c.env, quote.model);
+        const signature =
+            c.req.header("payment-signature") || c.req.header("x-payment");
+        const paymentPayload = signature
+            ? paymentFromHeader(signature)
+            : undefined;
+        // The existing proof binding lets a generated retry reuse its signed
+        // terms without consulting history again or storing a separate quote.
+        const resumed =
+            paymentPayload &&
+            (await resumeX402Operation(
+                env,
+                c.req.header("idempotency-key") ?? "",
+                request,
+                {
+                    paymentPayload,
+                    paymentRequirements: paymentPayload.accepted,
+                },
+            ));
+        let quote: X402Quote | undefined;
+        let accepts: PaymentOption;
+        if (resumed) {
+            const terms = resumed.paymentRequirements;
+            accepts = {
+                ...terms,
+                price: {
+                    amount: terms.amount,
+                    asset: terms.asset,
+                    extra: terms.extra,
+                },
+            };
+        } else {
+            quote = await quoteX402Request(c.env, request);
+            accepts = {
+                scheme: quote.scheme,
+                network,
+                payTo,
+                maxTimeoutSeconds: OPERATION_LEASE_MS / 1000,
+                price: usdPrice(quote.maximum),
+            };
+        }
         return paymentMiddleware(
             {
                 [`${request.method} *`]: {
-                    accepts: [
-                        {
-                            scheme,
-                            network,
-                            payTo,
-                            maxTimeoutSeconds: OPERATION_LEASE_MS / 1000,
-                            price: usdPrice(quote.maximum),
-                        },
-                    ],
+                    accepts: [accepts],
                     description:
-                        scheme === "exact"
+                        accepts.scheme === "exact"
                             ? "Pollinations generation at the advertised fixed price."
                             : "Pollinations generation, charged for actual usage up to the authorized ceiling.",
                     extensions: {
@@ -461,16 +502,10 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
                     { network, server: new ExactEvmScheme() },
                     { network, server: new UptoEvmScheme() },
                 ],
-                resumeVerifiedPayment: async (_context, candidate) =>
-                    resumeX402Operation(
-                        env,
-                        c.req.header("idempotency-key") ?? "",
-                        request,
-                        candidate,
-                    ),
+                resumeVerifiedPayment: async () => resumed || undefined,
             },
         )(c, async () => {
-            const response = await runX402Operation(c, async () => {
+            const response = await runX402Operation(quote)(c, async () => {
                 await next();
                 if (!c.res.ok) return;
                 if (
@@ -482,21 +517,6 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
                         c.res,
                         c.var.x402Execution?.onStream,
                     );
-                const actual = await priceActualUsage(
-                    c.env,
-                    quote,
-                    c.res.headers,
-                );
-                if (scheme === "upto") {
-                    c.header(
-                        SETTLEMENT_OVERRIDES_HEADER,
-                        JSON.stringify({ amount: usdPrice(actual) }),
-                    );
-                } else if (actual !== quote.maximum) {
-                    throw new Error(
-                        "Historically fixed x402 price changed during generation",
-                    );
-                }
             });
             if (response) c.res = response;
         });
@@ -507,7 +527,6 @@ function paymentMiddlewareFor(env: CloudflareBindings) {
 
 const executeDurably = createMiddleware<Env>(async (c, next) => {
     const request = describeX402Request(c);
-    await quoteX402Request(c.env, request);
     const signature =
         c.req.header("payment-signature") || c.req.header("x-payment");
     if (c.var.x402Execution || !signature) return next();

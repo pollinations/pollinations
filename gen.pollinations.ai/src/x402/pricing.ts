@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import {
-    calculatePriceForModelDefinition,
+    calculateUsageBilling,
     type Usage,
 } from "@shared/registry/registry.ts";
 import {
@@ -27,11 +27,10 @@ export type X402Request = {
 
 export type X402Quote = {
     model: string;
+    scheme: "exact" | "upto";
     maximum: number;
     usage: Usage;
 };
-
-export type X402Scheme = "exact" | "upto";
 
 function normalizedUsd(amount: number): number {
     if (!Number.isFinite(amount) || amount < 0)
@@ -77,14 +76,6 @@ export async function quoteX402Request(
                 "This request has no supported x402 spending ceiling; use a Pollinations API key.",
         });
     }
-    return { ...quote, model: entry.id, maximum: normalizedUsd(quote.maximum) };
-}
-
-export async function paymentSchemeForModel(
-    env: CloudflareBindings,
-    model: string,
-): Promise<X402Scheme> {
-    const entry = await modelEntry(env, model);
     const stats = await getModelStats(env.KV, getLogger(["x402"]));
     const range = getHistoricalPriceRange(stats, entry.id, entry.aliases);
     if (!range) {
@@ -93,7 +84,13 @@ export async function paymentSchemeForModel(
                 "This model does not have enough pricing history for x402; use a Pollinations API key.",
         });
     }
-    return range.minimum === range.maximum ? "exact" : "upto";
+    const fixed = range.minimum === range.maximum;
+    return {
+        ...quote,
+        model: entry.id,
+        scheme: fixed ? "exact" : "upto",
+        maximum: normalizedUsd(fixed ? range.minimum : quote.maximum),
+    };
 }
 
 function parseUsage(headers: Headers, quote: X402Quote): Usage {
@@ -130,30 +127,33 @@ function parseUsage(headers: Headers, quote: X402Quote): Usage {
     return usage;
 }
 
-export async function priceActualUsage(
+export async function billX402Usage(
     env: CloudflareBindings,
     quote: X402Quote,
     headers: Headers,
-): Promise<number> {
+) {
     const usedModel = headers.get(MODEL_USED_HEADER);
     if (!usedModel) throw new Error("Model usage headers are missing");
-    await modelEntry(env, usedModel);
+    const served = await modelEntry(env, usedModel);
 
     // Pollen prices fallbacks against the requested listing. Keep that same
     // quoted-model contract here; the served-model header is still required as
     // evidence that generation produced metered usage.
     const quoted = await modelEntry(env, quote.model);
-    const actual = normalizedUsd(
-        calculatePriceForModelDefinition(
-            quoted.id,
-            parseUsage(headers, quote),
-            quoted.definition,
-            undefined,
-            undefined,
-        ).totalPrice,
-    );
-    if (actual > quote.maximum) {
+    const usage = parseUsage(headers, quote);
+    const billing = calculateUsageBilling({
+        model: quote.model,
+        usage,
+        servedBy: served.definition,
+        quotedBy: quoted.definition,
+    });
+    // Exact is the advertised historical price, not a usage estimate to reconcile.
+    const totalPrice =
+        quote.scheme === "exact"
+            ? quote.maximum
+            : normalizedUsd(billing.price.totalPrice);
+    if (totalPrice > quote.maximum) {
         throw new Error("Actual usage exceeds the authorized maximum");
     }
-    return actual;
+    return { billing, usage, totalPrice, quoted, served, modelUsed: usedModel };
 }

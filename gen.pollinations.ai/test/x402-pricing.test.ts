@@ -23,7 +23,9 @@ import {
 import type { PaymentPayload } from "@x402/core/types";
 import { Hono } from "hono";
 import { afterEach, beforeEach, expect, vi } from "vitest";
+import type { Env } from "../src/env.ts";
 import { app as generationRoutes } from "../src/index.ts";
+import { authFromSnapshot } from "../src/middleware/auth.ts";
 import { getGenerationModelRegistry } from "../src/model-registry.ts";
 import { quoteGenerationRequest } from "../src/utils/request-pricing.ts";
 import {
@@ -33,6 +35,7 @@ import {
 import { createX402Event } from "../src/x402/accounting.ts";
 import { executeX402Request } from "../src/x402/execution.ts";
 import {
+    authorizeX402,
     finalX402Operation,
     requireX402Idempotency,
     resumeX402Operation as resumeOperation,
@@ -40,8 +43,9 @@ import {
     x402Payment,
 } from "../src/x402/payment.ts";
 import {
+    billX402Usage,
     quoteX402Request,
-    priceActualUsage as settleActualUsage,
+    type X402Quote,
 } from "../src/x402/pricing.ts";
 import { X402_STREAM_DONE } from "../src/x402/stream.ts";
 
@@ -94,6 +98,11 @@ const chatRequest = (body: unknown) => ({
     headers: {},
     body: CreateChatCompletionRequestSchema.parse(body),
 });
+const settleActualUsage = async (
+    bindings: CloudflareBindings,
+    quote: X402Quote,
+    headers: Headers,
+) => (await billX402Usage(bindings, quote, headers)).totalPrice;
 const priceActualUsage = async (
     bindings: CloudflareBindings,
     body: CreateChatCompletionRequest,
@@ -443,7 +452,7 @@ test("selects exact or upto from three historical prices", async () => {
             atob(differentlyPriced.headers.get("payment-required") as string),
         );
         expect(differentlyPricedOffer.accepts[0].scheme).toBe("exact");
-        expect(usd(differentlyPricedOffer.accepts[0])).toBe(0.002);
+        expect(usd(differentlyPricedOffer.accepts[0])).toBe(0.003);
 
         await env.KV.put(
             "model-stats-v3",
@@ -538,7 +547,7 @@ test.each([
     expect(response.headers.has("payment-required")).toBe(false);
 });
 
-test("prices image and speech usage with the requested model's Pollen rates", async () => {
+test("prices variable-history image and speech usage with the requested model's Pollen rates", async () => {
     const quote = await quoteX402Request(x402Env as CloudflareBindings, {
         method: "GET",
         path: "/image/flower?model=flux",
@@ -583,6 +592,53 @@ test("prices image and speech usage with the requested model's Pollen rates", as
         }),
     );
     expect(actual).toBeLessThan(speech.maximum);
+});
+
+test.each([
+    0.001, 0.02,
+])("charges the historical exact price %s even when speech usage costs a different amount", async (fixedPrice) => {
+    tinybird.state.modelStatsResponse = [
+        {
+            model: "elevenlabs/eleven-flash-v2.5",
+            min_price_usd: fixedPrice,
+            max_price_usd: fixedPrice,
+            price_sample_count: 3,
+        },
+    ];
+    const speech = {
+        method: "POST",
+        path: "/v1/audio/speech",
+        headers: {},
+        body: { model: "elevenflash", input: "🧶".repeat(100) },
+    };
+    const quote = await quoteX402Request(x402Env, speech);
+    expect(quote.scheme).toBe("exact");
+    expect(quote.maximum).toBe(fixedPrice);
+    const event = await createX402Event(
+        x402Env,
+        speech,
+        quote,
+        new Response("audio", {
+            headers: {
+                "x-model-used": "elevenflash",
+                "x-usage-completion-audio-tokens": "200",
+            },
+        }),
+        crypto.randomUUID(),
+        new Date(),
+    );
+    expect(event.totalPrice).toBe(fixedPrice);
+    expect(event.devPrice).toBe(0.01);
+    expect(event.totalCost).toBeGreaterThan(0);
+    await expect(
+        billX402Usage(
+            x402Env,
+            quote,
+            new Headers({
+                "x-model-used": "elevenflash",
+            }),
+        ),
+    ).rejects.toThrow(/Missing completionAudioTokens usage header/);
 });
 
 test.each([
@@ -775,7 +831,7 @@ function operationApp(
     const settlementsReady = new Promise<void>((resolve) => {
         releaseSettlements = resolve;
     });
-    const app = new Hono<{ Bindings: CloudflareBindings }>();
+    const app = new Hono<Env>();
     app.use(ROUTE, validator("json", CreateChatCompletionRequestSchema));
     app.use(ROUTE, requireX402Idempotency);
     app.use(ROUTE, finalX402Operation);
@@ -814,7 +870,14 @@ function operationApp(
             c.header("PAYMENT-RESPONSE", btoa(JSON.stringify({ nonce })));
         }
     });
-    app.use(ROUTE, runX402Operation);
+    app.use(ROUTE, async (c, next) =>
+        runX402Operation(
+            await quoteX402Request(
+                operationEnv,
+                chatRequest(c.req.valid("json" as never)),
+            ),
+        )(c, next),
+    );
     app.post(ROUTE, (c) => {
         counts.work += 1;
         c.header("x-model-used", "openai/gpt-oss-20b");
@@ -853,6 +916,162 @@ function operationApp(
             ),
     };
 }
+
+test("exact payments recheck an unaccepted price but resume generated results without history or saved quotes", async () => {
+    const model = "openai/gpt-oss-20b";
+    async function setHistory(price?: number) {
+        tinybird.state.modelStatsResponse =
+            price === undefined
+                ? []
+                : [
+                      {
+                          model,
+                          min_price_usd: price,
+                          max_price_usd: price,
+                          price_sample_count: 3,
+                      },
+                  ];
+        await env.KV.delete("model-stats-v3");
+    }
+    const settlements: {
+        paymentRequirements: { scheme: string; amount: string };
+    }[] = [];
+    let verifications = 0;
+    let generations = 0;
+    const fetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const outgoing = new Request(input, init);
+        const url = new URL(outgoing.url);
+        if (url.host !== "facilitator.test") return fetch(input, init);
+        if (url.pathname === "/supported")
+            return Response.json({
+                kinds: [
+                    {
+                        x402Version: 2,
+                        scheme: "exact",
+                        network: "eip155:84532",
+                    },
+                ],
+                extensions: [],
+                signers: {},
+            });
+        if (url.pathname === "/verify") {
+            verifications += 1;
+            return Response.json({
+                isValid: true,
+                payer: "0x0000000000000000000000000000000000000002",
+            });
+        }
+        if (url.pathname === "/settle") {
+            settlements.push(await outgoing.json());
+            return Response.json({
+                success: settlements.length > 1,
+                ...(settlements.length === 1 && {
+                    errorReason: "temporary_failure",
+                }),
+                transaction: "0xreceipt",
+                network: "eip155:84532",
+                payer: "0x0000000000000000000000000000000000000002",
+            });
+        }
+        throw new Error(`Unexpected facilitator request: ${url.pathname}`);
+    });
+    const app = new Hono<Env>();
+    app.use(ROUTE, validator("json", CreateChatCompletionRequestSchema));
+    app.use(ROUTE, authFromSnapshot({}));
+    app.use(ROUTE, async (c, next) => {
+        c.set("x402Execution", {
+            onStream: () => {
+                throw new Error("Not streaming");
+            },
+        });
+        await next();
+    });
+    app.use(ROUTE, x402Payment());
+    app.use(ROUTE, authorizeX402);
+    app.post(ROUTE, (c) => {
+        generations += 1;
+        return c.json({ ok: true }, 200, {
+            "x-model-used": model,
+            "x-usage-prompt-text-tokens": "10",
+            "x-usage-completion-text-tokens": "1",
+        });
+    });
+    const key = crypto.randomUUID();
+    const send = (signature?: string) =>
+        app.request(
+            ROUTE,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "idempotency-key": key,
+                    ...(signature && { "payment-signature": signature }),
+                },
+                body: JSON.stringify(request({ model })),
+            },
+            { ...x402Env, WEFT_FACILITATOR_URL: "https://facilitator.test" },
+        );
+
+    await setHistory(0.003);
+    const offer = await send();
+    expect(offer.status).toBe(402);
+    const accepted = JSON.parse(
+        atob(offer.headers.get("payment-required") as string),
+    ).accepts[0];
+    expect(accepted).toMatchObject({ scheme: "exact", amount: "3000" });
+    const payload = exactPaymentPayload("0x2a");
+    const signature = paymentHeader({
+        ...payload,
+        accepted,
+        payload: {
+            ...payload.payload,
+            authorization: {
+                ...(payload.payload.authorization as object),
+                value: accepted.amount,
+            },
+        },
+    });
+
+    await setHistory(0.004);
+    const changed = await send(signature);
+    expect(changed.status).toBe(402);
+    expect(
+        JSON.parse(atob(changed.headers.get("payment-required") as string))
+            .accepts[0].amount,
+    ).toBe("4000");
+    expect(generations).toBe(0);
+    expect(verifications).toBe(0);
+
+    await setHistory(0.003);
+    const unsettled = await send(signature);
+    expect(unsettled.status).not.toBe(200);
+    expect(generations).toBe(1);
+    expect(verifications).toBe(1);
+    expect(settlements).toHaveLength(1);
+
+    await setHistory();
+    const retry = await send(signature);
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toEqual({ ok: true });
+    expect(retry.headers.has("payment-response")).toBe(true);
+    expect(generations).toBe(1);
+    expect(verifications).toBe(1);
+    expect(settlements.map((call) => call.paymentRequirements)).toEqual([
+        expect.objectContaining({ scheme: "exact", amount: "3000" }),
+        expect.objectContaining({ scheme: "exact", amount: "3000" }),
+    ]);
+    const replay = await send(signature);
+    expect(replay.status).toBe(200);
+    expect(replay.headers.get("payment-response")).toBe(
+        retry.headers.get("payment-response"),
+    );
+    expect(settlements).toHaveLength(2);
+    await vi.waitFor(() => expect(tinybird.state.events).toHaveLength(1));
+    expect(tinybird.state.events[0].totalPrice).toBe(0.003);
+    expect(tinybird.state.events[0].devPrice).toBeLessThan(0.003);
+    expect((await send()).status).toBe(400);
+});
 
 test("anonymous callers get an upto challenge on the existing route", async () => {
     const { accepts, extensions } = await challenge(request());
@@ -1395,7 +1614,7 @@ test("generated replay skips consumed-nonce verification and settles again", asy
     expect(replay.status).toBe(200);
     expect(await replay.json()).toEqual({ ok: true });
     expect(replay.headers.get("Settlement-Overrides")).toBe(
-        JSON.stringify({ amount: "$0.001" }),
+        first.headers.get("Settlement-Overrides"),
     );
     expect(counts.work).toBe(1);
     expect(counts.payment).toBe(1);
@@ -1470,6 +1689,7 @@ test("x402 accounting separates the requested price from the exact serving model
     const row = await createX402Event(
         x402Env as CloudflareBindings,
         chatRequest(request()),
+        await quoteX402Request(x402Env, chatRequest(request())),
         new Response("ok", {
             headers: {
                 "x-model-used": served,

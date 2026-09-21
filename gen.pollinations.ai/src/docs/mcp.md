@@ -46,14 +46,13 @@ npx @pollinations/cli mcp remove cursor         # remove all Pollinations entrie
 ```
 
 Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
-CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed (via the `mcp-remote`
-bridge), and Warp.
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
 
-Clients that accept a secret by reference keep it out of the config file:
-Codex reads the key from `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`, and VS
-Code stores it in its secret storage via an `inputs` prompt. Removing only
-deletes entries that point at the Pollinations endpoints; your own servers are
-left untouched.
+Keys are stored locally in plaintext in client configs and reused on reinstall.
+Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.
+Files written by Polli use owner-only permissions on Unix. Do not share or commit
+configs containing keys. Removal only deletes Pollinations entries; other servers
+are left untouched.
 
 ### Use with hosted agents
 

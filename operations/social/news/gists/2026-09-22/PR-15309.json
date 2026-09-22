@@ -1,0 +1,35 @@
+{
+  "pr_number": 15309,
+  "title": "feat: add Claude Opus 5.5 via Bedrock",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15309",
+  "merged_at": "2026-09-22T20:17:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15316\n\n- Adds `anthropic/claude-opus-5.5` via the tested Bedrock `global.anthropic.claude-opus-5-5` profile, with a pinned OpenRouter Anthropic fallback.\n- Uses the model's always-on adaptive thinking contract; forced tool selection is not advertised. Keeps text, image, auto tools, and 1M context / 128K output support.\n- Sets primary cost to $4 input / $0.20 cache read / $5 cache write / $20 output per million tokens, without the OpenRouter fee. AWS's public price list has not yet published this launch-day entry; confirm it before merging.\n- Verified local Gen → gateway → Bedrock text, auto tools, streaming with terminal usage, and cache write/hit; verified the OpenRouter fallback at default and high reasoning. Focused tests (140), lint/build, Gen CI, and Enter CI pass.\n- Direct Azure Foundry's published global price is below OpenRouter's effective price, but a usable deployment/credential has not been verified; switch the fallback when it is.\n\nRelated: #5321\n\nOriginal submission generated with [Claude Code](https://claude.com/claude-code).\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A very large brain moved in",
+    "blurb": "Claude Opus 5.5 has joined the hive through Bedrock, with a pinned OpenRouter route waiting behind it. It can think adaptively, read images, use tools, and keep a truly unreasonable amount of context in its little cloud backpack.",
+    "summary": "Added `anthropic/claude-opus-5.5` to the text API through Bedrock's `global.anthropic.claude-opus-5-5` profile, with a pinned OpenRouter Anthropic fallback, adaptive thinking, image input, automatic tools, 1M-token context, and 128K-token output support.",
+    "impact": "Developers can now call Claude Opus 5.5 through the unified API for long-context, multimodal, tool-using, streaming workloads, with verified Bedrock routing, cache usage, and fallback behavior.",
+    "keywords": [
+      "claude-opus-5.5",
+      "bedrock",
+      "anthropic",
+      "text-api",
+      "adaptive-thinking",
+      "tools",
+      "long-context"
+    ],
+    "visual_concept": "Depict Polli as a tiny thoughtful librarian bee wearing round wizard glasses, guiding a giant cozy cloud-shaped book labeled \"OPUS 5.5\" into a warm garden library. The book's pages become code-plants, image tiles, tool icons, and a long glowing scroll to represent multimodal input, automatic tools, and 1M context; a small CRT monitor robot eagerly reads the scroll beside a Bedrock-like stone gateway.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny wizard-glasses accessory guiding a giant cloud-shaped book labeled \"OPUS 5.5\" through a warm stone gateway into a garden library, while code-plants, image tiles, tool icons, and an enormous glowing context scroll bloom from its pages; a cheerful CRT monitor robot reads along. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15309.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny wizard-glasses accessory guiding a giant cloud-shaped book labeled \"OPUS 5.5\" through a warm stone gateway into a garden library, while code-plants, image tiles, tool icons, and an enormous glowing context scroll bloom from its pages; a cheerful CRT monitor robot reads along. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-22T20:18:33.053891+00:00"
+}

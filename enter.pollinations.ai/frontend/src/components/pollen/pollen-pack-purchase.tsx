@@ -60,6 +60,8 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                     />
                 </div>
                 <Tooltip
+                    triggerAs="span"
+                    className="polli:cursor-pointer"
                     content={
                         <span className="block">
                             Buy{" "}

@@ -492,7 +492,11 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip triggerAs="span" content={content} className={className}>
+        <Tooltip
+            triggerAs="span"
+            content={content}
+            className={cn("polli:cursor-not-allowed", className)}
+        >
             {children}
         </Tooltip>
     );

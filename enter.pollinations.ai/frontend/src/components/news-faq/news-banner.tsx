@@ -6,7 +6,7 @@ const HIGHLIGHTS_RAW_URL =
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
-const DYNAMIC_NEWS_COUNT = 20;
+const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
     date?: string;
@@ -15,7 +15,6 @@ interface Highlight {
     emoji: string;
     title: string;
     description: string;
-    href?: string;
     /** Optional bullet list rendered under the description (pinned items only). */
     details?: string[];
 }
@@ -125,12 +124,11 @@ function parseHighlights(md: string): Highlight[] {
                 emoji: emojiTitleMatch?.[1] ?? "",
                 title: emojiTitleMatch?.[2]?.trim() ?? "",
                 description,
-                href: description.match(/\[[^\]]+\]\(([^)]+)\)/)?.[1],
             };
         });
 }
 
-function formatNewsDate(date: string, includeYear = true): string {
+function formatNewsDate(date: string): string {
     if (!date) return "";
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime())) return date;
@@ -138,14 +136,14 @@ function formatNewsDate(date: string, includeYear = true): string {
         timeZone: "UTC",
         month: "short",
         day: "numeric",
-        year: includeYear ? "numeric" : undefined,
+        year: "numeric",
     });
 }
 
 /** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
     return (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="flex flex-col gap-3">
             <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
@@ -196,11 +194,11 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0) return null;
 
     return (
-        <ul className="flex flex-col">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {highlights.map((item) => (
                 <DynamicNews key={`${item.date}-${item.title}`} item={item} />
             ))}
-        </ul>
+        </div>
     );
 };
 
@@ -235,45 +233,21 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     </Surface>
 );
 
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => {
-    const description = item.description
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-        .replace(/`([^`]+)`/g, "$1");
-
-    return (
-        <li className="flex min-w-0 items-center gap-2 py-0.5 text-sm">
-            {item.date && (
-                <time
-                    dateTime={item.date}
-                    title={formatNewsDate(item.date)}
-                    className="w-12 shrink-0 text-xs tabular-nums text-theme-text-muted"
-                >
-                    {formatNewsDate(item.date, false)}
-                </time>
-            )}
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0">
-                    {item.emoji}
-                </span>
-            )}
-            <span
-                className="min-w-0 truncate"
-                title={`${item.title}${description ? ` — ${description}` : ""}`}
-            >
-                {item.href ? (
-                    <InlineLink href={item.href}>{item.title}</InlineLink>
-                ) : (
-                    <span className="font-medium text-theme-text-base">
-                        {item.title}
-                    </span>
+const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
+    <Surface variant="card" className="flex min-h-48 text-sm leading-relaxed">
+        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
+            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
+            <div className="min-w-0">
+                <div className="font-semibold text-ink-900">{item.title}</div>
+                {item.date && (
+                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
+                        {formatNewsDate(item.date)}
+                    </div>
                 )}
-                {description && (
-                    <span className="text-theme-text-muted">
-                        {" — "}
-                        {description}
-                    </span>
-                )}
-            </span>
-        </li>
-    );
-};
+                <p className="mt-1 text-ink-700">
+                    {renderWithLinks(item.description)}
+                </p>
+            </div>
+        </div>
+    </Surface>
+);

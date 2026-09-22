@@ -9,11 +9,12 @@ import {
 
 export const NewsFaq: FC = () => (
     <div className="flex flex-col gap-6">
-        <Section title="Announcements">
+        <Section title="Announcements" framed>
             <Announcements />
         </Section>
         <Section
             title="News"
+            framed
             action={
                 <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">
                     <GitHubIcon

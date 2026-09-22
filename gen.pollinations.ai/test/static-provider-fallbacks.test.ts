@@ -43,11 +43,6 @@ const OPENROUTER_ROUTES = [
         "akashml/fp8",
     ],
     [
-        "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ],
-    [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -85,29 +80,34 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
-        "google/gemini-3.7-flash:openrouter:ai-studio-priority",
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
+        "google/gemini-3-flash-preview",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-3.7-flash:openrouter:vertex-global",
         "google/gemini-3.7-flash",
-        "google-ai-studio/priority",
+        "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        "google/gemini-3.8-flash:openrouter:vertex-global",
+        "google/gemini-3.8-flash",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
         "google/gemini-2.5-flash-lite",
-        "google-vertex",
+        "google-vertex/eu",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
-        "google/gemini-2.5-flash-lite",
-        "google-ai-studio",
-    ],
-    [
-        "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global",
         "google/gemini-3.5-flash-lite",
-        "google-ai-studio/flex",
+        "google-vertex/global",
     ],
     [
-        "google/gemini-3.1-pro-preview:openrouter:ai-studio",
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global",
         "google/gemini-3.1-pro-preview",
-        "google-ai-studio",
+        "google-vertex/global",
     ],
     [
         "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16",
@@ -173,12 +173,56 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it("includes the registry credit fee once in Gemini long-context and search costs", () => {
+    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+        const model = "mistralai/mistral-large-3";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
+        expect(fallback.provider).toBe("mistral");
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(findModelByName(model)?.config()).toMatchObject({
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Mistral-Large-3",
+        });
+        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-2512",
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1_000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
+    });
+
+    it("preserves seeded requests on the direct Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:mistral");
+        const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
+        const result = await route?.transform?.([], options);
+        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(options.seed).toBe(0);
+        const unseeded = await route?.transform?.([], { temperature: 0.2 });
+        expect(unseeded?.options).toEqual({ temperature: 0.2 });
+    });
+
+    it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {
         const primary = TEXT_SERVICES["google/gemini-3.1-pro-preview"];
         const fallback =
-            TEXT_SERVICES["google/gemini-3.1-pro-preview:openrouter:ai-studio"];
+            TEXT_SERVICES[
+                "google/gemini-3.1-pro-preview:openrouter:vertex-global"
+            ];
+        expect(primary.priceMultiplier).toBe(1.055);
+        expect(fallback.priceMultiplier).toBe(1);
         for (const definition of [primary, fallback]) {
-            expect(definition.priceMultiplier).toBe(1);
             const billed = calculateUsageBilling({
                 model: "google/gemini-3.1-pro-preview",
                 usage: {
@@ -186,16 +230,33 @@ describe("static provider fallbacks", () => {
                     completionTextTokens: 1_000,
                 },
                 servedBy: definition,
-                output: {
-                    usage: {
-                        server_tool_use_details: { web_search_requests: 1 },
-                    },
-                },
+                quotedBy: primary,
+                output:
+                    definition.provider === "openrouter"
+                        ? {
+                              usage: {
+                                  server_tool_use_details: {
+                                      web_search_requests: 1,
+                                  },
+                              },
+                          }
+                        : {
+                              choices: [
+                                  {
+                                      groundingMetadata: {
+                                          webSearchQueries: ["latest"],
+                                      },
+                                  },
+                              ],
+                          },
             });
-            // Long-context input/output plus one search, including credit fees.
-            const expected = (0.2 * 4 + 0.001 * 18 + 0.014) * 1.055;
-            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(expected, 8);
+            const directCost = 0.2 * 4 + 0.001 * 18 + 0.014;
+            const expectedCost =
+                definition.provider === "openrouter"
+                    ? directCost * 1.055
+                    : directCost;
+            expect(billed.cost.totalCost).toBeCloseTo(expectedCost, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(directCost * 1.055, 8);
             expect(billed.priceDefinition.promptTextTokens).toBe(
                 (4 / 1_000_000) * 1.055,
             );
@@ -419,7 +480,12 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("keeps provider-specific fallback costs", () => {
+    it("keeps exact provider route costs", () => {
+        expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (0.6 / 1_000_000) * 1.055,
+        });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
         ]);
@@ -429,7 +495,8 @@ describe("static provider fallbacks", () => {
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
         ).toMatchObject({
-            promptTextTokens: 0.08 / 1_000_000,
+            promptTextTokens: 0.06 / 1_000_000,
+            promptCachedTokens: 0.015 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
         expect(
@@ -437,9 +504,34 @@ describe("static provider fallbacks", () => {
                 "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
             ].cost,
         ).toMatchObject({
-            promptTextTokens: (0.2 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.006 / 1_000_000) * 1.055,
-            completionTextTokens: (0.6 / 1_000_000) * 1.055,
+            promptTextTokens: (0.14 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.0042 / 1_000_000) * 1.055,
+            completionTextTokens: (0.42 / 1_000_000) * 1.055,
+        });
+        expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
+            promptTextTokens: (0.24 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.024 / 1_000_000) * 1.055,
+            promptImageTokens: (0.24 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.24 / 1_000_000) * 1.055,
+            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.25 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.05 / 1_000_000) * 1.055,
+            promptImageTokens: (0.25 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.25 / 1_000_000) * 1.055,
+            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES[
+                "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
+            ].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.07 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.04 / 1_000_000) * 1.055,
+            completionTextTokens: (0.2 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
@@ -455,18 +547,17 @@ describe("static provider fallbacks", () => {
             completionImageTokens: 0.03,
         });
         expect(
-            TEXT_SERVICES[
-                "google/gemini-3.7-flash:openrouter:ai-studio-priority"
-            ].cost,
+            TEXT_SERVICES["google/gemini-3.7-flash:openrouter:vertex-global"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: (1.35 / 1_000_000) * 1.055,
+            promptCacheWriteTokens: (0.75 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[
-                "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex"
+                "google/gemini-3.5-flash-lite:openrouter:vertex-global"
             ].cost,
         ).toMatchObject({
-            promptCacheWriteTokens: (0.15 / 1_000_000) * 1.055,
+            promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,

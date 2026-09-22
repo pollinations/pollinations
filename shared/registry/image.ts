@@ -1354,18 +1354,20 @@ const IMAGE_BASE_SERVICES = {
     },
     "kwaivgi/kling-v3.0-std": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "Kuaishou",
         category: "video",
         addedDate: new Date("2026-09-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter kwaivgi/kling-v3.0-std rates (2026-09-19), including the
-        // mandatory 5.5% OpenRouter credit fee. Base is $0.084/s silent;
-        // audio adds $0.042/s ($0.126/s with audio).
+        // fal.ai kling-video/v3/standard direct published rates (2026-09-22).
+        // No OpenRouter credit fee: fal is the only route (#15176 review
+        // found OpenRouter applies a 5-second billing minimum and returns
+        // 1080p for a requested 720p, so it is not a compatible fallback).
+        // Base is $0.084/s silent; audio adds $0.042/s ($0.126/s with audio).
         cost: {
-            completionVideoSeconds: 0.084 * 1.055, // per sec at 720p
-            completionAudioSeconds: 0.042 * 1.055, // per sec when audio is enabled
+            completionVideoSeconds: 0.084, // per sec at 720p
+            completionAudioSeconds: 0.042, // per sec when audio is enabled
         },
         resolutions: ["720p"],
         title: "Kling 3.0 Standard",

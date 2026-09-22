@@ -46,6 +46,7 @@ export type WalletBalanceCardProps = {
     kind: WalletBalanceKind;
     label: ReactNode;
     value: ReactNode;
+    icon?: ReactNode;
     info?: ReactNode;
     footer?: ReactNode;
     className?: string;
@@ -55,19 +56,20 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
     kind,
     label,
     value,
+    icon,
     info,
     footer,
     className,
 }) => (
     <div
         className={cn(
-            "polli:rounded-xl polli:p-4",
+            "polli:min-w-0 polli:rounded-xl polli:p-4",
             walletPanelClasses[kind],
             className,
         )}
     >
         <span className="polli:flex polli:items-center polli:gap-2">
-            <WalletKindIcon kind={kind} />
+            {icon ?? <WalletKindIcon kind={kind} />}
             <span
                 className={cn(
                     "polli:text-sm polli:font-bold polli:uppercase polli:tracking-wide",
@@ -80,7 +82,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
         </span>
         <div
             className={cn(
-                "polli-wallet-balance-value polli:mt-1 polli:font-bold polli:leading-none polli:tracking-tight polli:tabular-nums",
+                "polli-wallet-balance-value polli:[overflow-wrap:anywhere] polli:mt-1 polli:font-bold polli:leading-none polli:tracking-tight polli:tabular-nums",
                 walletTextClasses[kind],
             )}
         >

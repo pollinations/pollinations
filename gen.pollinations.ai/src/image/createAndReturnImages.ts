@@ -40,6 +40,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
+import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import { callZImageFalAPI } from "./models/zImageFalModel.ts";
@@ -793,8 +794,8 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
-        case "google/gemini-3.1-flash-image:openrouter:ai-studio":
-        case "google/gemini-3.1-flash-lite-image": {
+        case "google/gemini-3.1-flash-lite-image":
+        case "google/gemini-3-pro-image": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -805,10 +806,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+                return await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "OpenRouter Gemini image generation or safety check failed:",
+                    "Vertex Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -816,8 +817,10 @@ const generateImage = async (
             }
         }
 
-        case "google/gemini-3-pro-image":
-        case "google/gemini-3-pro-image:openrouter:vertex-global": {
+        case "google/gemini-2.5-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
+        case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),

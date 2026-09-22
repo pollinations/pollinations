@@ -42,7 +42,7 @@ export function KeyNameField({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={
-                    app ? "Name" : publishable ? "Key name" : "Secret name"
+                    app ? "App name" : publishable ? "Name" : "Secret name"
                 }
                 className="min-w-0 flex-1"
                 required

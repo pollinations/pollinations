@@ -14,12 +14,12 @@ import {
     GitHubIcon,
     GlobeIcon,
     IconButton,
+    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
-    TrendUpIcon,
     XIcon,
 } from "@pollinations/ui";
 import {
@@ -28,7 +28,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { OpenWebUiLink } from "../models/open-webui-link.tsx";
+import { openWebUiChatUrl } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
@@ -89,16 +89,7 @@ export function CommunityEndpointCard({
                         <BeakerIcon className="h-4 w-4" aria-hidden="true" />
                     )
                 }
-                title={
-                    <span className="inline-flex max-w-full items-center gap-2">
-                        <span className="min-w-0 [overflow-wrap:anywhere]">
-                            {endpoint.title}
-                        </span>
-                        {testableModelId && (
-                            <OpenWebUiLink modelId={testableModelId} />
-                        )}
-                    </span>
-                }
+                title={endpoint.title}
                 description={endpoint.description}
                 badges={
                     <>
@@ -114,6 +105,40 @@ export function CommunityEndpointCard({
                             <Chip intent="danger" size="sm">
                                 Unlisted
                             </Chip>
+                        )}
+                        <Link
+                            data-size="footer"
+                            data-tone="quiet"
+                            to="/activity"
+                            search={{
+                                usageGranularity: "day",
+                                usagePeriod: currentPeriod().period,
+                                usageBucket: undefined,
+                                usageAnchor: undefined,
+                                earningsGranularity: "day",
+                                earningsPeriod: currentPeriod().period,
+                                earningsBucket: undefined,
+                                earningsAnchor: undefined,
+                                earningsModels: [endpoint.modelId],
+                                usageMetric: undefined,
+                                usageKeys: undefined,
+                                usageModels: undefined,
+                                earningsMetric: undefined,
+                                earningsApps: undefined,
+                            }}
+                            className="polli-link"
+                        >
+                            Activity
+                        </Link>
+                        {testableModelId && (
+                            <InlineLink
+                                href={openWebUiChatUrl(testableModelId)}
+                                size="footer"
+                                tone="quiet"
+                                title="Test in Open WebUI"
+                            >
+                                Test
+                            </InlineLink>
                         )}
                     </>
                 }
@@ -214,35 +239,6 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
-            </div>
-            <div
-                className={`mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 ${mutedClassName ?? ""}`}
-            >
-                <Link
-                    data-size="footer"
-                    data-tone="quiet"
-                    to="/activity"
-                    search={{
-                        usageGranularity: "day",
-                        usagePeriod: currentPeriod().period,
-                        usageBucket: undefined,
-                        usageAnchor: undefined,
-                        earningsGranularity: "day",
-                        earningsPeriod: currentPeriod().period,
-                        earningsBucket: undefined,
-                        earningsAnchor: undefined,
-                        earningsModels: [endpoint.modelId],
-                        usageMetric: undefined,
-                        usageKeys: undefined,
-                        usageModels: undefined,
-                        earningsMetric: undefined,
-                        earningsApps: undefined,
-                    }}
-                    className="polli-link inline-flex items-center gap-1.5"
-                >
-                    <TrendUpIcon className="h-3.5 w-3.5 shrink-0" />
-                    View activity
-                </Link>
             </div>
         </Surface>
     );

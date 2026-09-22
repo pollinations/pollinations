@@ -69,6 +69,25 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
+    it.each([
+        "gpt-6-sol",
+        "gpt-6-luna",
+    ])("routes %s through the direct OpenAI Responses API", (model) => {
+        const canonical = `openai/${model}`;
+        const result = resolveModelConfig(messages, { model: canonical });
+
+        expect(result.options.model).toBe(model);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model,
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+        });
+        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+        expect(() => resolveModelConfig(messages, { model })).toThrow(
+            `Model configuration not found for: ${model}`,
+        );
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {
@@ -138,6 +157,30 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
             only: ["phala"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flashx",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flashx");
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7",
+        });
+
+        expect(result.options.model).toBe("x-ai/grok-4.7");
+        expect(result.options.provider).toEqual({
+            only: ["xai"],
             allow_fallbacks: false,
         });
     });
@@ -235,36 +278,30 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Qwen3.7 Flash to Alibaba on OpenRouter without fallback", () => {
+    it("routes qwen3.7-flash directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.7-flash",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.model).toBe("qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Qwen3.8 Max to Alibaba without fallback", () => {
+    it("routes qwen3.8-max directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.8-max",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.model).toBe("qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
@@ -346,20 +383,17 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Qwen3.8 Flash to Alibaba on OpenRouter without provider fallbacks", () => {
+    it("routes qwen3.8-flash directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.8-flash",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.8-flash");
+        expect(result.options.model).toBe("qwen3.8-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it.each([
@@ -374,7 +408,7 @@ describe("resolveModelConfig", () => {
     ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
         for (const name of [
             "qwen/qwen3.8-flash",
-            "qwen/qwen3.8-flash:alibaba",
+            "qwen/qwen3.8-flash:openrouter:alibaba",
         ]) {
             const definition = findModelByName(name);
             const transformed = await definition?.transform?.(messages, {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15312,
+  "title": "feat: add GPT-6 Sol and Luna via OpenAI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15312",
+  "merged_at": "2026-09-22T19:17:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `openai/gpt-6-sol` and `openai/gpt-6-luna` through the direct OpenAI Responses API; no unprefixed aliases or fallback.\n- Marks both paid-only with a 1× multiplier and official per-token rates, including the >272K context tier.\n- Adds routing and paid-access coverage and updates effective-price snapshots. Gen and Enter typechecks plus focused tests pass; the local `/models` endpoint lists both models.\n- Draft pending authenticated end-to-end generation and Tinybird billing-event verification. No new secret or production deployment is included.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two new suns in the hive",
+    "blurb": "GPT-6 Sol and GPT-6 Luna have landed through OpenAI’s Responses API. Paid builders now have two more celestial brains to point at their strange little ideas.",
+    "summary": "Added paid-only OpenAI Responses API models `openai/gpt-6-sol` and `openai/gpt-6-luna`, each at a 1× multiplier with official token pricing including the over-272K-context tier, plus routing, permissions, and price coverage.",
+    "impact": "Developers can select either new prefixed model from `/models` and use it through the existing text API, with paid access and context-tier billing defined explicitly rather than relying on aliases or fallback routing.",
+    "keywords": [
+      "OpenAI",
+      "GPT-6 Sol",
+      "GPT-6 Luna",
+      "Responses API",
+      "text models",
+      "billing",
+      "paid access"
+    ],
+    "visual_concept": "A cozy observatory-garden represents the two newly routed OpenAI text models: Sol is a warm pastel sun and Luna a soft lavender moon, each feeding glowing code into a retro terminal. Polli, wearing a tiny astronomer cap, tends code-flowers beneath them while the CRT Monitor Robot eagerly watches the two model constellations appear; the garden and terminal glow prominently lime green.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny astronomer cap as she waters lime green (#ecf874) code-flowers in a warm garden observatory; above her, a pastel sun labeled “SOL” and lavender moon labeled “LUNA” send friendly code-stars into a retro CRT terminal while a chunky monitor robot looks delighted. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15312.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny astronomer cap as she waters lime green (#ecf874) code-flowers in a warm garden observatory; above her, a pastel sun labeled “SOL” and lavender moon labeled “LUNA” send friendly code-stars into a retro CRT terminal while a chunky monitor robot looks delighted. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-22T19:18:15.193200+00:00"
+}

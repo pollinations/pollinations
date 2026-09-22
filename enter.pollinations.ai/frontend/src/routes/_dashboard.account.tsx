@@ -2,7 +2,6 @@ import {
     Alert,
     Button,
     CopyButton,
-    Dialog,
     DiscordIcon,
     FieldStack,
     GitHubIcon,
@@ -17,6 +16,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { ResourceDialog } from "../components/layout/resource-dialog.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -332,7 +332,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
     }
 
     return (
-        <Dialog
+        <ResourceDialog
             open={open}
             onOpenChange={handleOpenChange}
             title="Delete Pollinations account?"
@@ -410,6 +410,6 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                     </Button>
                 </div>
             </div>
-        </Dialog>
+        </ResourceDialog>
     );
 }

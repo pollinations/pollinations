@@ -1,4 +1,5 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointDeleteConfirmationProps = {
@@ -13,7 +14,7 @@ export function CommunityEndpointDeleteConfirmation({
     onCancel,
 }: CommunityEndpointDeleteConfirmationProps) {
     return (
-        <Dialog
+        <ResourceDialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
             title="Delete Model"
@@ -33,6 +34,6 @@ export function CommunityEndpointDeleteConfirmation({
                     Delete
                 </Button>
             </div>
-        </Dialog>
+        </ResourceDialog>
     );
 }

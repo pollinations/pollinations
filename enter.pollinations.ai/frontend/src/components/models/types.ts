@@ -1,4 +1,4 @@
-import type { ModelHealth } from "@shared/model-health.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
 
 export type ModelCategory =

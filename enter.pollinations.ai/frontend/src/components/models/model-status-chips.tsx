@@ -1,6 +1,6 @@
 import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
-import type { ModelHealth } from "@shared/model-health.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
 
 export type BalanceAccess = "quest" | "paid" | "free";

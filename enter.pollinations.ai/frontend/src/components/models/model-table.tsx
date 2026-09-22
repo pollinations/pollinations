@@ -1,5 +1,6 @@
-import { Tooltip } from "@pollinations/ui";
+import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CopyValue } from "./copy-value.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -22,7 +23,6 @@ import {
 } from "./model-info.ts";
 import {
     getModelTitleTooltipContent,
-    ModelId,
     ModelRow,
     PerPollenEstimate,
 } from "./model-row.tsx";
@@ -147,7 +147,7 @@ const TabContent: FC<{
 
     return (
         <>
-            <div className={isDesktop ? "flex flex-col gap-2 pb-1" : "pb-1"}>
+            <div className="flex flex-col gap-3">
                 {visibleModels.map((model) => (
                     <Row key={model.name} model={model} />
                 ))}
@@ -188,8 +188,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const pricing = useModelPricingSelection(model);
 
     return (
-        <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
-            <div className="flex items-center gap-2.5 p-4">
+        <Surface className="transition-colors hover:bg-surface-opaque/90">
+            <div className="flex items-center gap-2.5">
                 <ModelBrandIcon
                     model={model}
                     className="h-8 w-8 shrink-0 opacity-55"
@@ -221,16 +221,19 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             </span>
                         )}
                     </div>
-                    <ModelId name={model.name} showCopyIcon />
+                    <CopyValue
+                        value={model.name}
+                        label={`Copy model id ${model.name}`}
+                        showCopyIcon
+                    />
                     {model.brandUrl && model.publisher && (
-                        <a
+                        <InlineLink
                             href={model.brandUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            size="footer"
+                            className="inline-flex w-fit max-w-full items-center"
                         >
-                            {model.publisher}
-                        </a>
+                            <span className="truncate">{model.publisher}</span>
+                        </InlineLink>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
@@ -262,7 +265,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="flex gap-2.5 px-4 pb-4 pt-0">
+            <div className="mt-3 flex gap-2.5">
                 {hasLeadingIcon && (
                     <>
                         <span
@@ -287,7 +290,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     />
                 </div>
             </div>
-        </div>
+        </Surface>
     );
 };
 

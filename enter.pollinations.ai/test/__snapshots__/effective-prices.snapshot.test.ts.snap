@@ -1572,16 +1572,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistralai/mistral-large-3:openrouter:mistral-zdr": {
+  "mistralai/mistral-large-3:mistral": {
     "cost": {
-      "completionTextTokens": 0.0000015825,
-      "promptCachedTokens": 0.00000005275,
-      "promptTextTokens": 0.0000005275,
+      "completionTextTokens": 0.0000015,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.0000005,
     },
     "price": {
-      "completionTextTokens": 0.000001186875,
-      "promptCachedTokens": 0.0000000395625,
-      "promptTextTokens": 0.000000395625,
+      "completionTextTokens": 0.000001125,
+      "promptCachedTokens": 0.0000000375,
+      "promptTextTokens": 0.000000375,
     },
   },
   "mistralai/mistral-small-3.2": {

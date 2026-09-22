@@ -43,11 +43,6 @@ const OPENROUTER_ROUTES = [
         "akashml/fp8",
     ],
     [
-        "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ],
-    [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -178,6 +173,47 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+        const model = "mistralai/mistral-large-3";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
+        expect(fallback.provider).toBe("mistral");
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(findModelByName(model)?.config()).toMatchObject({
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Mistral-Large-3",
+        });
+        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-2512",
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1_000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
+    });
+
+    it("preserves seeded requests on the direct Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:mistral");
+        const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
+        const result = await route?.transform?.([], options);
+        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(options.seed).toBe(0);
+        const unseeded = await route?.transform?.([], { temperature: 0.2 });
+        expect(unseeded?.options).toEqual({ temperature: 0.2 });
+    });
+
     it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {
         const primary = TEXT_SERVICES["google/gemini-3.1-pro-preview"];
         const fallback =

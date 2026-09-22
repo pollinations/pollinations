@@ -705,7 +705,6 @@ export function KeyIcon(props: IconProps) {
     );
 }
 
-
 export function GlobeIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -724,7 +723,6 @@ export function ArrowLeftIcon(props: IconProps) {
         </svg>
     );
 }
-
 
 export function RefreshIcon(props: IconProps) {
     return (

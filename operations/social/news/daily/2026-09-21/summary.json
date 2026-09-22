@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-21",
+  "period_start": "2026-09-21",
+  "period_end": "2026-09-21",
+  "title": "Three community routers now pick healthy models for the job",
+  "summary": "A routing-heavy day: smarter community agents, one-command MCP setup, a rebuilt Enter catalog, and more models ready for work.\n\nPolyrouter, triage-router, and tiered-health-router turn a single model call into fast, balanced, or deep routing based on request complexity, live health, capabilities, context limits, and modality support. They preserve the original conversation, expose their decisions in traces or headers, and can move on when a candidate route is unavailable.\n\n`polli mcp` now discovers, installs, inspects, and removes MCP server entries across 13 coding clients without bulldozing existing third-party configuration. The surrounding MCP work also fixes FFmpeg file handling, improves Connected Apps setup for Gmail and GitHub, and gets Ask Jev deployments loading their shared schema again.\n\nThe Enter interface now shares a more consistent set of responsive dialogs, fields, links, tooltips, and confirmations. Models, Agents, and MCP tabs are reachable again, while reusable search, filters, sorting, health metadata, copy actions, and Open WebUI launchers make the catalog less like a drawer full of cables.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 15032,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15041,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15069,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15141,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15190,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15246,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15250,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15252,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15254,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15258,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15264,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15267,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15268,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15269,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15270,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15278,
+      "date": "2026-09-21"
+    },
+    {
+      "number": 15286,
+      "date": "2026-09-21"
+    }
+  ],
+  "generated_at": "2026-09-22T06:30:12.955487+00:00"
+}

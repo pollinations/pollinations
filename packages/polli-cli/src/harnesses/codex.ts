@@ -64,6 +64,14 @@ export const routerControlEntry = (ctx: HarnessContext): string | null => {
 export const codexHomeDir = (ctx: HarnessContext): string =>
     ctx.env.CODEX_HOME?.trim() || join(ctx.home, ".codex");
 
+/** Codex CLI's own auth file: `$CODEX_HOME/auth.json`. */
+export const authJsonPath = (ctx: HarnessContext): string =>
+    join(codexHomeDir(ctx), "auth.json");
+
+/** Router-generated caller capability shared with local clients. */
+export const callerSecretPath = (ctx: HarnessContext): string =>
+    join(routerStateDir(ctx), "caller-secret");
+
 /** Codex Router's state dir: `$CODEX_HOME/codex-router` (src/paths.mjs). */
 export const routerStateDir = (ctx: HarnessContext): string =>
     join(codexHomeDir(ctx), "codex-router");
@@ -80,6 +88,7 @@ export const stateFilePaths = (ctx: HarnessContext) => ({
         "generic-provider-credentials",
         `${PROVIDER_ID}.key`,
     ),
+    authJson: authJsonPath(ctx),
 });
 
 /** Every file `on` writes; `off` restores or strips exactly these. */
@@ -90,6 +99,7 @@ const files = (ctx: HarnessContext) => {
         paths.credentialStore,
         paths.userModels,
         paths.apiKey,
+        paths.authJson,
     ];
 };
 
@@ -267,6 +277,39 @@ export const stripUserModels = (
 };
 
 // ---------------------------------------------------------------------------
+// Codex CLI auth.json (the client's own auth for the router)
+// ---------------------------------------------------------------------------
+
+export const buildAuthJson = (callerSecret: string): string =>
+    `${JSON.stringify({ OPENAI_API_KEY: callerSecret }, null, 2)}\n`;
+
+/**
+ * auth.json counts as ours when its OPENAI_API_KEY equals the router's caller
+ * secret. Anything else (a ChatGPT login, another provider's key) is the
+ * user's business — the snapshot restore covers it byte-for-byte, and the
+ * surgical strip leaves it alone.
+ */
+export const isHarnessAuthJson = (
+    text: string | null,
+    callerSecret: string | null,
+): boolean => {
+    if (text === null || callerSecret === null) return false;
+    try {
+        return (
+            (JSON.parse(text) as { OPENAI_API_KEY?: string }).OPENAI_API_KEY ===
+            callerSecret
+        );
+    } catch {
+        return false;
+    }
+};
+
+const readCallerSecret = (ctx: HarnessContext): string | null => {
+    const secret = readTextIfExists(callerSecretPath(ctx))?.trim();
+    return secret ? secret : null;
+};
+
+// ---------------------------------------------------------------------------
 // Router CLI (src/control.mjs runs under plain node — no shell shim needed)
 // ---------------------------------------------------------------------------
 
@@ -369,6 +412,32 @@ const writeState = (
         buildUserModelEntry(model, 100),
     );
     writeJson(paths.userModels, userModels.doc);
+
+    // Codex CLI reads auth.json for provider auth and ignores env vars for
+    // this purpose, so the router's caller secret must land there — without
+    // it every request dies with 401 "requires its configured caller
+    // authentication" even though all router state is correct (verified
+    // live against Codex CLI 0.146). The secret is router-generated; when it
+    // does not exist yet (router installed but never started) skip with a
+    // note instead of inventing one the router would not recognize.
+    const callerSecret = readCallerSecret(ctx);
+    const authText = readTextIfExists(paths.authJson);
+    if (callerSecret !== null) {
+        if (
+            authText !== null &&
+            !isHarnessAuthJson(authText, callerSecret) &&
+            !authText.includes('"OPENAI_API_KEY"')
+        ) {
+            printWarn(
+                "Replacing the existing Codex auth.json (it looks like a ChatGPT login). `polli harness codex off` restores it byte-for-byte.",
+            );
+        }
+        writeTextAtomic(paths.authJson, buildAuthJson(callerSecret), 0o600);
+    } else {
+        printInfo(
+            `Codex Router has no caller secret yet (start it once); skipping ${paths.authJson}. Without it, Codex needs OPENAI_API_KEY set to the router caller secret.`,
+        );
+    }
 };
 
 const stripState = (ctx: HarnessContext): boolean => {
@@ -416,6 +485,18 @@ const stripState = (ctx: HarnessContext): boolean => {
         removeApiKey(ctx);
         changed = true;
     }
+
+    // Only remove auth.json when it is the one we wrote. A user's own login
+    // (ChatGPT tokens or a foreign key) survives the surgical strip — the
+    // byte-for-byte path already restores it via the snapshot.
+    const authText = readTextIfExists(paths.authJson);
+    if (
+        authText !== null &&
+        isHarnessAuthJson(authText, readCallerSecret(ctx))
+    ) {
+        removeIfExists(paths.authJson);
+        changed = true;
+    }
     return changed;
 };
 
@@ -455,6 +536,10 @@ const statusResult = (ctx: HarnessContext): HarnessResult => {
         wired: isRouterWired(readTextIfExists(configTomlPath(ctx))),
         provider: provider !== undefined,
         credential: credential !== undefined && readApiKey(ctx) !== null,
+        authJson: isHarnessAuthJson(
+            readTextIfExists(paths.authJson),
+            readCallerSecret(ctx),
+        ),
     } as HarnessResult & Record<string, unknown>;
 };
 

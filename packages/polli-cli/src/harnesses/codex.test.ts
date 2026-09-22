@@ -10,9 +10,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+    buildAuthJson,
     buildCredentialEntry,
     buildGenericProvider,
     buildUserModelEntry,
+    isHarnessAuthJson,
     isRouterWired,
     LEGACY_CREDENTIAL_IDS,
     stripUserModels,
@@ -206,97 +208,153 @@ describe("router wiring marker", () => {
     });
 });
 
+describe("codex cli auth.json", () => {
+    const SECRET = "rXJ5eus7dK8mN2pQvL4wZ6yT1bC3xH9f";
+
+    it("carries the router caller secret as OPENAI_API_KEY", () => {
+        const parsed = JSON.parse(buildAuthJson(SECRET)) as {
+            OPENAI_API_KEY?: string;
+        };
+        expect(parsed.OPENAI_API_KEY).toBe(SECRET);
+        expect(JSON.stringify(parsed)).not.toContain("sk_");
+    });
+
+    it("recognizes only our own auth.json", () => {
+        expect(isHarnessAuthJson(buildAuthJson(SECRET), SECRET)).toBe(true);
+        expect(isHarnessAuthJson(buildAuthJson(SECRET), "different")).toBe(
+            false,
+        );
+        expect(isHarnessAuthJson(null, SECRET)).toBe(false);
+        expect(isHarnessAuthJson(buildAuthJson(SECRET), null)).toBe(false);
+        // A user's ChatGPT login or a foreign key is never "ours".
+        expect(
+            isHarnessAuthJson('{"tokens":{"access_token":"x"}}', SECRET),
+        ).toBe(false);
+        expect(isHarnessAuthJson("not json at all", SECRET)).toBe(false);
+    });
+});
+
 describe("on/off lifecycle", () => {
-    it("writes state, reuses the key, and restores byte-for-byte on off", async () => {
-        const ctx = makeCtx();
-        // Codex + router checkout exist; config already wired so client-setup is skipped.
-        const { join: pjoin } = await import("node:path");
-        mkdirSync(
-            pjoin(
+    it(
+        "writes state, reuses the key, and restores byte-for-byte on off",
+        { timeout: 30_000 },
+        async () => {
+            const ctx = makeCtx();
+            // Codex + router checkout exist; config already wired so client-setup is skipped.
+            const { join: pjoin } = await import("node:path");
+            mkdirSync(
+                pjoin(
+                    ctx.home,
+                    ".codex",
+                    "codex-router",
+                    "generic-provider-credentials",
+                ),
+                { recursive: true },
+            );
+            mkdirSync(
+                pjoin(ctx.home, "AppData", "Local", "codex-router", "src"),
+                {
+                    recursive: true,
+                },
+            );
+            writeFileSync(
+                pjoin(
+                    ctx.home,
+                    "AppData",
+                    "Local",
+                    "codex-router",
+                    "src",
+                    "control.mjs",
+                ),
+                "// router\n",
+            );
+            writeFileSync(
+                pjoin(ctx.home, ".codex", "config.toml"),
+                "# BEGIN codex-router-model_providers\n# END codex-router-model_providers\n",
+            );
+
+            const { codex } = await import("./codex.js");
+            const keyModule = await import("./keys.js");
+            const keySpy = vi
+                .spyOn(keyModule, "resolveHarnessKey")
+                .mockResolvedValue("sk_test_codex_key");
+            const smokeModule = await import("./smoke.js");
+            const _smokeSpy = vi
+                .spyOn(smokeModule, "smokeChat")
+                .mockResolvedValue({ ok: true, detail: "pong" });
+
+            const on = await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
+            expect(on.configured).toBe(true);
+            expect(on.model).toBe("openai/gpt-5.4-nano");
+            expect(keySpy).toHaveBeenCalledTimes(1);
+
+            // Key reuse on a second run.
+            await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
+            expect(keySpy).toHaveBeenCalledTimes(2);
+            expect(keySpy.mock.calls[1][0].existingKey).toBe(
+                "sk_test_codex_key",
+            );
+
+            const keyFile = pjoin(
                 ctx.home,
                 ".codex",
                 "codex-router",
                 "generic-provider-credentials",
-            ),
-            { recursive: true },
-        );
-        mkdirSync(pjoin(ctx.home, "AppData", "Local", "codex-router", "src"), {
-            recursive: true,
-        });
-        writeFileSync(
-            pjoin(
+                "pollinations.key",
+            );
+            expect(readFileSync(keyFile, "utf8")).toBe("sk_test_codex_key\n");
+
+            // The router's caller secret is copied into $CODEX_HOME/auth.json so
+            // the Codex CLI authenticates to the router without manual setup.
+            const secretFile = pjoin(
                 ctx.home,
-                "AppData",
-                "Local",
+                ".codex",
                 "codex-router",
-                "src",
-                "control.mjs",
-            ),
-            "// router\n",
-        );
-        writeFileSync(
-            pjoin(ctx.home, ".codex", "config.toml"),
-            "# BEGIN codex-router-model_providers\n# END codex-router-model_providers\n",
-        );
+                "caller-secret",
+            );
+            writeFileSync(secretFile, "rXJ5eus7dK8mN2pQvL4wZ6yT1bC3xH9f\n");
+            // Re-run `on` with the secret present (second `on` reuses the key).
+            await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
+            const authJson = pjoin(ctx.home, ".codex", "auth.json");
+            expect(JSON.parse(readFileSync(authJson, "utf8"))).toEqual({
+                OPENAI_API_KEY: "rXJ5eus7dK8mN2pQvL4wZ6yT1bC3xH9f",
+            });
+            const onStatus = (await codex.status(
+                ctx,
+            )) as unknown as Record<string, unknown>;
+            expect(onStatus.authJson).toBe(true);
 
-        const { codex } = await import("./codex.js");
-        const keyModule = await import("./keys.js");
-        const keySpy = vi
-            .spyOn(keyModule, "resolveHarnessKey")
-            .mockResolvedValue("sk_test_codex_key");
-        const smokeModule = await import("./smoke.js");
-        const _smokeSpy = vi
-            .spyOn(smokeModule, "smokeChat")
-            .mockResolvedValue({ ok: true, detail: "pong" });
-
-        const on = await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
-        expect(on.configured).toBe(true);
-        expect(on.model).toBe("openai/gpt-5.4-nano");
-        expect(keySpy).toHaveBeenCalledTimes(1);
-
-        // Key reuse on a second run.
-        await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
-        expect(keySpy).toHaveBeenCalledTimes(2);
-        expect(keySpy.mock.calls[1][0].existingKey).toBe("sk_test_codex_key");
-
-        const keyFile = pjoin(
-            ctx.home,
-            ".codex",
-            "codex-router",
-            "generic-provider-credentials",
-            "pollinations.key",
-        );
-        expect(readFileSync(keyFile, "utf8")).toBe("sk_test_codex_key\n");
-
-        const off = await codex.off(ctx);
-        // Nothing existed before our `on`, so byte-for-byte restore removes
-        // every file we wrote.
-        expect(off.outcome).toBe("restored");
-        expect(
-            existsSync(
-                pjoin(
-                    ctx.home,
-                    ".codex",
-                    "codex-router",
-                    "provider-credentials.json",
+            const off = await codex.off(ctx);
+            // Nothing existed before our `on`, so byte-for-byte restore removes
+            // every file we wrote.
+            expect(off.outcome).toBe("restored");
+            expect(
+                existsSync(
+                    pjoin(
+                        ctx.home,
+                        ".codex",
+                        "codex-router",
+                        "provider-credentials.json",
+                    ),
                 ),
-            ),
-        ).toBe(false);
-        expect(existsSync(keyFile)).toBe(false);
-        expect(
-            existsSync(
-                pjoin(
-                    ctx.home,
-                    ".codex",
-                    "codex-router",
-                    "generic-providers.json",
+            ).toBe(false);
+            expect(existsSync(keyFile)).toBe(false);
+            expect(existsSync(authJson)).toBe(false);
+            expect(
+                existsSync(
+                    pjoin(
+                        ctx.home,
+                        ".codex",
+                        "codex-router",
+                        "generic-providers.json",
+                    ),
                 ),
-            ),
-        ).toBe(false);
+            ).toBe(false);
 
-        const status = await codex.status(ctx);
-        expect(status.configured).toBe(false);
-    });
+            const status = await codex.status(ctx);
+            expect(status.configured).toBe(false);
+        },
+    );
 
     it("strips surgically after outside edits instead of restoring", async () => {
         const ctx = makeCtx();
@@ -376,6 +434,66 @@ describe("on/off lifecycle", () => {
                 ),
             ).providers,
         ).toEqual([]);
+    });
+
+    it("leaves a user-owned auth.json alone on off (surgical strip)", async () => {
+        const ctx = makeCtx();
+        const { join: pjoin } = await import("node:path");
+        mkdirSync(
+            pjoin(
+                ctx.home,
+                ".codex",
+                "codex-router",
+                "generic-provider-credentials",
+            ),
+            { recursive: true },
+        );
+        mkdirSync(pjoin(ctx.home, "AppData", "Local", "codex-router", "src"), {
+            recursive: true,
+        });
+        writeFileSync(
+            pjoin(
+                ctx.home,
+                "AppData",
+                "Local",
+                "codex-router",
+                "src",
+                "control.mjs",
+            ),
+            "// router\n",
+        );
+        writeFileSync(
+            pjoin(ctx.home, ".codex", "config.toml"),
+            "# BEGIN codex-router-x\n",
+        );
+        // Pre-existing user auth (ChatGPT login tokens) — ours never touches it.
+        const authJson = pjoin(ctx.home, ".codex", "auth.json");
+        writeFileSync(
+            authJson,
+            '{"tokens":{"access_token":"chatgpt-login"}}\n',
+        );
+        writeFileSync(
+            pjoin(ctx.home, ".codex", "codex-router", "caller-secret"),
+            "rXJ5eus7dK8mN2pQvL4wZ6yT1bC3xH9f\n",
+        );
+
+        const { codex } = await import("./codex.js");
+        vi.spyOn(
+            await import("./keys.js"),
+            "resolveHarnessKey",
+        ).mockResolvedValue("sk_test");
+        vi.spyOn(await import("./smoke.js"), "smokeChat").mockResolvedValue({
+            ok: true,
+            detail: "pong",
+        });
+
+        await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
+        // `on` overwrote it (that is the documented replace-with-restore
+        // behavior) and `off` restores the user's bytes via the snapshot.
+        expect(readFileSync(authJson, "utf8")).toContain("OPENAI_API_KEY");
+
+        await codex.off(ctx);
+        expect(readFileSync(authJson, "utf8")).toContain("chatgpt-login");
     });
 
     it("stops before login when the router is missing", async () => {

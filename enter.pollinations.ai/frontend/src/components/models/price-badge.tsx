@@ -56,14 +56,6 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
-const PRICE_LEDGER_UNIT: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-};
-
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
 
 const formatAdjustmentUnit = ({
@@ -92,57 +84,6 @@ const formatAdjustmentUnit = ({
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
     subKinds: PriceKind[];
 };
-
-const groupPriceBadges = (prices: ModelPriceLine[]): PriceBadgeConfig[] => {
-    const grouped = new Map<string, PriceBadgeConfig>();
-
-    for (const price of prices) {
-        const key = [price.price, price.unit].join("|");
-        const existing = grouped.get(key);
-        if (existing) {
-            existing.subKinds = [
-                ...new Set([...existing.subKinds, price.kind]),
-            ];
-            continue;
-        }
-
-        grouped.set(key, {
-            price: price.price,
-            kind: price.kind,
-            unit: price.unit,
-            subKinds: [price.kind],
-        });
-    }
-
-    return [...grouped.values()];
-};
-
-export const getModelPriceBadges = (
-    model: ModelPrice,
-    direction: PriceDirection,
-): PriceBadgeConfig[] =>
-    groupPriceBadges(
-        model.prices.filter((price) => price.direction === direction),
-    );
-
-const getPriceBadgeKey = (badge: PriceBadgeConfig): string =>
-    [badge.subKinds.join(""), badge.price, badge.unit].join("-");
-
-type PriceBadgeListProps = {
-    badges: PriceBadgeConfig[];
-    className?: string;
-};
-
-export const PriceBadgeList: FC<PriceBadgeListProps> = ({
-    badges,
-    className,
-}) => (
-    <div className={className}>
-        {badges.map((badge) => (
-            <PriceBadge key={getPriceBadgeKey(badge)} {...badge} />
-        ))}
-    </div>
-);
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const displayedPrice = formatDisplayPrice(price, unit === "token");
@@ -383,7 +324,10 @@ const LedgerLabel: FC<{
         )}
         {displayLabel !== label && <span className="sr-only">{label}</span>}
         <span
-            className="truncate whitespace-nowrap"
+            className={cn(
+                "truncate whitespace-nowrap",
+                displayLabel !== label && "cursor-help",
+            )}
             aria-hidden={displayLabel === label ? undefined : true}
             title={displayLabel === label ? undefined : label}
         >
@@ -616,7 +560,7 @@ export const ModelPricingLedger: FC<{
                 unit:
                     price.unit === "token"
                         ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_LEDGER_UNIT[price.unit],
+                        : PRICE_UNIT_SUFFIX[price.unit],
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:
@@ -665,7 +609,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
                     <LedgerPriceValue value={row.value} />
                     <span
-                        className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                        className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
                     >
                         {row.unit}

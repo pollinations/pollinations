@@ -61,6 +61,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                 </div>
                 <Tooltip
                     triggerAs="span"
+                    className="polli:cursor-pointer"
                     content={
                         <span className="block">
                             Buy{" "}
@@ -81,6 +82,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                     <ExternalLinkButton
                         href={checkoutHref}
                         target="_self"
+                        intent="commit"
                         className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                     >
                         <span className="inline-flex items-center gap-1.5">

@@ -39,6 +39,10 @@ export {
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
 export {
+    ConfirmationDialog,
+    type ConfirmationDialogProps,
+} from "./compositions/ConfirmationDialog.tsx";
+export {
     ContentHeader,
     type ContentHeaderProps,
 } from "./compositions/ContentHeader.tsx";
@@ -46,6 +50,7 @@ export {
     CopyButton,
     type CopyButtonProps,
 } from "./compositions/CopyButton.tsx";
+export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
     EditableCombobox,
     type EditableComboboxProps,
@@ -65,6 +70,7 @@ export {
     type FileUploadProps,
 } from "./compositions/FileUpload.tsx";
 export { InfoTip } from "./compositions/InfoTip.tsx";
+export { KeyChip, type KeyChipProps } from "./compositions/KeyChip.tsx";
 export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
 // Markdown and Prose live at @pollinations/ui/markdown — see src/markdown.ts.
 export {
@@ -117,6 +123,8 @@ export {
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
+    DialogBody,
+    type DialogBodyProps,
     DialogDescription,
     DialogFooter,
     type DialogFooterProps,

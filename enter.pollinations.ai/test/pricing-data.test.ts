@@ -686,6 +686,15 @@ test("Gemini search cost follows each route's provider metadata", () => {
             server_tool_use_details: { web_search_requests: 2 },
         },
     };
+    const vertex3SearchOutput = {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["query one", "query two"],
+                },
+            },
+        ],
+    };
     const vertex25SearchOutput = {
         choices: [
             {
@@ -708,15 +717,20 @@ test("Gemini search cost follows each route's provider metadata", () => {
     const gemini3FlashCost = calculateCost(
         "google/gemini-3-flash-preview",
         usage,
-        openRouterSearchOutput,
+        vertex3SearchOutput,
     );
     const geminiSearchFastCost = calculateCost(
         "google/gemini-3.5-flash-lite",
         usage,
-        openRouterSearchOutput,
+        vertex3SearchOutput,
     );
     const geminiSearchLargeCost = calculateCost(
         "google/gemini-3.7-flash",
+        usage,
+        vertex3SearchOutput,
+    );
+    const gemini3FlashFallbackCost = calculateCost(
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
         usage,
         openRouterSearchOutput,
     );
@@ -730,14 +744,13 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
     expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
-    // OpenRouter search-capable routes bill per reported web search request.
-    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528 * 1.055, 8);
-    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828 * 1.055, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528 * 1.055, 8);
-    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(
-        2.8 * 1.055,
-        8,
-    );
+    // Direct Vertex costs exclude the public multiplier; OpenRouter fallback
+    // costs include its 5.5% fee while keeping the same public quote.
+    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
+    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
+    expect(gemini3FlashFallbackCost.totalCost).toBeCloseTo(3.528 * 1.055, 8);
 });
 
 test("public model catalog exposes Gemini billing prices without internals", () => {
@@ -759,7 +772,7 @@ test("public model catalog exposes Gemini billing prices without internals", () 
                 price: "14.77",
                 currency: "pollen",
                 quantity: 1_000,
-                unit: "search requests",
+                unit: "search queries",
             }),
         ]),
     );
@@ -995,9 +1008,9 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
         "google/gemini-3-flash-preview",
         "google/gemini-3.7-flash",
         "google/gemini-3.8-flash",
-        "google/gemini-3.7-flash:openrouter:ai-studio-priority",
+        "google/gemini-3.7-flash:openrouter:vertex-global",
         "google/gemini-3.5-flash-lite",
-        "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
         "google/gemini-2.5-flash-lite:search",
@@ -1037,15 +1050,23 @@ test("Gemini routes price separately reported media input tokens", () => {
 });
 
 test("Google text model providers match their configured routes", () => {
-    const openRouterModels = [
+    const vertexModels = [
         "google/gemini-3-flash-preview",
         "google/gemini-3.7-flash",
         "google/gemini-3.8-flash",
         "google/gemini-3.5-flash-lite",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
+        "google/gemini-2.5-flash-lite:search",
     ] as const;
-    const vertexModels = ["google/gemini-2.5-flash-lite:search"] as const;
+    const openRouterModels = [
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
+        "google/gemini-3.7-flash:openrouter:vertex-global",
+        "google/gemini-3.8-flash:openrouter:vertex-global",
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global",
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global",
+    ] as const;
     const publicModels = new Map(
         getTextModelsInfo().map((model) => [model.name, model]),
     );
@@ -1054,10 +1075,6 @@ test("Google text model providers match their configured routes", () => {
         const definition = getRegistryModelDefinition(model);
         expect(definition.provider, `${model} provider`).toBe("openrouter");
         expect(definition.codeExecution, `${model} code execution`).toBeFalsy();
-        expect(
-            publicModels.get(model)?.capabilities,
-            `${model} public capabilities`,
-        ).not.toContain("code_execution");
         expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
     }
     for (const model of vertexModels) {
@@ -1074,7 +1091,7 @@ test("Google text model providers match their configured routes", () => {
 
 // Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
 // input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev"]);
+const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
@@ -1149,14 +1166,16 @@ test("bedrock nova models price cache writes free and reads at 25% of input", ()
 });
 
 test("OpenRouter Gemini adjustments use provider-reported cache and search usage", () => {
+    const flashLiteFallback =
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu" as const;
     const cacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("google/gemini-2.5-flash-lite"),
+        getRegistryModelDefinition(flashLiteFallback),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "google/gemini-2.5-flash-lite",
+        flashLiteFallback,
     );
     expect(cacheWrite).toHaveLength(1);
     expect(cacheWrite[0]).toMatchObject({
@@ -1169,14 +1188,16 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(cacheWrite[0].cost).toBeCloseTo((1 / 12) * 1.055, 15);
     expect(cacheWrite[0].price).toBeCloseTo((1 / 12) * 1.055, 15);
 
+    const proFallback =
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global" as const;
     const proCacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("google/gemini-3.1-pro-preview"),
+        getRegistryModelDefinition(proFallback),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "google/gemini-3.1-pro-preview",
+        proFallback,
     );
     expect(proCacheWrite).toHaveLength(1);
     expect(proCacheWrite[0].unitCost).toBeCloseTo(
@@ -1185,14 +1206,16 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     );
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375 * 1.055, 15);
 
+    const flashFallback =
+        "google/gemini-3.7-flash:openrouter:vertex-global" as const;
     const geminiCacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("google/gemini-3.7-flash"),
+        getRegistryModelDefinition(flashFallback),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "google/gemini-3.7-flash",
+        flashFallback,
     );
     expect(geminiCacheWrite).toHaveLength(1);
     expect(geminiCacheWrite[0].unitCost).toBeCloseTo(
@@ -1202,10 +1225,10 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(geminiCacheWrite[0].cost).toBeCloseTo((0.5 / 12) * 1.055, 15);
 
     for (const model of [
-        "google/gemini-3-flash-preview",
-        "google/gemini-3.5-flash-lite",
-        "google/gemini-2.5-flash-lite",
-        "google/gemini-3.1-pro-preview",
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
+        "google/gemini-3.5-flash-lite:openrouter:vertex-global",
+        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-3.1-pro-preview:openrouter:vertex-global",
     ] as const) {
         expect(
             calculateBillingAdjustments(
@@ -1241,13 +1264,13 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
 
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition("google/gemini-3.7-flash"),
+            getRegistryModelDefinition(flashFallback),
             {
                 usage: {
                     server_tool_use_details: { web_search_requests: 1 },
                 },
             },
-            "google/gemini-3.7-flash",
+            flashFallback,
         ),
     ).toContainEqual({
         ruleId: "openrouter.google.web_search.v1",
@@ -1260,7 +1283,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     });
 
     const streamedSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("google/gemini-3-flash-preview"),
+        getRegistryModelDefinition(
+            "google/gemini-3-flash-preview:openrouter:vertex-global",
+        ),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -1271,7 +1296,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                 },
             ],
         },
-        "google/gemini-3-flash-preview",
+        "google/gemini-3-flash-preview:openrouter:vertex-global",
     );
     expect(streamedSearch).toEqual([
         {
@@ -1288,7 +1313,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     for (const bad of [-5, "2", null, true, {}]) {
         expect(
             calculateBillingAdjustments(
-                getRegistryModelDefinition("google/gemini-2.5-flash-lite"),
+                getRegistryModelDefinition(flashLiteFallback),
                 {
                     usage: {
                         prompt_tokens_details: { cache_write_tokens: bad },
@@ -1297,7 +1322,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                         },
                     },
                 },
-                "google/gemini-2.5-flash-lite",
+                flashLiteFallback,
             ),
         ).toEqual([]);
     }
@@ -1362,12 +1387,12 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     );
     expect(gemini3).toEqual([
         {
-            ruleId: "openrouter.google.web_search.v1",
-            kind: "search_request",
-            unit: "request",
+            ruleId: "google.gemini_3.search_query.v1",
+            kind: "search_query",
+            unit: "query",
             units: 3,
-            unitCost: 0.014 * 1.055,
-            cost: 0.042 * 1.055,
+            unitCost: 0.014,
+            cost: 0.042,
             price: 0.042 * 1.055,
         },
     ]);

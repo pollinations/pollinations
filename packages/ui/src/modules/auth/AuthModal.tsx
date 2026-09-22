@@ -42,9 +42,9 @@ export function AuthModal({
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
+            positionerClassName="polli:bg-app-bg"
             contentClassName={cn(
-                "polli:bg-surface-white polli:border-2 polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto",
+                "polli:bg-surface-white polli:border-2",
                 borderClass,
                 contentClassName,
             )}

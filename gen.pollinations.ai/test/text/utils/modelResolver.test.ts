@@ -507,6 +507,8 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
+        ["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro", "xiaomi/fp8"],
         [
             "meta/llama-4-scout:openrouter:novita-bf16",
             "meta-llama/llama-4-scout",

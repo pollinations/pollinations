@@ -101,14 +101,21 @@ export function CommunityEndpointCard({
                 }
                 description={endpoint.description}
                 badges={
-                    <Chip intent={isPublic ? "news" : "neutral"} size="sm">
-                        {isPublic ? (
-                            <GlobeIcon className="h-3 w-3" />
-                        ) : (
-                            <LockIcon className="h-3 w-3" />
+                    <>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
+                        {endpoint.hidden && (
+                            <Chip intent="danger" size="sm">
+                                Unlisted
+                            </Chip>
                         )}
-                        {VISIBILITY_LABELS[endpoint.visibility]}
-                    </Chip>
+                    </>
                 }
                 actions={
                     <>
@@ -142,12 +149,6 @@ export function CommunityEndpointCard({
                     </>
                 }
             />
-
-            {endpoint.hidden && (
-                <Chip className="mt-3" intent="danger" size="sm">
-                    Unlisted
-                </Chip>
-            )}
 
             <PendingChangeNotice endpoint={endpoint} />
 

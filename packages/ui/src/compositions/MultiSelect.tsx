@@ -20,6 +20,8 @@ export type MultiSelectProps = {
     disabledTooltip?: string;
     align?: "start" | "end";
     label?: string;
+    /** Accessible name when the visible label is supplied by the caller. */
+    ariaLabel?: string;
     /** Fill the available width, allowing the trigger label to truncate. */
     fullWidth?: boolean;
 };
@@ -43,6 +45,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledTooltip,
     align = "start",
     label,
+    ariaLabel,
     fullWidth = false,
 }) => {
     const isAllSelected = selected.length === 0;
@@ -93,7 +96,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     <button
                         type="button"
                         disabled
-                        aria-label={label || placeholder}
+                        aria-label={ariaLabel || label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
@@ -123,11 +126,11 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             {labelNode}
             <Dropdown
                 align={align}
-                className="polli:min-w-[320px]"
+                className="polli:w-[min(20rem,calc(100vw-2rem))]"
                 trigger={(open) => (
                     <button
                         type="button"
-                        aria-label={label || placeholder}
+                        aria-label={ariaLabel || label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
@@ -162,6 +165,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     <button
                         type="button"
                         onClick={selectAll}
+                        aria-pressed={isAllSelected}
                         className={cn(
                             ROW_BASE,
                             isAllSelected
@@ -170,6 +174,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         )}
                     >
                         <span
+                            aria-hidden="true"
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
@@ -187,6 +192,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 type="button"
                                 key={opt.value}
                                 onClick={() => toggleItem(opt.value)}
+                                aria-pressed={isChecked}
                                 className={cn(
                                     ROW_BASE,
                                     isChecked
@@ -195,6 +201,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 )}
                             >
                                 <span
+                                    aria-hidden="true"
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
@@ -203,7 +210,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 >
                                     {isChecked && "✓"}
                                 </span>
-                                <span className="polli:whitespace-nowrap">
+                                <span className="polli:min-w-0 polli:[overflow-wrap:anywhere]">
                                     {opt.label}
                                 </span>
                             </button>

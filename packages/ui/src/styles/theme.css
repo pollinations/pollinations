@@ -86,6 +86,7 @@
     --color-switch-track-invalid: var(--polli-color-switch-track-invalid);
 
     --color-surface-opaque: var(--polli-color-surface-opaque);
+    --color-surface-menu: var(--polli-color-surface-menu);
     --color-surface-translucent: var(--polli-color-surface-translucent);
     --color-surface-white: var(--polli-color-surface-translucent);
 }

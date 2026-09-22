@@ -250,11 +250,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         {playSupported && (
                             <Tooltip
                                 content="Try in Play"
-                                ariaLabel={`Try ${publicModelName} in Play`}
-                                tapEnabled
+                                triggerAs="span"
+                                className="polli:cursor-pointer"
                                 displayContents
                             >
                                 <a
+                                    aria-label={`Try ${publicModelName} in Play`}
                                     href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"

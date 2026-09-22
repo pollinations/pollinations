@@ -64,7 +64,8 @@ function KeysPage() {
 
     async function handleDeleteApiKey(id: string): Promise<void> {
         const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error) console.error(result.error);
+        if (result.error)
+            throw new Error(result.error.message || "Request failed");
         await router.invalidate();
     }
 

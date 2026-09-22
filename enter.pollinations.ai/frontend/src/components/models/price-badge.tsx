@@ -324,7 +324,10 @@ const LedgerLabel: FC<{
         )}
         {displayLabel !== label && <span className="sr-only">{label}</span>}
         <span
-            className="truncate whitespace-nowrap"
+            className={cn(
+                "truncate whitespace-nowrap",
+                displayLabel !== label && "cursor-help",
+            )}
             aria-hidden={displayLabel === label ? undefined : true}
             title={displayLabel === label ? undefined : label}
         >
@@ -606,7 +609,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
                     <LedgerPriceValue value={row.value} />
                     <span
-                        className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                        className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
                     >
                         {row.unit}

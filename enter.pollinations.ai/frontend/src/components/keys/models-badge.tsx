@@ -32,9 +32,7 @@ export const ModelsBadge: FC<{
             <Chip
                 intent="neutral"
                 size="sm"
-                className={`cursor-default transition-colors hover:brightness-95 ${
-                    isAllModels ? "text-intent-success-text" : ""
-                }`}
+                className="transition-colors hover:brightness-95"
             >
                 {isAllModels ? "All" : modelCount}
             </Chip>

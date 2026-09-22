@@ -89,7 +89,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     content={disabledTooltip || "No items available"}
                     align="center"
                     className={cn(
-                        "polli:inline-flex",
+                        "polli:inline-flex polli:cursor-not-allowed",
                         fullWidth && "polli:min-w-0 polli:flex-1",
                     )}
                 >

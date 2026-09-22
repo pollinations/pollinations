@@ -51,6 +51,7 @@ function AccountPage() {
     const [connectionPending, setConnectionPending] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [signOutError, setSignOutError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!discordAvailable) return;
@@ -101,11 +102,14 @@ function AccountPage() {
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
         setIsSigningOut(true);
+        setSignOutError(null);
         try {
-            await authClient.signOut();
+            const { error } = await authClient.signOut();
+            if (error) throw error;
             window.location.href = "/news";
         } catch (error) {
             console.error("Sign out failed:", error);
+            setSignOutError("Couldn’t sign out. Please try again.");
             setIsSigningOut(false);
         }
     }
@@ -202,6 +206,8 @@ function AccountPage() {
                 </div>
             </Section>
 
+            {signOutError && <Alert intent="danger">{signOutError}</Alert>}
+
             <Section title="Community">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
@@ -242,6 +248,7 @@ function AccountPage() {
                     </div>
                     <Button
                         type="button"
+                        intent={discordConnection ? "danger" : "commit"}
                         className="shrink-0 self-start sm:self-center"
                         disabled={
                             !discordAvailable ||
@@ -351,14 +358,18 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
         setIsDeleting(true);
         setError(null);
 
-        const result = await authClient.deleteUser();
-        if (result.error) {
-            setError(result.error.message || "Account deletion failed.");
+        try {
+            const result = await authClient.deleteUser();
+            if (result.error) {
+                setError(result.error.message || "Account deletion failed.");
+                return;
+            }
+            window.location.assign("/news");
+        } catch {
+            setError("Account deletion failed. Please try again.");
+        } finally {
             setIsDeleting(false);
-            return;
         }
-
-        window.location.assign("/news");
     }
 
     return (

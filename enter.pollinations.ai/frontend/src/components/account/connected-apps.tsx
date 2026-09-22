@@ -86,7 +86,7 @@ function AppCard({
             <Button
                 type="button"
                 size="sm"
-                intent={connected ? "danger" : undefined}
+                intent={connected ? "danger" : "commit"}
                 className="inline-flex shrink-0 items-center gap-1.5"
                 disabled={pending}
                 aria-label={`${actionLabel} ${name}`}
@@ -333,6 +333,7 @@ export function ConnectedApps() {
                     ))}
                 {!connectionsLoading &&
                     !toolkitsLoading &&
+                    !connectionsError &&
                     !toolkitsError &&
                     displayedConnections.length === 0 &&
                     displayedToolkits.length === 0 && (

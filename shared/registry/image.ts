@@ -775,13 +775,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.6": {
         aliases: ["wan2.6", "wan-i2v", "wan"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // Alibaba wan2.6-t2v / wan2.6-i2v, locked to 720p ($0.10/s). Native audio is bundled
         // into the per-second rate, so there is no separate audio line.
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
@@ -892,23 +892,26 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-3.0": {
         aliases: ["wan-3.0"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Fal Prime rates verified against live endpoints on 2026-08-25.
+        // Alibaba Standard Singapore list rates; input video is also billed.
         cost: {
-            completionVideoSeconds: 0.068, // per sec at 480p
+            promptVideoSeconds: 0.05,
+            completionVideoSeconds: 0.05, // per sec at 480p
         },
         ...defineCostVariants(
             {
                 "720p": {
-                    completionVideoSeconds: 0.14,
+                    promptVideoSeconds: 0.1,
+                    completionVideoSeconds: 0.1,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.28,
+                    promptVideoSeconds: 0.2,
+                    completionVideoSeconds: 0.2,
                 },
             },
             matchResolution("720p", "1080p"),
@@ -947,13 +950,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.7-image": {
         aliases: ["wan2.7-image", "wan-img", "wan-image"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
+        // Alibaba Singapore: $0.03 per generated or edited image.
         cost: {
             completionImageTokens: 0.03, // per image
         },
@@ -1028,14 +1031,14 @@ const IMAGE_BASE_SERVICES = {
     },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptImageTokens: 0.003, // per reference image ingested by Fal
+            promptImageTokens: 0.003, // per reference image ingested
             completionImageTokens: 0.04, // per image up to 1536x1536
         },
         ...defineCostVariants(

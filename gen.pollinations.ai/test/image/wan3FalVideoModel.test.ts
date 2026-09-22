@@ -3,15 +3,11 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import { callWan3FalAPI } from "../../src/image/models/wan3FalVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
-const TEXT_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
-const IMAGE_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
-const R2V_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
-const STATUS_URL =
-    "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test/status";
-const RESULT_URL = "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test";
+const TEXT_ENDPOINT = "https://queue.fal.run/alibaba/wan-3.0/text-to-video";
+const IMAGE_ENDPOINT = "https://queue.fal.run/alibaba/wan-3.0/image-to-video";
+const R2V_ENDPOINT = "https://queue.fal.run/alibaba/wan-3.0/reference-to-video";
+const STATUS_URL = "https://queue.fal.run/alibaba/wan-3.0/requests/test/status";
+const RESULT_URL = "https://queue.fal.run/alibaba/wan-3.0/requests/test";
 const VIDEO_URL = "https://fal.media/wan-3-test.mp4";
 const VIDEO_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
 const REF_IMAGE_URL = "https://media.pollinations.ai/ref-style.png";
@@ -96,7 +92,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("Wan 3.0 Prime via Fal", () => {
+describe("Wan 3.0 Standard via Fal", () => {
     it.each([
         [undefined, "480p", false, [], "16:9", TEXT_ENDPOINT],
         ["720p", "720p", true, [], "9:16", TEXT_ENDPOINT],

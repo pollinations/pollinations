@@ -1,10 +1,4 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
-import {
-    fetchModelHealthRows,
-    type ModelHealth,
-    type ModelHealthRow,
-    modelHealthLookup,
-} from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -18,7 +12,6 @@ type ApiPricing = ModelInfo["pricing"];
 
 export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
-    health?: ModelHealth;
 };
 
 type PriceField =
@@ -86,19 +79,6 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 let modelCatalogExpiresAt = 0;
 
-export function mergeModelCatalogs(
-    catalogs: readonly ApiModelInfo[][],
-): ApiModelInfo[] {
-    const modelsById = new Map<string, ApiModelInfo>();
-    for (const catalog of catalogs) {
-        for (const model of catalog) {
-            const id = getCatalogModelId(model);
-            if (id && !modelsById.has(id)) modelsById.set(id, model);
-        }
-    }
-    return [...modelsById.values()];
-}
-
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const response = await fetch(url, {
         cache: "no-store",
@@ -110,17 +90,6 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     return parseModelCatalogResponse(await response.json());
 }
 
-export function withModelHealth(
-    models: ApiModelInfo[],
-    rows: ModelHealthRow[],
-): ApiModelInfo[] {
-    const lookup = modelHealthLookup(rows);
-    return models.map((model) => ({
-        ...model,
-        health: lookup(getCatalogModelId(model), getCatalogCategory(model)),
-    }));
-}
-
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
@@ -130,17 +99,7 @@ export async function fetchModelCatalog(
         modelCatalogExpiresAt = Date.now() + 60_000;
     }
     modelCatalogPromise ??= import("../../config.ts")
-        .then(async ({ config }) => {
-            const [rows, ...catalogs] = await Promise.all([
-                // Health is decoration: without the feed every dot reads unknown.
-                fetchModelHealthRows(config.genBaseUrl).catch(() => []),
-                fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
-            ]);
-            return withModelHealth(mergeModelCatalogs(catalogs), rows);
-        })
+        .then(({ config }) => fetchCatalog(`${config.genBaseUrl}/models`))
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;

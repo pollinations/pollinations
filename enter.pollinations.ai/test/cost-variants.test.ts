@@ -341,9 +341,9 @@ describe("long-context cost variants", () => {
             output: baseOutput,
         });
         expect(base.costVariant).toBeUndefined();
-        expect(base.cost.totalCost).toBeCloseTo(0.2375 * 1.055, 12);
+        expect(base.cost.totalCost).toBeCloseTo(0.65, 12);
         expect(base.adjustments).toHaveLength(1);
-        expect(base.adjustments[0].cost).toBeCloseTo(0.0375 * 1.055, 12);
+        expect(base.adjustments[0].cost).toBeCloseTo(0.45, 12);
 
         const long = calculateUsageBilling({
             model: "google/gemini-3.1-pro-preview",
@@ -360,9 +360,32 @@ describe("long-context cost variants", () => {
             },
         });
         expect(long.costVariant).toBe("long_context");
-        expect(long.cost.totalCost).toBeCloseTo(4.375 * 1.055, 12);
+        expect(long.cost.totalCost).toBeCloseTo(8.5, 12);
         expect(long.adjustments).toHaveLength(1);
-        expect(long.adjustments[0].cost).toBeCloseTo(0.375 * 1.055, 12);
+        expect(long.adjustments[0].cost).toBeCloseTo(4.5, 12);
+    });
+
+    it("keeps Vertex cache-storage pricing when OpenRouter serves the fallback", () => {
+        const billing = calculateUsageBilling({
+            model: "google/gemini-3.1-pro-preview",
+            usage: {},
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview:openrouter:vertex-global",
+            ),
+            quotedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
+            output: {
+                usage: {
+                    prompt_tokens_details: {
+                        cache_write_tokens: 1_000_000,
+                    },
+                },
+            },
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.375 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(4.5 * 1.055, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {

@@ -187,6 +187,7 @@ describe("permission picker selections", () => {
     });
     it("preserves the difference between no models and all models", () => {
         expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);
+        expect(normalizeAllowedModelSelection([], [])).toEqual([]);
         expect(
             setConsentModelGroup(null, ["a", "b"], ["a", "b"], false),
         ).toEqual([]);

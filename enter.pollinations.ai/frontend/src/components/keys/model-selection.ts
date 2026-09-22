@@ -4,6 +4,7 @@ export function normalizeAllowedModelSelection(
 ): string[] | null {
     const uniqueNext = new Set(next);
     const hasExactFullSelection =
+        uniqueNext.size > 0 &&
         uniqueNext.size === allModelIds.length &&
         allModelIds.every((id) => uniqueNext.has(id));
 

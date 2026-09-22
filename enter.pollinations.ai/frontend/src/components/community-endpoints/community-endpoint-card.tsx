@@ -219,6 +219,7 @@ export function CommunityEndpointCard({
             >
                 <Link
                     data-size="footer"
+                    data-tone="quiet"
                     to="/activity"
                     search={{
                         usageGranularity: "day",

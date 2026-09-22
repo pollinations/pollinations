@@ -425,8 +425,12 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
+    // Jev is the one OpenRouter route free-tier accounts may select, so it is
+    // visible to both keys and cannot take part in this comparison.
     const openRouterModelNames = getVisibleTextModels().filter(
-        (model) => getRegistryModelDefinition(model).provider === "openrouter",
+        (model) =>
+            getRegistryModelDefinition(model).provider === "openrouter" &&
+            model !== "typesafe/jev-1.13",
     );
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
@@ -451,6 +455,37 @@ test("filters OpenRouter text models by paid balance", async ({
         expect(generation.headers.get("cache-control")).toBe(
             "private, no-store",
         );
+    }
+});
+
+test("requires paid balance for direct OpenAI GPT-6 models", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
+    const freeResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const freeNames = new Set(freeModels.data.map((model) => model.id));
+    const paidNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of models) {
+        expect(freeNames.has(model)).toBe(false);
+        expect(paidNames.has(model)).toBe(true);
+        const response = await fetchWorker(
+            `/text/paid-only-check?model=${model}`,
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+        );
+        expect(response.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
     }
 });
 

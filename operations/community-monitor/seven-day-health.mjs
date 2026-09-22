@@ -115,7 +115,7 @@ const catalog = Array.isArray(catalogPayload)
     : (catalogPayload.data ?? []);
 const activeCommunityModels = new Map(
     catalog
-        .filter((model) => model.community)
+        .filter((model) => model.community && !model.agent)
         .map((model) => [model.name.replace(/^community\//, ""), model]),
 );
 

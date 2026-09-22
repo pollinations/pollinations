@@ -15,6 +15,8 @@ const AZURE_RESOURCE_BLOCK =
 // recent_server_errors, 2026-06). Every one of these must classify as a
 // content-policy violation so it surfaces as a 4xx, not a 5xx.
 const REAL_MODERATION_MESSAGES = [
+    "Exception: The output audio may be related to copyright restrictions.",
+    '{"code":"permission-denied","error":"I can\'t help with that request."}',
     // Alibaba DashScope (wan, wan-pro, wan-fast)
     "Green net check failed for input image",
     "Green net check failed for output video",
@@ -43,6 +45,8 @@ const REAL_MODERATION_MESSAGES = [
 // Genuine backend/infra failures that MUST stay 5xx — never misclassified as
 // content policy.
 const NON_MODERATION_MESSAGES = [
+    '{"code":"permission-denied","error":"API key lacks access to this model"}',
+    "Copyright detection service unavailable",
     "The service is currently experiencing high load and cannot process your request. Please try again later.",
     "No image URL in Wan-Image response",
     "Vertex AI API error: 500 Internal Server Error",

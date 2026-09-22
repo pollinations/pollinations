@@ -5,6 +5,7 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
+import { callAlibabaImage } from "./models/alibabaImageModel.ts";
 import {
     callAzureFlux2,
     callAzureFluxKontext,
@@ -20,6 +21,7 @@ import {
 import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
+    callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -39,6 +41,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
+import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import { callZImageFalAPI } from "./models/zImageFalModel.ts";
@@ -792,8 +795,8 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
-        case "google/gemini-3.1-flash-image:openrouter:ai-studio":
-        case "google/gemini-3.1-flash-lite-image": {
+        case "google/gemini-3.1-flash-lite-image":
+        case "google/gemini-3-pro-image": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -804,10 +807,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+                return await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "OpenRouter Gemini image generation or safety check failed:",
+                    "Vertex Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -815,8 +818,10 @@ const generateImage = async (
             }
         }
 
-        case "google/gemini-3-pro-image":
-        case "google/gemini-3-pro-image:openrouter:vertex-global": {
+        case "google/gemini-2.5-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
+        case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -861,6 +866,12 @@ const generateImage = async (
                 throw error;
             }
         }
+
+        case "black-forest-labs/flux.2-max":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
+        case "black-forest-labs/flux.2-max:openrouter":
+            return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
         case "microsoft/mai-image-2.5-flash": {
             try {
@@ -928,6 +939,9 @@ const generateImage = async (
             return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
+            return await callAlibabaImage(prompt, safeParams, "wan2.7-image");
+
+        case "alibaba/wan-2.7-image:replicate":
             return await callWanImageAPI(prompt, safeParams, false);
 
         case "alibaba/wan-2.7-image-pro":
@@ -937,6 +951,13 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "qwen/qwen-image-3":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-3.0-pro",
+            );
+
+        case "qwen/qwen-image-3:fal":
             return await callQwenImage3API(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":

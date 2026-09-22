@@ -16,6 +16,17 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+test("usageToEventParams preserves fractional megapixels for image usage", () => {
+    // Replicate FLUX.2 Max bills per input/output megapixel; 1024x1024 is 1.048576 MP.
+    const params = usageToEventParams({
+        promptImageTokens: 2.097152,
+        completionImageTokens: 1.048576,
+    });
+
+    expect(params.tokenCountPromptImage).toBe(2.097152);
+    expect(params.tokenCountCompletionImage).toBe(1.048576);
+});
+
 test("usageToEventParams preserves fractional seconds for video and audio durations", () => {
     // LTX-2 produces durations of the form N + 1/24 (8n+1 frames at 24fps);
     // ElevenLabs Music / Whisper-style STT produce non-integer second counts.

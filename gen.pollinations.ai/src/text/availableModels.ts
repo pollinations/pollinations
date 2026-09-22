@@ -214,6 +214,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-max",
+        config: portkeyConfig["qwen3.8-max-alibaba"],
+        transform: qwenForcedToolTransform,
+    },
+    {
+        name: "qwen/qwen3.8-max:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
@@ -223,22 +228,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.7-flash",
-        config: portkeyConfig["qwen/qwen3.7-flash"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "qwen/qwen3.7-flash:alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen3.7-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.8-flash",
-        config: portkeyConfig["qwen/qwen3.8-flash"],
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
         transform: qwenFlashTransform,
     },
     {
-        name: "qwen/qwen3.8-flash:alibaba",
-        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        name: "qwen/qwen3.8-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
         transform: qwenFlashTransform,
     },
     {

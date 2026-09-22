@@ -22,18 +22,32 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "openai/gpt-image-1-mini": {
+        // Prefer the alternate Azure region before leaving Azure (#13174).
+        "openai/gpt-image-1-mini:azure-westus3": {
+            provider: "azure",
+            addedDate: new Date("2026-09-22").getTime(),
+        },
         "openai/gpt-image-1-mini:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
         },
     },
     "openai/gpt-image-1.5": {
+        "openai/gpt-image-1.5:azure-westus3": {
+            provider: "azure",
+            addedDate: new Date("2026-09-22").getTime(),
+        },
         "openai/gpt-image-1.5:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
         },
     },
     "openai/gpt-image-2": {
+        "openai/gpt-image-2:azure-eastus2": {
+            provider: "azure",
+            addedDate: new Date("2026-09-22").getTime(),
+            perUserRpm: null,
+        },
         "openai/gpt-image-2:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),

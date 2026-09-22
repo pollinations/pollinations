@@ -2,7 +2,6 @@ import {
     Button,
     CopyButton,
     cn,
-    Dialog,
     DialogTitle,
     Field,
     InlineLink,
@@ -18,6 +17,7 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { genDocsUrl } from "../../config.ts";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -161,7 +161,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     );
 
     return (
-        <Dialog
+        <ResourceDialog
             open={isOpen}
             onOpenChange={(open) => {
                 if (open) {
@@ -194,7 +194,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 </Button>
             }
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
@@ -337,6 +336,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     )}
                 </div>
             </form>
-        </Dialog>
+        </ResourceDialog>
     );
 };

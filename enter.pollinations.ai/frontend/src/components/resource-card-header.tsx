@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 type ResourceCardHeaderProps = {
-    contentClassName?: string;
     icon: ReactNode;
     title: ReactNode;
     actions: ReactNode;
@@ -10,7 +9,6 @@ type ResourceCardHeaderProps = {
 };
 
 export function ResourceCardHeader({
-    contentClassName,
     icon,
     title,
     actions,
@@ -19,7 +17,7 @@ export function ResourceCardHeader({
 }: ResourceCardHeaderProps) {
     return (
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1">
-            <div className={`min-w-0 ${contentClassName ?? ""}`}>
+            <div className="min-w-0">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="shrink-0 text-theme-text-muted">
                         {icon}

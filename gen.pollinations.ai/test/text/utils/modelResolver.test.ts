@@ -69,6 +69,25 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
+    it.each([
+        "gpt-6-sol",
+        "gpt-6-luna",
+    ])("routes %s through the direct OpenAI Responses API", (model) => {
+        const canonical = `openai/${model}`;
+        const result = resolveModelConfig(messages, { model: canonical });
+
+        expect(result.options.model).toBe(model);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model,
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+        });
+        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+        expect(() => resolveModelConfig(messages, { model })).toThrow(
+            `Model configuration not found for: ${model}`,
+        );
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {

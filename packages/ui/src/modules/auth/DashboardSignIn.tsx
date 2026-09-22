@@ -77,7 +77,7 @@ export function DashboardSignIn({
             </Surface>
             {!(!isPending && error) && (
                 <Text size="sm" tone="muted">
-                    Sign in with your pollinations.ai admin account.
+                    Sign in with your Pollinations admin account.
                 </Text>
             )}
         </AuthFlowLayout>

@@ -71,8 +71,8 @@ export function ModelListingFields({
             ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
             : "Listed in /models and callable by anyone. Set prices below, or leave them at 0 for free."
         : canPublish
-          ? "Only you can use it."
-          : "Only you can use it. Public publishing requires approval.";
+          ? "Only you can use it. It appears in /models only when authenticated with your key."
+          : "Only you can use it. It appears in /models only when authenticated with your key. Public publishing requires approval.";
     const visibilityOptions = (
         <ButtonGroup aria-label="Model visibility">
             <TabButton

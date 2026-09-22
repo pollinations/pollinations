@@ -2,6 +2,25 @@ import { resourceActionError } from "@frontend/lib/resource-action-error.ts";
 import { describe, expect, it } from "vitest";
 
 describe("resource action feedback", () => {
+    it.each([
+        ["create", "the secret key", "Failed to create API key"],
+        ["save", "the app key", "Failed to save key. Please try again."],
+        ["save", "app access", "Failed to save key metadata"],
+        ["delete", "the model", "Request failed"],
+        ["save", "the agent", "Request failed"],
+    ] as const)("does not append a generic %s failure for %s", (action, subject, detail) => {
+        expect(
+            resourceActionError(action, subject, new Error(` ${detail} `)),
+        ).toBe(resourceActionError(action, subject));
+    });
+
+    it("preserves specific details even when they start with a generic failure", () => {
+        const detail = "Request failed: endpoint returned 403 Forbidden.";
+        expect(
+            resourceActionError("save", "the model", new Error(detail)),
+        ).toBe(`Couldn’t save the model. ${detail}`);
+    });
+
     it("keeps actionable validation details after the contextual message", () => {
         const detail = "Budget must be a number.";
         const message = resourceActionError(

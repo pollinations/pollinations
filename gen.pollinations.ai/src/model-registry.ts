@@ -312,6 +312,11 @@ function sequenceRowToGenerationEntry(
             ...modelInfoFromDefinition(id, definition),
             supported_endpoints: primary.supportedEndpoints,
         },
+        // The primary's community runtime (when it has one) is how the first
+        // attempt actually reaches the primary: without it a community-primary
+        // sequence would take the static-provider path with an id the gateway
+        // does not know, and the primary could never serve.
+        communityEndpoint: primary.communityEndpoint,
         modelSequence: { ownerUserId: row.ownerUserId },
         // Owner-private: added back for the owner by visibleEntries().
         visible: false,

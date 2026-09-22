@@ -199,6 +199,54 @@ describe("model sequence registry projection", () => {
         ).toBeNull();
     });
 
+    it("keeps the community primary's runtime so the first attempt can serve it", async () => {
+        const { userId, githubUsername } = await createSequenceOwner();
+        // A public proxy listing owned by the sequence owner, written the way
+        // Enter writes proxy rows (variant fields packed into payload).
+        await db.insert(schema.communityEndpoint).values({
+            id: `seq-primary-endpoint-${ownerCounter}`,
+            ownerUserId: userId,
+            name: "pro",
+            title: "pro",
+            type: "proxy",
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1/chat/completions",
+            upstreamModel: "upstream-pro",
+            payload: JSON.stringify({
+                bearerTokenCiphertext: "test-ciphertext",
+                api: "chat_completions",
+                paidOnly: false,
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+                prices: {},
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const communityPrimaryId = communityModelId(githubUsername, "pro");
+        await insertSequence(userId, "community-chain", [
+            communityPrimaryId,
+            FALLBACK,
+        ]);
+
+        const registry = await getGenerationModelRegistry(env);
+        const entry = registry.resolve(
+            modelSequenceModelId(githubUsername, "community-chain"),
+        );
+        expect(entry).not.toBeNull();
+        // Without the runtime the first fallback candidate would take the
+        // static-provider path with an id the gateway does not know, and the
+        // primary could never serve.
+        expect(entry?.communityEndpoint?.upstreamModel).toBe("upstream-pro");
+        // The fallback band still links concrete targets, depth one.
+        expect(entry?.fallbackEntries?.map((target) => target.id)).toEqual([
+            FALLBACK,
+        ]);
+    });
+
     it("drops fallbacks priced above the primary", async () => {
         const { userId, githubUsername } = await createSequenceOwner();
         // nano is cheaper than gpt-5.4, so gpt-5.4 cannot fall back from it.

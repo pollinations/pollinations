@@ -233,18 +233,25 @@ async function resolveSequenceModel(
             // with sequences, so this may name an existing sequence. Nested
             // sequences are not allowed, and saying so reveals nothing about
             // other owners: the sequence itself is owner-private either way.
-            const nested = owner
-                ? await db.query.modelSequence.findFirst({
-                      columns: { id: true },
-                      where: and(
-                          eq(schema.modelSequence.ownerUserId, owner.id),
-                          eq(
-                              schema.modelSequence.name,
-                              communityParts.modelName,
+            // The legacy community alias `owner/name` shares its id space
+            // with sequences, so this may name an existing sequence. The
+            // nested-sequence error is only safe when the sequence belongs to
+            // the caller: for anyone else's sequence it would confirm the
+            // existence of an owner-private id, so other owners get the same
+            // missing-model response as for an unknown name.
+            const nested =
+                owner && owner.id === ownerUserId
+                    ? await db.query.modelSequence.findFirst({
+                          columns: { id: true },
+                          where: and(
+                              eq(schema.modelSequence.ownerUserId, owner.id),
+                              eq(
+                                  schema.modelSequence.name,
+                                  communityParts.modelName,
+                              ),
                           ),
-                      ),
-                  })
-                : undefined;
+                      })
+                    : undefined;
             if (nested) {
                 throw new HTTPException(400, {
                     message: `Model ${requested} is itself a model sequence; nested sequences are not allowed`,

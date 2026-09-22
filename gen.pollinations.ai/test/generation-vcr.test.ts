@@ -2771,7 +2771,7 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     expect(response.headers.get("x-model-used")).toBe(
         "openai/gpt-image-2:openai",
     );
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[2]");
     await response.arrayBuffer();
     await wait();
 
@@ -2811,7 +2811,7 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
     expect(response.headers.get("x-model-used")).toBe(
         "openai/gpt-image-2:openai",
     );
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[2]");
     await response.arrayBuffer();
     await wait();
     expect(mocks.gptImage.state.imageHostRequests).toBe(2);

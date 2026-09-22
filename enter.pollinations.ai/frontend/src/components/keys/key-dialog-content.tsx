@@ -33,7 +33,7 @@ type KeyDialogContentProps = {
     header?: ReactNode;
     mode: "create" | "edit";
     app: boolean;
-    appAccess?: boolean;
+    accessContext?: "app" | "device";
     publishable: boolean;
     name: string;
     onNameChange: (name: string) => void;
@@ -59,7 +59,7 @@ export function KeyDialogContent({
     header,
     mode,
     app,
-    appAccess = false,
+    accessContext,
     publishable,
     name,
     onNameChange,
@@ -81,8 +81,8 @@ export function KeyDialogContent({
 }: KeyDialogContentProps) {
     const titles = {
         create: app ? "Create app key" : "Create secret key",
-        edit: appAccess
-            ? "Edit app access"
+        edit: accessContext
+            ? `Edit ${accessContext} access`
             : app
               ? "Edit app key"
               : publishable
@@ -102,8 +102,8 @@ export function KeyDialogContent({
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
               ? "Set the name, earnings, and redirect URLs."
-              : appAccess
-                ? "Choose what this app can access and how much it can spend."
+              : accessContext
+                ? `Choose what this ${accessContext} can access and how much it can spend.`
                 : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
@@ -240,7 +240,7 @@ export function KeyDialogContent({
                             <ul className="space-y-3 text-sm">
                                 <KeyNameField
                                     app={app}
-                                    appAccess={appAccess}
+                                    accessContext={accessContext}
                                     publishable={publishable}
                                     value={name}
                                     onChange={onNameChange}
@@ -254,7 +254,7 @@ export function KeyDialogContent({
                                         ariaLabel="Receive 20% of the Pollen users spend in your app"
                                         info={
                                             <InfoTip
-                                                text="When enabled, 20% of the Pollen users spend through your app is credited to your balance. Your own spending does not generate earnings."
+                                                text="When enabled, your users pay 25% above the base rate. That markup, 20% of what they pay, is credited to your balance. Your own spending does not generate earnings."
                                                 label="App earnings information"
                                             />
                                         }
@@ -274,7 +274,7 @@ export function KeyDialogContent({
                         ) : (
                             <KeyPermissionsInputs
                                 value={permissions}
-                                appAccess={appAccess}
+                                accessContext={accessContext}
                                 disabled={isSubmitting}
                             />
                         )}

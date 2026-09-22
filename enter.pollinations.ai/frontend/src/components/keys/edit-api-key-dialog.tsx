@@ -16,8 +16,8 @@ import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
-    /** Use app-access wording in the standalone editor. */
-    appAccess?: boolean;
+    /** Use grant-specific wording in the standalone editor. */
+    accessContext?: "app" | "device";
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
     /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
@@ -32,7 +32,7 @@ function cleanRedirectUris(uris: string[]): string[] {
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
-    appAccess = false,
+    accessContext,
     onUpdate,
     onClose,
     header,
@@ -112,8 +112,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             setError(
                 resourceActionError(
                     "save",
-                    appAccess
-                        ? "app access"
+                    accessContext
+                        ? `${accessContext} access`
                         : appKey
                           ? "the app key"
                           : "the secret key",
@@ -133,7 +133,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             <KeyDialogContent
                 header={header}
                 mode="edit"
-                appAccess={appAccess}
+                accessContext={accessContext}
                 app={appKey}
                 publishable={isPublishable}
                 name={name}

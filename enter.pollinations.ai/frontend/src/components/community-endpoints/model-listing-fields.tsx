@@ -105,8 +105,8 @@ export function ModelListingFields({
                             label={isAgent ? "ID" : "Model ID"}
                             help={
                                 isAgent
-                                    ? "Public ID: {username}/{id}."
-                                    : "Public ID: {username}/{model-id}."
+                                    ? "Public ID: community/{username}/{id}."
+                                    : "Public ID: community/{username}/{model-id}."
                             }
                             action={
                                 !isAgent && (

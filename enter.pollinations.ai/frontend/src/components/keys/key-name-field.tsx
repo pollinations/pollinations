@@ -4,14 +4,14 @@ import { useId } from "react";
 /** The key's name, shown in its own full-width card. */
 export function KeyNameField({
     app,
-    appAccess = false,
+    accessContext,
     publishable,
     value,
     onChange,
     disabled,
 }: {
     app: boolean;
-    appAccess?: boolean;
+    accessContext?: "app" | "device";
     publishable: boolean;
     value: string;
     onChange: (value: string) => void;
@@ -46,7 +46,7 @@ export function KeyNameField({
                 placeholder={
                     app
                         ? "App name"
-                        : publishable || appAccess
+                        : publishable || accessContext
                           ? "Name"
                           : "Secret name"
                 }

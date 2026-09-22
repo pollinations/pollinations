@@ -12,8 +12,8 @@ const limits = {
         step: "any",
         empty: "Unlimited",
         helper: "Spending cap for this key. Requests are rejected after the budget is spent. Leave empty for no cap.",
-        appHelper:
-            "Spending cap for this app. Requests are rejected after the budget is spent. Leave empty for no cap.",
+        accessHelper: (subject: "app" | "device") =>
+            `Spending cap for this ${subject}. Requests are rejected after the budget is spent. Leave empty for no cap.`,
     },
     expiry: {
         label: "Expiry",
@@ -24,8 +24,8 @@ const limits = {
         step: "any",
         empty: "Never",
         helper: "Key expires after this many days. Leave empty for no expiry.",
-        appHelper:
-            "App access expires after this many days. Leave empty for no expiry.",
+        accessHelper: (subject: "app" | "device") =>
+            `${subject === "app" ? "App" : "Device"} access expires after this many days. Leave empty for no expiry.`,
     },
 } as const;
 
@@ -35,13 +35,13 @@ export function KeyLimitInput({
     value,
     onChange,
     disabled = false,
-    appAccess = false,
+    accessContext,
 }: {
     kind: keyof typeof limits;
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
-    appAccess?: boolean;
+    accessContext?: "app" | "device";
 }) {
     const inputId = useId();
     const limit = limits[kind];
@@ -93,7 +93,11 @@ export function KeyLimitInput({
             <span className="inline-flex items-center">
                 {limit.label}
                 <InfoTip
-                    text={appAccess ? limit.appHelper : limit.helper}
+                    text={
+                        accessContext
+                            ? limit.accessHelper(accessContext)
+                            : limit.helper
+                    }
                     label={`${limit.label} information`}
                 />
             </span>

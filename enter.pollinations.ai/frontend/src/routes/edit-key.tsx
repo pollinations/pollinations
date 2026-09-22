@@ -12,6 +12,11 @@ import {
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
+import {
+    getKeyAccessContext,
+    isAppKey,
+    isPublishableKey,
+} from "../components/keys/key-type.ts";
 import { useAccountBalance } from "../hooks/use-account-balance.ts";
 import {
     parseAppUrl,
@@ -32,7 +37,7 @@ type EditKeySearch = {
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
-        meta: [{ title: "Edit app access | pollinations.ai" }],
+        meta: [{ title: "Edit access | pollinations.ai" }],
     }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
@@ -49,6 +54,19 @@ function EditKeyPage() {
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
+    const accessContext = apiKey ? getKeyAccessContext(apiKey) : undefined;
+    const title = !apiKey
+        ? "Edit access"
+        : accessContext
+          ? `Edit ${accessContext} access`
+          : isAppKey(apiKey)
+            ? "Edit app key"
+            : isPublishableKey(apiKey)
+              ? "Edit publishable key"
+              : "Edit secret key";
+    useEffect(() => {
+        document.title = `${title} | pollinations.ai`;
+    }, [title]);
     const balance = useAccountBalance(Boolean(user));
     const [outcome, setOutcome] = useState<Outcome>("editing");
     const returnUrl = redirect ?? null;
@@ -79,7 +97,7 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    // The card reads as one sentence: "Edit app access · {key} · {step}".
+    // The heading follows the loaded key; unknown/loading states stay neutral.
     // The URL only carries the record id, so the card waits for the key row.
     const subject = apiKey ? (
         <Surface>
@@ -94,15 +112,14 @@ function EditKeyPage() {
         </Surface>
     ) : undefined;
 
-    if (isPending)
-        return <AuthModalLoading title="Edit app access" subject={subject} />;
+    if (isPending) return <AuthModalLoading title={title} subject={subject} />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Edit app access"
+                title={title}
                 subject={subject}
-                description="Sign in to your Pollinations account to change this app’s access."
+                description="Sign in to your Pollinations account to continue."
             />
         );
     }
@@ -119,7 +136,7 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Edit app access"
+                title={title}
                 subject={subject}
                 description={
                     outcome === "saved"
@@ -141,9 +158,9 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Edit app access"
+                title={title}
                 subject={subject}
-                error="Couldn’t load this app’s access. Check that you’re signed in to the account that granted it."
+                error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={
@@ -156,17 +173,17 @@ function EditKeyPage() {
     }
 
     if (apiKey === undefined)
-        return <AuthModalLoading title="Edit app access" subject={subject} />;
+        return <AuthModalLoading title={title} subject={subject} />;
 
     return (
         <EditApiKeyDialog
             key={apiKey.id}
             apiKey={apiKey}
-            appAccess
+            accessContext={accessContext}
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
             footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {
-                await updateApiKey(keyId, updates, "Couldn’t save app access.");
+                await updateApiKey(keyId, updates);
                 setOutcome("saved");
             }}
             onClose={() =>

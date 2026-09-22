@@ -45,7 +45,7 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
 interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
-    appAccess?: boolean;
+    accessContext?: "app" | "device";
     visiblePermissions?: ReadonlySet<string>;
     requestedModels?: string[] | null;
     /** Required identity row on consent; key names are shown above this editor. */
@@ -60,7 +60,7 @@ interface KeyPermissionsInputsProps {
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
-    appAccess = false,
+    accessContext,
     visiblePermissions,
     requestedModels,
     lead,
@@ -110,14 +110,14 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         <>
             <KeyLimitInput
                 kind="budget"
-                appAccess={appAccess}
+                accessContext={accessContext}
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
                 disabled={disabled}
             />
             <KeyLimitInput
                 kind="expiry"
-                appAccess={appAccess}
+                accessContext={accessContext}
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
@@ -161,8 +161,8 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                         <ul className="text-sm">{modelsItem}</ul>
                         <InfoTip
                             text={
-                                appAccess
-                                    ? "Choose which models this app can use."
+                                accessContext
+                                    ? `Choose which models this ${accessContext} can use.`
                                     : "Choose which models this key can use."
                             }
                             label="Generate information"

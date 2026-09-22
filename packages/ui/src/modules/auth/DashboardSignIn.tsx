@@ -18,12 +18,12 @@ const signInErrors = {
     },
     invalid_state: {
         title: "Sign-in link expired",
-        message: "Your pollinations.ai sign-in link expired. Please try again.",
+        message: "Your Pollinations sign-in link expired. Please try again.",
     },
     unavailable: {
         title: "Couldn’t sign in",
         message:
-            "Couldn’t complete your pollinations.ai sign-in. Please try again.",
+            "Couldn’t complete your Pollinations sign-in. Please try again.",
     },
 } as const;
 

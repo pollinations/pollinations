@@ -21,7 +21,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
         title={app ? "Delete app key?" : "Delete secret key?"}
         description={
             app
-                ? "New users will no longer be able to connect with this app key. Existing connections will remain active. Deleting it cannot be undone."
+                ? "Existing connections keep working, but you stop earning from them. Users won’t be able to connect or authorize again with this app key. Deleting it cannot be undone."
                 : "Requests using this secret key will stop working. Deleting it cannot be undone."
         }
         confirmLabel={pending ? "Deleting…" : "Delete"}

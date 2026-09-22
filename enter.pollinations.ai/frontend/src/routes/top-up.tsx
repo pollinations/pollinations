@@ -124,11 +124,7 @@ function TopUpPage() {
             <AuthFlowScreen
                 footnote="back"
                 title="Top-up"
-                description={
-                    returnUrl
-                        ? `Return to ${new URL(returnUrl).hostname}. Your Pollen will appear when Stripe confirms it.`
-                        : "Your Pollen will appear when Stripe confirms the payment."
-                }
+                description="Your Pollen will appear when Stripe confirms the payment."
                 balance={wallet}
                 topUpHref={null}
                 actions={

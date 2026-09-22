@@ -1,4 +1,5 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import type { ManagedAgent } from "./types.ts";
 
 export function AgentDeleteConfirmation({
@@ -11,7 +12,7 @@ export function AgentDeleteConfirmation({
     onCancel: () => void;
 }) {
     return (
-        <Dialog
+        <ResourceDialog
             open={!!agent}
             onOpenChange={(open) => !open && onCancel()}
             title="Delete Agent"
@@ -30,6 +31,6 @@ export function AgentDeleteConfirmation({
                     Delete
                 </Button>
             </div>
-        </Dialog>
+        </ResourceDialog>
     );
 }

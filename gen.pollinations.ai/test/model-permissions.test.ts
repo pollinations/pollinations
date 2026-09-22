@@ -427,7 +427,10 @@ test("filters OpenRouter text models by paid balance", async ({
     };
     // Quest-tier OpenRouter routes free-tier accounts may select (Jev, MiMo
     // V2.5) are visible to both keys and cannot take part in this comparison.
-    const openRouterQuestTier = new Set(["typesafe/jev", "xiaomi/mimo-v2.5"]);
+    const openRouterQuestTier = new Set([
+        "typesafe/jev-1.13",
+        "xiaomi/mimo-v2.5",
+    ]);
     const openRouterModelNames = getVisibleTextModels().filter(
         (model) =>
             getRegistryModelDefinition(model).provider === "openrouter" &&

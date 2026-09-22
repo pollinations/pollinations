@@ -938,18 +938,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     <Section
                         title="Bonus rewards"
                         action={
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="tabular-nums"
-                            >
+                            <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                 {
                                     bonusRewardCards.filter(
                                         (card) => card.status === "claimed",
                                     ).length
                                 }{" "}
                                 / {bonusRewardCards.length}
-                            </Chip>
+                            </span>
                         }
                     >
                         <div className="flex flex-col gap-2">
@@ -981,13 +977,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             key={category.key}
                             title={category.label}
                             action={
-                                <Chip
-                                    intent="neutral"
-                                    size="sm"
-                                    className="tabular-nums"
-                                >
+                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                     {done} / {liveCards.length}
-                                </Chip>
+                                </span>
                             }
                         >
                             <div className="flex flex-col gap-2">

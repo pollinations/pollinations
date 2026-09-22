@@ -1,10 +1,4 @@
-import {
-    Chip,
-    InlineLink,
-    RocketIcon,
-    Surface,
-    Tooltip,
-} from "@pollinations/ui";
+import { InlineLink, RocketIcon, Surface, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
@@ -111,16 +105,12 @@ export const PerPollenEstimate: FC<{
             displayContents
         >
             {ledger ? (
-                <Chip
-                    intent="neutral"
-                    size="sm"
-                    className="justify-self-center tabular-nums"
-                >
+                <span className="inline-flex items-center justify-self-center gap-1 text-xs font-medium tabular-nums text-theme-text-strong">
                     {!isFree && !isUnavailable && (
                         <span aria-hidden="true">≈</span>
                     )}
                     <span>{value}</span>
-                </Chip>
+                </span>
             ) : (
                 <ModelRateValue value={value} unit="req /pollen" />
             )}

@@ -1078,4 +1078,13 @@ LINKEOF
 
     except Exception as e:
         print(f"  VPS: {type(e).__name__}: {e}")
+        # Bad/rotated SSH material is an ops secret problem, not a content
+        # publish bug. Treat auth failures like "not configured" so the
+        # scheduled workflow stays green instead of filing #15002 daily.
+        if e.__class__.__name__ == "AuthenticationException":
+            print(
+                "  VPS: SSH auth failed — skipping Reddit "
+                "(rotate or fix REDDIT_VPS_SSH_KEY)"
+            )
+            return None
         return False

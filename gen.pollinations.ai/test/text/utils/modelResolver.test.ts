@@ -154,6 +154,30 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Claude Opus 5.5 to Azure on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["azure/global"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["anthropic"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

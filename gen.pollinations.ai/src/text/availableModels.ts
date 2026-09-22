@@ -428,6 +428,16 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-opus-5.5",
+        config: portkeyConfig["anthropic/claude-opus-5.5"],
+        transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
+        transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),

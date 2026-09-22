@@ -469,6 +469,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "anthropic/claude-opus-5.5": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-5.5",
+        "azure/global",
+    ),
+    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-5.5",
+        "anthropic",
+    ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
         "google-vertex/global",

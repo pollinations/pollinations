@@ -442,6 +442,22 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-opus-5.5": {
+        "anthropic/claude-opus-5.5:openrouter:anthropic": {
+            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-22").getTime(),
+            // Anthropic's own native-API tag on OpenRouter (2026-09-22);
+            // same base rate as the azure/global primary, 100% reported
+            // uptime, and a genuinely distinct backend from Azure.
+            cost: {
+                promptTextTokens: perMillion(4) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptCacheWriteTokens: perMillion(5) * 1.055,
+                completionTextTokens: perMillion(20) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

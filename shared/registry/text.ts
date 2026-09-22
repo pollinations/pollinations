@@ -1418,6 +1418,38 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-opus-5.5": {
+        supportedParameters: CHAT_PARAMETERS.openRouterOpus,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter azure/global route rates (2026-09-22), including the
+        // mandatory 5.5% OpenRouter credit fee. Not yet listed on Anthropic's
+        // or AWS's own Opus-5.5 documentation as of this date; sourced from
+        // OpenRouter's live catalog, which is the exact route requested.
+        // Excludes the $0.01-per-call web_search charge OpenRouter reports;
+        // web_search_options is not exposed until that non-token charge has
+        // a billing path.
+        cost: {
+            promptTextTokens: perMillion(4) * 1.055,
+            promptCachedTokens: perMillion(0.2) * 1.055,
+            promptCacheWriteTokens: perMillion(5) * 1.055,
+            completionTextTokens: perMillion(20) * 1.055,
+        },
+        title: "Claude Opus 5.5",
+        description:
+            "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20,
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: ["claude-fable-5"],

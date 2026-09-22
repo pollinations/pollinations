@@ -84,9 +84,9 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
-                name: "Composio",
+                name: "Connected Apps",
                 description:
-                    "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",

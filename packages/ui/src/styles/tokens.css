@@ -43,6 +43,7 @@
 
     /* Level 2 — Well + neutral card surfaces */
     --polli-color-surface-opaque:      oklch(0.996 0.004 85);
+    --polli-color-surface-menu:        oklch(0.96 0.008 85);
     --polli-color-surface-translucent: oklch(0.996 0.004 85 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
@@ -205,6 +206,7 @@
 
     /* Level 2 — Well + neutral card surfaces (raised above the desk) */
     --polli-color-surface-opaque:      oklch(0.278 0.005 80);
+    --polli-color-surface-menu:        oklch(0.34 0.006 80);
     --polli-color-surface-translucent: oklch(0.278 0.005 80 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 

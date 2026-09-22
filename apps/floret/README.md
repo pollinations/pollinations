@@ -56,6 +56,11 @@ Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key
 
 Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
 
+Agent settings use `metadata`. `metadata.model` selects Floret's inner text model.
+`metadata.pollen: "quest"` excludes models marked `paid_only` from Floret's
+selection. It does not choose a wallet balance or prevent eligible generations
+from spending purchased Pollen.
+
 For the `routing` object:
 
 - Every field is optional.

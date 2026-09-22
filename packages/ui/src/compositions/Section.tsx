@@ -19,7 +19,7 @@ export type SectionProps = {
 export const Section: FC<SectionProps> = ({
     title,
     id,
-    framed = false,
+    framed = true,
     intro,
     action,
     actionClassName,
@@ -39,15 +39,9 @@ export const Section: FC<SectionProps> = ({
         </>
     );
 
-    return (
-        <section
-            id={id}
-            className={cn(
-                "polli:flex polli:scroll-mt-10 polli:flex-col polli:gap-4",
-                className,
-            )}
-        >
-            <header className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3 polli:px-1">
+    const content = (
+        <>
+            <header className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3">
                 <Heading
                     as="h2"
                     size="section"
@@ -61,6 +55,12 @@ export const Section: FC<SectionProps> = ({
                     </div>
                 )}
             </header>
+            {body}
+        </>
+    );
+
+    return (
+        <section id={id} className={cn("polli:scroll-mt-10", className)}>
             {framed ? (
                 <Surface
                     variant="panel"
@@ -69,10 +69,12 @@ export const Section: FC<SectionProps> = ({
                         panelClassName,
                     )}
                 >
-                    {body}
+                    {content}
                 </Surface>
             ) : (
-                body
+                <div className="polli:flex polli:flex-col polli:gap-4">
+                    {content}
+                </div>
             )}
         </section>
     );

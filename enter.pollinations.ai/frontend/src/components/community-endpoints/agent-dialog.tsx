@@ -3,7 +3,6 @@ import {
     Button,
     ButtonGroup,
     CheckIcon,
-    Dialog,
     DialogTitle,
     FieldStack,
     ScrollArea,
@@ -11,6 +10,7 @@ import {
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
@@ -109,13 +109,12 @@ export function AgentDialog({
           : "Add Private Agent";
 
     return (
-        <Dialog
+        <ResourceDialog
             open={open}
             onOpenChange={onOpenChange}
             size="lg"
             trigger={trigger}
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
@@ -272,6 +271,6 @@ export function AgentDialog({
                     </Button>
                 </div>
             </form>
-        </Dialog>
+        </ResourceDialog>
     );
 }

@@ -430,7 +430,7 @@ test("filters OpenRouter text models by paid balance", async ({
     const openRouterModelNames = getVisibleTextModels().filter(
         (model) =>
             getRegistryModelDefinition(model).provider === "openrouter" &&
-            model !== "typesafe/jev",
+            model !== "typesafe/jev-1.13",
     );
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));

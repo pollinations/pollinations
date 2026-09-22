@@ -130,27 +130,23 @@ const ANSWERS = {
     is_urgent: { type: "noul", noul: 0.98 },
 };
 
-function completion(answers = ANSWERS) {
+function decisionResponse(answers = ANSWERS) {
     return Response.json({
-        model: "jev-1.13.0",
-        choices: [
-            {
-                message: {
-                    role: "assistant",
-                    content: JSON.stringify(answers),
-                },
-            },
-        ],
+        id: "dec-test",
+        model: "typesafe/jev-1.13",
+        provider: "TypeSafe",
+        answers,
+        usage: { input_tokens: 312, output_tokens: 48 },
     });
 }
 
-test("sends native state and questions in one non-streaming chat completion", async (t) => {
+test("sends native state and questions to the decisions endpoint", async (t) => {
     let calls = 0;
     t.mock.method(globalThis, "fetch", async (input, init) => {
         calls++;
         assert.equal(
             String(input),
-            "https://gen.pollinations.ai/v1/chat/completions",
+            "https://gen.pollinations.ai/alpha/decisions",
         );
         assert.equal(init.method, "POST");
         assert.equal(
@@ -162,14 +158,12 @@ test("sends native state and questions in one non-streaming chat completion", as
             "application/json",
         );
         const body = JSON.parse(init.body);
-        assert.equal(body.model, "typesafe/jev");
-        assert.equal(body.messages.length, 1);
-        assert.equal(body.messages[0].role, "user");
-        assert.deepEqual(JSON.parse(body.messages[0].content), {
+        assert.deepEqual(body, {
+            model: "typesafe/jev-1.13",
             state: "My payouts have been failing for 3 days.",
             questions: QUESTIONS,
         });
-        return completion();
+        return decisionResponse();
     });
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
@@ -189,7 +183,7 @@ test("sends native state and questions in one non-streaming chat completion", as
     assert.deepEqual(JSON.parse(result.content[0].text), ANSWERS);
 });
 
-test("preserves optional noul criteria in the user message", async (t) => {
+test("preserves optional noul criteria in the decision request", async (t) => {
     const criteriaCases = [
         { true: "Explicitly time-sensitive", false: "No urgency expressed" },
         { true: "A deadline is stated" },
@@ -197,9 +191,8 @@ test("preserves optional noul criteria in the user message", async (t) => {
     ];
     const seen = [];
     t.mock.method(globalThis, "fetch", async (_input, init) => {
-        const content = JSON.parse(init.body).messages[0].content;
-        seen.push(JSON.parse(content).questions.is_urgent.criteria);
-        return completion({ is_urgent: ANSWERS.is_urgent });
+        seen.push(JSON.parse(init.body).questions.is_urgent.criteria);
+        return decisionResponse({ is_urgent: ANSWERS.is_urgent });
     });
     const client = await connectClient();
     t.after(() => client.close());
@@ -226,11 +219,11 @@ test("keeps bearer tokens scoped to concurrent requests", async (t) => {
     t.mock.method(globalThis, "fetch", async (input, init) => {
         assert.equal(
             String(input),
-            "https://gen.pollinations.ai/v1/chat/completions",
+            "https://gen.pollinations.ai/alpha/decisions",
         );
         const authorization = new Headers(init.headers).get("authorization");
         seenAuthorizations.add(authorization);
-        return completion({
+        return decisionResponse({
             is_urgent: {
                 type: "noul",
                 noul: authorization === "Bearer pk_first" ? 0.1 : 0.9,
@@ -283,8 +276,8 @@ test("accepts native string, object, and array instructions and rubric values", 
     };
     let content;
     t.mock.method(globalThis, "fetch", async (_input, init) => {
-        content = JSON.parse(JSON.parse(init.body).messages[0].content);
-        return completion({
+        content = JSON.parse(init.body);
+        return decisionResponse({
             department: ANSWERS.department,
             frustration: ANSWERS.frustration,
         });
@@ -297,6 +290,7 @@ test("accepts native string, object, and array instructions and rubric values", 
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(content, {
+        model: "typesafe/jev-1.13",
         state: "My card was declined.",
         questions: richQuestions,
     });
@@ -332,11 +326,11 @@ test("uses shared gateway error mapping", async (t) => {
     t.mock.method(globalThis, "fetch", async (input) => {
         assert.equal(
             String(input),
-            "https://gen.pollinations.ai/v1/chat/completions",
+            "https://gen.pollinations.ai/alpha/decisions",
         );
         return Response.json(
             { error: { message: "Insufficient balance" } },
-            { status: 403 },
+            { status: 402 },
         );
     });
     const client = await connectClient({

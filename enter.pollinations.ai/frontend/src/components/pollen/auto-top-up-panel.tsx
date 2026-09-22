@@ -1,11 +1,13 @@
 import { apiClient } from "@frontend/api.ts";
 import {
+    Alert,
     Button,
     CardIcon,
     CheckIcon,
     cn,
     InfoTip,
     InlineLink,
+    RefreshIcon,
     Switch,
     type SwitchStatus,
     Tooltip,
@@ -293,6 +295,24 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     );
     const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
+
+    if (billingState === null) {
+        return (
+            <div className="space-y-3">
+                <Alert intent="danger" title="Auto top-up">
+                    Couldn’t load billing settings.
+                </Alert>
+                <Button
+                    type="button"
+                    intent="neutral"
+                    icon={<RefreshIcon />}
+                    onClick={() => window.location.reload()}
+                >
+                    Try again
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">

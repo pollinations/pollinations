@@ -35,7 +35,10 @@ export const Route = createFileRoute("/_dashboard/pollen")({
         }
     },
     loader: () =>
-        apiClient.stripe.billing.$get().then((r) => (r.ok ? r.json() : null)),
+        apiClient.stripe.billing
+            .$get()
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
     pendingComponent: () => (
         <DashboardLoading label="Loading billing details…" />
     ),

@@ -1,6 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -17,7 +18,6 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
-import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 // Bumped to v29: the Discord quest links to account connection and the server.
 const CACHE_KEY = "quests:catalog:v29";

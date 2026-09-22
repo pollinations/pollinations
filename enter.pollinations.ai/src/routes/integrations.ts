@@ -1,6 +1,7 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_USER_ID_HEADER } from "@shared/registry/mcp.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -9,7 +10,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { type AuthEnv, auth } from "../middleware/auth.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
-import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 const ConnectionSchema = z.object({
     id: z.string(),

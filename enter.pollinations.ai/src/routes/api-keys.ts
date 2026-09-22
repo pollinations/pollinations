@@ -6,6 +6,7 @@ import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import {
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
@@ -21,7 +22,6 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
-import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 

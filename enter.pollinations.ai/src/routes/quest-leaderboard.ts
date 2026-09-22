@@ -1,13 +1,13 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { and, eq, isNotNull, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
-import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;

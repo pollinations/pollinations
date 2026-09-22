@@ -5,6 +5,7 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
+import { callAlibabaImage } from "./models/alibabaImageModel.ts";
 import {
     callAzureFlux2,
     callAzureFluxKontext,
@@ -938,6 +939,9 @@ const generateImage = async (
             return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
+            return await callAlibabaImage(prompt, safeParams, "wan2.7-image");
+
+        case "alibaba/wan-2.7-image:replicate":
             return await callWanImageAPI(prompt, safeParams, false);
 
         case "alibaba/wan-2.7-image-pro":
@@ -947,6 +951,13 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "qwen/qwen-image-3":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-3.0-pro",
+            );
+
+        case "qwen/qwen-image-3:fal":
             return await callQwenImage3API(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":

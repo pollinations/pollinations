@@ -1,7 +1,7 @@
 {
   "target": "worker",
   "credentials": "myceli",
-  "install": "npm ci",
+  "install": "npm ci && npm ci --prefix ../.. --workspaces=false",
   "build": "npm run test",
   "deploy": "npm run deploy",
   "watch": [

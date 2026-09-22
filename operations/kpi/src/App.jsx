@@ -17,6 +17,7 @@ import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
 import { LineChart } from "./components/LineChart";
+import { PollenSpendChart } from "./components/PollenSpendChart";
 import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
@@ -31,6 +32,15 @@ const EXPORT_COLUMNS = [
     ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
+    ["pollenText", "Text Pollen spent (USD)"],
+    ["pollenImage", "Image Pollen spent (USD)"],
+    ["pollenVideo", "Video Pollen spent (USD)"],
+    ["pollenAudio", "Audio Pollen spent (USD)"],
+    ["pollenRealtime", "Realtime Pollen spent (USD)"],
+    ["pollenEmbedding", "Embedding Pollen spent (USD)"],
+    ["pollen3d", "3D Pollen spent (USD)"],
+    ["pollenCommunity", "Community Pollen spent (USD)"],
+    ["pollenOther", "Tools / other Pollen spent (USD)"],
     ["packPurchases", "Pack purchases"],
     ["communityUserPct", "Community models user %"],
     ["communityRequestPct", "Community models request %"],
@@ -364,6 +374,8 @@ function Dashboard({ accountUser }) {
                     data={dailyComparison}
                     signupsSyncedAt={signupsSyncedAt}
                 />
+
+                <PollenSpendChart weeks={fullWeeks} />
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart

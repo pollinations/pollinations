@@ -18,6 +18,11 @@ type SystemOneResponse = {
     usage: { input_tokens: number; output_tokens: number };
 };
 
+type SystemOneRequest = {
+    state: unknown;
+    questions: Record<string, unknown>;
+};
+
 function serviceError(message: string, status: number): ServiceError {
     const error = new Error(message) as ServiceError;
     error.status = status;
@@ -40,7 +45,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev requires a user message with string content.",
+            "typesafe/jev-1.13 requires a user message with string content.",
         );
     }
     let payload: unknown;
@@ -48,7 +53,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev could not parse the user message content as JSON.",
+            "typesafe/jev-1.13 could not parse the user message content as JSON.",
         );
     }
     if (
@@ -57,7 +62,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev expects a JSON object with "state" and a "questions" map.',
+            'typesafe/jev-1.13 expects a JSON object with "state" and a "questions" map.',
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -95,16 +100,21 @@ function toStreamedCompletion(completion: ChatCompletion): ChatCompletion {
     };
 }
 
-export async function callSystemOne(
-    messages: ChatMessage[],
+/**
+ * The single upstream call, shared by the native `/alpha/decisions` route and
+ * the chat-completions adapter below. Returns the provider's response along
+ * with the URL it came from, which callers attach for error attribution.
+ */
+export async function requestDecision(
+    request: SystemOneRequest,
     options: TransformOptions,
-): Promise<ChatCompletion> {
-    const { state, questions } = parseNativeRequest(messages);
+): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
+    const { state, questions } = request;
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev.",
+            "The decisions route is not configured for typesafe/jev-1.13.",
             500,
         );
     }
@@ -135,32 +145,7 @@ export async function callSystemOne(
                 502,
             );
         }
-        const completion: ChatCompletion = {
-            id: `systemone-${crypto.randomUUID()}`,
-            object: "chat.completion",
-            created: Math.floor(Date.now() / 1000),
-            model: result.model,
-            choices: [
-                {
-                    index: 0,
-                    message: {
-                        role: "assistant",
-                        content: JSON.stringify(result.answers),
-                    },
-                    finish_reason: "stop",
-                },
-            ],
-            usage: {
-                prompt_tokens: result.usage.input_tokens,
-                completion_tokens: result.usage.output_tokens,
-                total_tokens:
-                    result.usage.input_tokens + result.usage.output_tokens,
-            },
-        };
-        return withUpstreamRequestUrl(
-            options.stream ? toStreamedCompletion(completion) : completion,
-            requestUrl,
-        );
+        return { result, requestUrl };
     } catch (thrown) {
         const error =
             thrown instanceof Error
@@ -172,4 +157,45 @@ export async function callSystemOne(
     } finally {
         clearTimeout(timeout);
     }
+}
+
+/**
+ * Chat-completions adapter: the native request travels as JSON in the last
+ * user message and the answers come back as the assistant's content. Callers
+ * that can post the native shape should use `/alpha/decisions` instead.
+ */
+export async function callSystemOne(
+    messages: ChatMessage[],
+    options: TransformOptions,
+): Promise<ChatCompletion> {
+    const { result, requestUrl } = await requestDecision(
+        parseNativeRequest(messages),
+        options,
+    );
+    const completion: ChatCompletion = {
+        id: `systemone-${crypto.randomUUID()}`,
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: result.model,
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant",
+                    content: JSON.stringify(result.answers),
+                },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: result.usage.input_tokens,
+            completion_tokens: result.usage.output_tokens,
+            total_tokens:
+                result.usage.input_tokens + result.usage.output_tokens,
+        },
+    };
+    return withUpstreamRequestUrl(
+        options.stream ? toStreamedCompletion(completion) : completion,
+        requestUrl,
+    );
 }

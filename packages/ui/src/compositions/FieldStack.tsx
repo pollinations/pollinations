@@ -3,7 +3,8 @@ import { cn } from "../lib/cn.ts";
 import { Field } from "../primitives/Field.tsx";
 
 export type FieldStackProps = {
-    label: ReactNode;
+    /** Omit for a self-describing control; label the input itself. */
+    label?: ReactNode;
     children: ReactNode;
     helper?: ReactNode;
     action?: ReactNode;
@@ -29,25 +30,32 @@ export function FieldStack({
 }: FieldStackProps) {
     return (
         <Field.Root
-            className={cn("polli:flex polli:flex-col polli:gap-2", className)}
+            className={cn(
+                "polli:flex polli:flex-col polli:gap-2 polli:font-body",
+                className,
+            )}
             invalid={Boolean(error)}
         >
-            <div
-                className={cn(
-                    "polli:flex polli:items-center polli:justify-between polli:gap-2",
-                    alignLabelRow && "polli:min-h-8",
-                )}
-            >
-                <Field.Label
+            {(label || action) && (
+                <div
                     className={cn(
-                        "polli:text-sm polli:font-semibold polli:text-theme-text-strong",
-                        labelClassName,
+                        "polli:flex polli:items-center polli:justify-between polli:gap-2",
+                        alignLabelRow && "polli:min-h-8",
                     )}
                 >
-                    {label}
-                </Field.Label>
-                {action}
-            </div>
+                    {label && (
+                        <Field.Label
+                            className={cn(
+                                "polli:text-sm polli:font-semibold polli:leading-5 polli:text-theme-text-strong",
+                                labelClassName,
+                            )}
+                        >
+                            {label}
+                        </Field.Label>
+                    )}
+                    {action}
+                </div>
+            )}
             {children}
             {error ? (
                 <Field.ErrorText
@@ -61,7 +69,7 @@ export function FieldStack({
             ) : helper ? (
                 <Field.HelperText
                     className={cn(
-                        "polli:text-xs polli:leading-5 polli:text-theme-text-muted",
+                        "polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted",
                         helperClassName,
                     )}
                 >

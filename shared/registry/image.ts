@@ -184,18 +184,18 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.3) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(0.3) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(2.5) * 1.055, // text output tokens
-            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1290 tokens/image
+            promptTextTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.3), // per 1M tokens
+            completionTextTokens: perMillion(2.5), // text output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
         title: "Nano Banana",
         description:
@@ -206,18 +206,18 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-3.1-flash-image": {
         aliases: ["nanobanana2", "nanobanana-2"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.5) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(0.5) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(3) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(60) * 1.055, // per 1M tokens, 2520 tokens/image
+            promptTextTokens: perMillion(0.5), // per 1M tokens
+            promptImageTokens: perMillion(0.5), // per 1M tokens
+            completionTextTokens: perMillion(3), // text/reasoning output tokens
+            completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
         },
         title: "Nano Banana 2",
         description:
@@ -228,18 +228,18 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-3.1-flash-lite-image": {
         aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
-            promptTextTokens: perMillion(0.25) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(0.25) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(1.5) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1120 tokens/1K image = $0.0336
+            promptTextTokens: perMillion(0.25), // per 1M tokens
+            promptImageTokens: perMillion(0.25), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
         title: "Nano Banana 2 Lite",
         description:
@@ -250,20 +250,20 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-3-pro-image": {
         aliases: ["nanobanana-pro"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(2) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(2) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(12) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(120) * 1.055, // per 1M tokens, 1120 tokens per 1K image
+            promptTextTokens: perMillion(2), // per 1M tokens
+            promptImageTokens: perMillion(2), // per 1M tokens
+            completionTextTokens: perMillion(12), // text/reasoning output tokens
+            completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
         title: "Nano Banana Pro",
         description:
@@ -775,13 +775,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.6": {
         aliases: ["wan2.6", "wan-i2v", "wan"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // Alibaba wan2.6-t2v / wan2.6-i2v, locked to 720p ($0.10/s). Native audio is bundled
         // into the per-second rate, so there is no separate audio line.
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
@@ -892,22 +892,25 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-3.0": {
         aliases: ["wan-3.0"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Fal Prime rates verified against live endpoints on 2026-08-25.
+        // Alibaba Prime Singapore list rates; input video is also billed.
         cost: {
+            promptVideoSeconds: 0.068,
             completionVideoSeconds: 0.068, // per sec at 480p
         },
         ...defineCostVariants(
             {
                 "720p": {
+                    promptVideoSeconds: 0.14,
                     completionVideoSeconds: 0.14,
                 },
                 "1080p": {
+                    promptVideoSeconds: 0.28,
                     completionVideoSeconds: 0.28,
                 },
             },
@@ -947,13 +950,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.7-image": {
         aliases: ["wan2.7-image", "wan-img", "wan-image"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
+        // Alibaba Singapore: $0.03 per generated or edited image.
         cost: {
             completionImageTokens: 0.03, // per image
         },
@@ -1028,14 +1031,14 @@ const IMAGE_BASE_SERVICES = {
     },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptImageTokens: 0.003, // per reference image ingested by Fal
+            promptImageTokens: 0.003, // per reference image ingested
             completionImageTokens: 0.04, // per image up to 1536x1536
         },
         ...defineCostVariants(

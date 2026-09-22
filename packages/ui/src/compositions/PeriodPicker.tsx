@@ -303,6 +303,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     type="button"
                                     key={label}
                                     aria-label={ariaLabel}
+                                    aria-pressed={selected}
                                     disabled={!selectable}
                                     onClick={() => selectDate(date)}
                                     className={cn(
@@ -359,6 +360,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         type="button"
                                         key={date.toISOString()}
                                         aria-label={ariaLabel}
+                                        aria-pressed={selected}
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(

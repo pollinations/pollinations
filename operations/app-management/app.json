@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Aizen (TTS)",
+    "url": "https://fantasyvvillain-pixel.github.io/Aizen-",
+    "description": "App Description: A static web app with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE sign-in flow entirely on the client side, without the need for a backend server",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "fantasyvvillain-pixel",
+    "githubUserId": "318220560",
+    "repositoryUrl": "https://github.com/fantasyvvillain-pixel/Aizen-",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-22",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15300",
+    "approvedDate": "2026-09-22",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Bees Pollination",
     "url": "https://halimyassine.github.io/bees-pollination-app",

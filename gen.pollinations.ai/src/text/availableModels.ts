@@ -151,6 +151,18 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6-sol",
+        config: portkeyConfig["gpt-6-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna",
+        config: portkeyConfig["gpt-6-luna"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "inception/mercury-2",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
@@ -214,6 +226,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-max",
+        config: portkeyConfig["qwen3.8-max-alibaba"],
+        transform: qwenForcedToolTransform,
+    },
+    {
+        name: "qwen/qwen3.8-max:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
@@ -223,22 +240,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.7-flash",
-        config: portkeyConfig["qwen/qwen3.7-flash"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "qwen/qwen3.7-flash:alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen3.7-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.8-flash",
-        config: portkeyConfig["qwen/qwen3.8-flash"],
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
         transform: qwenFlashTransform,
     },
     {
-        name: "qwen/qwen3.8-flash:alibaba",
-        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        name: "qwen/qwen3.8-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
         transform: qwenFlashTransform,
     },
     {
@@ -421,6 +438,17 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-opus-5",
         config: portkeyConfig["claude-opus-5"],
         transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5",
+        config: portkeyConfig["anthropic/claude-opus-5.5"],
+        // Bedrock rejects thinking.type=disabled for this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-fable-5",
@@ -705,6 +733,14 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.3-flash",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "z-ai/glm-5.3-flashx",
+        config: portkeyConfig["z-ai/glm-5.3-flashx"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        // Confirmed live (#15178 review): reasoning.enabled=false and
+        // reasoning_effort="none" 400 without this transform.
         transform: mandatoryReasoning,
     },
     {

@@ -1504,6 +1504,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-opus-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
+        // Verify against AWS's price list when the launch-day entry appears.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(5),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Claude Opus 5.5",
+        description:
+            "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: ["claude-fable-5"],
@@ -1531,7 +1558,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
-        supportedParameters: CHAT_PARAMETERS.bedrockFable51,
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
         provider: "aws",
         publisher: "Anthropic",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15291,
+  "title": "feat: prefer Alibaba direct routes with fallbacks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15291",
+  "merged_at": "2026-09-22T12:23:35Z",
+  "labels": [],
+  "pr_body_excerpt": "| Model | New route → fallbacks | Price change | Change |\n| --- | --- | --- | ---: |\n| Wan 3.0 | Alibaba Prime → fal Prime (was fal Prime) | 480p/720p/1080p: $0.068/$0.14/$0.28 per second unchanged; reference-video input now billed too | **0%** output price |\n| Wan 2.6 | Alibaba → Replicate → fal (was Replicate) | $0.10/second unchanged | **0%** |\n| Wan 2.7 Image | Alibaba → Replicate (was Replicate) | $0.03/image unchanged | **0%** |\n| Qwen Image 3 Pro | Alibaba → fal → Replicate (was fal) | $0.04/1K, $0.075/2K + $0.003/reference unchanged | **0%** |\n| Qwen 3.7 Flash | Alibaba → OpenRouter/Alibaba (was OpenRouter) | Removes 5.5% gateway fee; Alibaba context/cache tiers | **−5.2%** |\n| Qwen 3.8 Flash | Alibaba → OpenRouter/Alibaba (was OpenRouter) | Removes 5.5% gateway fee | **−5.2%** |\n| Qwen 3.8 Max | Alibaba → OpenRouter/Alibaba (was OpenRouter) | Removes 5.5% gateway fee; fallback currently rejects forced tools | **−5.2%** |\n\nPercentages compare old/new primary prices: text averages uncached input/output rates at the same context tier; Wan 3.0 retains Prime output prices and excludes newly billed reference-video input. Cache discounts and tier-boundary differences are excluded.\n\n307 focused tests pass; Gen/Enter type checks pass. Live primary/fallback media and Qwen probes completed. **Draft:** full authenticated/forced-fallback E2E, capacity checks, and Tinybird schema rollout/verification remain. Local test credential unavailable. Qwen fallbacks cover gateway failures, not Alibaba-wide outages.\n\n[Alibaba list pricing](https://www.alibabacloud.com/help/en/model-studio/model-pricing). No promotional discount assumed. Overlaps #15094; preserves existing aliases, access, and multipliers.\n\nCapability caveat: declared modalities and media limits are unchanged, and Wan 3.0 retains Prime on both routes. Qwen supported-parameter metadata drops logprobs/top_logprobs and OpenRouter reasoning controls (also frequency_penalty for 3.8); complete parameter parity is unverif",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A straighter path to Qwen",
+    "blurb": "Several Wan and Qwen models now fly directly through Alibaba first, with the old providers waiting politely behind them. Qwen Flash and Max also shed the gateway toll, while the media garden keeps its familiar prices.",
+    "summary": "Wan 3.0, Wan 2.6, Wan 2.7 Image, Qwen Image 3 Pro, and Qwen 3.7/3.8 Flash and Max now prefer direct Alibaba routes with existing providers as fallbacks; Qwen text primary pricing is about 5.2% lower after removing the OpenRouter gateway fee.",
+    "impact": "Developers keep the same model aliases, media limits, and Wan/Qwen image-video output prices, while Qwen 3.7 Flash, Qwen 3.8 Flash, and Qwen 3.8 Max receive Alibaba context and cache tiers plus lower primary text pricing.",
+    "keywords": [
+      "Alibaba",
+      "Qwen",
+      "Wan",
+      "routing",
+      "fallbacks",
+      "pricing",
+      "models"
+    ],
+    "visual_concept": "Depict a cozy model-routing garden: Polli tends several labeled Qwen and Wan code-plants whose paths converge on a warm Alibaba gateway pavilion, while smaller fallback paths lead to friendly backup terminals. The direct route should be a prominent lime-green path, showing efficient travel and resilient alternatives rather than a dramatic network diagram.",
+    "image_prompt": "A cozy pixel art garden-routing scene where the cute Polli bee mascot, with a tiny courier cap, points at a bold lime green (#ecf874) stepping-stone path from Qwen and Wan code-plants to a warm Alibaba gateway pavilion, with two smaller pastel fallback paths leading to friendly retro terminals. Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; include flowers and vines around the terminals, with simple pixel-font text \"DIRECT ROUTE\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley warmth, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15291.jpg",
+    "prompt": "A cozy pixel art garden-routing scene where the cute Polli bee mascot, with a tiny courier cap, points at a bold lime green (#ecf874) stepping-stone path from Qwen and Wan code-plants to a warm Alibaba gateway pavilion, with two smaller pastel fallback paths leading to friendly retro terminals. Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; include flowers and vines around the terminals, with simple pixel-font text \"DIRECT ROUTE\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley warmth, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-22T12:24:40.901361+00:00"
+}

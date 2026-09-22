@@ -32,7 +32,7 @@ import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 const accountPermissionLabels: Record<string, string> = {
     profile: "Profile",
     usage: "Usage",
-    keys: "Keys",
+    keys: "Admin",
 };
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
@@ -254,17 +254,30 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="text-theme-text-muted">
                                         Account:
                                     </span>
-                                    {accountPermissions.map((permission) => (
-                                        <Chip
-                                            key={permission}
-                                            intent="neutral"
-                                            size="sm"
-                                        >
-                                            {accountPermissionLabels[
-                                                permission
-                                            ] ?? permission}
-                                        </Chip>
-                                    ))}
+                                    {accountPermissions.map((permission) => {
+                                        const badge = (
+                                            <Chip
+                                                key={permission}
+                                                intent="neutral"
+                                                size="sm"
+                                            >
+                                                {accountPermissionLabels[
+                                                    permission
+                                                ] ?? permission}
+                                            </Chip>
+                                        );
+                                        return permission === "keys" ? (
+                                            <Tooltip
+                                                key={permission}
+                                                content="Manage keys, agents and models."
+                                                ariaLabel="Admin: Manage keys, agents and models."
+                                            >
+                                                {badge}
+                                            </Tooltip>
+                                        ) : (
+                                            badge
+                                        );
+                                    })}
                                 </span>
                             )}
                         </>

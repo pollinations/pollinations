@@ -399,7 +399,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             width: 1024,
             height: 1024,
         });
@@ -418,7 +418,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-2.5-flash-image",
+            actualModel:
+                "google/gemini-2.5-flash-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 9,
                 completionImageTokens: 1290,
@@ -446,7 +447,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-image",
+            model: "google/gemini-3.1-flash-image:openrouter:vertex-global",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -468,7 +469,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3.1-flash-image",
+            actualModel:
+                "google/gemini-3.1-flash-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 12,
                 completionTextTokens: 12,
@@ -494,7 +496,7 @@ describe("OpenRouter Gemini image", () => {
 
         await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-image",
+            model: "google/gemini-3.1-flash-image:openrouter:vertex-global",
             width,
             height,
             reasoning: "fast",
@@ -524,7 +526,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-lite-image",
+            model: "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -546,7 +548,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3.1-flash-lite-image",
+            actualModel:
+                "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 10,
                 completionReasoningTokens: 4,
@@ -575,7 +578,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3-pro-image",
+            model: "google/gemini-3-pro-image:openrouter:ai-studio-global",
             width: 3840,
             height: 2160,
             reasoning: "pro",
@@ -596,7 +599,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3-pro-image",
+            actualModel:
+                "google/gemini-3-pro-image:openrouter:ai-studio-global",
             usage: {
                 promptTextTokens: 14,
                 completionReasoningTokens: 8,
@@ -620,7 +624,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("edit prompt", {
             ...baseParams,
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             width: 1280,
             height: 720,
             image: [REFERENCE_IMAGE_URL],
@@ -679,7 +683,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             }),
         ).rejects.toMatchObject({ status: 502 });
     });
@@ -702,7 +706,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             }),
         ).rejects.toMatchObject({
             status: 400,
@@ -720,7 +724,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("edit prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
                 image: [
                     REFERENCE_IMAGE_URL,
                     REFERENCE_IMAGE_URL,

@@ -140,6 +140,8 @@ restores the backup.
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI
+polli harness claude-code on      # Claude Code via Claude Code Router → Pollinations
+polli harness codex on            # Codex via Codex Router → Pollinations
 polli harness dsh on              # DeepSeek Harness → Pollinations
 polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
@@ -154,7 +156,7 @@ polli harness <harness> off
 
 Bloom stores its dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`).
 tgpt stores its provider, dedicated key, and model in `~/.config/tgpt/config.conf`.
-The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
+The Claude Code adapter talks to a running Claude Code Router over its management RPC and scopes the profile to `ccr` so native Claude logins stay intact. The Codex adapter registers a generic provider through Codex Router's own CLI and hands the key over stdin. The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.

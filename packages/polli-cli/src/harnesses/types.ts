@@ -27,6 +27,8 @@ export interface HarnessResult {
     mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
+    /** Adapter-specific readiness facts shown by `status`. */
+    details?: Record<string, string | boolean>;
 }
 
 /** One harness integration. Each adapter owns its setup strategy. */

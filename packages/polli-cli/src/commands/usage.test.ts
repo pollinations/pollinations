@@ -39,6 +39,14 @@ describe("resolveKeyIds", () => {
         expect(resolveKeyIds(keys, ["id_harness"])).toEqual(["id_harness"]);
     });
 
+    it("returns every id sharing a requested name", () => {
+        const dupKeys: UsageKeyInfo[] = [
+            { id: "id_old", name: "dup" },
+            { id: "id_new", name: "dup" },
+        ];
+        expect(resolveKeyIds(dupKeys, ["dup"])).toEqual(["id_old", "id_new"]);
+    });
+
     it("resolves mixed names and ids, preserving order", () => {
         expect(resolveKeyIds(keys, ["id_kimi3", "kimi"])).toEqual([
             "id_kimi3",

@@ -24,7 +24,7 @@ export function ResourceCardHeader({
                     <span className="shrink-0 text-theme-text-muted">
                         {icon}
                     </span>
-                    <span className="min-w-0 text-sm font-semibold leading-5 [overflow-wrap:anywhere]">
+                    <span className="min-w-0 text-base font-semibold leading-6 [overflow-wrap:anywhere]">
                         {title}
                     </span>
                     {badges}

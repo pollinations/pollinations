@@ -169,7 +169,7 @@ function TopUpPage() {
             title="Top-up"
             error={
                 search.stripe_canceled
-                    ? "Checkout was cancelled, choose an amount to try again."
+                    ? "Checkout was cancelled. Choose an amount to try again."
                     : undefined
             }
             size="lg"

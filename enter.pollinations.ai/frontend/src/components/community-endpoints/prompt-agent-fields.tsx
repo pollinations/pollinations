@@ -24,7 +24,7 @@ export function PromptAgentFields({
         <div className="space-y-3">
             <ModelFormRow
                 label="Base model"
-                help="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
+                help="Pick a Pollinations text model or type any model ID. Accepted inputs are inherited from this model."
             >
                 <BaseModelInput
                     value={form.baseModel}
@@ -34,7 +34,7 @@ export function PromptAgentFields({
             </ModelFormRow>
             <ModelFormRow
                 label="System prompt"
-                help="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
+                help="The agent’s instructions, sent as the system message on every call. Public instructions are not secret. Users may infer or extract these instructions. Do not include credentials, personal data, or confidential information."
             >
                 <Field.Textarea asChild>
                     <Textarea

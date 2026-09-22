@@ -27,7 +27,7 @@ function ErrorPage() {
         ? "Your Pollinations account is suspended."
         : isStagingInviteOnly
           ? "Staging is invite-only. Use pollinations.ai to continue."
-          : "Couldn’t sign you in, please try again.";
+          : "Couldn’t sign you in. Please try again.";
 
     return (
         <AuthFlowScreen

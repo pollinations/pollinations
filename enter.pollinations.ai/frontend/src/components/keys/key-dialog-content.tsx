@@ -98,7 +98,7 @@ export function KeyDialogContent({
     const description =
         createdKey !== undefined
             ? app
-                ? "Use this app key to connect your app to Pollinations."
+                ? "Add this app key to your app. You can copy it again from the Apps section at any time."
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
               ? "Set the name, earnings, and redirect URLs."
@@ -200,7 +200,11 @@ export function KeyDialogContent({
                             <KeyChip
                                 prefix={existingKey.prefix}
                                 value={existingKey.value}
-                                label="Copy app key"
+                                label={
+                                    app
+                                        ? "Copy app key"
+                                        : "Copy publishable key"
+                                }
                             />
                         </div>
                     )}

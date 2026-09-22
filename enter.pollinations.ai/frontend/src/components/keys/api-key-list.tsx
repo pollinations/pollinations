@@ -151,7 +151,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <KeyChip
                         prefix={apiKey.start ?? ""}
                         value={isPublishable ? plaintextKey : undefined}
-                        label="Copy app key"
+                        label={isApp ? "Copy app key" : "Copy publishable key"}
                     />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">

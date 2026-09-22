@@ -354,7 +354,7 @@ export function CommunityEndpoints({
     const privateModelGuidance = (
         <>
             Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Public
+            <strong>/models</strong> is authenticated with your key. Public
             publishing is allowlist-only. To request publishing access for
             models, agents, or both, submit a {publisherAccessRequestLink}. You
             can register, probe, and test private models without approval. For
@@ -494,7 +494,7 @@ export function CommunityEndpoints({
                                 </ProviderProfileField>
                                 <ProviderProfileField
                                     icon={<ImageIcon />}
-                                    label="Brand icon"
+                                    label="Brand icon URL"
                                     help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
                                 >
                                     <Input
@@ -591,7 +591,7 @@ export function CommunityEndpoints({
                                     <>
                                         Private models are callable only by you
                                         and shown only when model lists use your
-                                        API key. Make one public to list it for
+                                        key. Make one public to list it for
                                         everyone in <strong>/models</strong> and
                                         bill callers at your configured pricing.
                                     </>

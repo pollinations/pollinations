@@ -123,7 +123,7 @@ function EditKeyPage() {
                 subject={subject}
                 description={
                     outcome === "saved"
-                        ? "Saved, they apply to future requests."
+                        ? "Changes saved. They apply to future requests."
                         : "Nothing changed."
                 }
                 balance={balance}

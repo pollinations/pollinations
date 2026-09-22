@@ -476,9 +476,9 @@ export function Authorize() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title={title}
+                title={denied ? "Access declined" : "Access allowed"}
                 subject={subject}
-                description={`${access} ${denied ? "Declined" : "Allowed"}, return to your device.`}
+                description="You can close this tab and return to your device."
             />
         );
     }
@@ -492,7 +492,7 @@ export function Authorize() {
                 title={title}
                 subject={subject}
                 description={access}
-                error={`Couldn’t connect. ${error}`}
+                error={`Couldn’t connect: ${error}`}
                 actions={
                     <Button
                         intent="neutral"
@@ -523,7 +523,7 @@ export function Authorize() {
             footnote="legal"
             title={title}
             subject={subject}
-            description={`${access} Choose what it can use; you can revoke access at any time. Only connect apps you trust.`}
+            description={`${access} Choose what it can use. You can revoke access at any time from your Keys page. Only connect apps you trust.`}
             actions={
                 <>
                     <Button

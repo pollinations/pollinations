@@ -455,7 +455,7 @@ export function CommunityEndpointDialog({
                             <>
                                 {isEndpointAgent
                                     ? "Update its listing and connection."
-                                    : "Connect your endpoint to Pollinations."}
+                                    : "Register an OpenAI-compatible endpoint as a {username}/{model-id} model."}
                                 {!isEdit && (
                                     <>
                                         {" "}
@@ -869,15 +869,15 @@ export function CommunityEndpointDialog({
                                 </ModelFormRow>
                             )}
                             <ModelFormRow
-                                label="Requests per minute"
-                                help="Per user. Decimals allowed: 0.5 means one request every 2 minutes. Leave empty for no limit."
+                                label="Per-user RPM"
+                                help="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."
                             >
                                 <Input
                                     name="community-per-user-rpm"
-                                    aria-label="Requests per minute value"
+                                    aria-label="Per-user RPM value"
                                     type="number"
                                     step="any"
-                                    placeholder="Unlimited"
+                                    placeholder="No limit"
                                     disabled={isSubmitting}
                                     value={form.perUserRpm}
                                     onChange={(event) =>

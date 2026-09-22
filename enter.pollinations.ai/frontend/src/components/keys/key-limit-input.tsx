@@ -11,8 +11,9 @@ const limits = {
         min: 0,
         step: "any",
         empty: "Unlimited",
-        helper: "Spending cap for this key. Leave empty for no cap.",
-        appHelper: "Spending cap for this app. Leave empty for no cap.",
+        helper: "Spending cap for this key. Requests are rejected after the budget is spent. Leave empty for no cap.",
+        appHelper:
+            "Spending cap for this app. Requests are rejected after the budget is spent. Leave empty for no cap.",
     },
     expiry: {
         label: "Expiry",
@@ -22,9 +23,9 @@ const limits = {
         min: 1 / 86400,
         step: "any",
         empty: "Never",
-        helper: "Time until this key expires. Leave empty to never expire.",
+        helper: "Key expires after this many days. Leave empty for no expiry.",
         appHelper:
-            "Time until this app’s access expires. Leave empty to never expire.",
+            "App access expires after this many days. Leave empty for no expiry.",
     },
 } as const;
 

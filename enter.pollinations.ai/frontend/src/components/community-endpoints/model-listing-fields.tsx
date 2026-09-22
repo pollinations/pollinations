@@ -68,8 +68,8 @@ export function ModelListingFields({
     const isPublic = form.visibility === "public";
     const visibilityHelp = isPublic
         ? isAgent
-            ? "Listed in /models. Calls use the caller's Pollen and API permissions."
-            : "Listed in /models. Set prices below, or leave them at 0 for free."
+            ? "Listed in /models and callable by anyone. Calls use the caller’s Pollen and key permissions."
+            : "Listed in /models and callable by anyone. Set prices below, or leave them at 0 for free."
         : canPublish
           ? "Only you can use it."
           : "Only you can use it. Public publishing requires approval.";
@@ -133,7 +133,10 @@ export function ModelListingFields({
                                 }
                             />
                         </ListingInputRow>
-                        <ListingInputRow label="Title">
+                        <ListingInputRow
+                            label="Title"
+                            help="Display name shown in the Models list."
+                        >
                             <Input
                                 name="community-model-title"
                                 value={form.title}
@@ -153,8 +156,8 @@ export function ModelListingFields({
                         label="Description"
                         help={
                             isAgent
-                                ? "A short summary of what the agent does."
-                                : "What the model does."
+                                ? "Optional. What the agent is good at."
+                                : "Optional. What the model is good at."
                         }
                         optional
                         multiline

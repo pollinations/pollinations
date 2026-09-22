@@ -99,7 +99,7 @@ export function ModelCapabilityFields({
             </ModelFormRow>
             <ModelFormRow
                 label="Accepted inputs"
-                help="Select supported inputs. At least one is required."
+                help="Select every input type supported by this model. At least one is required."
             >
                 <ul
                     aria-label="Accepted input modalities"

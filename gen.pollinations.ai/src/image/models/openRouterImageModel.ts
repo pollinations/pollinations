@@ -61,7 +61,7 @@ type GeminiImageConfig = {
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    "google/gemini-2.5-flash-image": {
+    "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
@@ -69,7 +69,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "none",
         reasoning: false,
     },
-    "google/gemini-3.1-flash-image": {
+    "google/gemini-3.1-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -77,15 +77,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "google/gemini-3.1-flash-image:openrouter:ai-studio": {
-        upstreamModel: "google/gemini-3.1-flash-image",
-        provider: "google-ai-studio",
-        maxReferenceImages: 14,
-        generator: "Google AI Studio Gemini 3.1 Flash Image",
-        resolution: "tiered",
-        reasoning: true,
-    },
-    "google/gemini-3.1-flash-lite-image": {
+    "google/gemini-3.1-flash-lite-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-lite-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -93,19 +85,11 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "1K",
         reasoning: true,
     },
-    "google/gemini-3-pro-image": {
+    "google/gemini-3-pro-image:openrouter:ai-studio-global": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-ai-studio/global",
         maxReferenceImages: 14,
         generator: "Google AI Studio Gemini 3 Pro Image",
-        resolution: "tiered",
-        reasoning: false,
-    },
-    "google/gemini-3-pro-image:openrouter:vertex-global": {
-        upstreamModel: "google/gemini-3-pro-image",
-        provider: "google-vertex/global",
-        maxReferenceImages: 14,
-        generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
     },

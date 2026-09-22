@@ -4,7 +4,6 @@ import {
     ButtonGroup,
     CheckIcon,
     ChevronIcon,
-    Dialog,
     DialogFooter,
     DialogHeader,
     Dropdown,
@@ -20,6 +19,7 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
@@ -388,13 +388,12 @@ export function CommunityEndpointDialog({
         saveRequirementMet;
 
     return (
-        <Dialog
+        <ResourceDialog
             open={open}
             onOpenChange={onOpenChange}
             size="lg"
             trigger={trigger}
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <DialogHeader
                 title={
@@ -923,6 +922,6 @@ export function CommunityEndpointDialog({
                     </Button>
                 </DialogFooter>
             </form>
-        </Dialog>
+        </ResourceDialog>
     );
 }

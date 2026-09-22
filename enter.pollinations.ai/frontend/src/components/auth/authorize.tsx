@@ -572,7 +572,8 @@ export function Authorize() {
                     accountAfter={
                         attribution?.earningsEnabled ? (
                             <AuthAccessItem icon={<SproutIcon />}>
-                                Earn 20% of the Pollen you spend in-app.
+                                20% of the Pollen you spend in this app goes to
+                                its developer.
                             </AuthAccessItem>
                         ) : undefined
                     }

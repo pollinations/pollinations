@@ -97,7 +97,7 @@ export function KeyDialogContent({
                 ? "Use this app key to connect your app to Pollinations."
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
-              ? "Set the name, earnings, and callback URLs."
+              ? "Set the name, earnings, and redirect URLs."
               : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
@@ -240,15 +240,15 @@ export function KeyDialogContent({
                                         checked={earningsEnabled}
                                         onChange={onEarningsEnabledChange}
                                         disabled={isSubmitting}
-                                        ariaLabel="Earn 20% of the Pollen users spend in your app"
+                                        ariaLabel="Receive 20% of the Pollen users spend in your app"
                                         info={
                                             <InfoTip
-                                                text="When enabled, requests through your app cost users more than the base API rate. You receive 20% of what they pay as Pollen in your balance. Your own spending does not earn rewards."
+                                                text="When enabled, 20% of the Pollen users spend through your app is credited to your balance. Your own spending does not generate earnings."
                                                 label="App earnings information"
                                             />
                                         }
                                     >
-                                        Earn 20% of the Pollen users spend in
+                                        Receive 20% of the Pollen users spend in
                                         your app
                                     </AuthAccessItem>
                                 )}

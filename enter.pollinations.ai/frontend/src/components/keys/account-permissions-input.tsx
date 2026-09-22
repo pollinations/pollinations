@@ -11,7 +11,7 @@ const permissions = [
     },
     {
         id: "keys",
-        label: "Manage API keys, agents, models and apps.",
+        label: "Manage keys, agents and models.",
     },
 ] as const;
 

@@ -3,7 +3,7 @@ import { DashboardSignInTrigger } from "./dashboard-sign-in-trigger.tsx";
 
 export function DashboardSignInBanner({
     defaultOpen = false,
-    message = "Create your Pollinations.ai account to start building.",
+    message = "Create your Pollinations account to start building.",
 }: {
     defaultOpen?: boolean;
     message?: string;

@@ -28,6 +28,12 @@ import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
+const accountPermissionLabels: Record<string, string> = {
+    profile: "Profile",
+    usage: "Usage",
+    keys: "Keys",
+};
+
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
@@ -36,13 +42,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     async function handleDelete(): Promise<void> {
-        if (deleteId) {
-            await onDelete(deleteId);
-            setDeleteId(null);
+        if (deletingKey) {
+            await onDelete(deletingKey.id);
+            setDeletingKey(null);
         }
     }
 
@@ -67,6 +73,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
         const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
+        const accountPermissions = apiKey.permissions?.account ?? [];
 
         return (
             <Surface
@@ -113,7 +120,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
-                                onClick={() => setDeleteId(apiKey.id)}
+                                onClick={() => setDeletingKey(apiKey)}
                             >
                                 <XIcon className="h-4 w-4" />
                             </IconButton>
@@ -218,10 +225,28 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                             <span className="flex items-center gap-1">
                                 <span className="text-theme-text-muted">
-                                    Permissions:
+                                    Models:
                                 </span>
                                 <ModelsBadge permissions={apiKey.permissions} />
                             </span>
+                            {accountPermissions.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                    <span className="text-theme-text-muted">
+                                        Account:
+                                    </span>
+                                    {accountPermissions.map((permission) => (
+                                        <Chip
+                                            key={permission}
+                                            intent="neutral"
+                                            size="sm"
+                                        >
+                                            {accountPermissionLabels[
+                                                permission
+                                            ] ?? permission}
+                                        </Chip>
+                                    ))}
+                                </span>
+                            )}
                         </>
                     )}
                 </div>
@@ -279,10 +304,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            For your own backend, scripts, and CLIs — billed to
-                            your Pollinations account. Keep these keys private.
-                            For a browser app, create an app key and use
-                            Pollinations Connect.
+                            Your backends, scripts, CLIs, connected apps, and
+                            devices use these keys and spend from your
+                            Pollinations account. Keep them private.
                         </span>
                     </p>
                 </Section>
@@ -315,7 +339,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <p className="flex items-start gap-1.5">
                             <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Turn on earnings to receive a share of pollen
+                                Turn on earnings to receive 20% of the Pollen
                                 users spend in your app.
                             </span>
                         </p>
@@ -323,9 +347,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </Section>
             </div>
             <DeleteConfirmation
-                deleteId={deleteId}
+                app={deletingKey ? isAppKey(deletingKey) : null}
                 onConfirm={handleDelete}
-                onCancel={() => setDeleteId(null)}
+                onCancel={() => setDeletingKey(null)}
             />
             {editingKey && (
                 <EditApiKeyDialog

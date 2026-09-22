@@ -2,20 +2,24 @@ import { ConfirmationDialog } from "@pollinations/ui";
 import type { FC } from "react";
 
 interface DeleteConfirmationProps {
-    deleteId: string | null;
+    app: boolean | null;
     onConfirm: () => void;
     onCancel: () => void;
 }
 
 export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
-    deleteId,
+    app,
     onConfirm,
     onCancel,
 }) => (
     <ConfirmationDialog
-        open={!!deleteId}
-        title="Delete key?"
-        description="Apps using this key will lose access. Deleting it cannot be undone."
+        open={app !== null}
+        title={app ? "Delete app key?" : "Delete secret key?"}
+        description={
+            app
+                ? "New users will no longer be able to connect with this app key. Existing connections will remain active. Deleting it cannot be undone."
+                : "Requests using this secret key will stop working. Deleting it cannot be undone."
+        }
         confirmLabel="Delete"
         onConfirm={onConfirm}
         onCancel={onCancel}

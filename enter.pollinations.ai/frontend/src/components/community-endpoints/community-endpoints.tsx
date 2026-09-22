@@ -402,8 +402,8 @@ export function CommunityEndpoints({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Add Agent"
-            title="Add Agent"
+            aria-label="Create agent"
+            title="Create agent"
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
@@ -415,8 +415,8 @@ export function CommunityEndpoints({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Add Model"
-            title="Add Model"
+            aria-label="Create model"
+            title="Create model"
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >

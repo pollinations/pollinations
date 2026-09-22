@@ -10,7 +10,7 @@ const signInErrors = {
     admin_required: {
         title: "Admin access required",
         message:
-            "Your pollinations.ai account does not have admin access. Switch accounts on Pollinations, then try again.",
+            "Your Pollinations account does not have admin access. Switch accounts on Pollinations, then try again.",
     },
     cancelled: {
         title: "Sign-in cancelled",

@@ -15,7 +15,7 @@ export function useGitHubSignIn(callbackURL?: string) {
         if (error) {
             setIsSigningIn(false);
             setError(
-                "We couldn’t sign you in to your pollinations.ai account. Please try again.",
+                "We couldn’t sign you in to your Pollinations account. Please try again.",
             );
         }
     }

@@ -45,11 +45,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         tone="strong"
                         className="polli:leading-5"
                     >
-                        Callback URLs
+                        Redirect URLs
                     </Text>
                     <InfoTip
-                        text="Your app receives users at these URLs after consent. For local development, match a localhost callback to your dev server’s path; remove it before production."
-                        label="Callback URLs information"
+                        text="Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production."
+                        label="Redirect URLs information"
                     />
                 </div>
                 {redirectUris.map((uri, index) => (
@@ -60,7 +60,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     >
                         <Field.Root className="min-w-0 flex-1">
                             <Field.Label className="sr-only">
-                                Callback URL {index + 1}
+                                Redirect URL {index + 1}
                             </Field.Label>
                             <Field.Input asChild>
                                 <Input
@@ -80,7 +80,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                             size="sm"
                             data-theme="neutral"
                             className="polli:shrink-0"
-                            aria-label={`Remove callback URL ${index + 1}`}
+                            aria-label={`Remove redirect URL ${index + 1}`}
                             onClick={() => remove(index)}
                             disabled={disabled}
                         >

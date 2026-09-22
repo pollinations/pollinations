@@ -99,21 +99,21 @@ describe("registry fallback linking", () => {
             [
                 "openai/gpt-image-1-mini",
                 [
-                    "openai/gpt-image-1-mini:azure-westus3",
+                    "openai/gpt-image-1-mini:azure:westus3",
                     "openai/gpt-image-1-mini:openai",
                 ],
             ],
             [
                 "openai/gpt-image-1.5",
                 [
-                    "openai/gpt-image-1.5:azure-westus3",
+                    "openai/gpt-image-1.5:azure:westus3",
                     "openai/gpt-image-1.5:openai",
                 ],
             ],
             [
                 "openai/gpt-image-2",
                 [
-                    "openai/gpt-image-2:azure-eastus2",
+                    "openai/gpt-image-2:azure:eastus2",
                     "openai/gpt-image-2:openai",
                 ],
             ],

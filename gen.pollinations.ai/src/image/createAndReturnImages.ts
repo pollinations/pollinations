@@ -372,7 +372,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
     // Stable Azure region routes (#13174). Primary ids still round-robin;
     // these let the shared fallback table pin a region without a bespoke counter.
-    "openai/gpt-image-1-mini:azure-swedencentral": [
+    "openai/gpt-image-1-mini:azure:swedencentral": [
         {
             provider: "azure",
             baseUrl:
@@ -382,7 +382,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
     ],
-    "openai/gpt-image-1-mini:azure-westus3": [
+    "openai/gpt-image-1-mini:azure:westus3": [
         {
             provider: "azure",
             baseUrl:
@@ -392,7 +392,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "westus3",
         },
     ],
-    "openai/gpt-image-1.5:azure-swedencentral": [
+    "openai/gpt-image-1.5:azure:swedencentral": [
         {
             provider: "azure",
             baseUrl:
@@ -402,7 +402,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
     ],
-    "openai/gpt-image-1.5:azure-westus3": [
+    "openai/gpt-image-1.5:azure:westus3": [
         {
             provider: "azure",
             baseUrl:
@@ -412,7 +412,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "westus3",
         },
     ],
-    "openai/gpt-image-2:azure-swedencentral": [
+    "openai/gpt-image-2:azure:swedencentral": [
         {
             provider: "azure",
             baseUrl:
@@ -422,7 +422,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
     ],
-    "openai/gpt-image-2:azure-eastus2": [
+    "openai/gpt-image-2:azure:eastus2": [
         {
             provider: "azure",
             baseUrl:
@@ -825,12 +825,12 @@ const generateImage = async (
         case "openai/gpt-image-2":
         case "openai/gpt-image-2.5-flare":
         case "openai/gpt-image-2.5-sunburst":
-        case "openai/gpt-image-1-mini:azure-swedencentral":
-        case "openai/gpt-image-1-mini:azure-westus3":
-        case "openai/gpt-image-1.5:azure-swedencentral":
-        case "openai/gpt-image-1.5:azure-westus3":
-        case "openai/gpt-image-2:azure-swedencentral":
-        case "openai/gpt-image-2:azure-eastus2":
+        case "openai/gpt-image-1-mini:azure:swedencentral":
+        case "openai/gpt-image-1-mini:azure:westus3":
+        case "openai/gpt-image-1.5:azure:swedencentral":
+        case "openai/gpt-image-1.5:azure:westus3":
+        case "openai/gpt-image-2:azure:swedencentral":
+        case "openai/gpt-image-2:azure:eastus2":
         case "openai/gpt-image-1-mini:openai":
         case "openai/gpt-image-1.5:openai":
         case "openai/gpt-image-2:openai":

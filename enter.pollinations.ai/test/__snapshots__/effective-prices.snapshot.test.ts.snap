@@ -1986,6 +1986,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
+  "openai/gpt-image-1-mini:azure:westus3": {
+    "cost": {
+      "completionImageTokens": 0.000008,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.0000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionImageTokens": 0.000006,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.000001875,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "openai/gpt-image-1-mini:openai": {
     "cost": {
       "completionImageTokens": 0.000008,
@@ -2001,6 +2015,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "openai/gpt-image-1.5": {
+    "cost": {
+      "completionImageTokens": 0.000032,
+      "completionTextTokens": 0.00001,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.000024,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
+  "openai/gpt-image-1.5:azure:westus3": {
     "cost": {
       "completionImageTokens": 0.000032,
       "completionTextTokens": 0.00001,
@@ -2100,6 +2130,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.00000125,
       "promptImageTokens": 0.000008,
       "promptTextTokens": 0.000005,
+    },
+  },
+  "openai/gpt-image-2:azure:eastus2": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2:openai": {

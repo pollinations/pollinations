@@ -104,30 +104,32 @@ export function CommunityEndpointCard({
                                 Unlisted
                             </Chip>
                         )}
-                        <Link
-                            data-size="footer"
-                            data-tone="quiet"
-                            to="/activity"
-                            search={{
-                                usageGranularity: "day",
-                                usagePeriod: currentPeriod().period,
-                                usageBucket: undefined,
-                                usageAnchor: undefined,
-                                earningsGranularity: "day",
-                                earningsPeriod: currentPeriod().period,
-                                earningsBucket: undefined,
-                                earningsAnchor: undefined,
-                                earningsModels: [endpoint.modelId],
-                                usageMetric: undefined,
-                                usageKeys: undefined,
-                                usageModels: undefined,
-                                earningsMetric: undefined,
-                                earningsApps: undefined,
-                            }}
-                            className="polli-link"
-                        >
-                            Activity
-                        </Link>
+                        {!endpoint.hidden && (
+                            <Link
+                                data-size="footer"
+                                data-tone="quiet"
+                                to="/activity"
+                                search={{
+                                    usageGranularity: "day",
+                                    usagePeriod: currentPeriod().period,
+                                    usageBucket: undefined,
+                                    usageAnchor: undefined,
+                                    earningsGranularity: "day",
+                                    earningsPeriod: currentPeriod().period,
+                                    earningsBucket: undefined,
+                                    earningsAnchor: undefined,
+                                    earningsModels: [endpoint.modelId],
+                                    usageMetric: undefined,
+                                    usageKeys: undefined,
+                                    usageModels: undefined,
+                                    earningsMetric: undefined,
+                                    earningsApps: undefined,
+                                }}
+                                className="polli-link"
+                            >
+                                Activity
+                            </Link>
+                        )}
                         {testableModelId && (
                             <InlineLink
                                 href={openWebUiChatUrl(testableModelId)}

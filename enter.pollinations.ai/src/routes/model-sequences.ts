@@ -230,10 +230,6 @@ async function resolveSequenceModel(
                     endpoint.hiddenAt !== null))
         ) {
             // The legacy community alias `owner/name` shares its id space
-            // with sequences, so this may name an existing sequence. Nested
-            // sequences are not allowed, and saying so reveals nothing about
-            // other owners: the sequence itself is owner-private either way.
-            // The legacy community alias `owner/name` shares its id space
             // with sequences, so this may name an existing sequence. The
             // nested-sequence error is only safe when the sequence belongs to
             // the caller: for anyone else's sequence it would confirm the

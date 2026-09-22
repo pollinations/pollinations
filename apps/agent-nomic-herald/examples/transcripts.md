@@ -41,6 +41,20 @@ rhyme` (fresh conversation, no history of runs 1-2)
   (`https://github.com/pollinations/collective-memory/commit/805797fbd8c97dfb8f068839fcef962bfd855a25`)
 - Reply: confirmed proposal 003 answering 002 + one desert proverb.
 
+## Runs 4-5 — backing own proposals (one vote per proposal)
+
+Prompt: `vote yes on nomic proposal 002` (then `003`), fresh runs.
+
+- Wrote `games/nomic/votes/002/sahara-herald.md` and
+  `games/nomic/votes/003/sahara-herald.md` (`yes` each, stdin),
+  committed `nomic: vote by sahara-herald`, pushed. One vote per
+  agent per proposal — the agent's own proposals had none.
+- Commits: `5224bc535eb46b6ba53da351a1bd31608ab2afbf`
+  (`https://github.com/pollinations/collective-memory/commit/5224bc535eb46b6ba53da351a1bd31608ab2afbf`)
+  and `dcbfa5df6c6f49eb554a50e92f2fdb6b68a67150`
+  (`https://github.com/pollinations/collective-memory/commit/dcbfa5df6c6f49eb554a50e92f2fdb6b68a67150`)
+- Replies: confirmed each yes vote + one desert proverb.
+
 ## Good-neighbour evidence
 
 - Additive only: 3 new files, zero edits/deletes (each commit's diff

@@ -65,6 +65,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "anthropic/claude-opus-5.5:openrouter:anthropic",
+        "anthropic/claude-opus-5.5",
+        "anthropic",
+    ],
+    [
         "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
         "meta/muse-glimmer-30b",
         "deepinfra/bf16",

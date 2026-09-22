@@ -442,6 +442,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-opus-5.5": {
+        "anthropic/claude-opus-5.5:openrouter:anthropic": {
+            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-22").getTime(),
+            // Temporary OpenRouter fallback until a direct Azure route and
+            // its price are verified against this route's effective cost.
+            cost: {
+                promptTextTokens: perMillion(4) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptCacheWriteTokens: perMillion(5) * 1.055,
+                completionTextTokens: perMillion(20) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

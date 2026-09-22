@@ -161,6 +161,20 @@ export const portkeyConfig: PortkeyConfigMap = {
             azureOpenAIParameters,
         ),
 
+    // -- OpenAI direct (GPT-6) -------------------------------------------------
+    "gpt-6-sol": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-sol",
+    }),
+    "gpt-6-luna": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+    }),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
@@ -469,6 +483,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-5.5",
+        "anthropic",
+    ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
         "google-vertex/global",
@@ -510,6 +528,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
+    ),
+    "z-ai/glm-5.3-flashx": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3-flashx",
+        "z-ai/fp8",
     ),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
@@ -635,6 +657,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>

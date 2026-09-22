@@ -69,6 +69,25 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
+    it.each([
+        "gpt-6-sol",
+        "gpt-6-luna",
+    ])("routes %s through the direct OpenAI Responses API", (model) => {
+        const canonical = `openai/${model}`;
+        const result = resolveModelConfig(messages, { model: canonical });
+
+        expect(result.options.model).toBe(model);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model,
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+        });
+        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+        expect(() => resolveModelConfig(messages, { model })).toThrow(
+            `Model configuration not found for: ${model}`,
+        );
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {
@@ -142,6 +161,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flashx",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flashx");
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",
@@ -150,6 +181,28 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("x-ai/grok-4.7");
         expect(result.options.provider).toEqual({
             only: ["xai"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-opus-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
+    });
+
+    it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["anthropic"],
             allow_fallbacks: false,
         });
     });

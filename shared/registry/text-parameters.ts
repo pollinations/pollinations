@@ -103,8 +103,8 @@ export const CHAT_PARAMETERS = {
     // Haiku 4.5 / Sonnet & Opus 4.6: sampling only without thinking; JSON schema only.
     bedrockClaudeSampling: [...SAMPLED_CHAT, "top_k", "reasoning_effort"],
     bedrockClaudeNoSampling: [...CHAT, ...TOOLS, "reasoning_effort", "stop"],
-    // Fable 5.1 rejects forced tool choice; auto alone is not an adjustable control.
-    bedrockFable51: [...CHAT, "reasoning_effort", "tools", "stop"],
+    // Fable 5.1 and Opus 5.5 reject forced tool choice.
+    bedrockClaudeNoForcedTools: [...CHAT, "reasoning_effort", "tools", "stop"],
     openRouterHaiku: [
         ...CHAT,
         ...SAMPLING,

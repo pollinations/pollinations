@@ -440,6 +440,17 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-opus-5.5",
+        config: portkeyConfig["anthropic/claude-opus-5.5"],
+        // Bedrock rejects thinking.type=disabled for this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),

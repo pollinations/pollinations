@@ -1,5 +1,6 @@
 import { env } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
+import { communityModelId } from "@shared/community-endpoints.ts";
 import { modelSequenceModelId } from "@shared/model-sequences.ts";
 import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";

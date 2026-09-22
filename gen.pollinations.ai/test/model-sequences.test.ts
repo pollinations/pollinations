@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
-import * as schema from "@shared/db/better-auth.ts";
 import { communityModelId } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { modelSequenceModelId } from "@shared/model-sequences.ts";
 import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -222,7 +222,10 @@ describe("model sequence registry projection", () => {
                 inputModalities: ["text"],
                 perUserRpm: null,
                 fallbacks: [],
-                prices: {},
+                // Priced above gpt-5.4-nano so the fallback band keeps the
+                // nano target: a free/unknown-price primary drops every paid
+                // fallback under the no-uphill-fallback rule.
+                prices: { promptTextPrice: 10, completionTextPrice: 10 },
             }),
             createdAt: new Date(),
             updatedAt: new Date(),

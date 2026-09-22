@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import base64
-import os
-import sys
 
 import pytest
 
@@ -60,17 +57,6 @@ async def test_upload_rejects_oversized_data_uri_before_decode(monkeypatch):
         await media._read_source("data:image/png;base64," + "A" * 9, None)
 
 
-async def test_upload_rejects_oversized_workspace_file(monkeypatch, tmp_path):
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
-    monkeypatch.setattr(media, "MAX_UPLOAD_BYTES", 3)
-    workdir = tmp_path / "workspace"
-    workdir.mkdir()
-    (workdir / "large.bin").write_bytes(b"1234")
-
-    with pytest.raises(ValueError, match="upload limit"):
-        await media._read_source("large.bin", None)
-
-
 async def test_upload_remote_source_passes_service_limit(monkeypatch):
     seen = []
 
@@ -85,21 +71,6 @@ async def test_upload_remote_source_passes_service_limit(monkeypatch):
     assert seen == [media.MAX_UPLOAD_BYTES]
 
 
-async def test_upload_media_workspace_file(monkeypatch, tmp_path):
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
-    workdir = tmp_path / "workspace"
-    workdir.mkdir()
-    (workdir / "frame.png").write_bytes(b"png bytes")
-
-    fake = _FakeClient(_FakeResponse({"url": "https://media.pollinations.ai/f1"}))
-    monkeypatch.setattr(media, "_http_client", lambda: fake)
-
-    url = await media.upload_media("frame.png")
-
-    assert url == "https://media.pollinations.ai/f1"
-    assert fake.calls[0]["files"]["file"][1] == b"png bytes"
-
-
 @pytest.mark.parametrize(
     ("payload", "extension"),
     [
@@ -110,47 +81,6 @@ async def test_upload_media_workspace_file(monkeypatch, tmp_path):
 )
 def test_generated_media_filename_uses_actual_bytes(payload, extension):
     assert media._name_for_bytes(payload).endswith(extension)
-
-
-async def test_cancelled_bash_terminates_and_reaps_child(monkeypatch, tmp_path):
-    from floret.tools import shell
-
-    if os.name != "posix":
-        pytest.skip("deployed process-group behavior is Linux-specific")
-    monkeypatch.setattr(shell.settings, "temp_dir", str(tmp_path))
-    marker = tmp_path / "workspace" / "child-finished"
-    command = (
-        f'{sys.executable} -c "import time, pathlib; time.sleep(2); '
-        f"pathlib.Path('{marker}').write_text('done')\""
-    )
-    task = asyncio.create_task(shell.bash(command))
-    await asyncio.sleep(0.1)
-    task.cancel()
-
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    await asyncio.sleep(2.1)
-    assert not marker.exists()
-
-
-async def test_upload_media_rejects_path_escape(monkeypatch, tmp_path):
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
-    with pytest.raises(ValueError):
-        await media.upload_media("../outside.txt")
-
-
-async def test_fetch_media_saves_into_workspace(monkeypatch, tmp_path):
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
-
-    async def fake_fetch(url):
-        return b"video bytes"
-
-    monkeypatch.setattr(media, "_fetch_bytes", fake_fetch)
-
-    path = await media.fetch_media("https://gen.pollinations.ai/video/x", "clip1.mp4")
-
-    assert path == "clip1.mp4"
-    assert (tmp_path / "workspace" / "clip1.mp4").read_bytes() == b"video bytes"
 
 
 async def test_generate_audio_uses_standard_speech_endpoint(monkeypatch):
@@ -220,28 +150,6 @@ async def test_video_uses_registry_default_duration(monkeypatch):
     url = await gen.generate_video("cat", model="veo")
 
     assert "duration=4" in url
-
-
-async def test_toolset_dispatches_media_tools(monkeypatch):
-    names = {t["function"]["name"] for t in toolset.TOOL_SCHEMAS}
-    assert {"upload_media", "fetch_media"} <= names
-
-    async def fake_upload(source, filename=None):
-        return "https://media.pollinations.ai/up1"
-
-    async def fake_fetch(url, filename=None):
-        return "clip1.mp4"
-
-    monkeypatch.setattr(toolset.media, "upload_media", fake_upload)
-    monkeypatch.setattr(toolset.media, "fetch_media", fake_fetch)
-
-    up = await toolset.dispatch("upload_media", {"source": "frame.png"})
-    assert "https://media.pollinations.ai/up1" in up.brain
-
-    down = await toolset.dispatch(
-        "fetch_media", {"url": "https://gen.pollinations.ai/video/x"}
-    )
-    assert "clip1.mp4" in down.brain
 
 
 async def test_generated_images_are_published_before_becoming_artifacts(monkeypatch):

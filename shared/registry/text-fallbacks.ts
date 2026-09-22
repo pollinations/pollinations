@@ -127,6 +127,11 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-09-06").getTime(),
         },
     },
+    "microsoft/mai-thinking-1": {
+        "microsoft/mai-thinking-1:azure:sweden": {
+            provider: "azure",
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

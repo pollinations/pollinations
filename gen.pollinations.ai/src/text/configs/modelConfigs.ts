@@ -161,6 +161,24 @@ export const portkeyConfig: PortkeyConfigMap = {
             azureOpenAIParameters,
         ),
 
+    // MAI uses Azure's separate OpenAI-compatible /mai/v1 transport.
+    "MAI-Thinking-1": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/chat/completions",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "MAI-Thinking-1",
+        supportsMaxCompletionTokens: true,
+        supportsStreamOptions: true,
+    }),
+    "MAI-Thinking-1-azure-sweden": () => ({
+        ...portkeyConfig["MAI-Thinking-1"](),
+        directEndpoint:
+            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/chat/completions",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+    }),
+
     // -- OpenAI direct (GPT-6) -------------------------------------------------
     "gpt-6-sol": () => ({
         provider: "openai",

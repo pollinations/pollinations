@@ -116,6 +116,14 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "microsoft/mai-thinking-1",
+        config: portkeyConfig["MAI-Thinking-1"],
+    },
+    {
+        name: "microsoft/mai-thinking-1:azure:sweden",
+        config: portkeyConfig["MAI-Thinking-1-azure-sweden"],
+    },
+    {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
         transform: omitOpenAISampling,

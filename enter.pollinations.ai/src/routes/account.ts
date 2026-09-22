@@ -138,6 +138,14 @@ const CreateKeySchema = z.object({
         .describe(
             "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
+    markupPct: z
+        .number()
+        .min(0.1)
+        .max(0.5)
+        .optional()
+        .describe(
+            "Developer earnings markup percentage (0.1-0.5, i.e. 10%-50%). Defaults to 0.25 (25%). Only applies when earningsEnabled is true.",
+        ),
 });
 
 // CSV escape helper
@@ -1461,6 +1469,7 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
+                markupPct,
             } = c.req.valid("json");
 
             const metadata =
@@ -1470,6 +1479,7 @@ export const accountRoutes = new Hono<Env>()
                           ...(earningsEnabled !== undefined
                               ? { earningsEnabled }
                               : {}),
+                          ...(markupPct !== undefined ? { markupPct } : {}),
                       }
                     : undefined;
 

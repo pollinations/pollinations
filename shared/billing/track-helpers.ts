@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { parseMetadata } from "../auth/api-key-metadata.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -15,7 +16,7 @@ import {
 import {
     byopClientAllowsMarkup,
     computeDevCredit,
-    MARKUP_PCT,
+    resolveMarkupPct,
 } from "./markup.ts";
 import { roundPollenLedgerAmount } from "./precision.ts";
 
@@ -95,9 +96,6 @@ export async function resolveDevMarkup(
 ): Promise<MarkupResolution | null> {
     if (!byopClientKeyId || !payerUserId) return null;
 
-    const credit = computeDevCredit(baselinePrice);
-    if (credit <= 0) return null;
-
     const [clientRow] = await db
         .select({
             userId: apikeyTable.referenceId,
@@ -122,10 +120,18 @@ export async function resolveDevMarkup(
 
     if (!byopClientAllowsMarkup(clientRow, payerUserId)) return null;
 
+    const meta =
+        typeof clientRow.metadata === "string"
+            ? parseMetadata(clientRow.metadata)
+            : (clientRow.metadata ?? {});
+    const markupRate = resolveMarkupPct(meta);
+    const credit = computeDevCredit(baselinePrice, markupRate);
+    if (credit <= 0) return null;
+
     return {
         devUserId: clientRow.userId,
         devCredit: credit,
-        markupRate: MARKUP_PCT,
+        markupRate,
     };
 }
 

@@ -52,11 +52,16 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     const initialRedirectUris = readRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
+    const initialMarkupPct =
+        typeof apiKey.metadata?.markupPct === "number"
+            ? apiKey.metadata.markupPct
+            : 0.25;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
     const [earningsEnabled, setEarningsEnabled] = useState(
         initialEarningsEnabled,
     );
+    const [markupPct, setMarkupPct] = useState(initialMarkupPct);
 
     const expiryDays = apiKey.expiresAt
         ? Math.ceil(
@@ -84,13 +89,18 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 shouldPostKeyMetadata(apiKey, {
                     redirectUris: cleaned,
                     earningsEnabled,
+                    markupPct,
                 })
             ) {
                 const metaRes = await apiClient["api-keys"][
                     ":id"
                 ].metadata.$post({
                     param: { id: apiKey.id },
-                    json: { redirectUris: cleaned, earningsEnabled },
+                    json: {
+                        redirectUris: cleaned,
+                        earningsEnabled,
+                        ...(earningsEnabled ? { markupPct } : {}),
+                    },
                 });
                 if (!metaRes.ok) {
                     const err = await metaRes.json().catch(() => null);
@@ -202,6 +212,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             onRedirectUrisChange={setRedirectUris}
                             earningsEnabled={earningsEnabled}
                             onEarningsEnabledChange={setEarningsEnabled}
+                            markupPct={markupPct}
+                            onMarkupPctChange={setMarkupPct}
                             disabled={isSubmitting}
                         />
                     )}

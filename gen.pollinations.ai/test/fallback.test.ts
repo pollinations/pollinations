@@ -117,7 +117,10 @@ describe("registry fallback linking", () => {
                     "openai/gpt-image-2:openai",
                 ],
             ],
-            ["openai/gpt-image-2.5-flare", ["openai/gpt-image-2.5-flare:openai"]],
+            [
+                "openai/gpt-image-2.5-flare",
+                ["openai/gpt-image-2.5-flare:openai"],
+            ],
             [
                 "openai/gpt-image-2.5-sunburst",
                 ["openai/gpt-image-2.5-sunburst:openai"],

@@ -525,6 +525,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
     ),
+    "z-ai/glm-5.3-flashx": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3-flashx",
+        "z-ai/fp8",
+    ),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
         "friendli",

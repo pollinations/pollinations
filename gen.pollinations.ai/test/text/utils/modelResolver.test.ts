@@ -161,6 +161,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flashx",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flashx");
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",

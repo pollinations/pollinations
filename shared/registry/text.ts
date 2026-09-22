@@ -189,6 +189,49 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-5.4-pro": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(30),
+            completionTextTokens: perMillion(180),
+        },
+        // Azure meters GPT-5.4 Pro as separate short/long-context SKUs.
+        // Above 272K prompt tokens, the higher rates apply to the whole request.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(60),
+                    completionTextTokens: perMillion(270),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-5.4 Pro",
+        description:
+            "Highest-depth reasoning for complex, long-running professional workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxCompletionTokens: 128000,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "openai/gpt-5.4-mini": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],

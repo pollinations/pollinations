@@ -14,7 +14,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
 }) => (
     <ConfirmationDialog
         open={!!deleteId}
-        title="Delete API key?"
+        title="Delete key?"
         description="Apps using this key will lose access. Deleting it cannot be undone."
         confirmLabel="Delete"
         onConfirm={onConfirm}

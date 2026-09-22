@@ -233,8 +233,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Add Key"
-            title="Add Key"
+            aria-label="Create secret key"
+            title="Create secret key"
             aria-haspopup="dialog"
             onClick={() => setKeyCreateOpen(true)}
         >
@@ -246,8 +246,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Add App"
-            title="Add App"
+            aria-label="Create app key"
+            title="Create app key"
             aria-haspopup="dialog"
             onClick={() => setAppCreateOpen(true)}
         >
@@ -269,7 +269,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <Surface className="p-6 text-center">
                                 <div className="mb-2">{keyAction}</div>
                                 <p className="text-sm text-theme-text-muted">
-                                    Use API keys for your own private
+                                    Use secret keys for your own private
                                     server-side integrations.
                                 </p>
                             </Surface>

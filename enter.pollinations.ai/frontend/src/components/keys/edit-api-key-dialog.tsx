@@ -106,9 +106,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         } catch (error) {
             console.error("Failed to update API key:", error);
             setError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to update API key",
+                error instanceof Error ? error.message : "Failed to update key",
             );
         } finally {
             setIsSubmitting(false);

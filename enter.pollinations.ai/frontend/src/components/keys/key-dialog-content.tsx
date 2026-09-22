@@ -78,14 +78,18 @@ export function KeyDialogContent({
     footnote,
 }: KeyDialogContentProps) {
     const titles = {
-        create: app ? "Create app key" : "Create API key",
-        edit: app ? "Edit app key" : "Edit key permissions",
+        create: app ? "Create app key" : "Create secret key",
+        edit: app
+            ? "Edit app key"
+            : publishable
+              ? "Edit publishable key"
+              : "Edit secret key",
     };
     const title =
         createdKey !== undefined
             ? app
                 ? "App key created"
-                : "API key created"
+                : "Secret key created"
             : titles[mode];
     const description =
         createdKey !== undefined
@@ -226,6 +230,7 @@ export function KeyDialogContent({
                             <ul className="space-y-3 text-sm">
                                 <KeyNameField
                                     app={app}
+                                    publishable={publishable}
                                     value={name}
                                     onChange={onNameChange}
                                     disabled={isSubmitting}

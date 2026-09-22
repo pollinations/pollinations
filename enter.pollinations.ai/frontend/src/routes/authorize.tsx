@@ -18,7 +18,13 @@ function parseNumber(val: unknown): number | null {
 }
 
 export const Route = createFileRoute("/authorize")({
-    head: () => ({ meta: [{ title: "Allow this app | pollinations.ai" }] }),
+    head: ({ match }) => ({
+        meta: [
+            {
+                title: `${match.search.user_code ? "Allow your device" : "Allow this app"} | pollinations.ai`,
+            },
+        ],
+    }),
     component: Authorize,
     validateSearch: (search: Record<string, unknown>) => {
         const result: {

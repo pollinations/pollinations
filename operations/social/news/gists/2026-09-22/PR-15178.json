@@ -1,0 +1,35 @@
+{
+  "pr_number": 15178,
+  "title": "feat: add z-ai/glm-5.3-flashx via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15178",
+  "merged_at": "2026-09-22T19:26:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `z-ai/glm-5.3-flashx` (Z.ai GLM-5.3 FlashX, text + image in, text out) via OpenRouter, paid-only, no aliases.\n- Route pinned to Z.AI `z-ai/fp8` (OpenRouter's only endpoint for this model), `allow_fallbacks: false`. No fallback: none found. The sibling `glm-5.3-flash` runs on Fireworks, but FlashX there is unconfirmed.\n- Cost $0.37 in / $0.075 cached / $1.25 out per 1M, x1.055 OpenRouter fee (#14895). 1M context, 131K max output.\n- Video input is not exposed. OpenRouter lists it, but it is untested here.\n- Reuses the existing Z.ai logo.\n\n**Verification**\n- Registry, config, availability, resolver test and price snapshot are updated. Not run locally (sandbox can't run the Vitest/Workers suites); CI is the check.\n- No live probe: no OpenRouter key in this environment. Needs a live text + image request before merge.\n- GLM-5.3 and 5.3-flash use a mandatory-reasoning transform. I didn't apply it here because FlashX's behavior is unverified. Check whether reasoning-off requests need it.\n\nRelated: #5321\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nFixes #15313\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "FlashX joins the hive",
+    "blurb": "A fast new Z.ai brain has landed in the garden. GLM-5.3 FlashX can read both words and pictures, then return a useful little burst of text.",
+    "summary": "Added the paid-only `z-ai/glm-5.3-flashx` model via OpenRouter, pinned to Z.AI's `z-ai/fp8` route with fallbacks disabled, supporting text and image input, text output, a 1M-token context window, and up to 131K output tokens.",
+    "impact": "Developers can now call GLM-5.3 FlashX for large-context text-and-image prompts through the unified text API, with deterministic Z.AI routing and no unexpected provider fallback.",
+    "keywords": [
+      "GLM-5.3 FlashX",
+      "Z.ai",
+      "OpenRouter",
+      "text models",
+      "image input",
+      "1M context",
+      "API"
+    ],
+    "visual_concept": "Depict FlashX as a tiny, quick messenger spark moving from a picture card and a long scroll of text into a cozy Z.ai-powered retro terminal. Polli, wearing little aviator goggles, helps feed the terminal both a pixel landscape image and an enormous scroll, while code-plants and the existing Z.ai logo motif establish that this is a new multimodal model route.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing tiny aviator goggles, she guides a pixel picture card and a very long text scroll into a glowing retro terminal marked with a small Z.ai-inspired emblem, while lime green (#ecf874) code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FLASHX\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15178.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing tiny aviator goggles, she guides a pixel picture card and a very long text scroll into a glowing retro terminal marked with a small Z.ai-inspired emblem, while lime green (#ecf874) code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FLASHX\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-22T19:27:15.883821+00:00"
+}

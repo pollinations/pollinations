@@ -83,7 +83,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required for this endpoint (including /v1/audio/*). Get one at https://enter.pollinations.ai/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -110,7 +110,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required for this endpoint (including /v1/audio/*). Get one at https://enter.pollinations.ai/keys",
             },
         });
         await waitOnExecutionContext(ctx);

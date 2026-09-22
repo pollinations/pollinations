@@ -22,7 +22,7 @@ export function CommunityEndpointToggleConfirmation({
             open={!!endpoint}
             title={`${action} ${kind}?`}
             confirmLabel={action}
-            intent="neutral"
+            intent="commit"
             confirmIcon={hidden ? <EyeIcon /> : <EyeOffIcon />}
             onConfirm={onConfirm}
             onCancel={onCancel}

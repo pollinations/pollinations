@@ -16,10 +16,7 @@ export function ProviderSignInButton({
             type={type}
             intent="brand"
             data-theme="accent"
-            className={cn(
-                "polli:min-h-11 polli:grow polli:shrink-0 polli:self-stretch polli:gap-3 polli:whitespace-nowrap polli:rounded-md polli:px-4 polli:py-2 polli:text-sm",
-                className,
-            )}
+            className={cn("polli:gap-2 polli:whitespace-nowrap", className)}
         >
             {icon}
             <span>{children}</span>

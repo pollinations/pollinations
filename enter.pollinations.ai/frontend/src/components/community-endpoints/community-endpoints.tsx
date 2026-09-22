@@ -524,6 +524,7 @@ export function CommunityEndpoints({
                                     </Button>
                                     <Button
                                         type="submit"
+                                        intent="commit"
                                         disabled={isSavingProvider}
                                     >
                                         {isSavingProvider ? "Saving…" : "Save"}

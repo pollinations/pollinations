@@ -1,4 +1,5 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointToggleConfirmationProps = {
@@ -13,7 +14,7 @@ export function CommunityEndpointToggleConfirmation({
     onCancel,
 }: CommunityEndpointToggleConfirmationProps) {
     return (
-        <Dialog
+        <ResourceDialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
             title={endpoint?.hidden ? "Relist Model" : "Hide Model"}
@@ -39,6 +40,6 @@ export function CommunityEndpointToggleConfirmation({
                     {endpoint?.hidden ? "Relist" : "Hide"}
                 </Button>
             </div>
-        </Dialog>
+        </ResourceDialog>
     );
 }

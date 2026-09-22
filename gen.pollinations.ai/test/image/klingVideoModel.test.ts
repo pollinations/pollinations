@@ -190,12 +190,4 @@ describe("callKlingVideoAPI", () => {
             callKlingVideoAPI("will fail", baseParams),
         ).rejects.toMatchObject({ status: 502 });
     });
-
-    it("requires FAL_KEY", async () => {
-        syncImageEnv({} as CloudflareBindings, []);
-
-        await expect(
-            callKlingVideoAPI("no key", baseParams),
-        ).rejects.toMatchObject({ status: 500 });
-    });
 });

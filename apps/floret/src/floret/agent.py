@@ -14,7 +14,6 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolPara
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
 from floret.routing import RoutingPreferences
-from floret.tools import shell
 from floret.toolset import TOOL_SCHEMAS, dispatch, parse_args
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,9 @@ def _client() -> AsyncOpenAI:
     )
 
 
-_WORKSPACE_MEDIA_RE = re.compile(r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif)\b", re.I)
+_WORKSPACE_MEDIA_RE = re.compile(
+    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.I
+)
 
 
 def _mentions_unpublished_media(text: str) -> bool:
@@ -68,7 +69,7 @@ async def _run_agent_events(
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
-    workspace_lock = asyncio.Lock()
+    computer_lock = asyncio.Lock()
     system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
@@ -112,7 +113,7 @@ async def _run_agent_events(
         if not tool_calls:
             text = msg.content or ""
             attached = any(
-                a.get("type") in ("video", "audio")
+                a.get("type") in ("video", "audio", "3d", "file")
                 and str(a.get("url", "")).startswith("https://media.pollinations.ai/")
                 for a in artifacts
             )
@@ -131,7 +132,7 @@ async def _run_agent_events(
                         "content": (
                             "Your answer references media files that were never "
                             "published. Files in the workspace are NOT delivered "
-                            "to the user. Call upload_media on each final file "
+                            "to the user. Use `assets publish` in Computer bash for each final file "
                             "and include the returned URLs in your answer."
                         ),
                     }
@@ -158,8 +159,8 @@ async def _run_agent_events(
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                if name in {"bash", "fetch_media", "upload_media"}:
-                    async with workspace_lock:
+                if name == "bash":
+                    async with computer_lock:
                         result = await dispatch(name, parse_args(raw_args), routing)
                 else:
                     result = await dispatch(name, parse_args(raw_args), routing)
@@ -223,7 +224,7 @@ async def run_agent_events(
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
-    """Run one agent event stream in an isolated temporary workspace."""
+    """Run one agent event stream."""
     from floret.registry import (
         fetch_model_catalog,
         reset_request_catalog,
@@ -231,7 +232,6 @@ async def run_agent_events(
         warm_registry,
     )
 
-    workspace, token = shell.create_workspace()
     catalog_token = None
     try:
         if settings.catalog_endpoint:
@@ -244,7 +244,6 @@ async def run_agent_events(
     finally:
         if catalog_token is not None:
             reset_request_catalog(catalog_token)
-        shell.cleanup_workspace(workspace, token)
 
 
 async def run_agent(

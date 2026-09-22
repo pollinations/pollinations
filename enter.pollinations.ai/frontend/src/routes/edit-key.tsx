@@ -32,7 +32,7 @@ type EditKeySearch = {
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
-        meta: [{ title: "Edit key permissions | pollinations.ai" }],
+        meta: [{ title: "Edit app access | pollinations.ai" }],
     }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
@@ -79,7 +79,7 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    // The card reads as one sentence: "Edit key permissions · {key} · {step}".
+    // The card reads as one sentence: "Edit app access · {key} · {step}".
     // The URL only carries the record id, so the card waits for the key row.
     const subject = apiKey ? (
         <Surface>
@@ -95,16 +95,14 @@ function EditKeyPage() {
     ) : undefined;
 
     if (isPending)
-        return (
-            <AuthModalLoading title="Edit key permissions" subject={subject} />
-        );
+        return <AuthModalLoading title="Edit app access" subject={subject} />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Edit key permissions"
+                title="Edit app access"
                 subject={subject}
-                description="Sign in to your Pollinations account to change this key’s permissions."
+                description="Sign in to your Pollinations account to change this app’s access."
             />
         );
     }
@@ -121,7 +119,7 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Edit key permissions"
+                title="Edit app access"
                 subject={subject}
                 description={
                     outcome === "saved"
@@ -143,9 +141,9 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Edit key permissions"
+                title="Edit app access"
                 subject={subject}
-                error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
+                error="Couldn’t load this app’s access. Check that you’re signed in to the account that granted it."
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={
@@ -158,18 +156,21 @@ function EditKeyPage() {
     }
 
     if (apiKey === undefined)
-        return (
-            <AuthModalLoading title="Edit key permissions" subject={subject} />
-        );
+        return <AuthModalLoading title="Edit app access" subject={subject} />;
 
     return (
         <EditApiKeyDialog
             key={apiKey.id}
             apiKey={apiKey}
+            appAccess
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
             footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {
-                await updateApiKey(keyId, updates);
+                await updateApiKey(
+                    keyId,
+                    updates,
+                    "Failed to save app access. Please try again.",
+                );
                 setOutcome("saved");
             }}
             onClose={() =>

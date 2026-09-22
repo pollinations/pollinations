@@ -556,6 +556,7 @@ export function Authorize() {
             >
                 <KeyPermissionsInputs
                     value={keyPermissions}
+                    appAccess={!isDeviceMode}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
                     lead={
@@ -563,7 +564,7 @@ export function Authorize() {
                             <span className="inline-flex items-center">
                                 Username and picture
                                 <InfoTip
-                                    text="This app can also see this key’s budget and usage."
+                                    text="This app can also see its budget and usage."
                                     label="Username and picture information"
                                 />
                             </span>

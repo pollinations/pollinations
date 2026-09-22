@@ -5,6 +5,7 @@ import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
 export async function updateApiKey(
     id: string,
     updates: ApiKeyUpdateParams,
+    failureMessage = "Failed to save key. Please try again.",
 ): Promise<void> {
     const response = await apiClient["api-keys"][":id"].update.$post({
         param: { id },
@@ -20,7 +21,7 @@ export async function updateApiKey(
         const result = await response.json().catch(() => null);
         throw new Error(
             (result as { error?: { message?: string } } | null)?.error
-                ?.message || "Failed to save key. Please try again.",
+                ?.message || failureMessage,
         );
     }
 }

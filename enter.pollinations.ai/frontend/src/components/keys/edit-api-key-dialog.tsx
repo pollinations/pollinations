@@ -15,6 +15,8 @@ import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
+    /** Use app-access wording in the standalone editor. */
+    appAccess?: boolean;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
     /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
@@ -29,6 +31,7 @@ function cleanRedirectUris(uris: string[]): string[] {
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
+    appAccess = false,
     onUpdate,
     onClose,
     header,
@@ -106,7 +109,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         } catch (error) {
             console.error("Failed to update API key:", error);
             setError(
-                error instanceof Error ? error.message : "Failed to update key",
+                error instanceof Error
+                    ? error.message
+                    : appAccess
+                      ? "Failed to update app access"
+                      : "Failed to update key",
             );
         } finally {
             setIsSubmitting(false);
@@ -121,6 +128,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             <KeyDialogContent
                 header={header}
                 mode="edit"
+                appAccess={appAccess}
                 app={appKey}
                 publishable={isPublishable}
                 name={name}

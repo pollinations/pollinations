@@ -4,12 +4,14 @@ import { useId } from "react";
 /** The key's name, shown in its own full-width card. */
 export function KeyNameField({
     app,
+    appAccess = false,
     publishable,
     value,
     onChange,
     disabled,
 }: {
     app: boolean;
+    appAccess?: boolean;
     publishable: boolean;
     value: string;
     onChange: (value: string) => void;
@@ -42,7 +44,11 @@ export function KeyNameField({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={
-                    app ? "App name" : publishable ? "Name" : "Secret name"
+                    app
+                        ? "App name"
+                        : publishable || appAccess
+                          ? "Name"
+                          : "Secret name"
                 }
                 className="min-w-0 flex-1"
                 required

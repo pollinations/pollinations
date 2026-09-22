@@ -12,6 +12,7 @@ const limits = {
         step: "any",
         empty: "Unlimited",
         helper: "Spending cap for this key. Leave empty for no cap.",
+        appHelper: "Spending cap for this app. Leave empty for no cap.",
     },
     expiry: {
         label: "Expiry",
@@ -22,6 +23,8 @@ const limits = {
         step: "any",
         empty: "Never",
         helper: "Time until this key expires. Leave empty to never expire.",
+        appHelper:
+            "Time until this app’s access expires. Leave empty to never expire.",
     },
 } as const;
 
@@ -31,11 +34,13 @@ export function KeyLimitInput({
     value,
     onChange,
     disabled = false,
+    appAccess = false,
 }: {
     kind: keyof typeof limits;
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
+    appAccess?: boolean;
 }) {
     const inputId = useId();
     const limit = limits[kind];
@@ -87,7 +92,7 @@ export function KeyLimitInput({
             <span className="inline-flex items-center">
                 {limit.label}
                 <InfoTip
-                    text={limit.helper}
+                    text={appAccess ? limit.appHelper : limit.helper}
                     label={`${limit.label} information`}
                 />
             </span>

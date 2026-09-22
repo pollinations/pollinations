@@ -33,6 +33,7 @@ type KeyDialogContentProps = {
     header?: ReactNode;
     mode: "create" | "edit";
     app: boolean;
+    appAccess?: boolean;
     publishable: boolean;
     name: string;
     onNameChange: (name: string) => void;
@@ -58,6 +59,7 @@ export function KeyDialogContent({
     header,
     mode,
     app,
+    appAccess = false,
     publishable,
     name,
     onNameChange,
@@ -79,11 +81,13 @@ export function KeyDialogContent({
 }: KeyDialogContentProps) {
     const titles = {
         create: app ? "Create app key" : "Create secret key",
-        edit: app
-            ? "Edit app key"
-            : publishable
-              ? "Edit publishable key"
-              : "Edit secret key",
+        edit: appAccess
+            ? "Edit app access"
+            : app
+              ? "Edit app key"
+              : publishable
+                ? "Edit publishable key"
+                : "Edit secret key",
     };
     const title =
         createdKey !== undefined
@@ -98,7 +102,9 @@ export function KeyDialogContent({
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
               ? "Set the name, earnings, and redirect URLs."
-              : "Choose what this key can access and how much it can spend.";
+              : appAccess
+                ? "Choose what this app can access and how much it can spend."
+                : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
     const submitAction =
@@ -230,6 +236,7 @@ export function KeyDialogContent({
                             <ul className="space-y-3 text-sm">
                                 <KeyNameField
                                     app={app}
+                                    appAccess={appAccess}
                                     publishable={publishable}
                                     value={name}
                                     onChange={onNameChange}
@@ -263,6 +270,7 @@ export function KeyDialogContent({
                         ) : (
                             <KeyPermissionsInputs
                                 value={permissions}
+                                appAccess={appAccess}
                                 disabled={isSubmitting}
                             />
                         )}

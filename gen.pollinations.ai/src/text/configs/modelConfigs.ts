@@ -469,10 +469,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
-    "anthropic/claude-opus-5.5": createPinnedOpenRouterConfig(
-        "anthropic/claude-opus-5.5",
-        "azure/global",
-    ),
     "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-5.5",
         "anthropic",
@@ -643,6 +639,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>

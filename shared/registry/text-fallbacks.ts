@@ -447,9 +447,8 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
             provider: "openrouter",
             addedDate: new Date("2026-09-22").getTime(),
-            // Anthropic's own native-API tag on OpenRouter (2026-09-22);
-            // same base rate as the azure/global primary, 100% reported
-            // uptime, and a genuinely distinct backend from Azure.
+            // Temporary OpenRouter fallback until a direct Azure route and
+            // its price are verified against this route's effective cost.
             cost: {
                 promptTextTokens: perMillion(4) * 1.055,
                 promptCachedTokens: perMillion(0.2) * 1.055,

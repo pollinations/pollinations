@@ -154,16 +154,14 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Claude Opus 5.5 to Azure on OpenRouter without fallback", () => {
+    it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5",
         });
 
-        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
-        expect(result.options.provider).toEqual({
-            only: ["azure/global"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.model).toBe("global.anthropic.claude-opus-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
     });
 
     it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {

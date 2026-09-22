@@ -401,6 +401,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         if request.pollen == "quest"
         else None
     )
+    agent_model = request.agent_model
     token = _api_key_override.set(api_key or None)
     try:
         with registry.model_scope(catalog, request.pollen):
@@ -409,6 +410,13 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 if catalog is not None
                 else await validate_routing(request.routing)
             )
+            if agent_model is not None and request.pollen == "quest":
+                agent_model = registry.choose_model(
+                    "text",
+                    agent_model,
+                    endpoint="/v1/chat/completions",
+                    required_capabilities=frozenset({"tool_calling"}),
+                )
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -416,6 +424,15 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         ) from exc
     except RoutingRegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "field": "metadata.model",
+                "model": request.agent_model,
+                "reason": str(exc),
+            },
+        ) from exc
     finally:
         _api_key_override.reset(token)
 
@@ -427,7 +444,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 api_key or None,
                 routing,
                 _include_stream_usage(request.stream_options),
-                agent_model=request.agent_model,
+                agent_model=agent_model,
                 pollen=request.pollen,
                 catalog=catalog,
             ),
@@ -437,8 +454,8 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     token = _api_key_override.set(api_key or None)
     try:
         options: dict[str, Any] = {"routing": routing}
-        if request.agent_model is not None:
-            options["model"] = request.agent_model
+        if agent_model is not None:
+            options["model"] = agent_model
         if request.pollen == "quest":
             options["pollen"] = request.pollen
             options["catalog"] = catalog

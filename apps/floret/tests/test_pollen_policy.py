@@ -40,7 +40,7 @@ def catalog(monkeypatch: pytest.MonkeyPatch) -> dict[str, dict[str, Any]]:
             "quest-text",
             "text",
             "/v1/chat/completions",
-            capabilities=["tools"],
+            capabilities=["tool_calling"],
         ),
         "paid-text": model(
             "paid-text",
@@ -48,7 +48,7 @@ def catalog(monkeypatch: pytest.MonkeyPatch) -> dict[str, dict[str, Any]]:
             "/v1/chat/completions",
             paid_only=True,
             aliases=["premium"],
-            capabilities=["tools"],
+            capabilities=["tool_calling"],
         ),
         "quest-image": model("quest-image", "image", "/image/{prompt}"),
         "paid-image": model("paid-image", "image", "/image/{prompt}", paid_only=True),
@@ -83,7 +83,7 @@ def test_quest_scope_excludes_paid_only_but_not_priced_models(catalog):
             registry.choose_model(
                 "text",
                 endpoint="/v1/chat/completions",
-                required_capabilities=frozenset({"tools"}),
+                required_capabilities=frozenset({"tool_calling"}),
             )
             == "quest-text"
         )
@@ -100,9 +100,34 @@ def test_quest_scope_keeps_its_catalog_snapshot(catalog):
             "quest-text": {**catalog["quest-text"], "paid_only": True},
         }
         registry.install_global_snapshot(
-            {"version": "catalog-2", "catalog": list(replacement.values())}
+            {
+                "version": "catalog-2",
+                "catalog": list(replacement.values()),
+                "review": {
+                    "revision": "review-2",
+                    "catalogRevision": "catalog-2",
+                    "incumbents": {},
+                    "recommendations": [
+                        {
+                            "taskFamily": "text.general",
+                            "model": "quest-text",
+                            "action": "avoid",
+                            "reason": "new snapshot",
+                            "source": "measured",
+                        }
+                    ],
+                },
+            }
         )
         assert registry.require_model("quest-text") == "quest-text"
+        assert (
+            registry.choose_model(
+                "text",
+                endpoint="/v1/chat/completions",
+                required_capabilities=frozenset({"tool_calling"}),
+            )
+            == "quest-text"
+        )
 
 
 async def test_generation_tool_rejects_paid_model_before_network(catalog):
@@ -161,6 +186,28 @@ def test_quest_rejects_paid_routing_before_agent(monkeypatch, catalog):
 
     assert response.status_code == 422
     assert response.json()["detail"]["reason"] == "unknown model"
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_quest_rejects_paid_inner_model_before_agent(monkeypatch, catalog, stream):
+    async def unexpected(*args, **kwargs):
+        raise AssertionError("agent must not start")
+
+    monkeypatch.setattr(api, "run_agent", unexpected)
+    monkeypatch.setattr(api, "run_agent_events", unexpected)
+    response = TestClient(api.app).post(
+        "/v1/chat/completions",
+        json={
+            "model": "floret",
+            "messages": [{"role": "user", "content": "hi"}],
+            "stream": stream,
+            "metadata": {"pollen": "quest", "model": "paid-text"},
+        },
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["field"] == "metadata.model"
 
 
 @pytest.mark.parametrize(

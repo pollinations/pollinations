@@ -29,6 +29,10 @@ _request_eligible_models: ContextVar[frozenset[str] | None] = ContextVar(
 _request_catalog: ContextVar[dict[str, dict[str, Any]] | None] = ContextVar(
     "request_catalog", default=None
 )
+_request_policy: ContextVar[PolicySnapshot | None] = ContextVar(
+    "request_policy", default=None
+)
+_request_revision: ContextVar[str | None] = ContextVar("request_revision", default=None)
 PollenPolicy = Literal["quest", "all"]
 _request_pollen: ContextVar[PollenPolicy] = ContextVar("request_pollen", default="all")
 _lock = asyncio.Lock()
@@ -436,11 +440,15 @@ def model_scope(
             }
         )
     catalog_token = _request_catalog.set(scoped)
+    review_token = _request_policy.set(_policy_snapshot)
+    revision_token = _request_revision.set(_catalog_revision)
     policy_token = _request_pollen.set(effective)
     try:
         yield
     finally:
         _request_pollen.reset(policy_token)
+        _request_revision.reset(revision_token)
+        _request_policy.reset(review_token)
         _request_catalog.reset(catalog_token)
 
 
@@ -481,8 +489,9 @@ def choose_model(
             if video_capabilities
             <= set(meta.get("params", {}).get("video_capabilities") or [])
         }
-    policy = _policy_snapshot or PolicySnapshot(
-        "unreviewed", _catalog_revision or "", {}, ()
+    revision = _request_revision.get()
+    policy = _request_policy.get() or PolicySnapshot(
+        "unreviewed", revision or "", {}, ()
     )
     selected = select_model(
         catalog,
@@ -496,7 +505,7 @@ def choose_model(
             output_modalities=output_modalities,
             pinned_model=pinned,
         ),
-        catalog_revision=_catalog_revision or "",
+        catalog_revision=revision or "",
     )
     if selected:
         return selected
@@ -740,12 +749,15 @@ def pick_model(
     if not pool:
         return ""
 
-    policy = _policy_snapshot
-    revision = _catalog_revision
+    policy = _request_policy.get() if scoped is not None else _policy_snapshot
+    revision = _request_revision.get() if scoped is not None else _catalog_revision
     if (
         policy is not None
         and revision is not None
-        and (_registry_cache or {}).get("catalog_revision") == revision
+        and (
+            scoped is not None
+            or (_registry_cache or {}).get("catalog_revision") == revision
+        )
     ):
         selected = select_model(
             pool,

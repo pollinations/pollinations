@@ -63,7 +63,7 @@ def select_brain(
         "text",
         explicit,
         endpoint="/v1/chat/completions",
-        required_capabilities=frozenset({"tools"}),
+        required_capabilities=frozenset({"tool_calling"}),
     )
 
 

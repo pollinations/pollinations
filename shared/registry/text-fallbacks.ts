@@ -100,6 +100,11 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.3-codex": {
+        "openai/gpt-5.3-codex:azure:sweden": {
+            provider: "azure",
+        },
+    },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",

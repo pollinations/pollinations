@@ -303,7 +303,7 @@ describe("static provider fallbacks", () => {
             priceMultiplier: 1,
             fallbacks: [`${model}:openrouter:perplexity`],
         });
-        expect(primary.paidOnly).not.toBe(true);
+        expect(primary).not.toHaveProperty("paidOnly", true);
         expect(findModelByName(model)?.config()).toMatchObject({
             provider: "perplexity-ai",
             model: upstream,
@@ -346,6 +346,42 @@ describe("static provider fallbacks", () => {
                 cost: searchFee * 1.055,
             });
         }
+    });
+
+    it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
+        const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
+        const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
+        expect(primary).toMatchObject({
+            provider: "azure",
+            aliases: [],
+            fallbacks: ["openai/gpt-5.3-codex:azure:sweden"],
+            priceMultiplier: 0.75,
+            maxCompletionTokens: 128000,
+        });
+        expect(fallback).toMatchObject({
+            provider: "azure",
+            fallbackOnly: true,
+            hidden: true,
+            aliases: [],
+        });
+        expect(primary).not.toHaveProperty("paidOnly", true);
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(fallback.cost).toEqual(primary.cost);
+
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-5.3-codex",
+            usage: {
+                promptTextTokens: 10,
+                promptCachedTokens: 4,
+                promptCacheWriteTokens: 2,
+                completionTextTokens: 5,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000917, 12);
+        expect(billing.price.totalPrice).toBe(0.00006877);
+        expect(billing.price.totalPrice).toBe(billing.servedPrice);
     });
 
     it("preserves the Astra quote while recording Data Zone costs", () => {

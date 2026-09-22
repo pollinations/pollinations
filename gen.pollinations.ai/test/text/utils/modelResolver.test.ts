@@ -63,6 +63,36 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("keeps GPT-5.3 Codex primary and Sweden fallback routes distinct", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "openai/gpt-5.3-codex",
+        });
+        const fallback = findModelByName("openai/gpt-5.3-codex:azure:sweden");
+
+        expect(primary.options.model).toBe("gpt-5.3-codex");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-5.3-codex",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(fallback?.useResponsesApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "gpt-5.3-codex",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it("does not expose GPT-5.3 Codex through an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-5.3-codex" }),
+        ).toThrow("Model configuration not found for: gpt-5.3-codex");
+    });
+
     it("does not expose gpt-6-astra as an alias", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "gpt-6-astra" }),

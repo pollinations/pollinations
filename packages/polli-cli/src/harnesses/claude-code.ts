@@ -1,8 +1,13 @@
 import { createHash } from "node:crypto";
-import { existsSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { printInfo } from "../lib/output.js";
-import { commandExists, readTextIfExists, writeTextAtomic } from "./fs.js";
+import { printInfo, printWarn } from "../lib/output.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import { smokeChat } from "./smoke.js";
@@ -42,6 +47,23 @@ export const ccrConfigDir = (ctx: HarnessContext): string => {
 
 export const configDbPath = (ctx: HarnessContext): string =>
     join(ccrConfigDir(ctx), "config.sqlite");
+
+/**
+ * Per-profile Claude Code settings the agent profile owns (c("~/.claude")
+ * / c("") / c("")).
+ */
+export const claudeSettingsPath = (ctx: HarnessContext): string =>
+    join(ctx.home, ".claude", "settings.json");
+
+/** ccr's own surface state next to the profile settings it writes. */
+export const settingsStatePath = (ctx: HarnessContext): string =>
+    join(
+        ccrConfigDir(ctx),
+        "profiles",
+        "default-claude-code",
+        "claude",
+        "settings-state.json",
+    );
 
 // ---------------------------------------------------------------------------
 // SQLite access — node:sqlite needs Node 22.5+ (stable from Node 24)
@@ -248,6 +270,97 @@ export const stripProvider = (
 };
 
 // ---------------------------------------------------------------------------
+// Claude Code settings.json (~/.claude) — env override so the CLI hits ccr
+// ---------------------------------------------------------------------------
+
+/**
+ * ccr's own management UI writes exactly these env keys into the user's
+ * settings.json (c("")): the base URLs point at the local gateway and the
+ * gateway-issued bearer token authenticates the CLI to it. We mirror that
+ * shape so polli's setup is indistinguishable from a hand-configured one.
+ */
+export const CCR_ENV_KEYS = [
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_API_BASE_URL",
+    "CLAUDE_AGENT_API_BASE_URL",
+] as const;
+export const AUTH_ENV_KEY = "ANTHROPIC_AUTH_TOKEN";
+
+export const gatewayOrigin = (host: unknown, port: unknown): string => {
+    // ccr maps 0.0.0.0 to the loopback (cli.js `No()`): clients cannot use
+    // the wildcard address meaningfully.
+    const rawHost =
+        typeof host === "string" && host.trim() !== ""
+            ? host.trim()
+            : "127.0.0.1";
+    const safeHost = rawHost === "0.0.0.0" ? "127.0.0.1" : rawHost;
+    const hostPart =
+        safeHost.includes(":") && !safeHost.startsWith("[")
+            ? `[${safeHost}]`
+            : safeHost;
+    const safePort =
+        typeof port === "number" && Number.isFinite(port)
+            ? port
+            : parseInt(String(port ?? ""), 10);
+    return `http://${hostPart}:${Number.isFinite(safePort) ? safePort : 3456}`;
+};
+
+interface SettingsDoc {
+    env?: Record<string, unknown>;
+    apiKeyHelper?: unknown;
+    [key: string]: unknown;
+}
+
+export const upsertSettingsEnv = (
+    doc: SettingsDoc,
+    origin: string,
+    authToken: string,
+): { doc: SettingsDoc; changed: boolean } => {
+    const env: Record<string, unknown> = { ...(doc.env ?? {}) };
+    for (const key of CCR_ENV_KEYS) env[key] = origin;
+    env[AUTH_ENV_KEY] = authToken;
+    // ccr's global takeover relies on these; harmless to carry.
+    env.NO_PROXY = "127.0.0.1,localhost,::1";
+    env.no_proxy = "127.0.0.1,localhost,::1";
+    const next = { ...doc, env };
+    return {
+        doc: next,
+        changed: JSON.stringify(next) !== JSON.stringify(doc),
+    };
+};
+
+/**
+ * Every env key that is provably ours (exact gateway origin + exact token).
+ * Anything else in `env` is the user's and survives the surgical strip.
+ */
+export const stripSettingsEnv = (
+    doc: SettingsDoc,
+    origin: string,
+    authToken: string,
+): { doc: SettingsDoc; changed: boolean } => {
+    const env = doc.env;
+    if (!env || typeof env !== "object") {
+        return { doc, changed: false };
+    }
+    const cleaned: Record<string, unknown> = { ...env };
+    let changed = false;
+    for (const key of [...CCR_ENV_KEYS, AUTH_ENV_KEY]) {
+        const value = cleaned[key];
+        const ours =
+            key === AUTH_ENV_KEY ? value === authToken : value === origin;
+        if (ours) {
+            delete cleaned[key];
+            changed = true;
+        }
+    }
+    if (!changed) return { doc, changed: false };
+    const next: SettingsDoc = { ...doc };
+    if (Object.keys(cleaned).length === 0) delete next.env;
+    else next.env = cleaned;
+    return { doc: next, changed: true };
+};
+
+// ---------------------------------------------------------------------------
 // Row snapshot — exact pre-`on` bytes for byte-for-byte restore on `off`
 // ---------------------------------------------------------------------------
 
@@ -255,6 +368,42 @@ interface RowSnapshot {
     before: string | null;
     afterHash: string | null;
 }
+
+interface FileSnapshot {
+    before: string | null;
+    afterHash: string | null;
+}
+
+/** Settings files snapshotted beside the DB row (path → bytes). */
+interface SettingsSnapshot {
+    [path: string]: FileSnapshot;
+}
+
+const settingsSnapshotPath = (ctx: HarnessContext) =>
+    join(ctx.home, ".pollinations", "harnesses", `${ID}.settings.json`);
+
+const readSettingsSnapshot = (ctx: HarnessContext): SettingsSnapshot | null => {
+    const text = readTextIfExists(settingsSnapshotPath(ctx));
+    return text ? (JSON.parse(text) as SettingsSnapshot) : null;
+};
+
+const writeSettingsSnapshot = (
+    ctx: HarnessContext,
+    snapshot: SettingsSnapshot,
+) =>
+    writeTextAtomic(
+        settingsSnapshotPath(ctx),
+        JSON.stringify(snapshot, null, 2),
+        0o600,
+    );
+
+const removeSettingsSnapshot = (ctx: HarnessContext) => {
+    try {
+        unlinkSync(settingsSnapshotPath(ctx));
+    } catch {
+        // already gone
+    }
+};
 
 const hash = (value: string) =>
     createHash("sha256").update(value).digest("hex");
@@ -280,6 +429,141 @@ const removeRowSnapshot = (ctx: HarnessContext) => {
     } catch {
         // already gone
     }
+};
+
+const readConfigRowRaw = (
+    Database: DatabaseSyncConstructor,
+    dbFile: string,
+): ConfigRow | null => readConfigRow(Database, dbFile);
+
+/** Gateway origin + bearer token from ccr's own state, when the service ran. */
+const gatewayFacts = async (
+    ctx: HarnessContext,
+    Database: DatabaseSyncConstructor,
+): Promise<{ origin: string; authToken: string } | null> => {
+    const config = await readConfig(ctx, Database);
+    if (!config) return null;
+    const origin = gatewayOrigin(config.HOST, config.PORT);
+    const serviceJson = readTextIfExists(
+        join(ccrConfigDir(ctx), "service.json"),
+    );
+    if (serviceJson === null) return null;
+    try {
+        const token = (JSON.parse(serviceJson) as { serviceToken?: unknown })
+            .serviceToken;
+        if (typeof token === "string" && token.length >= 16) {
+            return { origin, authToken: token };
+        }
+    } catch {
+        // unreadable service.json — treated as "gateway never started"
+    }
+    return null;
+};
+
+/**
+ * Apply the settings.json env override with a byte snapshot, mirroring what
+ * ccr's own profile takeover writes. Without this the Claude Code CLI ignores
+ * the router entirely (its real settings pin ANTHROPIC_BASE_URL via the env
+ * block, which overrides shell env — verified live).
+ */
+const applySettingsOverride = (
+    ctx: HarnessContext,
+    origin: string,
+    authToken: string,
+) => {
+    const settingsPath = claudeSettingsPath(ctx);
+    const snapshot = readSettingsSnapshot(ctx) ?? {};
+    if (snapshot[settingsPath] === undefined) {
+        snapshot[settingsPath] = {
+            before: readTextIfExists(settingsPath),
+            afterHash: null,
+        };
+    }
+    const current = readTextIfExists(settingsPath);
+    let doc: SettingsDoc = {};
+    if (current !== null) {
+        try {
+            doc = JSON.parse(current) as SettingsDoc;
+        } catch {
+            printWarn(
+                `${settingsPath} is not valid JSON — skipping the settings.json env override. Point ANTHROPIC_BASE_URL at ${origin} manually or fix the file.`,
+            );
+            writeSettingsSnapshot(ctx, snapshot);
+            return;
+        }
+    }
+    if (
+        typeof doc.apiKeyHelper === "string" &&
+        doc.apiKeyHelper.includes("claude-code-router")
+    ) {
+        // ccr's own apiKeyHelper wins (its token rotates with the gateway);
+        // ours would only shadow it.
+        delete doc.apiKeyHelper;
+    }
+    const { doc: next, changed } = upsertSettingsEnv(doc, origin, authToken);
+    if (changed) {
+        mkdirSync(join(settingsPath, ".."), { recursive: true });
+        writeTextAtomic(
+            settingsPath,
+            `${JSON.stringify(next, null, 2)}\n`,
+            0o600,
+        );
+    }
+    snapshot[settingsPath].afterHash = contentHashOrNull(
+        readTextIfExists(settingsPath),
+    );
+    writeSettingsSnapshot(ctx, snapshot);
+};
+
+const contentHashOrNull = (text: string | null) =>
+    text === null ? null : hash(text);
+
+const restoreOrStripSettings = (
+    ctx: HarnessContext,
+    origin: string,
+    authToken: string,
+): boolean => {
+    const snapshot = readSettingsSnapshot(ctx);
+    if (snapshot === null) return false;
+    let changed = false;
+    for (const [path, file] of Object.entries(snapshot)) {
+        const current = readTextIfExists(path);
+        if (file.afterHash !== null && current !== null) {
+            if (contentHashOrNull(current) !== file.afterHash) continue; // edited by user since
+        }
+        if (file.before === null) {
+            if (current !== null) {
+                // Only delete when nothing of ours remains inside.
+                try {
+                    const parsed = JSON.parse(current) as SettingsDoc;
+                    const stripped = stripSettingsEnv(
+                        parsed,
+                        origin,
+                        authToken,
+                    );
+                    if (stripped.changed) {
+                        if (Object.keys(stripped.doc).length === 0) {
+                            removeIfExists(path);
+                        } else {
+                            writeTextAtomic(
+                                path,
+                                `${JSON.stringify(stripped.doc, null, 2)}\n`,
+                                0o600,
+                            );
+                        }
+                        changed = true;
+                    }
+                } catch {
+                    // not ours / unreadable — leave it
+                }
+            }
+        } else if (current !== file.before) {
+            writeTextAtomic(path, file.before, 0o600);
+            changed = true;
+        }
+    }
+    removeSettingsSnapshot(ctx);
+    return changed;
 };
 
 // ---------------------------------------------------------------------------
@@ -314,16 +598,30 @@ const statusResult = async (ctx: HarnessContext): Promise<HarnessResult> => {
             // A foreign or unreadable DB shape is reported as not configured.
         }
     }
+    let settingsEnv = false;
+    const settingsPath = claudeSettingsPath(ctx);
+    const settingsText = readTextIfExists(settingsPath);
+    if (settingsText !== null) {
+        try {
+            const env = (JSON.parse(settingsText) as SettingsDoc).env;
+            settingsEnv =
+                typeof env?.ANTHROPIC_BASE_URL === "string" &&
+                env.ANTHROPIC_BASE_URL.startsWith("http://127.0.0.1:");
+        } catch {
+            // unreadable settings — reported as not overridden
+        }
+    }
     return {
         harness: ID,
         label: LABEL,
         configured,
         model,
-        files: [dbFile],
+        files: [dbFile, settingsPath],
         claudeInstalled,
         router: existsSync(dbFile) ? dbFile : null,
         provider: providerPresent,
         profileModel,
+        settingsEnv,
     } as HarnessResult & Record<string, unknown>;
 };
 
@@ -393,6 +691,16 @@ export const configureClaudeCode = async (
     }
     snapshot.afterHash = hash(nextValueJson);
     writeRowSnapshot(ctx, snapshot);
+
+    // Settings override so the actual Claude Code CLI hits the gateway.
+    const facts = await gatewayFacts(ctx, Database);
+    if (facts !== null) {
+        applySettingsOverride(ctx, facts.origin, facts.authToken);
+    } else {
+        printInfo(
+            "CCR gateway has not started yet (no service token); skipping the ~/.claude settings.json override. Start `ccr` once, then re-run `polli harness claude-code on` to wire the CLI env.",
+        );
+    }
     return statusResult(ctx);
 };
 
@@ -417,6 +725,17 @@ export const disableClaudeCode = async (
             writeConfigRow(Database, dbFile, snapshot.before);
         }
         removeRowSnapshot(ctx);
+        // The settings override was untouched too → full byte restore.
+        const factsForRestore = await gatewayFacts(ctx, Database);
+        if (factsForRestore !== null) {
+            restoreOrStripSettings(
+                ctx,
+                factsForRestore.origin,
+                factsForRestore.authToken,
+            );
+        } else {
+            removeSettingsSnapshot(ctx);
+        }
         return {
             ...(await statusResult(ctx)),
             configured: false,
@@ -431,6 +750,21 @@ export const disableClaudeCode = async (
             writeConfigRow(Database, dbFile, JSON.stringify(stripped.config));
             outcome = "stripped";
         }
+    }
+
+    // Settings override: restore byte-for-byte when untouched, else strip
+    // only env keys that are provably ours.
+    const currentRowAfterStrip = readConfigRowRaw(Database, dbFile);
+    const facts =
+        currentRowAfterStrip === null
+            ? null
+            : await gatewayFacts(ctx, Database);
+    if (facts !== null) {
+        if (restoreOrStripSettings(ctx, facts.origin, facts.authToken)) {
+            outcome = outcome === "unchanged" ? "stripped" : outcome;
+        }
+    } else {
+        removeSettingsSnapshot(ctx);
     }
     removeRowSnapshot(ctx);
     return { ...(await statusResult(ctx)), configured: false, outcome };

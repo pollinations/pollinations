@@ -151,6 +151,18 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6-sol",
+        config: portkeyConfig["gpt-6-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna",
+        config: portkeyConfig["gpt-6-luna"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "inception/mercury-2",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
@@ -721,6 +733,14 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.3-flash",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "z-ai/glm-5.3-flashx",
+        config: portkeyConfig["z-ai/glm-5.3-flashx"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        // Confirmed live (#15178 review): reasoning.enabled=false and
+        // reasoning_effort="none" 400 without this transform.
         transform: mandatoryReasoning,
     },
     {

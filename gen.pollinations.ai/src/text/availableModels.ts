@@ -715,6 +715,10 @@ const models: ModelDefinition[] = [
     {
         name: "z-ai/glm-5.3-flashx",
         config: portkeyConfig["z-ai/glm-5.3-flashx"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        // Confirmed live (#15178 review): reasoning.enabled=false and
+        // reasoning_effort="none" 400 without this transform.
+        transform: mandatoryReasoning,
     },
     {
         name: "minimax/minimax-m2.7",

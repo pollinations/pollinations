@@ -438,6 +438,92 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(5),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Sol",
+        description: "Reasoning for complex coding and agentic workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6-luna": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    completionTextTokens: perMillion(0.75),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Luna",
+        description: "Efficient reasoning for focused, high-volume tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "inception/mercury-2": {
         supportedParameters: CHAT_PARAMETERS.mercury,
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],

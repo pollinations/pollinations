@@ -1,1 +1,40 @@
 @import "@pollinations/ui/app.css";
+
+.catalog-search .polli-input-shell,
+.catalog-search > .polli-input {
+    background-color: var(--polli-color-bg-subtle);
+    border-color: transparent;
+}
+
+.catalog-search .polli-input-shell:focus-within,
+.catalog-search > .polli-input:focus {
+    border-color: var(--polli-color-border);
+}
+
+/* The filter panel shares the search tint, but must remain opaque over results. */
+.catalog-search-panel {
+    background-color: oklch(from var(--polli-color-bg-subtle) l c h / 1);
+}
+
+.catalog-filter-menu {
+    margin-top: 0.375rem;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+}
+
+.catalog-filter-option {
+    min-height: 2rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    font-weight: 400;
+}
+
+.catalog-filter-option:hover,
+.catalog-filter-option:focus-visible,
+.catalog-filter-trigger:hover {
+    background-color: color-mix(
+        in srgb,
+        var(--polli-color-text-muted) 12%,
+        transparent
+    );
+    color: var(--polli-color-text-strong);
+}

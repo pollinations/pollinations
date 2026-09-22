@@ -7,6 +7,7 @@ import {
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createMistralModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -283,6 +284,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",
@@ -306,6 +316,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.7-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.7-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.8-flash": () =>
@@ -322,6 +336,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.8-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>
@@ -427,10 +445,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ),
+    "mistral-large-direct": () =>
+        createMistralModelConfig({ model: "mistral-large-2512" }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -440,6 +456,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
+    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -464,30 +481,31 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ),
-    "mistral-openrouter-eu": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral/eu",
-    ),
-    "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
+    "gemini-3-flash-openrouter-vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-3-flash-preview",
+            "google-vertex/global",
+        ),
+    "gemini-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
         "gemini-3.7-flash",
-        "google-ai-studio/priority",
+        "google-vertex/global",
     ),
-    "gemini-fast-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
+    "gemini-3.8-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.8-flash",
+        "google-vertex/global",
+    ),
+    "gemini-fast-openrouter-vertex-eu": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex",
+        "google-vertex/eu",
     ),
-    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "google-ai-studio",
-    ),
-    "gemini-flash-lite-3.5-openrouter-ai-studio-flex":
+    "gemini-flash-lite-3.5-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3.5-flash-lite",
-            "google-ai-studio/flex",
+            "google-vertex/global",
         ),
-    "gemini-large-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+    "gemini-large-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
         "gemini-3.1-pro-preview",
-        "google-ai-studio",
+        "google-vertex/global",
     ),
     "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-235b-a22b-thinking",
@@ -565,7 +583,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
         }),
 
-    // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
+    // -- Mistral Small ---------------------------------------------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
     // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
     // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
@@ -578,16 +596,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         }),
     "mistral-small-2603": () =>
+        createMistralModelConfig({
+            model: "mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["mistral"],
-                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-                    allow_fallbacks: false,
-                },
-            },
+            defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -647,33 +663,33 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
-    // -- OpenRouter (Gemini via pinned Google Vertex routes) -----------------
-    "google/gemini-3-flash-preview": createPinnedOpenRouterGeminiConfig(
+    // -- Google Vertex AI (Gemini) -------------------------------------------
+    "google/gemini-3-flash-preview": createVertexGeminiConfig(
         "gemini-3-flash-preview",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.1-pro-preview": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.1-pro-preview": createVertexGeminiConfig(
         "gemini-3.1-pro-preview",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-2.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "global",
     ),
-    "google/gemini-3.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.7-flash": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.7-flash": createVertexGeminiConfig(
         "gemini-3.7-flash",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.8-flash": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.8-flash": createVertexGeminiConfig(
         "gemini-3.8-flash",
-        "google-vertex/global",
+        "global",
     ),
 
-    // -- Google Vertex AI (dedicated Gemini Search services) -----------------
+    // Dedicated Gemini Search services use the same direct Vertex adapter.
     "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
         "global",

@@ -5,8 +5,8 @@ import {
     totalPromptTokens,
 } from "./cost-variants";
 import {
+    GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
-    openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -61,6 +61,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -84,6 +85,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -119,12 +121,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter azure/openai route rates (2026-09-12). Image inputs
-            // are tokenized into promptTextTokens; no separate usage is
-            // reported or billed for image input.
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.6),
+            // OpenRouter Azure/OpenAI route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. Image inputs are tokenized
+            // into promptTextTokens; no separate image usage is reported.
+            promptTextTokens: perMillion(0.15) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "GPT-4o Mini",
         description:
@@ -207,6 +209,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -568,7 +571,7 @@ const TEXT_BASE_SERVICES = {
             "mistral-small-2603",
             "mistral",
         ],
-        provider: "openrouter",
+        provider: "mistral",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
@@ -576,18 +579,18 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            // OpenRouter Mistral endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.015) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            // Mistral direct API, verified 2026-09-20.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
         description:
             "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 8, // Exact OpenRouter Mistral route limit.
+        maxReferenceImages: 8,
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -655,27 +658,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3-flash-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.5) * 1.055,
-            promptCachedTokens: perMillion(0.05) * 1.055,
-            promptCacheWriteTokens: perMillion(0.5) * 1.055,
-            promptAudioTokens: perMillion(1.0) * 1.055,
-            promptImageTokens: perMillion(0.5) * 1.055,
-            promptVideoTokens: perMillion(0.5) * 1.055,
-            completionTextTokens: perMillion(3.0) * 1.055,
+            promptTextTokens: perMillion(0.5),
+            promptCachedTokens: perMillion(0.05),
+            promptCacheWriteTokens: perMillion(0.5),
+            promptAudioTokens: perMillion(1.0),
+            promptImageTokens: perMillion(0.5),
+            promptVideoTokens: perMillion(0.5),
+            completionTextTokens: perMillion(3.0),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3 Flash Preview",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -689,31 +689,26 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
-        // Standard OpenRouter rates for the pinned google-vertex/global route
-        // after the 50%-off launch promo ended 2026-08-27. These mirror
-        // Google's promotional pricing through 2026-12-31; list rates double
-        // on 2027-01-01 and need another update then.
+        // Google's promotional pricing runs through 2026-12-31; list rates
+        // double on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.75) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            promptCacheWriteTokens: perMillion(0.75) * 1.055,
-            promptAudioTokens: perMillion(0.75) * 1.055,
-            promptImageTokens: perMillion(0.75) * 1.055,
-            promptVideoTokens: perMillion(0.75) * 1.055,
-            completionTextTokens: perMillion(3.75) * 1.055,
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 0.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
@@ -727,29 +722,25 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
-        // Standard OpenRouter rates for the pinned google-vertex/global route.
         // Google's introductory pricing ends 2026-12-31.
         cost: {
-            promptTextTokens: perMillion(0.75) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            promptCacheWriteTokens: perMillion(0.75) * 1.055,
-            promptAudioTokens: perMillion(0.75) * 1.055,
-            promptImageTokens: perMillion(0.75) * 1.055,
-            promptVideoTokens: perMillion(0.75) * 1.055,
-            completionTextTokens: perMillion(3.75) * 1.055,
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 0.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.8 Flash",
         description:
             "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
@@ -763,7 +754,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini35,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
@@ -772,25 +763,22 @@ const TEXT_BASE_SERVICES = {
             "gemini-3.5-flash-lite",
             "gemini-flash-lite-3.5",
         ],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.3) * 1.055,
-            promptCachedTokens: perMillion(0.03) * 1.055,
-            promptCacheWriteTokens: perMillion(0.3) * 1.055,
-            promptAudioTokens: perMillion(0.3) * 1.055,
-            promptImageTokens: perMillion(0.3) * 1.055,
-            promptVideoTokens: perMillion(0.3) * 1.055,
-            completionTextTokens: perMillion(2.5) * 1.055,
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.03),
+            promptCacheWriteTokens: perMillion(0.3),
+            promptAudioTokens: perMillion(0.3),
+            promptImageTokens: perMillion(0.3),
+            promptVideoTokens: perMillion(0.3),
+            completionTextTokens: perMillion(2.5),
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
@@ -804,27 +792,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite": {
-        supportedParameters: CHAT_PARAMETERS.gemini25,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini25,
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptCachedTokens: perMillion(0.01) * 1.055, // per 1M tokens
-            promptCacheWriteTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptAudioTokens: perMillion(0.3) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            promptVideoTokens: perMillion(0.1) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(0.4) * 1.055, // per 1M tokens
+            promptTextTokens: perMillion(0.1), // per 1M tokens
+            promptCachedTokens: perMillion(0.01), // per 1M tokens
+            promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
+            promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptImageTokens: perMillion(0.1), // per 1M tokens
+            promptVideoTokens: perMillion(0.1), // per 1M tokens
+            completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 1.0 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -1086,6 +1071,54 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "x-ai/grok-4.7": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "xAI",
+        category: "text",
+        addedDate: new Date("2026-09-21").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter xAI route rates (2026-09-21), including the mandatory
+        // 5.5% OpenRouter credit fee. Image inputs are tokenized into
+        // promptTextTokens; no separate usage is reported. Excludes the
+        // $0.005-per-call web search charge (not exposed on this model).
+        cost: {
+            promptTextTokens: perMillion(1.6) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            completionTextTokens: perMillion(4.8) * 1.055,
+        },
+        // xAI reprices the whole request from 200K prompt tokens.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(3.2) * 1.055,
+                    promptCachedTokens: perMillion(0.8) * 1.055,
+                    completionTextTokens: perMillion(9.6) * 1.055,
+                },
+            },
+            longContextAtLeast(200_000),
+            {
+                long_context: {
+                    label: "Long context (200K+)",
+                    description:
+                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                },
+            },
+            "<200K context",
+        ),
+        title: "Grok 4.7",
+        description:
+            "Frontier reasoning for long-running coding, agentic tasks, and knowledge work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 500000,
+        isSpecialized: false,
+    },
     "google/gemini-2.5-flash-lite:search": {
         supportedParameters: CHAT_PARAMETERS.vertexGeminiSearch,
         aliases: [
@@ -1128,9 +1161,9 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "typesafe/jev": {
+    "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev"],
+        aliases: ["jev", "typesafe/jev"],
         provider: "openrouter",
         publisher: "TypeSafe",
         category: "text",
@@ -1149,7 +1182,12 @@ const TEXT_BASE_SERVICES = {
         title: "Jev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
-            "send the native state and questions as JSON in the last user message",
+            "post state and questions to /alpha/decisions, or send the same " +
+            "JSON in the last user message on /v1/chat/completions",
+        // Its own request shape, so it is offered on the decisions route and
+        // the chat adapter only — /text returns plain content and has nothing
+        // to return here.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
@@ -1875,38 +1913,34 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.1-pro-preview": {
-        supportedParameters: CHAT_PARAMETERS.gemini3,
+        supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(2.0) * 1.055,
-            promptCachedTokens: perMillion(0.2) * 1.055,
-            // OpenRouter bills Gemini cache writes as normal input plus the
-            // five-minute storage charge applied by the billing rule below.
-            promptCacheWriteTokens: perMillion(2.0) * 1.055,
-            promptAudioTokens: perMillion(2.0) * 1.055,
-            promptImageTokens: perMillion(2.0) * 1.055,
-            promptVideoTokens: perMillion(2.0) * 1.055,
-            completionTextTokens: perMillion(12.0) * 1.055,
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.0),
+            promptAudioTokens: perMillion(2.0),
+            promptImageTokens: perMillion(2.0),
+            promptVideoTokens: perMillion(2.0),
+            completionTextTokens: perMillion(12.0),
         },
-        // The pinned OpenRouter Google Vertex route reprices the whole request
-        // from 200K prompt tokens. Image tokens retain their separately
-        // advertised base rate; cache storage remains an independent
-        // adjustment below.
+        // Vertex reprices the whole request from 200K prompt tokens. Image
+        // tokens retain their separately advertised base rate.
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(4.0) * 1.055,
-                    promptCachedTokens: perMillion(0.4) * 1.055,
-                    promptCacheWriteTokens: perMillion(4.0) * 1.055,
-                    promptAudioTokens: perMillion(4.0) * 1.055,
-                    promptVideoTokens: perMillion(4.0) * 1.055,
-                    completionTextTokens: perMillion(18.0) * 1.055,
+                    promptTextTokens: perMillion(4.0),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(4.0),
+                    promptAudioTokens: perMillion(4.0),
+                    promptVideoTokens: perMillion(4.0),
+                    completionTextTokens: perMillion(18.0),
                 },
             },
             longContextAtLeast(200_000),
@@ -1919,10 +1953,7 @@ const TEXT_BASE_SERVICES = {
             },
             "<200K context",
         ),
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14 * 1.055,
-            storageCostPerMillionTokenHours: 4.5 * 1.055,
-        }),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro Preview",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
@@ -2450,13 +2481,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
-            // publishes one prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.32) * 1.055,
-            promptCachedTokens: perMillion(0.032) * 1.055,
-            promptImageTokens: perMillion(0.32) * 1.055,
-            promptVideoTokens: perMillion(0.32) * 1.055,
-            completionTextTokens: perMillion(2.5) * 1.055,
+            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // account's 5.5% credit-purchase fee. OpenRouter publishes one
+            // prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.24) * 1.055,
+            promptCachedTokens: perMillion(0.024) * 1.055,
+            promptImageTokens: perMillion(0.24) * 1.055,
+            promptVideoTokens: perMillion(0.24) * 1.055,
+            completionTextTokens: perMillion(2.2) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:
@@ -2471,21 +2503,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: ["qwen3.8-max"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2) * 1.055,
-            promptCachedTokens: perMillion(0.25) * 1.055,
-            promptCacheWriteTokens: perMillion(2.5) * 1.055,
-            promptImageTokens: perMillion(2) * 1.055,
-            promptVideoTokens: perMillion(2) * 1.055,
-            completionTextTokens: perMillion(6) * 1.055,
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
         },
         title: "Qwen3.8 Max",
         description:
@@ -2531,24 +2563,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: [],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-09-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
-        // price with a single 0-1M context tier (2026-09-05). OpenRouter
-        // publishes one prompt rate and no separate image/video rates.
         cost: {
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.016) * 1.055,
-            promptCacheWriteTokens: perMillion(0.2) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            promptVideoTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.47) * 1.055,
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
         },
         title: "Qwen3.8 Flash",
         description:
@@ -2563,63 +2592,106 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwen,
         aliases: ["qwen3.7-flash"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens overrides apply from 32K and 256K
-        // total prompt tokens.
-        cost: {
-            promptTextTokens: perMillion(0.03) * 1.055,
-            promptCachedTokens: perMillion(0.006) * 1.055,
-            promptCacheWriteTokens: perMillion(0.038) * 1.055,
-            promptImageTokens: perMillion(0.03) * 1.055,
-            promptVideoTokens: perMillion(0.03) * 1.055,
-            completionTextTokens: perMillion(0.13) * 1.055,
-        },
         ...defineCostVariants(
             {
                 context_32k: {
-                    promptTextTokens: perMillion(0.1) * 1.055,
-                    promptCachedTokens: perMillion(0.02) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.125) * 1.055,
-                    promptImageTokens: perMillion(0.1) * 1.055,
-                    promptVideoTokens: perMillion(0.1) * 1.055,
-                    completionTextTokens: perMillion(0.4) * 1.055,
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
                 },
                 context_256k: {
-                    promptTextTokens: perMillion(0.2) * 1.055,
-                    promptCachedTokens: perMillion(0.04) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.25) * 1.055,
-                    promptImageTokens: perMillion(0.2) * 1.055,
-                    promptVideoTokens: perMillion(0.2) * 1.055,
-                    completionTextTokens: perMillion(0.8) * 1.055,
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
+                },
+                explicit_cache: {
+                    promptCachedTokens: perMillion(0.003),
+                },
+                context_32k_explicit_cache: {
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.01),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
+                },
+                context_256k_explicit_cache: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
                 },
             },
-            ({ usage }) => {
+            ({ usage, input }) => {
                 const promptTokens = totalPromptTokens(usage);
-                if (promptTokens >= 256_000) return "context_256k";
-                if (promptTokens >= 32_000) return "context_32k";
-                return undefined;
+                const tier =
+                    promptTokens > 256_000
+                        ? "context_256k"
+                        : promptTokens > 32_000
+                          ? "context_32k"
+                          : undefined;
+                if (!input?.hasExplicitCacheHit) return tier;
+                if (tier === "context_256k") {
+                    return "context_256k_explicit_cache";
+                }
+                if (tier === "context_32k") {
+                    return "context_32k_explicit_cache";
+                }
+                return "explicit_cache";
             },
             {
                 context_32k: {
-                    label: "32K+ context",
+                    label: ">32K context",
                     description:
-                        "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+                        "Direct Alibaba rates above 32,000 prompt tokens; the higher rates apply to the whole request.",
                 },
                 context_256k: {
-                    label: "256K+ context",
+                    label: ">256K context",
                     description:
-                        "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+                        "Direct Alibaba rates above 256,000 prompt tokens; the highest rates apply to the whole request.",
+                },
+                explicit_cache: {
+                    label: "Explicit cache, ≤32K context",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost 10% of input; creation costs 125%.",
+                },
+                context_32k_explicit_cache: {
+                    label: "Explicit cache, >32K context",
+                    description:
+                        "Direct Alibaba >32K rates with explicit-cache reads at 10% of input.",
+                },
+                context_256k_explicit_cache: {
+                    label: "Explicit cache, >256K context",
+                    description:
+                        "Direct Alibaba >256K rates with explicit-cache reads at 10% of input.",
                 },
             },
-            "<32K context",
+            "≤32K context, implicit/no cache",
         ),
+        cost: {
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.006),
+            promptCacheWriteTokens: perMillion(0.038),
+            promptImageTokens: perMillion(0.03),
+            promptVideoTokens: perMillion(0.03),
+            completionTextTokens: perMillion(0.13),
+        },
         title: "Qwen3.7 Flash",
         description:
             "Ultra-low-cost multimodal reasoning for agents and visual tasks",

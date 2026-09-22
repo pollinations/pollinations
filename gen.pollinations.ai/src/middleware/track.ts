@@ -82,7 +82,6 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
-    isContentPolicyViolation,
 } from "@/image/utils/contentModeration.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
@@ -93,6 +92,7 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
     isResponsesFailure,
@@ -890,9 +890,7 @@ function streamError(raw: unknown): StreamError {
         message?: unknown;
     };
     return {
-        status: isContentPolicyViolation(JSON.stringify(raw ?? {}))
-            ? CONTENT_POLICY_STATUS
-            : 502,
+        status: apiErrorStatus(raw ?? {}, 502),
         code: typeof code === "string" ? code : undefined,
         message: typeof message === "string" ? message : undefined,
     };

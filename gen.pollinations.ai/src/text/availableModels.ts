@@ -214,6 +214,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-max",
+        config: portkeyConfig["qwen3.8-max-alibaba"],
+        transform: qwenForcedToolTransform,
+    },
+    {
+        name: "qwen/qwen3.8-max:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
@@ -223,22 +228,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.7-flash",
-        config: portkeyConfig["qwen/qwen3.7-flash"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "qwen/qwen3.7-flash:alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen3.7-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.8-flash",
-        config: portkeyConfig["qwen/qwen3.8-flash"],
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
         transform: qwenFlashTransform,
     },
     {
-        name: "qwen/qwen3.8-flash:alibaba",
-        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        name: "qwen/qwen3.8-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
         transform: qwenFlashTransform,
     },
     {
@@ -284,8 +289,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
-        name: "mistralai/mistral-small-4:openrouter:mistral-eu",
-        config: portkeyConfig["mistral-openrouter-eu"],
+        name: "mistralai/mistral-small-4:openrouter",
+        config: portkeyConfig["mistral-small-2603-openrouter"],
     },
     {
         name: "deepseek/deepseek-v4-flash",
@@ -363,6 +368,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6"],
     },
     {
+        name: "x-ai/grok-4.7",
+        config: portkeyConfig["x-ai/grok-4.7"],
+    },
+    {
         name: "x-ai/grok-4.6:azure:sweden",
         config: portkeyConfig["grok-4.6-azure-sweden"],
     },
@@ -437,6 +446,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3-flash-preview",
         config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
+        name: "google/gemini-3-flash-preview:openrouter:vertex-global",
+        config: portkeyConfig["gemini-3-flash-openrouter-vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -445,15 +464,17 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.7-flash",
         config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             // Gemini 3.7 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "google/gemini-3.7-flash:openrouter:ai-studio-priority",
-        config: portkeyConfig["gemini-openrouter-ai-studio-priority"],
+        name: "google/gemini-3.7-flash:openrouter:vertex-global",
+        config: portkeyConfig["gemini-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -462,8 +483,18 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.8-flash",
         config: portkeyConfig["google/gemini-3.8-flash"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             // Gemini 3.8 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-3.8-flash:openrouter:vertex-global",
+        config: portkeyConfig["gemini-3.8-openrouter-vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -471,16 +502,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.5-flash-lite",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
-        name: "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
-        config: portkeyConfig[
-            "gemini-flash-lite-3.5-openrouter-ai-studio-flex"
-        ],
+        name: "google/gemini-3.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-flash-lite-3.5-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-flash"),
         ),
@@ -489,22 +520,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-2.5-flash-lite",
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
-        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
-            createGeminiThinkingTransform("v2.5"),
-        ),
-    },
-    {
-        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
-        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
-        transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -520,7 +545,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "typesafe/jev",
+        name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
         useSystemOneApi: true,
     },
@@ -641,14 +666,16 @@ const models: ModelDefinition[] = [
         name: "google/gemini-3.1-pro-preview",
         config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
-            adaptGoogleSearchToolForOpenRouter,
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "google/gemini-3.1-pro-preview:openrouter:ai-studio",
-        config: portkeyConfig["gemini-large-openrouter-ai-studio"],
+        name: "google/gemini-3.1-pro-preview:openrouter:vertex-global",
+        config: portkeyConfig["gemini-large-openrouter-vertex-global"],
         transform: pipe(
+            sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
         ),
@@ -761,9 +788,18 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        config: portkeyConfig["mistral-large-openrouter-zdr"],
-        transform: stripReasoning,
+        name: "mistralai/mistral-large-3:mistral",
+        config: portkeyConfig["mistral-large-direct"],
+        transform: pipe(stripReasoning, (messages, options) => {
+            const { seed, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(seed === undefined ? {} : { random_seed: seed }),
+                },
+            };
+        }),
     },
     {
         name: "qwen/qwen3guard-gen-8b",

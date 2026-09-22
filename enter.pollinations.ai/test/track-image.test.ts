@@ -21,6 +21,17 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
     return rate as number;
 }
 
+function requiredPriceRate(model: ModelName, field: UsageType): number {
+    const rate = getPriceDefinition(model)?.[field];
+
+    expect(rate, `${model}.${field} must have a configured price`).toEqual(
+        expect.any(Number),
+    );
+    expect(rate).toBeGreaterThan(0);
+
+    return rate as number;
+}
+
 test("Image models should calculate costs proportionally to token count", () => {
     const models: ModelName[] = [
         "black-forest-labs/flux.1-schnell",
@@ -189,18 +200,30 @@ test("nanobanana models calculate reasoning token costs", () => {
     );
 });
 
-test("nanobanana image models carry current input and text output rates", () => {
+test("nanobanana image models separate direct costs from public prices", () => {
     expect(
         requiredCostRate(
             "google/gemini-2.5-flash-image",
             "completionTextTokens",
         ),
-    ).toBeCloseTo(0.0000025 * 1.055, 12);
+    ).toBeCloseTo(0.0000025, 12);
     expect(
         requiredCostRate("google/gemini-3-pro-image", "promptTextTokens"),
-    ).toBeCloseTo(0.000002 * 1.055, 12);
+    ).toBeCloseTo(0.000002, 12);
     expect(
         requiredCostRate("google/gemini-3-pro-image", "promptImageTokens"),
+    ).toBeCloseTo(0.000002, 12);
+    expect(
+        requiredPriceRate(
+            "google/gemini-2.5-flash-image",
+            "completionTextTokens",
+        ),
+    ).toBeCloseTo(0.0000025 * 1.055, 12);
+    expect(
+        requiredPriceRate("google/gemini-3-pro-image", "promptTextTokens"),
+    ).toBeCloseTo(0.000002 * 1.055, 12);
+    expect(
+        requiredPriceRate("google/gemini-3-pro-image", "promptImageTokens"),
     ).toBeCloseTo(0.000002 * 1.055, 12);
 });
 

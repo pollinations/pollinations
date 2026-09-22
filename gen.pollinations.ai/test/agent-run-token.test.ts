@@ -98,6 +98,33 @@ test("resolves to the parent key, without its account scope", async () => {
     });
 });
 
+test("managed agent run tokens drop the parent model allowlist", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        pollenBudget: 42,
+        user: { tierBalance: 100 },
+    });
+    const token = await runTokenFor(parent.id, "managed-agent-id");
+
+    const response = await probe(
+        authProbe,
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        userId: parent.userId,
+        apiKeyId: parent.id,
+        // Managed agents must call peer models (glm, image, …) even when the
+        // caller key is scoped to the agent alone (#12850).
+        permissions: null,
+        agentRun: {
+            parentApiKeyId: parent.id,
+            managedAgentId: "managed-agent-id",
+        },
+    });
+});
+
 test("preserves the managed agent scope", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id, "managed-agent-id");

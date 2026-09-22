@@ -262,10 +262,18 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token inherits the parent's model access but never its account scope:
-    // it is a generation credential held by a third party, so it must not be
-    // able to manage the owner's keys, endpoints or account.
-    const models = parent.apiKey.permissions?.models;
+    // Never inherit account scope: a run token is a generation credential
+    // held by a third party, so it must not manage the owner's keys,
+    // endpoints or account.
+    //
+    // Model allowlists: external (non-managed) run tokens still inherit the
+    // parent's model list. Managed prompt/code agents need to call whatever
+    // tools and models their runtime requires (see #12850), so a managed
+    // agent run token drops the parent's model restriction while still
+    // billing the same parent key.
+    const models = claims.managedAgentId
+        ? undefined
+        : parent.apiKey.permissions?.models;
 
     return {
         ...parent,

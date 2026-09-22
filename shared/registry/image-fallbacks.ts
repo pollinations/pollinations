@@ -1,5 +1,6 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { FallbackMap } from "./merge-fallbacks";
+import { perMillion } from "./price-helpers";
 
 /**
  * Fallback routes for the image catalog, keyed by the model they serve and
@@ -122,16 +123,56 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "google/gemini-3.1-flash-image": {
-        "google/gemini-3.1-flash-image:openrouter:ai-studio": {
+    "google/gemini-2.5-flash-image": {
+        "google/gemini-2.5-flash-image:openrouter:vertex-global": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptImageTokens: perMillion(0.3) * 1.055,
+                completionTextTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(30) * 1.055,
+            },
+        },
+    },
+    "google/gemini-3.1-flash-image": {
+        "google/gemini-3.1-flash-image:openrouter:vertex-global": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.5) * 1.055,
+                promptImageTokens: perMillion(0.5) * 1.055,
+                completionTextTokens: perMillion(3) * 1.055,
+                completionImageTokens: perMillion(60) * 1.055,
+            },
+        },
+    },
+    "google/gemini-3.1-flash-lite-image": {
+        "google/gemini-3.1-flash-lite-image:openrouter:vertex-global": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.25) * 1.055,
+                promptImageTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
+                completionImageTokens: perMillion(30) * 1.055,
+            },
         },
     },
     "google/gemini-3-pro-image": {
-        "google/gemini-3-pro-image:openrouter:vertex-global": {
+        "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(12) * 1.055,
+                completionImageTokens: perMillion(120) * 1.055,
+            },
         },
     },
     "black-forest-labs/flux.1-schnell": {

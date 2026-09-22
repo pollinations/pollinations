@@ -1684,4 +1684,64 @@ describe("API Key Management", () => {
             expect(response.status).toBe(401);
         });
     });
+
+    describe("POST /api/api-keys/:id/rotate", () => {
+        test("rotates a key while preserving permissions and revoking the old one", async ({
+            sessionToken,
+        }) => {
+            const createResp = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "rotate-me",
+                        type: "secret",
+                        pollenBudget: 12,
+                        allowedModels: ["openai/gpt-5-nano"],
+                        accountPermissions: ["profile", "usage"],
+                        metadata: { description: "before-rotate" },
+                    }),
+                },
+            );
+            expect(createResp.status).toBe(200);
+            const original = await createResp.json();
+
+            const rotateResp = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${original.id}/rotate`,
+                {
+                    method: "POST",
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            expect(rotateResp.status).toBe(200);
+            const rotated = await rotateResp.json();
+            expect(rotated.id).not.toBe(original.id);
+            expect(rotated.key).toMatch(/^sk_/);
+            expect(rotated.rotatedFromId).toBe(original.id);
+            expect(rotated.name).toBe("rotate-me");
+            expect(rotated.pollenBudget).toBe(12);
+
+            const db = drizzle(env.DB, { schema });
+            const oldRow = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, original.id),
+            });
+            expect(oldRow?.enabled).toBe(false);
+
+            const newRow = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, rotated.id),
+            });
+            expect(newRow?.enabled).not.toBe(false);
+            expect(newRow?.pollenBalance).toBe(12);
+            const meta = newRow?.metadata
+                ? JSON.parse(newRow.metadata as string)
+                : {};
+            expect(meta.description).toBe("before-rotate");
+        });
+    });
 });

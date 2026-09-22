@@ -447,4 +447,108 @@ export const apiKeysRoutes = new Hono<Env>()
             );
             return c.json({ id, metadata });
         },
+    )
+    /**
+     * Rotate an API key: create a replacement with the same permissions,
+     * budget, expiry and metadata, then revoke the old key.
+     */
+    .post(
+        "/:id/rotate",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Rotate an API key while preserving permissions, budget, expiry and metadata. Revokes the previous key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+
+            if (existingKey.enabled === false) {
+                throw new HTTPException(400, {
+                    message: "Cannot rotate a disabled API key",
+                });
+            }
+
+            const type = existingKey.prefix === "pk" ? "publishable" : "secret";
+            const permissions = existingKey.permissions
+                ? parsePermissions(existingKey.permissions)
+                : null;
+            const metadata = existingKey.metadata
+                ? parseMetadata(existingKey.metadata)
+                : {};
+
+            // Preserve remaining lifetime when the key already has an expiry.
+            let expiresIn: number | undefined;
+            if (existingKey.expiresAt) {
+                const remainingMs =
+                    new Date(existingKey.expiresAt).getTime() - Date.now();
+                if (remainingMs <= 0) {
+                    throw new HTTPException(400, {
+                        message: "Cannot rotate an expired API key",
+                    });
+                }
+                expiresIn = Math.ceil(remainingMs / 1000);
+            }
+
+            const callerMetadata = {
+                description:
+                    typeof metadata.description === "string"
+                        ? metadata.description
+                        : undefined,
+                redirectUris: Array.isArray(metadata.redirectUris)
+                    ? (metadata.redirectUris as string[])
+                    : undefined,
+                earningsEnabled:
+                    typeof metadata.earningsEnabled === "boolean"
+                        ? metadata.earningsEnabled
+                        : undefined,
+            };
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: existingKey.name || "rotated-key",
+                type,
+                expiresIn,
+                allowedModels: permissions?.models ?? null,
+                pollenBudget: existingKey.pollenBalance,
+                accountPermissions: permissions?.account ?? null,
+                metadata: callerMetadata,
+                allowAccountKeysPermission: true,
+                defaultCreatedVia:
+                    typeof metadata.createdVia === "string"
+                        ? metadata.createdVia
+                        : "dashboard",
+            });
+
+            // Transfer BYOP client binding when the old secret key had one.
+            if (existingKey.byopClientKeyId) {
+                await db
+                    .update(schema.apikey)
+                    .set({ byopClientKeyId: existingKey.byopClientKeyId })
+                    .where(eq(schema.apikey.id, created.id));
+            }
+
+            // Revoke the previous key after the replacement exists.
+            await db
+                .update(schema.apikey)
+                .set({ enabled: false, updatedAt: new Date() })
+                .where(eq(schema.apikey.id, id));
+
+            return c.json({
+                id: created.id,
+                key: created.key,
+                name: created.name,
+                type: created.type,
+                start: created.start,
+                expiresAt: created.expiresAt,
+                permissions: created.permissions,
+                pollenBudget: created.pollenBudget,
+                rotatedFromId: id,
+            });
+        },
     );

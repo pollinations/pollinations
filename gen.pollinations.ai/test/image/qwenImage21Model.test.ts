@@ -13,6 +13,8 @@ INPUT_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 INPUT_PNG.writeUInt32BE(1024, 16);
 INPUT_PNG.writeUInt32BE(512, 20);
 const INPUT_IMAGE = `data:image/png;base64,${INPUT_PNG.toString("base64")}`;
+// Same bytes, undecodable mime type: readImageDimensions returns null for it.
+const UNMETERABLE_IMAGE = `data:application/octet-stream;base64,${INPUT_PNG.toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "qwen/qwen-image-2.1",
@@ -121,6 +123,56 @@ describe("qwenImage21Model", () => {
         expect(result.trackingData?.usage).toEqual({
             completionImageTokens: (1280 * 736) / 1_000_000,
         });
+    });
+
+    it.each([
+        ["16:9", 1376, 768],
+        ["9:16", 768, 1376],
+        ["1:1", 1024, 1024],
+    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height) => {
+        const requests: FalRequest[] = [];
+        mockFal(requests);
+
+        const result = await callQwenImage21API("aspect ratio", {
+            ...baseParams,
+            aspectRatio,
+        });
+
+        expect(requests[0].body.image_size).toEqual({ width, height });
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: (width * height) / 1_000_000,
+        });
+    });
+
+    it("ignores aspectRatio once dimensions are explicit", async () => {
+        const requests: FalRequest[] = [];
+        mockFal(requests);
+
+        await callQwenImage21API("explicit wins", {
+            ...baseParams,
+            width: 1280,
+            height: 720,
+            dimensionsExplicit: true,
+            aspectRatio: "9:16",
+        });
+
+        expect(requests[0].body.image_size).toEqual({
+            width: 1280,
+            height: 736,
+        });
+    });
+
+    it("rejects a reference image whose dimensions can't be parsed instead of billing it as zero", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callQwenImage21API("unmeterable reference", {
+                ...baseParams,
+                image: [UNMETERABLE_IMAGE],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        // Rejected before submitting to fal.
+        expect(fetchSpy).not.toHaveBeenCalledWith(EDIT_URL, expect.anything());
     });
 
     it("routes edits to the edit endpoint and meters input megapixels", async () => {

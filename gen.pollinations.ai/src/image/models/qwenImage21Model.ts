@@ -26,6 +26,38 @@ function roundToMultipleOf32(value: number): number {
     return Math.max(32, Math.round(value / 32) * 32);
 }
 
+// Matches the default 1024x1024 side length (models.ts IMAGE_DEFAULT_SIDE_LENGTHS)
+// so the total output area stays constant regardless of aspect ratio.
+const DEFAULT_OUTPUT_AREA = 1024 * 1024;
+
+// safeParams.width/height default to a fixed square when the caller sends
+// aspectRatio without explicit dimensions, so aspectRatio must be resolved
+// into a size here — otherwise every non-explicit request renders square.
+function resolveImageSize(safeParams: ImageParams): {
+    width: number;
+    height: number;
+} {
+    const ratio = safeParams.aspectRatio;
+    if (safeParams.dimensionsExplicit || !ratio || ratio === "adaptive") {
+        return {
+            width: roundToMultipleOf32(safeParams.width),
+            height: roundToMultipleOf32(safeParams.height),
+        };
+    }
+    const [w, h] = ratio.split(":").map(Number);
+    if (!w || !h) {
+        return {
+            width: roundToMultipleOf32(safeParams.width),
+            height: roundToMultipleOf32(safeParams.height),
+        };
+    }
+    const scale = Math.sqrt(DEFAULT_OUTPUT_AREA / (w * h));
+    return {
+        width: roundToMultipleOf32(w * scale),
+        height: roundToMultipleOf32(h * scale),
+    };
+}
+
 export async function callQwenImage21API(
     prompt: string,
     safeParams: ImageParams,
@@ -46,15 +78,22 @@ export async function callQwenImage21API(
 
     // Edits bill input megapixels too, so read each reference's size while
     // inlining it (Fal also fetches redirect-free data URIs most reliably).
+    // A reference whose dimensions can't be parsed is rejected outright,
+    // rather than silently billed as 0 input megapixels — fal still charges
+    // for it, so forwarding it unmetered would undercharge the request.
     let inputMegapixels = 0;
     const imageUrls = await Promise.all(
         images.map(async (image) => {
             const { buffer, mimeType } = await downloadUserImage(image);
             const dimensions = readImageDimensions(buffer, mimeType);
-            if (dimensions) {
-                inputMegapixels +=
-                    (dimensions.width * dimensions.height) / 1_000_000;
+            if (!dimensions) {
+                throw UpstreamError.fromProvider(400, {
+                    message:
+                        "qwen-image-2.1 could not determine a reference image's pixel dimensions; provide a PNG, GIF, BMP, or WebP with a valid header",
+                });
             }
+            inputMegapixels +=
+                (dimensions.width * dimensions.height) / 1_000_000;
             return `data:${mimeType};base64,${buffer.toString("base64")}`;
         }),
     );
@@ -62,8 +101,7 @@ export async function callQwenImage21API(
     const upstreamUrl = isEdit
         ? QWEN_IMAGE_21_EDIT_URL
         : QWEN_IMAGE_21_GENERATE_URL;
-    const width = roundToMultipleOf32(safeParams.width);
-    const height = roundToMultipleOf32(safeParams.height);
+    const { width, height } = resolveImageSize(safeParams);
     const requestBody = {
         prompt,
         ...(isEdit ? { image_urls: imageUrls } : {}),

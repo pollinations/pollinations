@@ -273,17 +273,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "akashml/fp8",
         64000,
     ),
-    "qwen/qwen3.8-max": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3.8-max",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["Alibaba"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",
@@ -556,6 +545,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
+        }),
+    "accounts/fireworks/models/qwen3p8-max": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p8-max",
         }),
     "accounts/fireworks/models/qwen3p8-2p4t-a95b": () =>
         createFireworksModelConfig({

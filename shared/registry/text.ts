@@ -2475,32 +2475,30 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: ["qwen3.8-max"],
-        provider: "openrouter",
+        provider: "fireworks",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2) * 1.055,
-            promptCachedTokens: perMillion(0.25) * 1.055,
-            promptCacheWriteTokens: perMillion(2.5) * 1.055,
-            promptImageTokens: perMillion(2) * 1.055,
-            promptVideoTokens: perMillion(2) * 1.055,
-            completionTextTokens: perMillion(6) * 1.055,
+            // Fireworks accounts/fireworks/models/qwen3p8-max rates (2026-09-17).
+            // Serverless is text-only with 262K context; multimodal 1M stays on
+            // qwen/qwen3.8-max-0902 (Alibaba).
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            completionTextTokens: perMillion(6),
         },
         title: "Qwen3.8 Max",
         description:
-            "Million-token multimodal reasoning for coding and autonomous agents",
-        inputModalities: ["text", "image", "video"],
+            "Frontier reasoning for coding and autonomous agents (Fireworks serverless)",
+        inputModalities: ["text"],
         outputModalities: ["text"],
-        maxReferenceImages: 10,
-        maxReferenceVideos: 10,
         tools: true,
         reasoning: true,
-        contextLength: 1000000,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "qwen/qwen3.8-max-0902": {

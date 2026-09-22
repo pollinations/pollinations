@@ -35,20 +35,10 @@ import type {
     QuestCheckResult,
 } from "../../backend-types.ts";
 import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { mergeQuestRewards, type QuestReward } from "./quest-rewards.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
-
-type QuestReward = {
-    id: string;
-    questId: string | null;
-    title: string;
-    pollenAmount: number;
-    balanceBucket: string;
-    earnedAt: string;
-    claimedAt: string | null;
-    url?: string | null;
-};
 
 type QuestOverviewProps = Record<string, never>;
 
@@ -59,7 +49,7 @@ type FetchState = {
     loading: boolean;
     checking: boolean;
     error: string | null;
-    claimingRewardId: string | null;
+    claimingRewardIds: string[];
     // Anonymous (logged-out) visitors get the public catalog only — the
     // per-user rewards endpoint 401s, so there is nothing to claim and every
     // quest is rendered open as a "here's what you can earn" preview.
@@ -73,7 +63,7 @@ const INITIAL_STATE: FetchState = {
     loading: true,
     checking: false,
     error: null,
-    claimingRewardId: null,
+    claimingRewardIds: [],
     anonymous: false,
 };
 
@@ -549,7 +539,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     // show the indicator for them.
                     checking: !questData.anonymous,
                     error: null,
-                    claimingRewardId: null,
+                    claimingRewardIds: [],
                 });
                 // No per-user check for logged-out visitors — the catalog
                 // preview is all they get.
@@ -585,10 +575,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     setState((current) => ({
                         ...current,
                         ...refreshed,
+                        rewards: mergeQuestRewards(
+                            current.rewards,
+                            refreshed.rewards,
+                        ),
                         progress: checkResult.progress,
                         checking: false,
                         loading: false,
-                        error: null,
                     }));
                     return;
                 }
@@ -607,7 +600,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     async function handleClaimReward(rewardId: string): Promise<void> {
         setState((current) => ({
             ...current,
-            claimingRewardId: rewardId,
+            claimingRewardIds: [...current.claimingRewardIds, rewardId],
             error: null,
         }));
 
@@ -620,19 +613,24 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             if (!response.ok) {
                 throw new Error(`Failed to claim reward (${response.status})`);
             }
-            const questData = await loadQuestData();
+            const { reward } = await response.json();
             setState((current) => ({
                 ...current,
-                ...questData,
-                claimingRewardId: null,
-                checking: false,
-                loading: false,
-                error: null,
+                rewards: current.rewards.map((existing) =>
+                    existing.id === reward.id
+                        ? { ...existing, ...reward }
+                        : existing,
+                ),
+                claimingRewardIds: current.claimingRewardIds.filter(
+                    (id) => id !== rewardId,
+                ),
             }));
         } catch (error) {
             setState((current) => ({
                 ...current,
-                claimingRewardId: null,
+                claimingRewardIds: current.claimingRewardIds.filter(
+                    (id) => id !== rewardId,
+                ),
                 error:
                     error instanceof Error
                         ? error.message
@@ -820,13 +818,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         );
     }
 
-    // While the automatic quest check is running, dim the stats and cards so
-    // summary reads as "refreshing" — the numbers may be about to change. The
-    // checking indicator itself stays outside this wrapper so it stays crisp.
-    const dimWhileChecking = state.checking
-        ? "pointer-events-none select-none opacity-50 transition-opacity duration-300"
-        : "transition-opacity duration-300";
-
     return (
         <div className="flex flex-col gap-6">
             {/* Summary. The per-user accounting (completed/claimed cards +
@@ -838,7 +829,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             >
                 {!state.anonymous && (
                     <>
-                        <div className={dimWhileChecking}>
+                        <div>
                             <QuestSummary
                                 quests={claimedStats.quests}
                                 pollen={claimedStats.pollen}
@@ -895,10 +886,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     the automatic check is in flight; nothing when idle. */}
                         {state.checking && (
                             <div className="mt-3 flex justify-end">
-                                <span className="flex animate-[pulse_2s_ease-in-out_infinite] items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                                <output className="flex items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
                                     <SearchIcon className="h-4 w-4 shrink-0" />
                                     Checking for new quests…
-                                </span>
+                                </output>
                             </div>
                         )}
                     </>
@@ -942,7 +933,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 </Text>
             )}
 
-            <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
+            <div className="flex flex-col gap-6">
                 {bonusRewardCards.length > 0 && (
                     <Section
                         title="Bonus rewards"
@@ -967,9 +958,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     key={card.key}
                                     card={card}
                                     icon={SparkleIcon}
-                                    claiming={
-                                        state.claimingRewardId === card.rewardId
-                                    }
+                                    claiming={state.claimingRewardIds.includes(
+                                        card.rewardId ?? "",
+                                    )}
                                     onClaim={handleClaimReward}
                                 />
                             ))}
@@ -1005,10 +996,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                         key={card.key}
                                         card={card}
                                         icon={category.icon}
-                                        claiming={
-                                            state.claimingRewardId ===
-                                            card.rewardId
-                                        }
+                                        claiming={state.claimingRewardIds.includes(
+                                            card.rewardId ?? "",
+                                        )}
                                         onClaim={handleClaimReward}
                                     />
                                 ))}

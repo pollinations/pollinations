@@ -284,6 +284,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",
@@ -307,6 +316,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.7-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.7-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.8-flash": () =>
@@ -323,6 +336,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.8-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>
@@ -428,10 +445,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ),
+    "mistral-large-direct": () =>
+        createMistralModelConfig({ model: "mistral-large-2512" }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -441,6 +456,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
+    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",

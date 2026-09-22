@@ -43,11 +43,6 @@ const OPENROUTER_ROUTES = [
         "akashml/fp8",
     ],
     [
-        "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ],
-    [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -178,6 +173,75 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it.each([
+        "qwen/qwen3.7-flash",
+        "qwen/qwen3.8-flash",
+        "qwen/qwen3.8-max",
+    ])("preserves direct Responses support for %s", (model) => {
+        const request = {
+            model,
+            input: "Hello",
+            stream: false,
+            store: false as const,
+            safe: undefined,
+        };
+        expect(resolveDirectResponsesTarget(model, request)).toMatchObject({
+            endpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            model: model.slice("qwen/".length),
+        });
+        expect(
+            resolveDirectResponsesTarget(
+                `${model}:openrouter:alibaba`,
+                request,
+            ),
+        ).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+            model,
+        });
+    });
+
+    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+        const model = "mistralai/mistral-large-3";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
+        expect(fallback.provider).toBe("mistral");
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(findModelByName(model)?.config()).toMatchObject({
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "Mistral-Large-3",
+        });
+        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-2512",
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1_000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
+    });
+
+    it("preserves seeded requests on the direct Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:mistral");
+        const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
+        const result = await route?.transform?.([], options);
+        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(options.seed).toBe(0);
+        const unseeded = await route?.transform?.([], { temperature: 0.2 });
+        expect(unseeded?.options).toEqual({ temperature: 0.2 });
+    });
+
     it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {
         const primary = TEXT_SERVICES["google/gemini-3.1-pro-preview"];
         const fallback =
@@ -741,27 +805,23 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         });
-        expect(
-            findModelByName("qwen/qwen3.7-flash:alibaba")?.config(),
-        ).toMatchObject({
+        expect(findModelByName("qwen/qwen3.7-flash")?.config()).toMatchObject({
             directEndpoint:
                 "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
             model: "qwen3.7-flash",
             defaultOptions: { max_tokens: 64000 },
         });
-        expect(
-            findModelByName("qwen/qwen3.8-flash:alibaba")?.config(),
-        ).toMatchObject({
+        expect(findModelByName("qwen/qwen3.8-flash")?.config()).toMatchObject({
             directEndpoint:
                 "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
             model: "qwen3.8-flash",
             defaultOptions: { max_tokens: 64000 },
         });
         for (const [unit, cost] of Object.entries(
-            TEXT_SERVICES["qwen/qwen3.8-flash:alibaba"].cost,
+            TEXT_SERVICES["qwen/qwen3.8-flash"].cost,
         )) {
             expect(
-                TEXT_SERVICES["qwen/qwen3.8-flash"].cost[
+                TEXT_SERVICES["qwen/qwen3.8-flash:openrouter:alibaba"].cost[
                     unit as keyof (typeof TEXT_SERVICES)["qwen/qwen3.8-flash"]["cost"]
                 ],
             ).toBeCloseTo(cost * 1.055, 15);

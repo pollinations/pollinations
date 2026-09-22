@@ -214,6 +214,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-max",
+        config: portkeyConfig["qwen3.8-max-alibaba"],
+        transform: qwenForcedToolTransform,
+    },
+    {
+        name: "qwen/qwen3.8-max:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
@@ -223,22 +228,22 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.7-flash",
-        config: portkeyConfig["qwen/qwen3.7-flash"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "qwen/qwen3.7-flash:alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen3.7-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.8-flash",
-        config: portkeyConfig["qwen/qwen3.8-flash"],
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
         transform: qwenFlashTransform,
     },
     {
-        name: "qwen/qwen3.8-flash:alibaba",
-        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        name: "qwen/qwen3.8-flash:openrouter:alibaba",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
         transform: qwenFlashTransform,
     },
     {
@@ -361,6 +366,10 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6",
         config: portkeyConfig["grok-4.6"],
+    },
+    {
+        name: "x-ai/grok-4.7",
+        config: portkeyConfig["x-ai/grok-4.7"],
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",
@@ -775,9 +784,18 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:openrouter:mistral-zdr",
-        config: portkeyConfig["mistral-large-openrouter-zdr"],
-        transform: stripReasoning,
+        name: "mistralai/mistral-large-3:mistral",
+        config: portkeyConfig["mistral-large-direct"],
+        transform: pipe(stripReasoning, (messages, options) => {
+            const { seed, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(seed === undefined ? {} : { random_seed: seed }),
+                },
+            };
+        }),
     },
     {
         name: "qwen/qwen3guard-gen-8b",

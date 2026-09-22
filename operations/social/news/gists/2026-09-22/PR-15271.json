@@ -1,0 +1,35 @@
+{
+  "pr_number": 15271,
+  "title": "refactor(enter): unify auth, keys and model management UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15271",
+  "merged_at": "2026-09-22T21:22:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Unifies sign-in, app authorization, device approval, key editing, top-up, and error screens, including shared sign-in screens used by Economics, KPI, and Observability. Standalone editing follows the loaded app, device, or key context.\n- Gives secret keys, app keys, models, and agents consistent forms and pill footer buttons, preserving outlined write actions without context or bundle splitting. Fixes dialog height constraints so long forms stay within the viewport.\n- Restores Models, Agents, and MCP catalog tabs. Simplifies publisher info, model/agent cards, capability fields, pricing, and visibility/delete confirmations. Preserves relisting delays and adds no scheduling feature.\n- Preserves unlimited/no-expiry defaults, precise balances, consent trust/legal guidance, and same-tab Top-up navigation. Clarifies earnings and deletion consequences. Generate off supports account-only keys; empty selections remain restricted even with an empty catalog.\n- Validation (reviewer-reported at `aec0afbc4a`): 86 UI tests and 87 Enter tests pass; UI/Enter/Economics/apps-react typechecks and UI/Enter/Observability-production/KPI/Economics/apps-react builds pass. Biome is clean across 80 changed files; CI was green. Browser smoke tests covered key creation/editing/deletion, standalone titles, device/app consent, Top-up, and My Models, with no console errors.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One hive, fewer doors",
+    "blurb": "The account garden got a proper path system. Sign-in, consent, keys, top-ups, models, and agents now use the same calmer set of screens instead of each growing their own shrubbery.",
+    "summary": "Unified Enter’s sign-in, app authorization, device approval, API-key editing, top-up, and error flows, while restoring the Models, Agents, and MCP catalog tabs with consistent resource forms, permissions, pricing, and confirmations.",
+    "impact": "Developers can create and manage account-only, secret, and app keys—plus models and agents—from clearer context-aware screens, with long forms staying inside the viewport, precise balances, same-tab top-ups, and consistent consent guidance.",
+    "keywords": [
+      "enter",
+      "authentication",
+      "api-keys",
+      "models",
+      "agents",
+      "mcp",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy garden-shed dashboard where previously separate sign-in, key, top-up, model, and agent paths converge into one well-marked garden path. Polli, wearing a tiny gardener tool belt, carefully sorts glowing key-shaped seeds into labeled pots while the eager CRT Monitor Robot points at a unified terminal menu; model and agent cards appear as friendly catalog seedlings, with flowers and vines connecting everything.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where a single lime green (#ecf874) path connects little sign-in, API key, top-up, model, agent, and MCP catalog signposts to one friendly retro terminal; code-plants and pastel flowers grow from neatly labeled pots while a chunky CRT monitor robot points excitedly at the organized screen. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener tool belt and sorts glowing key-shaped seeds, small-to-medium in the scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15271.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where a single lime green (#ecf874) path connects little sign-in, API key, top-up, model, agent, and MCP catalog signposts to one friendly retro terminal; code-plants and pastel flowers grow from neatly labeled pots while a chunky CRT monitor robot points excitedly at the organized screen. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener tool belt and sorts glowing key-shaped seeds, small-to-medium in the scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-22T21:23:07.184071+00:00"
+}

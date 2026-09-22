@@ -2,6 +2,7 @@ import { apiClient } from "@frontend/api.ts";
 import { AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
@@ -109,11 +110,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         } catch (error) {
             console.error("Failed to update API key:", error);
             setError(
-                error instanceof Error
-                    ? error.message
-                    : appAccess
-                      ? "Failed to update app access"
-                      : "Failed to update key",
+                resourceActionError(
+                    "save",
+                    appAccess
+                        ? "app access"
+                        : appKey
+                          ? "the app key"
+                          : "the secret key",
+                    error,
+                ),
             );
         } finally {
             setIsSubmitting(false);

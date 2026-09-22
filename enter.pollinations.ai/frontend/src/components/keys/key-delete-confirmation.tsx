@@ -1,14 +1,18 @@
-import { ConfirmationDialog } from "@pollinations/ui";
+import { Alert, ConfirmationDialog } from "@pollinations/ui";
 import type { FC } from "react";
 
 interface DeleteConfirmationProps {
     app: boolean | null;
+    error: string | null;
+    pending: boolean;
     onConfirm: () => void;
     onCancel: () => void;
 }
 
 export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
     app,
+    error,
+    pending,
     onConfirm,
     onCancel,
 }) => (
@@ -20,8 +24,12 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
                 ? "New users will no longer be able to connect with this app key. Existing connections will remain active. Deleting it cannot be undone."
                 : "Requests using this secret key will stop working. Deleting it cannot be undone."
         }
-        confirmLabel="Delete"
+        confirmLabel={pending ? "Deleting…" : "Delete"}
+        confirmDisabled={pending}
+        cancelDisabled={pending}
         onConfirm={onConfirm}
         onCancel={onCancel}
-    />
+    >
+        {error && <Alert intent="danger">{error}</Alert>}
+    </ConfirmationDialog>
 );

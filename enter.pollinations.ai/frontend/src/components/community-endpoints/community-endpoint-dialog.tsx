@@ -24,6 +24,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelCapabilityFields } from "./model-capability-fields.tsx";
@@ -299,9 +300,11 @@ export function CommunityEndpointDialog({
             onOpenChange(false);
         } catch (thrown) {
             setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Endpoint save failed",
+                resourceActionError(
+                    "save",
+                    isEndpointAgent ? "the agent" : "the model",
+                    thrown,
+                ),
             );
         } finally {
             setIsSubmitting(false);
@@ -414,7 +417,9 @@ export function CommunityEndpointDialog({
                 disabled={!canSubmit}
             >
                 {isSubmitting
-                    ? "Saving…"
+                    ? isEdit
+                        ? "Saving…"
+                        : "Creating…"
                     : isEdit
                       ? "Save changes"
                       : "Create model"}

@@ -14,6 +14,7 @@ import {
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelFormRow } from "./model-form-row.tsx";
@@ -74,9 +75,7 @@ export function AgentDialog({
             await onSubmit(form);
             onOpenChange(false);
         } catch (thrown) {
-            setError(
-                thrown instanceof Error ? thrown.message : "Agent save failed",
-            );
+            setError(resourceActionError("save", "the agent", thrown));
         } finally {
             setIsSubmitting(false);
         }
@@ -125,7 +124,7 @@ export function AgentDialog({
                 intent="commit"
                 disabled={!canSubmit}
             >
-                {isSubmitting ? "Saving…" : submitLabel}
+                {isSubmitting ? (agent ? "Saving…" : "Creating…") : submitLabel}
             </Button>
         </>
     );

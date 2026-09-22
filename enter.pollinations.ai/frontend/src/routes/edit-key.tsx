@@ -166,11 +166,7 @@ function EditKeyPage() {
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
             footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {
-                await updateApiKey(
-                    keyId,
-                    updates,
-                    "Failed to save app access. Please try again.",
-                );
+                await updateApiKey(keyId, updates, "Couldn’t save app access.");
                 setOutcome("saved");
             }}
             onClose={() =>

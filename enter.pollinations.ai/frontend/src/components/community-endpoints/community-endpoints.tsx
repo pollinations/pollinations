@@ -27,6 +27,7 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { DashboardLoading } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
@@ -193,11 +194,7 @@ export function CommunityEndpoints({
             await loadEndpoints();
             await onChange?.();
         } catch (thrown) {
-            setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Agent delete failed",
-            );
+            setError(resourceActionError("delete", "the agent", thrown));
         }
     }
 
@@ -269,9 +266,11 @@ export function CommunityEndpoints({
             await onChange?.();
         } catch (thrown) {
             setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Endpoint delete failed",
+                resourceActionError(
+                    "delete",
+                    target.type === "proxy" ? "the model" : "the agent",
+                    thrown,
+                ),
             );
         }
     }
@@ -300,11 +299,7 @@ export function CommunityEndpoints({
             setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
-            setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Provider profile update failed",
-            );
+            setError(resourceActionError("save", "publisher info", thrown));
         } finally {
             setIsSavingProvider(false);
         }
@@ -337,9 +332,13 @@ export function CommunityEndpoints({
             await onChange?.();
         } catch (thrown) {
             setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Model status update failed",
+                resourceActionError(
+                    "update",
+                    endpoint.type === "proxy"
+                        ? "the model’s visibility"
+                        : "the agent’s visibility",
+                    thrown,
+                ),
             );
         } finally {
             setTogglingId(null);

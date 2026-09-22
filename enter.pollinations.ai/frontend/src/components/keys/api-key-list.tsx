@@ -19,6 +19,7 @@ import {
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
@@ -44,11 +45,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [appCreateOpen, setAppCreateOpen] = useState(false);
     const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     async function handleDelete(): Promise<void> {
-        if (deletingKey) {
+        if (!deletingKey || isDeleting) return;
+        setIsDeleting(true);
+        setDeleteError(null);
+        try {
             await onDelete(deletingKey.id);
             setDeletingKey(null);
+        } catch (error) {
+            setDeleteError(
+                resourceActionError(
+                    "delete",
+                    isAppKey(deletingKey) ? "the app key" : "the secret key",
+                    error,
+                ),
+            );
+        } finally {
+            setIsDeleting(false);
         }
     }
 
@@ -66,6 +82,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
         const isApp = isAppKey(apiKey);
+        const keyLabel = isApp ? "app key" : "secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -104,8 +121,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title="Edit key"
-                                tooltip="Edit key"
+                                title={`Edit ${keyLabel}`}
+                                tooltip={`Edit ${keyLabel}`}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
@@ -115,12 +132,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </IconButton>
                             <IconButton
                                 intent="danger"
-                                title="Delete key"
-                                tooltip="Delete key"
+                                title={`Delete ${keyLabel}`}
+                                tooltip={`Delete ${keyLabel}`}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
-                                onClick={() => setDeletingKey(apiKey)}
+                                onClick={() => {
+                                    setDeleteError(null);
+                                    setDeletingKey(apiKey);
+                                }}
                             >
                                 <XIcon className="h-4 w-4" />
                             </IconButton>
@@ -348,8 +368,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             </div>
             <DeleteConfirmation
                 app={deletingKey ? isAppKey(deletingKey) : null}
+                error={deleteError}
+                pending={isDeleting}
                 onConfirm={handleDelete}
-                onCancel={() => setDeletingKey(null)}
+                onCancel={() => {
+                    if (!isDeleting) {
+                        setDeletingKey(null);
+                        setDeleteError(null);
+                    }
+                }}
             />
             {editingKey && (
                 <EditApiKeyDialog

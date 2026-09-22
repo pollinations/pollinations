@@ -5,6 +5,7 @@ import {
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
@@ -96,7 +97,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             setCreatedKey(newKey);
         } catch (err) {
             setError(
-                err instanceof Error ? err.message : "Failed to create key",
+                resourceActionError(
+                    "create",
+                    simplified ? "the app key" : "the secret key",
+                    err,
+                ),
             );
         } finally {
             setIsSubmitting(false);

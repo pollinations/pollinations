@@ -1,0 +1,34 @@
+{
+  "pr_number": 15284,
+  "title": "fix: use Mistral direct for Large 3 fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15284",
+  "merged_at": "2026-09-22T00:00:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps `mistralai/mistral-large-3` on Azure (`myceli-prod-eastus`, deployment `Mistral-Large-3`); aliases `mistral-large-3`/`mistral-large`, multiplier 0.75, Quest access, and no Pollinations GPU remain unchanged.\n- Replaces the reproducibly failing OpenRouter/Mistral-ZDR fallback (404: no endpoints) with Mistral direct `api.mistral.ai/v1`, checkpoint `mistral-large-2512`. Removes the OpenRouter fee from fallback costs; public pricing stays unchanged. Maps `seed` to `random_seed` to avoid upstream 422s.\n- Leaves Small 4 direct and Small 3.2 on its existing routes: neither exact checkpoint appears in our Azure account catalog, and Mistral direct no longer lists Small 3.2. [Provider model/pricing](https://docs.mistral.ai/models/mistral-large-3-25-12).\n- Validation: 110 Gen routing/billing/resolver tests, 468 catalog-consumer tests, Gen typecheck, Biome, and diff checks pass. Live Azure Chat/Responses and direct Mistral text, terminal streaming usage, tools, seeded JSON/sampling probes pass.\n- Draft verification gaps: no existing local test credential in expected locations, so forced-fallback E2E, wallet/Tinybird reconciliation, cache and load checks remain pending. Vision returned HTTP 200 but misidentified a red test image; vision correctness and direct-account privacy equivalence to the previous ZDR route remain unverified. No secrets or deployments changed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Large 3 Finds Its Way Home",
+    "blurb": "Mistral Large 3’s fallback route has stopped wandering into a provider with no endpoint. When Azure needs a hand, the hive now calls Mistral directly—and seeded requests arrive with the right name tag.",
+    "summary": "Replaced the failing OpenRouter/Mistral-ZDR fallback for Mistral Large 3 with Mistral’s direct api.mistral.ai/v1 endpoint using the mistral-large-2512 checkpoint, while translating seed to random_seed for upstream compatibility.",
+    "impact": "Mistral Large 3 aliases retain their existing Azure primary route, pricing, Quest access, and 0.75 multiplier, while fallback requests now have a working direct route and seeded generation avoids 422 errors.",
+    "keywords": [
+      "mistral-large-3",
+      "fallback",
+      "azure",
+      "mistral-direct",
+      "seed",
+      "text-api"
+    ],
+    "visual_concept": "A cozy routing garden shows the Mistral Large 3 request leaving an Azure cloud terminal and following a clearly marked backup path to a friendly direct Mistral telescope-like API station. Polli, wearing a tiny route-planner cap, adjusts a seed packet labeled random_seed beside glowing code-plants, making the provider handoff feel reliable and deliberate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded light-blue translucent wings, wearing a tiny route-planner cap as she guides a glowing request along a lime green (#ecf874) garden path from an Azure cloud terminal to a friendly direct Mistral API observatory; seed packets labeled “random_seed” nourish small code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15284.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded light-blue translucent wings, wearing a tiny route-planner cap as she guides a glowing request along a lime green (#ecf874) garden path from an Azure cloud terminal to a friendly direct Mistral API observatory; seed packets labeled “random_seed” nourish small code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-22T00:01:59.356431+00:00"
+}

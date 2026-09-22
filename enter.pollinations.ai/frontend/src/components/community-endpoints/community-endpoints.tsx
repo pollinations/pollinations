@@ -1,10 +1,12 @@
 import {
+    AccountIcon,
     Alert,
     BeakerIcon,
     BotIcon,
     Button,
     Field,
     GlobeIcon,
+    ImageIcon,
     InfoTip,
     InlineLink,
     Input,
@@ -58,21 +60,31 @@ const PUBLISHER_ACCESS_REQUEST_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml";
 
 function ProviderProfileField({
+    icon,
     label,
     help,
     children,
 }: {
+    icon: ReactElement;
     label: string;
     help: string;
     children: ReactElement;
 }) {
     return (
         <Field.Root className="grid gap-2 sm:grid-cols-[15rem_minmax(0,1fr)] sm:items-center">
-            <span className="inline-flex items-center">
-                <Field.Label className="text-sm font-semibold leading-5 text-theme-text-strong">
-                    {label}
-                </Field.Label>
-                <InfoTip text={help} label={`${label} information`} />
+            <span className="inline-flex items-center gap-2">
+                <span
+                    aria-hidden="true"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong [&>svg]:h-4 [&>svg]:w-4"
+                >
+                    {icon}
+                </span>
+                <span className="inline-flex items-center">
+                    <Field.Label className="text-sm font-semibold leading-5 text-theme-text-strong">
+                        {label}
+                    </Field.Label>
+                    <InfoTip text={help} label={`${label} information`} />
+                </span>
             </span>
             <Field.Input asChild>{children}</Field.Input>
         </Field.Root>
@@ -441,6 +453,7 @@ export function CommunityEndpoints({
                         >
                             <div className="space-y-3">
                                 <ProviderProfileField
+                                    icon={<AccountIcon />}
                                     label="Publisher name"
                                     help="Shown as the publisher on all your public models."
                                 >
@@ -460,6 +473,7 @@ export function CommunityEndpoints({
                                     />
                                 </ProviderProfileField>
                                 <ProviderProfileField
+                                    icon={<GlobeIcon />}
                                     label="Website or privacy policy"
                                     help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
                                 >
@@ -480,6 +494,7 @@ export function CommunityEndpoints({
                                     />
                                 </ProviderProfileField>
                                 <ProviderProfileField
+                                    icon={<ImageIcon />}
                                     label="Brand icon"
                                     help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
                                 >

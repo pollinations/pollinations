@@ -256,7 +256,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, google/gemini-2.5-flash-lite:search, typesafe/jev, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, perplexity/sonar-pro, perplexity/sonar-reasoning-pro, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, google/gemini-2.5-flash-lite:search, typesafe/jev-1.13, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, perplexity/sonar-pro, perplexity/sonar-reasoning-pro, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
@@ -370,23 +370,47 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev`)
+### Typed decisions (`typesafe/jev-1.13`)
 
-`typesafe/jev` (alias `jev`) returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Only the last `user` message is used; its `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Earlier turns, system instructions and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk.
+`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`.
 
 ```json
 {
-  "model": "typesafe/jev",
-  "messages": [
-    {
-      "role": "user",
-      "content": "{\"state\":\"My payouts have been failing for 3 days.\",\"questions\":{\"department\":{\"type\":\"choice\",\"instructions\":\"Which team should handle this?\",\"criteria\":{\"billing\":\"Payment issues\",\"technical\":\"Product failures\"}},\"is_urgent\":{\"type\":\"noul\",\"instructions\":\"Does this convey urgency?\"}}}"
-    }
-  ]
+  "state": "My payouts have been failing for 3 days.",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": { "billing": "Payment issues", "technical": "Product failures" }
+    },
+    "is_urgent": { "type": "noul", "instructions": "Does this convey urgency?" }
+  }
 }
 ```
 
-`message.content` returns the native TypeSafe `answers` object unchanged: one field per question, each carrying `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`). See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
+The response carries `answers`, one field per question, each with `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`), plus `usage` with `input_tokens` and `output_tokens`. See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
+
+```json
+{
+  "id": "dec-…",
+  "model": "typesafe/jev-1.13",
+  "provider": "TypeSafe",
+  "answers": {
+    "department": {
+      "type": "choice",
+      "choice": "billing",
+      "confidence": 0.82,
+      "probabilities": { "billing": 0.91, "technical": 0.09 }
+    },
+    "is_urgent": { "type": "noul", "noul": 0.87 }
+  },
+  "usage": { "input_tokens": 312, "output_tokens": 48 }
+}
+```
+
+`state`, `instructions`, and criteria values accept a string or arbitrary JSON. There is no streaming; the answers arrive in one response.
+
+The same model is also reachable from an OpenAI client on `/v1/chat/completions`: put the identical request JSON in the last `user` message as a string, and the answers come back as `message.content`. Earlier turns, system instructions, and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk. Prefer `/alpha/decisions` where you can post the native shape.
 
 Supply relevant facts in `state`; Jev can be confident even when facts are missing. Interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
 
@@ -481,6 +505,53 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
     "total_tokens": 22
   }
 }
+```
+
+---
+
+#### `POST` `/alpha/decisions` — Create Decision
+
+Answer typed questions about a state and get calibrated probabilities instead of free text. Request-compatible with the OpenRouter decisions API.
+
+Each question is one of three types. `choice` selects among named options and returns the chosen key with per-option probabilities. `score` rates on an ordered scale and returns a fractional position plus a `legend` mapping each index back to its rung — read the legend before interpreting the score. `noul` returns the probability that a yes/no proposition is true.
+
+Questions are answered independently and returned under the keys you supplied. `state`, `instructions`, and criteria values accept a string or arbitrary JSON.
+
+Confidence can stay high when facts are missing, so supply the facts that matter. Counting, arithmetic, and date comparisons belong in your code, not in a question.
+
+Models that support this endpoint list `/alpha/decisions` in `supported_endpoints`. The response is JSON only; there is no streaming.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | `string` | Decision model to use. Defaults to `jev`. See the `/models` endpoint for models that list `/alpha/decisions` in `supported_endpoints`. |
+| `state` * | `string` \| `object` \| `any`[] | The facts to decide on. Confidence can stay high when facts are missing, so supply what is relevant rather than everything. |
+| `questions` * | `object` | Questions to answer about the state, keyed by a name you choose. Each question is evaluated independently and answered under the same key. |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/json` — Decision answers with token usage
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `model` * | `string` | The model that answered. |
+| `provider` * | `string` | Publisher of the model that answered. |
+| `answers` * | `object` | One answer per question, under the same key. |
+| `usage` * | `object` | Token usage for the decision. Jev bills input tokens only. |
+| `usage.input_tokens` * | `number` | — |
+| `usage.output_tokens` * | `number` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/decisions" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"state":"My payouts have been failing for 3 days."}'
 ```
 
 ---

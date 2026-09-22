@@ -23,12 +23,15 @@ export const ActivityToolbar: FC<{
 }) => (
     <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-col gap-2">
                 <ActivityPeriodNavigation
                     label={label}
                     value={period}
                     onChange={onPeriodChange}
                 />
+                <p className="text-micro text-theme-text-muted">
+                    Updated hourly · All times UTC
+                </p>
             </div>
             <div data-theme="neutral" className="shrink-0">
                 {download}

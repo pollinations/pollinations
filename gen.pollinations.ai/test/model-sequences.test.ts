@@ -222,10 +222,19 @@ describe("model sequence registry projection", () => {
                 inputModalities: ["text"],
                 perUserRpm: null,
                 fallbacks: [],
-                // Priced above gpt-5.4-nano so the fallback band keeps the
-                // nano target: a free/unknown-price primary drops every paid
-                // fallback under the no-uphill-fallback rule.
-                prices: { promptTextPrice: 10, completionTextPrice: 10 },
+                // Priced above gpt-5.4-nano on EVERY usage bucket (including
+                // cached tokens) so the fallback band keeps the nano target:
+                // the no-uphill-fallback rule compares bucket by bucket, and
+                // a zero primary bucket rejects any positive target rate.
+                prices: {
+                    promptTextPrice: 10,
+                    promptCachedPrice: 10,
+                    promptCacheWritePrice: 10,
+                    promptAudioPrice: 10,
+                    completionTextPrice: 10,
+                    completionReasoningPrice: 10,
+                    completionAudioPrice: 10,
+                },
             }),
             createdAt: new Date(),
             updatedAt: new Date(),

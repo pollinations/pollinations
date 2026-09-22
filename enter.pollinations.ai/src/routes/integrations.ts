@@ -1,7 +1,7 @@
-import { MCP_USER_ID_HEADER } from "@shared/registry/mcp.ts";
 import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
+import { MCP_USER_ID_HEADER } from "@shared/registry/mcp.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";

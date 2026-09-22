@@ -2,10 +2,10 @@ import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
-import * as schema from "@shared/db/better-auth.ts";
-import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import * as schema from "@shared/db/better-auth.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     filterPermissionsToVisibleModels,

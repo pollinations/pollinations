@@ -133,15 +133,15 @@ audio model. For `eleven-dialogue`, format each line as `voice: text`.
 remove background sound from audio or video.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
-- Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \
-authenticate); `bash` has ffmpeg for post-processing (stitch, trim, extract frames, mux audio); \
-`upload_media` publishes a workspace file or data: URI as a public URL — the form other tools \
-need as image inputs. Frame refs you pass to `generate_video` are re-hosted automatically.
+- Media plumbing: use Computer `bash` for files in this run's isolated workspace and publish final \
+files with `assets publish`. Computer does not include ffmpeg. Use `runFfmpeg` with public source URLs for stitching, trimming, \
+frame extraction, and audio muxing; its output is already hosted. `upload_media` accepts only HTTP(S) \
+URLs or data: URIs. Frame refs passed to `generate_video` are re-hosted automatically.
 - Multi-scene video: generate keyframe images, then clip_i = generate_video(image=K_i, \
-end_image=K_i+1). Models drift off the requested end frame — for seamless joins extract the real \
-last frame (`ffmpeg -sseof -0.1 -i clip.mp4 -update 1 -q:v 1 last.jpg`), upload_media it, and \
-start the next clip from it. When concatenating, first drop each later clip's first frame \
-(duplicate of the previous clip's last), then upload_media the stitched file.
+end_image=K_i+1). Models drift off the requested end frame — for seamless joins use `runFfmpeg` \
+to extract the real last frame, then start the next clip from its returned URL. When concatenating, \
+first drop each later clip's first frame (duplicate of the previous clip's last); use the hosted \
+`runFfmpeg` result directly.
 - When done, write a clear final message. Reference the media you produced; it is attached \
 automatically for the user.
 

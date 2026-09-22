@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -15,6 +16,8 @@ from floret.routing import RoutingPreferences
 from floret.tools import gen, mcp, media
 
 logger = logging.getLogger(__name__)
+
+_PUBLISHED_URL = re.compile(r"https://media\.pollinations\.ai/[^\s)\]]+", re.IGNORECASE)
 
 
 @dataclass
@@ -310,9 +313,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "bash",
             "description": (
                 "Run official Computer MCP bash: shell utilities, curl, git, jq, and files. "
-                "The account workspace persists across runs; use a project folder under /workspace. "
+                "Each Floret run gets an isolated /workspace/floret directory; do not expect files from another run. "
                 "/tmp is cleared after each call. No Python, Node, package installs, native ffmpeg, or GUI. "
-                "Use stdin with cat > path to write text; assets publish <path> prints a public file URL. "
+                "Use stdin with cat > path to write text; assets publish <path> prints a public file URL and attaches media. "
                 "Commands have a 60-second limit and bounded output."
             ),
             "parameters": {
@@ -520,6 +523,21 @@ async def dispatch(
                         }
                     )
             brain = "\n".join(texts)
+            if (
+                name == "bash"
+                and not result.isError
+                and "assets publish" in str(args.get("command", ""))
+            ):
+                for url in _PUBLISHED_URL.findall(brain):
+                    path = url.split("?", 1)[0].lower()
+                    kind = (
+                        "video"
+                        if path.endswith((".mp4", ".webm", ".mov", ".mkv"))
+                        else "audio"
+                        if path.endswith((".mp3", ".wav", ".ogg", ".m4a", ".flac"))
+                        else "file"
+                    )
+                    arts.append({"type": kind, "url": url})
             return ToolResult(
                 brain=f"ERROR from {name}: {brain}" if result.isError else brain,
                 artifacts=[] if result.isError else arts,

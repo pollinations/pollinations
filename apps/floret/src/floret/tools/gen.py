@@ -107,7 +107,11 @@ async def generate_3d(
         body["seed"] = seed
     url = f"{_base()}/3d/{urllib.parse.quote(prompt, safe='')}"
     async with _http_client().stream(
-        "POST", url, headers={"Authorization": f"Bearer {_key()}"}, json=body
+        "POST",
+        url,
+        headers={"Authorization": f"Bearer {_key()}"},
+        json=body,
+        timeout=310,
     ) as response:
         response.raise_for_status()
         enclosure = response.links.get("enclosure", {}).get("url")

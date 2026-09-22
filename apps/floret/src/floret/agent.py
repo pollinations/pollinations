@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import uuid
 from collections.abc import AsyncGenerator
 from typing import Any, cast
 
@@ -237,10 +238,19 @@ async def run_agent_events(
         if settings.catalog_endpoint:
             await warm_registry()
             catalog_token = set_request_catalog(await fetch_model_catalog())
-        async for event in _run_agent_events(
-            messages, model=model, max_iters=max_iters, routing=routing
-        ):
-            yield event
+        from floret.tools import mcp
+
+        workspace = f"/workspace/floret/{uuid.uuid4().hex}"
+        used = [False]
+        try:
+            with mcp.workspace(workspace) as used:
+                async for event in _run_agent_events(
+                    messages, model=model, max_iters=max_iters, routing=routing
+                ):
+                    yield event
+        finally:
+            if used[0]:
+                await mcp.cleanup_workspace(workspace)
     finally:
         if catalog_token is not None:
             reset_request_catalog(catalog_token)

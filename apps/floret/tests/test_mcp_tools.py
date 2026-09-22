@@ -107,9 +107,26 @@ async def test_computer_uses_sdk_and_keeps_auth_out_of_arguments(
     assert payload["params"] == {"name": "bash", "arguments": args}
     assert "ag_test-caller" not in request.content.decode()
     assert result.brain == "https://media.pollinations.ai/result.txt"
-    assert (
-        result.artifacts == []
-    )  # Computer publishes through stdout, not resource_link.
+    assert result.artifacts == [
+        {"type": "file", "url": "https://media.pollinations.ai/result.txt"}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("url", "kind"),
+    [
+        ("https://media.pollinations.ai/result.mp4", "video"),
+        ("https://media.pollinations.ai/result.mp3", "audio"),
+    ],
+)
+async def test_computer_published_media_text_becomes_artifact(
+    transport: dict[str, Any], url: str, kind: str
+) -> None:
+    transport["result"] = {"content": [{"type": "text", "text": f"Published: {url}"}]}
+
+    result = await dispatch("bash", {"command": "assets publish /workspace/out"})
+
+    assert result.artifacts == [{"type": kind, "url": url}]
 
 
 @pytest.mark.parametrize(
@@ -214,6 +231,59 @@ async def test_concurrent_callers_never_share_mcp_credentials(
             suffix = payload["params"]["arguments"]["command"][-1]
             assert request.headers["authorization"] == f"Bearer ag_caller-{suffix}"
     assert len(transport["clients"]) == 2
+
+
+async def test_computer_workspace_is_created_and_removed(
+    transport: dict[str, Any],
+) -> None:
+    path = "/workspace/floret/run"
+    await mcp.prepare_workspace(path)
+    await mcp.cleanup_workspace(path)
+
+    commands = [
+        payload["params"]["arguments"]["command"]
+        for _, payload in transport["calls"]
+        if payload["method"] == "tools/call"
+    ]
+    assert commands == [f"mkdir -p {path}", f"rm -rf -- {path}"]
+
+
+async def test_computer_workspace_is_scoped_to_each_run(
+    transport: dict[str, Any],
+) -> None:
+    with mcp.workspace("/workspace/floret/one"):
+        await dispatch("bash", {"command": "pwd", "cwd": "/workspace/ignored"})
+    with mcp.workspace("/workspace/floret/two"):
+        await dispatch("bash", {"command": "pwd"})
+
+    calls = [
+        payload["params"]["arguments"]
+        for _, payload in transport["calls"]
+        if payload["method"] == "tools/call"
+    ]
+    assert [call["cwd"] for call in calls] == ["/workspace", "/workspace"]
+    assert calls[0]["command"] == (
+        "mkdir -p /workspace/floret/one/ignored && "
+        "cd /workspace/floret/one/ignored && pwd"
+    )
+    assert calls[1]["command"] == (
+        "mkdir -p /workspace/floret/two && cd /workspace/floret/two && pwd"
+    )
+
+
+async def test_computer_workspace_rewrites_absolute_workspace_paths(
+    transport: dict[str, Any],
+) -> None:
+    with mcp.workspace("/workspace/floret/run"):
+        await dispatch("bash", {"command": "cat /workspace/input > /workspace/output"})
+
+    call = next(
+        payload["params"]["arguments"]
+        for _, payload in transport["calls"]
+        if payload["method"] == "tools/call"
+    )
+    assert "/workspace/floret/run/input" in call["command"]
+    assert "/workspace/floret/run/output" in call["command"]
 
 
 async def test_cancellation_closes_mcp_transport(transport: dict[str, Any]) -> None:

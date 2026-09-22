@@ -532,6 +532,35 @@ async def test_generate_video_rehosts_unfetchable_frames(monkeypatch):
     assert uploads == ["https://gen.pollinations.ai/image/cube?model=flux"]
 
 
+async def test_generation_client_allows_provider_3d_deadline(monkeypatch):
+    from floret.tools import gen
+
+    class Response:
+        headers = {"content-type": "model/gltf-binary"}
+        links = {"enclosure": {"url": "https://media.pollinations.ai/model.glb"}}
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        def raise_for_status(self):
+            return None
+
+    captured = {}
+
+    class Client:
+        def stream(self, *args, **kwargs):
+            captured.update(kwargs)
+            return Response()
+
+    monkeypatch.setattr(gen, "_http_client", lambda: Client())
+    url, _ = await gen.generate_3d("cube", model="model")
+    assert url == "https://media.pollinations.ai/model.glb"
+    assert captured["timeout"] == 310
+
+
 async def test_edit_image_returns_hosted_url(monkeypatch):
     """edit_image must upload its result and return a plain URL, not a data URI."""
     from floret.tools import gen

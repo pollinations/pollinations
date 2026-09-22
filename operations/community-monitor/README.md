@@ -203,8 +203,9 @@ monitor offline.
 
 ## Visibility and authority
 
-All model-list endpoints use one rule: more than 90% success across the latest
-50 eligible final requests within seven days. No minimum sample. No observations
+All model-list endpoints use one rule for community proxy models: more than 80%
+success across the latest 50 eligible final requests within seven days. Official
+models and agents are unaffected. No minimum sample. No observations
 or unavailable analytics means unknown and visible. Successful fallbacks count
 for the requested model. Final 4xx and community-owner traffic are excluded;
 monitor probes count. The bounded Tinybird query is `model_catalog_health.pipe`.

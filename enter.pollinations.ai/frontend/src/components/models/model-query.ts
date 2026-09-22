@@ -309,7 +309,9 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return (
                 filter.value === "all" ||
                 (filter.value === "reliable"
-                    ? isModelReliable(model.health?.successRate)
+                    ? !model.community ||
+                      model.agent ||
+                      isModelReliable(model.health?.successRate)
                     : model.health?.status === "healthy")
             );
         case "publisher": {

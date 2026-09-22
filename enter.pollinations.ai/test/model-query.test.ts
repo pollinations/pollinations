@@ -108,20 +108,33 @@ describe("model query defaults", () => {
     });
 });
 
-it("uses the same strict reliability cutoff as the API, keeps unknown models and permits show all", () => {
-    for (const successRate of [0, 70, 90, 92, 100, null]) {
+it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
+    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
         const candidate = model({
+            community: true,
             health: {
                 status: successRate == null ? "unknown" : "degraded",
                 requests: successRate == null ? 0 : 50,
                 successRate,
             },
         });
-        const visible = successRate == null || successRate > 90;
-        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(visible);
+        const visible = successRate == null || successRate > 80;
+        expect(matches(candidate, "source:community status:reliable")).toBe(
+            visible,
+        );
         expect(matches(candidate, "status:reliable")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
     }
+    const official = model({
+        health: { status: "down", requests: 50, successRate: 0 },
+    });
+    expect(matches(official, "status:reliable")).toBe(true);
+    expect(
+        matches(
+            { ...official, community: true, agent: true },
+            "status:reliable",
+        ),
+    ).toBe(true);
     expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
     expect(matches(model(), "status:healthy")).toBe(false);
     expect(getModelQuerySuggestions("status:", [])).toEqual([

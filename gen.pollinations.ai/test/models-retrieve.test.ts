@@ -54,7 +54,7 @@ function mockCatalogHealth(rows: ModelHealthRow[], status = 200) {
         });
 }
 
-test("reliability filters every list, preserves exact retrieval, and supports query/header overrides", async () => {
+test("official models stay discoverable across every list regardless of reliability", async () => {
     const registry = await getGenerationModelRegistry(env);
     const categories = ["text", "image", "video", "3d", "audio", "embedding"];
     const failing = categories.map((category) => {
@@ -69,8 +69,8 @@ test("reliability filters every list, preserves exact retrieval, and supports qu
             model: entry.id,
             event_type: entry.eventType,
             is_rollup: 1,
-            status_2xx: 45,
-            errors_5xx: 5,
+            status_2xx: 0,
+            errors_5xx: 50,
         })),
     );
 
@@ -93,7 +93,7 @@ test("reliability filters every list, preserves exact retrieval, and supports qu
         expect(
             ids.some((id) => failing.some((entry) => entry.id === id)),
             path,
-        ).toBe(false);
+        ).toBe(true);
     }
     for (const [query, headers] of [
         ["?reliability=all", {}],
@@ -114,14 +114,14 @@ test("reliability filters every list, preserves exact retrieval, and supports qu
         ((await overridden.json()) as { name: string }[]).some(
             (model) => model.name === failing[0].id,
         ),
-    ).toBe(false);
+    ).toBe(true);
     const exact = await fetchWorker(
         `/v1/models/${encodeURIComponent(failing[0].id)}`,
     );
     expect(exact.status).toBe(200);
     expect(await exact.json()).toMatchObject({
         id: failing[0].id,
-        health: { success_rate: 90, requests: 50 },
+        health: { success_rate: 0, requests: 50 },
     });
     // Discovery filtering never mutates the registry used for generation/fallbacks.
     expect(registry.resolve(failing[0].id)).toBe(failing[0]);
@@ -197,7 +197,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     await drizzle(env.DB)
         .insert(communityEndpoint)
         .values(
-            ["public", "private", "hidden"].map((name) => ({
+            ["public", "passing", "private", "hidden"].map((name) => ({
                 id: crypto.randomUUID(),
                 ownerUserId,
                 name,
@@ -226,29 +226,36 @@ test("community reliability is discovery-only and show all preserves manual hidi
         );
     await resetGenerationModelRegistryCache(env);
     const id = `community/${owner}/public`;
+    const passingId = `community/${owner}/passing`;
     mockCatalogHealth([
         {
             model: id,
             event_type: "generate.text",
             is_rollup: 1,
-            status_2xx: 0,
-            errors_5xx: 1,
+            status_2xx: 40,
+            errors_5xx: 10,
+        },
+        {
+            model: passingId,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 41,
+            errors_5xx: 9,
         },
     ]);
     const normal = await fetchWorker("/models?source=community");
-    expect(
-        ((await normal.json()) as { name: string }[]).some(
-            (model) => model.name === id,
-        ),
-    ).toBe(false);
+    const normalModels = (await normal.json()) as { name: string }[];
+    expect(normalModels.some((model) => model.name === id)).toBe(false);
+    expect(normalModels.some((model) => model.name === passingId)).toBe(true);
     const unfiltered = await fetchWorker(
         "/models?source=community&reliability=all",
     );
     expect(
         ((await unfiltered.json()) as { name: string }[])
             .filter((model) => model.name.startsWith(`community/${owner}/`))
-            .map((model) => model.name),
-    ).toEqual([id]);
+            .map((model) => model.name)
+            .sort(),
+    ).toEqual([passingId, id].sort());
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);

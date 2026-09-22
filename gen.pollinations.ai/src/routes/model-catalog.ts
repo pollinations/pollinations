@@ -67,6 +67,8 @@ export async function filterCatalogEntries(
         .filter(
             (entry) =>
                 reliability === "all" ||
+                !entry.info.community ||
+                entry.info.agent ||
                 isModelReliable(entry.info.health?.success_rate),
         );
 }

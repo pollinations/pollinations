@@ -17,7 +17,7 @@ export type ModelHealth = {
     successRate: number | null;
 };
 
-// Diagnostic colors are independent of the >90% discovery cutoff.
+// Diagnostic colors are independent of the >80% community discovery cutoff.
 const DEGRADED_5XX_PERCENT = 5;
 const DOWN_5XX_PERCENT = 20;
 
@@ -25,7 +25,7 @@ const DOWN_5XX_PERCENT = 20;
 export function isModelReliable(
     successRate: number | null | undefined,
 ): boolean {
-    return successRate == null || successRate > 90;
+    return successRate == null || successRate > 80;
 }
 
 /** Health per model id and category (`text`, `image`, ...) from rollup rows. */

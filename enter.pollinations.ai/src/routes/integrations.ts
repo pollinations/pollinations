@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { type AuthEnv, auth } from "../middleware/auth.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 const ConnectionSchema = z.object({
     id: z.string(),
@@ -77,7 +78,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "List Connected Apps",
             responses: {
                 200: {
@@ -98,7 +99,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/toolkits",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Search Connectable Apps",
             responses: {
                 200: {
@@ -125,7 +126,7 @@ export const integrationsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Connect App",
             responses: {
                 200: { description: "Hosted authentication URL" },
@@ -151,7 +152,7 @@ export const integrationsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Disconnect App",
             responses: { 204: { description: "App disconnected" } },
         }),

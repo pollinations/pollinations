@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
@@ -34,7 +35,7 @@ export type QuestLeaderboardResponse = z.infer<
 export const questLeaderboardRoutes = new Hono<Env>().get(
     "/leaderboard",
     describeRoute({
-        tags: ["✨ Quests"],
+        tags: [OPENAPI_TAGS.quests],
         summary: "Get Quest Leaderboard",
         security: [],
         description:

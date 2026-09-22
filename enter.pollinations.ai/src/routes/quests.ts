@@ -17,6 +17,7 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 
 // Bumped to v29: the Discord quest links to account connection and the server.
 const CACHE_KEY = "quests:catalog:v29";
@@ -93,7 +94,7 @@ export const questsRoutes = new Hono<Env>()
     .get(
         "/catalog",
         describeRoute({
-            tags: ["✨ Quests"],
+            tags: [OPENAPI_TAGS.quests],
             summary: "Get Quest Catalog",
             security: [],
             description:
@@ -123,7 +124,7 @@ export const questsRoutes = new Hono<Env>()
     .post(
         "/check",
         describeRoute({
-            tags: ["✨ Quests"],
+            tags: [OPENAPI_TAGS.quests],
             summary: "Check Quest Rewards",
             description:
                 "Checks the authenticated dashboard user's quest status and records any newly earned pending rewards. Session authentication is required.",
@@ -178,7 +179,7 @@ export const questsRoutes = new Hono<Env>()
     .get(
         "/rewards",
         describeRoute({
-            tags: ["✨ Quests"],
+            tags: [OPENAPI_TAGS.quests],
             summary: "Get Quest Rewards",
             description:
                 "Returns earned quest rewards for the authenticated account, including claim state. API keys require the read-only `account:usage` permission.",
@@ -241,7 +242,7 @@ export const questsRoutes = new Hono<Env>()
     .post(
         "/rewards/:rewardId/claim",
         describeRoute({
-            tags: ["✨ Quests"],
+            tags: [OPENAPI_TAGS.quests],
             summary: "Claim Quest Reward",
             description:
                 "Claims one pending quest reward and credits the authenticated user's balance. Session authentication is required.",

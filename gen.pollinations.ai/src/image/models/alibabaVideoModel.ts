@@ -61,7 +61,7 @@ export async function callAlibabaVideo(
     const body =
         version === "3.0"
             ? {
-                  model: "wan3.0-video",
+                  model: "wan3.0-video-prime",
                   input: {
                       prompt,
                       media: frames.length

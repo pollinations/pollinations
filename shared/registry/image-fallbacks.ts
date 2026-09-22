@@ -15,11 +15,14 @@ export const IMAGE_FALLBACKS = {
     "alibaba/wan-3.0": {
         "alibaba/wan-3.0:fal": {
             provider: "fal",
-            // Fal Standard bills output only; retain the Alibaba quote.
-            cost: { promptVideoSeconds: 0, completionVideoSeconds: 0.05 },
+            // Fal Prime bills output only; retain the Alibaba quote.
+            cost: { promptVideoSeconds: 0, completionVideoSeconds: 0.068 },
             costVariants: {
-                "720p": { promptVideoSeconds: 0, completionVideoSeconds: 0.1 },
-                "1080p": { promptVideoSeconds: 0, completionVideoSeconds: 0.2 },
+                "720p": { promptVideoSeconds: 0, completionVideoSeconds: 0.14 },
+                "1080p": {
+                    promptVideoSeconds: 0,
+                    completionVideoSeconds: 0.28,
+                },
             },
         },
     },

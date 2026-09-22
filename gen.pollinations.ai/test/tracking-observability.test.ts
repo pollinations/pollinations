@@ -2271,12 +2271,12 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             tokenCountPromptVideoSeconds: 3,
-            tokenPricePromptVideoSeconds: 0.05,
+            tokenPricePromptVideoSeconds: 0.068,
             tokenCountCompletionVideoSeconds: 5,
-            totalCost: 0.4,
-            totalPrice: 0.4,
+            totalCost: 0.544,
+            totalPrice: 0.544,
         });
-        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.4);
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.544);
     });
 
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {

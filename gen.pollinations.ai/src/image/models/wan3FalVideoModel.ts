@@ -7,11 +7,11 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const WAN_3_TEXT_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0/text-to-video";
+    "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const WAN_3_IMAGE_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0/image-to-video";
+    "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
 const WAN_3_R2V_ENDPOINT =
-    "https://queue.fal.run/alibaba/wan-3.0/reference-to-video";
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const WAN_3_DURATION_SECONDS = 5;
 const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
 const WAN_3_POLL_INTERVAL_MS = 2_000;

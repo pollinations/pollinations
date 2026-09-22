@@ -65,7 +65,7 @@ describe("Alibaba media adapters", () => {
         expect(
             JSON.parse(fetch.mock.calls[0][1]?.body as string),
         ).toMatchObject({
-            model: "wan3.0-video",
+            model: "wan3.0-video-prime",
             input: {
                 media: [
                     {
@@ -86,13 +86,13 @@ describe("Alibaba media adapters", () => {
             servedBy: definition,
             quotedBy: definition,
         });
-        expect(billed.price.totalPrice).toBeCloseTo(0.4);
+        expect(billed.price.totalPrice).toBeCloseTo(0.544);
         expect(usageToEventParams(result.trackingData?.usage)).toMatchObject({
             tokenCountPromptVideoSeconds: 3,
             tokenCountCompletionVideoSeconds: 5,
         });
         expect(priceToEventParams(definition.cost)).toMatchObject({
-            tokenPricePromptVideoSeconds: 0.05,
+            tokenPricePromptVideoSeconds: 0.068,
         });
     });
     it("preserves Wan 2.6 portrait selection and duration rounding", async () => {

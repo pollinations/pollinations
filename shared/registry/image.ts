@@ -898,20 +898,20 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Alibaba Standard Singapore list rates; input video is also billed.
+        // Alibaba Prime Singapore list rates; input video is also billed.
         cost: {
-            promptVideoSeconds: 0.05,
-            completionVideoSeconds: 0.05, // per sec at 480p
+            promptVideoSeconds: 0.068,
+            completionVideoSeconds: 0.068, // per sec at 480p
         },
         ...defineCostVariants(
             {
                 "720p": {
-                    promptVideoSeconds: 0.1,
-                    completionVideoSeconds: 0.1,
+                    promptVideoSeconds: 0.14,
+                    completionVideoSeconds: 0.14,
                 },
                 "1080p": {
-                    promptVideoSeconds: 0.2,
-                    completionVideoSeconds: 0.2,
+                    promptVideoSeconds: 0.28,
+                    completionVideoSeconds: 0.28,
                 },
             },
             matchResolution("720p", "1080p"),

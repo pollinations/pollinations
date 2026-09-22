@@ -96,41 +96,41 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "alibaba/wan-3.0": {
     "cost": {
-      "completionVideoSeconds": 0.05,
-      "promptVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.068,
+      "promptVideoSeconds": 0.068,
     },
     "costVariants": {
       "1080p": {
-        "completionVideoSeconds": 0.2,
-        "promptVideoSeconds": 0.2,
+        "completionVideoSeconds": 0.28,
+        "promptVideoSeconds": 0.28,
       },
       "720p": {
-        "completionVideoSeconds": 0.1,
-        "promptVideoSeconds": 0.1,
+        "completionVideoSeconds": 0.14,
+        "promptVideoSeconds": 0.14,
       },
     },
     "price": {
-      "completionVideoSeconds": 0.05,
-      "promptVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.068,
+      "promptVideoSeconds": 0.068,
     },
   },
   "alibaba/wan-3.0:fal": {
     "cost": {
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.068,
       "promptVideoSeconds": 0,
     },
     "costVariants": {
       "1080p": {
-        "completionVideoSeconds": 0.2,
+        "completionVideoSeconds": 0.28,
         "promptVideoSeconds": 0,
       },
       "720p": {
-        "completionVideoSeconds": 0.1,
+        "completionVideoSeconds": 0.14,
         "promptVideoSeconds": 0,
       },
     },
     "price": {
-      "completionVideoSeconds": 0.05,
+      "completionVideoSeconds": 0.068,
       "promptVideoSeconds": 0,
     },
   },

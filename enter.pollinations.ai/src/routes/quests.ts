@@ -1,7 +1,7 @@
-import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
 import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
+import { claimReward } from "@shared/billing/rewards.ts";
+import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";

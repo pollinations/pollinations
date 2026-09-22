@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-21",
+  "period_start": "2026-09-21",
+  "period_end": "2026-09-21",
+  "generated_at": "2026-09-22T06:30:12.955487+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-21/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: three community routers now choose code models by health, complexity, and cost. `polli mcp` installs MCP servers into 13 coding agents. Enter’s model, agent, and MCP catalogs are organized again. 17 PRs: the garden received plumbing."
+}

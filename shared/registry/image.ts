@@ -182,6 +182,28 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure MAI edit route takes one input image.
     },
+    "microsoft/mai-image-2.6-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure Global Standard meters, verified 2026-09-22 in both regions.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(2.5),
+            completionImageTokens: perMillion(19),
+        },
+        title: "MAI Image 2.6 Flash",
+        description:
+            "Photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "google",

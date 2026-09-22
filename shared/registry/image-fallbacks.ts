@@ -9,6 +9,9 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "microsoft/mai-image-2.6-flash": {
+        "microsoft/mai-image-2.6-flash:azure:sweden": { provider: "azure" },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

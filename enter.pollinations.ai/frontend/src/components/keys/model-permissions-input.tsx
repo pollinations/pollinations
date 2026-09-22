@@ -1,4 +1,10 @@
-import { Button, ButtonGroup, ChevronIcon, TabButton } from "@pollinations/ui";
+import {
+    Button,
+    ButtonGroup,
+    ChevronIcon,
+    TabButton,
+    Text,
+} from "@pollinations/ui";
 import { useState } from "react";
 import { ConsentModelPicker } from "../auth/consent-model-picker.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
@@ -55,11 +61,15 @@ export function ModelPermissionsInput({
         idsByTab.set("other", new Set(otherIds.map(({ id }) => id)));
     }
     const selectedIds = new Set(selected ?? models.map(({ id }) => id));
-    const hasSelectedModels = models.some(({ id }) => selectedIds.has(id));
-    const shownTabs = [...idsByTab].filter(
-        ([, ids]) =>
-            activeTab !== null || [...ids].some((id) => selectedIds.has(id)),
-    );
+    const selectedCategories = [...idsByTab]
+        .filter(([, ids]) => [...ids].some((id) => selectedIds.has(id)))
+        .map(([tab]) => TAB_LABELS[tab]);
+    const summary =
+        selected === null
+            ? "All models allowed"
+            : selectedIds.size === 0
+              ? "Generation disabled."
+              : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"} allowed${selectedCategories.length ? ` · ${selectedCategories.join(", ")}` : ""}`;
     const displayedModels = models.filter(({ id }) =>
         activeTab === "selected"
             ? selectedIds.has(id)
@@ -67,32 +77,37 @@ export function ModelPermissionsInput({
     );
     return (
         <>
-            {(activeTab !== null || hasSelectedModels) && (
+            {activeTab === null ? (
+                <Text
+                    size="sm"
+                    className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                >
+                    {summary}
+                </Text>
+            ) : (
                 <ButtonGroup
                     aria-label="Model categories"
                     className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
-                    {shownTabs.map(([tab]) => (
+                    {[...idsByTab].map(([tab]) => (
                         <TabButton
                             key={tab}
                             size="xs"
                             active={activeTab === tab}
-                            disabled={disabled || activeTab === null}
+                            disabled={disabled}
                             onClick={() => setActiveTab(tab)}
                         >
                             {TAB_LABELS[tab]}
                         </TabButton>
                     ))}
-                    {activeTab !== null && (
-                        <TabButton
-                            size="xs"
-                            active={activeTab === "selected"}
-                            disabled={disabled}
-                            onClick={() => setActiveTab("selected")}
-                        >
-                            Selected
-                        </TabButton>
-                    )}
+                    <TabButton
+                        size="xs"
+                        active={activeTab === "selected"}
+                        disabled={disabled}
+                        onClick={() => setActiveTab("selected")}
+                    >
+                        Selected
+                    </TabButton>
                 </ButtonGroup>
             )}
             <Button
@@ -102,7 +117,7 @@ export function ModelPermissionsInput({
                 className="col-start-2 row-start-1 gap-1.5 justify-self-end sm:col-start-3"
                 aria-label={
                     activeTab === null
-                        ? "Expand model selector"
+                        ? "Choose models"
                         : "Collapse model selector"
                 }
                 aria-expanded={activeTab !== null}
@@ -111,7 +126,7 @@ export function ModelPermissionsInput({
                     setActiveTab(activeTab === null ? "selected" : null)
                 }
             >
-                {activeTab === null && <span>Edit</span>}
+                {activeTab === null && <span>Choose models</span>}
                 <ChevronIcon expanded={activeTab !== null} />
             </Button>
             {activeTab !== null && (

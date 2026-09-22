@@ -434,6 +434,7 @@ export function QuestRow({
     const claimButton = claimableRewardId ? (
         <Button
             type="button"
+            intent="commit"
             disabled={claiming}
             onClick={() => onClaim(claimableRewardId)}
             className="gap-1.5"

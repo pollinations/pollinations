@@ -264,20 +264,23 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="flex min-h-48 text-sm leading-relaxed">
-        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
-            <div className="min-w-0">
-                <div className="font-semibold text-ink-900">{item.title}</div>
-                {item.date && (
-                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
-                        {formatNewsDate(item.date)}
-                    </div>
-                )}
-                <p className="mt-1 text-ink-700">
-                    {renderWithLinks(item.description)}
-                </p>
-            </div>
+    <Surface variant="card" className="text-sm leading-relaxed">
+        {item.date && (
+            <time
+                dateTime={item.date}
+                className="mb-1 block text-xs font-medium text-theme-text-muted"
+            >
+                {formatNewsDate(item.date)}
+            </time>
+        )}
+        <div className="flex items-start gap-2 font-semibold text-ink-900">
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0 text-base">
+                    {item.emoji}
+                </span>
+            )}
+            <div className="min-w-0">{item.title}</div>
         </div>
+        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
     </Surface>
 );

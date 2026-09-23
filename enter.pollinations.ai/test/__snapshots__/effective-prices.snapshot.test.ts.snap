@@ -698,14 +698,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek/deepseek-v4-pro": {
     "cost": {
-      "completionTextTokens": 0.000001838232,
-      "promptCachedTokens": 0.0000000612744,
-      "promptTextTokens": 0.000000612744,
+      "completionTextTokens": 0.00000355113,
+      "promptCachedTokens": 0.000000118371,
+      "promptTextTokens": 0.00000118371,
     },
     "price": {
-      "completionTextTokens": 0.000001838232,
-      "promptCachedTokens": 0.0000000612744,
-      "promptTextTokens": 0.000000612744,
+      "completionTextTokens": 0.00000355113,
+      "promptCachedTokens": 0.000000118371,
+      "promptTextTokens": 0.00000118371,
     },
   },
   "deepseek/deepseek-v4-pro:openrouter:streamlake": {

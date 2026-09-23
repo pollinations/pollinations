@@ -161,6 +161,20 @@ export const portkeyConfig: PortkeyConfigMap = {
             azureOpenAIParameters,
         ),
 
+    // -- OpenAI direct (GPT-6) -------------------------------------------------
+    "gpt-6-sol": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-sol",
+    }),
+    "gpt-6-luna": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+    }),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
@@ -231,7 +245,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
-        "deepinfra/fp8",
+        "novita/fp8",
+    ),
+    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
@@ -284,6 +302,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",
@@ -307,6 +334,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.7-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.7-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.8-flash": () =>
@@ -323,6 +354,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.8-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>
@@ -414,8 +449,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         }),
-    "MiniMaxAI/MiniMax-M2.7": () =>
-        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -428,10 +461,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ),
+    "mistral-large-direct": () =>
+        createMistralModelConfig({ model: "mistral-large-2512" }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
@@ -441,6 +472,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
+    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -452,6 +484,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
+    ),
+    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-5.5",
+        "anthropic",
     ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
@@ -494,6 +530,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
+    ),
+    "z-ai/glm-5.3-flashx": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3-flashx",
+        "z-ai/fp8",
     ),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
@@ -619,6 +659,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-fable-5": () =>

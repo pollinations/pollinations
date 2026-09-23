@@ -1,6 +1,6 @@
 import { Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
@@ -69,8 +69,11 @@ type FAQProps = {
 export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
     const hash = useRouterState({ select: (state) => state.location.hash });
+    const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
+        const slug = generateSlug(faqData[index]?.question ?? "");
+        const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
             if (next.has(index)) {
@@ -80,6 +83,12 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             }
             return next;
         });
+        if (!isOpen || hash === slug) {
+            void navigate({
+                to: "/news",
+                hash: isOpen ? "" : slug,
+            });
+        }
     };
 
     // Auto-expand FAQ item when navigating via anchor link

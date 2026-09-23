@@ -1,13 +1,5 @@
-import { InlineLink, Surface, Text } from "@pollinations/ui";
-import {
-    type FC,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { InlineLink, Surface } from "@pollinations/ui";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -190,59 +182,23 @@ const CanonicalModelSlugAnnouncement: FC = () => (
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
-    const [loading, setLoading] = useState(true);
-    const request = useRef<AbortController | null>(null);
-    const [error, setError] = useState(false);
-
-    const retry = useCallback(() => {
-        request.current?.abort();
-        const controller = new AbortController();
-        request.current = controller;
-        setLoading(true);
-        setError(false);
-        return fetch(HIGHLIGHTS_RAW_URL, { signal: controller.signal })
-            .then((res) => {
-                if (!res.ok) throw new Error("News request failed");
-                return res.text();
-            })
-            .then((md) => {
-                if (!controller.signal.aborted)
-                    setHighlights(
-                        parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT),
-                    );
-            })
-            .catch(() => {
-                if (!controller.signal.aborted) setError(true);
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
-            });
+    useEffect(() => {
+        fetch(HIGHLIGHTS_RAW_URL)
+            .then((res) => res.text())
+            .then((md) =>
+                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
+            )
+            .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
 
-    useEffect(() => {
-        void retry();
-        return () => request.current?.abort();
-    }, [retry]);
+    if (highlights.length === 0) return null;
 
     return (
-        <SectionContent loading={loading} label="Loading news…">
-            {error ? (
-                <LoadError onRetry={retry}>Couldn’t load news.</LoadError>
-            ) : highlights.length === 0 ? (
-                <Text size="sm" tone="muted">
-                    No news to show.
-                </Text>
-            ) : (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {highlights.map((item) => (
-                        <DynamicNews
-                            key={`${item.date}-${item.title}`}
-                            item={item}
-                        />
-                    ))}
-                </div>
-            )}
-        </SectionContent>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {highlights.map((item) => (
+                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
+            ))}
+        </div>
     );
 };
 

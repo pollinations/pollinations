@@ -13,13 +13,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import {
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
@@ -125,73 +119,62 @@ export function ConnectedApps() {
     const [toolkitsError, setToolkitsError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
-    const connectionsRequest = useRef<AbortController | null>(null);
-    const searchRequest = useRef<AbortController | null>(null);
-
     const loadConnections = useCallback(async () => {
-        connectionsRequest.current?.abort();
-        const controller = new AbortController();
-        connectionsRequest.current = controller;
-        setConnectionsError(null);
-        setConnectionsLoading(true);
-        try {
-            const response = await apiClient.account.integrations.$get(
-                {},
-                { init: { signal: controller.signal } },
-            );
-            if (!response.ok) throw new Error("Could not load connected apps.");
-            const result = (await response.json()) as { data: Connection[] };
-            if (!controller.signal.aborted) setConnections(result.data);
-        } catch (error) {
-            if (!controller.signal.aborted)
-                setConnectionsError(
-                    errorMessage(error, "Could not load connected apps."),
-                );
-        } finally {
-            if (!controller.signal.aborted) setConnectionsLoading(false);
-        }
+        const response = await apiClient.account.integrations.$get();
+        if (!response.ok) throw new Error("Could not load connected apps.");
+        setConnections(
+            ((await response.json()) as { data: Connection[] }).data,
+        );
     }, []);
 
-    const loadToolkits = useCallback(async (query: string) => {
-        searchRequest.current?.abort();
-        const controller = new AbortController();
-        searchRequest.current = controller;
-        setToolkitsError(null);
-        setToolkitsLoading(true);
-        try {
-            const response = await apiClient.account.integrations.toolkits.$get(
-                {
-                    query: query ? { search: query } : {},
-                },
-                { init: { signal: controller.signal } },
-            );
-            if (!response.ok) throw new Error("Could not search apps.");
-            const result = (await response.json()) as { data: Toolkit[] };
-            if (!controller.signal.aborted) setToolkits(result.data);
-        } catch (error) {
-            if (!controller.signal.aborted)
-                setToolkitsError(errorMessage(error, "Could not search apps."));
-        } finally {
-            if (!controller.signal.aborted) {
-                setLoadedSearch(query);
-                setToolkitsLoading(false);
-            }
-        }
+    const loadToolkits = useCallback(async (query = "") => {
+        const response = await apiClient.account.integrations.toolkits.$get({
+            query: query ? { search: query } : {},
+        });
+        if (!response.ok) throw new Error("Could not load available apps.");
+        return ((await response.json()) as { data: Toolkit[] }).data;
     }, []);
 
     useEffect(() => {
-        void loadConnections();
-        return () => connectionsRequest.current?.abort();
+        void loadConnections()
+            .catch((loadError) =>
+                setConnectionsError(
+                    errorMessage(loadError, "Could not load connected apps."),
+                ),
+            )
+            .finally(() => setConnectionsLoading(false));
     }, [loadConnections]);
 
     useEffect(() => {
-        const timeout = window.setTimeout(
-            () => loadToolkits(search.trim()),
-            200,
-        );
+        const query = search.trim();
+        let cancelled = false;
+        const timeout = window.setTimeout(() => {
+            setToolkitsError(null);
+            setToolkitsLoading(true);
+            void loadToolkits(query)
+                .then((results) => {
+                    if (cancelled) return;
+                    setToolkits(results);
+                })
+                .catch((searchError) => {
+                    if (!cancelled) {
+                        setToolkits([]);
+                        setToolkitsError(
+                            errorMessage(searchError, "Could not search apps."),
+                        );
+                    }
+                })
+                .finally(() => {
+                    if (!cancelled) {
+                        setLoadedSearch(query);
+                        setToolkitsLoading(false);
+                    }
+                });
+        }, 200);
+
         return () => {
+            cancelled = true;
             window.clearTimeout(timeout);
-            searchRequest.current?.abort();
         };
     }, [loadToolkits, search]);
 
@@ -282,17 +265,9 @@ export function ConnectedApps() {
             </div>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}
-            {connectionsError && (
-                <LoadError onRetry={loadConnections}>
-                    {connectionsError}
-                </LoadError>
-            )}
+            {connectionsError && <LoadError>{connectionsError}</LoadError>}
 
-            {toolkitsError && (
-                <LoadError onRetry={() => loadToolkits(search.trim())}>
-                    {toolkitsError}
-                </LoadError>
-            )}
+            {toolkitsError && <LoadError>{toolkitsError}</LoadError>}
 
             <SectionContent
                 loading={

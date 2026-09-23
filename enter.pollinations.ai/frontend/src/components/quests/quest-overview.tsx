@@ -26,7 +26,6 @@ import { useLoaderData } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
-    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -38,21 +37,22 @@ import type {
     QuestCheckResult,
 } from "../../backend-types.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
-import { mergeQuestRewards, type QuestReward } from "./quest-rewards.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
 
 type QuestOverviewProps = Record<string, never>;
 
-type CachedQuestData = Pick<
-    FetchState,
-    "catalog" | "rewards" | "progress" | "anonymous"
->;
-
-// Keep the last account’s data across page visits, never across accounts.
-let cachedQuests: { userId: string | null; data: CachedQuestData } | null =
-    null;
+type QuestReward = {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+    url?: string | null;
+};
 
 type FetchState = {
     catalog: QuestCatalogItem[];
@@ -186,13 +186,13 @@ function rewardIconKind(
 
 type QuestData = Pick<FetchState, "catalog" | "rewards" | "anonymous">;
 
-async function loadQuestData(signal: AbortSignal): Promise<QuestData> {
+async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
     const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.catalog.$get({}, { init: { signal } }),
-        apiClient.quests.rewards.$get({}, { init: { signal } }),
+        apiClient.quests.catalog.$get(),
+        apiClient.quests.rewards.$get(),
     ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
@@ -584,28 +584,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
-    const request = useRef<AbortController | null>(null);
     const [claimError, setClaimError] = useState<string | null>(null);
-    const [state, setState] = useState<FetchState>(() => ({
+    const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
-        ...(cachedQuests?.userId === userId
-            ? {
-                  ...cachedQuests.data,
-                  loading: false,
-                  checking: userId !== null,
-              }
-            : {}),
-    }));
-    useEffect(() => {
-        if (!state.loading && !state.error) {
-            const { catalog, rewards, progress, anonymous } = state;
-            cachedQuests = {
-                userId,
-                data: { catalog, rewards, progress, anonymous },
-            };
-        }
-    }, [userId, state]);
+    });
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -613,99 +596,81 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
     // relaxed, since there is no per-user progress to gate on.
     const previewAll = state.anonymous;
 
-    // On open: keep previously loaded data visible, fetch saved rewards, THEN run one
-    // automatic quest check (slow GitHub + Tinybird fan-out) and refresh.
-    // Retrying a failed read preserves loaded quests and does not repeat a check.
-    const retry = useCallback(() => {
-        request.current?.abort();
-        const controller = new AbortController();
-        request.current = controller;
-        setState((current) => ({
-            ...current,
-            loading:
-                current.catalog.length === 0 && current.rewards.length === 0,
-            error: null,
-        }));
-        return (async () => {
+    // On open: load saved quest data from D1, THEN run one
+    // automatic quest check (slow GitHub + Tinybird fan-out) and refresh. There
+    // is no manual button — quests check themselves when the page opens. The
+    // whole flow is inlined here (not a separate callback) so the mount-only
+    // effect has a stable, empty dependency list.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
             try {
-                const questData = await loadQuestData(controller.signal);
-                if (controller.signal.aborted) return;
-                setState((current) => ({
-                    ...current,
+                const questData = await loadQuestData();
+                if (cancelled) return;
+                setState({
                     ...questData,
-                    rewards: mergeQuestRewards(
-                        current.rewards,
-                        questData.rewards,
-                    ),
+                    progress: [],
                     loading: false,
                     // Flag the auto-check as in-flight so the indicator shows
                     // straight after the initial render, with no idle flash.
                     // Anonymous visitors run no check (it would 401), so don't
                     // show the indicator for them.
-                    checking: !questData.anonymous && !autoCheckedRef.current,
+                    checking: !questData.anonymous,
                     error: null,
-                }));
+                    claimingRewardIds: [],
+                });
                 // No per-user check for logged-out visitors — the catalog
                 // preview is all they get.
                 if (questData.anonymous) return;
             } catch (error) {
-                if (controller.signal.aborted) return;
-                setState((current) => ({
-                    ...current,
+                if (cancelled) return;
+                setState({
+                    ...INITIAL_STATE,
                     loading: false,
-                    checking: false,
                     error:
                         error instanceof Error
                             ? error.message
                             : "Failed to load quests",
-                }));
+                });
                 return;
             }
 
             // StrictMode double-mounts the effect; run the check at most once.
-            if (controller.signal.aborted || autoCheckedRef.current) return;
+            if (cancelled || autoCheckedRef.current) return;
             autoCheckedRef.current = true;
 
             // The automatic check is best-effort: a 429 (per-user throttle still
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post(
-                    {},
-                    { init: { signal: controller.signal } },
-                );
-                if (controller.signal.aborted) return;
+                const response = await apiClient.quests.check.$post();
+                if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
                         (await response.json()) as QuestCheckResult;
-                    const refreshed = await loadQuestData(controller.signal);
-                    if (controller.signal.aborted) return;
+                    const refreshed = await loadQuestData();
+                    if (cancelled) return;
                     setState((current) => ({
                         ...current,
                         ...refreshed,
-                        rewards: mergeQuestRewards(
-                            current.rewards,
-                            refreshed.rewards,
-                        ),
                         progress: checkResult.progress,
                         checking: false,
                         loading: false,
+                        error: null,
                     }));
                     return;
                 }
                 // Not ok (throttled or failed) — just stop the indicator.
                 setState((current) => ({ ...current, checking: false }));
             } catch {
-                if (controller.signal.aborted) return;
+                if (cancelled) return;
                 setState((current) => ({ ...current, checking: false }));
             }
         })();
+        return () => {
+            cancelled = true;
+        };
     }, []);
-
-    useEffect(() => {
-        void retry();
-        return () => request.current?.abort();
-    }, [retry]);
 
     async function handleClaimReward(rewardId: string): Promise<void> {
         setClaimError(null);
@@ -723,14 +688,10 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
-            const { reward } = await response.json();
+            const questData = await loadQuestData();
             setState((current) => ({
                 ...current,
-                rewards: current.rewards.map((existing) =>
-                    existing.id === reward.id
-                        ? { ...existing, ...reward }
-                        : existing,
-                ),
+                ...questData,
                 claimingRewardIds: current.claimingRewardIds.filter(
                     (id) => id !== rewardId,
                 ),
@@ -927,9 +888,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
                 <SectionContent loading={state.loading} label="Loading quests…">
-                    {state.error && (
-                        <LoadError onRetry={retry}>{state.error}</LoadError>
-                    )}
+                    {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (
                         <>

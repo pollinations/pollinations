@@ -319,4 +319,25 @@ describe("codex harness", () => {
         const { codex } = await import("./codex.js");
         expect(codex.status(ctx).configured).toBe(false);
     });
+
+    it("refuses to configure a router installed with --no-discovery", async () => {
+        const { codex } = await import("./codex.js");
+        mkdirSync(stateDir(), { recursive: true });
+        writeFileSync(
+            join(stateDir(), "discovery-mode.json"),
+            JSON.stringify({ version: 1, discovery: "disabled" }),
+        );
+        await expect(codex.on(ctx, {})).rejects.toThrow(/--no-discovery/);
+    });
+
+    it("reuses the key already stored by the router instead of minting a new one", async () => {
+        const { codex } = await import("./codex.js");
+        await codex.on(ctx, { model: settings.model });
+        const stored = readFileSync(keyFile(), "utf-8");
+        const before = requests.filter((r) => r.includes("/account/keys")).length;
+        await codex.on(ctx, { model: settings.model });
+        const after = requests.filter((r) => r.includes("/account/keys")).length;
+        expect(after).toBe(before);
+        expect(readFileSync(keyFile(), "utf-8")).toBe(stored);
+    });
 });

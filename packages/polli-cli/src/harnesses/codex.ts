@@ -153,11 +153,6 @@ const configureViaRouter = (
     ctx: HarnessContext,
     settings: { apiKey: string; model: string },
 ) => {
-    if (readDiscoveryMode(ctx) === "disabled") {
-        throw new Error(
-            "Codex Router was installed with --no-discovery, so it will not read the provider credential file. Re-run the Codex Router installer without --no-discovery first.",
-        );
-    }
     const { router, curate } = routerCommands(ctx);
     const descriptor = [
         "--name",
@@ -316,6 +311,11 @@ export const codex: HarnessAdapter = {
         if (!routerInstalled(ctx)) {
             throw new Error(
                 "Codex Router was not found. Install it first: curl -fsSL https://raw.githubusercontent.com/duolahypercho/codex-router/main/install.sh | sh -s -- --target codex --guided",
+            );
+        }
+        if (readDiscoveryMode(ctx) === "disabled") {
+            throw new Error(
+                "Codex Router was installed with --no-discovery, so it will not read the provider credential file. Re-run the Codex Router installer without --no-discovery first.",
             );
         }
         const model = options.model ?? DEFAULT_MODEL;

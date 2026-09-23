@@ -11,5 +11,5 @@ export default defineConfig({
     splitting: false,
     loader: { ".md": "text" },
     noExternal: [],
-    external: ["@modelcontextprotocol/sdk", "zod"],
+    external: ["@modelcontextprotocol/sdk", "zod", "node:sqlite"],
 });

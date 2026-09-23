@@ -62,6 +62,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
+    "black-forest-labs/flux-1.1-pro": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            completionImageTokens: 0.04, // Azure Global Standard, $40/1K images in East US and Sweden Central.
+        },
+        title: "FLUX 1.1 Pro",
+        description:
+            "Fast text-to-image generation with precise dimensions and reproducible seeds",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "black-forest-labs/flux.2-pro": {
         aliases: ["flux-2-pro"],
         provider: "azure",

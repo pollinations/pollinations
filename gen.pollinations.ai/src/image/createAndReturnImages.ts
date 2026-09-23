@@ -8,6 +8,7 @@ import { getImageEnv } from "./env.ts";
 import { callAlibabaImage } from "./models/alibabaImageModel.ts";
 import {
     callAzureFlux2,
+    callAzureFlux11Pro,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
@@ -849,6 +850,20 @@ const generateImage = async (
             } catch (error) {
                 logError(
                     "Azure Flux Kontext generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "black-forest-labs/flux-1.1-pro":
+        case "black-forest-labs/flux-1.1-pro:azure:sweden": {
+            try {
+                return await callAzureFlux11Pro(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Azure FLUX 1.1 Pro generation failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);

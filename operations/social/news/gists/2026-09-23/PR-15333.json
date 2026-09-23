@@ -1,0 +1,36 @@
+{
+  "pr_number": 15333,
+  "title": "feat: add Azure FLUX 1.1 Pro image model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15333",
+  "merged_at": "2026-09-23T14:20:30Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `black-forest-labs/flux.1.1-pro` at 0.75× Azure retail price ($0.03/image), with East US primary and same-cost Sweden Central fallback.\n- Pins existing Azure deployments to exact GA version `1` at 25 RPM per region; no endpoint routes or credentials changed.\n- Validates model-specific dimensions, text-only input, seed forwarding, provider errors, and flat image usage. Updates OpenAPI parameter descriptions and effective-price snapshot.\n- Tested: 30 focused Gen tests, Gen typecheck, Enter price snapshot, live authenticated East and forced-Sweden E2E (PNG, cache, 0.03 Pollen debit). Local content-safety service DNS is unavailable and its existing fail-open path was exercised.\n\nQuest-accessible (paid by Azure credit). GA with no scheduled retirement. Both regions re-checked live on 2026-09-23.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new flux blooms",
+    "blurb": "Azure FLUX 1.1 Pro has landed in the image garden. It makes polished images at 0.03 Pollen each, with a second region quietly standing by in case the first one needs a cup of tea.",
+    "summary": "Added Azure-hosted `black-forest-labs/flux.1.1-pro` image generation at $0.03 per image (0.03 Pollen), with East US as primary, Sweden Central fallback, exact GA version `1`, and model-specific dimension, text-only, seed, error, and usage handling.",
+    "impact": "Builders can now generate with FLUX 1.1 Pro through the existing image API, receiving seed-aware PNG results with automatic same-price regional fallback and a flat 0.03 Pollen debit per image.",
+    "keywords": [
+      "image-generation",
+      "FLUX-1.1-Pro",
+      "Azure",
+      "models",
+      "Pollen",
+      "fallbacks"
+    ],
+    "visual_concept": "Depict FLUX 1.1 Pro as a luminous flower-powered image printer in a cozy garden workshop: a primary East US bloom feeds the printer while a Sweden Central bloom is connected as a friendly backup vine. Polli, wearing tiny painter goggles and holding a seed packet, inspects a crisp generated landscape emerging from the printer; a small CRT robot can watch the two-region signal lights.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny painter goggles and plants a seed beside a flower-powered image printer. The printer produces a beautiful pixel landscape from a glowing lime green (#ecf874) FLUX 1.1 Pro flower, while a second pastel Sweden bloom connects by a backup vine; a cute CRT-monitor robot watches two happy region lights, with subtle pixel-font text reading “FLUX 1.1 PRO”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature-filled code plants, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15333.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny painter goggles and plants a seed beside a flower-powered image printer. The printer produces a beautiful pixel landscape from a glowing lime green (#ecf874) FLUX 1.1 Pro flower, while a second pastel Sweden bloom connects by a backup vine; a cute CRT-monitor robot watches two happy region lights, with subtle pixel-font text reading “FLUX 1.1 PRO”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature-filled code plants, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T14:21:37.062851+00:00"
+}

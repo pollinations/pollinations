@@ -1,0 +1,36 @@
+{
+  "pr_number": 15279,
+  "title": "feat: filter model discovery by recent reliability",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15279",
+  "merged_at": "2026-09-23T14:04:39Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Filter public discovery of community proxy models at >80% success across the latest 50 eligible final requests within seven days. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Unknown health stays visible.\n- Keep official-model and agent health on its existing 24-hour window. Show all automatically filtered models with `reliability=all`; exact-ID calls, fallbacks, permissions, private access, and manual hiding stay unchanged. The public monitor uses this unfiltered view.\n- Remove the Play-page uptime dot and its now-unused hook. Update the model dashboard, API descriptions, and provider docs to match the new rule.\n- Replace monitor hide/relist writes and the daily audit with selective text/image probes: four-hour base interval, backoff up to six days after server/protocol failures, and the existing 30-minute reply cycle. Daily leaderboard posts include only newly filtered/back-in-listings changes; the first check seeds a baseline.\n- Not deployed. Rollout order: validate Tinybird in staging, deploy the pipe to production, deploy Workers, clear only old monitor-owned hides, then install the merged EC2 updater. No D1 schema change; manual hide fields remain.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden checks its sprouts",
+    "blurb": "Community models now earn a place in the public catalog by staying healthy where it counts. Polli stopped trusting a single lucky buzz and started checking the last 50.",
+    "summary": "Public discovery now lists community proxy models that exceed 80% success across their latest 50 eligible final requests in the past seven days, while unknown-health models remain visible and the full catalog is available with reliability=all.",
+    "impact": "People browsing models get a catalog biased toward recently dependable community options, while exact-ID calls, fallbacks, private access, permissions, manual hides, and official-model health behavior remain unchanged.",
+    "keywords": [
+      "model-catalog",
+      "reliability",
+      "community-models",
+      "health-monitoring",
+      "api",
+      "probes"
+    ],
+    "visual_concept": "Depict the public model catalog as a cozy garden: healthy code-plants with clear little success gauges are placed on the sunny display shelf, while other plants remain safely visible in a nearby \"ALL\" greenhouse rather than being discarded. Polli, wearing a tiny gardener hat and holding a clipboard, reviews a row of 50 small request-seed markers beside the eager CRT Monitor Robot, which is gently probing plants on a timed schedule.",
+    "image_prompt": "A cozy pixel art garden-lab where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny gardener hat, checks a clipboard beside 50 small request-seed markers and healthy code-plants on a lime green (#ecf874) public catalog shelf; a cute CRT monitor robot carefully tests a nearby plant, while an \"ALL\" greenhouse keeps every plant visible. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines, subtle CRT glow, dark purple (#110518) pixel-font label \"80%\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15279.jpg",
+    "prompt": "A cozy pixel art garden-lab where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny gardener hat, checks a clipboard beside 50 small request-seed markers and healthy code-plants on a lime green (#ecf874) public catalog shelf; a cute CRT monitor robot carefully tests a nearby plant, while an \"ALL\" greenhouse keeps every plant visible. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowers and vines, subtle CRT glow, dark purple (#110518) pixel-font label \"80%\"."
+  },
+  "generated_at": "2026-09-23T14:06:40.278135+00:00"
+}

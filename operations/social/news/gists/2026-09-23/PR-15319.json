@@ -1,0 +1,34 @@
+{
+  "pr_number": 15319,
+  "title": "fix: publish UI package through npm OIDC",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15319",
+  "merged_at": "2026-09-23T08:52:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Grants the UI release job GitHub OIDC permission and removes its `NPM_TOKEN` dependency.\n- Triggers the UI job when this workflow changes, so the unpublished `0.1.0-alpha.3` is retried after merge.\n- Before merge, an npm package owner must add a Trusted Publisher for `@pollinations/ui`: GitHub repository `pollinations/pollinations`, workflow `release-publish-npm-packages.yml`, with `npm publish` allowed. This npm setting cannot be changed in a GitHub PR.\n- After merge, verify the release run and `npm view @pollinations/ui dist-tags` reports `alpha: 0.1.0-alpha.3`.\n\nAddresses the [failed release](https://github.com/pollinations/pollinations/actions/runs/35786203865).",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The UI gets a passport",
+    "blurb": "The UI package release job now uses GitHub’s OIDC passport instead of keeping an npm token in its pocket. Once npm trusts the publisher, alpha.3 can finally leave the nest.",
+    "summary": "The npm release workflow now grants the @pollinations/ui publish job GitHub OIDC permissions, removes its NPM_TOKEN dependency, and reruns when the workflow changes so @pollinations/ui@0.1.0-alpha.3 can publish under npm Trusted Publishing.",
+    "impact": "Developers can receive the @pollinations/ui alpha dist-tag through a tokenless, GitHub-attested publishing path once the npm Trusted Publisher is configured.",
+    "keywords": [
+      "npm",
+      "oidc",
+      "ui",
+      "trusted-publishing",
+      "release",
+      "github-actions"
+    ],
+    "visual_concept": "A cozy package-post office represents the UI package finally being sent out: Polli wears a tiny postal cap and presents a glowing OIDC passport beside a small @pollinations/ui parcel, while a friendly CRT robot checks the trusted-publisher stamp. A code-flower garden and lime-green release conveyor make the security-and-release workflow feel welcoming rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, handing a glowing OIDC passport and a parcel labeled \"@pollinations/ui alpha\" to a friendly CRT-monitor robot stamping it \"TRUSTED\" beside a lime green (#ecf874) release conveyor and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"PUBLISH\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15319.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, handing a glowing OIDC passport and a parcel labeled \"@pollinations/ui alpha\" to a friendly CRT-monitor robot stamping it \"TRUSTED\" beside a lime green (#ecf874) release conveyor and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"PUBLISH\"."
+  },
+  "generated_at": "2026-09-23T08:53:58.055329+00:00"
+}

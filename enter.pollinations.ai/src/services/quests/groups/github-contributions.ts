@@ -20,6 +20,13 @@ import {
  */
 
 const QUEST_LABEL = "POLLEN-QUEST";
+const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
+    QUEST_LABEL,
+    "DRAFT-QUEST",
+    "APP-SUBMISSION",
+    "AUTOMATED",
+]);
+const ISSUE_REPORT_LAUNCH = Date.parse("2026-09-23T19:45:46Z");
 const REPO_OWNER = "pollinations";
 const REPO_NAME = "pollinations";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
@@ -38,6 +45,18 @@ const firstMergedPrQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "tier",
+};
+
+const reportedIssueQuest: QuestDefinition = {
+    id: "reported_merged_issue",
+    title: "Report an issue that gets fixed",
+    description:
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+    category: CONTRIBUTION_CATEGORY,
+    scope: "perUser",
+    rewardAmount: 3,
+    balanceBucket: "tier",
+    url: `https://github.com/${REPO}/issues/new/choose`,
 };
 
 const solveGithubIssueQuest: QuestDefinition = {
@@ -90,9 +109,24 @@ type GitHubPullRequestNode = {
     mergedAt: string | null;
 };
 
+type ReportedIssueNode = {
+    number: number;
+    title: string;
+    url: string;
+    author: GitHubUser | null;
+    labels: { nodes: { name: string }[] };
+    closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
+};
+
 type SearchData<TNode> = {
     search: {
         nodes: TNode[];
+    };
+};
+
+type PaginatedSearchData<TNode> = {
+    search: SearchData<TNode>["search"] & {
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
     };
 };
 
@@ -119,6 +153,22 @@ query($query:String!){
       ... on PullRequest{
         number
         mergedAt
+      }
+    }
+  }
+}`;
+
+const REPORTED_ISSUES_QUERY = `
+query($query:String!,$after:String){
+  search(query:$query,type:ISSUE,first:100,after:$after){
+    pageInfo{ hasNextPage endCursor }
+    nodes{
+      ... on Issue{
+        number title url author{ ... on User{ databaseId } }
+        labels(first:20){ nodes{ name } }
+        closedByPullRequestsReferences(first:10,includeClosedPrs:true){
+          nodes{ mergedAt }
+        }
       }
     }
   }
@@ -236,9 +286,54 @@ export async function listQuestCards(
     const issues = await loadQuestIssues(await githubToken(ctx.env));
     return [
         questToCard(firstMergedPrQuest),
+        questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
+}
+
+async function reportedIssueProposals(token: string, user: QuestUser) {
+    if (!user.githubUsername || user.githubId === null) return [];
+
+    const proposals: QuestEvaluation["proposals"] = [];
+    let after: string | null = null;
+    do {
+        const data: PaginatedSearchData<ReportedIssueNode> = await graphql<
+            PaginatedSearchData<ReportedIssueNode>
+        >(token, REPORTED_ISSUES_QUERY, {
+            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-09-23`,
+            after,
+        });
+        for (const issue of data.search.nodes) {
+            if (
+                issue.author?.databaseId !== user.githubId ||
+                issue.title.startsWith("[Community Publisher Access]") ||
+                issue.labels.nodes.some((label) =>
+                    ISSUE_REPORT_EXCLUDED_LABELS.has(label.name),
+                ) ||
+                !issue.closedByPullRequestsReferences.nodes.some(
+                    (pr) =>
+                        pr.mergedAt !== null &&
+                        Date.parse(pr.mergedAt) >= ISSUE_REPORT_LAUNCH,
+                )
+            ) {
+                continue;
+            }
+            proposals.push({
+                quest: {
+                    ...reportedIssueQuest,
+                    id: `github:reported_issue:${issue.number}`,
+                    title: `Reported issue #${issue.number}: ${issue.title}`,
+                    url: issue.url,
+                },
+                userId: user.id,
+            });
+        }
+        after = data.search.pageInfo.hasNextPage
+            ? data.search.pageInfo.endCursor
+            : null;
+    } while (after);
+    return proposals;
 }
 
 async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
@@ -261,9 +356,10 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr] = await Promise.all([
+    const [issues, mergedPr, reportedIssues] = await Promise.all([
         loadQuestIssues(token),
         hasMergedPr(token, user),
+        reportedIssueProposals(token, user),
     ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
@@ -282,6 +378,7 @@ export async function evaluateUser(
     return {
         proposals: [
             ...issueProposals,
+            ...reportedIssues,
             ...(mergedPr
                 ? [{ quest: firstMergedPrQuest, userId: user.id }]
                 : []),

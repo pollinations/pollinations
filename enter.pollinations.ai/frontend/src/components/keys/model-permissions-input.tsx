@@ -84,9 +84,6 @@ export function ModelPermissionsInput({
                     size="sm"
                     className="polli:min-h-8 polli:leading-5 col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
-                    <span className="whitespace-nowrap font-medium">
-                        {summary}
-                    </span>
                     {selectedCategories.length > 0 && (
                         <span className="flex min-w-0 flex-wrap gap-1">
                             {selectedCategories.map((category) => (
@@ -100,6 +97,9 @@ export function ModelPermissionsInput({
                             ))}
                         </span>
                     )}
+                    <span className="whitespace-nowrap text-xs text-theme-text-muted">
+                        {summary}
+                    </span>
                 </Text>
             ) : (
                 <ButtonGroup

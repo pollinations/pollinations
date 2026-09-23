@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-22",
+  "period_start": "2026-09-22",
+  "period_end": "2026-09-22",
+  "generated_at": "2026-09-23T06:30:56.766681+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-22/images/reddit.jpg"
+    }
+  ],
+  "title": "Four text models and route fallbacks landed",
+  "text": "Nine PRs merged today. The main API change is four additional heavyweight text models: `z-ai/glm-5.3-flashx` through OpenRouter, Claude Opus 5.5 through Bedrock, and GPT-6 Sol and Luna through OpenAI.\n\nRouting also got less dependent on one provider having a good afternoon. Alibaba direct routes are now preferred where available, with fallbacks behind them; this covers the Wan/Qwen side of the catalog. Mistral Large 3 fallback now uses Mistral direct rather than taking a longer route.\n\nOn the Enter side, auth, API keys, permissions, and model management were consolidated into one UI. These had drifted into separate surfaces over time, which is how settings become a small scavenger hunt.\n\nThe README and generated API reference were refreshed against production as well. Docs are never finished, but they should at least describe the machine currently running.\n\nPRs: https://github.com/pollinations/pollinations/pull/15178, https://github.com/pollinations/pollinations/pull/15291, https://github.com/pollinations/pollinations/pull/15309, https://github.com/pollinations/pollinations/pull/15312\n\nRepo: https://github.com/pollinations/pollinations\nAPI reference: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md"
+}

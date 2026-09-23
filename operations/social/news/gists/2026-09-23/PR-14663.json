@@ -1,0 +1,36 @@
+{
+  "pr_number": 14663,
+  "title": "fix: run community monitor with Opus 5.5",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14663",
+  "merged_at": "2026-09-23T18:46:49Z",
+  "labels": [
+    "BUG",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Pins monitor cycles to claude-opus-5-5 at medium effort and documents the required Claude Code 2.1.280 or newer.\n- Preserves the 300,000-token compaction setting, current prompt, 30-minute cadence, probe backoff, and state.\n- Updates this existing PR from main; supersedes the proposed Fable 5.1 switch.\n- Verified on EC2: upgraded the existing npm installation from 2.1.267 to 2.1.280 and received a successful tool-disabled response attributed to claude-opus-5-5 with the existing login.\n- Validation: all 18 monitor tests, shell syntax, and diff checks pass. Biome does not process these shell/Markdown files.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor got better ears",
+    "blurb": "The community monitor now does its rounds with Claude Opus 5.5. Same 30-minute garden walk, sturdier set of ears.",
+    "summary": "Pinned the operations/community-monitor loop to claude-opus-5-5 at medium effort and documented the Claude Code 2.1.280+ requirement while preserving its 300,000-token compaction, 30-minute cadence, backoff, prompts, and state.",
+    "impact": "Community monitoring continues with the existing schedule and stateful behavior, now using a verified Claude Opus 5.5 setup on Claude Code 2.1.280 or newer.",
+    "keywords": [
+      "community-monitor",
+      "claude-opus-5-5",
+      "claude-code",
+      "monitoring",
+      "operations"
+    ],
+    "visual_concept": "A cozy garden-monitoring station represents the internal community monitor: Polli, wearing tiny operator headphones, checks a CRT terminal labeled \"OPUS 5.5\" beside a clock showing a steady 30-minute cycle. Code-plants, a compacted stack of notes, and a small status light convey preserved state and reliable monitoring.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny operator headphones, carefully checking a lime green (#ecf874) CRT garden-monitor terminal labeled in simple pixel text \"OPUS 5.5\"; code-plants grow from pots beside a softly ticking clock and neatly compacted notes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and a calm reliable garden-shed atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-14663.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny operator headphones, carefully checking a lime green (#ecf874) CRT garden-monitor terminal labeled in simple pixel text \"OPUS 5.5\"; code-plants grow from pots beside a softly ticking clock and neatly compacted notes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and a calm reliable garden-shed atmosphere."
+  },
+  "generated_at": "2026-09-23T18:47:54.766159+00:00"
+}

@@ -140,6 +140,8 @@ restores the backup.
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI
+polli harness claude-code on      # Claude Code via Claude Code Router (isolated profile)
+polli harness codex on            # Codex via Codex Router (generic provider + curated model)
 polli harness dsh on              # DeepSeek Harness → Pollinations
 polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration

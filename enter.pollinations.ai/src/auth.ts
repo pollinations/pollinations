@@ -419,7 +419,7 @@ export function onAfterSessionCreate(
                     );
                     if (!res.ok) {
                         console.error(
-                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                            `[github-profile-sync] GitHub API ${res.status} for user ${githubId}`,
                         );
                         return;
                     }
@@ -428,30 +428,24 @@ export function onAfterSessionCreate(
                         login: string;
                         name?: string | null;
                     };
-                    const githubName = profile.name?.trim() || profile.login;
-                    const updates: { githubUsername?: string; name?: string } =
-                        {};
+                    const githubName = profile.name || profile.login;
 
                     if (
                         profile.login &&
-                        profile.login !== user?.githubUsername
+                        (profile.login !== user?.githubUsername ||
+                            githubName !== user?.name)
                     ) {
-                        updates.githubUsername = profile.login;
-                    }
-
-                    if (githubName && githubName !== user?.name) {
-                        updates.name = githubName;
-                    }
-
-                    if (Object.keys(updates).length > 0) {
                         await db
                             .update(userTable)
-                            .set(updates)
+                            .set({
+                                githubUsername: profile.login,
+                                name: githubName,
+                            })
                             .where(eq(userTable.id, session.userId));
                     }
                 } catch (e) {
                     console.error(
-                        "[username-sync] failed for session",
+                        "[github-profile-sync] failed for session",
                         session.userId,
                         e,
                     );

@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-09-23",
+  "previous_date": "2026-09-16",
+  "generated_at": "2026-09-23T14:13:47.206151+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-09-23\n\n### 🆕 New\n- 🧠 **Claude Opus 5.5** (Anthropic) — vision + tool calling\n- 🧠 **GPT-6 Luna** (OpenAI) — vision, tools + reasoning\n- 🧠 **GPT-6 Sol** (OpenAI) — vision, tools + reasoning\n- 🧠 **Grok 4.7** (xAI) — vision, tools + reasoning\n- 🧠 **Z.ai GLM-5.3 FlashX** (Z.ai) — vision, tools + reasoning\n- 🧠 **Hy3** (Tencent) — tool calling + reasoning\n- 🧠 **GPT-4o Mini** (OpenAI) — vision + tool calling\n- 🎨 **FLUX.2 Max** (Black Forest Labs) — text/image generation and editing\n- 🔊 **ElevenLabs Music v2.5** (ElevenLabs) — text/audio music generation\n\n### 🗑️ Removed\n- Community text, image, video, and audio endpoints were removed; see the developer changelog for model IDs.\n\n### ⬇️ Price cuts\n- 🧠 Text: Qwen3.8 27B (~10%) · Qwen3.8 Flash · Qwen3.8 Max · Qwen3.7 Flash · Mistral Small 4 · Prompt to Art · Free Clips\n- 🎨 Image: Anima (~10%) · Uncensored v2 (~15%)\n\n### ⬆️ Price increases\n- 🧠 Text: DeepSeek V4 Flash 0731 (Paid) (~100%) · Gemini 3.1 Flash Lite (~30%) · Claude Sonnet 4.6 (~10%)\n- 🎬 Video: Seedance-2.5 (~20%) · Wan 3.0 added prompt-video pricing\n\n### ✨ Capability updates\n- `openai/gpt-5.4-nano` · `openai/gpt-5.4-mini` · `openai/gpt-5-nano` — reasoning added\n- `community/smplstuff/title-generator` — reasoning added\n\nExplore at https://gen.pollinations.ai/docs"
+}

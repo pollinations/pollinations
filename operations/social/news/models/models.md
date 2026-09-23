@@ -1,5 +1,80 @@
 # Pollinations Model Changelog
 
+## 2026-09-23
+
+### Added
+- `anthropic/claude-opus-5.5` (Anthropic, text) — image input and tool calling.
+- `openai/gpt-6-luna` (OpenAI, text) — image input, tool calling, and reasoning.
+- `openai/gpt-6-sol` (OpenAI, text) — image input, tool calling, and reasoning.
+- `x-ai/grok-4.7` (xAI, text) — image input, tool calling, and reasoning.
+- `z-ai/glm-5.3-flashx` (Z.ai, text) — image input, tool calling, and reasoning.
+- `typesafe/jev-1.13` (TypeSafe, text) — specialized typed-decision endpoint.
+- `tencent/hy3` (Tencent, text) — tool calling and reasoning.
+- `openai/gpt-4o-mini` (OpenAI, text) — image input and tool calling.
+- `black-forest-labs/flux.2-max` (Black Forest Labs, image) — text/image generation and editing.
+- `elevenlabs/music-v2.5` (ElevenLabs, audio) — text/audio-to-audio music generation.
+- Additional community text, image, and audio endpoints were added.
+
+### Changed
+- `community/MarcosFRG/deepseek-v4-flash-0731:paid` — price +100%.
+- `community/MarcosFRG/gemini-3.1-flash-lite` — price +30%.
+- `community/NamanSoni78/Seedance-2.5` — price +20%.
+- `community/chigwell/claude-sonnet-4-6` — completion price +10%.
+- `community/MarcosFRG/qwen3.8-27b` — completion price +5%.
+- `community/MarcosFRG/qwen3.8-flash:paid` — completion price +5%.
+- `alibaba/wan-3.0` — added prompt video-seconds pricing.
+- `qwen/qwen3.8-27b` — completion price cut ~10%.
+- `qwen/qwen3.8-flash` — completion price cut ~5%.
+- `qwen/qwen3.8-max` — completion price cut ~5%.
+- `qwen/qwen3.7-flash` — completion price cut ~5%.
+- `mistralai/mistral-small-4` — completion price cut ~5%.
+- `community/AkshayCoder48/prompt-to-art` — completion price cut ~5%.
+- `community/AkshayCoder48/free-clips` — completion price cut ~5%.
+- `community/vendouple/anima` — image price cut ~10%.
+- `community/vendouple/uncensored-image-v2` — image price cut ~15%.
+- `openai/gpt-5.4-nano` — added reasoning.
+- `openai/gpt-5.4-mini` — added reasoning.
+- `openai/gpt-5-nano` — added reasoning.
+- `community/smplstuff/title-generator` — added reasoning.
+
+### Removed
+- `community/Catniti/gpt-6-astra` (was: text)
+- `community/Lorodn4x/com.claude-gpt-6.astra` (was: text)
+- `community/Lorodn4x/deepseek-v4-flash` (was: text)
+- `community/MarcosFRG/gemini-2.5-flash-lite:paid` (was: text)
+- `community/chigwell/gemini-3.8-flash-high` (was: text)
+- `community/NamanSoni78/Claude-Sonnet-5` (was: text)
+- `community/iotserver24/deepseek-v4f` (was: text)
+- `community/NamanSoni78/nemotron-3-ultra-550b-a55b` (was: text)
+- `community/NamanSoni78/GPT-5.5-xHigh` (was: text)
+- `community/iotserver24/kimi-k3` (was: text)
+- `community/MarcosFRG/qwen3.8-flash` (was: text)
+- `community/tomdacatto/claude-haiku-4.5` (was: text)
+- `community/tomdacatto/claude-sonnet-5` (was: text)
+- `community/tomdacatto/claude-opus-4-6` (was: text)
+- `community/tomdacatto/claude-opus-4-7` (was: text)
+- `community/tomdacatto/claude-opus-5` (was: text)
+- `community/chigwell/claude-haiku-4-5` (was: text)
+- `community/chigwell/gemini-3.7-flash` (was: text)
+- `community/CloudCompile/moondream3.1` (was: text)
+- `community/iotserver24/stealth-code` (was: text)
+- `community/JustScriptzz/moondream-3.1` (was: text)
+- `community/chigwell/gemini-3-flash` (was: text)
+- `community/vendouple/kimi-k3` (was: text)
+- `community/vendouple/deepseek-v4-pro` (was: text)
+- `community/MarcosFRG/gemini-3-flash-preview` (was: text)
+- `community/MarcosFRG/gemini-2.5-flash-lite` (was: text)
+- `community/CloudCompile/flux-2-klein-4b` (was: image)
+- `community/CloudCompile/flux-2-klein-9b` (was: image)
+- `community/NamanSoni78/Imagine-4` (was: image)
+- `community/vendouple/animagine` (was: image)
+- `community/ZapGaming/failure-reel-v1` (was: video)
+- `community/NamanSoni78/aura-2-thalia-en` (was: audio)
+- `community/NamanSoni78/aura-2-orpheus-en` (was: audio)
+- `community/NamanSoni78/aura-2-atlas-en` (was: audio)
+- `community/NamanSoni78/aura-2-amalthea-en` (was: audio)
+- `community/NamanSoni78/nova-3` (was: audio)
+
 ## 2026-09-16
 
 ### Added

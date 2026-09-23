@@ -1,0 +1,36 @@
+{
+  "pr_number": 15348,
+  "title": "fix: only team tracking issues parent dev issues",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15348",
+  "merged_at": "2026-09-23T16:23:34Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Follow-up to #15335.\n\n- Only `TRACKING` issues opened by team members are offered to the classifier as parents for Dev issues. Community epics also carry `TRACKING` (e.g. #14763); the relabel run picked it as the parent for four internal issues, which the Support project's sub-issue workflow then pulled into Support\n- Issues opened by CI bots (e.g. github-actions failure reports) route to Dev instead of Support. The Discord relay bot still counts as the person it relays",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Parents stay in the hive",
+    "blurb": "The issue gardener now checks who planted the tracking marker before filing it under Dev. CI reports also find their way to the right workbench.",
+    "summary": "Updated the GitHub project manager so only TRACKING issues opened by team members can become parents of Dev issues, while CI-bot failure reports route to Dev and Discord-relayed reports retain their original human author.",
+    "impact": "Internal Dev issues now avoid being attached to community TRACKING epics and accidentally pulled into Support, keeping project workflows neatly separated.",
+    "keywords": [
+      "github",
+      "project-management",
+      "issue-routing",
+      "tracking-issues",
+      "automation"
+    ],
+    "visual_concept": "A cozy issue-triage garden: Polli, wearing a tiny gardener hat, sorts labeled TRACKING seed packets into a Dev planter while a friendly little CI robot carries a failure-report note to the correct bench. Community and Support planters remain clearly separate, with code-vines and flowers showing orderly routing.",
+    "image_prompt": "A cozy pixel art issue-triage garden where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polli wears a tiny gardener hat and places a TRACKING seed packet into a \"DEV\" flower pot while a small robot carries a CI report to the same bench, with separate community and support planters, code-plants, and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15348.jpg",
+    "prompt": "A cozy pixel art issue-triage garden where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; Polli wears a tiny gardener hat and places a TRACKING seed packet into a \"DEV\" flower pot while a small robot carries a CI report to the same bench, with separate community and support planters, code-plants, and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T16:24:32.527473+00:00"
+}

@@ -156,7 +156,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 )}
             </div>
             <AuthInfoCard>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                     <div className="col-start-1 row-start-1 flex items-center">
                         <ul className="text-sm">{modelsItem}</ul>
                         <InfoTip

@@ -82,29 +82,33 @@ export function ModelPermissionsInput({
                 <Text
                     as="div"
                     size="sm"
-                    className="polli:min-h-8 polli:leading-5 col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="polli:min-h-8 polli:leading-5 col-span-2 row-start-2 flex min-w-0 flex-wrap items-start gap-x-3 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
                     {selectedCategories.length > 0 && (
-                        <span className="flex min-w-0 flex-wrap gap-1">
+                        <span className="flex min-w-0 flex-wrap gap-x-1">
                             {selectedCategories.map((category) => (
-                                <Chip
+                                <span
                                     key={category}
-                                    size="sm"
-                                    className="polli:text-sm polli:leading-5"
+                                    className="inline-flex h-8 items-center"
                                 >
-                                    {category}
-                                </Chip>
+                                    <Chip
+                                        size="sm"
+                                        className="polli:text-sm polli:leading-5"
+                                    >
+                                        {category}
+                                    </Chip>
+                                </span>
                             ))}
                         </span>
                     )}
-                    <span className="whitespace-nowrap text-xs text-theme-text-muted">
+                    <span className="inline-flex h-8 items-center whitespace-nowrap text-xs text-theme-text-muted">
                         {summary}
                     </span>
                 </Text>
             ) : (
                 <ButtonGroup
                     aria-label="Model categories"
-                    className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="col-span-2 row-start-2 py-1.5 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
                     <TabButton
                         size="xs"
@@ -136,25 +140,27 @@ export function ModelPermissionsInput({
                     ))}
                 </ButtonGroup>
             )}
-            <Button
-                type="button"
-                size="sm"
-                intent="neutral"
-                className="col-start-2 row-start-1 gap-1.5 justify-self-end sm:col-start-3"
-                aria-label={
-                    activeTab === null
-                        ? "Choose models"
-                        : "Collapse model selector"
-                }
-                aria-expanded={activeTab !== null}
-                disabled={disabled}
-                onClick={() =>
-                    setActiveTab(activeTab === null ? "selected" : null)
-                }
-            >
-                {activeTab === null && <span>Choose models</span>}
-                <ChevronIcon expanded={activeTab !== null} />
-            </Button>
+            <div className="col-start-2 row-start-1 flex h-8 items-center justify-self-end sm:col-start-3">
+                <Button
+                    type="button"
+                    size="sm"
+                    intent="neutral"
+                    className="gap-1.5"
+                    aria-label={
+                        activeTab === null
+                            ? "Choose models"
+                            : "Collapse model selector"
+                    }
+                    aria-expanded={activeTab !== null}
+                    disabled={disabled}
+                    onClick={() =>
+                        setActiveTab(activeTab === null ? "selected" : null)
+                    }
+                >
+                    {activeTab === null && <span>Choose models</span>}
+                    <ChevronIcon expanded={activeTab !== null} />
+                </Button>
+            </div>
             {activeTab !== null && (
                 <div className="col-span-2 w-full pt-2 sm:col-span-3">
                     <ConsentModelPicker

@@ -43,8 +43,11 @@ function successResponse(usage: Record<string, number>): Response {
 
 beforeEach(() => {
     syncImageEnv(
-        { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
-        ["AZURE_MYCELI_PROD_API_KEY"],
+        {
+            AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
+            AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-sweden-key",
+        } as CloudflareBindings,
+        ["AZURE_MYCELI_PROD_API_KEY", "AZURE_MYCELI_PROD_SWEDEN_API_KEY"],
     );
 });
 
@@ -53,6 +56,63 @@ afterEach(() => {
 });
 
 describe("callAzureMaiImage", () => {
+    it.each([
+        ["microsoft/mai-image-2.6", GENERATIONS_ENDPOINT, "test-azure-key"],
+        [
+            "microsoft/mai-image-2.6:azure:sweden",
+            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/images/generations",
+            "test-sweden-key",
+        ],
+    ] as const)("routes %s to the full 2.6 deployment", async (model, endpoint, key) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                expect(url.toString()).toBe(endpoint);
+                expect(init?.headers).toMatchObject({ "api-key": key });
+                expect(JSON.parse(init?.body as string)).toEqual({
+                    model: "MAI-Image-2.6",
+                    prompt: "a red bicycle",
+                    width: 1536,
+                    height: 1536,
+                });
+                return successResponse({
+                    num_input_text_tokens: 14,
+                    num_output_tokens: 2304,
+                });
+            });
+
+        const result = await callAzureMaiImage(
+            "a red bicycle",
+            { ...baseParams, model, width: 1536, height: 1536 },
+            USER_INFO,
+        );
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(result.trackingData).toEqual({
+            actualModel: model,
+            usage: { promptTextTokens: 14, completionImageTokens: 2304 },
+        });
+    });
+
+    it("rejects dimensions above the full 2.6 pixel cap", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAzureMaiImage(
+                "a red bicycle",
+                {
+                    ...baseParams,
+                    model: "microsoft/mai-image-2.6",
+                    width: 1552,
+                    height: 1536,
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("2,359,296 pixels"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("generates through the MAI route forwarding only the supported fields", async () => {
         let requestBody: Record<string, unknown> | undefined;
         const fetchSpy = vi

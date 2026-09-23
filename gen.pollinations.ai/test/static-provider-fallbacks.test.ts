@@ -178,6 +178,35 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("keeps MAI Image 2.6's Sweden fallback hidden and cost-equivalent", () => {
+        const id = "microsoft/mai-image-2.6";
+        const primary = IMAGE_SERVICES[id];
+        const fallback = IMAGE_SERVICES[`${id}:azure:sweden`];
+        expect(primary.fallbacks).toEqual([`${id}:azure:sweden`]);
+        expect(fallback.hidden).toBe(true);
+        expect(fallback.fallbackOnly).toBe(true);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.priceMultiplier).toBe(0.75);
+        const billing = calculateUsageBilling({
+            model: id,
+            usage: {
+                promptTextTokens: 38,
+                promptImageTokens: 576,
+                completionImageTokens: 1024,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            (38 * 5 + 576 * 8 + 1024 * 38) / 1_000_000,
+            12,
+        );
+        expect(billing.price.totalPrice).toBeCloseTo(
+            ((38 * 5 + 576 * 8 + 1024 * 38) / 1_000_000) * 0.75,
+            12,
+        );
+        expect(getVisibleImageModels()).not.toContain(`${id}:azure:sweden`);
+    });
     it.each([
         "qwen/qwen3.7-flash",
         "qwen/qwen3.8-flash",

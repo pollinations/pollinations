@@ -1528,6 +1528,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-image-2.6": {
+    "cost": {
+      "completionImageTokens": 0.000038,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000285,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
+  "microsoft/mai-image-2.6:azure:sweden": {
+    "cost": {
+      "completionImageTokens": 0.000038,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000285,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,

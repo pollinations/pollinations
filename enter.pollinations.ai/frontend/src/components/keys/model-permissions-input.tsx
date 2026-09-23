@@ -82,7 +82,7 @@ export function ModelPermissionsInput({
                 <Text
                     as="div"
                     size="sm"
-                    className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="polli:min-h-8 polli:leading-5 col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
                     <span className="whitespace-nowrap font-medium">
                         {summary}
@@ -90,7 +90,11 @@ export function ModelPermissionsInput({
                     {selectedCategories.length > 0 && (
                         <span className="flex min-w-0 flex-wrap gap-1">
                             {selectedCategories.map((category) => (
-                                <Chip key={category} size="sm">
+                                <Chip
+                                    key={category}
+                                    size="sm"
+                                    className="polli:text-sm polli:leading-5"
+                                >
                                     {category}
                                 </Chip>
                             ))}

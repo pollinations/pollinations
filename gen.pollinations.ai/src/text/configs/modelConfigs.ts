@@ -96,6 +96,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.3-codex": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-5.3-codex-azure-sweden": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
     "gpt-5.4": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -245,7 +257,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
-        "deepinfra/fp8",
+        "novita/fp8",
+    ),
+    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
@@ -445,8 +461,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         }),
-    "MiniMaxAI/MiniMax-M2.7": () =>
-        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>

@@ -21,35 +21,31 @@ import { ensureAzureImageOk } from "./azureFluxKontextModel.ts";
 
 const logCloudflare = debug("pollinations:cloudflare");
 
-const MAI_ROUTES = {
+const AZURE_MAI_ENDPOINT =
+    "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
+const MAI_ROUTES: Record<
+    string,
+    { deployment: string; title: string; maxPixels: number }
+> = {
     "microsoft/mai-image-2.5-flash": {
-        endpoint:
-            "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images",
         deployment: "MAI-Image-2.5-Flash",
-        key: "AZURE_MYCELI_PROD_API_KEY",
         title: "MAI Image 2.5 Flash",
         maxPixels: 1024 * 1024,
     },
+    "microsoft/mai-image-2.6-flash": {
+        deployment: "MAI-Image-2.6-Flash",
+        title: "MAI Image 2.6 Flash",
+        maxPixels: 1536 * 1536,
+    },
     "microsoft/mai-image-2.6": {
-        endpoint:
-            "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images",
         deployment: "MAI-Image-2.6",
-        key: "AZURE_MYCELI_PROD_API_KEY",
         title: "MAI Image 2.6",
         maxPixels: 1536 * 1536,
     },
-    "microsoft/mai-image-2.6:azure:sweden": {
-        endpoint:
-            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/images",
-        deployment: "MAI-Image-2.6",
-        key: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-        title: "MAI Image 2.6",
-        maxPixels: 1536 * 1536,
-    },
-} as const;
-type MaiRoute = (typeof MAI_ROUTES)[keyof typeof MAI_ROUTES];
+};
+type MaiRoute = (typeof MAI_ROUTES)[string];
 // Azure MAI generation limits (docs and live 400s): each side at least 768px,
-// 16px steps (Azure otherwise snaps down silently); max pixels vary by model.
+// 16px steps (Azure otherwise snaps down silently); max pixels vary by version.
 const AZURE_MAI_MIN_SIDE = 768;
 const AZURE_MAI_DIMENSION_STEP = 16;
 
@@ -132,7 +128,7 @@ export async function callAzureMaiImage(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const route = MAI_ROUTES[safeParams.model as keyof typeof MAI_ROUTES];
+    const route = MAI_ROUTES[safeParams.model];
     if (!route) {
         throw new Error(`Unknown Azure MAI image route: ${safeParams.model}`);
     }
@@ -151,14 +147,16 @@ export async function callAzureMaiImage(
         validateMaiDimensions(safeParams.width, safeParams.height, route);
     }
 
-    const apiKey = getImageEnv(route.key);
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     if (!apiKey) {
-        throw new Error(`${route.key} not found in environment variables`);
+        throw new Error(
+            "AZURE_MYCELI_PROD_API_KEY not found in environment variables",
+        );
     }
 
     await requireSafePrompt(prompt, safeParams, userInfo);
 
-    const endpoint = `${route.endpoint}/${isEdit ? "edits" : "generations"}`;
+    const endpoint = `${AZURE_MAI_ENDPOINT}/${isEdit ? "edits" : "generations"}`;
     const headers: Record<string, string> = { "api-key": apiKey };
     let body: BodyInit;
     if (isEdit) {

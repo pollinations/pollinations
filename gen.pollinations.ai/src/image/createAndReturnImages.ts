@@ -874,8 +874,8 @@ const generateImage = async (
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
         case "microsoft/mai-image-2.5-flash":
-        case "microsoft/mai-image-2.6":
-        case "microsoft/mai-image-2.6:azure:sweden": {
+        case "microsoft/mai-image-2.6-flash":
+        case "microsoft/mai-image-2.6": {
             try {
                 return await callAzureMaiImage(prompt, safeParams, userInfo);
             } catch (error) {

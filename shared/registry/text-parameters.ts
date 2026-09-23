@@ -282,10 +282,13 @@ export const CHAT_PARAMETERS = {
         ...PENALTIES,
         ...OPENROUTER_REASONING,
         "top_k",
-        "min_p",
         "repetition_penalty",
         "seed",
-        "logit_bias",
+    ],
+    openRouterMinimax27FirstParty: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,

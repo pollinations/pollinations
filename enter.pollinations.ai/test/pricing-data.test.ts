@@ -52,22 +52,45 @@ const getCatalogModelPrices = () =>
         ...getModel3dModelsInfo(),
     ]);
 
-test("health indicators use three states", () => {
+test("health indicators show the current reliability sample", () => {
     for (const [status, label] of [
-        ["healthy", "Healthy over the last 24 hours"],
-        ["degraded", "Elevated errors over the last 24 hours"],
-        ["down", "Elevated errors over the last 24 hours"],
-        ["unknown", "No requests in the last 24 hours"],
+        [
+            "healthy",
+            "Healthy across the last 12 eligible requests (up to seven days)",
+        ],
+        [
+            "degraded",
+            "Elevated errors across the last 12 eligible requests (up to seven days)",
+        ],
+        [
+            "down",
+            "Elevated errors across the last 12 eligible requests (up to seven days)",
+        ],
+        ["unknown", "No recent reliability data"],
     ] as const) {
         const markup = renderToStaticMarkup(
             createElement(ModelStatusChips, {
                 showNew: false,
                 showAlpha: false,
-                health: { status, requests: 0, successRate: null },
+                communityProxy: true,
+                health: {
+                    status,
+                    requests: status === "unknown" ? 0 : 12,
+                    successRate: status === "unknown" ? null : 90,
+                },
             }),
         );
         expect(markup).toContain(`aria-label="${label}"`);
     }
+
+    const official = renderToStaticMarkup(
+        createElement(ModelStatusChips, {
+            showNew: false,
+            showAlpha: false,
+            health: { status: "healthy", requests: 12, successRate: 90 },
+        }),
+    );
+    expect(official).toContain('aria-label="Healthy across the last 24 hours"');
 });
 
 const getCatalogModels = () => [
@@ -1106,16 +1129,16 @@ test("caller-selectable OpenRouter models require paid balance", () => {
     }
 });
 
-test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
+test("MiniMax M2.7 uses the pinned Novita OpenRouter rates", () => {
     const definition = getRegistryModelDefinition("minimax/minimax-m2.7");
 
     expect(definition.provider).toBe("openrouter");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.cost).toMatchObject({
-        promptTextTokens: (0.25 / 1e6) * 1.055,
-        promptCachedTokens: (0.05 / 1e6) * 1.055,
-        completionTextTokens: (1 / 1e6) * 1.055,
+        promptTextTokens: (0.27 / 1e6) * 1.055,
+        promptCachedTokens: (0.054 / 1e6) * 1.055,
+        completionTextTokens: (1.08 / 1e6) * 1.055,
     });
 });
 

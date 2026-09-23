@@ -1391,11 +1391,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000001899,
       "promptCachedTokens": 0.00000001266,
       "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
     },
     "price": {
       "completionTextTokens": 0.0000001899,
       "promptCachedTokens": 0.00000001266,
       "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
     },
   },
   "krea/krea-2-medium": {

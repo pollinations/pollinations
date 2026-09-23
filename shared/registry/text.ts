@@ -1852,18 +1852,21 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter DeepInfra fp16 route rates (2026-09-19), including
-            // the mandatory 5.5% OpenRouter credit fee. Image inputs are
-            // tokenized into promptTextTokens; no separate usage is reported.
+            // the mandatory 5.5% OpenRouter credit fee. OpenRouter publishes
+            // one prompt rate and no separate image/video rates: images and
+            // video parts are tokenized into the prompt total.
             promptTextTokens: perMillion(0.06) * 1.055,
             promptCachedTokens: perMillion(0.012) * 1.055,
+            promptVideoTokens: perMillion(0.06) * 1.055,
             completionTextTokens: perMillion(0.18) * 1.055,
         },
         title: "Ling 3.0 Flash VL",
         description:
-            "Low-cost multimodal MoE with image understanding and tool calling",
-        inputModalities: ["text", "image"],
+            "Low-cost multimodal MoE with image and video understanding and tool calling",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        maxReferenceVideos: 10,
         tools: true,
         contextLength: 131072,
         isSpecialized: false,

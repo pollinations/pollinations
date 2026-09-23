@@ -1,0 +1,36 @@
+{
+  "pr_number": 15351,
+  "title": "fix(auth): sync platform name with GitHub on login",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/15351",
+  "merged_at": "2026-09-23T21:46:37Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "### Summary\nCurrently, `enter.pollinations.ai` only syncs `github_username` on subsequent logins via `onAfterSessionCreate`, while `user.name` is never updated after initial registration. If a user changes their display name or username on GitHub, their platform name displayed across the dashboard (`data.user?.name || data.githubUsername`) and API responses remains stale with their old name.\n\nThis PR updates `onAfterSessionCreate` to:\n- Retrieve `name` alongside `githubId` and `githubUsername` from `userTable`.\n- Fetch the user's latest GitHub profile, determining their current GitHub name (`profile.name || profile.login`).\n- Compare both `user.name` and `user.githubUsername`, updating `userTable` if either has changed.\n- No UI changes.\n\n### Testing\n- Added unit/integration tests in `enter.pollinations.ai/test/username-sync.test.ts` covering:\n  - Synchronizing updated name and username when GitHub profile changes.\n  - Falling back to GitHub login when GitHub display name is empty.\n- Ran tests via `npx vitest run test/username-sync.test.ts` (all passed).\n- Verified `npx biome check` and `npx tsc --noEmit` pass cleanly.\n\nFixes #15373",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Names follow the pollen",
+    "blurb": "GitHub name changes now make it through the hive on login. Polli has stopped addressing people by their previous internet selves.",
+    "summary": "The auth login hook now fetches each returning user's latest GitHub profile and updates both user.name and github_username in enter.pollinations.ai, using the GitHub login when no display name is set.",
+    "impact": "Dashboard displays and API responses now reflect a user's current GitHub display name or username after they log in, rather than keeping the name from initial registration.",
+    "keywords": [
+      "auth",
+      "GitHub",
+      "profile-sync",
+      "dashboard",
+      "API"
+    ],
+    "visual_concept": "Depict Polli tending a cozy profile garden where a GitHub-style name tag is being refreshed from an old label to a new one. A friendly CRT monitor robot can display a clean profile card, while flowers and code-vines convey that account data is staying current.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black antennae, oval eyes, pink rectangular blush, a happy smile, light-blue rounded wings, and a tiny gardener scarf, carefully replacing an old profile name tag with a fresh one on a glowing retro terminal; a chunky CRT monitor robot holds a profile card while code-plants and small flowers grow around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"PROFILE SYNCED\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15351.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black antennae, oval eyes, pink rectangular blush, a happy smile, light-blue rounded wings, and a tiny gardener scarf, carefully replacing an old profile name tag with a fresh one on a glowing retro terminal; a chunky CRT monitor robot holds a profile card while code-plants and small flowers grow around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"PROFILE SYNCED\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-23T21:47:35.224778+00:00"
+}

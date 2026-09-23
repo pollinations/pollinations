@@ -1,0 +1,38 @@
+{
+  "pr_number": 15335,
+  "title": "feat: one label list for issues and pull requests",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15335",
+  "merged_at": "2026-09-23T14:14:19Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "The issue/PR classifier has returned 403 on every run since ~July 22 (`openai-large` isn't allowed on its key) and still exited green, so new PRs went unlabeled and the Support and Dev projects stopped receiving issues.\n\n- Switch the classifier to `gpt-5.6-luna` (the app pre-review already uses it with the same key) and exit non-zero when classification or a GitHub write fails\n- Use one label list for issues and PRs, defined in `operations/github/project-manager.md`: one kind (`MODEL`, `ECONOMICS`, `MONITORING`, `APPS`, `INFRA`, `UI-UX`, `API`, `DOCS`), at most one type (`BUG`, `FEATURE`, `QUESTION`, `OUTAGE`, `TRACKING`) and flags (`BILLING`, `SECURITY`, `AUTOMATED`, plus `POLLEN-QUEST` on PRs only). The classifier picks every label; the script only passes it the changed files, the author's account type and the linked issues' labels\n- Stop adding PRs to the Dev project. Issue routing (Support, Dev, Apps, paid-customer priority) is unchanged\n- Add a `workflow_dispatch` that re-classifies existing issues and PRs (dry run by default) and drop the old backfill script\n\nGitHub labels are already migrated: `DEV-*` and Support's type/service labels were renamed or merged into the list above, and the retired ones (`IMAGE`, `TEXT`, `AUDIO`, `VIDEO`, `WEB`, `CREDITS`, `ACCOUNT`, `.REQUEST`, `.INTEGRATION`, `.DOCS`, `DEV-CHORE`, `refactor`, `EPIC`) were deleted. Open issues and PRs were relabeled from this branch: https://github.com/pollinations/pollinations/actions/runs/35869156178\n\nThe app publish, Polli auto-fix and quest reward flows only read `APP-*`, `POLLI` and issue `POLLEN-QUEST` labels, which are unchanged.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "The label garden regrows",
+    "blurb": "The GitHub sorter has fresh pollen and a single, less mysterious label basket. New issues can find Support, Dev, and Apps again instead of quietly becoming decorative metadata.",
+    "summary": "Replaced the failing `openai-large` issue/PR classifier with `gpt-5.6-luna`, made classification and GitHub write failures exit non-zero, and consolidated issue and PR labeling into one documented kind/type/flag taxonomy with a dry-run reclassification workflow.",
+    "impact": "Contributors and maintainers get reliably labeled new issues and PRs again, with existing issue routing to Support, Dev, Apps, and paid-customer priority preserved while PRs no longer enter the Dev project.",
+    "keywords": [
+      "github",
+      "issue-triage",
+      "pull-requests",
+      "labels",
+      "automation",
+      "gpt-5.6-luna",
+      "project-routing"
+    ],
+    "visual_concept": "A cozy GitHub triage garden: Polli acts as a careful gardener sorting one tidy basket of labeled seed packets into clearly marked Support, Dev, and Apps paths. A friendly CRT monitor robot verifies the routes on a terminal, while code-vines and flowers represent issues being correctly classified instead of lost in the weeds.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, light blue translucent rounded wings, and a tiny gardener hat, sorting one basket of pixel label seed packets beside paths marked SUPPORT, DEV, and APPS; a chunky CRT monitor robot checks a lime-green terminal while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15335.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, light blue translucent rounded wings, and a tiny gardener hat, sorting one basket of pixel label seed packets beside paths marked SUPPORT, DEV, and APPS; a chunky CRT monitor robot checks a lime-green terminal while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T14:15:24.303900+00:00"
+}

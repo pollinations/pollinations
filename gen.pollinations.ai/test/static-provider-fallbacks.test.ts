@@ -458,11 +458,11 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
-    it("keeps a provider retirement date on the route that states it", () => {
+    it("keeps a retirement date on the route that states it", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = {
             ...TEXT_SERVICES[parentId],
-            providerRetirementDate: Date.UTC(2026, 9, 20),
+            retirementDate: Date.UTC(2026, 9, 20),
         };
         const undatedId = `${parentId}:openrouter:ai-studio`;
         const datedId = `${parentId}:openrouter:vertex`;
@@ -473,19 +473,15 @@ describe("static provider fallbacks", () => {
                     [undatedId]: { provider: "openrouter" },
                     [datedId]: {
                         provider: "openrouter",
-                        providerRetirementDate: Date.UTC(2027, 2, 15),
+                        retirementDate: Date.UTC(2027, 2, 15),
                     },
                 },
             },
         );
 
-        expect(services[parentId].providerRetirementDate).toBe(
-            Date.UTC(2026, 9, 20),
-        );
-        expect(services[undatedId].providerRetirementDate).toBeUndefined();
-        expect(services[datedId].providerRetirementDate).toBe(
-            Date.UTC(2027, 2, 15),
-        );
+        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
+        expect(services[undatedId].retirementDate).toBeUndefined();
+        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {

@@ -188,13 +188,11 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
-    // Earliest moment the provider may stop serving this route's upstream
-    // model (ms epoch), set only when the provider has published a date. Uses
-    // the exact cutoff when one is published; a date-only notice means the
-    // start of that day in the provider's stated time zone, otherwise UTC.
-    // A provider fact about this route, not Pollinations' retirement of the
-    // public model, so fallback routes never inherit it.
-    providerRetirementDate?: number;
+    // When this model or route stops being served (ms epoch), set only when
+    // known: a provider's published retirement, or our own decision to retire
+    // it. Exact cutoff when the provider gives one, else the start of the day.
+    // Fallback routes never inherit it.
+    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;

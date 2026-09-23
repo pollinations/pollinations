@@ -103,7 +103,7 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
-            providerRetirementDate: new Date("2028-01-11").getTime(),
+            retirementDate: new Date("2028-01-11").getTime(),
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -126,7 +126,7 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
-            providerRetirementDate: new Date("2027-08-24").getTime(),
+            retirementDate: new Date("2027-08-24").getTime(),
         },
     },
     "deepseek/deepseek-v4-flash": {
@@ -162,7 +162,7 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
             // DeepInfra `deprecated` time; it now forwards requests to
             // MiniMax-M3 at MiniMax-M3's price.
-            providerRetirementDate: new Date("2026-09-10T22:22:06Z").getTime(),
+            retirementDate: new Date("2026-09-10T22:22:06Z").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.25),
                 promptCachedTokens: perMillion(0.05),
@@ -584,7 +584,7 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            providerRetirementDate: new Date("2026-10-20").getTime(),
+            retirementDate: new Date("2026-10-20").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.01) * 1.055,
@@ -695,7 +695,7 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
             // DeepInfra `deprecated` time; it then forwards requests to
             // Kimi-K3 at Kimi-K3's price.
-            providerRetirementDate: new Date("2026-09-29T23:36:12Z").getTime(),
+            retirementDate: new Date("2026-09-29T23:36:12Z").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.68),
                 promptCachedTokens: perMillion(0.136),

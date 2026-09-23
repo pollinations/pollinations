@@ -10,8 +10,8 @@ import type { ModelDefinition } from "./registry";
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
  * hidden and fallback-only, carries no aliases, and never chains further.
- * `providerRetirementDate` is not inherited either: it dates the upstream
- * route, so a route states its own or has none.
+ * `retirementDate` is not inherited either: a route can outlive the one it
+ * backs up, so it states its own date or has none.
  */
 export type FallbackDefinition = Partial<
     Omit<
@@ -71,7 +71,7 @@ export function mergeFallbacks<
             fallbacks: _fallbacks,
             fallbackOnly: _fallbackOnly,
             hidden: _hidden,
-            providerRetirementDate: _providerRetirementDate,
+            retirementDate: _retirementDate,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {

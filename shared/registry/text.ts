@@ -147,6 +147,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
+        retirementDate: new Date("2027-08-24").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(1.75),

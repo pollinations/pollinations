@@ -269,9 +269,11 @@ function QuestSummary({
                 value={quests}
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
-                    claimable && claimable.count > 0
-                        ? `+${claimable.count} ready`
-                        : undefined
+                    claimable && claimable.count > 0 ? (
+                        <span className="text-theme-text-strong">
+                            {claimable.count} ready to claim
+                        </span>
+                    ) : undefined
                 }
             />
             <WalletBalanceCard
@@ -282,20 +284,19 @@ function QuestSummary({
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
                     claimable && claimable.count > 0 ? (
-                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                            {claimable.segments.map((segment, index) => {
+                        <span className="flex flex-wrap items-center gap-1.5 text-theme-text-strong">
+                            {claimable.segments.map((segment) => {
                                 const Icon =
                                     segment.kind === "paid"
                                         ? CardIcon
                                         : SproutIcon;
                                 return (
-                                    <span
+                                    <Chip
                                         key={segment.kind}
-                                        className="inline-flex items-center gap-1 whitespace-nowrap"
+                                        intent="neutral"
+                                        size="lg"
+                                        className={`gap-1.5 tabular-nums ${BUCKET_CHIP_CLASS[segment.kind]}`}
                                     >
-                                        {index > 0 && (
-                                            <span aria-hidden="true">·</span>
-                                        )}
                                         <Icon
                                             className="h-3.5 w-3.5 shrink-0"
                                             aria-hidden="true"
@@ -306,7 +307,7 @@ function QuestSummary({
                                                 : "Quest Pollen:"}
                                         </span>
                                         {formatRewardAmount(segment.pollen)}
-                                    </span>
+                                    </Chip>
                                 );
                             })}
                             <span className="whitespace-nowrap">to claim</span>

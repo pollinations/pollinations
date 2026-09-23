@@ -5,6 +5,7 @@ import re
 import requests
 import time
 from typing import Optional
+from urllib.parse import quote
 
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -39,6 +40,8 @@ POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 AI_MODEL = "gpt-5.6-luna"
 # Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
+# Re-classify items that already have labels, replacing the classifier's older labels.
+RELABEL = os.getenv("RELABEL") == "1"
 
 # Validate required tokens at startup
 if not GITHUB_TOKEN:
@@ -179,47 +182,31 @@ def read_prompt_file() -> str:
         return f.read()
 
 
-VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DOCS", "INFRA", "DEV-CHORE", "APPS", "UI-UX"},
-    "support": {
-        ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
-        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
-    },
-}
-
-SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
-SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
-
-PROTECTED_LABELS = {
-    "dev": {"DEV-TRACKING", "DEV-VOTING"},
-}
-
-# Pull requests get exactly one kind (listed in tie-break order, see project-manager.md)
-# plus optional flags; the model picks all of them.
-PR_KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-PR_FLAGS = {"BILLING", "SECURITY", "BUG", "AUTOMATED", "POLLEN-QUEST"}
+# One label list for issues and pull requests; definitions live in project-manager.md.
+# Kinds are listed in tie-break order.
+KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
+ISSUE_TYPES = ["BUG", "FEATURE", "QUESTION", "OUTAGE", "TRACKING"]
+PR_TYPES = ["BUG"]
+ISSUE_FLAGS = {"BILLING", "SECURITY", "AUTOMATED"}
+# POLLEN-QUEST stays PR-only: on an issue it publishes a rewarded quest.
+PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
+# Labels the classifier owns; a relabel replaces these and leaves workflow labels alone.
+CLASSIFIER_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
+# Types a person set on an issue that the classifier keeps.
+PINNED_TYPES = {"TRACKING", "VOTING"}
 APP_SUBMISSION_BRANCH = re.compile(r"^auto/app-\d+(?:-|$)")
 
 
-def normalize_labels(project: str, labels: list) -> list:
-    project = project.lower()
-    valid_labels = VALID_LABELS.get(project, set())
-    
-    if not valid_labels:
-        return []
-    
-    incoming = [l.upper() for l in labels]
-    
-    if project == "dev":
-        label = next((l for l in incoming if l in valid_labels), None)
-        return [label] if label else []
-    
-    if project == "support":
-        type_label = next((l for l in incoming if l in SUPPORT_TYPE_LABELS), None)
-        service_label = next((l for l in incoming if l in SUPPORT_SERVICE_LABELS), None)
-        return [l for l in (type_label, service_label) if l]
-
-    return []
+def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
+    """The model's kind, type and flags as labels; None when the kind is invalid."""
+    kind = str(raw.get("kind", "")).upper()
+    if kind not in KINDS:
+        log_error(f"AI returned invalid kind: {raw.get('kind')!r}")
+        return None
+    item_type = str(raw.get("type") or "").upper()
+    raw_flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
+    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in flags]
+    return list(dict.fromkeys([kind, *([item_type] if item_type in types else []), *picked]))
 
 
 def get_fallback_classification(_: bool) -> dict:
@@ -279,15 +266,7 @@ def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
 def classify_with_ai(
     is_internal: bool,
     tracking_issues: Optional[list] = None,
-    *,
-    title: Optional[str] = None,
-    body: Optional[str] = None,
-    author: Optional[str] = None,
 ) -> dict:
-    title = ISSUE_TITLE if title is None else title
-    body = ISSUE_BODY if body is None else body
-    author = ISSUE_AUTHOR if author is None else author
-
     tracking_block = ""
     if tracking_issues:
         tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
@@ -303,10 +282,10 @@ def classify_with_ai(
 """
 
     user_prompt = f"""
-Author: {author}
+Author: {ISSUE_AUTHOR} (account type: {ITEM_DATA.get("user", {}).get("type", "User")})
 Author Type: {"Internal" if is_internal else "External"}
-Title: {title}
-Body: {body[:2000]}
+Title: {ISSUE_TITLE}
+Body: {ISSUE_BODY[:2000]}
 """
 
     raw = ask_ai(system_prompt, user_prompt)
@@ -328,16 +307,9 @@ Body: {body[:2000]}
     else:
         priority = None
 
-    labels = raw.get("labels", [])
-    if not isinstance(labels, list):
-        labels = []
-    labels = [l for l in labels if isinstance(l, str)]
-
-    valid_for_project = VALID_LABELS.get(project, set())
-    filtered_labels = [l.upper() for l in labels if l.upper() in valid_for_project]
-    if len(filtered_labels) < len(labels):
-        invalid = [l for l in labels if l.upper() not in valid_for_project]
-        log_error(f"AI returned invalid labels for {project}: {invalid}")
+    labels = parse_labels(raw, ISSUE_TYPES, ISSUE_FLAGS)
+    if labels is None:
+        return get_fallback_classification(is_internal)
 
     tracking_raw = raw.get("tracking_issue")
     tracking_number = None
@@ -351,7 +323,7 @@ Body: {body[:2000]}
     classification = {
         "project": project,
         "priority": priority,
-        "labels": filtered_labels,
+        "labels": labels,
         "tracking_issue": tracking_number,
         "reasoning": raw.get("reasoning", ""),
         "is_app_submission": is_app_submission,
@@ -362,7 +334,7 @@ Body: {body[:2000]}
 
 
 def classify_pr(files: list, linked_issues: list) -> dict:
-    """Pick one kind and any flags for the current pull request."""
+    """Pick the kind, type and flags for the current pull request."""
     listed = "\n".join(files[:300])
     more = f"\n... and {len(files) - 300} more" if len(files) > 300 else ""
     author = ITEM_DATA.get("user", {})
@@ -383,13 +355,10 @@ Changed files ({len(files)}):
     if raw is None:
         fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
 
-    kind = str(raw.get("kind", "")).upper()
-    if kind not in PR_KINDS:
-        fail(f"AI returned invalid kind for PR #{ISSUE_NUMBER}: {raw.get('kind')!r}")
-
-    flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
-    flags = [f.upper() for f in flags if isinstance(f, str) and f.upper() in PR_FLAGS]
-    return {"kind": kind, "flags": flags, "reasoning": raw.get("reasoning", "")}
+    labels = parse_labels(raw, PR_TYPES, PR_FLAGS)
+    if labels is None:
+        fail(f"AI returned no valid kind for PR #{ISSUE_NUMBER}")
+    return {"labels": labels, "reasoning": raw.get("reasoning", "")}
 
 
 def graphql_request(query: str, variables: dict = None) -> dict:
@@ -442,7 +411,7 @@ _TRACKING_ISSUES: Optional[list] = None
 
 
 def fetch_tracking_issues() -> list:
-    """Open Dev tracking issues (labelled DEV-TRACKING). Returns [{number, title}] so the
+    """Open Dev tracking issues (labelled TRACKING). Returns [{number, title}] so the
     AI can pick the best-fit parent. Cached for the lifetime of the process."""
     global _TRACKING_ISSUES
     if _TRACKING_ISSUES is not None:
@@ -451,7 +420,7 @@ def fetch_tracking_issues() -> list:
         r = requests.get(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues",
             headers=GITHUB_HEADERS,
-            params={"labels": "DEV-TRACKING", "state": "open", "per_page": 100},
+            params={"labels": "TRACKING", "state": "open", "per_page": 100},
             timeout=15,
         )
         if r.status_code != 200:
@@ -542,6 +511,31 @@ def add_labels(labels: list):
     log_debug(f"Added labels: {labels}")
 
 
+def remove_label(label: str):
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would remove label: {label}")
+        return
+    try:
+        r = requests.delete(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels/{quote(label)}",
+            headers=GITHUB_HEADERS,
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        fail(f"Exception removing label {label} from #{ISSUE_NUMBER}: {e}")
+    if r.status_code not in (200, 404):
+        fail(f"Failed to remove label {label} from #{ISSUE_NUMBER}: {r.status_code} - {r.text}")
+    log_debug(f"Removed label: {label}")
+
+
+def set_labels(labels: list):
+    """Apply the classifier's labels; a relabel first drops its older ones."""
+    if RELABEL:
+        for stale in sorted((set(get_existing_labels()) & CLASSIFIER_LABELS) - set(labels)):
+            remove_label(stale)
+    add_labels(labels)
+
+
 def assign_issue(assignee: str):
     if not assignee or DRY_RUN:
         return
@@ -616,18 +610,17 @@ def fetch_linked_issues() -> list:
 
 
 def label_pull_request():
-    if set(get_existing_labels()) & set(PR_KINDS):
+    if not RELABEL and set(get_existing_labels()) & set(KINDS):
         log_debug(f"PR #{ISSUE_NUMBER} already has a kind label, skipping")
         return
 
     classification = classify_pr(fetch_pr_files(), fetch_linked_issues())
-    labels = list(dict.fromkeys([classification["kind"], *classification["flags"]]))
+    labels = classification["labels"]
     log_debug(f"PR #{ISSUE_NUMBER} labels: {labels} ({classification['reasoning']})")
-
     if DRY_RUN:
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
-        return
-    add_labels(labels)
+
+    set_labels(labels)
     if APP_SUBMISSION_BRANCH.match(PR_HEAD_REF):
         add_to_project(CONFIG["projects"]["apps"]["id"])
 
@@ -686,8 +679,11 @@ def main():
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"][project_key]
 
-    labels = normalize_labels(project_key, classification.get("labels", []))
-    log_debug(f"Normalized labels: {labels}")
+    labels = classification["labels"]
+    pinned = set(existing_labels) & PINNED_TYPES
+    if pinned:
+        labels = [l for l in labels if l not in ISSUE_TYPES] + sorted(pinned)
+    log_debug(f"Labels: {labels}")
     if DRY_RUN:
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{project_key}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
@@ -702,14 +698,13 @@ def main():
                 project["priority_field_id"],
                 priority_option,
             )
-    protected = PROTECTED_LABELS.get(project_key, set())
-    if protected & set(existing_labels):
-        log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")
+    if RELABEL or not set(existing_labels) & set(KINDS):
+        set_labels(labels)
     else:
-        add_labels(labels)
+        log_debug(f"Issue #{ISSUE_NUMBER} already has a kind label; keeping its labels")
 
     # Parent new Dev issues under the best-fit tracking issue (skip tracking issues themselves)
-    is_tracking_issue = "DEV-TRACKING" in existing_labels or "DEV-TRACKING" in labels
+    is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels
     if project_key == "dev" and ISSUE_DB_ID and not is_tracking_issue:
         parent = classification.get("tracking_issue")
         valid_parents = {e["number"] for e in tracking_issues}

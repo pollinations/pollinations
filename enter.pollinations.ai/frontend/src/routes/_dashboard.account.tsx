@@ -152,57 +152,53 @@ function AccountPage() {
 
             <Section title="Need help?">
                 <ul className="grid gap-5 text-sm sm:grid-cols-2">
-                    <li className="flex items-start gap-2">
+                    <li className="flex min-w-0 items-start gap-2">
                         <DiscordIcon
-                            className="mt-0.5 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
                             aria-hidden="true"
                         />
-                        <InlineLink href="https://discord.com/channels/885844321461485618/889573359111774329">
-                            Get help on Discord
-                        </InlineLink>
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Get help on{" "}
+                            <InlineLink href="https://discord.com/channels/885844321461485618/889573359111774329">
+                                Discord
+                            </InlineLink>
+                        </Text>
                     </li>
-                    <li className="flex items-start gap-2">
+                    <li className="flex min-w-0 items-start gap-2">
                         <GitHubIcon
-                            className="mt-0.5 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
                             aria-hidden="true"
                         />
-                        <InlineLink href="https://github.com/pollinations/pollinations/issues">
-                            Report a bug on GitHub
-                        </InlineLink>
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Report a bug on{" "}
+                            <InlineLink href="https://github.com/pollinations/pollinations/issues">
+                                GitHub
+                            </InlineLink>
+                        </Text>
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
                             aria-hidden="true"
                         />
-                        <div className="min-w-0">
-                            <Text size="sm" tone="muted">
-                                General questions
-                            </Text>
-                            <InlineLink
-                                href="mailto:hello@pollinations.ai"
-                                className="break-words"
-                            >
+                        <Text size="sm" tone="base" className="min-w-0">
+                            General questions:{" "}
+                            <InlineLink href="mailto:hello@pollinations.ai">
                                 hello@pollinations.ai
                             </InlineLink>
-                        </div>
+                        </Text>
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
                         <MailIcon
                             className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
                             aria-hidden="true"
                         />
-                        <div className="min-w-0">
-                            <Text size="sm" tone="muted">
-                                Billing support
-                            </Text>
-                            <InlineLink
-                                href="mailto:billing@pollinations.ai"
-                                className="break-words"
-                            >
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Billing support:{" "}
+                            <InlineLink href="mailto:billing@pollinations.ai">
                                 billing@pollinations.ai
                             </InlineLink>
-                        </div>
+                        </Text>
                     </li>
                 </ul>
             </Section>

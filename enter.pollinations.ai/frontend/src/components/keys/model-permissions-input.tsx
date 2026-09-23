@@ -2,6 +2,7 @@ import {
     Button,
     ButtonGroup,
     ChevronIcon,
+    Chip,
     TabButton,
     Text,
 } from "@pollinations/ui";
@@ -81,14 +82,18 @@ export function ModelPermissionsInput({
                 <Text
                     as="div"
                     size="sm"
-                    className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
                     <span className="whitespace-nowrap font-medium">
                         {summary}
                     </span>
                     {selectedCategories.length > 0 && (
-                        <span className="min-w-0">
-                            {selectedCategories.join(" · ")}
+                        <span className="flex min-w-0 flex-wrap gap-1">
+                            {selectedCategories.map((category) => (
+                                <Chip key={category} size="sm">
+                                    {category}
+                                </Chip>
+                            ))}
                         </span>
                     )}
                 </Text>

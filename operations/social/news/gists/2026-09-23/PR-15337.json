@@ -1,0 +1,33 @@
+{
+  "pr_number": 15337,
+  "title": "feat: add retirement dates to the model registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15337",
+  "merged_at": "2026-09-23T13:00:17Z",
+  "labels": [],
+  "pr_body_excerpt": "Records when a model or route stops being served, so upcoming retirements are visible in the registry instead of surfacing as upstream errors.\n\n- Adds an optional `retirementDate` (ms epoch) to `ModelDefinition`, set only when known: a provider's published retirement, or our own decision to retire a model (e.g. one nobody uses). This PR fills in provider dates for 49 public models and 8 fallback routes.\n- Uses the provider's exact cutoff when one is published (AWS 08:00 UTC, DeepInfra's `deprecated` second, Alibaba 00:00 UTC+8), otherwise the start of the published day.\n- A fallback can outlive the route it backs up, so `mergeFallbacks` no longer lets fallbacks inherit the date. Tested in `static-provider-fallbacks.test.ts`.\n- Sources are provider lifecycle APIs and official notices, checked 2026-09-23. Where sources disagree, the earliest date is used and the other is noted in a comment.\n- Registry data only: no catalog field, response header or runtime behavior changes.\n\nSoonest shutdowns:\n\n| When (UTC) | Routes |\n|---|---|\n| 09-25 | Fireworks: DeepSeek V4 Flash, V4 Flash Vision, V4 Pro, GLM 5.2, Kimi K2.6, Kimi K2.7 Code, Muse Glimmer 30B |\n| 09-27 | Perplexity Sonar, Sonar Pro, Sonar Reasoning Pro |\n| 09-29 23:36 | Kimi K2.7 Code DeepInfra fallback (forwards to Kimi K3 after this) |\n| 09-30 08:00 | Nova Canvas, Nova Reel |\n| 10-01 | MAI Image 2.5 Flash, Qwen3 Coder 30B (OVH) |\n| 10-09 16:00 | Qwen3 TTS Instruct Flash, Qwen3 VL 235B Thinking |\n| 10-13 | Command A+ |\n| 10-20 | Gemini 2.5 Flash Lite, plus `:search` |\n\nThe MiniMax M2.7 DeepInfra fallback is already past its date (2026-09-10 22:22 UTC): DeepInfra now forwards it to MiniMax-M3.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The registry gets a calendar",
+    "blurb": "The model registry now keeps a little calendar beside the flower beds. Known provider retirement dates are recorded before an upstream route quietly turns into a pumpkin.",
+    "summary": "Added optional millisecond-epoch `retirementDate` metadata to `ModelDefinition`, populating known provider cutoff dates for 49 public models and 8 fallback routes while ensuring fallbacks do not inherit a backed route's retirement date.",
+    "impact": "Registry maintainers can see upcoming model and route retirements, including provider-specific cutoff times, and preserve fallbacks that remain valid after their original route retires.",
+    "keywords": [
+      "model-registry",
+      "retirement-dates",
+      "providers",
+      "fallbacks",
+      "lifecycle"
+    ],
+    "visual_concept": "A cozy model-registry garden with labeled route plants and a large calendar marking retirement dates; Polli, wearing tiny librarian glasses and carrying a clipboard, carefully attaches date tags while a CRT monitor robot checks a fallback plant that continues growing on its own vine.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, tending a garden of labeled code-plants beside a glowing lime green (#ecf874) registry calendar with small date tags; a friendly CRT monitor robot points happily at a separate fallback vine that keeps blooming. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'RETIREMENT DATE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15337.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, tending a garden of labeled code-plants beside a glowing lime green (#ecf874) registry calendar with small date tags; a friendly CRT monitor robot points happily at a separate fallback vine that keeps blooming. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'RETIREMENT DATE'."
+  },
+  "generated_at": "2026-09-23T13:01:22.089330+00:00"
+}

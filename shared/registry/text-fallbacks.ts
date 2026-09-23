@@ -100,6 +100,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.3-codex": {
+        "openai/gpt-5.3-codex:azure:sweden": {
+            provider: "azure",
+            retirementDate: new Date("2027-08-24").getTime(),
+        },
+    },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
@@ -156,17 +162,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
-            // DeepInfra `deprecated` time; it now forwards requests to
-            // MiniMax-M3 at MiniMax-M3's price.
-            retirementDate: new Date("2026-09-10T22:22:06Z").getTime(),
+        "minimax/minimax-m2.7:openrouter:minimax": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(1),
+                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
+                // including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.06) * 1.055,
+                completionTextTokens: perMillion(1.2) * 1.055,
             },
         },
     },

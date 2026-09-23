@@ -62,6 +62,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
+    "black-forest-labs/flux.1.1-pro": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            completionImageTokens: 0.04, // Azure Global Standard, $40/1K images in East US and Sweden Central.
+        },
+        title: "FLUX 1.1 Pro",
+        description:
+            "Fast text-to-image generation with precise dimensions and reproducible seeds",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "black-forest-labs/flux.2-pro": {
         aliases: ["flux-2-pro"],
         provider: "azure",
@@ -203,6 +220,29 @@ const IMAGE_BASE_SERVICES = {
         title: "MAI Image 2.6 Flash",
         description:
             "Photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
+    "microsoft/mai-image-2.6": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        retirementDate: new Date("2027-01-09").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure Global Standard meters, verified 2026-09-23.
+        cost: {
+            promptTextTokens: perMillion(5),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(38),
+        },
+        title: "MAI Image 2.6",
+        description:
+            "Detailed photorealistic generation and single-reference editing with strong instruction following",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
@@ -476,7 +516,6 @@ const IMAGE_BASE_SERVICES = {
         retirementDate: new Date("2027-10-21").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
-        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -499,8 +538,7 @@ const IMAGE_BASE_SERVICES = {
         // Azure model catalog; the retirement schedule says 2027-09-09.
         retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        perUserRpm: 12,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
             promptTextTokens: perMillion(5),
@@ -524,8 +562,7 @@ const IMAGE_BASE_SERVICES = {
         // Azure model catalog; the retirement schedule says 2027-09-09.
         retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        perUserRpm: 12,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
             promptTextTokens: perMillion(5),

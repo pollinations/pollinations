@@ -429,6 +429,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.0005,
     },
   },
+  "black-forest-labs/flux.1.1-pro": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
+  "black-forest-labs/flux.1.1-pro:azure:sweden": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
   "black-forest-labs/flux.2-flex": {
     "cost": {
       "completionImageTokens": 0.05,
@@ -1528,6 +1544,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-image-2.6": {
+    "cost": {
+      "completionImageTokens": 0.000038,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000285,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
   "microsoft/mai-image-2.6-flash": {
     "cost": {
       "completionImageTokens": 0.000019,
@@ -1606,26 +1634,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax/minimax-m2.7": {
     "cost": {
-      "completionTextTokens": 0.000001055,
-      "promptCachedTokens": 0.00000005275,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.0000011394,
+      "promptCachedTokens": 0.00000005697,
+      "promptTextTokens": 0.00000028485,
     },
     "price": {
-      "completionTextTokens": 0.000001055,
-      "promptCachedTokens": 0.00000005275,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.0000011394,
+      "promptCachedTokens": 0.00000005697,
+      "promptTextTokens": 0.00000028485,
     },
   },
-  "minimax/minimax-m2.7:deepinfra": {
+  "minimax/minimax-m2.7:openrouter:minimax": {
     "cost": {
-      "completionTextTokens": 0.000001,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.00000025,
+      "completionTextTokens": 0.000001266,
+      "promptCachedTokens": 0.0000000633,
+      "promptTextTokens": 0.0000003165,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.00000025,
+      "completionTextTokens": 0.000001266,
+      "promptCachedTokens": 0.0000000633,
+      "promptTextTokens": 0.0000003165,
     },
   },
   "minimax/minimax-m3": {
@@ -1850,6 +1878,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000003,
       "promptCachedTokens": 0.00000000375,
       "promptTextTokens": 0.0000000375,
+    },
+  },
+  "openai/gpt-5.3-codex": {
+    "cost": {
+      "completionTextTokens": 0.000014,
+      "promptCacheWriteTokens": 0.00000175,
+      "promptCachedTokens": 0.000000175,
+      "promptTextTokens": 0.00000175,
+    },
+    "price": {
+      "completionTextTokens": 0.0000105,
+      "promptCacheWriteTokens": 0.0000013125,
+      "promptCachedTokens": 0.00000013125,
+      "promptTextTokens": 0.0000013125,
+    },
+  },
+  "openai/gpt-5.3-codex:azure:sweden": {
+    "cost": {
+      "completionTextTokens": 0.000014,
+      "promptCacheWriteTokens": 0.00000175,
+      "promptCachedTokens": 0.000000175,
+      "promptTextTokens": 0.00000175,
+    },
+    "price": {
+      "completionTextTokens": 0.0000105,
+      "promptCacheWriteTokens": 0.0000013125,
+      "promptCachedTokens": 0.00000013125,
+      "promptTextTokens": 0.0000013125,
     },
   },
   "openai/gpt-5.4": {
@@ -2178,10 +2234,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2.5-flare:openai": {
@@ -2192,10 +2248,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2.5-sunburst": {
@@ -2206,10 +2262,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2.5-sunburst:openai": {
@@ -2220,10 +2276,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.00003,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2:openai": {

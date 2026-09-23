@@ -339,6 +339,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5">
                         <ModelStatusChips
                             health={model.health}
+                            communityProxy={Boolean(
+                                model.community && !model.agent,
+                            )}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />

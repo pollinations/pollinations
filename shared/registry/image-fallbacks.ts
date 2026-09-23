@@ -58,27 +58,29 @@ export const IMAGE_FALLBACKS = {
         "openai/gpt-image-2:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
-            perUserRpm: null,
         },
     },
     "openai/gpt-image-2.5-flare": {
         "openai/gpt-image-2.5-flare:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-14").getTime(),
-            perUserRpm: null,
         },
     },
     "openai/gpt-image-2.5-sunburst": {
         "openai/gpt-image-2.5-sunburst:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-14").getTime(),
-            perUserRpm: null,
         },
     },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "black-forest-labs/flux.1.1-pro": {
+        "black-forest-labs/flux.1.1-pro:azure:sweden": {
+            provider: "azure",
         },
     },
     "black-forest-labs/flux.2-pro": {

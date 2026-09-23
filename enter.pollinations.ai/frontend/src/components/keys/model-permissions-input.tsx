@@ -66,10 +66,10 @@ export function ModelPermissionsInput({
         .map(([tab]) => TAB_LABELS[tab]);
     const summary =
         selected === null
-            ? "All models allowed"
+            ? "All models"
             : selectedIds.size === 0
               ? "Generation disabled."
-              : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"} allowed${selectedCategories.length ? ` · ${selectedCategories.join(", ")}` : ""}`;
+              : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"}`;
     const displayedModels = models.filter(({ id }) =>
         activeTab === "selected"
             ? selectedIds.has(id)
@@ -79,10 +79,18 @@ export function ModelPermissionsInput({
         <>
             {activeTab === null ? (
                 <Text
+                    as="div"
                     size="sm"
-                    className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
-                    {summary}
+                    <span className="whitespace-nowrap font-medium">
+                        {summary}
+                    </span>
+                    {selectedCategories.length > 0 && (
+                        <span className="min-w-0">
+                            {selectedCategories.join(" · ")}
+                        </span>
+                    )}
                 </Text>
             ) : (
                 <ButtonGroup

@@ -249,6 +249,7 @@ function AccountPage() {
                     <Button
                         type="button"
                         intent={discordConnection ? "danger" : "commit"}
+                        icon={<DiscordIcon />}
                         className="shrink-0 self-start sm:self-center"
                         disabled={
                             !discordAvailable ||

@@ -5,7 +5,7 @@ on:
     types: [opened]
   pull_request_target:
     types: [opened]
-  # Organize existing items (defaults to every open PR).
+  # Re-classify existing items, replacing their classifier labels (defaults to every open PR).
   workflow_dispatch:
     inputs:
       pr_numbers:
@@ -69,6 +69,7 @@ jobs:
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          RELABEL: "1"
         run: |
           # $1 = event key (pull_request|issue), $2 = number
           organize() {

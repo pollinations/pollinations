@@ -37,7 +37,7 @@ GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 AI_MODEL = "gpt-5.6-luna"
-# Print pull request labels instead of applying them (used by the backfill dispatch).
+# Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
 
 # Validate required tokens at startup
@@ -425,6 +425,9 @@ def add_to_project(project_id: str) -> Optional[str]:
         }
     }
     """
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would add #{ISSUE_NUMBER} to project {project_id}")
+        return "dry-run"
     data = graphql_request(mutation, {
         "projectId": project_id,
         "contentId": ISSUE_NODE_ID
@@ -471,6 +474,9 @@ def fetch_tracking_issues() -> list:
 
 def assign_to_tracking_issue(parent_number: int, child_db_id: int) -> bool:
     """Link the current issue as a native sub-issue of tracking issue #parent_number."""
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would link #{ISSUE_NUMBER} under tracking issue #{parent_number}")
+        return True
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
@@ -501,6 +507,9 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         }
     }
     """
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would set project field {field_id} to {option_id}")
+        return
     data = graphql_request(mutation, {
         "projectId": project_id,
         "itemId": item_id,
@@ -517,6 +526,9 @@ def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
         return
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would add labels: {labels}")
+        return
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
@@ -532,7 +544,7 @@ def add_labels(labels: list):
 
 
 def assign_issue(assignee: str):
-    if not assignee:
+    if not assignee or DRY_RUN:
         return
     try:
         r = requests.post(
@@ -689,6 +701,8 @@ def main():
 
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
+    if DRY_RUN:
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{project_key}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     item_id = add_to_project(project["id"])
 

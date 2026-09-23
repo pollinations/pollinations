@@ -468,6 +468,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 as="button"
                 type="button"
                 onClick={onSave}
+                intent="commit"
                 disabled={saveDisabled}
                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
@@ -492,7 +493,11 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip triggerAs="span" content={content} className={className}>
+        <Tooltip
+            triggerAs="span"
+            content={content}
+            className={cn("polli:cursor-not-allowed", className)}
+        >
             {children}
         </Tooltip>
     );

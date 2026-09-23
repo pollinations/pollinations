@@ -79,6 +79,18 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
+    // OpenRouter xAI tag for Grok 4.7 (2026-09-21). web_search_options is
+    // withheld: OpenRouter bills web search per call ($0.005), a non-token
+    // charge our cost model can't meter yet.
+    openRouterGrok47: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "seed",
+        "structured_outputs",
+        "reasoning_effort",
+    ],
     azureGrok46: [
         ...CHAT,
         ...SAMPLING,
@@ -91,8 +103,8 @@ export const CHAT_PARAMETERS = {
     // Haiku 4.5 / Sonnet & Opus 4.6: sampling only without thinking; JSON schema only.
     bedrockClaudeSampling: [...SAMPLED_CHAT, "top_k", "reasoning_effort"],
     bedrockClaudeNoSampling: [...CHAT, ...TOOLS, "reasoning_effort", "stop"],
-    // Fable 5.1 rejects forced tool choice; auto alone is not an adjustable control.
-    bedrockFable51: [...CHAT, "reasoning_effort", "tools", "stop"],
+    // Fable 5.1 and Opus 5.5 reject forced tool choice.
+    bedrockClaudeNoForcedTools: [...CHAT, "reasoning_effort", "tools", "stop"],
     openRouterHaiku: [
         ...CHAT,
         ...SAMPLING,
@@ -302,7 +314,7 @@ export const CHAT_PARAMETERS = {
         "top_k",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
-    openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
     // seed or logprobs in supported_parameters. Forced tool_choice isn't
     // supported (only "auto"/"none"), so "tools" is declared alone.
@@ -347,6 +359,18 @@ export const CHAT_PARAMETERS = {
         "repetition_penalty",
         "stop",
         "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
+    openRouterGlmFlashx: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "temperature",
+        "top_p",
+        "top_k",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],

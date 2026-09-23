@@ -458,6 +458,37 @@ test("filters OpenRouter text models by paid balance", async ({
     }
 });
 
+test("requires paid balance for direct OpenAI GPT-6 models", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
+    const freeResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const freeNames = new Set(freeModels.data.map((model) => model.id));
+    const paidNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of models) {
+        expect(freeNames.has(model)).toBe(false);
+        expect(paidNames.has(model)).toBe(true);
+        const response = await fetchWorker(
+            `/text/paid-only-check?model=${model}`,
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+        );
+        expect(response.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
+    }
+});
+
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
     paidApiKey,

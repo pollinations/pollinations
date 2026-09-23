@@ -10,6 +10,7 @@ import {
     InlineLink,
     Input,
     LoadingStatus,
+    MailIcon,
     Section,
     SignOutIcon,
     Text,
@@ -149,27 +150,62 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-sm text-theme-text-muted">
-                <span className="font-medium">Need help?</span>
-                <InlineLink
-                    href="https://discord.com/channels/885844321461485618/889573359111774329"
-                    tone="quiet"
-                    size="footer"
-                    className="inline-flex items-center gap-2"
-                >
-                    <DiscordIcon className="h-4 w-4" aria-hidden="true" />
-                    Get help
-                </InlineLink>
-                <InlineLink
-                    href="https://github.com/pollinations/pollinations/issues"
-                    tone="quiet"
-                    size="footer"
-                    className="inline-flex items-center gap-2"
-                >
-                    <GitHubIcon className="h-4 w-4" aria-hidden="true" />
-                    Report a bug
-                </InlineLink>
-            </div>
+            <Section title="Need help?">
+                <ul className="grid gap-5 text-sm sm:grid-cols-2">
+                    <li className="flex items-start gap-2">
+                        <DiscordIcon
+                            className="mt-0.5 h-4 w-4 shrink-0 text-theme-text-soft"
+                            aria-hidden="true"
+                        />
+                        <InlineLink href="https://discord.com/channels/885844321461485618/889573359111774329">
+                            Get help on Discord
+                        </InlineLink>
+                    </li>
+                    <li className="flex items-start gap-2">
+                        <GitHubIcon
+                            className="mt-0.5 h-4 w-4 shrink-0 text-theme-text-soft"
+                            aria-hidden="true"
+                        />
+                        <InlineLink href="https://github.com/pollinations/pollinations/issues">
+                            Report a bug on GitHub
+                        </InlineLink>
+                    </li>
+                    <li className="flex min-w-0 items-start gap-2">
+                        <MailIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            aria-hidden="true"
+                        />
+                        <div className="min-w-0">
+                            <Text size="sm" tone="muted">
+                                General questions
+                            </Text>
+                            <InlineLink
+                                href="mailto:hello@pollinations.ai"
+                                className="break-words"
+                            >
+                                hello@pollinations.ai
+                            </InlineLink>
+                        </div>
+                    </li>
+                    <li className="flex min-w-0 items-start gap-2">
+                        <MailIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            aria-hidden="true"
+                        />
+                        <div className="min-w-0">
+                            <Text size="sm" tone="muted">
+                                Billing support
+                            </Text>
+                            <InlineLink
+                                href="mailto:billing@pollinations.ai"
+                                className="break-words"
+                            >
+                                billing@pollinations.ai
+                            </InlineLink>
+                        </div>
+                    </li>
+                </ul>
+            </Section>
 
             <Section title="Delete account">
                 <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">

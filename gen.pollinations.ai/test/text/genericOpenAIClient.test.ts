@@ -514,6 +514,37 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 415, upstreamStatus: 415 });
     });
 
+    it.each([
+        ["I can't help with that request.", 422],
+        ["API key lacks access to this model", 502],
+    ])("distinguishes xAI refusal from account permissions: %s", async (message, status) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message: "Provider returned error",
+                        code: 403,
+                        metadata: {
+                            provider_name: "xAI",
+                            raw: JSON.stringify({
+                                code: "permission-denied",
+                                error: message,
+                            }),
+                        },
+                    },
+                },
+                { status: 403 },
+            ),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ status, upstreamStatus: 403 });
+        expect(isRetryableFallbackError(error)).toBe(status >= 500);
+    });
+
     it("maps unsupported multimodal input errors to a client error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
@@ -540,8 +571,9 @@ describe("genericOpenAIClient", () => {
 
     it.each([
         "Multimodal processing failed: image decode error",
+        "Upstream error from DeepInfra: Tool call id was 2tpesxk_0 but must be a-z, A-Z, 0-9, with a length of 9.",
         '{"error":{"message":"Invalid or unsupported audio file."}}',
-    ])("maps malformed media errors to a client error: %s", async (message) => {
+    ])("maps explicit input errors to a client error: %s", async (message) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
                 {

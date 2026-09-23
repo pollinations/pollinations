@@ -1,42 +1,58 @@
 import {
+    fetchModelCatalog,
     getModelPricesFromCatalog,
-    mergeModelCatalogs,
     parseModelCatalogResponse,
-    withModelHealth,
 } from "@frontend/components/models/model-catalog.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-it("derives health from the model's rollup row and keeps it for filtering", () => {
-    const row = (model: string, status_2xx: number, errors_5xx: number) => ({
-        model,
-        event_type: "generate.text",
-        is_rollup: 1,
-        status_2xx,
-        errors_5xx,
-    });
-    const rows = [
-        { ...row("healthy/model", 0, 100), is_rollup: 0 },
-        row("healthy/model", 96, 4),
-        row("degraded/model", 95, 5),
-        row("down/model", 80, 20),
+vi.mock("../frontend/src/config.ts", () => ({
+    config: {
+        genBaseUrl: "https://gen.example",
+    },
+}));
+
+it("fetches the full catalog for show-all without a separate health request", async () => {
+    const fetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input) => {
+            const url = new URL(String(input));
+            expect(url.pathname).toBe("/models");
+            expect(url.searchParams.get("reliability")).toBe("all");
+            return Response.json([
+                {
+                    name: "example/model",
+                    health: { status: "down", success_rate: 0, requests: 1 },
+                },
+            ]);
+        });
+    try {
+        const catalog = await fetchModelCatalog({ refresh: true });
+        expect(fetch).toHaveBeenCalled();
+        expect(catalog[0].health).toEqual({
+            status: "down",
+            success_rate: 0,
+            requests: 1,
+        });
+    } finally {
+        fetch.mockRestore();
+    }
+});
+
+it("keeps catalog health for filtering and status display", () => {
+    const health = [
+        { status: "healthy" as const, requests: 100, success_rate: 96 },
+        { status: "degraded" as const, requests: 100, success_rate: 95 },
+        { status: "down" as const, requests: 100, success_rate: 80 },
+        { status: "unknown" as const, requests: 0, success_rate: null },
     ];
     const models = getModelPricesFromCatalog(
-        withModelHealth(
-            [
-                { name: "healthy/model", category: "text" },
-                { name: "degraded/model", category: "text" },
-                { name: "down/model", category: "text" },
-                { name: "quiet/model", category: "image" },
-            ],
-            rows,
-        ),
+        health.map((entry, index) => ({
+            name: `model-${index}`,
+            category: "text" as const,
+            health: entry,
+        })),
     );
-    expect(models.map((model) => model.health)).toEqual([
-        { status: "healthy", requests: 100, successRate: 96 },
-        { status: "degraded", requests: 100, successRate: 95 },
-        { status: "down", requests: 100, successRate: 80 },
-        { status: "unknown", requests: 0, successRate: null },
-    ]);
+    expect(models.map((model) => model.health)).toEqual(health);
 });
 
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
@@ -115,37 +131,6 @@ describe("parseModelCatalogResponse", () => {
         expect(() =>
             parseModelCatalogResponse([{ title: "Mystery" }, {}]),
         ).toThrow();
-    });
-});
-
-describe("mergeModelCatalogs", () => {
-    it("adds community models while preserving the first catalog entry", () => {
-        const localModel = { name: "local-model", title: "Local" };
-        const localCommunityModel = {
-            name: "owner/community-model",
-            title: "Local community model",
-            community: true,
-        };
-
-        expect(
-            mergeModelCatalogs([
-                [localModel, localCommunityModel],
-                [
-                    {
-                        ...localCommunityModel,
-                        title: "Production community model",
-                    },
-                    {
-                        name: "another/community-model",
-                        community: true,
-                    },
-                ],
-            ]),
-        ).toEqual([
-            localModel,
-            localCommunityModel,
-            { name: "another/community-model", community: true },
-        ]);
     });
 });
 

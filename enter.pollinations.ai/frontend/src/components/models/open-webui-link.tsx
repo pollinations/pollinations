@@ -52,11 +52,12 @@ export function OpenWebUiLink({
     return (
         <Tooltip
             content="Test in Open WebUI"
-            ariaLabel={`Test ${modelId} in Open WebUI`}
-            tapEnabled
+            triggerAs="span"
+            className="polli:cursor-pointer"
             displayContents
         >
             <a
+                aria-label={`Test ${modelId} in Open WebUI`}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"

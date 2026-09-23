@@ -6,14 +6,12 @@ import {
     useDashboardSession,
 } from "@pollinations/auth/react";
 import {
-    Alert,
     AppHeader,
     ChevronIcon,
     ColorModeToggle,
     Dropdown,
     DropdownItem,
     TabButton,
-    Text,
 } from "@pollinations/ui";
 import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useEffect, useState } from "react";
@@ -144,20 +142,15 @@ function Dashboards({
 
 function App() {
     const { user, isPending, error } = useDashboardSession();
-    if (isPending)
+    if (isPending || error || !user)
         return (
-            <main>
-                <Text>Checking sign-in…</Text>
-            </main>
+            <DashboardSignIn
+                appName="Observability"
+                onSignIn={signIn}
+                isPending={isPending}
+                sessionError={error}
+            />
         );
-    if (error)
-        return (
-            <main>
-                <Alert>{error}</Alert>
-            </main>
-        );
-    if (!user)
-        return <DashboardSignIn appName="Observability" onSignIn={signIn} />;
     return <Dashboards user={user} />;
 }
 const root = document.getElementById("root");

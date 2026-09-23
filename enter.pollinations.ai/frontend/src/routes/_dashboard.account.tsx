@@ -277,6 +277,28 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-sm text-theme-text-muted">
+                <span className="font-medium">Need help?</span>
+                <InlineLink
+                    href="https://discord.com/channels/885844321461485618/889573359111774329"
+                    tone="quiet"
+                    size="footer"
+                    className="inline-flex items-center gap-2"
+                >
+                    <DiscordIcon className="h-4 w-4" aria-hidden="true" />
+                    Get help
+                </InlineLink>
+                <InlineLink
+                    href="https://github.com/pollinations/pollinations/issues"
+                    tone="quiet"
+                    size="footer"
+                    className="inline-flex items-center gap-2"
+                >
+                    <GitHubIcon className="h-4 w-4" aria-hidden="true" />
+                    Report a bug
+                </InlineLink>
+            </div>
+
             <Section title="Delete account">
                 <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
@@ -296,51 +318,29 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <footer className="flex flex-col gap-4 px-1 text-[13px] text-theme-text-muted">
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                    <InlineLink
-                        href="https://discord.com/channels/885844321461485618/889573359111774329"
-                        tone="quiet"
-                        size="footer"
-                        className="inline-flex items-center gap-2"
-                    >
-                        <DiscordIcon className="h-4 w-4" aria-hidden="true" />
-                        Get help
-                    </InlineLink>
-                    <InlineLink
-                        href="https://github.com/pollinations/pollinations/issues"
-                        tone="quiet"
-                        size="footer"
-                        className="inline-flex items-center gap-2"
-                    >
-                        <GitHubIcon className="h-4 w-4" aria-hidden="true" />
-                        Report a bug
-                    </InlineLink>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <span>© 2026 Myceli.AI OÜ</span>
-                    <InlineLink
-                        href="https://pollinations.ai/terms"
-                        tone="quiet"
-                        size="footer"
-                    >
-                        Terms of Service
-                    </InlineLink>
-                    <InlineLink
-                        href="https://pollinations.ai/privacy"
-                        tone="quiet"
-                        size="footer"
-                    >
-                        Privacy Policy
-                    </InlineLink>
-                    <InlineLink
-                        href="https://pollinations.ai/refunds"
-                        tone="quiet"
-                        size="footer"
-                    >
-                        Refund Policy
-                    </InlineLink>
-                </div>
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+                <span>© 2026 Myceli.AI OÜ</span>
+                <InlineLink
+                    href="https://pollinations.ai/terms"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Terms of Service
+                </InlineLink>
+                <InlineLink
+                    href="https://pollinations.ai/privacy"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Privacy Policy
+                </InlineLink>
+                <InlineLink
+                    href="https://pollinations.ai/refunds"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Refund Policy
+                </InlineLink>
             </footer>
 
             <DeleteAccountDialog

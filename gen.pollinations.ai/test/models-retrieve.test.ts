@@ -500,3 +500,22 @@ test("applies the same 404 rule to aliases of hidden models", async ({
     });
     expect(response.status).toBe(404);
 });
+
+test("advertises reasoning capability for Azure GPT models that accept reasoning_effort", async () => {
+    const response = await fetchWorker("/v1/models");
+    expect(response.status).toBe(200);
+    const list = (await response.json()) as {
+        data: { id: string; capabilities?: string[] }[];
+    };
+    for (const id of [
+        "openai/gpt-5.4-nano",
+        "openai/gpt-5-nano",
+        "openai/gpt-5.4-mini",
+    ]) {
+        const entry = list.data.find((model) => model.id === id);
+        expect(entry, id).toBeDefined();
+        expect(entry?.capabilities, id).toEqual(
+            expect.arrayContaining(["reasoning"]),
+        );
+    }
+});

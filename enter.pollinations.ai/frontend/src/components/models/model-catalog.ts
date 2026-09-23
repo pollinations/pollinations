@@ -79,19 +79,6 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 let modelCatalogExpiresAt = 0;
 
-export function mergeModelCatalogs(
-    catalogs: readonly ApiModelInfo[][],
-): ApiModelInfo[] {
-    const modelsById = new Map<string, ApiModelInfo>();
-    for (const catalog of catalogs) {
-        for (const model of catalog) {
-            const id = getCatalogModelId(model);
-            if (id && !modelsById.has(id)) modelsById.set(id, model);
-        }
-    }
-    return [...modelsById.values()];
-}
-
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const catalogUrl = new URL(url);
     // Keep the full accessible catalog so the search bar can offer status:all.
@@ -115,15 +102,7 @@ export async function fetchModelCatalog(
         modelCatalogExpiresAt = Date.now() + 60_000;
     }
     modelCatalogPromise ??= import("../../config.ts")
-        .then(async ({ config }) => {
-            const catalogs = await Promise.all([
-                fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
-            ]);
-            return mergeModelCatalogs(catalogs);
-        })
+        .then(({ config }) => fetchCatalog(`${config.genBaseUrl}/models`))
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -204,13 +183,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
-        health: model.health
-            ? {
-                  status: model.health.status,
-                  successRate: model.health.success_rate,
-                  requests: model.health.requests,
-              }
-            : undefined,
+        health: model.health,
         agent: model.agent,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,

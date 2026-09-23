@@ -1,7 +1,6 @@
 import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
-    mergeModelCatalogs,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it, vi } from "vitest";
@@ -9,7 +8,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../frontend/src/config.ts", () => ({
     config: {
         genBaseUrl: "https://gen.example",
-        communityCatalogUrl: "https://gen.example/models?source=community",
     },
 }));
 
@@ -40,35 +38,21 @@ it("fetches the full catalog for show-all without a separate health request", as
     }
 });
 
-it("preserves catalog reliability across text, image, video and 3D without a second health feed", () => {
-    const models = getModelPricesFromCatalog([
-        {
-            name: "text/model",
-            category: "text",
-            health: { status: "healthy", requests: 50, success_rate: 98 },
-        },
-        {
-            name: "video/model",
-            category: "video",
-            health: { status: "degraded", requests: 50, success_rate: 90 },
-        },
-        {
-            name: "3d/model",
-            category: "3d",
-            health: { status: "down", requests: 5, success_rate: 0 },
-        },
-        {
-            name: "image/model",
-            category: "image",
-            health: { status: "unknown", requests: 0, success_rate: null },
-        },
-    ]);
-    expect(models.map((model) => model.health)).toEqual([
-        { status: "healthy", requests: 50, successRate: 98 },
-        { status: "degraded", requests: 50, successRate: 90 },
-        { status: "down", requests: 5, successRate: 0 },
-        { status: "unknown", requests: 0, successRate: null },
-    ]);
+it("keeps catalog health for filtering and status display", () => {
+    const health = [
+        { status: "healthy" as const, requests: 100, success_rate: 96 },
+        { status: "degraded" as const, requests: 100, success_rate: 95 },
+        { status: "down" as const, requests: 100, success_rate: 80 },
+        { status: "unknown" as const, requests: 0, success_rate: null },
+    ];
+    const models = getModelPricesFromCatalog(
+        health.map((entry, index) => ({
+            name: `model-${index}`,
+            category: "text" as const,
+            health: entry,
+        })),
+    );
+    expect(models.map((model) => model.health)).toEqual(health);
 });
 
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
@@ -147,37 +131,6 @@ describe("parseModelCatalogResponse", () => {
         expect(() =>
             parseModelCatalogResponse([{ title: "Mystery" }, {}]),
         ).toThrow();
-    });
-});
-
-describe("mergeModelCatalogs", () => {
-    it("adds community models while preserving the first catalog entry", () => {
-        const localModel = { name: "local-model", title: "Local" };
-        const localCommunityModel = {
-            name: "owner/community-model",
-            title: "Local community model",
-            community: true,
-        };
-
-        expect(
-            mergeModelCatalogs([
-                [localModel, localCommunityModel],
-                [
-                    {
-                        ...localCommunityModel,
-                        title: "Production community model",
-                    },
-                    {
-                        name: "another/community-model",
-                        community: true,
-                    },
-                ],
-            ]),
-        ).toEqual([
-            localModel,
-            localCommunityModel,
-            { name: "another/community-model", community: true },
-        ]);
     });
 });
 

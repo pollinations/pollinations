@@ -115,7 +115,7 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             health: {
                 status: successRate == null ? "unknown" : "degraded",
                 requests: successRate == null ? 0 : 50,
-                successRate,
+                success_rate: successRate,
             },
         });
         const visible = successRate == null || successRate > 80;
@@ -126,7 +126,7 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
         expect(matches(candidate, "status:all")).toBe(true);
     }
     const official = model({
-        health: { status: "down", requests: 50, successRate: 0 },
+        health: { status: "down", requests: 50, success_rate: 0 },
     });
     expect(matches(official, "status:reliable")).toBe(true);
     expect(

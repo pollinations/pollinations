@@ -311,7 +311,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
                 (filter.value === "reliable"
                     ? !model.community ||
                       model.agent ||
-                      isModelReliable(model.health?.successRate)
+                      isModelReliable(model.health?.success_rate)
                     : model.health?.status === "healthy")
             );
         case "publisher": {

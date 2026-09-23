@@ -61,6 +61,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -84,6 +85,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -207,6 +209,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -430,6 +433,92 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(5),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Sol",
+        description: "Reasoning for complex coding and agentic workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6-luna": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    completionTextTokens: perMillion(0.75),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Luna",
+        description: "Efficient reasoning for focused, high-volume tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -1068,6 +1157,54 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "x-ai/grok-4.7": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "xAI",
+        category: "text",
+        addedDate: new Date("2026-09-21").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter xAI route rates (2026-09-21), including the mandatory
+        // 5.5% OpenRouter credit fee. Image inputs are tokenized into
+        // promptTextTokens; no separate usage is reported. Excludes the
+        // $0.005-per-call web search charge (not exposed on this model).
+        cost: {
+            promptTextTokens: perMillion(1.6) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            completionTextTokens: perMillion(4.8) * 1.055,
+        },
+        // xAI reprices the whole request from 200K prompt tokens.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(3.2) * 1.055,
+                    promptCachedTokens: perMillion(0.8) * 1.055,
+                    completionTextTokens: perMillion(9.6) * 1.055,
+                },
+            },
+            longContextAtLeast(200_000),
+            {
+                long_context: {
+                    label: "Long context (200K+)",
+                    description:
+                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                },
+            },
+            "<200K context",
+        ),
+        title: "Grok 4.7",
+        description:
+            "Frontier reasoning for long-running coding, agentic tasks, and knowledge work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 500000,
+        isSpecialized: false,
+    },
     "google/gemini-2.5-flash-lite:search": {
         supportedParameters: CHAT_PARAMETERS.vertexGeminiSearch,
         aliases: [
@@ -1367,6 +1504,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-opus-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
+        // Verify against AWS's price list when the launch-day entry appears.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(5),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Claude Opus 5.5",
+        description:
+            "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: ["claude-fable-5"],
@@ -1394,7 +1558,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
-        supportedParameters: CHAT_PARAMETERS.bedrockFable51,
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
         provider: "aws",
         publisher: "Anthropic",
@@ -2043,6 +2207,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "z-ai/glm-5.3-flashx": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGlmFlashx,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-09-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Z.AI fp8 route rates (2026-09-19), including the
+            // mandatory 5.5% OpenRouter credit fee. Image inputs are
+            // tokenized into promptTextTokens; no separate usage is reported.
+            promptTextTokens: perMillion(0.37) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(1.25) * 1.055,
+        },
+        title: "Z.ai GLM-5.3 FlashX",
+        description:
+            "Faster million-token multimodal reasoning for agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/llama-3.3-70b-instruct": {
         supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: [
@@ -2424,21 +2616,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: ["qwen3.8-max"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2) * 1.055,
-            promptCachedTokens: perMillion(0.25) * 1.055,
-            promptCacheWriteTokens: perMillion(2.5) * 1.055,
-            promptImageTokens: perMillion(2) * 1.055,
-            promptVideoTokens: perMillion(2) * 1.055,
-            completionTextTokens: perMillion(6) * 1.055,
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
         },
         title: "Qwen3.8 Max",
         description:
@@ -2484,24 +2676,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: [],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-09-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
-        // price with a single 0-1M context tier (2026-09-05). OpenRouter
-        // publishes one prompt rate and no separate image/video rates.
         cost: {
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.016) * 1.055,
-            promptCacheWriteTokens: perMillion(0.2) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            promptVideoTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.47) * 1.055,
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
         },
         title: "Qwen3.8 Flash",
         description:
@@ -2516,63 +2705,106 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwen,
         aliases: ["qwen3.7-flash"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens overrides apply from 32K and 256K
-        // total prompt tokens.
-        cost: {
-            promptTextTokens: perMillion(0.03) * 1.055,
-            promptCachedTokens: perMillion(0.006) * 1.055,
-            promptCacheWriteTokens: perMillion(0.038) * 1.055,
-            promptImageTokens: perMillion(0.03) * 1.055,
-            promptVideoTokens: perMillion(0.03) * 1.055,
-            completionTextTokens: perMillion(0.13) * 1.055,
-        },
         ...defineCostVariants(
             {
                 context_32k: {
-                    promptTextTokens: perMillion(0.1) * 1.055,
-                    promptCachedTokens: perMillion(0.02) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.125) * 1.055,
-                    promptImageTokens: perMillion(0.1) * 1.055,
-                    promptVideoTokens: perMillion(0.1) * 1.055,
-                    completionTextTokens: perMillion(0.4) * 1.055,
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
                 },
                 context_256k: {
-                    promptTextTokens: perMillion(0.2) * 1.055,
-                    promptCachedTokens: perMillion(0.04) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.25) * 1.055,
-                    promptImageTokens: perMillion(0.2) * 1.055,
-                    promptVideoTokens: perMillion(0.2) * 1.055,
-                    completionTextTokens: perMillion(0.8) * 1.055,
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
+                },
+                explicit_cache: {
+                    promptCachedTokens: perMillion(0.003),
+                },
+                context_32k_explicit_cache: {
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.01),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
+                },
+                context_256k_explicit_cache: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
                 },
             },
-            ({ usage }) => {
+            ({ usage, input }) => {
                 const promptTokens = totalPromptTokens(usage);
-                if (promptTokens >= 256_000) return "context_256k";
-                if (promptTokens >= 32_000) return "context_32k";
-                return undefined;
+                const tier =
+                    promptTokens > 256_000
+                        ? "context_256k"
+                        : promptTokens > 32_000
+                          ? "context_32k"
+                          : undefined;
+                if (!input?.hasExplicitCacheHit) return tier;
+                if (tier === "context_256k") {
+                    return "context_256k_explicit_cache";
+                }
+                if (tier === "context_32k") {
+                    return "context_32k_explicit_cache";
+                }
+                return "explicit_cache";
             },
             {
                 context_32k: {
-                    label: "32K+ context",
+                    label: ">32K context",
                     description:
-                        "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+                        "Direct Alibaba rates above 32,000 prompt tokens; the higher rates apply to the whole request.",
                 },
                 context_256k: {
-                    label: "256K+ context",
+                    label: ">256K context",
                     description:
-                        "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+                        "Direct Alibaba rates above 256,000 prompt tokens; the highest rates apply to the whole request.",
+                },
+                explicit_cache: {
+                    label: "Explicit cache, ≤32K context",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost 10% of input; creation costs 125%.",
+                },
+                context_32k_explicit_cache: {
+                    label: "Explicit cache, >32K context",
+                    description:
+                        "Direct Alibaba >32K rates with explicit-cache reads at 10% of input.",
+                },
+                context_256k_explicit_cache: {
+                    label: "Explicit cache, >256K context",
+                    description:
+                        "Direct Alibaba >256K rates with explicit-cache reads at 10% of input.",
                 },
             },
-            "<32K context",
+            "≤32K context, implicit/no cache",
         ),
+        cost: {
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.006),
+            promptCacheWriteTokens: perMillion(0.038),
+            promptImageTokens: perMillion(0.03),
+            promptVideoTokens: perMillion(0.03),
+            completionTextTokens: perMillion(0.13),
+        },
         title: "Qwen3.7 Flash",
         description:
             "Ultra-low-cost multimodal reasoning for agents and visual tasks",

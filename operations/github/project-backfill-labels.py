@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Backfill labels and priority for issues/PRs in a GitHub project.
+Backfill labels and priority for issues in a GitHub project.
 
 Usage:
     # Full backfill (replace all)
@@ -15,18 +15,12 @@ Usage:
     # Skip labels (useful for priority-only runs)
     python operations/github/project-backfill-labels.py --project dev --skip-labels --with-priority
 
-    # Process PRs
-    python operations/github/project-backfill-labels.py --project dev --include-prs
-    python operations/github/project-backfill-labels.py --project dev --prs-only
-
 Options:
     --project        Required. Project to process: dev, support, apps
     --dry-run        Preview changes without applying
     --with-priority  Also update priority field (dev/support only)
     --only-missing   Only fill missing fields, don't replace existing values
     --skip-labels    Skip label updates
-    --include-prs    Include PRs along with issues
-    --prs-only       Process only PRs, not issues
 
 Notes:
     Priority is determined by AI based on issue content.
@@ -66,20 +60,18 @@ def classify_issue(
     body: str,
     author: str,
     is_internal: bool,
-    is_pr: bool = False,
 ) -> dict:
     classification = pm.classify_with_ai(
         is_internal,
         title=title,
         body=body,
         author=author,
-        is_pull_request=is_pr,
     )
     return classification if classification.get("project") else {}
 
 
-def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None) -> list:
-    """Fetch all open issues (and optionally PRs) in a project with their project item IDs."""
+def get_project_issues(project_id: str, priority_field_id: str = None) -> list:
+    """Fetch all open issues in a project with their project item IDs."""
     query = """
     query($projectId: ID!, $cursor: String) {
         node(id: $projectId) {
@@ -98,23 +90,6 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                         }
                         content {
                             ... on Issue {
-                                __typename
-                                id
-                                number
-                                title
-                                body
-                                state
-                                createdAt
-                                author {
-                                    login
-                                    ... on User { databaseId }
-                                    ... on Bot { databaseId }
-                                }
-                                labels(first: 20) {
-                                    nodes { name }
-                                }
-                            }
-                            ... on PullRequest {
                                 __typename
                                 id
                                 number
@@ -152,9 +127,8 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
             if not content or content.get("state") != "OPEN":
                 continue
             typename = content.get("__typename")
-            if typename == "Issue" or (include_prs and typename == "PullRequest"):
+            if typename == "Issue":
                 content["_item_id"] = item.get("id")
-                content["_is_pr"] = typename == "PullRequest"
                 current_priority = None
                 for fv in item.get("fieldValues", {}).get("nodes", []):
                     field = fv.get("field", {})
@@ -230,31 +204,6 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
     return [l for l in current_labels if l not in to_remove]
 
 
-def add_to_project(project_id: str, content_node_id: str) -> str:
-    """Add an issue/PR to a project. Returns new project item id."""
-    mutation = """
-    mutation($projectId: ID!, $contentId: ID!) {
-        addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
-            item { id }
-        }
-    }
-    """
-    data = graphql_request(mutation, {"projectId": project_id, "contentId": content_node_id})
-    return data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
-
-
-def delete_from_project(project_id: str, item_id: str) -> bool:
-    mutation = """
-    mutation($projectId: ID!, $itemId: ID!) {
-        deleteProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) {
-            deletedItemId
-        }
-    }
-    """
-    data = graphql_request(mutation, {"projectId": project_id, "itemId": item_id})
-    return bool(data.get("deleteProjectV2Item", {}).get("deletedItemId"))
-
-
 def add_labels(issue_number: int, labels: list, dry_run: bool):
     """Add labels to an issue."""
     if not labels:
@@ -295,14 +244,11 @@ def main():
                         help="Project to process")
     parser.add_argument("--dry-run", action="store_true", help="Preview without applying")
     parser.add_argument("--with-priority", action="store_true", help="Also update priority (dev/support)")
-    parser.add_argument("--prs-only", action="store_true", help="Process only PRs, not issues")
-    parser.add_argument("--include-prs", action="store_true", help="Include PRs along with issues")
     # Control what to update
     parser.add_argument("--only-missing", action="store_true",
                         help="Only fill missing fields, don't replace existing (applies to labels and priority)")
     parser.add_argument("--skip-labels", action="store_true", help="Skip label updates")
     parser.add_argument("--issues", help="Comma-separated issue numbers to process (filters project items to just these)")
-    parser.add_argument("--migrate-to", choices=["dev"], help="Migrate items from --project into the named project (currently only 'dev' supported, intended for moving PRs Support -> Dev)")
     args = parser.parse_args()
 
     project_key = args.project
@@ -312,77 +258,16 @@ def main():
         log_error(f"Unknown project: {project_key}")
         sys.exit(1)
 
-    include_prs = args.include_prs or args.prs_only
     priority_field_id = project.get("priority_field_id")
-    log_debug(f"Fetching open items from {project['name']} project (include_prs={include_prs})...")
-    items = get_project_issues(project["id"], include_prs=include_prs, priority_field_id=priority_field_id)
-    
-    if args.prs_only:
-        items = [i for i in items if i.get("_is_pr")]
-        log_debug(f"Found {len(items)} open PRs")
-    else:
-        log_debug(f"Found {len(items)} open items")
+    log_debug(f"Fetching open items from {project['name']} project...")
+    items = get_project_issues(project["id"], priority_field_id=priority_field_id)
+    log_debug(f"Found {len(items)} open items")
 
     if args.issues:
         wanted = {int(n.strip()) for n in args.issues.split(",") if n.strip()}
         items = [i for i in items if i["number"] in wanted]
         log_debug(f"Filtered to {len(items)} items matching --issues {sorted(wanted)}")
 
-    if args.migrate_to == "dev":
-        if project_key == "dev":
-            log_error("--migrate-to dev requires --project to be the source (e.g. support), not dev")
-            sys.exit(1)
-        dev_project = CONFIG["projects"]["dev"]
-        log_debug(f"Migration mode: {len(items)} items from {project['name']} -> {dev_project['name']}")
-        for issue in items:
-            issue_number = issue["number"]
-            title = issue["title"]
-            body = issue.get("body", "") or ""
-            author_record = issue.get("author") or {}
-            author = author_record.get("login", "")
-            author_id = author_record.get("databaseId")
-            is_pr = issue.get("_is_pr", False)
-            content_node_id = issue.get("id")
-            source_item_id = issue.get("_item_id")
-
-            log_debug(f"\n--- Migrating #{issue_number} ({'PR' if is_pr else 'issue'}): {title[:60]}...")
-
-            real_author, real_author_id = get_real_author(author, author_id, body)
-            is_internal = pm.is_org_member(real_author_id)
-            classification = classify_issue(
-                title, body, real_author, is_internal, is_pr=is_pr
-            )
-            if not classification:
-                log_error(f"Failed to classify #{issue_number}; skipping migration")
-                time.sleep(1)
-                continue
-
-            # Force dev labels regardless of AI's project choice (the new rule for PRs)
-            raw_labels = classification.get("labels", [])
-            dev_label = next(
-                (l.upper() for l in raw_labels if l.upper() in VALID_LABELS["dev"]),
-                "DEV-CHORE",  # safe default
-            )
-
-            if args.dry_run:
-                log_debug(f"[DRY-RUN] Would strip support labels from #{issue_number}")
-                log_debug(f"[DRY-RUN] Would add label {dev_label} to #{issue_number}")
-                log_debug(f"[DRY-RUN] Would add #{issue_number} to Dev project")
-                log_debug(f"[DRY-RUN] Would remove #{issue_number} from {project['name']} project")
-            else:
-                remove_project_labels(issue_number, project_key, dry_run=False)
-                add_labels(issue_number, [dev_label], dry_run=False)
-                new_item_id = add_to_project(dev_project["id"], content_node_id)
-                if new_item_id:
-                    log_debug(f"Added #{issue_number} to Dev project: item_id={new_item_id}")
-                    if source_item_id:
-                        deleted = delete_from_project(project["id"], source_item_id)
-                        log_debug(f"{'Removed' if deleted else 'FAILED to remove'} #{issue_number} from {project['name']}")
-                else:
-                    log_error(f"Failed to add #{issue_number} to Dev; not removing from source")
-            time.sleep(1)
-        log_debug(f"\nDone! Migrated {len(items)} items.")
-        return
 
     for issue in items:
         issue_number = issue["number"]

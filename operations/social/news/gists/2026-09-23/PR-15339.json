@@ -1,0 +1,35 @@
+{
+  "pr_number": 15339,
+  "title": "feat: uncap GPT Image per-user RPM where OpenAI fallback exists",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15339",
+  "merged_at": "2026-09-23T13:33:44Z",
+  "labels": [],
+  "pr_body_excerpt": "The per-user RPM gate runs before the Azure attempt, so a capped user got a 429 and never reached the OpenAI direct fallback. Removing it lets Azure serve until its own quota 429s, then overflow goes to OpenAI direct (Azure GPT Image only falls back on upstream 429).\n\n- Removes `perUserRpm` from `openai/gpt-image-2` (6), `gpt-image-2.5-flare` (12), `gpt-image-2.5-sunburst` (12), plus the now-redundant `perUserRpm: null` on their `:openai` routes\n- Sets Flare and Sunburst `priceMultiplier` 1 → 0.75, matching the other Azure GPT Image models; `paidOnly` unchanged\n- Aliases, providers, routes and fallbacks unchanged. gpt-image-1-mini / 1.5 already had no cap\n\n| | Before | After |\n|---|---|---|\n| gpt-image-2 per-user cap | 6 RPM | none |\n| 2.5 Flare / Sunburst per-user cap | 12 RPM | none |\n| 2.5 Flare / Sunburst price | 1× cost | 0.75× cost |\n\nVerification\n- OpenAI direct probed for all three models: 200, ~11s, 14 in / 196 out tokens\n- OpenAI org limits (settings page, 2026-09-23): gpt-image-2 250 images/min + 8M TPM, well above Azure's 2×12 RPM. gpt-image-2.5-flare/sunburst are not listed, so the org default (3,000 RPM / 250k TPM) presumably applies\n- Local gen E2E: one request per model served by Azure, debit = cost × 0.75 exactly (tier for gpt-image-2, pack for 2.5)\n- Burst from one user: 10× gpt-image-2 + 14× Flare in parallel, all 200 with no local 429, billing matches usage headers. Azure absorbed the Flare burst, so live overflow wasn't triggered; the `gpt-image-2 falls back to OpenAI direct on an Azure 429` VCR test passes\n- Tests: rate-limit, fallback, GPT Image routing, aliases, effective-prices snapshot; gen typecheck clean\n\nEconomics note: overflow to OpenAI direct is cash spend billed at 0.75×. gpt-image-2 stays Quest-Pollen accessible.\n\nTouches the same fallback file as #15293.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The overflow garden opens",
+    "blurb": "GPT Image requests can now keep buzzing past the old per-user gate: Azure serves first, and OpenAI is ready when Azure is full. Flare and Sunburst also got a lighter 0.75× Pollen price tag.",
+    "summary": "Removed the 6 RPM per-user cap on gpt-image-2 and 12 RPM caps on gpt-image-2.5-flare and gpt-image-2.5-sunburst so Azure can serve requests until its upstream quota triggers the existing OpenAI-direct fallback; Flare and Sunburst now use a 0.75× price multiplier instead of 1×.",
+    "impact": "Users can send larger GPT Image bursts without local 429s on these three models, with Azure capacity and OpenAI overflow available while Flare and Sunburst cost 25% less.",
+    "keywords": [
+      "gpt-image-2",
+      "azure",
+      "openai",
+      "fallback",
+      "rate-limits",
+      "pricing",
+      "image-generation"
+    ],
+    "visual_concept": "Depict GPT Image traffic as glowing pixel pollen flowing through a spacious Azure-blue garden gate into a second OpenAI-direct greenhouse when the first garden is busy. Polli, wearing a tiny gardener's visor and holding a routing clipboard, warmly directs the flow between the two healthy code-plants; a small CRT robot can hold a 0.75× price placard, with flowers and vines making the capacity expansion feel abundant rather than frantic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny gardener visor and guiding glowing pixel pollen from a lime green (#ecf874) Azure code-garden toward a second OpenAI greenhouse; a cute chunky CRT monitor robot holds a pixel sign reading \"0.75×\", while flowers and code-vines bloom around both routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15339.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny gardener visor and guiding glowing pixel pollen from a lime green (#ecf874) Azure code-garden toward a second OpenAI greenhouse; a cute chunky CRT monitor robot holds a pixel sign reading \"0.75×\", while flowers and code-vines bloom around both routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-23T13:34:45.817401+00:00"
+}

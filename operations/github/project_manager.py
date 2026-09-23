@@ -97,11 +97,6 @@ CONFIG = {
                 "Low": "ca5161be",
             },
         },
-        "apps": {
-            "id": "PVT_kwDOBS76fs4BLtE_",
-            "name": "Apps",
-            "internal_only": False,
-        },
     },
     "discord_relay_bot_id": 247793354,
     # CI bots whose issues report our own failures (github-actions[bot]).
@@ -196,7 +191,6 @@ PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
 CLASSIFIER_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
 # Types a person set on an issue that the classifier keeps.
 PINNED_TYPES = {"TRACKING", "VOTING"}
-APP_SUBMISSION_BRANCH = re.compile(r"^auto/app-\d+(?:-|$)")
 
 
 def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
@@ -627,8 +621,8 @@ def label_pull_request():
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     set_labels(labels)
-    if APP_SUBMISSION_BRANCH.match(PR_HEAD_REF):
-        add_to_project(CONFIG["projects"]["apps"]["id"])
+    # Every open PR sits next to the issues in Dev, where views separate them.
+    add_to_project(CONFIG["projects"]["dev"]["id"])
 
 
 def main():
@@ -643,8 +637,8 @@ def main():
 
     existing_labels = get_existing_labels()
     if "APP-SUBMISSION" in existing_labels:
-        log_debug("Found APP-SUBMISSION label, routing to Apps project")
-        add_to_project(CONFIG["projects"]["apps"]["id"])
+        log_debug("Found APP-SUBMISSION label, routing to Dev project")
+        add_to_project(CONFIG["projects"]["dev"]["id"])
         return
     if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
         log_debug("Found quest label; not project-manager's responsibility, skipping")
@@ -665,8 +659,9 @@ def main():
     classification = classify_with_ai(is_internal, tracking_issues)
     
     if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Apps project")
-        add_to_project(CONFIG["projects"]["apps"]["id"])
+        # Not labelled APP-SUBMISSION: a person confirms before the app review starts.
+        log_debug("AI detected app submission, routing to Dev project")
+        add_to_project(CONFIG["projects"]["dev"]["id"])
         return
 
     if not classification.get("project"):

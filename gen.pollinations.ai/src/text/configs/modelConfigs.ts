@@ -490,6 +490,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
         }),
+    "zai-org/GLM-5.2": () =>
+        createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -592,6 +594,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         )(),
         requiresBase64ImageUrls: true,
     }),
+    "glm-5.2-openrouter-zai": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.2",
+        "z-ai/fp8",
+    ),
     "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "alibaba",
@@ -785,10 +791,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "perplexity",
     ),
 
-    "accounts/fireworks/models/glm-5p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p2",
-        }),
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p3",

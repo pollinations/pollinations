@@ -2205,19 +2205,20 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.2": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterGlmFlashx,
         aliases: ["glm-5.2", "glm-5p2", "glm"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.14),
-            completionTextTokens: perMillion(4.4),
+            // OpenRouter Z.AI FP8 rates (2026-09-23), including the account's
+            // 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(1.4) * 1.055,
+            promptCachedTokens: perMillion(0.26) * 1.055,
+            completionTextTokens: perMillion(4.4) * 1.055,
         },
         title: "Z.ai GLM-5.2",
         description:

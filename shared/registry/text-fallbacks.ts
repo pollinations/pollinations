@@ -740,4 +740,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "z-ai/glm-5.2": {
+        "z-ai/glm-5.2:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // DeepInfra FP4 rates (2026-09-23): list $0.75/$2.40 with an
+                // open-ended 25% discount.
+                promptTextTokens: perMillion(0.5625),
+                promptCachedTokens: perMillion(0.105),
+                completionTextTokens: perMillion(1.8),
+            },
+        },
+    },
 } as const satisfies FallbackMap;

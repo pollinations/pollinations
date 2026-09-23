@@ -736,7 +736,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "z-ai/glm-5.2",
-        config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
+        config: portkeyConfig["glm-5.2-openrouter-zai"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "z-ai/glm-5.2:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.2"],
         transform: fireworksThinking,
     },
     {

@@ -3395,14 +3395,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "z-ai/glm-5.2": {
     "cost": {
-      "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000014,
-      "promptTextTokens": 0.0000014,
+      "completionTextTokens": 0.000004642,
+      "promptCachedTokens": 0.0000002743,
+      "promptTextTokens": 0.000001477,
     },
     "price": {
-      "completionTextTokens": 0.0000044,
-      "promptCachedTokens": 0.00000014,
-      "promptTextTokens": 0.0000014,
+      "completionTextTokens": 0.000004642,
+      "promptCachedTokens": 0.0000002743,
+      "promptTextTokens": 0.000001477,
+    },
+  },
+  "z-ai/glm-5.2:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.0000018,
+      "promptCachedTokens": 0.000000105,
+      "promptTextTokens": 0.0000005625,
+    },
+    "price": {
+      "completionTextTokens": 0.0000018,
+      "promptCachedTokens": 0.000000105,
+      "promptTextTokens": 0.0000005625,
     },
   },
   "z-ai/glm-5.3": {

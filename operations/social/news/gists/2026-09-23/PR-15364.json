@@ -1,0 +1,37 @@
+{
+  "pr_number": 15364,
+  "title": "fix: report Tinybird query failures as errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15364",
+  "merged_at": "2026-09-23T23:39:03Z",
+  "labels": [
+    "BUG",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Fix `tb-prod.sh` returning success for HTTP/SQL errors, missing data, and malformed responses that callers could mistake for no rows.\n- Validate the JSON envelope before returning the original response; preserve genuine empty arrays and JSONCompact results.\n- Update spending/billing consumers to preserve pipeline failures, and fix the Tinybird endpoint example that counted a missing data field as zero rows.\n- Verify 13 response cases against the actual shell helper, curl, and jq using a local HTTP server plus six endpoint-guard cases. Run the helper tests with `node --test enter.pollinations.ai/observability/scripts/tb-prod.test.mjs`.\n- Shell syntax, Biome, and diff checks pass; no production queries or secret changes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "No More Ghost Rows",
+    "blurb": "The Tinybird pipe now knows the difference between an empty result and a bird that never delivered the letter. Billing and spending checks get a proper error instead of quietly counting imaginary zeroes.",
+    "summary": "Fixed the `tb-prod.sh` Tinybird helper so HTTP and SQL failures, missing data, and malformed JSON return errors, while valid empty arrays and `JSONCompact` responses remain valid results.",
+    "impact": "Spending and billing pipelines can now preserve real Tinybird query failures instead of interpreting broken responses as zero rows.",
+    "keywords": [
+      "tinybird",
+      "observability",
+      "billing",
+      "spending",
+      "error-handling",
+      "testing"
+    ],
+    "visual_concept": "A cozy garden data pipeline: Polli acts as a careful observability mechanic, inspecting a Tinybird-shaped message tube that distinguishes a genuinely empty seed basket from a cracked, error-marked delivery. A retro terminal and small code-plants represent validated JSON and more trustworthy billing data.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny inspector glasses while checking a retro lime green (#ecf874) terminal beside a garden message pipe; one empty seed basket is clearly valid while a cracked response envelope is marked with a small pixel error symbol, with code-plants and flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15364.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny inspector glasses while checking a retro lime green (#ecf874) terminal beside a garden message pipe; one empty seed basket is clearly valid while a cracked response envelope is marked with a small pixel error symbol, with code-plants and flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-23T23:39:53.678803+00:00"
+}

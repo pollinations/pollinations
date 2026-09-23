@@ -653,7 +653,12 @@ def main():
         return
 
     real_author, real_author_id = get_real_author()
-    is_internal = is_org_member(real_author_id)
+    # Bots such as github-actions report our own failures; the Discord relay bot speaks for people.
+    is_ci_bot = (
+        ITEM_DATA.get("user", {}).get("type") == "Bot"
+        and ISSUE_AUTHOR_ID != CONFIG["discord_relay_bot_id"]
+    )
+    is_internal = is_ci_bot or is_org_member(real_author_id)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
     
     if real_author != ISSUE_AUTHOR and is_internal:

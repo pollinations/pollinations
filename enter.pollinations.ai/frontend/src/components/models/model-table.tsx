@@ -24,6 +24,7 @@ import {
 import {
     getModelTitleTooltipContent,
     ModelRow,
+    ModelTestLink,
     PerPollenEstimate,
 } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
@@ -235,31 +236,20 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             <span className="truncate">{model.publisher}</span>
                         </InlineLink>
                     )}
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                            <MobileMetadataBadges
-                                inputModalities={inputModalities}
-                                capabilities={capabilities}
-                                modalityLabel={modalityLabel}
-                                capabilityLabel={capabilityLabel}
-                                perUserRpm={model.perUserRpm}
-                            />
-                            <ModelPricingControls
-                                model={model}
-                                pricing={pricing}
-                            />
-                        </div>
-                    </div>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                    <MobileMetadataBadges
+                        inputModalities={inputModalities}
+                        capabilities={capabilities}
+                        modalityLabel={modalityLabel}
+                        capabilityLabel={capabilityLabel}
+                        perUserRpm={model.perUserRpm}
+                    />
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5">
                         <ModelStatusChips
                             health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
+                        <ModelTestLink model={model} />
                     </div>
                 </div>
             </div>
@@ -278,6 +268,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     </>
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ModelPricingControls model={model} pricing={pricing} />
+                        <BalanceAccessChip access={balanceAccess} />
+                    </div>
                     <ModelPricingLedger
                         pricing={pricing}
                         className="w-full"
@@ -356,7 +350,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     tapEnabled
                     displayContents
                 >
-                    <span className="inline-flex items-center gap-1 text-theme-text-soft">
+                    <span className="inline-flex items-center gap-1">
                         {capabilities.map((key) => {
                             const Icon = CAPABILITY_ICON[key];
                             return <Icon key={key} className="h-4 w-4" />;

@@ -229,6 +229,7 @@ export const ModelPricingControls: FC<{
                             <Button
                                 type="button"
                                 size="xs"
+                                intent="neutral"
                                 aria-label={`Pricing option for ${model.displayName ?? model.name}`}
                                 className="max-w-44 justify-between gap-1 tabular-nums"
                             >
@@ -275,10 +276,11 @@ export const ModelPricingControls: FC<{
     );
 };
 
-const LedgerPriceValue: FC<{
+export const LedgerPriceValue: FC<{
     value: string;
+    prefix?: string;
     fractionDigits?: number;
-}> = ({ value, fractionDigits = 5 }) => {
+}> = ({ value, prefix, fractionDigits = 5 }) => {
     const [whole, fraction] = value.split(".", 2);
 
     return (
@@ -288,9 +290,19 @@ const LedgerPriceValue: FC<{
                 gridTemplateColumns: `minmax(2ch, 1fr) auto ${fractionDigits}ch`,
             }}
         >
-            <span className="sr-only">{value}</span>
+            <span className="sr-only">
+                {prefix}
+                {value}
+            </span>
             <span aria-hidden="true" className="text-right">
-                {whole}
+                <span className="relative">
+                    {prefix && (
+                        <span className="absolute right-full pr-1">
+                            {prefix}
+                        </span>
+                    )}
+                    {whole}
+                </span>
             </span>
             <span aria-hidden="true" className={cn(!fraction && "invisible")}>
                 .
@@ -621,17 +633,17 @@ export const ModelPricingLedger: FC<{
     return (
         <div
             className={cn(
-                "grid w-full min-w-0 max-w-full gap-x-2",
+                "grid w-full min-w-0 max-w-full gap-x-1",
                 align === "left"
-                    ? "grid-cols-[6.5rem_9ch_minmax(0,1fr)] min-[480px]:grid-cols-[8rem_9ch_5.5rem]"
-                    : "grid-cols-[1fr_8rem_9ch_5.5rem]",
+                    ? "grid-cols-[6.5rem_9ch_minmax(0,1fr)] min-[480px]:grid-cols-[8rem_9ch_4rem]"
+                    : "grid-cols-[1fr_8rem_9ch_4rem]",
                 className,
             )}
         >
             {requestEstimate && (
                 <div
                     className={cn(
-                        "mb-1 grid grid-cols-subgrid items-baseline border-b border-divider pb-1",
+                        "mb-1 grid grid-cols-subgrid items-center border-b border-divider pt-0.5 pb-1",
                         align === "right"
                             ? "col-start-2 col-end-[-1]"
                             : "col-span-full",

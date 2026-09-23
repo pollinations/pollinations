@@ -1,4 +1,11 @@
-import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
+import {
+    CheckIcon,
+    Chip,
+    SparklesIcon,
+    Tooltip,
+    WarningIcon,
+    XIcon,
+} from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
@@ -17,6 +24,57 @@ type BalanceAccessChipProps = {
     className?: string;
 };
 
+const healthStyles = {
+    healthy: {
+        label: "Healthy",
+        className: "text-intent-success-text",
+        icon: <CheckIcon className="h-4 w-4" />,
+    },
+    degraded: {
+        label: "Degraded",
+        className: "text-intent-warning-text",
+        icon: <WarningIcon className="h-4 w-4" />,
+    },
+    down: {
+        label: "Down",
+        className: "text-intent-danger-text",
+        icon: <XIcon className="h-4 w-4" />,
+    },
+    unknown: {
+        label: "No data",
+        className: "text-theme-text-muted",
+        icon: <span className="text-base leading-none">—</span>,
+    },
+} as const;
+
+const healthNumber = new Intl.NumberFormat("en", {
+    maximumFractionDigits: 1,
+});
+
+function ModelHealthIndicator({ health }: { health: ModelHealth }) {
+    const { label, className, icon } = healthStyles[health.status];
+    const detail =
+        health.status === "unknown" || health.success_rate === null
+            ? "No data · last 24 hours"
+            : `${healthNumber.format(health.success_rate)}% success · last 24 hours`;
+
+    return (
+        <Tooltip
+            content={detail}
+            ariaLabel={`${label}: ${detail}`}
+            tapEnabled
+            displayContents
+        >
+            <span
+                aria-hidden="true"
+                className={`inline-flex h-5 w-5 items-center justify-center ${className}`}
+            >
+                {icon}
+            </span>
+        </Tooltip>
+    );
+}
+
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
@@ -25,31 +83,11 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
 }) => {
     if (!showNew && !showAlpha && !health) return null;
 
-    const unknown = !health || health.status === "unknown";
-    const healthy = !unknown && health.status === "healthy";
-    const healthLabel = unknown
-        ? "No requests in the last 24 hours"
-        : healthy
-          ? "Healthy over the last 24 hours"
-          : "Elevated errors over the last 24 hours";
-
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
     return (
-        <span className="inline-flex shrink-0 items-center gap-1.5">
-            {health && (
-                <Tooltip
-                    triggerAs="span"
-                    content={healthLabel}
-                    ariaLabel={healthLabel}
-                    tapEnabled
-                >
-                    <span
-                        aria-hidden="true"
-                        className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : healthy ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
-                    />
-                </Tooltip>
-            )}
+        <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
+            {health && <ModelHealthIndicator health={health} />}
             {showNew && (
                 <Chip intent="new" size="sm">
                     New

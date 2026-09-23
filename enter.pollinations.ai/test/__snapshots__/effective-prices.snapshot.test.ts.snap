@@ -660,14 +660,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek/deepseek-v4-flash": {
     "cost": {
-      "completionTextTokens": 0.00000066,
-      "promptCachedTokens": 0.000000007,
-      "promptTextTokens": 0.00000022,
+      "completionTextTokens": 0.00000132,
+      "promptCachedTokens": 0.000000014,
+      "promptTextTokens": 0.00000044,
     },
     "price": {
-      "completionTextTokens": 0.00000066,
-      "promptCachedTokens": 0.000000007,
-      "promptTextTokens": 0.00000022,
+      "completionTextTokens": 0.00000099,
+      "promptCachedTokens": 0.0000000105,
+      "promptTextTokens": 0.00000033,
     },
   },
   "deepseek/deepseek-v4-flash-vision-exp": {
@@ -691,9 +691,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000006,
     },
     "price": {
-      "completionTextTokens": 0.00000018,
-      "promptCachedTokens": 0.000000015,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.000000135,
+      "promptCachedTokens": 0.00000001125,
+      "promptTextTokens": 0.000000045,
     },
   },
   "deepseek/deepseek-v4-pro": {

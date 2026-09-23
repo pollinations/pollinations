@@ -246,6 +246,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
         ),
 
+    // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
+    // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
+    // replaces, so this route asks by default.
+    "DeepSeek-V4-Flash-0731": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
+            { defaultOptions: { reasoning_effort: "high" } },
+        ),
+
     // -- OpenRouter (frontier models) ----------------------------------------
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
@@ -460,6 +470,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
         }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
@@ -576,10 +588,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
-    "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash-0731",
-        }),
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",

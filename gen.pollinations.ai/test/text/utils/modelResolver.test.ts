@@ -636,19 +636,24 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
+    it("routes DeepSeek to the exact Azure 0731 checkpoint with reasoning on", () => {
         const result = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4-flash",
         });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4-flash-0731",
-        );
+        expect(result.options.model).toBe("DeepSeek-V4-Flash-0731");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4-Flash-0731",
         });
-        expect(result.options.provider).toBeUndefined();
+        expect(result.options.reasoning_effort).toBe("high");
+        expect(
+            resolveModelConfig(messages, {
+                model: "deepseek/deepseek-v4-flash",
+                reasoning_effort: "none",
+            }).options.reasoning_effort,
+        ).toBe("none");
     });
 
     it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {

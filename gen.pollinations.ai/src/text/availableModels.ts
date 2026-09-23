@@ -318,9 +318,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4-flash",
-        config: portkeyConfig[
-            "accounts/fireworks/models/deepseek-v4-flash-0731"
-        ],
+        config: portkeyConfig["DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
     },
     {

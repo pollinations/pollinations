@@ -955,7 +955,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.azureOpenReasoning,
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
@@ -964,18 +964,19 @@ const TEXT_BASE_SERVICES = {
             "deepseek-flash",
             "deepseek",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
-        priceMultiplier: 1,
+        // Azure model catalog and retirement schedule (Preview).
+        retirementDate: new Date("2026-12-03").getTime(),
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Azure Global Standard "V4 Flash 0731" meters (2026-09-23).
+            promptTextTokens: perMillion(0.44),
+            promptCachedTokens: perMillion(0.014),
+            completionTextTokens: perMillion(1.32),
         },
         title: "DeepSeek V4 Flash 0731",
         description: "Fast reasoning and coding at bargain prices",

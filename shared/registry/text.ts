@@ -1096,19 +1096,20 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-pro": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV4Pro,
         aliases: ["deepseek-v4-pro", "deepseek-pro"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-04-24").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.32),
-            promptCachedTokens: perMillion(0.044),
-            completionTextTokens: perMillion(3.96),
+            // OpenRouter Alibaba rates (2026-09-23), including the account's
+            // 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.5808) * 1.055,
+            promptCachedTokens: perMillion(0.05808) * 1.055,
+            completionTextTokens: perMillion(1.7424) * 1.055,
         },
         title: "DeepSeek V4 Pro 0813",
         description: "Deep reasoning and strong coding for demanding problems",
@@ -1116,7 +1117,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "x-ai/grok-4.20": {

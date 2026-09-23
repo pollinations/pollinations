@@ -75,6 +75,11 @@ const OPENROUTER_ROUTES = [
         "deepinfra/bf16",
     ],
     [
+        "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
+    ],
+    [
         "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
         "deepseek/deepseek-v4.1-flash",
         "deepinfra/fp8",

@@ -362,7 +362,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4-pro",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
+        config: portkeyConfig["deepseek-v4-pro-openrouter-alibaba"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        config: portkeyConfig["deepseek-v4-pro-openrouter-streamlake"],
         transform: fireworksThinking,
     },
     {

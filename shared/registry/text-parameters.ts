@@ -303,6 +303,22 @@ export const CHAT_PARAMETERS = {
         "reasoning_effort",
         "logit_bias",
     ],
+    // OpenRouter endpoint parameters (2026-09-23) for Fireworks replacements.
+    openRouterDeepseekV4Pro: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "structured_outputs",
+        "top_k",
+    ],
+    openRouterStreamLakeReasoning: [
+        ...SAMPLED_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     openRouterDeepseekV41Flash: [
         ...CHAT,
         ...SAMPLING,

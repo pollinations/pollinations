@@ -727,4 +727,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "deepseek/deepseek-v4-pro": {
+        "deepseek/deepseek-v4-pro:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterStreamLakeReasoning,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $1.32/$3.96), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.462) * 1.055,
+                promptCachedTokens: perMillion(0.0154) * 1.055,
+                completionTextTokens: perMillion(1.386) * 1.055,
+            },
+        },
+    },
 } as const satisfies FallbackMap;

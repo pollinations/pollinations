@@ -582,6 +582,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "kimi-code-deepinfra": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.7-Code" }),
+    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4-pro-0813",
+        "alibaba",
+    ),
+    "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
+    ),
     "qwen-coder-large-openrouter-streamlake": createPinnedOpenRouterConfig(
         "qwen/qwen3-coder-next",
         "streamlake",
@@ -613,10 +621,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "deepseek/deepseek-v4.1-flash",
         "deepinfra/fp8",
     ),
-    "accounts/fireworks/models/deepseek-v4-pro-0813": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-pro-0813",
-        }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k2p7-code": () =>

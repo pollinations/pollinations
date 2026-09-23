@@ -200,6 +200,8 @@ PR_KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API",
 PR_AI_FLAGS = {"BILLING", "SECURITY", "BUG"}
 SECRET_FILE_PATTERN = re.compile(r"(^|/)secrets/[^/]+\.json$|(^|/)\.sops\.yaml$")
 APP_SUBMISSION_BRANCH = re.compile(r"^auto/app-\d+(?:-|$)")
+# "fix(scope): ..." -> "fix"; the author's own prefix decides BUG when present.
+CONVENTIONAL_TYPE = re.compile(r"^(\w+)(?:\([^)]*\))?!?:")
 
 
 def normalize_labels(project: str, labels: list) -> list:
@@ -603,7 +605,13 @@ def label_pull_request():
 
     files = fetch_pr_files()
     classification = classify_pr(files)
-    labels = [classification["kind"], *classification["flags"]]
+    flags = classification["flags"]
+    declared = CONVENTIONAL_TYPE.match(ISSUE_TITLE)
+    if declared:
+        flags = [f for f in flags if f != "BUG"]
+        if declared.group(1).lower() == "fix":
+            flags.append("BUG")
+    labels = [classification["kind"], *flags]
     if any(SECRET_FILE_PATTERN.search(f) for f in files):
         labels.append("SECURITY")
     if ITEM_DATA.get("user", {}).get("type") == "Bot":

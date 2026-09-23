@@ -5,6 +5,16 @@ on:
     types: [opened]
   pull_request_target:
     types: [opened]
+  # Label existing pull requests (defaults to every open PR).
+  workflow_dispatch:
+    inputs:
+      pr_numbers:
+        description: "Space-separated PR numbers (empty = all open PRs)"
+        required: false
+      dry_run:
+        description: "Print the labels without applying them"
+        type: boolean
+        default: true
 
 concurrency:
   group: project-manager-${{ github.event.issue.number || github.event.pull_request.number }}
@@ -38,9 +48,37 @@ jobs:
         run: pip install requests
 
       - name: Organize issue or PR
+        if: github.event_name != 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: python operations/github/project_manager.py
+
+      - name: Label pull requests
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          PR_NUMBERS: ${{ inputs.pr_numbers }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: |
+          numbers="$PR_NUMBERS"
+          if [ -z "$numbers" ]; then
+            numbers=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 --json number --jq '.[].number')
+          fi
+          failed=0
+          for number in $numbers; do
+            case "$number" in
+              ''|*[!0-9]*) echo "Skipping invalid PR number: $number"; continue ;;
+            esac
+            if ! event=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq '{pull_request: .}'); then
+              failed=$((failed + 1))
+              continue
+            fi
+            GITHUB_EVENT="$event" python operations/github/project_manager.py || failed=$((failed + 1))
+          done
+          echo "Failed PRs: $failed"
+          [ "$failed" -eq 0 ]

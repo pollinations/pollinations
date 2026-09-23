@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import posixpath
-import re
 import shlex
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -17,7 +15,6 @@ from mcp.types import CallToolResult
 
 from floret.config import resolve_api_key, settings
 
-
 _workspace: ContextVar[tuple[str, list[bool]] | None] = ContextVar(
     "computer_workspace", default=None
 )
@@ -29,34 +26,6 @@ def workspace(path: str) -> Generator[list[bool], None, None]:
     token: Token[tuple[str, list[bool]] | None] = _workspace.set((path, used))
     try:
         yield used
-    finally:
-        _workspace.reset(token)
-
-
-def _workspace_command(arguments: dict[str, Any], path: str) -> dict[str, Any]:
-    requested = str(arguments.get("cwd") or "/workspace")
-    if requested == "/workspace":
-        cwd = path
-    elif requested.startswith("/workspace/"):
-        cwd = posixpath.join(path, requested.removeprefix("/workspace/"))
-    else:
-        raise ValueError("Computer cwd must be inside /workspace")
-    command = re.sub(
-        r"(?<![\w.-])/workspace(?=/|\s|$)", path, str(arguments["command"])
-    )
-    return {
-        **arguments,
-        "command": f"mkdir -p {shlex.quote(cwd)} && cd {shlex.quote(cwd)} && {command}",
-        "cwd": "/workspace",
-    }
-
-
-async def prepare_workspace(path: str) -> None:
-    token: Token[tuple[str, list[bool]] | None] = _workspace.set(None)
-    try:
-        await call_tool(
-            "computer", "bash", {"command": f"mkdir -p {shlex.quote(path)}"}
-        )
     finally:
         _workspace.reset(token)
 
@@ -81,7 +50,8 @@ async def call_tool(
     if server == "computer" and name == "bash" and current is not None:
         path, used = current
         used[0] = True
-        arguments = _workspace_command(arguments, path)
+        # Computer creates cwd; the directory is not a filesystem boundary.
+        arguments = {"cwd": path, **arguments}
     # Never share Authorization across runs or expose it to shell commands.
     async with httpx.AsyncClient(
         headers={"Authorization": f"Bearer {key}"},

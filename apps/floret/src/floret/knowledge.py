@@ -133,8 +133,8 @@ audio model. For `eleven-dialogue`, format each line as `voice: text`.
 remove background sound from audio or video.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
-- Media plumbing: use Computer `bash` for files in this run's isolated workspace and publish final \
-files with `assets publish`. Computer does not include ffmpeg. Use `runFfmpeg` with public source URLs for stitching, trimming, \
+- Media plumbing: use Computer `bash` with relative paths in this run's temporary directory and publish final \
+files with `assets publish` before the directory is removed. The caller's Computer filesystem is shared across runs, not isolated. Computer does not include ffmpeg. Use `runFfmpeg` with public source URLs for stitching, trimming, \
 frame extraction, and audio muxing; its output is already hosted. `upload_media` accepts only HTTP(S) \
 URLs or data: URIs. Frame refs passed to `generate_video` are re-hosted automatically.
 - Multi-scene video: generate keyframe images, then clip_i = generate_video(image=K_i, \

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15330,
+  "title": "Add ShouldIApply to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15330",
+  "merged_at": "2026-09-23T09:27:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ShouldIApply](https://notsointresting.github.io/shouldiapply) to build\n- ShouldIApply tells job seekers their real, calibrated odds of passing a job's initial screen — before they waste the effort applying. Paste your resume and a job description. The app sends them to Pol\n\nFixes #15315",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Odds Before the Odyssey",
+    "blurb": "ShouldIApply has joined the garden: paste in a resume and job description, then get calibrated initial-screen odds before planting hours into an application. A small reality check, delivered before the cover-letter spiral begins.",
+    "summary": "Added ShouldIApply to the app build, giving job seekers a Pollinations-powered tool that compares a pasted resume and job description to estimate their calibrated odds of passing the initial screening stage.",
+    "impact": "Users can now check a role’s likely initial-screen fit before investing time in a full application, with the app available through the Pollinations build.",
+    "keywords": [
+      "community-app",
+      "ShouldIApply",
+      "job-search",
+      "resume",
+      "screening",
+      "apps"
+    ],
+    "visual_concept": "Depict ShouldIApply as a cozy job-search garden: Polli reviews a resume and job-description parchment beside a friendly retro terminal whose screen shows a simple, encouraging odds meter. A few code-plants and blooming flowers turn the intimidating application process into a calm, practical checkpoint; Polli wears tiny librarian glasses and looks knowingly amused.",
+    "image_prompt": "A cozy pixel art garden-office scene where the cute Polli bee mascot—with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded light-blue translucent wings, and tiny librarian glasses—compares a resume parchment with a job-description parchment beside a chunky CRT terminal showing a gentle lime-green (#ecf874) “FIT CHECK” odds meter; code-plants and small flowers bloom around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15330.jpg",
+    "prompt": "A cozy pixel art garden-office scene where the cute Polli bee mascot—with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded light-blue translucent wings, and tiny librarian glasses—compares a resume parchment with a job-description parchment beside a chunky CRT terminal showing a gentle lime-green (#ecf874) “FIT CHECK” odds meter; code-plants and small flowers bloom around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-23T09:28:49.901020+00:00",
+  "app_name": "ShouldIApply",
+  "app_url": "https://notsointresting.github.io/shouldiapply"
+}

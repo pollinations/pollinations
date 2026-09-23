@@ -1,4 +1,5 @@
 import { isUserBanned } from "@shared/auth/ban.ts";
+import { isOfficialAgentPublisherGithubId } from "@shared/auth/official-agent-publishers.ts";
 import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
@@ -70,6 +71,7 @@ async function queryCommunityModelRegistryEntries(
             banned: schema.user.banned,
             banExpires: schema.user.banExpires,
             ownerGithubUsername: schema.user.githubUsername,
+            ownerGithubId: schema.user.githubId,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
             providerIconUrl: schema.user.communityProviderIconUrl,
@@ -236,9 +238,12 @@ async function queryCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        const isAgent = usesAgentRunToken(communityEndpoint);
         const info = modelInfoFromDefinition(modelId, definition, {
             community: true,
-            agent: usesAgentRunToken(communityEndpoint),
+            agent: isAgent,
+            verified:
+                isAgent && isOfficialAgentPublisherGithubId(row.ownerGithubId),
         });
         const pendingPayload = proxyState?.pending?.payload ?? null;
         if (

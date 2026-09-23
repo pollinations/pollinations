@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import { textEnvironmentValue } from "../environment.js";
+import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -11,7 +12,7 @@ import {
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
-    createPerplexityModelConfig,
+    createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -741,22 +742,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Perplexity -----------------------------------------------------------
-    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
-    "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
-    "perplexity/sonar": createPinnedOpenRouterConfig(
-        "perplexity/sonar",
-        "perplexity",
-    ),
-    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-pro",
-        "perplexity",
-    ),
-    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ),
+    // The Sonar transform turns the caller's search options into web_search
+    // tool settings.
+    "perplexity/sonar": (options?: TransformOptions) =>
+        createPerplexityAgentConfig(
+            "perplexity/sonar",
+            options?.perplexityWebSearch,
+        ),
 
     "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({

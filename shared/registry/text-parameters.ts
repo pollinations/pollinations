@@ -202,21 +202,6 @@ export const CHAT_PARAMETERS = {
         "search_domain_filter",
         "search_recency_filter",
     ],
-    openRouterSonar: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        "top_k",
-        "web_search_options",
-    ],
-    openRouterSonarReasoning: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        ...OPENROUTER_REASONING,
-        "top_k",
-        "web_search_options",
-    ],
     laguna: [...CHAT, ...TOOLS, ...OPENROUTER_REASONING, "temperature"],
     longcat: [
         ...CHAT,

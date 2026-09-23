@@ -10,11 +10,7 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
-import {
-    PERPLEXITY_PRO_BILLING,
-    PERPLEXITY_REASONING_BILLING,
-    PERPLEXITY_SONAR_BILLING,
-} from "./perplexity-billing";
+import { PERPLEXITY_WEB_SEARCH_BILLING } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 import { TEXT_FALLBACKS } from "./text-fallbacks";
@@ -1653,58 +1649,13 @@ const TEXT_BASE_SERVICES = {
             "perplexity-deep",
             "sonar-deep",
             "perplexity-fast",
-        ],
-        provider: "perplexity",
-        publisher: "Perplexity",
-        category: "text",
-        addedDate: new Date("2025-11-04").getTime(),
-        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
-        retirementDate: new Date("2026-09-27").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_SONAR_BILLING,
-        cost: {
-            promptTextTokens: perMillion(1.0),
-            completionTextTokens: perMillion(1.0),
-        },
-        title: "Perplexity Sonar Fast Search",
-        description: "Quick web searches with cited answers; keeps it brief",
-        // Sonar is text-only — verified empirically (image input is ignored,
-        // no image tokens billed). Do not add "image".
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        search: true,
-        contextLength: 128000,
-        isSpecialized: false,
-    },
-    "perplexity/sonar-pro": {
-        supportedParameters: CHAT_PARAMETERS.sonar,
-        aliases: ["sonar-pro", "perplexity-pro", "perplexity"],
-        provider: "perplexity",
-        publisher: "Perplexity",
-        category: "text",
-        addedDate: new Date("2026-05-29").getTime(),
-        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
-        retirementDate: new Date("2026-09-27").getTime(),
-        priceMultiplier: 1,
-        billing: PERPLEXITY_PRO_BILLING,
-        cost: {
-            promptTextTokens: perMillion(3.0),
-            completionTextTokens: perMillion(15.0),
-        },
-        title: "Perplexity Sonar Pro",
-        description:
-            "Advanced web search that synthesizes multiple sources with citations",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        search: true,
-        contextLength: 200000,
-        isSpecialized: false,
-    },
-    "perplexity/sonar-reasoning-pro": {
-        supportedParameters: CHAT_PARAMETERS.sonar,
-        aliases: [
+            // Sonar Pro and Reasoning Pro retired with the Sonar API on
+            // 2026-09-27; the Agent API serves only Sonar.
+            "perplexity/sonar-pro",
+            "sonar-pro",
+            "perplexity-pro",
+            "perplexity",
+            "perplexity/sonar-reasoning-pro",
             "sonar-reasoning",
             "sonar-reasoning-pro",
             "perplexity-reasoning",
@@ -1713,21 +1664,23 @@ const TEXT_BASE_SERVICES = {
         publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
-        retirementDate: new Date("2026-09-27").getTime(),
         priceMultiplier: 1,
-        billing: PERPLEXITY_REASONING_BILLING,
+        paidOnly: true,
+        billing: PERPLEXITY_WEB_SEARCH_BILLING,
         cost: {
-            promptTextTokens: perMillion(2.0),
-            completionTextTokens: perMillion(8.0),
+            // Agent API rates (2026-09-23). Search results count as input.
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.0625),
+            promptCacheWriteTokens: perMillion(0.25),
+            completionTextTokens: perMillion(2.5),
         },
-        title: "Perplexity Sonar Reasoning Pro",
-        description:
-            "Thinks step by step while searching the web; slower but more rigorous",
+        title: "Perplexity Sonar Fast Search",
+        description: "Quick web searches with cited answers; keeps it brief",
+        // Sonar is text-only — verified empirically (image input is ignored,
+        // no image tokens billed). Do not add "image".
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
-        reasoning: true,
         search: true,
         contextLength: 128000,
         isSpecialized: false,

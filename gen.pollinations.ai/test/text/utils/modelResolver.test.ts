@@ -710,43 +710,39 @@ describe("resolveModelConfig", () => {
     });
 
     it.each([
-        ["perplexity/sonar", "low"],
-        ["perplexity/sonar", "high"],
-        ["perplexity/sonar-pro", "high"],
-        ["perplexity/sonar-reasoning-pro", "high"],
-    ] as const)("preserves %s %s search context on OpenRouter", (model, searchContextSize) => {
-        const result = resolveModelConfig(messages, {
-            model: `${model}:openrouter:perplexity`,
-            web_search_options: { search_context_size: searchContextSize },
-        });
-        expect(result.options.model).toBe(model);
-        expect(result.options.web_search_options).toEqual({
-            search_context_size: searchContextSize,
-        });
-        expect(result.options.modelConfig).toMatchObject({
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
-        });
-        expect(result.options.provider).toEqual({
-            only: ["perplexity"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it.each([
         "perplexity-high",
-        "perplexity-deep",
         "sonar-deep",
-    ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
+        "perplexity/sonar-pro",
+        "sonar-reasoning-pro",
+    ])("resolves %s to Sonar with search options on its web_search tool", async (modelName) => {
         const model = findModelByName(modelName);
-
         expect(model?.name).toBe("perplexity/sonar");
-        const result = resolveModelConfig(messages, {
+
+        const transformed = await model?.transform?.(messages, {
             model: modelName,
             web_search_options: { search_context_size: "high" },
+            search_recency_filter: "day",
+            presence_penalty: 1,
         });
-        expect(result.options.model).toBe("sonar");
-        expect(result.options.web_search_options).toEqual({
-            search_context_size: "high",
+        if (!transformed) throw new Error("Sonar transform missing");
+        const result = resolveModelConfig(
+            transformed.messages,
+            transformed.options,
+        );
+        expect(result.options.model).toBe("perplexity/sonar");
+        expect(result.options).not.toHaveProperty("presence_penalty");
+        expect(result.options).not.toHaveProperty("web_search_options");
+        expect(result.options.modelConfig).toMatchObject({
+            responsesEndpoint: "https://api.perplexity.ai/v1/agent",
+            responsesDefaults: {
+                tools: [
+                    {
+                        type: "web_search",
+                        search_context_size: "high",
+                        filters: { search_recency_filter: "day" },
+                    },
+                ],
+            },
         });
     });
 

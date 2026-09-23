@@ -648,6 +648,7 @@ export const CompletionUsageSchema = z
                     .nullish(),
                 cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
+                video_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         reasoning_tokens: z.number().int().nonnegative().nullish(),

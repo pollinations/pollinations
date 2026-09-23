@@ -647,6 +647,70 @@ describe("static provider fallbacks", () => {
         expect(supportsTextFallbackRequest(route, images(11))).toBe(false);
     });
 
+    it("admits video input on Ling 3.0 Flash VL and blocks silent fallback to video-less routes", () => {
+        const primary = TEXT_SERVICES["inclusionai/ling-3.0-flash-vl"];
+        expect(primary.inputModalities).toContain("video");
+        expect(primary.paidOnly).toBe(true);
+
+        const video = (type: string) => ({
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "Summarize this clip" },
+                        type === "video_url"
+                            ? {
+                                  type: "video_url",
+                                  video_url: {
+                                      url: "https://example.com/clip.mp4",
+                                  },
+                              }
+                            : {
+                                  type: "input_video",
+                                  video_url: "https://example.com/clip.mp4",
+                              },
+                    ],
+                },
+            ],
+        });
+
+        // Both public API shapes pass the primary's capability gate.
+        expect(
+            textCapabilityError(primary, video("video_url")),
+        ).toBeUndefined();
+        expect(
+            textCapabilityError(primary, video("input_video")),
+        ).toBeUndefined();
+        expect(supportsTextFallbackRequest(primary, video("video_url"))).toBe(
+            true,
+        );
+    });
+
+    it("rejects video input on video-less text models so fallback never serves it silently", () => {
+        const video = {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "video_url",
+                            video_url: { url: "https://example.com/clip.mp4" },
+                        },
+                    ],
+                },
+            ],
+        };
+        expect(
+            textCapabilityError(TEXT_SERVICES["meta/llama-4-scout"], video),
+        ).toMatch(/does not support video input/);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                video,
+            ),
+        ).toBe(false);
+    });
+
     it.each([
         { tools: [{ type: "function", function: { name: "weather" } }] },
         { tool_choice: "required" },

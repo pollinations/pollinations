@@ -82,4 +82,62 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
         expect(result.messages).toEqual([{ role: "user", content: "" }]);
     });
+
+    it("accepts video_url content parts with a URL or a base64 data URI", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            model: "inclusionai/ling-3.0-flash-vl",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What happens in this clip?" },
+                        {
+                            type: "video_url",
+                            video_url: {
+                                url: "https://example.com/clip.mp4",
+                            },
+                        },
+                        {
+                            type: "video_url",
+                            video_url: {
+                                url: "data:video/mp4;base64,AAAA",
+                                mime_type: "video/mp4",
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+
+        const content = result.messages[0].content as Array<
+            Record<string, unknown>
+        >;
+        expect(content[1]).toEqual({
+            type: "video_url",
+            video_url: { url: "https://example.com/clip.mp4" },
+        });
+        expect(content[2]).toEqual({
+            type: "video_url",
+            video_url: {
+                url: "data:video/mp4;base64,AAAA",
+                mime_type: "video/mp4",
+            },
+        });
+    });
+
+    it("preserves a video_url part missing its URL for the adapter to reject", () => {
+        // The Chat body schema is a passthrough union: provider extensions
+        // survive parsing, and URL presence is the Responses adapter's 400.
+        const result = CreateChatCompletionRequestSchema.parse({
+            messages: [
+                {
+                    role: "user",
+                    content: [{ type: "video_url", video_url: {} }],
+                },
+            ],
+        });
+        expect(result.messages[0].content).toEqual([
+            { type: "video_url", video_url: {} },
+        ]);
+    });
 });

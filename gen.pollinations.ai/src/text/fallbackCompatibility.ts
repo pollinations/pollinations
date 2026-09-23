@@ -28,6 +28,19 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+function requestHasVideoInput(value: unknown): boolean {
+    if (Array.isArray(value)) {
+        return value.some((item) => requestHasVideoInput(item));
+    }
+    if (!value || typeof value !== "object") return false;
+
+    const record = value as Record<string, unknown>;
+    if (record.type === "video_url" || record.type === "input_video") {
+        return true;
+    }
+    return Object.values(record).some((item) => requestHasVideoInput(item));
+}
+
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -97,6 +110,11 @@ export function textCapabilityError(
         countReferenceImages(request) > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
+    if (
+        requestHasVideoInput(request) &&
+        !definition.inputModalities?.includes("video")
+    )
+        return "This model does not support video input";
 }
 
 /** Whether a fallback route can honor this text request's public contract. */

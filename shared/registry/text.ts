@@ -1841,6 +1841,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "inclusionai/ling-3.0-flash-vl": {
+        supportedParameters: CHAT_PARAMETERS.openRouterLing,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "inclusionAI",
+        category: "text",
+        addedDate: new Date("2026-09-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter DeepInfra fp16 route rates (2026-09-19), including
+            // the mandatory 5.5% OpenRouter credit fee. Image and video inputs
+            // are tokenized into promptTextTokens; this route reports no
+            // separate image/video usage.
+            promptTextTokens: perMillion(0.06) * 1.055,
+            promptCachedTokens: perMillion(0.012) * 1.055,
+            completionTextTokens: perMillion(0.18) * 1.055,
+        },
+        title: "Ling 3.0 Flash VL",
+        description:
+            "Low-cost multimodal MoE with image, video understanding and tool calling",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

@@ -245,6 +245,28 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionTextTokens).toBe(1);
     });
 
+    it("should handle video tokens in prompt_tokens_details", () => {
+        const openaiUsage = {
+            prompt_tokens: 50,
+            completion_tokens: 2,
+            total_tokens: 52,
+            prompt_tokens_details: {
+                cached_tokens: 5,
+                video_tokens: 30,
+            },
+            completion_tokens_details: {
+                reasoning_tokens: 0,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptVideoTokens).toBe(30);
+        expect(usage.promptCachedTokens).toBe(5);
+        expect(usage.promptTextTokens).toBe(15);
+        expect(usage.completionTextTokens).toBe(2);
+    });
+
     // Grok via Azure reports reasoning as an additive counter:
     // total_tokens = prompt_tokens + completion_tokens + reasoning_tokens.
     it("handles additive reasoning convention when total_tokens proves it", () => {

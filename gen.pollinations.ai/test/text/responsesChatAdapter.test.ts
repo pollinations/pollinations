@@ -1064,6 +1064,85 @@ describe("Chat Completions over Responses", () => {
         });
     });
 
+    it("normalizes video_url parts to input_video and keeps video-less requests byte-identical", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "resp_video",
+                object: "response",
+                created_at: 123,
+                status: "completed",
+                model: "provider-model",
+                output: [
+                    {
+                        type: "message",
+                        role: "assistant",
+                        content: [
+                            { type: "output_text", text: "A cat jumps." },
+                        ],
+                    },
+                ],
+                usage: usage(),
+            }),
+        );
+
+        const completion = await callChatViaResponses(
+            [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What happens?" },
+                        {
+                            type: "video_url",
+                            video_url: {
+                                url: "https://example.com/clip.mp4",
+                                mime_type: "video/mp4",
+                            },
+                        },
+                        {
+                            type: "video_url",
+                            video_url: "https://example.com/mov.webm",
+                        },
+                    ],
+                },
+            ] as ChatMessage[],
+            { model: "provider-model", modelConfig },
+        );
+
+        expect(completion.choices?.[0]?.message?.content).toBe("A cat jumps.");
+        const init = vi.mocked(globalThis.fetch).mock.calls[0]?.[1];
+        const body = JSON.parse(String(init?.body)) as {
+            input: Array<{
+                content?: Array<Record<string, unknown>>;
+            }>;
+        };
+        expect(body.input[0].content).toEqual([
+            { type: "input_text", text: "What happens?" },
+            {
+                type: "input_video",
+                video_url: "https://example.com/clip.mp4",
+                mime_type: "video/mp4",
+            },
+            { type: "input_video", video_url: "https://example.com/mov.webm" },
+        ]);
+    });
+
+    it("rejects video_url parts without a URL", async () => {
+        await expect(
+            callChatViaResponses(
+                [
+                    {
+                        role: "user",
+                        content: [{ type: "video_url", video_url: {} }],
+                    },
+                ] as ChatMessage[],
+                { model: "provider-model", modelConfig },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_parameter",
+        });
+    });
+
     it("surfaces provider errors and truncated streams without DONE", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(

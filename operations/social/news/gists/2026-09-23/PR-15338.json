@@ -1,0 +1,34 @@
+{
+  "pr_number": 15338,
+  "title": "fix: reroute MiniMax M2.7 off DeepInfra, which now serves M3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15338",
+  "merged_at": "2026-09-23T13:43:15Z",
+  "labels": [],
+  "pr_body_excerpt": "Since 2026-09-10, DeepInfra forwards `MiniMaxAI/MiniMax-M2.7` to MiniMax-M3 and bills M3 rates. OpenRouter has also dropped its `deepinfra/fp8` endpoint, so our pinned primary returns 404 and every M2.7 request falls back to DeepInfra. Users who pay for M2.7 are getting M3.\n\n- Primary: OpenRouter `minimax/minimax-m2.7`, now pinned to `novita/fp8`\n- Fallback: `minimax/minimax-m2.7:openrouter:minimax` (MiniMax first-party `minimax/fp8`) replaces the DeepInfra route\n- Cost per M including the 5.5% OpenRouter fee: primary $0.27 / $0.054 cached / $1.08 (was $0.25 / $0.05 / $1.00), fallback $0.30 / $0.06 / $1.20. Multiplier, paid-only and aliases are unchanged\n- Drops `min_p` and `logit_bias` from the advertised params because Novita doesn't support them\n- Azure only has M2.5 and M3, so it can't provide an M2.7 fallback\n\nVerified through local gen: canonical ID and all 4 aliases (each identifies as M2.7), streaming, tools, reasoning effort from none to high, prompt caching (6,267 cached tokens billed), `max_tokens` cutoff, and a 400 on a bad tool schema. Forcing the fallback with the dead pin routes to MiniMax with tools and streaming intact. On both routes the debit matches the primary price exactly.\n\nKnown limitations, same on every M2.7 provider: `tool_choice: \"required\"` is ignored, and `json_object` output is sometimes wrapped in code fences.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "M2.7 Finds Its Way Home",
+    "blurb": "MiniMax M2.7 was taking a rather adventurous detour through a provider that had quietly become M3. The route now points to actual M2.7 providers again, with tools, streaming, caching, and reasoning still along for the ride.",
+    "summary": "Rerouted MiniMax M2.7 from OpenRouter’s retired DeepInfra FP8 pin to Novita FP8 as primary and MiniMax first-party FP8 as fallback, so canonical and alias requests resolve to M2.7 rather than M3.",
+    "impact": "Users requesting MiniMax M2.7 now receive the intended M2.7 model across all four aliases, with streaming, tool calls, prompt caching, and reasoning-effort controls preserved; unsupported min_p and logit_bias are no longer advertised.",
+    "keywords": [
+      "MiniMax M2.7",
+      "OpenRouter",
+      "model routing",
+      "fallbacks",
+      "text API",
+      "provider compatibility"
+    ],
+    "visual_concept": "A cozy garden-path reroute: Polli acts as a tiny railway signal operator, guiding an M2.7-labeled code parcel away from a crossed-out DeepInfra sign and onto two well-marked routes, Novita and MiniMax. A CRT monitor robot happily confirms the correct model identity while code-plants and small cached-token jars show that the request’s useful features made the trip intact.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny stationmaster cap as she switches a glowing M2.7 code train onto a safe garden track labeled “NOVITA” and “MINIMAX,” past an old crossed-out “DEEPINFRA” sign; a chunky CRT-monitor robot holds a pixel sign reading “M2.7 VERIFIED,” surrounded by code-plants, flowers, and little cache jars. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15338.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny stationmaster cap as she switches a glowing M2.7 code train onto a safe garden track labeled “NOVITA” and “MINIMAX,” past an old crossed-out “DEEPINFRA” sign; a chunky CRT-monitor robot holds a pixel sign reading “M2.7 VERIFIED,” surrounded by code-plants, flowers, and little cache jars. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-23T13:44:16.689511+00:00"
+}

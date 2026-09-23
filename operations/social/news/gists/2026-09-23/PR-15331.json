@@ -1,0 +1,34 @@
+{
+  "pr_number": 15331,
+  "title": "feat: add Azure MAI Image 2.6",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15331",
+  "merged_at": "2026-09-23T14:26:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `microsoft/mai-image-2.6` at 0.75× Azure meter cost ($5/M text input, $8/M image input, $38/M image output) for generation and one-reference edits, Quest-accessible (paid by Azure credit). Existing public image endpoints only.\n- East US only, pinned to `2026-07-31` (no auto-upgrade), with the whole 36-RPM subscription quota and 12 RPM per user. No Sweden fallback: both regions draw from one 36-RPM pool, so a second region adds no capacity (same setup as MAI Image 2.6 Flash).\n- Retirement date 2027-01-09 (Azure catalog, Preview).\n- Rebuilt on top of the merged 2.6 Flash code: one route-table entry and one dispatch case, no new adapter code.\n\nVerification\n- Direct East US generations at 1024px (26s) and 1536px (38s) on 2026-09-23, with usage reported. Earlier primary E2E: generation, edit, cache, validation and staging billing at 0.75×.\n- Focused gen tests (92), gen typecheck, Enter price snapshot.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh Azure petal",
+    "blurb": "MAI Image 2.6 has landed in the public image endpoints, ready to grow generations and one-reference edits from the same little seed. It is Quest-accessible and paid with Azure credit, because apparently clouds can garden too.",
+    "summary": "Added the preview Azure model `microsoft/mai-image-2.6` to public image endpoints for generation and one-reference edits, using 0.75× Azure meter pricing with a 12-RPM per-user share of the East US 36-RPM subscription quota.",
+    "impact": "Builders can now generate or edit images with MAI Image 2.6 at 1024px and 1536px through existing endpoints, with Quest access and Azure-credit billing already wired in.",
+    "keywords": [
+      "azure",
+      "mai-image-2.6",
+      "image-generation",
+      "image-editing",
+      "quest",
+      "rate-limits"
+    ],
+    "visual_concept": "A cozy cloud-garden image lab represents Azure-hosted MAI Image 2.6: a retro terminal grows two image-plants, one a fresh generated flower and one being gently edited from a single reference photo. Polli, wearing a tiny cloud-shaped painter beret, tends the plants while a small quota rain gauge marked “12 RPM” quietly waters the shared garden; use Azure-like soft sky-blue only as a pastel supporting color, with lime green as the dominant glow.",
+    "image_prompt": "Cozy pixel art scene in a warm cloud-garden workshop: the cute pixel art bee mascot Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny cloud-shaped painter beret, she carefully paints a one-reference image flower beside a newly generated flower growing from a glowing lime green (#ecf874) retro terminal, while a small CRT monitor robot holds the reference picture and a gentle rain gauge reads “12 RPM.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, pixel vines and flowers, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15331.jpg",
+    "prompt": "Cozy pixel art scene in a warm cloud-garden workshop: the cute pixel art bee mascot Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny cloud-shaped painter beret, she carefully paints a one-reference image flower beside a newly generated flower growing from a glowing lime green (#ecf874) retro terminal, while a small CRT monitor robot holds the reference picture and a gentle rain gauge reads “12 RPM.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, pixel vines and flowers, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-23T14:28:03.721887+00:00"
+}

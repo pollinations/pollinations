@@ -1165,6 +1165,23 @@ test("offers an ordinary JSON 402 for streaming chat at the same spending ceilin
 });
 
 test.each([
+    [ROUTE, "no supported x402 spending ceiling"],
+    ["/text", "is available only on:"],
+])("preserves Jev's endpoint restrictions before payment on %s", async (route, message) => {
+    const response = await generationApp.request(route, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": crypto.randomUUID(),
+        },
+        body: JSON.stringify(request({ model: "typesafe/jev-1.13" })),
+    });
+    expect(response.status).toBe(400);
+    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+    expect(await response.text()).toContain(message);
+});
+
+test.each([
     ["missing output cap", { max_tokens: undefined }],
     [
         "multimodal input",

@@ -1,6 +1,6 @@
 import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
-import type { ModelHealth } from "@shared/model-health.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
 
 export type BalanceAccess = "quest" | "paid" | "free";
@@ -10,6 +10,7 @@ type ModelStatusChipsProps = {
     showAlpha: boolean;
     alphaTooltip?: boolean;
     health?: ModelHealth;
+    communityProxy?: boolean;
 };
 
 type BalanceAccessChipProps = {
@@ -22,16 +23,20 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showAlpha,
     alphaTooltip = true,
     health,
+    communityProxy = false,
 }) => {
     if (!showNew && !showAlpha && !health) return null;
 
     const unknown = !health || health.status === "unknown";
     const healthy = !unknown && health.status === "healthy";
+    const sample = communityProxy
+        ? `the last ${health?.requests} eligible requests (up to seven days)`
+        : "the last 24 hours";
     const healthLabel = unknown
-        ? "No requests in the last 24 hours"
+        ? "No recent reliability data"
         : healthy
-          ? "Healthy over the last 24 hours"
-          : "Elevated errors over the last 24 hours";
+          ? `Healthy across ${sample}`
+          : `Elevated errors across ${sample}`;
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 

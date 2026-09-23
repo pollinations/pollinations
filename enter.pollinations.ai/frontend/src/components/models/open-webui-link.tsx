@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
+import { ExternalLinkIcon, InlineLink, Tooltip } from "@pollinations/ui";
 
 export const OPEN_WEBUI_URL =
     import.meta.env.MODE === "staging"
@@ -43,26 +43,21 @@ export function OpenWebUiLink({
 
     if (variant === "text") {
         return (
-            <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
-            >
+            <InlineLink href={href} size="footer">
                 Test in Open WebUI
-                <ExternalLinkIcon className="h-3 w-3" />
-            </a>
+            </InlineLink>
         );
     }
 
     return (
         <Tooltip
             content="Test in Open WebUI"
-            ariaLabel={`Test ${modelId} in Open WebUI`}
-            tapEnabled
+            triggerAs="span"
+            className="polli:cursor-pointer"
             displayContents
         >
             <a
+                aria-label={`Test ${modelId} in Open WebUI`}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"

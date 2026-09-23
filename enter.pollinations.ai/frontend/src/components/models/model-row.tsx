@@ -1,9 +1,6 @@
 import {
-    CheckIcon,
     Chip,
-    ClipboardIcon,
-    CopyButton,
-    cn,
+    InlineLink,
     RocketIcon,
     Surface,
     Tooltip,
@@ -11,6 +8,7 @@ import {
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
+import { CopyValue } from "./copy-value.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -64,58 +62,6 @@ function formatVideoDuration(model: ModelPrice): string | null {
 type ModelRowProps = {
     model: ModelPrice;
 };
-
-type ModelIdProps = {
-    name: string;
-    showCopyIcon?: boolean;
-};
-
-const MODEL_ID_TOOLTIP_MAX_WIDTH = 520;
-
-export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
-    <CopyButton
-        value={name}
-        tooltip={
-            showCopyIcon ? null : (
-                <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                    Click to copy
-                </span>
-            )
-        }
-        copiedTooltip={
-            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                Copied
-            </span>
-        }
-        aria-label={`Copy model id ${name}`}
-        tooltipAlign="start"
-        tooltipMaxWidth={MODEL_ID_TOOLTIP_MAX_WIDTH}
-        tooltipClassName="min-w-0 max-w-full"
-        className={(copied) =>
-            cn(
-                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
-                copied
-                    ? "text-intent-success-text"
-                    : "text-theme-text-muted hover:text-theme-text-soft",
-            )
-        }
-    >
-        {(copied) => (
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-                <span className="min-w-0 truncate">{name}</span>
-                {showCopyIcon &&
-                    (copied ? (
-                        <CheckIcon className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                        <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />
-                    ))}
-                {showCopyIcon && copied && (
-                    <span className="sr-only">Copied</span>
-                )}
-            </span>
-        )}
-    </CopyButton>
-);
 
 export const PerPollenEstimate: FC<{
     model: ModelPrice;
@@ -277,8 +223,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <div
                 className={
                     brandLogoPath || CommunityModelIcon
-                        ? "flex-1 min-w-0 self-stretch py-3"
-                        : "flex-1 min-w-0 self-stretch py-3 pl-[25px]"
+                        ? "flex-1 min-w-0 self-stretch"
+                        : "flex-1 min-w-0 self-stretch pl-[25px]"
                 }
             >
                 <div className="flex h-full min-w-0 flex-col justify-center gap-1.5">
@@ -304,11 +250,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         {playSupported && (
                             <Tooltip
                                 content="Try in Play"
-                                ariaLabel={`Try ${publicModelName} in Play`}
-                                tapEnabled
+                                triggerAs="span"
+                                className="polli:cursor-pointer"
                                 displayContents
                             >
                                 <a
+                                    aria-label={`Try ${publicModelName} in Play`}
                                     href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -322,16 +269,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <OpenWebUiLink modelId={model.name} />
                         )}
                     </div>
-                    <ModelId name={model.name} />
+                    <CopyValue
+                        value={model.name}
+                        label={`Copy model id ${model.name}`}
+                    />
                     {model.brandUrl && model.publisher && (
-                        <a
+                        <InlineLink
                             href={model.brandUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
+                            size="footer"
+                            className="inline-flex w-fit max-w-full items-center"
                         >
-                            {model.publisher}
-                        </a>
+                            <span className="truncate">{model.publisher}</span>
+                        </InlineLink>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
@@ -428,6 +377,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
                             health={model.health}
+                            communityProxy={Boolean(
+                                model.community && !model.agent,
+                            )}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
@@ -439,7 +391,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden py-3 pl-3 pr-1">
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

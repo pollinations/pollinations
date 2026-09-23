@@ -3,7 +3,6 @@ import {
     AppIcon,
     BotIcon,
     Button,
-    ClockIcon,
     InlineLink,
     Input,
     LockIcon,
@@ -376,22 +375,9 @@ export function ConnectedApps() {
                     />
                     <span>
                         Review the access requested by each app before
-                        connecting.
-                    </span>
-                </Text>
-                <Text
-                    size="sm"
-                    tone="muted"
-                    className="flex items-start gap-1.5"
-                >
-                    <ClockIcon
-                        className="mt-0.5 h-4 w-4 shrink-0"
-                        aria-hidden="true"
-                    />
-                    <span>
-                        Sign-in links expire after 10 minutes. If a link expires
-                        or you leave before finishing, return here and select
-                        Connect again for a fresh link.
+                        connecting. Sign-in links expire after 10 minutes. If
+                        yours expires or you leave before finishing, select
+                        “Connect” again for a fresh link.
                     </span>
                 </Text>
             </footer>

@@ -142,9 +142,7 @@ describe("video parts in the text capability gate", () => {
                     {
                         role: "user",
                         content: Array.from({ length: 11 }, (_, index) =>
-                            videoPart(
-                                `https://example.com/clip-${index}.mp4`,
-                            ),
+                            videoPart(`https://example.com/clip-${index}.mp4`),
                         ),
                     },
                 ],
@@ -183,9 +181,7 @@ describe("video parts through the stateless Responses adapter", () => {
             typeof chatToResponsesRequest
         >[0];
 
-    const inputContent = (
-        request: ReturnType<typeof chatToResponsesRequest>,
-    ) =>
+    const inputContent = (request: ReturnType<typeof chatToResponsesRequest>) =>
         (request.input[0] as { content: Array<Record<string, unknown>> })
             .content;
 

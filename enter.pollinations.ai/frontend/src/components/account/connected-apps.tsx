@@ -4,7 +4,6 @@ import {
     BotIcon,
     Button,
     ClockIcon,
-    GlobeIcon,
     InlineLink,
     Input,
     LockIcon,
@@ -357,10 +356,14 @@ export function ConnectedApps() {
                     />
                     <span>
                         Let Pollinations agents read Gmail, search GitHub,
-                        update Sheets, and post to Slack through Composio.
-                        Enable Connected Apps in your agent, then ask it to use
-                        your connected account. Try “Summarize my unread Gmail”
-                        or “Find open issues in my GitHub repository.”
+                        update Sheets, and post to Slack. Enable Connected Apps
+                        in your agent, then ask it to use your connected
+                        account. Try “Summarize my unread Gmail” or “Find open
+                        issues in my GitHub repository.” Connections powered by{" "}
+                        <InlineLink href="https://composio.dev" size="sm">
+                            Composio
+                        </InlineLink>
+                        .
                     </span>
                 </Text>
                 <Text
@@ -390,22 +393,6 @@ export function ConnectedApps() {
                         Sign-in links expire after 10 minutes. If a link expires
                         or you leave before finishing, return here and select
                         Connect again for a fresh link.
-                    </span>
-                </Text>
-                <Text
-                    size="sm"
-                    tone="muted"
-                    className="flex items-start gap-1.5"
-                >
-                    <GlobeIcon
-                        className="mt-0.5 h-4 w-4 shrink-0"
-                        aria-hidden="true"
-                    />
-                    <span>
-                        Connections powered by{" "}
-                        <InlineLink href="https://composio.dev" size="sm">
-                            Composio
-                        </InlineLink>
                     </span>
                 </Text>
             </footer>

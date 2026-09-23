@@ -116,6 +116,7 @@ export function ModelPermissionsInput({
                     </TabButton>
                     <TabButton
                         size="xs"
+                        className="mr-2"
                         active={activeTab === "all"}
                         disabled={disabled}
                         onClick={() => setActiveTab("all")}

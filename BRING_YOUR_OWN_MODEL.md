@@ -137,7 +137,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "owner/my-model",
+    "model": "community/owner/my-model",
     "messages": [{"role": "user", "content": "Hello"}]
   }'
 ```
@@ -152,7 +152,7 @@ Endpoint agents also select one upstream API and exact URL. Managed prompt agent
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Model lists show models with more than 90% success across their last 50 eligible requests within seven days. Fallback rescues count as successes. Final 4xx and the owner's own requests are excluded; monitor probes count. There is no minimum sample size, and models without recent data remain listed.
+Model lists show models with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. There is no minimum sample size, and models without recent data remain listed.
 
 Models filtered for reliability still work by exact ID and can serve as fallbacks. Use `?reliability=all` on a model-list endpoint to include them. Manual hiding and private models remain separate; this option does not bypass access controls.
 

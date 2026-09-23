@@ -134,7 +134,7 @@ unauthenticated `GET https://gen.pollinations.ai/models?reliability=all` catalog
 D1/wrangler access needed on the box):
 
 - The agent selects low-traffic, unhealthy, reported, or automatically filtered models
-  using customer traffic (excluding owner/probe traffic), then runs
+  using traffic from everyone except its own probe account, then runs
   `node probe.mjs --models-file /home/ubuntu/monitor/probe-candidates.json`.
   An empty selection runs no probes. Healthy busy models are skipped. Both
   text and image checks have a four-hour base interval; successive failures
@@ -207,8 +207,8 @@ All model-list endpoints use one rule for community proxy models: more than 80%
 success across the latest 50 eligible final requests within seven days. Official
 models and agents are unaffected. No minimum sample. No observations
 or unavailable analytics means unknown and visible. Successful fallbacks count
-for the requested model. Final 4xx and community-owner traffic are excluded;
-monitor probes count. The bounded Tinybird query is `model_catalog_health.pipe`.
+for the requested model. Final 4xx are excluded; owner requests and monitor
+probes count. The bounded Tinybird query is `model_catalog_health.pipe`.
 Health data is edge-cached for 60 seconds. `reliability=all` (or the
 `Pollinations-Model-Reliability: all` header) bypasses only this filter.
 

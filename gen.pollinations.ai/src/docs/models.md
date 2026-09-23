@@ -42,8 +42,8 @@ Lists default to `reliability=reliable`: community proxy models need more than
 80% success across the last 50 eligible final requests within seven days.
 Official models and agents are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
-for the requested model; final 4xx and community-owner traffic are excluded,
-while monitor probes count. Each entry includes `health` with `status`,
+for the requested model; final 4xx are excluded, while owner requests and
+monitor probes count. Each entry includes `health` with `status`,
 `success_rate` (null without observations), and `requests` (at most 50).
 This sample refreshes roughly every 60 seconds; unavailable analytics fails open.
 

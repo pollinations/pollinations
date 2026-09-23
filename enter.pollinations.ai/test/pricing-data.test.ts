@@ -52,18 +52,31 @@ const getCatalogModelPrices = () =>
         ...getModel3dModelsInfo(),
     ]);
 
-test("health indicators use three states", () => {
+test("health indicators show the current reliability sample", () => {
     for (const [status, label] of [
-        ["healthy", "Healthy over the last 24 hours"],
-        ["degraded", "Elevated errors over the last 24 hours"],
-        ["down", "Elevated errors over the last 24 hours"],
-        ["unknown", "No requests in the last 24 hours"],
+        [
+            "healthy",
+            "Healthy across the last 12 eligible requests (up to seven days)",
+        ],
+        [
+            "degraded",
+            "Elevated errors across the last 12 eligible requests (up to seven days)",
+        ],
+        [
+            "down",
+            "Elevated errors across the last 12 eligible requests (up to seven days)",
+        ],
+        ["unknown", "No recent reliability data"],
     ] as const) {
         const markup = renderToStaticMarkup(
             createElement(ModelStatusChips, {
                 showNew: false,
                 showAlpha: false,
-                health: { status, requests: 0, successRate: null },
+                health: {
+                    status,
+                    requests: status === "unknown" ? 0 : 12,
+                    successRate: status === "unknown" ? null : 90,
+                },
             }),
         );
         expect(markup).toContain(`aria-label="${label}"`);

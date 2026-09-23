@@ -48,7 +48,7 @@ export const ModelHealthSchema = z
     })
     .meta({
         description:
-            "Recent gateway reliability across the last 50 eligible final requests within seven days, refreshed roughly every 60s. Final 4xx and community-owner traffic are excluded; monitor probes and successful fallback rescues count. Not individual upstream health.",
+            "Recent gateway reliability across the last 50 eligible final requests within seven days, refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
     });
 
 export type ModelHealth = z.infer<typeof ModelHealthSchema>;

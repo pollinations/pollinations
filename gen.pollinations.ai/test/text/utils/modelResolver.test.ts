@@ -1,3 +1,4 @@
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
@@ -233,6 +234,39 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("anthropic/claude-opus-5.5");
         expect(result.options.provider).toEqual({
             only: ["anthropic"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.0-flash-vl",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.0-flash-vl");
+        expect(result.options.provider).toEqual({
+            only: ["deepinfra/fp16"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("advertises video input for Ling 3.0 Flash VL without dropping image/text (issue #15318)", () => {
+        const entry = TEXT_SERVICES["inclusionai/ling-3.0-flash-vl"];
+
+        expect(entry.inputModalities).toEqual(["text", "image", "video"]);
+        expect(entry.maxReferenceImages).toBe(10);
+        expect(entry.maxReferenceVideos).toBe(10);
+        // Video is billed as promptTextTokens (same documented behavior as
+        // image on this exact DeepInfra fp16 route) — no separate
+        // promptVideoTokens field, so no billable unit is silently dropped.
+        expect("promptVideoTokens" in entry.cost).toBe(false);
+        expect(entry.cost.promptTextTokens).toBeGreaterThan(0);
+
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.0-flash-vl",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["deepinfra/fp16"],
             allow_fallbacks: false,
         });
     });

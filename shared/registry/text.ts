@@ -1734,7 +1734,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.6": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.azureOpenReasoning,
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
@@ -1743,13 +1743,14 @@ const TEXT_BASE_SERVICES = {
             "kimi-thinking",
             "kimi",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
+        // Azure model catalog and retirement schedule (Preview).
+        retirementDate: new Date("2027-04-16").getTime(),
         priceMultiplier: 1,
+        // Azure Global Standard "K2.6 Thinking" meters (2026-09-23).
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
@@ -1761,7 +1762,7 @@ const TEXT_BASE_SERVICES = {
             "Agentic all-rounder that shows its chain-of-thought reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 262000,

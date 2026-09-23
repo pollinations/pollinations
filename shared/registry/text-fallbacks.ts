@@ -293,6 +293,11 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.6": {
+        "moonshotai/kimi-k2.6:azure:sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-23").getTime(),
+            retirementDate: new Date("2027-04-16").getTime(),
+        },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",

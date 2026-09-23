@@ -1754,6 +1754,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000095,
     },
   },
+  "moonshotai/kimi-k2.6:azure:sweden": {
+    "cost": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 0.00000016,
+      "promptImageTokens": 0.00000095,
+      "promptTextTokens": 0.00000095,
+    },
+    "price": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 0.00000016,
+      "promptImageTokens": 0.00000095,
+      "promptTextTokens": 0.00000095,
+    },
+  },
   "moonshotai/kimi-k2.6:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000035,

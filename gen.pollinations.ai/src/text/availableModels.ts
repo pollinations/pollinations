@@ -66,8 +66,9 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
-// Alibaba rejects forced tool selection while thinking is enabled.
-const qwenForcedToolTransform: TransformFn = (messages, options) => {
+// Alibaba and DeepInfra Kimi reject (or garble) forced tool selection while
+// thinking is enabled.
+const forcedToolWithoutReasoning: TransformFn = (messages, options) => {
     const toolChoice = options.tool_choice;
     const forcesTool =
         toolChoice === "required" ||
@@ -80,10 +81,12 @@ const qwenForcedToolTransform: TransformFn = (messages, options) => {
     };
 };
 
-const qwenReasoningToggle = createReasoningEffortTransform("toggle");
-const qwenFlashTransform: TransformFn = async (messages, options) => {
-    const toggled = await qwenReasoningToggle(messages, options);
-    return qwenForcedToolTransform(toggled.messages, toggled.options);
+const toggleReasoningExceptForcedTools: TransformFn = async (
+    messages,
+    options,
+) => {
+    const toggled = await fireworksThinking(messages, options);
+    return forcedToolWithoutReasoning(toggled.messages, toggled.options);
 };
 
 const models: ModelDefinition[] = [
@@ -239,7 +242,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen3.8-max-alibaba"],
-        transform: qwenForcedToolTransform,
+        transform: forcedToolWithoutReasoning,
     },
     {
         name: "qwen/qwen3.8-max:openrouter:alibaba",
@@ -248,7 +251,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-max-0902",
         config: portkeyConfig["qwen3.8-max-0902"],
-        transform: qwenForcedToolTransform,
+        transform: forcedToolWithoutReasoning,
     },
     {
         name: "qwen/qwen3.7-flash",
@@ -263,12 +266,12 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-flash",
         config: portkeyConfig["qwen3.8-flash-alibaba"],
-        transform: qwenFlashTransform,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "qwen/qwen3.8-flash:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-flash"],
-        transform: qwenFlashTransform,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "qwen/qwen3-vl-30b-a3b-instruct",
@@ -624,13 +627,18 @@ const models: ModelDefinition[] = [
     },
     {
         name: "moonshotai/kimi-k2.6",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+        config: portkeyConfig["Kimi-K2.6"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "moonshotai/kimi-k2.6:azure:sweden",
+        config: portkeyConfig["Kimi-K2.6-azure-sweden"],
         transform: fireworksThinking,
     },
     {
         name: "moonshotai/kimi-k2.6:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K2.6"],
-        transform: fireworksThinking,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "moonshotai/kimi-k2.7-code",

@@ -255,6 +255,19 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
             { defaultOptions: { reasoning_effort: "high" } },
         ),
+    // Azure Kimi rejects remote image URLs.
+    "Kimi-K2.6": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
+        ),
+    "Kimi-K2.6-azure-sweden": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
+        ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
@@ -606,10 +619,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p6": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p6",
-        }),
     "accounts/fireworks/models/kimi-k2p7-code": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p7-code",

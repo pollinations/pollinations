@@ -160,8 +160,9 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
-            // DeepInfra now forwards requests to MiniMax-M3 at MiniMax-M3's price.
-            providerRetirementDate: new Date("2026-09-10").getTime(),
+            // DeepInfra `deprecated` time; it now forwards requests to
+            // MiniMax-M3 at MiniMax-M3's price.
+            providerRetirementDate: new Date("2026-09-10T22:22:06Z").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.25),
                 promptCachedTokens: perMillion(0.05),
@@ -692,8 +693,9 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
-            // DeepInfra then forwards requests to Kimi-K3 at Kimi-K3's price.
-            providerRetirementDate: new Date("2026-09-29").getTime(),
+            // DeepInfra `deprecated` time; it then forwards requests to
+            // Kimi-K3 at Kimi-K3's price.
+            providerRetirementDate: new Date("2026-09-29T23:36:12Z").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.68),
                 promptCachedTokens: perMillion(0.136),

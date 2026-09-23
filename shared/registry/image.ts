@@ -1577,8 +1577,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy end-of-life.
-        providerRetirementDate: new Date("2026-09-30").getTime(),
+        // Bedrock Legacy endOfLifeTime.
+        providerRetirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
         priceMultiplier: 1,
         // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
@@ -1613,8 +1613,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy end-of-life.
-        providerRetirementDate: new Date("2026-09-30").getTime(),
+        // Bedrock Legacy endOfLifeTime.
+        providerRetirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
         priceMultiplier: 1,
         cost: {
             completionVideoSeconds: 0.08, // per sec

@@ -2905,8 +2905,8 @@ const TEXT_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
-        // Alibaba Model Studio notices 1949 and 2000.
-        providerRetirementDate: new Date("2026-10-10").getTime(),
+        // Alibaba Model Studio notice on postponed legacy retirements.
+        providerRetirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",

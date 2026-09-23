@@ -676,8 +676,8 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
-        // Alibaba Model Studio notice 2009.
-        providerRetirementDate: new Date("2026-10-10").getTime(),
+        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
+        providerRetirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {

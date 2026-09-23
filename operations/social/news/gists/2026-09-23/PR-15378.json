@@ -1,0 +1,36 @@
+{
+  "pr_number": 15378,
+  "title": "chore: update community publisher access",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15378",
+  "merged_at": "2026-09-23T23:30:46Z",
+  "labels": [
+    "API",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Removes NamanSoni78 from the community publisher allowlist.\n- Existing listings were set to private separately in production; no model records were deleted.\n- Prevents new public publishing after this change reaches production.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gate update",
+    "blurb": "The community publishing roster got a small bit of tending. Existing listings remain safely private while the next set of public seeds stays deliberate.",
+    "summary": "Updated the GitHub-based community publisher allowlist by removing one publisher account; its existing production listings had already been made private and no model records were deleted.",
+    "impact": "Community publishing access now reflects the current roster, while the affected account's existing model records remain preserved as private listings.",
+    "keywords": [
+      "community",
+      "publisher access",
+      "github auth",
+      "allowlist",
+      "model listings"
+    ],
+    "visual_concept": "Depict Polli as a careful garden steward updating a small wooden gate's visitor list beside a private greenhouse of preserved code-plants. The scene represents maintained publishing permissions without implying deleted work: a tucked-away greenhouse holds the existing listings safely, while flowers and vines keep the setting warm.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully updating a visitor list on a wooden garden gate beside a softly glowing private greenhouse full of preserved code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'PUBLISHERS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15378.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully updating a visitor list on a wooden garden gate beside a softly glowing private greenhouse full of preserved code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: 'PUBLISHERS'."
+  },
+  "generated_at": "2026-09-23T23:31:42.801359+00:00"
+}

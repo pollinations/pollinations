@@ -41,7 +41,6 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     85689068, // pegalink
     147928812, // iotserver24
     24752658, // zero2launch
-    170070104, // NamanSoni78
     63298614, // xiaotian1171
     84572851, // immature-yt
     177411725, // Davizigjojo

@@ -1167,8 +1167,24 @@ describe("OpenRouter Recraft Flash", () => {
     });
 
     it.each([
+        "image/webp",
+        "image/png",
+    ])("accepts a %s response", async (mediaType) => {
+        useOpenRouterKey();
+        mockFlashResponse([], mediaType);
+
+        const result = await callOpenRouterRecraftFlashAPI(
+            "raster",
+            flashParams,
+        );
+
+        expect(result.buffer).toEqual(PNG);
+    });
+
+    it.each([
         null,
         "image/svg+xml",
+        "image/gif",
     ])("rejects a %s response media type", async (mediaType) => {
         useOpenRouterKey();
         mockFlashResponse([], mediaType);

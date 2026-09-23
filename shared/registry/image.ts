@@ -498,7 +498,7 @@ const IMAGE_BASE_SERVICES = {
         // Azure model catalog; the retirement schedule says 2027-09-09.
         retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
             promptTextTokens: perMillion(5),
@@ -522,7 +522,7 @@ const IMAGE_BASE_SERVICES = {
         // Azure model catalog; the retirement schedule says 2027-09-09.
         retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
             promptTextTokens: perMillion(5),

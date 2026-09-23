@@ -14,6 +14,7 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 const QUOTA_BOUND_MODELS = new Set([
     "microsoft/mai-image-2.5-flash",
     "microsoft/mai-image-2.6-flash",
+    "microsoft/mai-image-2.6",
 ]);
 
 describe("model rate limiting", () => {
@@ -32,6 +33,7 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].perUserRpm).toBe(
             12,
         );
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.6"].perUserRpm).toBe(12);
     });
 
     it("keeps other configured catalog model limits at 60 RPM or higher", () => {

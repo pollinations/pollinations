@@ -771,6 +771,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy3"],
     },
     {
+        name: "inclusionai/ling-3.0-flash-vl",
+        config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
+    },
+    {
         name: "tencent/hy3:openrouter:phala",
         config: portkeyConfig["hy3-openrouter-phala"],
     },

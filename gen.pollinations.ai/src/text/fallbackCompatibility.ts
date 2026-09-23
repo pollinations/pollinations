@@ -28,6 +28,23 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+function countReferenceVideos(value: unknown): number {
+    if (Array.isArray(value)) {
+        return value.reduce(
+            (total, item) => total + countReferenceVideos(item),
+            0,
+        );
+    }
+    if (!value || typeof value !== "object") return 0;
+
+    const record = value as Record<string, unknown>;
+    if (record.type === "video_url" || record.type === "input_video") return 1;
+    return Object.values(record).reduce<number>(
+        (total, item) => total + countReferenceVideos(item),
+        0,
+    );
+}
+
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -97,6 +114,22 @@ export function textCapabilityError(
         countReferenceImages(request) > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
+    const referenceVideos = countReferenceVideos(request);
+    if (referenceVideos > 0) {
+        // A route that declares its input modalities but not `video` cannot
+        // consume the part, so the request is rejected before any provider
+        // attempt instead of being answered as if only text had been sent.
+        // Routes that declare no modalities at all (community endpoints,
+        // agents) are left to their own contract.
+        const declaredModalities = definition.inputModalities;
+        if (declaredModalities && !declaredModalities.includes("video"))
+            return "This model does not support video input";
+        if (
+            definition.maxReferenceVideos !== undefined &&
+            referenceVideos > definition.maxReferenceVideos
+        )
+            return `This model supports at most ${definition.maxReferenceVideos} reference videos`;
+    }
 }
 
 /** Whether a fallback route can honor this text request's public contract. */

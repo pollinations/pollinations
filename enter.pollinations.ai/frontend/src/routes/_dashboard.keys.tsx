@@ -5,10 +5,12 @@ import {
     redirect,
     useRouter,
 } from "@tanstack/react-router";
-import { useDeferredValue } from "react";
+import { useDeferredValue, useState } from "react";
 import { authClient } from "../auth.ts";
 import {
+    type ApiKey,
     ApiKeyList,
+    type ApiKeyManagerProps,
     type ApiKeyUpdateParams,
     type CreateApiKey,
     type CreateApiKeyResponse,
@@ -35,7 +37,7 @@ export const Route = createFileRoute("/_dashboard/keys")({
 
 function KeysPage() {
     const router = useRouter();
-    const { apiKeys } = useDeferredValue(DashboardRoute.useLoaderData());
+    const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
     async function refreshKeys(): Promise<void> {
         await router.invalidate({
@@ -112,26 +114,55 @@ function KeysPage() {
                 </div>
             }
         >
-            {(keys) =>
-                keys ? (
-                    <ApiKeyList
-                        apiKeys={keys}
-                        onCreate={handleCreateApiKey}
-                        onUpdate={handleUpdateApiKey}
-                        onDelete={handleDeleteApiKey}
-                    />
-                ) : (
-                    <div className="flex flex-col gap-6">
-                        {["Secrets", "Apps"].map((title) => (
-                            <Section key={title} title={title}>
-                                <LoadError onRetry={refreshKeys}>
-                                    Couldn’t load keys.
-                                </LoadError>
-                            </Section>
-                        ))}
-                    </div>
-                )
-            }
+            {(keys) => (
+                <KeysContent
+                    key={user?.id}
+                    apiKeys={keys}
+                    onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
+                    onDelete={handleDeleteApiKey}
+                    onRetry={refreshKeys}
+                />
+            )}
         </Await>
+    );
+}
+
+function KeysContent({
+    apiKeys,
+    onRetry,
+    ...actions
+}: Omit<ApiKeyManagerProps, "apiKeys"> & {
+    apiKeys: ApiKey[] | null;
+    onRetry: () => Promise<void>;
+}) {
+    const [lastKeys, setLastKeys] = useState(apiKeys);
+    // A failed refresh must not unmount the dialog holding a newly created secret.
+    if (apiKeys !== null && apiKeys !== lastKeys) setLastKeys(apiKeys);
+    const keys = apiKeys ?? lastKeys;
+
+    if (keys === null) {
+        return (
+            <div className="flex flex-col gap-6">
+                {["Secrets", "Apps"].map((title) => (
+                    <Section key={title} title={title}>
+                        <LoadError onRetry={onRetry}>
+                            Couldn’t load keys.
+                        </LoadError>
+                    </Section>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-6">
+            {apiKeys === null && (
+                <LoadError onRetry={onRetry}>
+                    Couldn’t refresh keys. Showing the last loaded list.
+                </LoadError>
+            )}
+            <ApiKeyList apiKeys={keys} {...actions} />
+        </div>
     );
 }

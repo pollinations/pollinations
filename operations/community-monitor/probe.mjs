@@ -546,11 +546,13 @@ const nextState = {
     ...currentState,
     spend: {
         ...currentState.spend,
-        lastCycleBudget: undefined,
-        lastEstimatedPollen: estimatedSpend,
-        lastActualPollen: actualSpend,
-        lastRequestCount: jobs.length,
-        lastRunAt: new Date().toISOString(),
+        ...(!targeted && {
+            lastCycleBudget: undefined,
+            lastEstimatedPollen: estimatedSpend,
+            lastActualPollen: actualSpend,
+            lastRequestCount: jobs.length,
+            lastRunAt: new Date().toISOString(),
+        }),
         probes: {
             ...currentState.spend?.probes,
             ...Object.fromEntries(

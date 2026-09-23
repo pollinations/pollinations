@@ -39,16 +39,16 @@ export const ModelHealthSchema = z
         }),
         success_rate: z.number().min(0).max(100).nullable().meta({
             description:
-                "Success across the last 50 eligible final requests within seven days; null with no measured requests.",
+                "Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests.",
         }),
         requests: z.number().int().nonnegative().meta({
             description:
-                "Number of eligible final responses in the reliability sample (at most 50).",
+                "Number of eligible final responses in the health sample (at most 50 for community proxies).",
         }),
     })
     .meta({
         description:
-            "Recent gateway reliability across the last 50 eligible final requests within seven days, refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
+            "Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
     });
 
 export type ModelHealth = z.infer<typeof ModelHealthSchema>;

@@ -44,8 +44,9 @@ Official models and agents are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
 monitor probes count. Each entry includes `health` with `status`,
-`success_rate` (null without observations), and `requests` (at most 50).
-This sample refreshes roughly every 60 seconds; unavailable analytics fails open.
+`success_rate` (null without observations), and `requests` (at most 50 for
+community proxies). Other models keep their 24-hour health window. Health
+refreshes roughly every 60 seconds; unavailable analytics fails open.
 
 Use `?reliability=all` or `Pollinations-Model-Reliability: all` to see all
 otherwise accessible models. The query takes precedence over the header.

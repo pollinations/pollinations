@@ -11,16 +11,17 @@ import { nextProbeAt, recordProbe } from "./probe-schedule.mjs";
 
 const HOUR = 3_600_000;
 
-test("failures back off across restarts, cap at a week, and fallback success resets the budget", () => {
+test("failures back off across restarts, cap below seven days, and fallback success resets the budget", () => {
     let now = Date.parse("2026-09-21T00:00:00Z");
     let previous;
     assert.equal(nextProbeAt(previous), 0);
-    for (const hours of [8, 16, 32, 64, 128, 168, 168, 168]) {
+    for (const hours of [8, 16, 32, 64, 128, 144, 144, 144]) {
         previous = JSON.parse(
             JSON.stringify(
                 recordProbe(previous, {
                     timestamp: new Date(now).toISOString(),
                     ok: false,
+                    status: 502,
                     operation: "edit",
                 }),
             ),
@@ -37,6 +38,16 @@ test("failures back off across restarts, cap at a week, and fallback success res
     assert.equal(previous.failures, 0);
     assert.equal(nextProbeAt(previous), now + 4 * HOUR);
     assert.equal(previous.operation, "edit");
+    for (const status of [402, "ERR", "INVALID"]) {
+        previous = recordProbe(previous, {
+            timestamp: new Date(now).toISOString(),
+            ok: false,
+            status,
+            operation: "edit",
+        });
+        assert.equal(previous.failures, 0);
+        assert.equal(nextProbeAt(previous), now + 4 * HOUR);
+    }
 });
 
 test("CLI probes only selected due IDs, persists backoff, and allows a one-off recovery check", async (t) => {
@@ -163,6 +174,7 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
     await run(["--models-file", candidatesPath]);
     assert.equal(requests.length, 2);
     assert.deepEqual((await readJson(resultsPath)).results, []);
+    const routineSpend = (await readJson(statePath)).spend;
 
     // An explicit fix report can trigger a diagnostic; fallback rescue is success.
     failing = false;
@@ -170,6 +182,9 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
     assert.equal(JSON.parse(diagnostic.stdout).results[0].fallbackUsed, true);
     state = await readJson(statePath);
     assert.equal(state.spend.probes["tester/text"].failures, 0);
+    assert.equal(state.spend.lastActualPollen, routineSpend.lastActualPollen);
+    assert.equal(state.spend.lastRequestCount, routineSpend.lastRequestCount);
+    assert.equal(state.spend.lastRunAt, routineSpend.lastRunAt);
     assert.deepEqual((await readJson(resultsPath)).results, []);
     await run(["--models-file", candidatesPath]);
     assert.equal(requests.length, 3);

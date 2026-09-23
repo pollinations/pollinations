@@ -38,7 +38,11 @@ afterEach(async () => {
     vi.restoreAllMocks();
 });
 
-function mockCatalogHealth(rows: ModelHealthRow[], status = 200) {
+function mockCatalogHealth(
+    rows: ModelHealthRow[],
+    status = 200,
+    officialRows = rows,
+) {
     vi.restoreAllMocks();
     const originalFetch = globalThis.fetch;
     return vi
@@ -47,8 +51,20 @@ function mockCatalogHealth(rows: ModelHealthRow[], status = 200) {
             const url = new URL(
                 input instanceof Request ? input.url : String(input),
             );
-            if (url.pathname === "/v0/pipes/model_catalog_health.json") {
-                return Response.json({ data: rows }, { status });
+            if (
+                url.pathname === "/v0/pipes/model_catalog_health.json" ||
+                url.pathname === "/v0/pipes/model_route_health.json"
+            ) {
+                return Response.json(
+                    {
+                        data:
+                            url.pathname ===
+                            "/v0/pipes/model_catalog_health.json"
+                                ? rows
+                                : officialRows,
+                    },
+                    { status },
+                );
             }
             return originalFetch(input, init);
         });
@@ -129,22 +145,34 @@ test("official models stay discoverable across every list regardless of reliabil
 
 test("counts final fallback rescues, retains unknown models and fails open on unavailable analytics", async () => {
     const id = "openai/gpt-5-nano";
-    mockCatalogHealth([
-        {
-            model: id,
-            event_type: "generate.text",
-            is_rollup: 0,
-            status_2xx: 0,
-            errors_5xx: 50,
-        },
-        {
-            model: id,
-            event_type: "generate.text",
-            is_rollup: 1,
-            status_2xx: 46,
-            errors_5xx: 4,
-        },
-    ]);
+    mockCatalogHealth(
+        [
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 1,
+                status_2xx: 0,
+                errors_5xx: 50,
+            },
+        ],
+        200,
+        [
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 0,
+                status_2xx: 0,
+                errors_5xx: 50,
+            },
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 1,
+                status_2xx: 46,
+                errors_5xx: 4,
+            },
+        ],
+    );
     const response = await fetchWorker("/text/models");
     const models = (await response.json()) as {
         name: string;

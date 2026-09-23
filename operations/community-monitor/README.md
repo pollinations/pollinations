@@ -138,10 +138,11 @@ D1/wrangler access needed on the box):
   `node probe.mjs --models-file /home/ubuntu/monitor/probe-candidates.json`.
   An empty selection runs no probes. Healthy busy models are skipped. Both
   text and image checks have a four-hour base interval; successive failures
-  double it to at most seven days (`min(4 * 2^failures, 168)` hours).
-  Success, including a fallback rescue, resets it to four hours. The script
+  double it to at most six days (`min(4 * 2^failures, 144)` hours).
+  Success, including a fallback rescue, and inconclusive caller/probe errors
+  reset it to four hours. The script
   stores cadence in `state.json`'s `spend.probes`, separately from health
-  decisions. A failed check slows retries; it does not classify the provider.
+  decisions. A server/protocol failure slows retries; it does not classify the provider.
   The agent's 30-minute wake-up/reply schedule is unchanged.
 - Selected, due text models get one cache-busted streaming chat request.
   Text probes omit `max_tokens` so reasoning models can

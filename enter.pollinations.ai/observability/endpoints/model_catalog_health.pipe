@@ -17,6 +17,7 @@ SQL >
     WHERE start_time >= now() - INTERVAL 7 DAY
         AND is_final
         AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
+        AND startsWith(resolved_model_requested, 'community/')
     GROUP BY model, event_type
 
 NODE endpoint

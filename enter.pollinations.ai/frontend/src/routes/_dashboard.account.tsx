@@ -280,8 +280,9 @@ function AccountPage() {
             <Section title="Delete account">
                 <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
-                        Permanently close your Pollinations account and revoke
-                        all access.
+                        Permanently delete your account, profile, keys, agents
+                        and models. All remaining Pollen will be lost. This
+                        cannot be undone, and deleted data cannot be recovered.
                     </Text>
                     <Button
                         type="button"

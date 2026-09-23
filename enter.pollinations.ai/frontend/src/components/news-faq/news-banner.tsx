@@ -1,5 +1,6 @@
-import { InlineLink, Surface } from "@pollinations/ui";
+import { InlineLink, LoadingStatus, Surface, Text } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -182,16 +183,41 @@ const CanonicalModelSlugAnnouncement: FC = () => (
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
     useEffect(() => {
-        fetch(HIGHLIGHTS_RAW_URL)
-            .then((res) => res.text())
-            .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
-            )
-            .catch((err) => console.error("Failed to fetch highlights:", err));
+        const controller = new AbortController();
+        setLoading(true);
+        setError(false);
+        fetch(HIGHLIGHTS_RAW_URL, { signal: controller.signal })
+            .then((res) => {
+                if (!res.ok) throw new Error("News request failed");
+                return res.text();
+            })
+            .then((md) => {
+                if (!controller.signal.aborted)
+                    setHighlights(
+                        parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT),
+                    );
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) setError(true);
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
     }, []);
 
-    if (highlights.length === 0) return null;
+    if (loading) return <LoadingStatus>Loading news…</LoadingStatus>;
+    if (error) return <LoadError>Couldn’t load news.</LoadError>;
+    if (highlights.length === 0)
+        return (
+            <Text size="sm" tone="muted">
+                No news to show.
+            </Text>
+        );
 
     return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

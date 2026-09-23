@@ -1,6 +1,7 @@
 import {
     Chip,
     InlineLink,
+    LoadingStatus,
     Table,
     TableBody,
     TableCell,
@@ -8,12 +9,13 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityEmptyState,
     ActivityFilter,
+    ActivityKeyFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
     PollenUsageBadges,
@@ -45,9 +47,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     onSelectedAppKeyIdsChange,
     onSelectedModelIdsChange,
 }) => {
-    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const {
         loading,
+        refreshing,
         error,
         fetchEarnings,
         usedApps,
@@ -68,24 +70,17 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         value: app.id,
         label: app.label,
     }));
-    for (const id of selectedAppKeyIds) {
-        const key = apiKeys.find((key) => key.id === id);
-        if (key && !appSelectOptions.some((option) => option.value === id))
-            appSelectOptions.push({
-                value: id,
-                label: key.name || "Unnamed app",
-            });
-    }
     const modelSelectOptions = usedModels.map((model) => ({
         value: model.id,
         label: model.label,
     }));
 
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
-    const downloadDisabled = loading || exportRows.length === 0;
-    const downloadDisabledReason = loading
-        ? "Loading earnings data"
-        : "No earnings to download for this selected period";
+    const downloadDisabled = loading || refreshing || exportRows.length === 0;
+    const downloadDisabledReason =
+        loading || refreshing
+            ? "Loading earnings data"
+            : "No earnings to download for this selected period";
 
     function downloadEarnings(): void {
         if (downloadDisabled) return;
@@ -137,7 +132,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             >
                 {hasPeriodData && (
                     <>
-                        <ActivityFilter
+                        <ActivityKeyFilter
                             label="Apps"
                             missingLabel="Unavailable app"
                             options={appSelectOptions}
@@ -157,31 +152,23 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             </ActivityToolbar>
 
             <div className="min-h-[180px]">
+                <div className="min-h-5">
+                    {refreshing && (
+                        <LoadingStatus>Updating earnings…</LoadingStatus>
+                    )}
+                </div>
                 {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching earnings data...
-                        </p>
+                    <div className="flex h-[180px] items-center justify-center">
+                        <LoadingStatus>Loading earnings…</LoadingStatus>
                     </div>
                 )}
                 {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <div className="text-center">
-                            <p className="text-sm text-intent-danger-text font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchEarnings()}
-                                className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
+                    <LoadError onRetry={() => fetchEarnings()}>
+                        {error}
+                    </LoadError>
                 )}
                 {!loading &&
-                    !error &&
+                    (!error || hasData) &&
                     (hasData ? (
                         <Chart
                             key={`${period.granularity}:${period.period}`}
@@ -203,7 +190,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     ))}
             </div>
 
-            {!loading && !error && hasData && (
+            {!loading && hasData && (
                 <div className="min-w-0 max-w-full overflow-x-auto">
                     <Table
                         aria-label="Earnings by source"

@@ -1,4 +1,11 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { Section } from "@pollinations/ui";
+import {
+    Await,
+    createFileRoute,
+    redirect,
+    useRouter,
+} from "@tanstack/react-router";
+import { useDeferredValue } from "react";
 import { authClient } from "../auth.ts";
 import {
     ApiKeyList,
@@ -6,6 +13,10 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
+import {
+    DashboardLoading,
+    LoadError,
+} from "../components/layout/dashboard-loading.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
@@ -24,7 +35,7 @@ export const Route = createFileRoute("/_dashboard/keys")({
 
 function KeysPage() {
     const router = useRouter();
-    const { apiKeys } = DashboardRoute.useLoaderData();
+    const { apiKeys } = useDeferredValue(DashboardRoute.useLoaderData());
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -78,11 +89,32 @@ function KeysPage() {
     }
 
     return (
-        <ApiKeyList
-            apiKeys={apiKeys}
-            onCreate={handleCreateApiKey}
-            onUpdate={handleUpdateApiKey}
-            onDelete={handleDeleteApiKey}
-        />
+        <Await
+            promise={apiKeys}
+            fallback={
+                <div className="flex flex-col gap-6">
+                    <DashboardLoading
+                        title="Secrets"
+                        label="Loading secret keys…"
+                    />
+                    <DashboardLoading title="Apps" label="Loading app keys…" />
+                </div>
+            }
+        >
+            {(keys) =>
+                keys ? (
+                    <ApiKeyList
+                        apiKeys={keys}
+                        onCreate={handleCreateApiKey}
+                        onUpdate={handleUpdateApiKey}
+                        onDelete={handleDeleteApiKey}
+                    />
+                ) : (
+                    <Section title="Keys">
+                        <LoadError>Couldn’t load keys.</LoadError>
+                    </Section>
+                )
+            }
+        </Await>
     );
 }

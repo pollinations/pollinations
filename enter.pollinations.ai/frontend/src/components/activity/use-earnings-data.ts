@@ -59,6 +59,7 @@ function filterRowsBySelection(
 
 type EarningsDataResult = {
     loading: boolean;
+    refreshing: boolean;
     error: string | null;
     fetchEarnings: () => void;
     usedApps: { id: string; label: string }[];
@@ -78,53 +79,59 @@ type EarningsDataResult = {
     };
 };
 
+const EMPTY_EARNINGS: DeveloperEarningsRow[] = [];
+
 export function useEarningsData(
     filters: EarningsFilterState,
 ): EarningsDataResult {
-    const [dailyEarnings, setDailyEarnings] = useState<DeveloperEarningsRow[]>(
-        [],
-    );
-    const [loading, setLoading] = useState(true);
-    const request = useRef<AbortController | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
     const { granularity, period } = filters.period;
+    const requestKey = `${granularity}:${period}`;
+    const [result, setResult] = useState<{
+        key: string;
+        rows: DeveloperEarningsRow[];
+    } | null>(null);
+    const [status, setStatus] = useState({
+        key: requestKey,
+        pending: true,
+        error: null as string | null,
+    });
+    const request = useRef<AbortController | null>(null);
+    const hasLoaded = result?.key === requestKey;
+    const dailyEarnings = hasLoaded ? result.rows : EMPTY_EARNINGS;
+    const pending = status.key !== requestKey || status.pending;
+    const loading = pending && !hasLoaded;
+    const refreshing = pending && hasLoaded;
+    const error = status.key === requestKey ? status.error : null;
 
     const fetchEarnings = useCallback(() => {
         request.current?.abort();
         const controller = new AbortController();
         request.current = controller;
-        setLoading(true);
-        setError(null);
-        setDailyEarnings([]);
-
-        const query = { granularity, period };
-
+        setStatus({ key: requestKey, pending: true, error: null });
         apiClient.account.earnings
-            .$get({ query }, { init: { signal: controller.signal } })
+            .$get(
+                { query: { granularity, period } },
+                { init: { signal: controller.signal } },
+            )
             .then((r) => {
                 if (!r.ok)
-                    throw new Error(
-                        `Failed to fetch earnings data: ${r.status}`,
-                    );
-                return r.json() as Promise<{
-                    daily: DeveloperEarningsRow[];
-                }>;
+                    throw new Error(`Failed to load earnings: ${r.status}`);
+                return r.json() as Promise<{ daily: DeveloperEarningsRow[] }>;
             })
             .then((data) => {
                 if (controller.signal.aborted) return;
-                setDailyEarnings(data.daily);
+                setResult({ key: requestKey, rows: data.daily });
+                setStatus({ key: requestKey, pending: false, error: null });
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
-                console.error("Earnings fetch error:", err);
-                setError(err.message || "Failed to load earnings data");
-                setDailyEarnings([]);
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
+                if (!controller.signal.aborted)
+                    setStatus({
+                        key: requestKey,
+                        pending: false,
+                        error: err.message || "Couldn’t load earnings.",
+                    });
             });
-    }, [granularity, period]);
+    }, [granularity, period, requestKey]);
 
     useEffect(() => {
         fetchEarnings();
@@ -305,6 +312,7 @@ export function useEarningsData(
 
     return {
         loading,
+        refreshing,
         error,
         fetchEarnings,
         usedApps,

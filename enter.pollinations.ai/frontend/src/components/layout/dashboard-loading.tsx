@@ -1,15 +1,44 @@
-import { ClockIcon, Surface, Text } from "@pollinations/ui";
+import {
+    Alert,
+    Button,
+    LoadingStatus,
+    RefreshIcon,
+    Section,
+} from "@pollinations/ui";
 
-/** Shared page loading state inside the dashboard shell. */
-export function DashboardLoading({ label }: { label: string }) {
+export function DashboardLoading({
+    title,
+    label,
+}: {
+    title: string;
+    label: string;
+}) {
     return (
-        <Surface variant="panel">
-            <output className="flex items-center gap-2 text-theme-text-muted">
-                <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                <Text size="sm" tone="muted">
-                    {label}
-                </Text>
-            </output>
-        </Surface>
+        <Section title={title}>
+            <LoadingStatus>{label}</LoadingStatus>
+        </Section>
+    );
+}
+
+export function LoadError({
+    children,
+    onRetry = () => window.location.reload(),
+}: {
+    children: string;
+    onRetry?: () => void;
+}) {
+    return (
+        <Alert intent="danger">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>{children}</span>
+                <Button
+                    intent="neutral"
+                    icon={<RefreshIcon />}
+                    onClick={onRetry}
+                >
+                    Try again
+                </Button>
+            </div>
+        </Alert>
     );
 }

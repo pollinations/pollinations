@@ -8,8 +8,8 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    LoadingStatus,
     RocketIcon,
-    SearchIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -21,6 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
+import { useLoaderData } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -34,7 +35,7 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { DashboardLoading, LoadError } from "../layout/dashboard-loading.tsx";
 import { mergeQuestRewards, type QuestReward } from "./quest-rewards.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -510,6 +511,8 @@ export function QuestRow({
 }
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
+    const { user } = useLoaderData({ from: "/_dashboard" });
+    const summaryTitle = user ? "Claimed" : "Pollen you can earn";
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
@@ -803,7 +806,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.rewards]);
 
     if (state.loading) {
-        return <DashboardLoading label="Loading quests…" />;
+        return (
+            <DashboardLoading title={summaryTitle} label="Loading quests…" />
+        );
     }
 
     if (
@@ -812,9 +817,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         state.rewards.length === 0
     ) {
         return (
-            <Text role="alert" size="sm" className="text-intent-danger-text">
-                {state.error}
-            </Text>
+            <Section title={summaryTitle}>
+                <LoadError>{state.error}</LoadError>
+            </Section>
         );
     }
 
@@ -884,14 +889,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         {/* Auto-check indicator: quests check themselves on open, so
                     there's no button. Show a subtle "checking" line only while
                     the automatic check is in flight; nothing when idle. */}
-                        {state.checking && (
-                            <div className="mt-3 flex justify-end">
-                                <output className="flex items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                                    <SearchIcon className="h-4 w-4 shrink-0" />
+                        <div className="mt-3 min-h-5">
+                            {state.checking && (
+                                <LoadingStatus>
                                     Checking for new quests…
-                                </output>
-                            </div>
-                        )}
+                                </LoadingStatus>
+                            )}
+                        </div>
                     </>
                 )}
                 {/* The preview counts available quests and their possible rewards. */}

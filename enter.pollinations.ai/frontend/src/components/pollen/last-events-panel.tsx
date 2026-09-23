@@ -4,6 +4,7 @@ import {
     CardIcon,
     Chip,
     ClockIcon,
+    LoadingStatus,
     SproutIcon,
     Table,
     TableBody,
@@ -16,6 +17,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -208,32 +210,34 @@ export const LastEventsPanel: FC = () => {
     });
 
     useEffect(() => {
+        let cancelled = false;
         setState((prev) => ({ ...prev, loading: true, error: null }));
         fetchLastEvents(visibleCount)
-            .then(({ rows, hasMore }) =>
-                setState({ rows, hasMore, loading: false, error: null }),
-            )
-            .catch(() =>
-                setState((prev) => ({
-                    ...prev,
-                    loading: false,
-                    error: "Failed to load last events",
-                })),
-            );
+            .then(({ rows, hasMore }) => {
+                if (!cancelled)
+                    setState({ rows, hasMore, loading: false, error: null });
+            })
+            .catch(() => {
+                if (!cancelled)
+                    setState((prev) => ({
+                        ...prev,
+                        loading: false,
+                        error: "Failed to load last events",
+                    }));
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [visibleCount]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
-        return (
-            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                Loading…
-            </p>
-        );
+        return <LoadingStatus>Loading recent activity…</LoadingStatus>;
     }
 
     if (state.error && state.rows.length === 0) {
-        return <p className="text-sm text-intent-danger-text">{state.error}</p>;
+        return <LoadError>{state.error}</LoadError>;
     }
 
     if (state.rows.length === 0) {
@@ -246,9 +250,7 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && (
-                <p className="text-sm text-intent-danger-text">{state.error}</p>
-            )}
+            {state.error && <LoadError>{state.error}</LoadError>}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (

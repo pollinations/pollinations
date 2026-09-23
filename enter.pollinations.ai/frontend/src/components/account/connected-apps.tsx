@@ -5,6 +5,7 @@ import {
     Button,
     InlineLink,
     Input,
+    LoadingStatus,
     LockIcon,
     LogInIcon,
     LogOutIcon,
@@ -15,6 +16,7 @@ import {
 } from "@pollinations/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 
 type Connection = {
     id: string;
@@ -107,6 +109,7 @@ function AppCard({
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
+    const [loadedSearch, setLoadedSearch] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [connectionsLoading, setConnectionsLoading] = useState(true);
@@ -153,10 +156,12 @@ export function ConnectedApps() {
                 .then((results) => {
                     if (cancelled) return;
                     setToolkits(results);
+                    setLoadedSearch(query);
                 })
                 .catch((searchError) => {
                     if (!cancelled) {
                         setToolkits([]);
+                        setLoadedSearch(query);
                         setToolkitsError(
                             errorMessage(searchError, "Could not search apps."),
                         );
@@ -225,6 +230,7 @@ export function ConnectedApps() {
         ? availableToolkits
         : availableToolkits.slice(0, 6);
     const searchQuery = search.trim();
+    const searching = toolkitsLoading || loadedSearch !== searchQuery;
     const normalizedSearch = searchQuery.toLowerCase();
     const displayedConnections = connections.filter((connection) =>
         [connection.name, connection.alias, connection.toolkit]
@@ -259,17 +265,13 @@ export function ConnectedApps() {
             </div>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}
-            {connectionsError && (
-                <Alert intent="danger">{connectionsError}</Alert>
-            )}
+            {connectionsError && <LoadError>{connectionsError}</LoadError>}
 
             {connectionsLoading && (
-                <Text size="sm" tone="muted" role="status">
-                    Loading connected apps…
-                </Text>
+                <LoadingStatus>Loading connected apps…</LoadingStatus>
             )}
 
-            {toolkitsError && <Alert intent="danger">{toolkitsError}</Alert>}
+            {toolkitsError && <LoadError>{toolkitsError}</LoadError>}
 
             <div className="flex flex-col gap-2" aria-live="polite">
                 {!connectionsLoading &&
@@ -307,7 +309,9 @@ export function ConnectedApps() {
                             connected
                         />
                     ))}
-                {!toolkitsLoading &&
+                {!searching &&
+                    !connectionsLoading &&
+                    !connectionsError &&
                     !toolkitsError &&
                     displayedToolkits.map((toolkit) => (
                         <AppCard
@@ -328,7 +332,7 @@ export function ConnectedApps() {
                         />
                     ))}
                 {!connectionsLoading &&
-                    !toolkitsLoading &&
+                    !searching &&
                     !connectionsError &&
                     !toolkitsError &&
                     displayedConnections.length === 0 &&
@@ -341,10 +345,10 @@ export function ConnectedApps() {
                     )}
             </div>
 
-            {toolkitsLoading && (
-                <Text size="sm" tone="muted" role="status">
+            {searching && (
+                <LoadingStatus>
                     {searchQuery ? "Searching apps…" : "Loading apps…"}
-                </Text>
+                </LoadingStatus>
             )}
 
             <footer className="space-y-3">

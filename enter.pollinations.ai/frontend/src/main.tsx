@@ -1,6 +1,8 @@
+import { LoadingStatus } from "@pollinations/ui";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+import { LoadError } from "./components/layout/dashboard-loading.tsx";
 import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
@@ -23,6 +25,18 @@ declare module "@tanstack/react-router" {
 
 const router = createRouter({
     routeTree,
+    defaultErrorComponent: () => (
+        <div className="p-6">
+            <LoadError>Couldn’t load this page.</LoadError>
+        </div>
+    ),
+    defaultPendingMs: 0,
+    defaultPendingMinMs: 0,
+    defaultPendingComponent: () => (
+        <div className="p-6">
+            <LoadingStatus>Loading…</LoadingStatus>
+        </div>
+    ),
 });
 
 const App: FC<PropsWithChildren> = () => {

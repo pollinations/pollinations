@@ -7,7 +7,9 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
+import { useDeferredValue } from "react";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -212,5 +214,32 @@ export function PollenUsageBadges(usage: {
                 {quest}
             </TierChip>
         </div>
+    );
+}
+
+export function ActivityKeyFilter(props: ActivityFilterProps) {
+    const { apiKeys } = useDeferredValue(
+        useLoaderData({ from: "/_dashboard" }),
+    );
+    return (
+        <Await
+            promise={apiKeys}
+            fallback={
+                <ActivityFilter {...props} missingLabel="Loading key name…" />
+            }
+        >
+            {(keys) => {
+                const options = [...props.options];
+                for (const id of props.selected) {
+                    const key = keys?.find((key) => key.id === id);
+                    if (key && !options.some((option) => option.value === id))
+                        options.push({
+                            value: id,
+                            label: key.name || "Unnamed key",
+                        });
+                }
+                return <ActivityFilter {...props} options={options} />;
+            }}
+        </Await>
     );
 }

@@ -1,4 +1,4 @@
-import { Section } from "@pollinations/ui";
+import { LoadingStatus, Section } from "@pollinations/ui";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -12,8 +12,9 @@ import {
     redirect,
     useNavigate,
 } from "@tanstack/react-router";
+import { useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
-import { DashboardLoading } from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -34,24 +35,22 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
-    loader: () =>
-        apiClient.stripe.billing
+    loader: () => ({
+        billing: apiClient.stripe.billing
             .$get()
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-    pendingComponent: () => (
-        <DashboardLoading label="Loading billing details…" />
-    ),
+    }),
     component: PollenPage,
 });
 
 function PollenPage() {
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, earnings } =
-        DashboardRoute.useLoaderData();
-    const balances = { tierBalance, packBalance };
-    const billingState = Route.useLoaderData();
+    const { balance, earnings } = useDeferredValue(
+        DashboardRoute.useLoaderData(),
+    );
+    const { billing } = useDeferredValue(Route.useLoaderData());
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
     function selectPack(amount: number): void {
@@ -63,20 +62,43 @@ function PollenPage() {
         <div className="flex flex-col gap-6">
             <Section title="Wallet">
                 <Await
-                    promise={earnings}
-                    fallback={<PollenBalance {...balances} />}
+                    promise={balance}
+                    fallback={<LoadingStatus>Loading balance…</LoadingStatus>}
                 >
-                    {(earnings) => (
-                        <PollenBalance {...balances} {...earnings} />
-                    )}
+                    {(balances) =>
+                        balances ? (
+                            <Await
+                                promise={earnings}
+                                fallback={<PollenBalance {...balances} />}
+                            >
+                                {(earnings) => (
+                                    <PollenBalance
+                                        {...balances}
+                                        {...earnings}
+                                    />
+                                )}
+                            </Await>
+                        ) : (
+                            <LoadError>Couldn’t load your balance.</LoadError>
+                        )
+                    }
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <BuyPollenPanel
-                    initialBillingState={billingState}
-                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                    onSelectedPackAmountChange={selectPack}
-                />
+                <Await
+                    promise={billing}
+                    fallback={
+                        <LoadingStatus>Loading billing details…</LoadingStatus>
+                    }
+                >
+                    {(billingState) => (
+                        <BuyPollenPanel
+                            initialBillingState={billingState}
+                            selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                            onSelectedPackAmountChange={selectPack}
+                        />
+                    )}
+                </Await>
             </Section>
         </div>
     );

@@ -5,6 +5,7 @@ import {
     ClockIcon,
     EditableCombobox,
     InlineLink,
+    LoadingStatus,
     McpIcon,
     Section,
     SparklesIcon,
@@ -22,7 +23,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -479,18 +480,6 @@ export const Models: FC = () => {
         });
     };
 
-    if (catalogLoading && activePrimaryTab !== "mcp") {
-        return (
-            <DashboardLoading
-                label={
-                    activePrimaryTab === "agent"
-                        ? "Loading agents…"
-                        : "Loading models…"
-                }
-            />
-        );
-    }
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -656,11 +645,23 @@ export const Models: FC = () => {
                         </span>
                     </Alert>
                 )}
-                {catalogError && activeTab !== "mcp" && (
-                    <Alert intent="danger">{catalogError}</Alert>
-                )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
+                ) : catalogLoading ? (
+                    <LoadingStatus>
+                        {activePrimaryTab === "agent"
+                            ? "Loading agents…"
+                            : "Loading models…"}
+                    </LoadingStatus>
+                ) : catalogError ? (
+                    <LoadError
+                        onRetry={() => {
+                            setCatalogLoading(true);
+                            void loadModelCatalog();
+                        }}
+                    >
+                        {catalogError}
+                    </LoadError>
                 ) : query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         No {searchTarget.toLowerCase()} match{" "}

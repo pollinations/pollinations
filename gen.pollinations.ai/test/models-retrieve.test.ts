@@ -1,34 +1,13 @@
-import {
-    createExecutionContext,
-    SELF,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { afterEach, expect, vi } from "vitest";
+import { expect } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
-
-async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
-    const { default: worker } = await import("../src/index.ts");
-    const context = createExecutionContext();
-    const response = await worker.fetch(
-        new Request(`https://gen.pollinations.ai${path}`, init),
-        { ENVIRONMENT: "test" } as CloudflareBindings,
-        context,
-    );
-    await waitOnExecutionContext(context);
-    return response;
-}
-
-afterEach(() => {
-    vi.restoreAllMocks();
-    vi.resetModules();
-});
 
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(

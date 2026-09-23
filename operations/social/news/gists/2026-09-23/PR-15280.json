@@ -1,0 +1,33 @@
+{
+  "pr_number": 15280,
+  "title": "docs: add focused design questioning guidance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15280",
+  "merged_at": "2026-09-23T13:36:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds design questions before implementation when answers could change user outcomes, scope, UX, constraints, or architecture.\n- Keeps interviews focused: investigate facts independently, recommend tradeoffs, revise the design after answers, and stop once consequential choices are settled.\n- Preserves existing safety approvals and avoids repeating answered questions or requesting permission already given; CLAUDE.md already imports AGENTS.md.\n- Validation: reviewed the seven-line, AGENTS.md-only diff; `git diff --check` passed. Biome processed no files because Markdown was ignored; no runtime code changed.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Questions Before Concrete",
+    "blurb": "The garden shed gained a small sign: ask the design questions that actually change the build, then stop digging once the path is clear.",
+    "summary": "Added seven lines to AGENTS.md directing implementation work to ask focused design questions only when answers could change user outcomes, scope, UX, constraints, or architecture.",
+    "impact": "Contributors get a clearer decision-making loop: independently verify facts, recommend tradeoffs, revise the design after consequential answers, and avoid re-asking settled questions or approvals.",
+    "keywords": [
+      "documentation",
+      "AGENTS.md",
+      "design",
+      "implementation",
+      "contributor-guidance"
+    ],
+    "visual_concept": "Polli wears tiny architect glasses beside a cozy garden workbench, sorting a few meaningful design-question cards into a plan while a code-plant grows from the finalized blueprint. A small sign shows that only consequential questions need watering.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny architect glasses, thoughtfully placing a few design-question cards beside a finished blueprint and a sprouting code-plant; lime green (#ecf874) is prominent across the warm cream and lavender garden-shed workspace. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “ASK WHAT CHANGES THE BUILD”; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15280.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny architect glasses, thoughtfully placing a few design-question cards beside a finished blueprint and a sprouting code-plant; lime green (#ecf874) is prominent across the warm cream and lavender garden-shed workspace. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “ASK WHAT CHANGES THE BUILD”; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-23T13:37:31.042382+00:00"
+}

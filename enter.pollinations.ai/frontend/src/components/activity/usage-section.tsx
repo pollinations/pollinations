@@ -245,7 +245,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                 aria-label="Usage by model"
                 className="min-w-[340px] [&_tr:hover]:bg-transparent"
             >
-                <TableHead className="sr-only">
+                <TableHead>
                     <TableRow>
                         <TableHeaderCell scope="col">Model</TableHeaderCell>
                         <TableHeaderCell scope="col" align="right">

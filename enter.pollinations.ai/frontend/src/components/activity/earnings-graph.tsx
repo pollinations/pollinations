@@ -196,7 +196,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         aria-label="Earnings by source"
                         className="min-w-[440px] [&_tr:hover]:bg-transparent"
                     >
-                        <TableHead className="sr-only">
+                        <TableHead>
                             <TableRow>
                                 <TableHeaderCell scope="col">
                                     Name

@@ -218,10 +218,12 @@ This is discovery only: exact-ID calls and fallback targets remain available.
 Manual hiding, privacy, key permissions and paid access remain unchanged.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
 The monitor retains diagnostics, billing/protocol warnings, served-model and
-fallback notices, official-model alerts and daily leaderboards. Once daily,
-after a leaderboard posts, it also reports only the community models currently
-filtered from discovery by reliability, with their success rates. It posts at
-most two messages per cycle, with no routine listing-transition chatter.
+fallback notices, official-model alerts and daily leaderboards. After a daily
+leaderboard posts, it reports only community models newly filtered from
+discovery and those back in listings since the previous check, with their
+current success rates. The first check records a baseline without posting a
+long list. It posts at most two messages per cycle, with no routine
+listing-transition chatter.
 
 ## Coordinated rollout
 

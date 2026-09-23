@@ -560,6 +560,12 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
+        [
+            "minimax/minimax-m2.7:openrouter:minimax",
+            "minimax/minimax-m2.7",
+            "minimax/fp8",
+        ],
         [
             "meta/llama-4-scout:openrouter:novita-bf16",
             "meta-llama/llama-4-scout",
@@ -572,18 +578,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toEqual({
             only: [provider],
             allow_fallbacks: false,
-        });
-    });
-
-    it("routes the MiniMax M2.7 fallback directly to DeepInfra", () => {
-        const result = resolveModelConfig(messages, {
-            model: "minimax/minimax-m2.7:deepinfra",
-        });
-
-        expect(result.options.model).toBe("MiniMaxAI/MiniMax-M2.7");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 

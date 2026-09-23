@@ -245,7 +245,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
-        "deepinfra/fp8",
+        "novita/fp8",
+    ),
+    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
@@ -445,8 +449,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         }),
-    "MiniMaxAI/MiniMax-M2.7": () =>
-        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>

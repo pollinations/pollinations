@@ -2381,9 +2381,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25) * 1.055,
-            promptCachedTokens: perMillion(0.05) * 1.055,
-            completionTextTokens: perMillion(1) * 1.055,
+            // OpenRouter Novita FP8 rates (2026-09-23), including the
+            // account's 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.27) * 1.055,
+            promptCachedTokens: perMillion(0.054) * 1.055,
+            completionTextTokens: perMillion(1.08) * 1.055,
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",

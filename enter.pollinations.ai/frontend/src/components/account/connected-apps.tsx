@@ -283,7 +283,11 @@ export function ConnectedApps() {
                             logo={connection.logo}
                             details={
                                 <>
-                                    <Text size="sm" tone="muted">
+                                    <Text
+                                        size="sm"
+                                        tone="muted"
+                                        className="line-clamp-2"
+                                    >
                                         {connection.description ||
                                             toolkits.find(
                                                 ({ slug }) =>

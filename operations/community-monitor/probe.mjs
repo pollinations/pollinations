@@ -618,7 +618,7 @@ console.log(
 );
 if (skippedModels.length) {
     console.log(
-        `${skippedModels.length} models not due (4h base interval, failure backoff up to 7d)`,
+        `${skippedModels.length} models not due (4h base interval, failure backoff up to 6d)`,
     );
 }
 console.log(

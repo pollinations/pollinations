@@ -128,14 +128,22 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
     const official = model({
         health: { status: "down", requests: 50, success_rate: 0 },
     });
-    expect(matches(official, "status:reliable")).toBe(true);
+    expect(matches(official, "status:reliable")).toBe(false);
     expect(
         matches(
             { ...official, community: true, agent: true },
             "status:reliable",
         ),
+    ).toBe(false);
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    expect(
+        matches(
+            model({
+                health: { status: "healthy", requests: 50, success_rate: 99 },
+            }),
+            ensureModelQueryDefaults(""),
+        ),
     ).toBe(true);
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
     expect(matches(model(), "status:healthy")).toBe(false);
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",

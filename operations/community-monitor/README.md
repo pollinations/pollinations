@@ -67,8 +67,9 @@ Pick "Resume full session" at the prompt to keep the session state intact.
 
 Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
 fetches `origin/main` and updates `CYCLE.md`, `.claude/settings.json`,
-`probe.mjs`, `loop.sh`, `healthcheck.sh`, both leaderboard builders, and the
-updater itself. Changes merged to `main` apply on the next cycle. `.env`, state,
+the probe scripts (including `probe-schedule.mjs`), `loop.sh`, `healthcheck.sh`,
+both leaderboard builders, and the updater itself. Changes merged to `main`
+apply on the next cycle. `.env`, state,
 identity mappings, logs, and generated data are never copied or removed.
 Restart the service to apply a merged change immediately. Changes to the
 systemd unit itself still require the deployment command below.

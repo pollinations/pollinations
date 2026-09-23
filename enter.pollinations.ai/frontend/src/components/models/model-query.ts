@@ -306,14 +306,10 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
         case "source":
             return Boolean(model.community) === (filter.value === "community");
         case "status":
-            return (
-                filter.value === "all" ||
-                (filter.value === "reliable"
-                    ? !model.community ||
-                      model.agent ||
-                      isModelReliable(model.health?.success_rate)
-                    : model.health?.status === "healthy")
-            );
+            if (filter.value === "all") return true;
+            if (filter.value === "reliable" && model.community && !model.agent)
+                return isModelReliable(model.health?.success_rate);
+            return model.health?.status === "healthy";
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

@@ -37,6 +37,11 @@ const MAI_ROUTES: Record<
         title: "MAI Image 2.6 Flash",
         maxPixels: 1536 * 1536,
     },
+    "microsoft/mai-image-2.6": {
+        deployment: "MAI-Image-2.6",
+        title: "MAI Image 2.6",
+        maxPixels: 1536 * 1536,
+    },
 };
 type MaiRoute = (typeof MAI_ROUTES)[string];
 // Azure MAI generation limits (docs and live 400s): each side at least 768px,

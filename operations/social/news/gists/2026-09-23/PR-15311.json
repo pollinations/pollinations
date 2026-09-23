@@ -1,0 +1,36 @@
+{
+  "pr_number": 15311,
+  "title": "feat: add MiMo V2.6 Flash and Pro via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15311",
+  "merged_at": "2026-09-23T19:33:47Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds `xiaomi/mimo-v2.6-flash` and `xiaomi/mimo-v2.6-pro` via OpenRouter\n- Both pinned to OpenRouter's `xiaomi/fp8` endpoint with `allow_fallbacks: false`, no fallback route declared. OpenRouter also lists `deepinfra/fp8` for both at the same price, but maintainer live probes returned HTTP 429 from it, so it is not a working fallback\n- Same price tier as the existing `xiaomi/mimo-v2.5` / `xiaomi/mimo-v2.5-pro` siblings, verified live against OpenRouter's catalog (2026-09-22), 5.5% OpenRouter credit fee included\n- Both models declare `text` + `image` input, matching maintainer E2E on the pinned route. Flash keeps `maxReferenceImages: 10` (ten-image probe passed); Pro sets no limit since only two images were verified\n\n| | Flash | Pro |\n|---|---|---|\n| Prompt | $0.1477/M | $0.458925/M |\n| Completion | $0.2954/M | $0.91785/M |\n| Cache read | $0.002954/M | $0.003798/M |\n| Context | 1,048,576 | 1,048,576 |\n\n## Test plan\n- [x] Added resolver pin tests for both models (`gen.pollinations.ai/test/text/utils/modelResolver.test.ts`)\n- [x] Added effective-price snapshot entries\n- [x] `npx biome check --write` on all changed files\n- [x] Maintainer authenticated Gen + direct Xiaomi-route E2E on `3c2876c`: text, streaming usage, tools, JSON schema, reasoning off, image input, billing matched\n- [ ] CI on the latest commit (main merged, Pro image modality corrected)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two Xiaomi bees join the garden",
+    "blurb": "MiMo V2.6 Flash and Pro have landed through OpenRouter, both ready for text-and-image prompts. One is built for quick foraging; the other brought a larger notebook and the same enormous context window.",
+    "summary": "Added OpenRouter-backed `xiaomi/mimo-v2.6-flash` and `xiaomi/mimo-v2.6-pro`, pinned to the verified `xiaomi/fp8` route with 1,048,576-token context windows and text-plus-image input support.",
+    "impact": "Developers can now call MiMo V2.6 Flash at $0.1477/M prompt tokens or Pro at $0.458925/M, with the verified Xiaomi route, streaming, tools, JSON schema, reasoning controls, and image inputs available through the existing text API.",
+    "keywords": [
+      "MiMo V2.6",
+      "Xiaomi",
+      "OpenRouter",
+      "text models",
+      "image input",
+      "1M context"
+    ],
+    "visual_concept": "A cozy model garden introduces two Xiaomi MiMo seed packets: a quick Flash seed glowing lightly and a more studious Pro seed beside a giant 1,048,576-page pixel notebook. Polli, wearing tiny researcher glasses, compares the two at a retro terminal while image-and-text code-plants grow from lime-green pots, making the multimodal and long-context capabilities visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blush, a small smile, light blue rounded wings, and tiny researcher glasses, tending two labeled pixel seed packets, “MiMo V2.6 FLASH” and “MiMo V2.6 PRO,” beside a retro terminal showing a huge “1,048,576” notebook and text-and-image code-plants sprouting from prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15311.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blush, a small smile, light blue rounded wings, and tiny researcher glasses, tending two labeled pixel seed packets, “MiMo V2.6 FLASH” and “MiMo V2.6 PRO,” beside a retro terminal showing a huge “1,048,576” notebook and text-and-image code-plants sprouting from prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-23T19:34:47.137187+00:00"
+}

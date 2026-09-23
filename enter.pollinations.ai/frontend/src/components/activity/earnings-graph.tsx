@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityEmptyState,
@@ -151,16 +151,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )}
             </ActivityToolbar>
 
-            <div className="min-h-[180px]">
-                <div className="min-h-5">
-                    {refreshing && (
-                        <LoadingStatus>Updating earnings…</LoadingStatus>
-                    )}
-                </div>
-                {loading && (
-                    <div className="flex h-[180px] items-center justify-center">
-                        <LoadingStatus>Loading earnings…</LoadingStatus>
-                    </div>
+            <SectionContent loading={loading} label="Loading earnings…">
+                {refreshing && (
+                    <LoadingStatus>Updating earnings…</LoadingStatus>
                 )}
                 {error && !loading && (
                     <LoadError onRetry={() => fetchEarnings()}>
@@ -188,7 +181,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     ) : (
                         <EarningsEmptyState />
                     ))}
-            </div>
+            </SectionContent>
 
             {!loading && hasData && (
                 <div className="min-w-0 max-w-full overflow-x-auto">
@@ -219,7 +212,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 </TableHeaderCell>
                                 <TableHeaderCell
                                     scope="col"
-                                    align="center"
+                                    align="right"
                                     className="px-2 py-1 font-normal"
                                 >
                                     {metric === "pollen"

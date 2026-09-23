@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
@@ -183,17 +183,8 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 }) => {
     return (
         <>
-            <div className="min-h-[180px]">
-                <div className="min-h-5">
-                    {refreshing && (
-                        <LoadingStatus>Updating usage…</LoadingStatus>
-                    )}
-                </div>
-                {loading && (
-                    <div className="flex h-[180px] items-center justify-center">
-                        <LoadingStatus>Loading usage…</LoadingStatus>
-                    </div>
-                )}
+            <SectionContent loading={loading} label="Loading usage…">
+                {refreshing && <LoadingStatus>Updating usage…</LoadingStatus>}
                 {error && !loading && (
                     <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}
@@ -212,7 +203,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                     />
                 )}
                 {!loading && !error && !hasData && <UsageEmptyState />}
-            </div>
+            </SectionContent>
 
             {!loading && hasData && (
                 <ModelBreakdownTable stats={stats} metric={metric} />
@@ -262,7 +253,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                         </TableHeaderCell>
                         <TableHeaderCell
                             scope="col"
-                            align="center"
+                            align="right"
                             className="px-2 py-1 font-normal"
                         >
                             {metric === "pollen" ? "Pollen" : "Requests"}

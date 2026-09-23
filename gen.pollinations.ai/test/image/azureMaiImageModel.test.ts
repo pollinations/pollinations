@@ -43,11 +43,8 @@ function successResponse(usage: Record<string, number>): Response {
 
 beforeEach(() => {
     syncImageEnv(
-        {
-            AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
-            AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-sweden-key",
-        } as CloudflareBindings,
-        ["AZURE_MYCELI_PROD_API_KEY", "AZURE_MYCELI_PROD_SWEDEN_API_KEY"],
+        { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
+        ["AZURE_MYCELI_PROD_API_KEY"],
     );
 });
 
@@ -56,21 +53,12 @@ afterEach(() => {
 });
 
 describe("callAzureMaiImage", () => {
-    it.each([
-        [
-            "microsoft/mai-image-2.6-flash",
-            GENERATIONS_ENDPOINT,
-            "test-azure-key",
-        ],
-        [
-            "microsoft/mai-image-2.6-flash:azure:sweden",
-            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/images/generations",
-            "test-sweden-key",
-        ],
-    ] as const)("routes %s to its exact Azure deployment", async (model, endpoint, key) => {
+    it("routes 2.6 Flash to its exact Azure deployment", async () => {
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
-            expect(url.toString()).toBe(endpoint);
-            expect(init?.headers).toMatchObject({ "api-key": key });
+            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
+            expect(init?.headers).toMatchObject({
+                "api-key": "test-azure-key",
+            });
             expect(JSON.parse(init?.body as string)).toEqual({
                 model: "MAI-Image-2.6-Flash",
                 prompt: "a red bicycle",
@@ -86,51 +74,12 @@ describe("callAzureMaiImage", () => {
 
         const result = await callAzureMaiImage(
             "a red bicycle",
-            { ...baseParams, model },
+            { ...baseParams, model: "microsoft/mai-image-2.6-flash" },
             USER_INFO,
         );
         expect(result.trackingData).toEqual({
-            actualModel: model,
+            actualModel: "microsoft/mai-image-2.6-flash",
             usage: { promptTextTokens: 24, completionImageTokens: 1024 },
-        });
-    });
-
-    it("edits with the Sweden fallback and bills the image input", async () => {
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
-            if (url.toString() === INPUT_IMAGE_URL) {
-                return new Response(INPUT_IMAGE, {
-                    headers: { "Content-Type": "image/png" },
-                });
-            }
-            expect(url.toString()).toBe(
-                "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/images/edits",
-            );
-            expect(init?.headers).toMatchObject({
-                "api-key": "test-sweden-key",
-            });
-            expect((init?.body as FormData).get("model")).toBe(
-                "MAI-Image-2.6-Flash",
-            );
-            return successResponse({
-                num_output_tokens: 1024,
-                num_input_text_tokens: 12,
-                num_input_image_tokens: 576,
-            });
-        });
-
-        const result = await callAzureMaiImage(
-            "make it blue",
-            {
-                ...baseParams,
-                model: "microsoft/mai-image-2.6-flash:azure:sweden",
-                image: [INPUT_IMAGE_URL],
-            },
-            USER_INFO,
-        );
-        expect(result.trackingData.usage).toEqual({
-            promptTextTokens: 12,
-            promptImageTokens: 576,
-            completionImageTokens: 1024,
         });
     });
 

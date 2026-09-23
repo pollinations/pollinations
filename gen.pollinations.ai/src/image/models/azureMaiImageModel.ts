@@ -21,37 +21,19 @@ import { ensureAzureImageOk } from "./azureFluxKontextModel.ts";
 
 const logCloudflare = debug("pollinations:cloudflare");
 
+const AZURE_MAI_ENDPOINT =
+    "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
 const MAI_ROUTES: Record<
     string,
-    {
-        endpoint: string;
-        deployment: string;
-        key: string;
-        title: string;
-        maxPixels: number;
-    }
+    { deployment: string; title: string; maxPixels: number }
 > = {
     "microsoft/mai-image-2.5-flash": {
-        endpoint:
-            "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images",
         deployment: "MAI-Image-2.5-Flash",
-        key: "AZURE_MYCELI_PROD_API_KEY",
         title: "MAI Image 2.5 Flash",
         maxPixels: 1024 * 1024,
     },
     "microsoft/mai-image-2.6-flash": {
-        endpoint:
-            "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images",
         deployment: "MAI-Image-2.6-Flash",
-        key: "AZURE_MYCELI_PROD_API_KEY",
-        title: "MAI Image 2.6 Flash",
-        maxPixels: 1536 * 1536,
-    },
-    "microsoft/mai-image-2.6-flash:azure:sweden": {
-        endpoint:
-            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/images",
-        deployment: "MAI-Image-2.6-Flash",
-        key: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
         title: "MAI Image 2.6 Flash",
         maxPixels: 1536 * 1536,
     },
@@ -160,14 +142,16 @@ export async function callAzureMaiImage(
         validateMaiDimensions(safeParams.width, safeParams.height, route);
     }
 
-    const apiKey = getImageEnv(route.key);
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     if (!apiKey) {
-        throw new Error(`${route.key} not found in environment variables`);
+        throw new Error(
+            "AZURE_MYCELI_PROD_API_KEY not found in environment variables",
+        );
     }
 
     await requireSafePrompt(prompt, safeParams, userInfo);
 
-    const endpoint = `${route.endpoint}/${isEdit ? "edits" : "generations"}`;
+    const endpoint = `${AZURE_MAI_ENDPOINT}/${isEdit ? "edits" : "generations"}`;
     const headers: Record<string, string> = { "api-key": apiKey };
     let body: BodyInit;
     if (isEdit) {

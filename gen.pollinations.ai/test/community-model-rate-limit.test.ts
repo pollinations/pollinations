@@ -17,7 +17,6 @@ const QUOTA_BOUND_MODELS = new Set([
     "openai/gpt-image-2.5-sunburst",
     "microsoft/mai-image-2.5-flash",
     "microsoft/mai-image-2.6-flash",
-    "microsoft/mai-image-2.6-flash:azure:sweden",
 ]);
 
 describe("model rate limiting", () => {
@@ -49,10 +48,6 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].perUserRpm).toBe(
             12,
         );
-        expect(
-            IMAGE_SERVICES["microsoft/mai-image-2.6-flash:azure:sweden"]
-                .perUserRpm,
-        ).toBe(12);
     });
 
     it("keeps other configured catalog model limits at 60 RPM or higher", () => {

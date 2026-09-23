@@ -52,6 +52,16 @@ const OPENROUTER_ROUTES = [
         "meta-llama/llama-4-scout",
         "novita/bf16",
     ],
+    [
+        "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
+        "google/gemma-4-26b-a4b-it",
+        "novita/bf16",
+    ],
+    [
+        "google/gemma-4-31b-it:openrouter:novita-bf16",
+        "google/gemma-4-31b-it",
+        "novita/bf16",
+    ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
     [

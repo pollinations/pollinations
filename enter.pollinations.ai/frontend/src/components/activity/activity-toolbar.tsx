@@ -29,9 +29,6 @@ export const ActivityToolbar: FC<{
                     value={period}
                     onChange={onPeriodChange}
                 />
-                <p className="text-micro text-theme-text-muted">
-                    Updated hourly · All times UTC
-                </p>
             </div>
             <div data-theme="neutral" className="shrink-0">
                 {download}

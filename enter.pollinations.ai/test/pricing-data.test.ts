@@ -72,6 +72,7 @@ test("health indicators show the current reliability sample", () => {
             createElement(ModelStatusChips, {
                 showNew: false,
                 showAlpha: false,
+                communityProxy: true,
                 health: {
                     status,
                     requests: status === "unknown" ? 0 : 12,
@@ -81,6 +82,15 @@ test("health indicators show the current reliability sample", () => {
         );
         expect(markup).toContain(`aria-label="${label}"`);
     }
+
+    const official = renderToStaticMarkup(
+        createElement(ModelStatusChips, {
+            showNew: false,
+            showAlpha: false,
+            health: { status: "healthy", requests: 12, successRate: 90 },
+        }),
+    );
+    expect(official).toContain('aria-label="Healthy across the last 24 hours"');
 });
 
 const getCatalogModels = () => [

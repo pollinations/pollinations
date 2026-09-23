@@ -154,7 +154,7 @@ function AccountPage() {
                 <ul className="grid gap-5 text-sm sm:grid-cols-2">
                     <li className="flex min-w-0 items-start gap-2">
                         <DiscordIcon
-                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
                         />
                         <Text size="sm" tone="base" className="min-w-0">
@@ -166,7 +166,7 @@ function AccountPage() {
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
                         <GitHubIcon
-                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
                         />
                         <Text size="sm" tone="base" className="min-w-0">
@@ -178,7 +178,7 @@ function AccountPage() {
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
                         <MailIcon
-                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
                         />
                         <Text size="sm" tone="base" className="min-w-0">
@@ -190,7 +190,7 @@ function AccountPage() {
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
                         <MailIcon
-                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-soft"
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
                             aria-hidden="true"
                         />
                         <Text size="sm" tone="base" className="min-w-0">

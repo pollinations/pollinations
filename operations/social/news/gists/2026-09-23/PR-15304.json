@@ -1,0 +1,36 @@
+{
+  "pr_number": 15304,
+  "title": "feat: add GPT-5.3 Codex on Azure",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15304",
+  "merged_at": "2026-09-23T13:52:06Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `openai/gpt-5.3-codex` through Azure East US at the 0.75 multiplier, Quest-accessible (paid by Azure credit).\n- Hidden Sweden Central fallback on the same `2026-02-24` checkpoint at identical Azure prices (1.0× primary cost).\n- Both deployments run at 400 capacity units: 400K TPM / 4,000 RPM, so one request at the full 400K context fits. At the initial 10K TPM, any prompt above ~10K tokens got an immediate 429.\n- Retirement date 2027-08-24 (Azure retirement schedule), on both routes.\n- Reuses the existing chat/text/Responses surfaces; no endpoint or public API change.\n\nVerification\n- Direct Azure, both regions: text, image, file, structured output, tools, reasoning, streaming and terminal usage. After the capacity change: an 18.6K-token prompt passes in both regions and a 195K-token prompt passes in 6s. Default reasoning effort is `none`; a realistic coding task finished in 8s non-streaming.\n- Authenticated local primary and forced-fallback E2E: cache, wallet deduction, headers, limit errors, usage. Staging Tinybird shows Azure attribution and price/cost = 0.75 on both routes.\n- Focused gen tests (144), gen typecheck, Enter price snapshot.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Codex Gets a Bigger Desk",
+    "blurb": "GPT-5.3 Codex has moved into the hive through Azure, with room for a full 400K-token thought before anyone has to fetch more paper. Polli checked both routes; the very large prompts now fit.",
+    "summary": "Added `openai/gpt-5.3-codex` on the existing chat, text, and Responses surfaces through Azure East US at a 0.75 multiplier, with a same-checkpoint Sweden Central fallback; both deployments provide 400K TPM, 4,000 RPM, and support the full 400K-token context window.",
+    "impact": "Developers can use GPT-5.3 Codex for text, images, files, structured output, tools, reasoning, streaming, and terminal workflows, with prompts such as 195K tokens verified on both Azure routes instead of hitting the former roughly 10K-token capacity ceiling.",
+    "keywords": [
+      "gpt-5.3-codex",
+      "azure",
+      "text-api",
+      "coding",
+      "400k-context",
+      "model"
+    ],
+    "visual_concept": "Depict GPT-5.3 Codex as a cozy retro coding workstation with an enormous scroll of code feeding into a CRT terminal, representing the 400K context capacity. Polli, wearing tiny programmer glasses and a tool belt, carefully guides the giant code scroll into the terminal while a small monitor robot happily points between two softly glowing route signposts labeled East US and Sweden; code-plants and flowers make the infrastructure feel like a well-tended garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded light-blue translucent wings, wearing tiny programmer glasses and a tool belt as she feeds an enormous parchment scroll of code into a retro CRT terminal glowing lime green (#ecf874); a cute chunky monitor robot with excited square pixel eyes points at two small route signs, “EAST US” and “SWEDEN,” while code-plants and pixel flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: “400K CONTEXT”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15304.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded light-blue translucent wings, wearing tiny programmer glasses and a tool belt as she feeds an enormous parchment scroll of code into a retro CRT terminal glowing lime green (#ecf874); a cute chunky monitor robot with excited square pixel eyes points at two small route signs, “EAST US” and “SWEDEN,” while code-plants and pixel flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: “400K CONTEXT”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-23T13:53:16.726012+00:00"
+}

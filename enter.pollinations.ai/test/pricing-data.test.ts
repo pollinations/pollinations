@@ -1129,16 +1129,16 @@ test("caller-selectable OpenRouter models require paid balance", () => {
     }
 });
 
-test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
+test("MiniMax M2.7 uses the pinned Novita OpenRouter rates", () => {
     const definition = getRegistryModelDefinition("minimax/minimax-m2.7");
 
     expect(definition.provider).toBe("openrouter");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.cost).toMatchObject({
-        promptTextTokens: (0.25 / 1e6) * 1.055,
-        promptCachedTokens: (0.05 / 1e6) * 1.055,
-        completionTextTokens: (1 / 1e6) * 1.055,
+        promptTextTokens: (0.27 / 1e6) * 1.055,
+        promptCachedTokens: (0.054 / 1e6) * 1.055,
+        completionTextTokens: (1.08 / 1e6) * 1.055,
     });
 });
 

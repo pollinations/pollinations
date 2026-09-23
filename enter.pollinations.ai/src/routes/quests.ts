@@ -18,7 +18,7 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v30: the 15-Pollen app quest requires 3 Paid Pollen spent.
+// Bumped to v30: the app-spend quest is worth 10 Pollen.
 const CACHE_KEY = "quests:catalog:v30";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;

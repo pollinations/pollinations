@@ -451,13 +451,9 @@ test("catalog returns quest definitions without ledger stats", async ({
         unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
-        state: "available",
+        state: "completed",
         rewardAmount: 15,
         balanceBucket: "tier",
-    });
-    expect(byId.get("app_paid_request")?.goal).toEqual({
-        target: 3,
-        unit: "pollen",
     });
     expectStableCatalogFields("app_users_10", {
         state: "available",
@@ -470,7 +466,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_pollen_10", {
         state: "available",
-        rewardAmount: 5,
+        rewardAmount: 10,
         balanceBucket: "tier",
     });
     expect(byId.get("app_pollen_10")?.goal).toEqual({
@@ -1171,12 +1167,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
             .map((reward) => reward.questId),
     );
     expect(ownerQuestIds).toEqual(
-        new Set([
-            "app_pollen_10",
-            "app_paid_request",
-            "app_users_10",
-            "app_listed",
-        ]),
+        new Set(["app_pollen_10", "app_users_10", "app_listed"]),
     );
     // use_app is live, but the owner has no BYOP-attributed key of their own.
     expect(
@@ -1241,13 +1232,12 @@ test("app milestones award their rewards at inclusive thresholds", async ({
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("app_users_10")).toBe(true);
     expect(questIds.has("app_pollen_10")).toBe(true);
-    expect(questIds.has("app_paid_request")).toBe(true);
+    expect(questIds.has("app_paid_request")).toBe(false);
     expect(questIds.has("app_active")).toBe(false);
     expect(rewards).toEqual(
         expect.arrayContaining([
             { questId: "app_users_10", pollenAmount: 3 },
-            { questId: "app_pollen_10", pollenAmount: 5 },
-            { questId: "app_paid_request", pollenAmount: 15 },
+            { questId: "app_pollen_10", pollenAmount: 10 },
         ]),
     );
 });
@@ -1276,12 +1266,6 @@ test("app milestones do not record below their thresholds, even with Quest Polle
         current: 9,
         target: 10,
         unit: "users",
-    });
-    expect(result.progress).toContainEqual({
-        questId: "app_paid_request",
-        current: 2.99,
-        target: 3,
-        unit: "pollen",
     });
     expect(result.progress).toContainEqual({
         questId: "app_pollen_10",

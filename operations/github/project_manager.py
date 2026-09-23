@@ -115,11 +115,16 @@ CONFIG = {
     },
 }
 
+# The relay bot appends "**Author:** `name` (UID: `123`)" after the relayed message,
+# so only whole Author lines count and the last one is the relay's own.
+RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?(\d+)`?\)\s*$", re.MULTILINE)
+
+
 def get_real_author() -> tuple[str, Optional[int]]:
     if ISSUE_AUTHOR_ID == CONFIG["discord_relay_bot_id"]:
-        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
-        if uid_match:
-            discord_uid = uid_match.group(1)
+        uids = RELAY_AUTHOR_LINE.findall(ISSUE_BODY)
+        if uids:
+            discord_uid = uids[-1]
             log_debug(f"Extracted Discord UID: {discord_uid}")
             github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:

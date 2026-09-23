@@ -257,7 +257,7 @@ function QuestSummary({
     preview?: boolean;
     claimable?: {
         count: number;
-        segments: { kind: RewardIconKind; pollen: number }[];
+        pollen: number;
     };
 }) {
     return (
@@ -270,9 +270,16 @@ function QuestSummary({
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
                     claimable && claimable.count > 0 ? (
-                        <span className="text-theme-text-strong">
-                            {claimable.count} ready to claim
-                        </span>
+                        <Chip
+                            intent="success"
+                            size="lg"
+                            className="polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug"
+                            style={{ height: "auto" }}
+                        >
+                            {claimable.count}{" "}
+                            {claimable.count === 1 ? "quest" : "quests"} to
+                            claim
+                        </Chip>
                     ) : undefined
                 }
             />
@@ -284,34 +291,15 @@ function QuestSummary({
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
                     claimable && claimable.count > 0 ? (
-                        <span className="flex flex-wrap items-center gap-1.5 text-theme-text-strong">
-                            {claimable.segments.map((segment) => {
-                                const Icon =
-                                    segment.kind === "paid"
-                                        ? CardIcon
-                                        : SproutIcon;
-                                return (
-                                    <Chip
-                                        key={segment.kind}
-                                        intent="neutral"
-                                        size="lg"
-                                        className={`gap-1.5 tabular-nums ${BUCKET_CHIP_CLASS[segment.kind]}`}
-                                    >
-                                        <Icon
-                                            className="h-3.5 w-3.5 shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        <span className="sr-only">
-                                            {segment.kind === "paid"
-                                                ? "Paid Pollen:"
-                                                : "Quest Pollen:"}
-                                        </span>
-                                        {formatRewardAmount(segment.pollen)}
-                                    </Chip>
-                                );
-                            })}
-                            <span className="whitespace-nowrap">to claim</span>
-                        </span>
+                        <Chip
+                            intent="success"
+                            size="lg"
+                            className="polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug"
+                            style={{ height: "auto" }}
+                        >
+                            {formatRewardAmount(claimable.pollen)} Pollen to
+                            claim
+                        </Chip>
                     ) : undefined
                 }
             />
@@ -887,21 +875,17 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         return stats;
     }, [state.rewards]);
 
-    // Claimable footers pair the quest count with its per-bucket Pollen amounts.
+    // Summarize unclaimed rewards; bucket details stay on the individual rows.
     const claimable = useMemo(() => {
-        const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
+        let pollen = 0;
         for (const reward of state.rewards) {
             if (reward.claimedAt == null) {
-                byKind[rewardIconKind(reward.balanceBucket)] +=
-                    reward.pollenAmount;
                 count += 1;
+                pollen += reward.pollenAmount;
             }
         }
-        const segments = (["tier", "paid"] as RewardIconKind[])
-            .filter((kind) => byKind[kind] > 0)
-            .map((kind) => ({ kind, pollen: byKind[kind] }));
-        return { count, segments };
+        return { count, pollen };
     }, [state.rewards]);
 
     const initialError =

@@ -170,7 +170,8 @@ const configureViaRouter = (
     router(["providers", "generic", "credential", PROVIDER_ID, "set", "--stdin"], {
         input: settings.apiKey,
     });
-    router(["providers", "enable", PROVIDER_ID]);
+    // add/edit already publishes the descriptor enabled; `providers enable`
+    // only handles built-in providers, not generic ones.
     // Publish the selected model from Pollinations' live catalog; the
     // router fetches that catalog itself when listing candidates.
     curate([PROVIDER_ID, "--models", settings.model, "--apply"]);

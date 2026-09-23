@@ -252,12 +252,12 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
             const result = await authClient.deleteUser();
             if (result.error) {
                 setError(result.error.message || "Account deletion failed.");
+                setIsDeleting(false);
                 return;
             }
             window.location.assign("/news");
         } catch {
             setError("Account deletion failed. Please try again.");
-        } finally {
             setIsDeleting(false);
         }
     }

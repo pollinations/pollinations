@@ -1,15 +1,13 @@
-import {
-    Button,
-    GitHubIcon,
-    InlineLink,
-    LoadingStatus,
-} from "@pollinations/ui";
+import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
 import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    SectionContent,
+} from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -114,7 +112,7 @@ function DashboardLayout() {
                     <Await
                         promise={data.balance}
                         fallback={
-                            <LoadingStatus>Loading balance…</LoadingStatus>
+                            <SectionContent loading label="Loading balance…" />
                         }
                     >
                         {(balance) =>

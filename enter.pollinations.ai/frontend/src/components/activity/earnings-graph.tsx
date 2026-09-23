@@ -155,13 +155,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 {refreshing && (
                     <LoadingStatus>Updating earnings…</LoadingStatus>
                 )}
-                {error && !loading && (
+                {error && (
                     <LoadError onRetry={() => fetchEarnings()}>
                         {error}
                     </LoadError>
                 )}
-                {!loading &&
-                    (!error || hasData) &&
+                {(!error || hasData) &&
                     (hasData ? (
                         <Chart
                             key={`${period.granularity}:${period.period}`}

@@ -5,7 +5,6 @@ import {
     Button,
     InlineLink,
     Input,
-    LoadingStatus,
     LockIcon,
     LogInIcon,
     LogOutIcon,
@@ -16,7 +15,7 @@ import {
 } from "@pollinations/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 type Connection = {
     id: string;
@@ -267,89 +266,88 @@ export function ConnectedApps() {
             {actionError && <Alert intent="danger">{actionError}</Alert>}
             {connectionsError && <LoadError>{connectionsError}</LoadError>}
 
-            {connectionsLoading && (
-                <LoadingStatus>Loading connected apps…</LoadingStatus>
-            )}
-
             {toolkitsError && <LoadError>{toolkitsError}</LoadError>}
 
-            <div className="flex flex-col gap-2" aria-live="polite">
-                {!connectionsLoading &&
-                    displayedConnections.map((connection) => (
-                        <AppCard
-                            key={connection.id}
-                            name={
-                                connection.name ||
-                                readableSlug(connection.toolkit)
-                            }
-                            logo={connection.logo}
-                            details={
-                                <>
+            <SectionContent
+                loading={
+                    connectionsLoading ||
+                    (searching && displayedConnections.length === 0)
+                }
+                label={searchQuery ? "Searching apps…" : "Loading apps…"}
+            >
+                <div className="flex flex-col gap-2" aria-live="polite">
+                    {!connectionsLoading &&
+                        displayedConnections.map((connection) => (
+                            <AppCard
+                                key={connection.id}
+                                name={
+                                    connection.name ||
+                                    readableSlug(connection.toolkit)
+                                }
+                                logo={connection.logo}
+                                details={
+                                    <>
+                                        <Text
+                                            size="sm"
+                                            tone="muted"
+                                            className="line-clamp-2"
+                                        >
+                                            {connection.description ||
+                                                toolkits.find(
+                                                    ({ slug }) =>
+                                                        slug ===
+                                                        connection.toolkit,
+                                                )?.description ||
+                                                `Use ${connection.name || readableSlug(connection.toolkit)} with Pollinations agents.`}
+                                        </Text>
+                                        {connection.alias && (
+                                            <Text size="sm" tone="muted">
+                                                {connection.alias}
+                                            </Text>
+                                        )}
+                                    </>
+                                }
+                                pending={pendingId === connection.id}
+                                onAction={() => void disconnect(connection)}
+                                connected
+                            />
+                        ))}
+                    {!searching &&
+                        !connectionsLoading &&
+                        !connectionsError &&
+                        !toolkitsError &&
+                        displayedToolkits.map((toolkit) => (
+                            <AppCard
+                                key={toolkit.slug}
+                                name={toolkit.name}
+                                logo={toolkit.logo}
+                                details={
                                     <Text
                                         size="sm"
                                         tone="muted"
                                         className="line-clamp-2"
                                     >
-                                        {connection.description ||
-                                            toolkits.find(
-                                                ({ slug }) =>
-                                                    slug === connection.toolkit,
-                                            )?.description ||
-                                            `Use ${connection.name || readableSlug(connection.toolkit)} with Pollinations agents.`}
+                                        {toolkit.description}
                                     </Text>
-                                    {connection.alias && (
-                                        <Text size="sm" tone="muted">
-                                            {connection.alias}
-                                        </Text>
-                                    )}
-                                </>
-                            }
-                            pending={pendingId === connection.id}
-                            onAction={() => void disconnect(connection)}
-                            connected
-                        />
-                    ))}
-                {!searching &&
-                    !connectionsLoading &&
-                    !connectionsError &&
-                    !toolkitsError &&
-                    displayedToolkits.map((toolkit) => (
-                        <AppCard
-                            key={toolkit.slug}
-                            name={toolkit.name}
-                            logo={toolkit.logo}
-                            details={
-                                <Text
-                                    size="sm"
-                                    tone="muted"
-                                    className="line-clamp-2"
-                                >
-                                    {toolkit.description}
-                                </Text>
-                            }
-                            pending={pendingId === toolkit.slug}
-                            onAction={() => void connect(toolkit.slug)}
-                        />
-                    ))}
-                {!connectionsLoading &&
-                    !searching &&
-                    !connectionsError &&
-                    !toolkitsError &&
-                    displayedConnections.length === 0 &&
-                    displayedToolkits.length === 0 && (
-                        <Text size="sm" tone="muted">
-                            {searchQuery
-                                ? `No apps found for “${searchQuery}”. Try another search.`
-                                : "No more apps to show. Search for another app to connect."}
-                        </Text>
-                    )}
-            </div>
-
-            {searching && (
-                <LoadingStatus>
-                    {searchQuery ? "Searching apps…" : "Loading apps…"}
-                </LoadingStatus>
-            )}
+                                }
+                                pending={pendingId === toolkit.slug}
+                                onAction={() => void connect(toolkit.slug)}
+                            />
+                        ))}
+                    {!connectionsLoading &&
+                        !searching &&
+                        !connectionsError &&
+                        !toolkitsError &&
+                        displayedConnections.length === 0 &&
+                        displayedToolkits.length === 0 && (
+                            <Text size="sm" tone="muted">
+                                {searchQuery
+                                    ? `No apps found for “${searchQuery}”. Try another search.`
+                                    : "No more apps to show. Search for another app to connect."}
+                            </Text>
+                        )}
+                </div>
+            </SectionContent>
 
             <footer className="space-y-3">
                 <Text

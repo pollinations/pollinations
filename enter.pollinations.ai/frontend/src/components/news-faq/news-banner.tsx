@@ -1,6 +1,6 @@
-import { InlineLink, LoadingStatus, Surface, Text } from "@pollinations/ui";
+import { InlineLink, Surface, Text } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -210,21 +210,25 @@ export const NewsBanner: FC = () => {
         return () => controller.abort();
     }, []);
 
-    if (loading) return <LoadingStatus>Loading news…</LoadingStatus>;
-    if (error) return <LoadError>Couldn’t load news.</LoadError>;
-    if (highlights.length === 0)
-        return (
-            <Text size="sm" tone="muted">
-                No news to show.
-            </Text>
-        );
-
     return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {highlights.map((item) => (
-                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
-            ))}
-        </div>
+        <SectionContent loading={loading} label="Loading news…">
+            {error ? (
+                <LoadError>Couldn’t load news.</LoadError>
+            ) : highlights.length === 0 ? (
+                <Text size="sm" tone="muted">
+                    No news to show.
+                </Text>
+            ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {highlights.map((item) => (
+                        <DynamicNews
+                            key={`${item.date}-${item.title}`}
+                            item={item}
+                        />
+                    ))}
+                </div>
+            )}
+        </SectionContent>
     );
 };
 

@@ -1,11 +1,7 @@
-import { Section } from "@pollinations/ui";
 import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
 import { Deployments } from "../components/community-endpoints";
-import {
-    DashboardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { DeploymentsPlaceholder } from "../components/community-endpoints/community-endpoints.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-models")({
@@ -23,24 +19,14 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 function MyModelsPage() {
     const { profile } = useDeferredValue(DashboardRoute.useLoaderData());
     return (
-        <Await
-            promise={profile}
-            fallback={
-                <DashboardLoading
-                    title="My models"
-                    label="Loading publisher details…"
-                />
-            }
-        >
+        <Await promise={profile} fallback={<DeploymentsPlaceholder />}>
             {(details) =>
                 details ? (
                     <Deployments
                         canPublish={details.communityEndpointsAllowed}
                     />
                 ) : (
-                    <Section title="My models">
-                        <LoadError>Couldn’t load publisher details.</LoadError>
-                    </Section>
+                    <DeploymentsPlaceholder error="Couldn’t load publisher details." />
                 )
             }
         </Await>

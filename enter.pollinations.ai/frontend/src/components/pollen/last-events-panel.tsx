@@ -3,7 +3,6 @@ import {
     Button,
     CardIcon,
     Chip,
-    LoadingStatus,
     SproutIcon,
     Table,
     TableBody,
@@ -16,7 +15,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -232,7 +231,7 @@ export const LastEventsPanel: FC = () => {
     const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
-        return <LoadingStatus>Loading recent activity…</LoadingStatus>;
+        return <SectionContent loading label="Loading recent activity…" />;
     }
 
     if (state.error && state.rows.length === 0) {

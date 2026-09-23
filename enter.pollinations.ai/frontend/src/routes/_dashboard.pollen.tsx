@@ -1,4 +1,4 @@
-import { LoadingStatus, Section } from "@pollinations/ui";
+import { Section } from "@pollinations/ui";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -14,7 +14,10 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    SectionContent,
+} from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -63,7 +66,9 @@ function PollenPage() {
             <Section title="Wallet">
                 <Await
                     promise={balance}
-                    fallback={<LoadingStatus>Loading balance…</LoadingStatus>}
+                    fallback={
+                        <SectionContent loading label="Loading balance…" />
+                    }
                 >
                     {(balances) =>
                         balances ? (
@@ -88,7 +93,10 @@ function PollenPage() {
                 <Await
                     promise={billing}
                     fallback={
-                        <LoadingStatus>Loading billing details…</LoadingStatus>
+                        <SectionContent
+                            loading
+                            label="Loading billing details…"
+                        />
                     }
                 >
                     {(billingState) => (

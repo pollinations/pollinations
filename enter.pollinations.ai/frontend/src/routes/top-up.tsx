@@ -1,4 +1,4 @@
-import { Button, LoadingStatus, RefreshIcon } from "@pollinations/ui";
+import { Button, RefreshIcon } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     getPollenPackByAmount,
@@ -11,6 +11,7 @@ import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
+import { SectionContent } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
@@ -175,7 +176,7 @@ function TopUpPage() {
             }
         >
             {billing === undefined ? (
-                <LoadingStatus>Loading billing details…</LoadingStatus>
+                <SectionContent loading label="Loading billing details…" />
             ) : (
                 <BuyPollenPanel
                     initialBillingState={billing}

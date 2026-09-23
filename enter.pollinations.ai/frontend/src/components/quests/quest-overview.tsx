@@ -35,7 +35,7 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { mergeQuestRewards, type QuestReward } from "./quest-rewards.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -845,9 +845,11 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         return { count, segments };
     }, [state.rewards]);
 
-    const showSummary =
-        !state.loading &&
-        (!state.error || state.catalog.length > 0 || state.rewards.length > 0);
+    const initialError =
+        state.catalog.length === 0 && state.rewards.length === 0
+            ? state.error
+            : null;
+    const showSummary = !initialError;
 
     return (
         <div className="flex flex-col gap-6">
@@ -858,78 +860,78 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {state.loading && (
-                    <LoadingStatus>Loading quests…</LoadingStatus>
-                )}
-                {showSummary && !state.anonymous && (
-                    <>
-                        <div>
-                            <QuestSummary
-                                quests={claimedStats.quests}
-                                pollen={claimedStats.pollen}
-                            />
-                            {claimable.count > 0 && (
-                                <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                                    <SparkleIcon className="h-4 w-4 shrink-0" />
-                                    <span>
-                                        <span className="tabular-nums">
-                                            {claimable.count}
-                                        </span>{" "}
-                                        new{" "}
-                                        {claimable.count === 1
-                                            ? "quest"
-                                            : "quests"}{" "}
-                                        completed
-                                    </span>
-                                    {/* Reward amount pulled inline — "…completed
+                <SectionContent loading={state.loading} label="Loading quests…">
+                    {state.error && <LoadError>{state.error}</LoadError>}
+                    {showSummary && !state.anonymous && (
+                        <>
+                            <div>
+                                <QuestSummary
+                                    quests={claimedStats.quests}
+                                    pollen={claimedStats.pollen}
+                                />
+                                {claimable.count > 0 && (
+                                    <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
+                                        <SparkleIcon className="h-4 w-4 shrink-0" />
+                                        <span>
+                                            <span className="tabular-nums">
+                                                {claimable.count}
+                                            </span>{" "}
+                                            new{" "}
+                                            {claimable.count === 1
+                                                ? "quest"
+                                                : "quests"}{" "}
+                                            completed
+                                        </span>
+                                        {/* Reward amount pulled inline — "…completed
                                         🌱 5 pollen ready to claim!" — so it reads
                                         as one sentence, not a trailing chip. */}
-                                    {claimable.segments.map((seg, i) => {
-                                        const SegIcon =
-                                            seg.kind === "paid"
-                                                ? CardIcon
-                                                : SproutIcon;
-                                        return (
-                                            <span
-                                                key={seg.kind}
-                                                className="flex items-center gap-1.5"
-                                            >
-                                                {i > 0 && (
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="opacity-60"
-                                                    >
-                                                        ·
-                                                    </span>
-                                                )}
-                                                <SegIcon className="h-4 w-4 shrink-0" />
-                                                <span className="tabular-nums">
-                                                    {formatRewardAmount(
-                                                        seg.pollen,
+                                        {claimable.segments.map((seg, i) => {
+                                            const SegIcon =
+                                                seg.kind === "paid"
+                                                    ? CardIcon
+                                                    : SproutIcon;
+                                            return (
+                                                <span
+                                                    key={seg.kind}
+                                                    className="flex items-center gap-1.5"
+                                                >
+                                                    {i > 0 && (
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="opacity-60"
+                                                        >
+                                                            ·
+                                                        </span>
                                                     )}
+                                                    <SegIcon className="h-4 w-4 shrink-0" />
+                                                    <span className="tabular-nums">
+                                                        {formatRewardAmount(
+                                                            seg.pollen,
+                                                        )}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        );
-                                    })}
-                                    <span>pollen ready to claim!</span>
-                                </div>
+                                            );
+                                        })}
+                                        <span>pollen ready to claim!</span>
+                                    </div>
+                                )}
+                            </div>
+                            {state.checking && (
+                                <LoadingStatus>
+                                    Checking for new quests…
+                                </LoadingStatus>
                             )}
-                        </div>
-                        {state.checking && (
-                            <LoadingStatus>
-                                Checking for new quests…
-                            </LoadingStatus>
-                        )}
-                    </>
-                )}
-                {/* The preview counts available quests and their possible rewards. */}
-                {showSummary && state.anonymous && (
-                    <QuestSummary
-                        preview
-                        quests={previewTotals.count}
-                        pollen={previewTotals.pollen}
-                    />
-                )}
+                        </>
+                    )}
+                    {/* The preview counts available quests and their possible rewards. */}
+                    {showSummary && state.anonymous && (
+                        <QuestSummary
+                            preview
+                            quests={previewTotals.count}
+                            pollen={previewTotals.pollen}
+                        />
+                    )}
+                </SectionContent>
                 <div className="space-y-2 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -954,8 +956,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </p>
                 </div>
             </Section>
-
-            {state.error && <LoadError>{state.error}</LoadError>}
 
             <div className="flex flex-col gap-6">
                 {bonusRewardCards.length > 0 && (
@@ -989,7 +989,8 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 )}
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
-                    if (!state.loading && cards.length === 0) return null;
+                    if (!state.loading && !initialError && cards.length === 0)
+                        return null;
                     // The progress chip counts only real (grantable) quests —
                     // coming_soon rows are excluded from both done and total.
                     const liveCards = cards.filter((card) => !card.comingSoon);
@@ -1001,29 +1002,35 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             key={category.key}
                             title={category.label}
                             action={
-                                !state.loading && (
+                                !state.loading &&
+                                !initialError && (
                                     <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                         {done} / {liveCards.length}
                                     </span>
                                 )
                             }
                         >
-                            <div
-                                className="flex min-h-5 flex-col gap-2"
-                                aria-busy={state.loading}
+                            <SectionContent
+                                loading={state.loading}
+                                label="Loading quests…"
                             >
-                                {cards.map((card) => (
-                                    <QuestRow
-                                        key={card.key}
-                                        card={card}
-                                        icon={category.icon}
-                                        claiming={state.claimingRewardIds.includes(
-                                            card.rewardId ?? "",
-                                        )}
-                                        onClaim={handleClaimReward}
-                                    />
-                                ))}
-                            </div>
+                                {initialError && (
+                                    <LoadError>{initialError}</LoadError>
+                                )}
+                                <div className="flex flex-col gap-2">
+                                    {cards.map((card) => (
+                                        <QuestRow
+                                            key={card.key}
+                                            card={card}
+                                            icon={category.icon}
+                                            claiming={state.claimingRewardIds.includes(
+                                                card.rewardId ?? "",
+                                            )}
+                                            onClaim={handleClaimReward}
+                                        />
+                                    ))}
+                                </div>
+                            </SectionContent>
                         </Section>
                     );
                 })}

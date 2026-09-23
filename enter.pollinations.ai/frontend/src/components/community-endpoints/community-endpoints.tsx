@@ -28,7 +28,7 @@ import {
 } from "react";
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { DashboardLoading, LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -89,6 +89,36 @@ function ProviderProfileField({
             </span>
             <Field.Input asChild>{children}</Field.Input>
         </Field.Root>
+    );
+}
+
+export function DeploymentsPlaceholder({
+    canPublish = false,
+    error,
+    onRetry,
+}: {
+    canPublish?: boolean;
+    error?: string | null;
+    onRetry?: () => void;
+}) {
+    const titles = canPublish
+        ? ["Publisher info", "Agents", "Models"]
+        : ["Agents", "Models"];
+    return (
+        <div className="flex flex-col gap-6">
+            {titles.map((title) => (
+                <Section key={title} title={title}>
+                    <SectionContent
+                        loading={!error}
+                        label={`Loading ${title.toLowerCase()}…`}
+                    >
+                        {error && (
+                            <LoadError onRetry={onRetry}>{error}</LoadError>
+                        )}
+                    </SectionContent>
+                </Section>
+            ))}
+        </div>
     );
 }
 
@@ -442,33 +472,16 @@ export function CommunityEndpoints({
         </Button>
     );
 
-    if (isLoading) {
+    if (isLoading || (error && !hasLoaded)) {
         return (
-            <div className="flex flex-col gap-6">
-                {canPublish && (
-                    <DashboardLoading
-                        title="Publisher info"
-                        label="Loading publisher details…"
-                    />
-                )}
-                <DashboardLoading title="Agents" label="Loading agents…" />
-                <DashboardLoading title="Models" label="Loading models…" />
-            </div>
-        );
-    }
-
-    if (error && !hasLoaded) {
-        return (
-            <Section title="My models">
-                <LoadError
-                    onRetry={() => {
-                        setIsLoading(true);
-                        void loadEndpoints();
-                    }}
-                >
-                    {error}
-                </LoadError>
-            </Section>
+            <DeploymentsPlaceholder
+                canPublish={canPublish}
+                error={isLoading ? null : error}
+                onRetry={() => {
+                    setIsLoading(true);
+                    void loadEndpoints();
+                }}
+            />
         );
     }
 

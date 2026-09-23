@@ -110,9 +110,13 @@ function KeysPage() {
                         onDelete={handleDeleteApiKey}
                     />
                 ) : (
-                    <Section title="Keys">
-                        <LoadError>Couldn’t load keys.</LoadError>
-                    </Section>
+                    <div className="flex flex-col gap-6">
+                        {["Secrets", "Apps"].map((title) => (
+                            <Section key={title} title={title}>
+                                <LoadError>Couldn’t load keys.</LoadError>
+                            </Section>
+                        ))}
+                    </div>
                 )
             }
         </Await>

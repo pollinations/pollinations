@@ -185,10 +185,10 @@ const UsageChartView: FC<UsageChartViewProps> = ({
         <>
             <SectionContent loading={loading} label="Loading usage…">
                 {refreshing && <LoadingStatus>Updating usage…</LoadingStatus>}
-                {error && !loading && (
+                {error && (
                     <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}
-                {!loading && hasData && (
+                {hasData && (
                     <Chart
                         key={`${period.granularity}:${period.period}`}
                         period={period}
@@ -202,7 +202,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         metric={metric}
                     />
                 )}
-                {!loading && !error && !hasData && <UsageEmptyState />}
+                {!error && !hasData && <UsageEmptyState />}
             </SectionContent>
 
             {!loading && hasData && (

@@ -5,6 +5,20 @@ import {
     RefreshIcon,
     Section,
 } from "@pollinations/ui";
+import type { ReactNode } from "react";
+
+/** Keep section headings and controls outside the content that waits for data. */
+export function SectionContent({
+    loading,
+    label,
+    children,
+}: {
+    loading: boolean;
+    label: string;
+    children?: ReactNode;
+}) {
+    return loading ? <LoadingStatus>{label}</LoadingStatus> : children;
+}
 
 export function DashboardLoading({
     title,
@@ -15,7 +29,7 @@ export function DashboardLoading({
 }) {
     return (
         <Section title={title}>
-            <LoadingStatus>{label}</LoadingStatus>
+            <SectionContent loading label={label} />
         </Section>
     );
 }

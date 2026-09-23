@@ -188,6 +188,10 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
+    // Date the provider stops serving this route's upstream model (ms epoch).
+    // Set only when the provider has published one. It belongs to the route,
+    // so fallback routes never inherit it from the model they serve.
+    expirationDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;

@@ -401,6 +401,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
+        expirationDate: new Date("2028-02-01").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -675,6 +676,8 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
+        // Alibaba Model Studio notice 2009.
+        expirationDate: new Date("2026-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {

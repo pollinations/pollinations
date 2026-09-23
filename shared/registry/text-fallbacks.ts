@@ -103,6 +103,7 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
+            expirationDate: new Date("2028-01-11").getTime(),
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -125,6 +126,7 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
+            expirationDate: new Date("2027-08-24").getTime(),
         },
     },
     "deepseek/deepseek-v4-flash": {
@@ -158,6 +160,8 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
+            // DeepInfra now forwards requests to MiniMax-M3 at MiniMax-M3's price.
+            expirationDate: new Date("2026-09-10").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.25),
                 promptCachedTokens: perMillion(0.05),
@@ -578,6 +582,8 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
+            // OpenRouter expiration_date.
+            expirationDate: new Date("2026-10-20").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.01) * 1.055,
@@ -686,6 +692,8 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
+            // DeepInfra then forwards requests to Kimi-K3 at Kimi-K3's price.
+            expirationDate: new Date("2026-09-29").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.68),
                 promptCachedTokens: perMillion(0.136),

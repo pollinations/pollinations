@@ -165,6 +165,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-05").getTime(),
+        // Azure retirement schedule; the model catalog says 2026-11-15.
+        expirationDate: new Date("2026-10-01").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
@@ -188,6 +190,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-22").getTime(),
+        expirationDate: new Date("2027-01-09").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -210,6 +213,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
+        // Vertex AI model page.
+        expirationDate: new Date("2027-03-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1.055,
         cost: {
@@ -425,6 +430,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
+        expirationDate: new Date("2027-04-07").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
@@ -444,6 +450,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
+        expirationDate: new Date("2026-12-16").getTime(),
         priceMultiplier: 0.75,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
@@ -466,6 +473,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
+        expirationDate: new Date("2027-10-21").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 6,
@@ -488,6 +496,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
+        // Azure model catalog; the retirement schedule says 2027-09-09.
+        expirationDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 12,
@@ -511,6 +521,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
+        // Azure model catalog; the retirement schedule says 2027-09-09.
+        expirationDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 12,
@@ -1120,6 +1132,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        // xAI retires the slug and redirects it to grok-imagine-image-2.0.
+        expirationDate: new Date("2026-11-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
@@ -1563,6 +1577,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        // Bedrock Legacy end-of-life.
+        expirationDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1,
         // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
@@ -1597,6 +1613,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        // Bedrock Legacy end-of-life.
+        expirationDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1,
         cost: {
             completionVideoSeconds: 0.08, // per sec

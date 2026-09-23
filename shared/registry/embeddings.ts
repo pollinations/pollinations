@@ -35,6 +35,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
+        expirationDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.02),
@@ -52,6 +53,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
+        expirationDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.13),

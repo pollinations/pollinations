@@ -1,0 +1,36 @@
+{
+  "pr_number": 15343,
+  "title": "feat: allow Saauf to publish community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15343",
+  "merged_at": "2026-09-23T14:35:40Z",
+  "labels": [
+    "API",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Add Saauf’s GitHub account to the community-model publisher allowlist.\n- No model or pricing changes.\n\nFixes #15342",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One more gardener",
+    "blurb": "Saauf now has the keys to publish community models. The garden gets another careful pair of hands.",
+    "summary": "Added Saauf’s GitHub account to the community-model publisher allowlist, enabling them to publish community models without changing existing models or pricing.",
+    "impact": "Community model users gain access to future models published by Saauf through the existing community-model workflow.",
+    "keywords": [
+      "community-models",
+      "publisher-allowlist",
+      "github",
+      "model-publishing",
+      "community"
+    ],
+    "visual_concept": "Depict Polli welcoming a new community gardener into a cozy code-garden: a GitHub-style identity badge unlocks a small gate to flower pots containing model cards and sprouting code-plants. Polli wears a tiny gardener hat and hands the new contributor a seed packet, representing trusted publishing access rather than a new model release.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, welcoming a new community gardener through a little unlocked gate into a code-garden of model-card flower pots and sprouting terminal plants; a small GitHub-style badge hangs on the gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'PUBLISH'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15343.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, welcoming a new community gardener through a little unlocked gate into a code-garden of model-card flower pots and sprouting terminal plants; a small GitHub-style badge hangs on the gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: 'PUBLISH'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-23T14:36:48.549482+00:00"
+}

@@ -1,5 +1,10 @@
 import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
-import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
+import {
+    Await,
+    createFileRoute,
+    Outlet,
+    useRouter,
+} from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -83,7 +88,17 @@ export const Route = createFileRoute("/_dashboard")({
     component: DashboardLayout,
 });
 
+export function useDashboardRetry() {
+    const router = useRouter();
+    return () =>
+        router.invalidate({
+            filter: (match) => match.routeId === Route.id,
+            sync: true,
+        });
+}
+
 function DashboardLayout() {
+    const retry = useDashboardRetry();
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -129,7 +144,7 @@ function DashboardLayout() {
                                     )}
                                 </Await>
                             ) : (
-                                <LoadError>
+                                <LoadError onRetry={retry}>
                                     Couldn’t load your balance.
                                 </LoadError>
                             )

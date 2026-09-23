@@ -19,7 +19,7 @@ import {
     SectionContent,
 } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
-import { Route as DashboardRoute } from "./_dashboard.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 });
 
 function PollenPage() {
+    const retry = useDashboardRetry();
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const { balance, earnings } = useDeferredValue(
@@ -84,7 +85,9 @@ function PollenPage() {
                                 )}
                             </Await>
                         ) : (
-                            <LoadError>Couldn’t load your balance.</LoadError>
+                            <LoadError onRetry={retry}>
+                                Couldn’t load your balance.
+                            </LoadError>
                         )
                     }
                 </Await>

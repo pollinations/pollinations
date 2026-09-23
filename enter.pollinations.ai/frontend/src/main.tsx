@@ -27,7 +27,9 @@ const router = createRouter({
     routeTree,
     defaultErrorComponent: () => (
         <div className="p-6">
-            <LoadError>Couldn’t load this page.</LoadError>
+            <LoadError onRetry={() => router.invalidate()}>
+                Couldn’t load this page.
+            </LoadError>
         </div>
     ),
     defaultPendingMs: 0,

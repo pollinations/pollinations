@@ -36,7 +36,7 @@ export function DashboardLoading({
 
 export function LoadError({
     children,
-    onRetry = () => window.location.reload(),
+    onRetry,
 }: {
     children: string;
     onRetry?: () => void;
@@ -45,13 +45,15 @@ export function LoadError({
         <Alert intent="danger">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <span>{children}</span>
-                <Button
-                    intent="neutral"
-                    icon={<RefreshIcon />}
-                    onClick={onRetry}
-                >
-                    Try again
-                </Button>
+                {onRetry && (
+                    <Button
+                        intent="neutral"
+                        icon={<RefreshIcon />}
+                        onClick={onRetry}
+                    >
+                        Try again
+                    </Button>
+                )}
             </div>
         </Alert>
     );

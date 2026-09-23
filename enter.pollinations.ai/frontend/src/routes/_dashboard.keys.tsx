@@ -37,6 +37,17 @@ function KeysPage() {
     const router = useRouter();
     const { apiKeys } = useDeferredValue(DashboardRoute.useLoaderData());
 
+    async function refreshKeys(): Promise<void> {
+        await router.invalidate({
+            filter: (match) => match.routeId === DashboardRoute.id,
+            sync: true,
+        });
+        // The dashboard returns this promise without awaiting it.
+        await router.state.matches.find(
+            (match) => match.routeId === DashboardRoute.id,
+        )?.loaderData?.apiKeys;
+    }
+
     async function handleCreateApiKey(
         formState: CreateApiKey,
     ): Promise<CreateApiKeyResponse> {
@@ -65,7 +76,7 @@ function KeysPage() {
             },
         });
 
-        await router.invalidate();
+        await refreshKeys();
         return {
             id: created.id,
             key: created.key,
@@ -77,7 +88,7 @@ function KeysPage() {
         const result = await authClient.apiKey.delete({ keyId: id });
         if (result.error)
             throw new Error(result.error.message || "Request failed");
-        await router.invalidate();
+        await refreshKeys();
     }
 
     async function handleUpdateApiKey(
@@ -85,7 +96,7 @@ function KeysPage() {
         updates: ApiKeyUpdateParams,
     ): Promise<void> {
         await updateApiKey(id, updates);
-        await router.invalidate();
+        await refreshKeys();
     }
 
     return (
@@ -113,7 +124,9 @@ function KeysPage() {
                     <div className="flex flex-col gap-6">
                         {["Secrets", "Apps"].map((title) => (
                             <Section key={title} title={title}>
-                                <LoadError>Couldn’t load keys.</LoadError>
+                                <LoadError onRetry={refreshKeys}>
+                                    Couldn’t load keys.
+                                </LoadError>
                             </Section>
                         ))}
                     </div>

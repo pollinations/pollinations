@@ -23,7 +23,7 @@ import {
     DashboardLoading,
     LoadError,
 } from "../components/layout/dashboard-loading.tsx";
-import { Route as DashboardRoute } from "./_dashboard.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
 
@@ -47,6 +47,7 @@ export const Route = createFileRoute("/_dashboard/account")({
 });
 
 function AccountPage() {
+    const retry = useDashboardRetry();
     const { user, githubUsername, profile } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
@@ -136,7 +137,7 @@ function AccountPage() {
                         />
                     ) : (
                         <Section title="Community">
-                            <LoadError>
+                            <LoadError onRetry={retry}>
                                 Couldn’t load connection settings.
                             </LoadError>
                         </Section>

@@ -1,5 +1,12 @@
 import { InlineLink, Surface, Text } from "@pollinations/ui";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import {
+    type FC,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 const HIGHLIGHTS_RAW_URL =
@@ -184,13 +191,16 @@ export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
     const [loading, setLoading] = useState(true);
+    const request = useRef<AbortController | null>(null);
     const [error, setError] = useState(false);
 
-    useEffect(() => {
+    const retry = useCallback(() => {
+        request.current?.abort();
         const controller = new AbortController();
+        request.current = controller;
         setLoading(true);
         setError(false);
-        fetch(HIGHLIGHTS_RAW_URL, { signal: controller.signal })
+        return fetch(HIGHLIGHTS_RAW_URL, { signal: controller.signal })
             .then((res) => {
                 if (!res.ok) throw new Error("News request failed");
                 return res.text();
@@ -207,13 +217,17 @@ export const NewsBanner: FC = () => {
             .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
             });
-        return () => controller.abort();
     }, []);
+
+    useEffect(() => {
+        void retry();
+        return () => request.current?.abort();
+    }, [retry]);
 
     return (
         <SectionContent loading={loading} label="Loading news…">
             {error ? (
-                <LoadError>Couldn’t load news.</LoadError>
+                <LoadError onRetry={retry}>Couldn’t load news.</LoadError>
             ) : highlights.length === 0 ? (
                 <Text size="sm" tone="muted">
                     No news to show.

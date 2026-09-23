@@ -1,13 +1,11 @@
 import { apiClient } from "@frontend/api.ts";
 import {
-    Alert,
     Button,
     CardIcon,
     CheckIcon,
     cn,
     InfoTip,
     InlineLink,
-    RefreshIcon,
     Switch,
     type SwitchStatus,
     Tooltip,
@@ -29,6 +27,7 @@ import {
     useEffect,
     useState,
 } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -129,6 +128,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     returnToTopUp,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
+    const [isReloading, setIsReloading] = useState(false);
     const [packAmountUsd, setPackAmountUsd] = useState(
         normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
     );
@@ -183,6 +183,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         );
         setEnableDraft(false);
     }, [initialBillingState]);
+
+    async function reloadBilling(): Promise<void> {
+        setIsReloading(true);
+        try {
+            const response = await apiClient.stripe.billing.$get();
+            if (!response.ok) return;
+            const next = await response.json();
+            setBillingState(next);
+            if (next.autoTopUp.enabled || !enableDraft) {
+                setPackAmountUsd(
+                    normalizePackAmount(next.autoTopUp.packAmountUsd),
+                );
+            }
+        } catch {
+            // Keep the billing error visible so this section can be retried again.
+        } finally {
+            setIsReloading(false);
+        }
+    }
 
     async function openBillingPortal(): Promise<void> {
         setIsOpeningPortal(true);
@@ -298,19 +317,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     if (billingState === null) {
         return (
-            <div className="space-y-3">
-                <Alert intent="danger" title="Auto top-up">
+            <SectionContent
+                loading={isReloading}
+                label="Loading billing settings…"
+            >
+                <LoadError onRetry={reloadBilling}>
                     Couldn’t load billing settings.
-                </Alert>
-                <Button
-                    type="button"
-                    intent="neutral"
-                    icon={<RefreshIcon />}
-                    onClick={() => window.location.reload()}
-                >
-                    Try again
-                </Button>
-            </div>
+                </LoadError>
+            </SectionContent>
         );
     }
 

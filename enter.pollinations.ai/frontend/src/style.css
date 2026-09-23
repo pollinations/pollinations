@@ -51,10 +51,3 @@
     padding-inline: 0.75rem;
     gap: 0.25rem;
 }
-
-.quest-summary-preview {
-    --polli-color-paid-pale: var(--polli-color-surface-opaque);
-    --polli-color-tier-pale: var(--polli-color-surface-opaque);
-    --polli-color-paid-deep: var(--polli-color-text-muted);
-    --polli-color-tier-deep: var(--polli-color-text-muted);
-}

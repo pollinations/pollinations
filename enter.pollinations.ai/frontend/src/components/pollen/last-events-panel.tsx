@@ -12,7 +12,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
@@ -176,14 +176,18 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
 
 async function fetchLastEvents(
     limit: number,
+    signal: AbortSignal,
 ): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
     const query = {
         limit: (limit + 1).toString(),
         days: RECENT_WINDOW_DAYS.toString(),
     };
     const [usageResponse, earningsResponse] = await Promise.all([
-        apiClient.account.usage.$get({ query }),
-        apiClient.account.earnings.transactions.$get({ query }),
+        apiClient.account.usage.$get({ query }, { init: { signal } }),
+        apiClient.account.earnings.transactions.$get(
+            { query },
+            { init: { signal } },
+        ),
     ]);
     if (!usageResponse.ok || !earningsResponse.ok) {
         throw new Error("Failed to load last events");
@@ -200,6 +204,7 @@ async function fetchLastEvents(
 
 export const LastEventsPanel: FC = () => {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const request = useRef<AbortController | null>(null);
     const [state, setState] = useState<FetchState>({
         rows: [],
         hasMore: false,
@@ -207,26 +212,30 @@ export const LastEventsPanel: FC = () => {
         error: null,
     });
 
-    useEffect(() => {
-        let cancelled = false;
+    const retry = useCallback(() => {
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        fetchLastEvents(visibleCount)
+        return fetchLastEvents(visibleCount, controller.signal)
             .then(({ rows, hasMore }) => {
-                if (!cancelled)
+                if (!controller.signal.aborted)
                     setState({ rows, hasMore, loading: false, error: null });
             })
             .catch(() => {
-                if (!cancelled)
+                if (!controller.signal.aborted)
                     setState((prev) => ({
                         ...prev,
                         loading: false,
                         error: "Failed to load last events",
                     }));
             });
-        return () => {
-            cancelled = true;
-        };
     }, [visibleCount]);
+
+    useEffect(() => {
+        void retry();
+        return () => request.current?.abort();
+    }, [retry]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 
@@ -235,7 +244,7 @@ export const LastEventsPanel: FC = () => {
     }
 
     if (state.error && state.rows.length === 0) {
-        return <LoadError>{state.error}</LoadError>;
+        return <LoadError onRetry={retry}>{state.error}</LoadError>;
     }
 
     if (state.rows.length === 0) {
@@ -248,7 +257,9 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && <LoadError>{state.error}</LoadError>}
+            {state.error && (
+                <LoadError onRetry={retry}>{state.error}</LoadError>
+            )}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (

@@ -648,6 +648,10 @@ export const CompletionUsageSchema = z
                     .nullish(),
                 cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
+                // Video-capable models report their video prompt tokens here.
+                // Without the field this schema would drop the detail and the
+                // tokens would fall out of every rated bucket.
+                video_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         reasoning_tokens: z.number().int().nonnegative().nullish(),

@@ -1,5 +1,6 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { FallbackMap } from "./merge-fallbacks";
+import { perMillion } from "./price-helpers";
 
 /**
  * Fallback routes for the image catalog, keyed by the model they serve and
@@ -8,6 +9,23 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "alibaba/wan-2.7-image": {
+        "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
+    },
+    "alibaba/wan-3.0": {
+        "alibaba/wan-3.0:fal": {
+            provider: "fal",
+            // Fal Prime bills output only; retain the Alibaba quote.
+            cost: { promptVideoSeconds: 0, completionVideoSeconds: 0.068 },
+            costVariants: {
+                "720p": { promptVideoSeconds: 0, completionVideoSeconds: 0.14 },
+                "1080p": {
+                    promptVideoSeconds: 0,
+                    completionVideoSeconds: 0.28,
+                },
+            },
+        },
+    },
     "google/veo-3.1-fast": {
         "google/veo-3.1-fast:replicate": {
             provider: "replicate",
@@ -24,33 +42,34 @@ export const IMAGE_FALLBACKS = {
         "openai/gpt-image-1-mini:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
+            // OpenAI shutdown_date.
+            retirementDate: new Date("2026-12-01").getTime(),
         },
     },
     "openai/gpt-image-1.5": {
         "openai/gpt-image-1.5:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
+            // OpenAI shutdown_date.
+            retirementDate: new Date("2026-12-01").getTime(),
         },
     },
     "openai/gpt-image-2": {
         "openai/gpt-image-2:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
-            perUserRpm: null,
         },
     },
     "openai/gpt-image-2.5-flare": {
         "openai/gpt-image-2.5-flare:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-14").getTime(),
-            perUserRpm: null,
         },
     },
     "openai/gpt-image-2.5-sunburst": {
         "openai/gpt-image-2.5-sunburst:openai": {
             provider: "openai",
             addedDate: new Date("2026-09-14").getTime(),
-            perUserRpm: null,
         },
     },
     "black-forest-labs/flux.1-kontext-pro": {
@@ -101,6 +120,7 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "qwen/qwen-image-3": {
+        "qwen/qwen-image-3:fal": { provider: "fal" },
         "qwen/qwen-image-3:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
@@ -122,16 +142,58 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "google/gemini-3.1-flash-image": {
-        "google/gemini-3.1-flash-image:openrouter:ai-studio": {
+    "google/gemini-2.5-flash-image": {
+        "google/gemini-2.5-flash-image:openrouter:vertex-global": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            // OpenRouter expiration_date.
+            retirementDate: new Date("2027-03-15").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptImageTokens: perMillion(0.3) * 1.055,
+                completionTextTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(30) * 1.055,
+            },
+        },
+    },
+    "google/gemini-3.1-flash-image": {
+        "google/gemini-3.1-flash-image:openrouter:vertex-global": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.5) * 1.055,
+                promptImageTokens: perMillion(0.5) * 1.055,
+                completionTextTokens: perMillion(3) * 1.055,
+                completionImageTokens: perMillion(60) * 1.055,
+            },
+        },
+    },
+    "google/gemini-3.1-flash-lite-image": {
+        "google/gemini-3.1-flash-lite-image:openrouter:vertex-global": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.25) * 1.055,
+                promptImageTokens: perMillion(0.25) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
+                completionImageTokens: perMillion(30) * 1.055,
+            },
         },
     },
     "google/gemini-3-pro-image": {
-        "google/gemini-3-pro-image:openrouter:vertex-global": {
+        "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            priceMultiplier: 1,
+            addedDate: new Date("2026-09-21").getTime(),
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(12) * 1.055,
+                completionImageTokens: perMillion(120) * 1.055,
+            },
         },
     },
     "black-forest-labs/flux.1-schnell": {
@@ -183,6 +245,7 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "alibaba/wan-2.6": {
+        "alibaba/wan-2.6:replicate": { provider: "replicate" },
         "alibaba/wan-2.6:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),

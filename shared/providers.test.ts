@@ -78,8 +78,10 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     openrouter: "openrouter",
 };
 const HOST_VENDORS: Record<string, string> = {
+    "api.openai.com": "openai",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
+    "api.mistral.ai": "mistral",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",

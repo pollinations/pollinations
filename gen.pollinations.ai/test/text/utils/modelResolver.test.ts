@@ -63,10 +63,59 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("keeps GPT-5.3 Codex primary and Sweden fallback routes distinct", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "openai/gpt-5.3-codex",
+        });
+        const fallback = findModelByName("openai/gpt-5.3-codex:azure:sweden");
+
+        expect(primary.options.model).toBe("gpt-5.3-codex");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-5.3-codex",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(fallback?.useResponsesApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "gpt-5.3-codex",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it("does not expose GPT-5.3 Codex through an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-5.3-codex" }),
+        ).toThrow("Model configuration not found for: gpt-5.3-codex");
+    });
+
     it("does not expose gpt-6-astra as an alias", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "gpt-6-astra" }),
         ).toThrow("Model configuration not found for: gpt-6-astra");
+    });
+
+    it.each([
+        "gpt-6-sol",
+        "gpt-6-luna",
+    ])("routes %s through the direct OpenAI Responses API", (model) => {
+        const canonical = `openai/${model}`;
+        const result = resolveModelConfig(messages, { model: canonical });
+
+        expect(result.options.model).toBe(model);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model,
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+        });
+        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+        expect(() => resolveModelConfig(messages, { model })).toThrow(
+            `Model configuration not found for: ${model}`,
+        );
     });
 
     it("routes Claude Fable 5.1 to its global profile", () => {
@@ -138,6 +187,52 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
             only: ["phala"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flashx",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flashx");
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7",
+        });
+
+        expect(result.options.model).toBe("x-ai/grok-4.7");
+        expect(result.options.provider).toEqual({
+            only: ["xai"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-opus-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
+    });
+
+    it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["anthropic"],
             allow_fallbacks: false,
         });
     });
@@ -235,36 +330,30 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Qwen3.7 Flash to Alibaba on OpenRouter without fallback", () => {
+    it("routes qwen3.7-flash directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.7-flash",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.model).toBe("qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Qwen3.8 Max to Alibaba without fallback", () => {
+    it("routes qwen3.8-max directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.8-max",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.model).toBe("qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
@@ -346,20 +435,17 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Qwen3.8 Flash to Alibaba on OpenRouter without provider fallbacks", () => {
+    it("routes qwen3.8-flash directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.8-flash",
         });
-
-        expect(result.options.model).toBe("qwen/qwen3.8-flash");
+        expect(result.options.model).toBe("qwen3.8-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it.each([
@@ -374,7 +460,7 @@ describe("resolveModelConfig", () => {
     ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
         for (const name of [
             "qwen/qwen3.8-flash",
-            "qwen/qwen3.8-flash:alibaba",
+            "qwen/qwen3.8-flash:openrouter:alibaba",
         ]) {
             const definition = findModelByName(name);
             const transformed = await definition?.transform?.(messages, {
@@ -504,6 +590,12 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
+        [
+            "minimax/minimax-m2.7:openrouter:minimax",
+            "minimax/minimax-m2.7",
+            "minimax/fp8",
+        ],
         [
             "meta/llama-4-scout:openrouter:novita-bf16",
             "meta-llama/llama-4-scout",
@@ -516,18 +608,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toEqual({
             only: [provider],
             allow_fallbacks: false,
-        });
-    });
-
-    it("routes the MiniMax M2.7 fallback directly to DeepInfra", () => {
-        const result = resolveModelConfig(messages, {
-            model: "minimax/minimax-m2.7:deepinfra",
-        });
-
-        expect(result.options.model).toBe("MiniMaxAI/MiniMax-M2.7");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 
@@ -545,15 +625,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("excludes Mistral's non-standard endpoint variants", () => {
+    it("routes Mistral Small 4 to Mistral's direct API", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 
-        expect(result.options.model).toBe("mistralai/mistral-small-2603");
-        expect(result.options.provider).toEqual({
-            only: ["mistral"],
-            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-            allow_fallbacks: false,
+        expect(result.options.model).toBe("mistral-small-2603");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.mistral.ai/v1",
         });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {

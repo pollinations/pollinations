@@ -1,0 +1,37 @@
+{
+  "pr_number": 15282,
+  "title": "chore: enable agent publishing for MCP quest contributors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15282",
+  "merged_at": "2026-09-23T19:01:11Z",
+  "labels": [
+    "API",
+    "POLLEN-QUEST",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Adds afanasevmylife (#15032) and Marcus-Mok-GH (#15262) to the existing community model/agent publishing allowlist.\n- Recognizes the selected MCP installer and a similar focused alternative; existing publishers are unchanged.\n- Verified GitHub IDs, allowlist uniqueness, and formatting. Two-line data change only.\n\nAddresses #15014",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Two new garden keys",
+    "blurb": "Two MCP Quest contributors now have the keys to publish their agents. The garden gets a couple more careful hands, which is how ecosystems avoid becoming parking lots.",
+    "summary": "Added the verified GitHub IDs afanasevmylife and Marcus-Mok-GH to the community model and agent publishing allowlist for selected MCP Quest contributor agents.",
+    "impact": "The selected MCP installer and a focused alternative can now publish through the existing contributor flow, while the established publisher allowlist remains unchanged.",
+    "keywords": [
+      "MCP",
+      "Pollen Quest",
+      "contributors",
+      "agent publishing",
+      "GitHub allowlist"
+    ],
+    "visual_concept": "A cozy community publishing scene: Polli welcomes two small contributor seed packets into a guarded garden gate marked for MCP agents, with a retro terminal showing a neat approved-ID list. The gate and growing code-plants represent the verified allowlist; Polli wears a tiny librarian keyring to show careful access rather than a broad new permission system.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian keyring as she unlocks a small garden gate for two labeled contributor seed packets beside sprouting code-plants and a retro terminal with simple pixel text “MCP OK”; use lime green (#ecf874) prominently with warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15282.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian keyring as she unlocks a small garden gate for two labeled contributor seed packets beside sprouting code-plants and a retro terminal with simple pixel text “MCP OK”; use lime green (#ecf874) prominently with warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-09-23T19:02:11.658014+00:00"
+}

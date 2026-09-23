@@ -5,7 +5,7 @@ Label this GitHub pull request for pollinations/pollinations. Return JSON only.
 ```json
 {
   "kind": "MODEL",
-  "flags": ["BILLING"],
+  "flags": ["BUG"],
   "reasoning": "brief explanation"
 }
 ```
@@ -27,8 +27,9 @@ When a pull request fits several kinds, pick the first matching kind in this lis
 
 - `BILLING`: Changes money-handling code: Stripe, checkout, wallets, balances, debits, refunds, payouts, or Pollen rewards. Not for adding or repricing a model; `MODEL` already covers model pricing
 - `SECURITY`: Changes API keys, permissions, secrets, fraud or ban handling, or allowlists
+- `BUG`: Fixes something that was broken or behaving wrongly. Not for refactors, cleanups, tuning values or prices, routine updates, or new features
 
-Return an empty `flags` list when neither applies.
+Return an empty `flags` list when none apply.
 
 ## Rules
 

@@ -197,7 +197,7 @@ PROTECTED_LABELS = {
 # Pull requests get exactly one kind (listed in tie-break order, see pr-labels.md)
 # plus optional flags.
 PR_KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-PR_AI_FLAGS = {"BILLING", "SECURITY"}
+PR_AI_FLAGS = {"BILLING", "SECURITY", "BUG"}
 SECRET_FILE_PATTERN = re.compile(r"(^|/)secrets/[^/]+\.json$|(^|/)\.sops\.yaml$")
 APP_SUBMISSION_BRANCH = re.compile(r"^auto/app-\d+(?:-|$)")
 

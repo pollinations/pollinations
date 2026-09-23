@@ -62,7 +62,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
-    "black-forest-labs/flux-1.1-pro": {
+    "black-forest-labs/flux.1.1-pro": {
         aliases: [],
         provider: "azure",
         publisher: "Black Forest Labs",

@@ -30,11 +30,11 @@ const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 
 const AZURE_FLUX_11_PRO_ROUTES = {
-    "black-forest-labs/flux-1.1-pro": {
+    "black-forest-labs/flux.1.1-pro": {
         resource: "myceli-prod-eastus",
         apiKeyEnv: "AZURE_MYCELI_PROD_API_KEY",
     },
-    "black-forest-labs/flux-1.1-pro:azure:sweden": {
+    "black-forest-labs/flux.1.1-pro:azure:sweden": {
         resource: "myceli-prod-swedencentral",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },

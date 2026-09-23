@@ -251,12 +251,12 @@ describe("callAzureFluxKontext", () => {
 describe("callAzureFlux11Pro", () => {
     it.each([
         [
-            "black-forest-labs/flux-1.1-pro",
+            "black-forest-labs/flux.1.1-pro",
             "myceli-prod-eastus",
             "test-azure-key",
         ],
         [
-            "black-forest-labs/flux-1.1-pro:azure:sweden",
+            "black-forest-labs/flux.1.1-pro:azure:sweden",
             "myceli-prod-swedencentral",
             "test-sweden-key",
         ],
@@ -311,7 +311,7 @@ describe("callAzureFlux11Pro", () => {
                 "blue ceramic teapot",
                 {
                     ...baseParams,
-                    model: "black-forest-labs/flux-1.1-pro",
+                    model: "black-forest-labs/flux.1.1-pro",
                     ...overrides,
                 },
                 USER_INFO,
@@ -334,7 +334,7 @@ describe("callAzureFlux11Pro", () => {
         await expect(
             callAzureFlux11Pro(
                 "unsafe request",
-                { ...baseParams, model: "black-forest-labs/flux-1.1-pro" },
+                { ...baseParams, model: "black-forest-labs/flux.1.1-pro" },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({

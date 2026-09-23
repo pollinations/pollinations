@@ -397,22 +397,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000583333333333333,
     },
   },
-  "black-forest-labs/flux-1.1-pro": {
-    "cost": {
-      "completionImageTokens": 0.04,
-    },
-    "price": {
-      "completionImageTokens": 0.03,
-    },
-  },
-  "black-forest-labs/flux-1.1-pro:azure:sweden": {
-    "cost": {
-      "completionImageTokens": 0.04,
-    },
-    "price": {
-      "completionImageTokens": 0.03,
-    },
-  },
   "black-forest-labs/flux.1-kontext-pro": {
     "cost": {
       "completionImageTokens": 0.04,
@@ -443,6 +427,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0005,
+    },
+  },
+  "black-forest-labs/flux.1.1-pro": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
+  "black-forest-labs/flux.1.1-pro:azure:sweden": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
     },
   },
   "black-forest-labs/flux.2-flex": {

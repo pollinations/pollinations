@@ -857,8 +857,8 @@ const generateImage = async (
             }
         }
 
-        case "black-forest-labs/flux-1.1-pro":
-        case "black-forest-labs/flux-1.1-pro:azure:sweden": {
+        case "black-forest-labs/flux.1.1-pro":
+        case "black-forest-labs/flux.1.1-pro:azure:sweden": {
             try {
                 return await callAzureFlux11Pro(prompt, safeParams, userInfo);
             } catch (error) {

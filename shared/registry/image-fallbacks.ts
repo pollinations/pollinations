@@ -78,8 +78,8 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "black-forest-labs/flux-1.1-pro": {
-        "black-forest-labs/flux-1.1-pro:azure:sweden": {
+    "black-forest-labs/flux.1.1-pro": {
+        "black-forest-labs/flux.1.1-pro:azure:sweden": {
             provider: "azure",
         },
     },

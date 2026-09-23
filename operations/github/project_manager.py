@@ -104,6 +104,8 @@ CONFIG = {
         },
     },
     "discord_relay_bot_id": 247793354,
+    # CI bots whose issues report our own failures (github-actions[bot]).
+    "ci_bot_ids": {41898282},
     "org_member_ids": {5099901, 36901823, 74301576, 158852059, 34513273},
     "discord_uid_to_github": {
         "304378879705874432": {"id": 5099901, "login": "voodoohop"},
@@ -653,12 +655,7 @@ def main():
         return
 
     real_author, real_author_id = get_real_author()
-    # Bots such as github-actions report our own failures; the Discord relay bot speaks for people.
-    is_ci_bot = (
-        ITEM_DATA.get("user", {}).get("type") == "Bot"
-        and ISSUE_AUTHOR_ID != CONFIG["discord_relay_bot_id"]
-    )
-    is_internal = is_ci_bot or is_org_member(real_author_id)
+    is_internal = ISSUE_AUTHOR_ID in CONFIG["ci_bot_ids"] or is_org_member(real_author_id)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
     
     if real_author != ISSUE_AUTHOR and is_internal:

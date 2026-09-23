@@ -1,8 +1,8 @@
-import { LoadingStatus } from "@pollinations/ui";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { LoadError } from "./components/layout/dashboard-loading.tsx";
+import { DashboardPending } from "./components/layout/dashboard-pending.tsx";
 import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
@@ -34,11 +34,7 @@ const router = createRouter({
     ),
     defaultPendingMs: 0,
     defaultPendingMinMs: 0,
-    defaultPendingComponent: () => (
-        <div className="p-6">
-            <LoadingStatus>Loading…</LoadingStatus>
-        </div>
-    ),
+    defaultPendingComponent: DashboardPending,
 });
 
 const App: FC<PropsWithChildren> = () => {

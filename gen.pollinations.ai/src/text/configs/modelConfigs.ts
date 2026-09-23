@@ -486,6 +486,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             // Reasons only when asked; keep the model's reasoning default.
             defaultOptions: { reasoning_effort: "high" },
         }),
+    "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+        }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -609,10 +613,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "deepseek/deepseek-v4.1-flash",
         "deepinfra/fp8",
     ),
-    "accounts/fireworks/models/deepseek-v4-flash-vision-exp": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
-        }),
     "accounts/fireworks/models/deepseek-v4-pro-0813": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-pro-0813",

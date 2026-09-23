@@ -671,17 +671,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
+    it("routes DeepSeek Vision to the exact DeepInfra vision checkpoint", () => {
         const result = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4-flash-vision-exp",
         });
 
         expect(result.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+            "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
         expect(result.options.provider).toBeUndefined();
     });

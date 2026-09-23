@@ -672,16 +672,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek/deepseek-v4-flash-vision-exp": {
     "cost": {
-      "completionTextTokens": 0.00000066,
-      "promptCachedTokens": 0.000000007,
-      "promptImageTokens": 0.00000022,
-      "promptTextTokens": 0.00000022,
+      "completionTextTokens": 0.0000006468,
+      "promptCachedTokens": 0.0000000069,
+      "promptImageTokens": 0.0000002156,
+      "promptTextTokens": 0.0000002156,
     },
     "price": {
-      "completionTextTokens": 0.00000066,
-      "promptCachedTokens": 0.000000007,
-      "promptImageTokens": 0.00000022,
-      "promptTextTokens": 0.00000022,
+      "completionTextTokens": 0.0000006468,
+      "promptCachedTokens": 0.0000000069,
+      "promptImageTokens": 0.0000002156,
+      "promptTextTokens": 0.0000002156,
     },
   },
   "deepseek/deepseek-v4-flash:deepinfra": {

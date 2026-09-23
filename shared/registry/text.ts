@@ -1012,22 +1012,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-09-01).
+        // DeepInfra rates (2026-09-23): list $0.44/$1.32 with an open-ended
+        // 51% discount.
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            promptImageTokens: perMillion(0.22),
-            completionTextTokens: perMillion(0.66),
+            promptTextTokens: perMillion(0.2156),
+            promptCachedTokens: perMillion(0.0069),
+            promptImageTokens: perMillion(0.2156),
+            completionTextTokens: perMillion(0.6468),
         },
         title: "DeepSeek V4 Flash Vision Exp",
         description:

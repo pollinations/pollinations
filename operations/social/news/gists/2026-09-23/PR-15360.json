@@ -1,0 +1,37 @@
+{
+  "pr_number": 15360,
+  "title": "fix: trust only the relay author line and label promotion PRs as infra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15360",
+  "merged_at": "2026-09-23T17:04:09Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Two small fixes to the issue/PR labeling bot.\n\n- Discord-relayed issues: only whole `**Author:** … (UID: …)` lines count, and the last one is used. The relay bot appends that line after the message, so a UID typed into the message text can no longer route the issue to Dev as a team member's\n- Promotion PRs (`main` → `production`) are always `INFRA`; #15347 was labelled `API` + `SECURITY` from the changes it carried\n\nDry run: #15347 → `INFRA`; relayed #15098 still maps to its real author.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The relay reads the footer",
+    "blurb": "The labeling bee now trusts the relay’s actual author stamp, not a UID that wandered into the message body. Promotion branches also get the tidy INFRA label they came for.",
+    "summary": "Updated the issue/PR labeling bot to use only the last full Discord relay `**Author:** … (UID: …)` line for author routing, and to always label `main` → `production` promotion PRs as `INFRA`.",
+    "impact": "Relayed issues continue mapping to their real Discord authors without message-text UID collisions, while production promotion PRs receive a consistent infrastructure classification.",
+    "keywords": [
+      "github",
+      "labeling-bot",
+      "discord-relay",
+      "author-routing",
+      "promotion",
+      "infrastructure"
+    ],
+    "visual_concept": "A cozy garden-shed labeling station: Polli, wearing tiny librarian glasses, carefully reads the final stamped author line on a relay scroll while a small CRT monitor robot applies a large INFRA sticker to a `main → production` parcel. Code-plants and file folders make the internal automation feel organized and alive.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed automation desk: the cute pixel art bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny librarian glasses carefully highlights the final `Author` line on a relay scroll while a chunky CRT monitor robot stamps an `INFRA` label onto a parcel marked `main → production`. Lime green (#ecf874) glows prominently from the terminal beside code-plants and small flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15360.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed automation desk: the cute pixel art bee mascot with a yellow body, dark brown stripes, pink rectangular cheek blush, light blue wings, and tiny librarian glasses carefully highlights the final `Author` line on a relay scroll while a chunky CRT monitor robot stamps an `INFRA` label onto a parcel marked `main → production`. Lime green (#ecf874) glows prominently from the terminal beside code-plants and small flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-09-23T17:05:18.904534+00:00"
+}

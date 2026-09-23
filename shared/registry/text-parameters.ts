@@ -103,8 +103,8 @@ export const CHAT_PARAMETERS = {
     // Haiku 4.5 / Sonnet & Opus 4.6: sampling only without thinking; JSON schema only.
     bedrockClaudeSampling: [...SAMPLED_CHAT, "top_k", "reasoning_effort"],
     bedrockClaudeNoSampling: [...CHAT, ...TOOLS, "reasoning_effort", "stop"],
-    // Fable 5.1 rejects forced tool choice; auto alone is not an adjustable control.
-    bedrockFable51: [...CHAT, "reasoning_effort", "tools", "stop"],
+    // Fable 5.1 and Opus 5.5 reject forced tool choice.
+    bedrockClaudeNoForcedTools: [...CHAT, "reasoning_effort", "tools", "stop"],
     openRouterHaiku: [
         ...CHAT,
         ...SAMPLING,
@@ -282,10 +282,13 @@ export const CHAT_PARAMETERS = {
         ...PENALTIES,
         ...OPENROUTER_REASONING,
         "top_k",
-        "min_p",
         "repetition_penalty",
         "seed",
-        "logit_bias",
+    ],
+    openRouterMinimax27FirstParty: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
@@ -359,6 +362,18 @@ export const CHAT_PARAMETERS = {
         "repetition_penalty",
         "stop",
         "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
+    openRouterGlmFlashx: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "temperature",
+        "top_p",
+        "top_k",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],

@@ -7,6 +7,13 @@
     max-height: calc(100dvh - 2rem);
 }
 
+@media (min-width: 40rem) {
+    .resource-dialog {
+        margin-block-start: 1rem;
+        max-height: calc(100dvh - 3rem);
+    }
+}
+
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);

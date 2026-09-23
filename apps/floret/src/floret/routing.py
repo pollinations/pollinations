@@ -210,16 +210,20 @@ def _validation_reason(
     return None
 
 
-async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
+async def validate_routing(
+    value: RoutingInput | None,
+    catalog: dict[str, dict[str, Any]] | None = None,
+) -> RoutingPreferences:
     preferences = value.to_preferences() if value is not None else RoutingPreferences()
     explicit = preferences.explicit()
     if not explicit:
         return preferences
 
-    try:
-        catalog = await fetch_model_catalog()
-    except Exception as exc:
-        raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
+    if catalog is None:
+        try:
+            catalog = await fetch_model_catalog()
+        except Exception as exc:
+            raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
 
     for field, model in explicit.items():
         meta = find_model_meta(catalog, model)

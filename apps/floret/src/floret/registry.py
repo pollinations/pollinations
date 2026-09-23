@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from collections.abc import Generator
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import httpx
 
@@ -24,6 +26,15 @@ _catalog_revision: str | None = None
 _request_eligible_models: ContextVar[frozenset[str] | None] = ContextVar(
     "request_eligible_models", default=None
 )
+_request_catalog: ContextVar[dict[str, dict[str, Any]] | None] = ContextVar(
+    "request_catalog", default=None
+)
+_request_policy: ContextVar[PolicySnapshot | None] = ContextVar(
+    "request_policy", default=None
+)
+_request_revision: ContextVar[str | None] = ContextVar("request_revision", default=None)
+PollenPolicy = Literal["quest", "all"]
+_request_pollen: ContextVar[PollenPolicy] = ContextVar("request_pollen", default="all")
 _lock = asyncio.Lock()
 _METADATA_KEYS = {
     "id",
@@ -38,6 +49,7 @@ _METADATA_KEYS = {
     "supported_endpoints",
     "context_length",
     "category",
+    "paid_only",
     "hidden",
     "alpha",
     "fallback",
@@ -71,7 +83,7 @@ _TIER_COST_WEIGHT = {
 }
 
 _IMAGE_TEXT_PATTERNS = [
-    re.compile(p, re.I)
+    re.compile(p, re.IGNORECASE)
     for p in [
         r"\b(text|typo|font|letter|word|label|title|heading|caption|infographic|diagram|chart|graph|flowchart|mindmap|timeline|poster|banner|sign|badge|sticker|meme|comic|panel|speech.bubble|.subtitle|.overlay)\b",
         r"\b(render.*text|text.*render|legible|readable|typography)\b",
@@ -153,7 +165,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("transcript")
     if category == "audio" and any(
         endpoint in declared_endpoints
-        for endpoint in {"/v1/audio/voice-changer", "/v1/audio/voice-isolator"}
+        for endpoint in ("/v1/audio/voice-changer", "/v1/audio/voice-isolator")
     ):
         modalities.append("audio_transform")
     if not category and (
@@ -299,6 +311,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         "id": mid,
         "aliases": list(item.get("aliases") or []),
         "category": category,
+        "paid_only": item.get("paid_only", False),
         "modalities": modalities,
         "hidden": item.get("hidden", False),
         "alpha": item.get("alpha", False),
@@ -398,6 +411,111 @@ def reset_request_catalog(token: Token[frozenset[str] | None]) -> None:
     _request_eligible_models.reset(token)
 
 
+def request_pollen() -> PollenPolicy:
+    return _request_pollen.get()
+
+
+@contextmanager
+def model_scope(
+    catalog: dict[str, dict[str, Any]] | None, pollen: PollenPolicy = "all"
+) -> Generator[None, None, None]:
+    """Limit model selection to this request without changing billing behavior."""
+    if pollen not in {"quest", "all"}:
+        raise ValueError("pollen must be quest or all")
+    effective = "quest" if request_pollen() == "quest" else pollen
+    scoped = _request_catalog.get()
+    if catalog is not None:
+        eligible = _request_eligible_models.get()
+        candidate = {
+            model_id: {"id": model_id, **meta}
+            for model_id, meta in catalog.items()
+            if (eligible is None or model_id in eligible)
+            and (effective == "all" or meta.get("paid_only") is not True)
+        }
+        scoped = (
+            candidate
+            if scoped is None
+            else {
+                model_id: scoped[model_id]
+                for model_id in candidate
+                if model_id in scoped
+            }
+        )
+    catalog_token = _request_catalog.set(scoped)
+    review_token = _request_policy.set(_policy_snapshot)
+    revision_token = _request_revision.set(_catalog_revision)
+    policy_token = _request_pollen.set(effective)
+    try:
+        yield
+    finally:
+        _request_pollen.reset(policy_token)
+        _request_revision.reset(revision_token)
+        _request_policy.reset(review_token)
+        _request_catalog.reset(catalog_token)
+
+
+def require_model(model_id: str) -> str:
+    """Resolve an allowed model or reject it before generation."""
+    if request_pollen() == "all":
+        return model_id
+    meta = find_model_meta(get_model_catalog(), model_id)
+    if meta is None:
+        raise ValueError(f"Model {model_id!r} is not available in Quest mode")
+    return str(meta["id"])
+
+
+def choose_model(
+    modality: str,
+    model_id: str | None = None,
+    *,
+    endpoint: str | None = None,
+    required_capabilities: frozenset[str] = frozenset(),
+    input_modalities: frozenset[str] = frozenset(),
+    output_modalities: frozenset[str] = frozenset(),
+    video_capabilities: frozenset[str] = frozenset(),
+    default: str = "",
+    prompt: str = "",
+) -> str:
+    if request_pollen() == "all":
+        return model_id or default_model(modality, prompt, default)
+
+    catalog = get_model_catalog()
+    pinned = require_model(model_id) if model_id else None
+    if pinned:
+        meta = find_model_meta(catalog, pinned)
+        pinned = str(meta["id"]) if meta else pinned
+    if video_capabilities:
+        catalog = {
+            model: meta
+            for model, meta in catalog.items()
+            if video_capabilities
+            <= set(meta.get("params", {}).get("video_capabilities") or [])
+        }
+    revision = _request_revision.get()
+    policy = _request_policy.get() or PolicySnapshot(
+        "unreviewed", revision or "", {}, ()
+    )
+    selected = select_model(
+        catalog,
+        policy,
+        SelectionRequest(
+            task_family=f"{modality}.general",
+            modality=modality,
+            endpoint=endpoint,
+            required_capabilities=required_capabilities,
+            input_modalities=input_modalities,
+            output_modalities=output_modalities,
+            pinned_model=pinned,
+        ),
+        catalog_revision=revision or "",
+    )
+    if selected:
+        return selected
+    if pinned:
+        raise ValueError(f"Model {model_id!r} is not compatible with this request")
+    raise ValueError(f"No eligible {modality} model in Quest mode")
+
+
 def find_model_meta(
     catalog: dict[str, dict[str, Any]], model_id: str
 ) -> dict[str, Any] | None:
@@ -449,12 +567,15 @@ def get_model_catalog() -> dict[str, dict[str, Any]]:
     if not isinstance(models, dict):
         return {}
     catalog = cast(dict[str, dict[str, Any]], models)
+    scoped = _request_catalog.get()
+    if scoped is not None:
+        return scoped
     eligible = _request_eligible_models.get()
-    if eligible is None:
-        return catalog
-    return {
-        model_id: meta for model_id, meta in catalog.items() if model_id in eligible
-    }
+    if eligible is not None:
+        return {
+            model_id: meta for model_id, meta in catalog.items() if model_id in eligible
+        }
+    return catalog
 
 
 def get_modalities_for_model(model_id: str) -> list[str]:
@@ -620,18 +741,25 @@ def pick_model(
         if not pool:
             return ""
 
-    eligible_ids = _request_eligible_models.get()
-    if eligible_ids is not None:
-        pool = {mid: meta for mid, meta in pool.items() if mid in eligible_ids}
+    scoped = _request_catalog.get()
+    if scoped is not None:
+        pool = {mid: meta for mid, meta in scoped.items() if mid in pool}
+    else:
+        eligible = _request_eligible_models.get()
+        if eligible is not None:
+            pool = {mid: meta for mid, meta in pool.items() if mid in eligible}
     if not pool:
         return ""
 
-    policy = _policy_snapshot
-    revision = _catalog_revision
+    policy = _request_policy.get() if scoped is not None else _policy_snapshot
+    revision = _request_revision.get() if scoped is not None else _catalog_revision
     if (
         policy is not None
         and revision is not None
-        and (_registry_cache or {}).get("catalog_revision") == revision
+        and (
+            scoped is not None
+            or (_registry_cache or {}).get("catalog_revision") == revision
+        )
     ):
         selected = select_model(
             pool,
@@ -640,7 +768,7 @@ def pick_model(
                 task_family=f"{modality}.general",
                 modality=modality,
                 endpoint=endpoint,
-                eligible_model_ids=eligible_ids,
+                eligible_model_ids=frozenset(pool),
                 paid=paid,
             ),
             catalog_revision=revision,

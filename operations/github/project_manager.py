@@ -411,8 +411,10 @@ _TRACKING_ISSUES: Optional[list] = None
 
 
 def fetch_tracking_issues() -> list:
-    """Open Dev tracking issues (labelled TRACKING). Returns [{number, title}] so the
-    AI can pick the best-fit parent. Cached for the lifetime of the process."""
+    """Open Dev tracking issues (labelled TRACKING, opened by the team). Returns
+    [{number, title}] so the AI can pick the best-fit parent. Community epics also
+    carry TRACKING but live in Support, so they are never parents for Dev issues.
+    Cached for the lifetime of the process."""
     global _TRACKING_ISSUES
     if _TRACKING_ISSUES is not None:
         return _TRACKING_ISSUES
@@ -430,7 +432,9 @@ def fetch_tracking_issues() -> list:
         _TRACKING_ISSUES = [
             {"number": i["number"], "title": i.get("title", "")}
             for i in r.json()
-            if "pull_request" not in i and i.get("number") != ISSUE_NUMBER
+            if "pull_request" not in i
+            and i.get("number") != ISSUE_NUMBER
+            and i.get("user", {}).get("id") in CONFIG["org_member_ids"]
         ]
         log_debug(f"Loaded {len(_TRACKING_ISSUES)} open tracking issues")
         return _TRACKING_ISSUES

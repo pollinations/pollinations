@@ -35,13 +35,22 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { DashboardLoading, LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { mergeQuestRewards, type QuestReward } from "./quest-rewards.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
 
 type QuestOverviewProps = Record<string, never>;
+
+type CachedQuestData = Pick<
+    FetchState,
+    "catalog" | "rewards" | "progress" | "anonymous"
+>;
+
+// Keep the last account’s data across page visits, never across accounts.
+let cachedQuests: { userId: string | null; data: CachedQuestData } | null =
+    null;
 
 type FetchState = {
     catalog: QuestCatalogItem[];
@@ -512,8 +521,35 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const { user } = useLoaderData({ from: "/_dashboard" });
-    const summaryTitle = user ? "Claimed" : "Pollen you can earn";
-    const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    return (
+        <QuestOverviewContent
+            key={user?.id ?? "anonymous"}
+            userId={user?.id ?? null}
+        />
+    );
+};
+
+function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const [state, setState] = useState<FetchState>(() => ({
+        ...INITIAL_STATE,
+        anonymous: userId === null,
+        ...(cachedQuests?.userId === userId
+            ? {
+                  ...cachedQuests.data,
+                  loading: false,
+                  checking: userId !== null,
+              }
+            : {}),
+    }));
+    useEffect(() => {
+        if (!state.loading && !state.error) {
+            const { catalog, rewards, progress, anonymous } = state;
+            cachedQuests = {
+                userId,
+                data: { catalog, rewards, progress, anonymous },
+            };
+        }
+    }, [userId, state]);
     // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
     const autoCheckedRef = useRef(false);
     // Logged-out visitors see a preview: every quest shown open (so all
@@ -521,7 +557,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     // relaxed, since there is no per-user progress to gate on.
     const previewAll = state.anonymous;
 
-    // On open: render cached quest data immediately (fast D1 read), THEN run one
+    // On open: keep previously loaded data visible, fetch saved rewards, THEN run one
     // automatic quest check (slow GitHub + Tinybird fan-out) and refresh. There
     // is no manual button — quests check themselves when the page opens. The
     // whole flow is inlined here (not a separate callback) so the mount-only
@@ -532,9 +568,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             try {
                 const questData = await loadQuestData();
                 if (cancelled) return;
-                setState({
+                setState((current) => ({
+                    ...current,
                     ...questData,
-                    progress: [],
+                    rewards: mergeQuestRewards(
+                        current.rewards,
+                        questData.rewards,
+                    ),
                     loading: false,
                     // Flag the auto-check as in-flight so the indicator shows
                     // straight after the initial render, with no idle flash.
@@ -542,21 +582,21 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     // show the indicator for them.
                     checking: !questData.anonymous,
                     error: null,
-                    claimingRewardIds: [],
-                });
+                }));
                 // No per-user check for logged-out visitors — the catalog
                 // preview is all they get.
                 if (questData.anonymous) return;
             } catch (error) {
                 if (cancelled) return;
-                setState({
-                    ...INITIAL_STATE,
+                setState((current) => ({
+                    ...current,
                     loading: false,
+                    checking: false,
                     error:
                         error instanceof Error
                             ? error.message
                             : "Failed to load quests",
-                });
+                }));
                 return;
             }
 
@@ -805,23 +845,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return { count, segments };
     }, [state.rewards]);
 
-    if (state.loading) {
-        return (
-            <DashboardLoading title={summaryTitle} label="Loading quests…" />
-        );
-    }
-
-    if (
-        state.error &&
-        state.catalog.length === 0 &&
-        state.rewards.length === 0
-    ) {
-        return (
-            <Section title={summaryTitle}>
-                <LoadError>{state.error}</LoadError>
-            </Section>
-        );
-    }
+    const showSummary =
+        !state.loading &&
+        (!state.error || state.catalog.length > 0 || state.rewards.length > 0);
 
     return (
         <div className="flex flex-col gap-6">
@@ -832,7 +858,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {!state.anonymous && (
+                {state.loading && (
+                    <LoadingStatus>Loading quests…</LoadingStatus>
+                )}
+                {showSummary && !state.anonymous && (
                     <>
                         <div>
                             <QuestSummary
@@ -899,7 +928,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     </>
                 )}
                 {/* The preview counts available quests and their possible rewards. */}
-                {state.anonymous && (
+                {showSummary && state.anonymous && (
                     <QuestSummary
                         preview
                         quests={previewTotals.count}
@@ -931,11 +960,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 </div>
             </Section>
 
-            {state.error && (
-                <Text size="sm" className="text-intent-danger-text">
-                    {state.error}
-                </Text>
-            )}
+            {state.error && <LoadError>{state.error}</LoadError>}
 
             <div className="flex flex-col gap-6">
                 {bonusRewardCards.length > 0 && (
@@ -969,7 +994,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 )}
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
-                    if (cards.length === 0) return null;
+                    if (!state.loading && cards.length === 0) return null;
                     // The progress chip counts only real (grantable) quests —
                     // coming_soon rows are excluded from both done and total.
                     const liveCards = cards.filter((card) => !card.comingSoon);
@@ -981,12 +1006,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             key={category.key}
                             title={category.label}
                             action={
-                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                    {done} / {liveCards.length}
-                                </span>
+                                !state.loading && (
+                                    <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                                        {done} / {liveCards.length}
+                                    </span>
+                                )
                             }
                         >
-                            <div className="flex flex-col gap-2">
+                            <div
+                                className="flex min-h-5 flex-col gap-2"
+                                aria-busy={state.loading}
+                            >
                                 {cards.map((card) => (
                                     <QuestRow
                                         key={card.key}
@@ -1005,4 +1035,4 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             </div>
         </div>
     );
-};
+}

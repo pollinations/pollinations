@@ -42,9 +42,9 @@ export function ModelPermissionsInput({
     onChange: (models: string[]) => void;
     disabled?: boolean;
 }) {
-    const [activeTab, setActiveTab] = useState<ModelTab | "selected" | null>(
-        null,
-    );
+    const [activeTab, setActiveTab] = useState<
+        ModelTab | "selected" | "all" | null
+    >(null);
     const offeredIds = new Set(models.map(({ id }) => id));
     const categorizedIds = new Set<string>();
     const idsByTab = new Map<ModelTab, Set<string>>();
@@ -71,11 +71,11 @@ export function ModelPermissionsInput({
             : selectedIds.size === 0
               ? "Generation disabled."
               : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"}`;
-    const displayedModels = models.filter(({ id }) =>
-        activeTab === "selected"
-            ? selectedIds.has(id)
-            : activeTab !== null && idsByTab.get(activeTab)?.has(id),
-    );
+    const displayedModels = models.filter(({ id }) => {
+        if (activeTab === "all") return true;
+        if (activeTab === "selected") return selectedIds.has(id);
+        return activeTab !== null && idsByTab.get(activeTab)?.has(id);
+    });
     return (
         <>
             {activeTab === null ? (
@@ -106,6 +106,22 @@ export function ModelPermissionsInput({
                     aria-label="Model categories"
                     className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
+                    <TabButton
+                        size="xs"
+                        active={activeTab === "selected"}
+                        disabled={disabled}
+                        onClick={() => setActiveTab("selected")}
+                    >
+                        Selected
+                    </TabButton>
+                    <TabButton
+                        size="xs"
+                        active={activeTab === "all"}
+                        disabled={disabled}
+                        onClick={() => setActiveTab("all")}
+                    >
+                        All
+                    </TabButton>
                     {[...idsByTab].map(([tab]) => (
                         <TabButton
                             key={tab}
@@ -117,14 +133,6 @@ export function ModelPermissionsInput({
                             {TAB_LABELS[tab]}
                         </TabButton>
                     ))}
-                    <TabButton
-                        size="xs"
-                        active={activeTab === "selected"}
-                        disabled={disabled}
-                        onClick={() => setActiveTab("selected")}
-                    >
-                        Selected
-                    </TabButton>
                 </ButtonGroup>
             )}
             <Button

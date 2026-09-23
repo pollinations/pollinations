@@ -355,11 +355,10 @@ export function ConnectedApps() {
                         aria-hidden="true"
                     />
                     <span>
-                        Let Pollinations agents read Gmail, search GitHub,
-                        update Sheets, and post to Slack. Enable Connected Apps
-                        in your agent, then ask it to use your connected
-                        account. Try “Summarize my unread Gmail” or “Find open
-                        issues in my GitHub repository.” Connections powered by{" "}
+                        Connect your apps so Pollinations agents can read Gmail,
+                        search GitHub, update Sheets, and post to Slack. Enable
+                        “Connected Apps” in your agent, then try “Summarize my
+                        unread Gmail.” Connections powered by{" "}
                         <InlineLink href="https://composio.dev" size="sm">
                             Composio
                         </InlineLink>

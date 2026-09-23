@@ -1,0 +1,35 @@
+{
+  "pr_number": 15352,
+  "title": "test: parallelize independent permission checks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15352",
+  "merged_at": "2026-09-23T15:52:45Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "- Runs independent catalog and generation requests concurrently in two permission integration tests.\n- Preserves every assertion and leaves production behavior unchanged.\n- Keeps aggregate request latency below the existing per-test 5-second budget on slower CI runners.\n\nTests: `npx vitest run test/model-permissions.test.ts` (20 passed); `npm run typecheck`; Biome check.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Permission checks race politely",
+    "blurb": "Two independent permission checks now run side by side in CI, like bees taking separate flowers. Every assertion stays put; the test suite just spends less time waiting around.",
+    "summary": "Parallelized independent catalog and generation requests in two model-permission integration tests while preserving all assertions and the existing 5-second per-test latency budget.",
+    "impact": "Contributors get faster, more reliable permission-test runs on slower CI runners without any production behavior changing.",
+    "keywords": [
+      "tests",
+      "permissions",
+      "vitest",
+      "ci",
+      "gen-api"
+    ],
+    "visual_concept": "A cozy garden test bench represents parallel integration checks: Polli, wearing tiny engineer goggles, sends two glowing request envelopes along separate vine paths toward a catalog bookshelf and a retro generation terminal. Both paths meet beneath a small passing test sign, with code-plants and a subtle timer showing they finish together.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny engineer goggles, guiding two glowing request envelopes down separate vine paths toward a catalog bookshelf and a lime green (#ecf874) retro generation terminal; code-plants bloom around a small pixel sign reading \"20 PASS\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and quietly efficient."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15352.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny engineer goggles, guiding two glowing request envelopes down separate vine paths toward a catalog bookshelf and a lime green (#ecf874) retro generation terminal; code-plants bloom around a small pixel sign reading \"20 PASS\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and quietly efficient."
+  },
+  "generated_at": "2026-09-23T15:53:43.068685+00:00"
+}

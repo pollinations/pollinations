@@ -247,11 +247,24 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
             >
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell scope="col">Model</TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            className="px-2 py-1 font-normal"
+                        >
+                            Model
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            scope="col"
+                            align="right"
+                            className="px-2 py-1 font-normal"
+                        >
                             Share
                         </TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            align="center"
+                            className="px-2 py-1 font-normal"
+                        >
                             {metric === "pollen" ? "Pollen" : "Requests"}
                         </TableHeaderCell>
                     </TableRow>

@@ -198,16 +198,30 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     >
                         <TableHead>
                             <TableRow>
-                                <TableHeaderCell scope="col">
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Name
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col">
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Source
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col" align="right">
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="right"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Share
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col" align="right">
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="center"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     {metric === "pollen"
                                         ? "Pollen"
                                         : "Requests"}

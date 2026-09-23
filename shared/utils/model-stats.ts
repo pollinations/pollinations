@@ -32,7 +32,7 @@ export async function getModelStats(
 async function fetchModelStats(log: Logger): Promise<TinybirdModelStats> {
     try {
         const response = await fetch(TINYBIRD_MODEL_STATS_URL, {
-            signal: AbortSignal.timeout(3_000),
+            signal: AbortSignal.timeout(2_000),
         });
         if (!response.ok) {
             throw new Error(`Tinybird API error: ${response.status}`);

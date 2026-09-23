@@ -12,7 +12,9 @@ import {
     Input,
     Section,
     SignOutIcon,
+    Surface,
     Text,
+    TrashIcon,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -194,8 +196,7 @@ function AccountPage() {
                     </div>
                     <Button
                         type="button"
-                        intent="neutral"
-                        size="sm"
+                        intent="commit"
                         icon={<SignOutIcon />}
                         disabled={isSigningOut}
                         className="shrink-0 self-start sm:self-center"
@@ -277,10 +278,31 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
-            <div className="flex flex-col gap-4 border-theme-border border-t px-1 pt-5">
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+            <Surface
+                variant="panel"
+                className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
+            >
+                <Text size="sm" tone="muted">
+                    Permanently close your Pollinations account and revoke all
+                    access.
+                </Text>
+                <Button
+                    type="button"
+                    intent="danger"
+                    icon={<TrashIcon />}
+                    className="shrink-0"
+                    onClick={() => setDeleteDialogOpen(true)}
+                >
+                    Delete account
+                </Button>
+            </Surface>
+
+            <footer className="flex flex-col gap-4 px-1 text-[13px] text-theme-text-muted">
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
                     <InlineLink
                         href="https://discord.com/channels/885844321461485618/889573359111774329"
+                        tone="quiet"
+                        size="footer"
                         className="inline-flex items-center gap-2"
                     >
                         <DiscordIcon className="h-4 w-4" aria-hidden="true" />
@@ -288,42 +310,39 @@ function AccountPage() {
                     </InlineLink>
                     <InlineLink
                         href="https://github.com/pollinations/pollinations/issues"
+                        tone="quiet"
+                        size="footer"
                         className="inline-flex items-center gap-2"
                     >
                         <GitHubIcon className="h-4 w-4" aria-hidden="true" />
                         Report a bug
                     </InlineLink>
                 </div>
-
-                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-                    <Text size="sm" tone="muted">
-                        Permanently close your Pollinations account and revoke
-                        all access.
-                    </Text>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => setDeleteDialogOpen(true)}
-                    >
-                        Delete account
-                    </Button>
-                </div>
-
-                <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 border-theme-border border-t pt-4 text-sm text-theme-text-muted">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                     <span>© 2026 Myceli.AI OÜ</span>
-                    <InlineLink href="https://pollinations.ai/terms">
+                    <InlineLink
+                        href="https://pollinations.ai/terms"
+                        tone="quiet"
+                        size="footer"
+                    >
                         Terms of Service
                     </InlineLink>
-                    <InlineLink href="https://pollinations.ai/privacy">
+                    <InlineLink
+                        href="https://pollinations.ai/privacy"
+                        tone="quiet"
+                        size="footer"
+                    >
                         Privacy Policy
                     </InlineLink>
-                    <InlineLink href="https://pollinations.ai/refunds">
+                    <InlineLink
+                        href="https://pollinations.ai/refunds"
+                        tone="quiet"
+                        size="footer"
+                    >
                         Refund Policy
                     </InlineLink>
-                </footer>
-            </div>
+                </div>
+            </footer>
 
             <DeleteAccountDialog
                 open={deleteDialogOpen}

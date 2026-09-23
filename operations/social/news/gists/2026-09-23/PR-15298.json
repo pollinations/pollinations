@@ -1,0 +1,36 @@
+{
+  "pr_number": 15298,
+  "title": "feat(floret): use shared MCP media tools",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/15298",
+  "merged_at": "2026-09-23T23:12:47Z",
+  "labels": [
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Replaces Floret’s private shell with caller-authenticated Computer and FFmpeg MCP tools.\n- Adds downloadable 3D generation through the existing durable route.\n- Retires shell container code, bindings, Docker dependencies, and CI coverage.\n- Verifies MCP file creation, media editing/publishing, and retired-shell deployment configuration.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Floret borrows better tools",
+    "blurb": "Floret has traded its private shell shed for shared, caller-authenticated MCP tools. It can now create, edit, publish, and hand you downloadable 3D work without keeping a tiny container kingdom alive.",
+    "summary": "Floret now uses the shared caller-authenticated Computer and FFmpeg MCP tools instead of its private shell, while adding downloadable 3D generation through the existing durable media route.",
+    "impact": "Floret users gain authenticated file and media workflows—including editable, publishable media and downloadable 3D outputs—backed by the shared MCP toolchain rather than a separate shell container.",
+    "keywords": [
+      "floret",
+      "mcp",
+      "computer-tools",
+      "ffmpeg",
+      "3d-generation",
+      "media"
+    ],
+    "visual_concept": "Depict Floret as a cozy digital flower workshop: Polli helps a friendly CRT monitor robot use shared toolboxes labeled Computer and FFmpeg to shape a small downloadable 3D flower model. Show a durable glowing parcel or download arrow leaving the workshop, with code-plants and garden vines representing the shared MCP infrastructure replacing the old private shell.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, warmly helping a chunky CRT monitor robot use two shared toolboxes labeled “COMPUTER” and “FFMPEG” to sculpt a small 3D pixel flower that is being packed into a glowing download parcel. Lime green (#ecf874) is prominent across the garden-workshop, with code-plants, pastel mint and peach gradients, and subtle pixel-font text “SHARED TOOLS”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15298.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, warmly helping a chunky CRT monitor robot use two shared toolboxes labeled “COMPUTER” and “FFMPEG” to sculpt a small 3D pixel flower that is being packed into a glowing download parcel. Lime green (#ecf874) is prominent across the garden-workshop, with code-plants, pastel mint and peach gradients, and subtle pixel-font text “SHARED TOOLS”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T23:13:51.030072+00:00"
+}

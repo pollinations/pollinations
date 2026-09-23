@@ -5,7 +5,7 @@ import {
     RefreshIcon,
     Section,
 } from "@pollinations/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
@@ -39,8 +39,22 @@ export function LoadError({
     onRetry,
 }: {
     children: string;
-    onRetry?: () => void;
+    onRetry?: () => unknown;
 }) {
+    const [retrying, setRetrying] = useState(false);
+
+    async function retry() {
+        if (!onRetry || retrying) return;
+        setRetrying(true);
+        try {
+            await onRetry();
+        } catch {
+            // Keep the existing error visible if the retry also fails.
+        } finally {
+            setRetrying(false);
+        }
+    }
+
     return (
         <Alert intent="danger">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -49,9 +63,10 @@ export function LoadError({
                     <Button
                         intent="neutral"
                         icon={<RefreshIcon />}
-                        onClick={onRetry}
+                        onClick={retry}
+                        disabled={retrying}
                     >
-                        Try again
+                        {retrying ? "Retrying…" : "Try again"}
                     </Button>
                 )}
             </div>

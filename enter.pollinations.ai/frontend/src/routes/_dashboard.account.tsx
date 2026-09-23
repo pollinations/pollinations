@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_dashboard/account")({
 });
 
 function AccountPage() {
-    const retry = useDashboardRetry();
+    const retry = useDashboardRetry("profile");
     const { user, githubUsername, profile } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );

@@ -65,7 +65,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const controller = new AbortController();
         request.current = controller;
         setStatus({ key: requestKey, pending: true, error: null });
-        apiClient.account.usage.daily
+        return apiClient.account.usage.daily
             .$get(
                 { query: { granularity, period } },
                 { init: { signal: controller.signal } },

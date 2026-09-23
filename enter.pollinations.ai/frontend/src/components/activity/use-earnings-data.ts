@@ -108,7 +108,7 @@ export function useEarningsData(
         const controller = new AbortController();
         request.current = controller;
         setStatus({ key: requestKey, pending: true, error: null });
-        apiClient.account.earnings
+        return apiClient.account.earnings
             .$get(
                 { query: { granularity, period } },
                 { init: { signal: controller.signal } },

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 });
 
 function MyModelsPage() {
-    const retry = useDashboardRetry();
+    const retry = useDashboardRetry("profile");
     const { profile } = useDeferredValue(DashboardRoute.useLoaderData());
     return (
         <Await promise={profile} fallback={<DeploymentsPlaceholder />}>

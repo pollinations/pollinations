@@ -88,17 +88,20 @@ export const Route = createFileRoute("/_dashboard")({
     component: DashboardLayout,
 });
 
-export function useDashboardRetry() {
+export function useDashboardRetry(resource: "balance" | "profile") {
     const router = useRouter();
-    return () =>
-        router.invalidate({
+    return async () => {
+        await router.invalidate({
             filter: (match) => match.routeId === Route.id,
             sync: true,
         });
+        await router.state.matches.find((match) => match.routeId === Route.id)
+            ?.loaderData?.[resource];
+    };
 }
 
 function DashboardLayout() {
-    const retry = useDashboardRetry();
+    const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
 

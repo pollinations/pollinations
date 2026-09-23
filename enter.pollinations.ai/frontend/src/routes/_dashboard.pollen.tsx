@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 });
 
 function PollenPage() {
-    const retry = useDashboardRetry();
+    const retry = useDashboardRetry("balance");
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const { balance, earnings } = useDeferredValue(

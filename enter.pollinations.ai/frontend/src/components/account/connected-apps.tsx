@@ -186,7 +186,7 @@ export function ConnectedApps() {
 
     useEffect(() => {
         const timeout = window.setTimeout(
-            () => void loadToolkits(search.trim()),
+            () => loadToolkits(search.trim()),
             200,
         );
         return () => {
@@ -289,7 +289,7 @@ export function ConnectedApps() {
             )}
 
             {toolkitsError && (
-                <LoadError onRetry={() => void loadToolkits(search.trim())}>
+                <LoadError onRetry={() => loadToolkits(search.trim())}>
                     {toolkitsError}
                 </LoadError>
             )}

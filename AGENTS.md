@@ -154,6 +154,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ### Commands & Files
 
+- Maintain project skills in `.claude/skills/`. Expose them to Codex through
+  relative directory links in `.agents/skills/`; keep command adapters as
+  pointers to their maintained instructions, never copied workflows.
+
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.

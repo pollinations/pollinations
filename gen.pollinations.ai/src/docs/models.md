@@ -38,9 +38,9 @@ LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
 catalog header.
 
-Lists default to `reliability=reliable`: community proxy models need more than
+Lists default to `reliability=reliable`: public community proxy models need more than
 80% success across the last 50 eligible final requests within seven days.
-Official models and agents are unaffected. There is no minimum sample size.
+Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
 Models without observations remain listed. Successful fallbacks count as successes
 for the requested model; final 4xx are excluded, while owner requests and
 monitor probes count. Each entry includes `health` with `status`,

@@ -6,6 +6,7 @@ import {
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
 import {
+    createTestApiKey,
     createTestUser,
     RESTRICTED_TEXT_TEST_MODEL,
     test,
@@ -222,6 +223,7 @@ test("show all does not bypass key permissions or paid access", async ({
 test("community reliability is discovery-only and show all preserves manual hiding and privacy", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
+    const { key: ownerKey } = await createTestApiKey({ userId: ownerUserId });
     await drizzle(env.DB)
         .insert(communityEndpoint)
         .values(
@@ -255,6 +257,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     await resetGenerationModelRegistryCache(env);
     const id = `community/${owner}/public`;
     const passingId = `community/${owner}/passing`;
+    const privateId = `community/${owner}/private`;
     mockCatalogHealth([
         {
             model: id,
@@ -270,11 +273,26 @@ test("community reliability is discovery-only and show all preserves manual hidi
             status_2xx: 41,
             errors_5xx: 9,
         },
+        {
+            model: privateId,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 0,
+            errors_5xx: 10,
+        },
     ]);
     const normal = await fetchWorker("/models?source=community");
     const normalModels = (await normal.json()) as { name: string }[];
     expect(normalModels.some((model) => model.name === id)).toBe(false);
     expect(normalModels.some((model) => model.name === passingId)).toBe(true);
+    const ownerList = await fetchWorker("/models?source=community", {
+        headers: { Authorization: `Bearer ${ownerKey}` },
+    });
+    expect(
+        ((await ownerList.json()) as { name: string }[]).some(
+            (model) => model.name === privateId,
+        ),
+    ).toBe(true);
     const unfiltered = await fetchWorker(
         "/models?source=community&reliability=all",
     );

@@ -1,10 +1,4 @@
-import {
-    Chip,
-    InlineLink,
-    RocketIcon,
-    Surface,
-    Tooltip,
-} from "@pollinations/ui";
+import { InlineLink, RocketIcon, Surface, Tooltip } from "@pollinations/ui";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
@@ -30,13 +24,14 @@ import {
 } from "./model-info.ts";
 import {
     type BalanceAccess,
-    BalanceAccessChip,
+    ModelHealthIndicator,
     ModelRateValue,
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
 import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
+    LedgerPriceValue,
     ModelPricingControls,
     ModelPricingLedger,
     useModelPricingSelection,
@@ -111,16 +106,10 @@ export const PerPollenEstimate: FC<{
             displayContents
         >
             {ledger ? (
-                <Chip
-                    intent="neutral"
-                    size="sm"
-                    className="justify-self-center tabular-nums"
-                >
-                    {!isFree && !isUnavailable && (
-                        <span aria-hidden="true">≈</span>
-                    )}
-                    <span>{value}</span>
-                </Chip>
+                <LedgerPriceValue
+                    value={value}
+                    prefix={!isFree && !isUnavailable ? "≈" : undefined}
+                />
             ) : (
                 <ModelRateValue value={value} unit="req /pollen" />
             )}
@@ -246,6 +235,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <span className="min-w-0 truncate text-base font-medium leading-tight">
                                 {publicModelName}
                             </span>
+                        )}
+                        {model.health && (
+                            <ModelHealthIndicator
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                            />
                         )}
                         {playSupported && (
                             <Tooltip
@@ -374,26 +371,21 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
-                    </div>
+                    {(showNew || showAlpha) && (
+                        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
                 <ModelPricingLedger
                     pricing={pricing}
+                    access={balanceAccess}
                     hasTools={pollinationsTools}
                     requestEstimate={<PerPollenEstimate model={model} ledger />}
                 />

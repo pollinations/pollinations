@@ -1,5 +1,12 @@
-import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
-import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
+import {
+    CheckIcon,
+    Chip,
+    SparklesIcon,
+    Tooltip,
+    WarningIcon,
+    XIcon,
+} from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
 
@@ -9,52 +16,74 @@ type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
     alphaTooltip?: boolean;
-    health?: ModelHealth;
-    communityProxy?: boolean;
 };
 
-type BalanceAccessChipProps = {
+type BalanceAccessLabelProps = {
     access: BalanceAccess;
-    className?: string;
 };
+
+const healthStyles = {
+    healthy: {
+        className: "text-intent-success-text",
+        icon: <CheckIcon className="h-5 w-5" />,
+    },
+    degraded: {
+        className: "text-intent-warning-text",
+        icon: <WarningIcon className="h-4 w-4" />,
+    },
+    down: {
+        className: "text-intent-danger-text",
+        icon: <XIcon className="h-4 w-4" />,
+    },
+    unknown: {
+        className: "text-theme-text-muted",
+        icon: <span className="text-base leading-none">—</span>,
+    },
+} as const;
+
+export function ModelHealthIndicator({
+    health,
+    communityProxy,
+}: {
+    health: ModelHealth;
+    communityProxy: boolean;
+}) {
+    const { className, icon } = healthStyles[health.status];
+    const reliabilitySample = communityProxy
+        ? `the last ${health.requests} eligible requests (up to seven days)`
+        : "the last 24 hours";
+    const healthLabel =
+        health.status === "unknown"
+            ? "No recent reliability data"
+            : `${health.status === "healthy" ? "Healthy" : "Elevated errors"} across ${reliabilitySample}`;
+    return (
+        <Tooltip
+            content={healthLabel}
+            ariaLabel={healthLabel}
+            tapEnabled
+            displayContents
+        >
+            <span
+                aria-hidden="true"
+                className={`inline-flex h-5 w-5 shrink-0 items-center justify-center ${className}`}
+            >
+                {icon}
+            </span>
+        </Tooltip>
+    );
+}
 
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
     alphaTooltip = true,
-    health,
-    communityProxy = false,
 }) => {
-    if (!showNew && !showAlpha && !health) return null;
-
-    const unknown = !health || health.status === "unknown";
-    const healthy = !unknown && health.status === "healthy";
-    const sample = communityProxy
-        ? `the last ${health?.requests} eligible requests (up to seven days)`
-        : "the last 24 hours";
-    const healthLabel = unknown
-        ? "No recent reliability data"
-        : healthy
-          ? `Healthy across ${sample}`
-          : `Elevated errors across ${sample}`;
+    if (!showNew && !showAlpha) return null;
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
     return (
         <span className="inline-flex shrink-0 items-center gap-1.5">
-            {health && (
-                <Tooltip
-                    triggerAs="span"
-                    content={healthLabel}
-                    ariaLabel={healthLabel}
-                    tapEnabled
-                >
-                    <span
-                        aria-hidden="true"
-                        className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : healthy ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
-                    />
-                </Tooltip>
-            )}
             {showNew && (
                 <Chip intent="new" size="sm">
                     New
@@ -129,10 +158,7 @@ export const PerUserRateLimit: FC<{ value?: number | null }> = ({ value }) => {
     );
 };
 
-export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
-    access,
-    className,
-}) => {
+export const BalanceAccessLabel: FC<BalanceAccessLabelProps> = ({ access }) => {
     const tooltipLabel =
         access === "free"
             ? "This model is free to use."
@@ -170,23 +196,14 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             </span>
         );
 
-    const chip =
+    const icon =
         access === "free" ? (
-            <Chip intent="free" size="sm" className={className}>
-                <SparklesIcon className="h-3.5 w-3.5 shrink-0" />
-                Free
-            </Chip>
-        ) : access === "paid" ? (
-            <PaidChip size="sm" className={className}>
-                <WalletKindIcon kind="paid" />
-                Paid
-            </PaidChip>
+            <SparklesIcon className="h-3.5 w-3.5 shrink-0" />
         ) : (
-            <TierChip size="sm" className={className}>
-                <WalletKindIcon kind="tier" />
-                Quest
-            </TierChip>
+            <WalletKindIcon kind={access === "paid" ? "paid" : "tier"} />
         );
+    const label =
+        access === "free" ? "Free" : access === "paid" ? "Paid" : "Quest";
 
     return (
         <Tooltip
@@ -198,7 +215,10 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
             tapEnabled
             displayContents
         >
-            {chip}
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-theme-text-strong">
+                {icon}
+                {label}
+            </span>
         </Tooltip>
     );
 };

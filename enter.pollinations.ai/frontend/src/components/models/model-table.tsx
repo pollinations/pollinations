@@ -29,7 +29,7 @@ import {
 import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
-    BalanceAccessChip,
+    ModelHealthIndicator,
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
@@ -220,6 +220,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
+                        {model.health && (
+                            <ModelHealthIndicator
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                            />
+                        )}
                     </div>
                     <CopyValue
                         value={model.name}
@@ -250,20 +258,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             />
                         </div>
                     </div>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
-                    </div>
+                    {(showNew || showAlpha) && (
+                        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -283,6 +285,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <ModelPricingLedger
                         pricing={pricing}
+                        access={balanceAccess}
                         className="w-full"
                         align="left"
                         hasTools={pollinationsTools}

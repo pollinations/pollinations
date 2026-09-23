@@ -12,10 +12,15 @@ import {
     SearchIcon,
     TokensIcon,
     Tooltip,
+    WalletIcon,
 } from "@pollinations/ui";
 import { type FC, type ReactNode, useState } from "react";
 import { formatDisplayPrice } from "./formatters.ts";
 import { PRICE_ICON } from "./model-icons.tsx";
+import {
+    type BalanceAccess,
+    BalanceAccessLabel,
+} from "./model-status-chips.tsx";
 import type {
     ModelPrice,
     ModelPriceAdjustment,
@@ -275,32 +280,14 @@ export const ModelPricingControls: FC<{
     );
 };
 
-const LedgerPriceValue: FC<{
+export const LedgerPriceValue: FC<{
     value: string;
-    fractionDigits?: number;
-}> = ({ value, fractionDigits = 5 }) => {
-    const [whole, fraction] = value.split(".", 2);
-
-    return (
-        <span
-            className="grid w-full text-sm font-semibold tabular-nums text-theme-text-strong"
-            style={{
-                gridTemplateColumns: `minmax(2ch, 1fr) auto ${fractionDigits}ch`,
-            }}
-        >
-            <span className="sr-only">{value}</span>
-            <span aria-hidden="true" className="text-right">
-                {whole}
-            </span>
-            <span aria-hidden="true" className={cn(!fraction && "invisible")}>
-                .
-            </span>
-            <span aria-hidden="true" className="text-left">
-                {fraction}
-            </span>
-        </span>
-    );
-};
+    prefix?: string;
+}> = ({ value, prefix }) => (
+    <span className="block text-left text-sm font-semibold tabular-nums text-theme-text-strong">
+        {prefix ? `${prefix} ${value}` : value}
+    </span>
+);
 
 const RequestBasedAdjustmentKinds = new Set([
     "search_request",
@@ -339,8 +326,7 @@ const LedgerLabel: FC<{
 export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
-    fractionDigits?: number;
-}> = ({ adjustments, align, fractionDigits }) =>
+}> = ({ adjustments, align }) =>
     adjustments.map((adjustment) => {
         const isSearch = RequestBasedAdjustmentKinds.has(adjustment.kind);
         const PriceIcon = isSearch
@@ -379,7 +365,6 @@ export const UsagePriceRows: FC<{
                 />
                 <LedgerPriceValue
                     value={formatDisplayPrice(adjustment.price).value}
-                    fractionDigits={fractionDigits}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -432,26 +417,19 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
 
 export const ModelPricingLedger: FC<{
     pricing: ModelPricingSelection;
+    access: BalanceAccess;
     className?: string;
     align?: "left" | "right";
     hasTools?: boolean;
     requestEstimate?: ReactNode;
 }> = ({
     pricing,
+    access,
     className,
     align = "right",
     hasTools = false,
     requestEstimate,
 }) => {
-    if (
-        !pricing.prices.length &&
-        !pricing.adjustments.length &&
-        !hasTools &&
-        !requestEstimate
-    ) {
-        return null;
-    }
-
     const cachedBasePrice = pricing.prices.find(
         (price) =>
             price.direction === "input" &&
@@ -628,10 +606,23 @@ export const ModelPricingLedger: FC<{
                 className,
             )}
         >
+            <div
+                className={cn(
+                    "mb-1 grid grid-cols-subgrid items-center border-b border-divider pb-1",
+                    align === "right"
+                        ? "col-start-2 col-end-[-1]"
+                        : "col-span-full",
+                )}
+            >
+                <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                <span className="col-span-2">
+                    <BalanceAccessLabel access={access} />
+                </span>
+            </div>
             {requestEstimate && (
                 <div
                     className={cn(
-                        "mb-1 grid grid-cols-subgrid items-baseline border-b border-divider pb-1",
+                        "grid grid-cols-subgrid items-baseline py-0.5",
                         align === "right"
                             ? "col-start-2 col-end-[-1]"
                             : "col-span-full",

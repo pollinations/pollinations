@@ -39,7 +39,7 @@ import {
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
-import { ModelStatusChips } from "../frontend/src/components/models/model-status-chips.tsx";
+import { ModelHealthIndicator } from "../frontend/src/components/models/model-status-chips.tsx";
 import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
@@ -69,14 +69,12 @@ test("health indicators show the current reliability sample", () => {
         ["unknown", "No recent reliability data"],
     ] as const) {
         const markup = renderToStaticMarkup(
-            createElement(ModelStatusChips, {
-                showNew: false,
-                showAlpha: false,
+            createElement(ModelHealthIndicator, {
                 communityProxy: true,
                 health: {
                     status,
                     requests: status === "unknown" ? 0 : 12,
-                    successRate: status === "unknown" ? null : 90,
+                    success_rate: status === "unknown" ? null : 90,
                 },
             }),
         );
@@ -84,10 +82,9 @@ test("health indicators show the current reliability sample", () => {
     }
 
     const official = renderToStaticMarkup(
-        createElement(ModelStatusChips, {
-            showNew: false,
-            showAlpha: false,
-            health: { status: "healthy", requests: 12, successRate: 90 },
+        createElement(ModelHealthIndicator, {
+            communityProxy: false,
+            health: { status: "healthy", requests: 12, success_rate: 90 },
         }),
     );
     expect(official).toContain('aria-label="Healthy across the last 24 hours"');
@@ -448,7 +445,7 @@ test("cached modality adjustments remain visible without a matching base row", (
         dropdowns: [],
     };
     const markup = renderToStaticMarkup(
-        createElement(ModelPricingLedger, { pricing }),
+        createElement(ModelPricingLedger, { pricing, access: "quest" }),
     );
 
     expect(markup).toContain("Cached input");

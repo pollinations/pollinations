@@ -100,6 +100,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.3-codex": {
+        "openai/gpt-5.3-codex:azure:sweden": {
+            provider: "azure",
+            retirementDate: new Date("2027-08-24").getTime(),
+        },
+    },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",

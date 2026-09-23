@@ -627,9 +627,10 @@ def label_pull_request():
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     set_labels(labels)
-    # App-catalog PRs belong to Apps; every other PR sits next to the issues in Dev.
-    project = "apps" if APP_SUBMISSION_BRANCH.match(PR_HEAD_REF) else "dev"
-    add_to_project(CONFIG["projects"][project]["id"])
+    # Every open PR sits next to the issues in Dev; app-catalog PRs also go to Apps.
+    add_to_project(CONFIG["projects"]["dev"]["id"])
+    if APP_SUBMISSION_BRANCH.match(PR_HEAD_REF):
+        add_to_project(CONFIG["projects"]["apps"]["id"])
 
 
 def main():

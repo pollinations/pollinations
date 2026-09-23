@@ -205,7 +205,7 @@ describe("GPT Image 2.5", () => {
             });
         });
 
-        it(`${model} charges paid balance at provider cost`, () => {
+        it(`${model} charges paid balance at 0.75x provider cost`, () => {
             // Usage from the live low-quality generation probe, plus image input.
             const usage = {
                 promptTextTokens: 14,
@@ -218,7 +218,7 @@ describe("GPT Image 2.5", () => {
                 8,
             );
             expect(calculatePrice(model, usage).totalPrice).toBeCloseTo(
-                0.00675,
+                0.0050625,
                 8,
             );
         });

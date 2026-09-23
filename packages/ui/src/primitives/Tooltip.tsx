@@ -136,8 +136,7 @@ export const Tooltip: FC<TooltipProps> = ({
         }
     };
 
-    // Universal cursor for every tooltip trigger across the app.
-    // `cursor-help` = standard "?" pointer that means "more info on hover".
+    // Informational triggers use help; action wrappers can override the cursor.
     const triggerClassName = cn(
         "polli-control polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
         className,
@@ -145,7 +144,7 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const cursorClass = displayContents
         ? "polli:contents"
-        : "polli:cursor-help";
+        : "polli:cursor-inherit";
 
     // Portal past the trigger's layout; stay inside modal dialogs so the popup
     // shares their stacking and accessible subtree.

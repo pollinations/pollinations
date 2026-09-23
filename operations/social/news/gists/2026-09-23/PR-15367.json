@@ -1,0 +1,38 @@
+{
+  "pr_number": 15367,
+  "title": "fix: keep one paid app-spend quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15367",
+  "merged_at": "2026-09-23T23:19:55Z",
+  "labels": [
+    "BUG",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Retires the 15-Pollen first-paid-request quest; its card remains for existing rewards.\n- Awards 10 Pollen when other users spend 3 Paid Pollen across your apps. Own usage and Quest Pollen do not count.\n- Keeps the existing quest IDs and historical reward amounts; no migration or Tinybird change.\n- All 39 quest tests pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One garden, one reward",
+    "blurb": "The app-spend quest now follows a single, useful trail: when other people spend 3 Paid Pollen in your apps, 10 Pollen lands back in your wallet. The old first-paid-request card stays around so past rewards keep their history.",
+    "summary": "Consolidated paid app-spend quest behavior so the existing quest awards 10 Pollen after other users spend 3 Paid Pollen across an app creator's apps, while excluding the creator's own usage and Quest Pollen.",
+    "impact": "App builders now have one clear 10-Pollen growth reward tied to 3 Paid Pollen of real external app usage, with existing quest IDs and historical rewards preserved.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "billing",
+      "app-growth",
+      "rewards",
+      "paid-usage"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper combining two nearby quest signposts into one healthy code-plant. Three small Paid Pollen coins arrive from friendly app visitors, bloom into a 10-Pollen reward flower, and an older signpost remains gently preserved in the background to represent retained reward history.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, tending one thriving code-plant in a lime green (#ecf874) flower pot while three small Paid Pollen coins carried by friendly pixel app visitors feed its roots and a flower marked \"10 POLLEN\" blooms above it; an older quest sign rests safely nearby among flowers and vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15367.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, tending one thriving code-plant in a lime green (#ecf874) flower pot while three small Paid Pollen coins carried by friendly pixel app visitors feed its roots and a flower marked \"10 POLLEN\" blooms above it; an older quest sign rests safely nearby among flowers and vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T23:20:50.402816+00:00"
+}

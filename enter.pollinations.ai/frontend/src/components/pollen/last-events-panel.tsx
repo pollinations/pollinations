@@ -342,8 +342,7 @@ export const LastEventsPanel: FC = () => {
                     </Table>
                 </div>
 
-                <div className="mt-4 flex flex-col gap-3 text-[13px] leading-snug text-theme-text-muted sm:flex-row sm:items-center sm:justify-between">
-                    <p>Updated hourly · All times UTC</p>
+                <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
                     {state.hasMore && (
                         <Button
                             as="button"

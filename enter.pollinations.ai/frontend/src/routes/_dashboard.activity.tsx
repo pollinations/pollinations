@@ -160,6 +160,9 @@ function ActivityPage() {
             <Section title="Last events" framed>
                 <LastEventsPanel />
             </Section>
+            <p className="text-micro text-theme-text-muted">
+                Times shown in UTC.
+            </p>
         </div>
     );
 }

@@ -873,7 +873,8 @@ const generateImage = async (
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
-        case "microsoft/mai-image-2.5-flash": {
+        case "microsoft/mai-image-2.5-flash":
+        case "microsoft/mai-image-2.6-flash": {
             try {
                 return await callAzureMaiImage(prompt, safeParams, userInfo);
             } catch (error) {

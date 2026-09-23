@@ -42,6 +42,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
+| [Claude Code](https://github.com/anthropics/claude-code) | **Available now** — `polli harness claude-code on` | Configures the [Claude Code Router](https://github.com/musistudio/claude-code-router) provider and an isolated `Pollinations` launch profile; the native `~/.claude` login is never touched. |
+| [Codex](https://github.com/openai/codex) | **Available now** — `polli harness codex on` | Configures the [Codex Router](https://github.com/duolahypercho/codex-router) generic provider end to end (provider, credential, curated model, smoke request). Preserves the ChatGPT login, native GPT models, and profiles. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
@@ -57,6 +59,31 @@ bloom
 ```
 
 Bloom already uses Pollinations for its models. `on` creates a dedicated key and stores it in `~/.bloom/.env` (or `$BLOOM_HOME/.env`); `off` restores the previous file or removes only that key if the file changed later.
+
+## Claude Code
+
+```bash
+npm install -g @anthropic-ai/claude-code
+npm install -g @musistudio/claude-code-router
+npx @pollinations/cli@latest harness claude-code on
+ccr "Pollinations"
+```
+
+`on` requires both the Claude Code CLI and [Claude Code Router](https://github.com/musistudio/claude-code-router) (CCR). It adds a `pollinations` provider (base URL `https://gen.pollinations.ai/v1`, `autoFetchModels` so CCR keeps the catalog current) plus an isolated Agent Config profile named `Pollinations` with scope **Only opened from CCR** in CCR's own `config.sqlite`, then smoke-tests one `pong` request through the CCR gateway. Your existing Claude login, settings, providers, and profiles are untouched: the generated profile settings live under `~/.claude-code-router/profiles/`, and nothing is written to `~/.claude`. Choose another model with `--model <id>`. `off` restores `config.sqlite` byte-for-byte, or removes only the Pollinations provider, profile, and profile key after outside edits. Start the profile with `ccr "Pollinations"`, then use `/model` inside Claude Code to switch among the models the gateway exposes.
+
+Troubleshooting: `polli harness claude-code status` reports the provider/key/profile state and, when CCR is installed, runs the same smoke check on demand. If the profile does not launch, make sure the CCR gateway is running (`ccr start` or the desktop app's Server page) — the adapter starts it when it can and skips the smoke with a note when it cannot. Version skew: CCR 3.x stores its config in `config.sqlite` and the adapter writes that store with the same document schema; if a future CCR moves storage again, re-run `polli harness claude-code on` after upgrading and `off` first if the config was left in an old format.
+
+## Codex
+
+```bash
+npm install -g @openai/codex
+curl -fsSL https://raw.githubusercontent.com/duolahypercho/codex-router/main/install.sh | sh -s -- --target codex --guided
+npx @pollinations/cli@latest harness codex on
+```
+
+`on` requires the Codex CLI and [Codex Router](https://github.com/duolahypercho/codex-router). The whole setup is driven through the router's own commands: `providers generic add|edit` (OpenAI-chat adapter against `https://gen.pollinations.ai/v1`), the dedicated Pollinations key handed to `providers generic credential ... set --stdin` (it lands only in the router's protected credential file), `providers enable`, and `curate-models ... --apply` for the selected model from the live catalog. Before finishing, a one-word `pong` request runs through the real `codex exec` → router → Pollinations path. Your ChatGPT login, native GPT models, profiles, and settings are preserved; the router manages its own block in `~/.codex/config.toml`. Choose another model with `--model <id>`; `off` restores the router state byte-for-byte when untouched, otherwise removes only the Pollinations provider, its credential, and its curated routes (`providers generic remove`), leaving the router and unrelated providers installed. A router installed with `--no-discovery` refuses to read credential files by design — re-run the installer without that flag first. Fully quit and reopen Codex (or the ChatGPT app) after `on` to refresh the model picker.
+
+Troubleshooting: `polli harness codex status` reports the provider, credential, curated model, and files, using the router's own `providers generic show`. A `providers generic test` that fails with "response exceeds the byte limit" is the router's 64 KiB discovery bound, not a broken provider — curation and routed requests still work, and the adapter's smoke is a real generation instead. Version skew: the adapter drives the router's documented provider commands (v0.6.x); after upgrading the router, re-run `polli harness codex status` and, if flags changed, `off` then `on` again.
 
 ## DeepSeek Harness
 

@@ -1,7 +1,10 @@
 import {
     Alert,
     AppIcon,
+    BotIcon,
     Button,
+    ClockIcon,
+    GlobeIcon,
     InlineLink,
     Input,
     LockIcon,
@@ -343,14 +346,22 @@ export function ConnectedApps() {
             )}
 
             <footer className="space-y-3">
-                <Text size="sm" tone="muted">
-                    Let Pollinations agents read Gmail, search GitHub, update
-                    Sheets, and post to Slack through Composio.
-                </Text>
-                <Text size="sm" tone="muted">
-                    Enable Connected Apps in your agent, then ask it to use your
-                    connected account. Try “Summarize my unread Gmail” or “Find
-                    open issues in my GitHub repository.”
+                <Text
+                    size="sm"
+                    tone="muted"
+                    className="flex items-start gap-1.5"
+                >
+                    <BotIcon
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>
+                        Let Pollinations agents read Gmail, search GitHub,
+                        update Sheets, and post to Slack through Composio.
+                        Enable Connected Apps in your agent, then ask it to use
+                        your connected account. Try “Summarize my unread Gmail”
+                        or “Find open issues in my GitHub repository.”
+                    </span>
                 </Text>
                 <Text
                     size="sm"
@@ -366,16 +377,36 @@ export function ConnectedApps() {
                         connecting.
                     </span>
                 </Text>
-                <Text size="sm" tone="muted">
-                    Sign-in links expire after 10 minutes. If a link expires or
-                    you leave before finishing, return here and select Connect
-                    again for a fresh link.
+                <Text
+                    size="sm"
+                    tone="muted"
+                    className="flex items-start gap-1.5"
+                >
+                    <ClockIcon
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>
+                        Sign-in links expire after 10 minutes. If a link expires
+                        or you leave before finishing, return here and select
+                        Connect again for a fresh link.
+                    </span>
                 </Text>
-                <Text size="sm" tone="muted">
-                    Connections powered by{" "}
-                    <InlineLink href="https://composio.dev" size="sm">
-                        Composio
-                    </InlineLink>
+                <Text
+                    size="sm"
+                    tone="muted"
+                    className="flex items-start gap-1.5"
+                >
+                    <GlobeIcon
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>
+                        Connections powered by{" "}
+                        <InlineLink href="https://composio.dev" size="sm">
+                            Composio
+                        </InlineLink>
+                    </span>
                 </Text>
             </footer>
         </Section>

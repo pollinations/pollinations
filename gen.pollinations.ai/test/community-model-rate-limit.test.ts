@@ -16,6 +16,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "openai/gpt-image-2.5-flare",
     "openai/gpt-image-2.5-sunburst",
     "microsoft/mai-image-2.5-flash",
+    "microsoft/mai-image-2.6-flash",
 ]);
 
 describe("model rate limiting", () => {
@@ -42,6 +43,9 @@ describe("model rate limiting", () => {
             ).toBeNull();
         }
         expect(IMAGE_SERVICES["microsoft/mai-image-2.5-flash"].perUserRpm).toBe(
+            12,
+        );
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].perUserRpm).toBe(
             12,
         );
     });

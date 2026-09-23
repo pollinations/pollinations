@@ -271,9 +271,9 @@ function QuestSummary({
                 footer={
                     claimable && claimable.count > 0 ? (
                         <Chip
-                            intent="success"
+                            intent="neutral"
                             size="lg"
-                            className="polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug"
+                            className={`polli:max-w-full polli:py-2 polli:font-semibold polli:leading-snug ${BUCKET_CHIP_CLASS.paid}`}
                             style={{ height: "auto" }}
                         >
                             +{claimable.count}{" "}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15358,
+  "title": "feat: one dev project for issues, pull requests and app submissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15358",
+  "merged_at": "2026-09-23T17:01:19Z",
+  "labels": [
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Follow-up to #15335. Dev becomes the single project for team work; its views separate the item types (`LIST ALL`, `PR`, `QUESTS`, `APPS`, `TRACKING`). Support stays for external issues.\n\n- Every PR goes to Dev when it opens, so the `PR` view lists all open PRs\n- App submissions and app-catalog PRs go to Dev instead of the Apps project. App review runs on the `APP-*` labels only, so nothing else depended on Apps; the Apps project is being closed (not deleted)\n- Issues the classifier thinks are app submissions but lack `APP-SUBMISSION` also go to Dev, unlabelled, so a person confirms before the app review starts",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One garden for the work",
+    "blurb": "The Dev project is now the hive’s single workbench for pull requests, app submissions, and team-tracked issues. Different views keep the pollen sorted; humans still get the final say on unlabelled app submissions.",
+    "summary": "GitHub project automation now routes every newly opened PR, app submission, app-catalog PR, and unlabelled suspected app-submission issue into the Dev project, whose views separate PRs, quests, apps, tracking, and all work.",
+    "impact": "Contributors and maintainers get one Dev project for open PR and app-review triage, while suspected submissions without APP-SUBMISSION wait for a human confirmation before review begins.",
+    "keywords": [
+      "github",
+      "project-management",
+      "pull-requests",
+      "app-submissions",
+      "triage",
+      "automation"
+    ],
+    "visual_concept": "Depict Dev as a cozy central garden workbench with separate labeled trays for PRs, quests, apps, and tracking; Polli acts as a calm organizer, moving paper cards into the right trays while one unlabelled app card waits under a small human-check stamp. Include code-plants and the retired Apps garden sign gently resting nearby to show consolidation rather than deletion.",
+    "image_prompt": "A cozy pixel art garden workbench labeled \"DEV\" has tidy little trays marked \"PR\", \"QUESTS\", \"APPS\", and \"TRACKING\", while Polli—the cute yellow-and-brown striped bee with light blue wings, pink cheek blush, a happy smile, and a tiny librarian scarf—sorts pull-request cards beside sprouting code-plants; one unlabelled app card waits under a small \"CHECK\" stamp, and a softly glowing retired \"APPS\" sign rests nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15358.jpg",
+    "prompt": "A cozy pixel art garden workbench labeled \"DEV\" has tidy little trays marked \"PR\", \"QUESTS\", \"APPS\", and \"TRACKING\", while Polli—the cute yellow-and-brown striped bee with light blue wings, pink cheek blush, a happy smile, and a tiny librarian scarf—sorts pull-request cards beside sprouting code-plants; one unlabelled app card waits under a small \"CHECK\" stamp, and a softly glowing retired \"APPS\" sign rests nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-23T17:05:37.135649+00:00"
+}

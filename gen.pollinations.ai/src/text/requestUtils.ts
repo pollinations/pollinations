@@ -3,7 +3,7 @@ import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import { normalizeSeed } from "@/util.ts";
 import type { ChatMessage, RequestData } from "./types.js";
 
-function requestsJson(json: unknown, jsonMode: unknown): boolean {
+export function requestsJson(json: unknown, jsonMode: unknown): boolean {
     return (
         Boolean(jsonMode) ||
         json === true ||

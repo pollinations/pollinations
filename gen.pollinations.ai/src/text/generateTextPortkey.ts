@@ -3,6 +3,7 @@ import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
+import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
@@ -54,6 +55,10 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        // TypeSafe has its own wire format and does not use Portkey transforms.
+        if (modelDef?.useSystemOneApi) {
+            return callSystemOne(state.messages, state.options);
+        }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
@@ -100,9 +105,8 @@ export async function generateTextPortkey(
         );
     }
 
-    // These options belong to the Responses adapter, not generic providers.
+    // This internal transport belongs only to the Responses adapter.
     delete state.options.responsesFetcher;
-    delete state.options.parallel_tool_calls;
 
     const completion = await genericOpenAIClient(
         state.messages,

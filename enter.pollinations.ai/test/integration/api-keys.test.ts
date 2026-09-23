@@ -26,6 +26,70 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("preserves Generate off through creation, listing, authentication and editing", async ({
+            sessionToken,
+        }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "account-only",
+                        type: "secret",
+                        allowedModels: [],
+                        accountPermissions: ["profile"],
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.permissions).toEqual({
+                models: [],
+                account: ["profile"],
+            });
+
+            const list = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                { headers },
+            );
+            expect(list.status).toBe(200);
+            const listed = (await list.json()) as ApiKeyListResponse;
+            expect(
+                listed.data.find((key) => key.id === created.id)?.permissions,
+            ).toEqual({ models: [], account: ["profile"] });
+
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        allowedModels: [],
+                        accountPermissions: ["profile"],
+                        pollenBudget: 10,
+                    }),
+                },
+            );
+            expect(update.status).toBe(200);
+            const readback = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: { Authorization: `Bearer ${created.key}` },
+                },
+            );
+            expect(readback.status).toBe(200);
+            const info = await readback.json();
+            expect(info.permissions).toEqual({
+                models: [],
+                account: ["profile"],
+            });
+        });
+
         test("forces publishable keys to zero direct-spend budget", async ({
             sessionToken,
         }) => {
@@ -1080,7 +1144,7 @@ describe("API Key Management", () => {
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
             expect(listed?.permissions?.models).toEqual([
-                "model-owner/private-model",
+                "community/model-owner/private-model",
             ]);
         });
 

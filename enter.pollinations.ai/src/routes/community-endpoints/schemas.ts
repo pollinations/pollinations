@@ -10,10 +10,12 @@ import {
     CommunityEndpointAdvertisedSchema,
     CommunityEndpointApiSchema,
     type CommunityEndpointPriceKey,
+    EndpointAgentListingPayloadSchema,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
@@ -108,7 +110,10 @@ const EndpointFieldsSchema = {
     description: z
         .string()
         .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .max(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        )
         .optional(),
     baseUrl: z
         .string()
@@ -178,8 +183,14 @@ const ProxyCreateSchema = z.union([
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
+const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
+    inputModalities: true,
+    outputModalities: true,
+}).shape;
+
 export const CreateEndpointAgentSchema = z
     .object({
+        ...EndpointAgentModalityFields,
         name: EndpointFieldsSchema.name,
         title: EndpointFieldsSchema.title,
         description: EndpointFieldsSchema.description,
@@ -222,9 +233,22 @@ const ProxyUpdateSchema = z
     .superRefine(validateEndpointUpdate);
 export type ProxyUpdateInput = z.infer<typeof ProxyUpdateSchema>;
 const PromptAgentUpdateSchema = z.object(CommonUpdateFieldsSchema).strict();
+export const CodeAgentUpdateSchema = z
+    .object({
+        description: z
+            .literal("")
+            .optional()
+            .describe(
+                "An empty value is ignored; the description comes from GitHub.",
+            ),
+        visibility: VisibilitySchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
+    })
+    .strict();
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
+        ...EndpointAgentModalityFields,
         api: CommunityEndpointApiSchema.optional(),
         url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
@@ -233,11 +257,16 @@ const EndpointAgentUpdateSchema = z
     .strict()
     .superRefine(validateEndpointUpdate);
 
-export const UpdateEndpointSchema = ProxyUpdateSchema;
+export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
+    outputModalities: EndpointAgentModalityFields.outputModalities,
+});
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
+    code_agent: CodeAgentUpdateSchema.extend({
+        hidden: CommonUpdateFieldsSchema.hidden,
+    }),
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -355,9 +384,16 @@ const PromptAgentEndpointResponseSchema = z
         type: z.literal("prompt_agent"),
     })
     .strict();
+const CodeAgentEndpointResponseSchema = z
+    .object({
+        ...CommunityEndpointResponseFieldsSchema,
+        type: z.literal("code_agent"),
+    })
+    .strict();
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
+        ...EndpointAgentModalityFields,
         type: z.literal("endpoint_agent"),
         api: CommunityEndpointApiSchema,
         url: EndpointFieldsSchema.url,
@@ -368,6 +404,7 @@ export const EndpointAgentResponseSchema = z
 export const CommunityEndpointResponseSchema = z.union([
     ProxyEndpointResponseSchema,
     PromptAgentEndpointResponseSchema,
+    CodeAgentEndpointResponseSchema,
     EndpointAgentResponseSchema,
 ]);
 export type CommunityEndpointResponse = z.infer<
@@ -378,17 +415,25 @@ export const CommunityEndpointListResponseSchema = z.object({
     provider: z.object({
         name: z.string().nullable(),
         url: z.string().url().nullable(),
+        iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
     }),
 });
 export const CommunityProviderProfileInputSchema = z
     .object({
         name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
         url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+        iconUrl: z
+            .string()
+            .trim()
+            .refine(isCommunityProviderIconUrl, "Invalid media icon URL")
+            .nullable()
+            .optional(),
     })
     .strict();
 export const CommunityProviderProfileResponseSchema = z.object({
     name: z.string().nullable(),
     url: z.string().url().nullable(),
+    iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
 });
 export const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),

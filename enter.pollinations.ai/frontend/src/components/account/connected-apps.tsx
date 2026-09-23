@@ -252,7 +252,13 @@ export function ConnectedApps() {
     return (
         <Section title="Connect apps" framed>
             <Text>
-                Let Pollinations agents work with the apps you already use.
+                Let Pollinations agents read Gmail, search GitHub, update
+                Sheets, and post to Slack through Composio.
+            </Text>
+            <Text size="sm" tone="muted">
+                Enable Connected Apps in your agent, then ask it to use your
+                connected account. Try “Summarize my unread Gmail” or “Find open
+                issues in my GitHub repository.”
             </Text>
 
             {actionError && <Alert intent="danger">{actionError}</Alert>}
@@ -330,6 +336,11 @@ export function ConnectedApps() {
                         Browse all apps
                     </ExternalLinkButton>
                 </div>
+                <Text size="sm" tone="muted">
+                    Sign-in links expire after 10 minutes. If a link expires or
+                    you leave before finishing, return here and select Connect
+                    again for a fresh link.
+                </Text>
             </div>
 
             {toolkitsError && <Alert intent="danger">{toolkitsError}</Alert>}

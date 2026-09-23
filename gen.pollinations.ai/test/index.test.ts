@@ -377,7 +377,7 @@ describe("gen worker routing", () => {
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
-                completionImageTokens: "0.08",
+                completionImageTokens: "0.0844",
                 currency: "pollen",
             },
         });
@@ -681,59 +681,34 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it("reports the source timestamp and marks stale fallback data", async () => {
-        let now = 1_000;
-        vi.spyOn(Date, "now").mockImplementation(() => now);
+    it("proxies the route health pipe with a 60 second edge cache", async () => {
         const upstream = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
-            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+            .mockResolvedValueOnce(
+                Response.json({ data: [{ model: "test" }] }),
+            );
 
-        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(fresh.status).toBe(200);
-        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
+        const response = await fetchWorker("/models/status?minutes=15");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=60",
         );
-        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+        expect(await response.json()).toEqual({ data: [{ model: "test" }] });
 
-        now = 2_000;
-        const cached = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(cached.status).toBe(200);
-        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(upstream).toHaveBeenCalledTimes(1);
-
-        now = 62_000;
-        const stale = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(stale.status).toBe(200);
-        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
-        expect(upstream).toHaveBeenCalledTimes(2);
+        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
+        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+        expect(url.searchParams.get("minutes")).toBe("15");
+        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
     });
 
-    it("evicts old entries when the in-memory cache reaches its bound", async () => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (request) => {
-                const minutes = new URL(
-                    new Request(request).url,
-                ).searchParams.get("minutes");
-                return Response.json({ data: [{ model: `test-${minutes}` }] });
-            });
+    it("passes upstream errors through unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: "bad minutes" }, { status: 400 }),
+        );
 
-        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
-            const response = await fetchWorker(
-                `/v1/models/status?minutes=${minutes}`,
-            );
-            expect(response.status).toBe(200);
-        }
-
-        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
-        expect(evicted.status).toBe(200);
-        expect(upstream).toHaveBeenCalledTimes(34);
+        const response = await fetchWorker("/models/status?minutes=abc");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: "bad minutes" });
     });
 });
 

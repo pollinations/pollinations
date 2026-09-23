@@ -323,6 +323,26 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
+    "elevenlabs/music-v2.5": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-09-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // ElevenLabs Music v2.5: reference ingestion and generated output
+            // are each billed at $0.15/minute.
+            promptAudioSeconds: 0.0025,
+            completionAudioSeconds: 0.0025,
+        },
+        title: "ElevenLabs Music v2.5",
+        description:
+            "Richer, better prompt-following music from text or a reference track",
+        inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
     "google/lyria-3-clip-preview": {
         aliases: ["lyria", "lyria-3", "lyria-3-clip"],
         provider: "google",
@@ -381,6 +401,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
+        retirementDate: new Date("2028-02-01").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -619,7 +640,7 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
-            completionAudioTokens: 15 / 1_000_000,
+            completionAudioTokens: (15 / 1_000_000) * 1.055,
         },
         title: "Fish Audio S2.1 Pro",
         description:
@@ -655,6 +676,8 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
+        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
+        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {

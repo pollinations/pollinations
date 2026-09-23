@@ -168,6 +168,7 @@ describe("error observability", () => {
         "ContentModerationError",
         "content_policy_violation",
         "content_safety_violation",
+        "The output audio may be related to copyright restrictions",
     ])("classifies provider code/type %s without rewriting its body", async (type) => {
         const responseBody = JSON.stringify({
             error: { type, message: "Request rejected" },

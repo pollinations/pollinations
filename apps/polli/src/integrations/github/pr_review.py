@@ -8,9 +8,9 @@ Mixed into GitHubPRManager; relies on the host class for `get_pr` and `get_pr_di
 """
 
 import asyncio
+import contextvars
 import logging
 
-from ...core.config import config
 from ...utils.regex import re
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,9 @@ HIGH_PRIORITY_PATTERNS = [
 ]
 
 
+_review_complexity: contextvars.ContextVar[str | None] = contextvars.ContextVar("review_complexity", default=None)
+
+
 class PRReviewMixin:
     """Concurrent per-file review plus synthesis into a single report."""
 
@@ -55,7 +58,9 @@ class PRReviewMixin:
     # AI-POWERED PR REVIEW
     # ============================================================
 
-    async def review_pr(self, pr_number: int, post_to_github: bool = False, author: str = "Discord User") -> dict:
+    async def review_pr(
+        self, pr_number: int, post_to_github: bool = False, author: str = "Discord User", complexity: str | None = None
+    ) -> dict:
         """
         Generate an AI-powered code review for a PR.
 
@@ -74,6 +79,13 @@ class PRReviewMixin:
         Returns:
             dict with 'review' text and optionally 'posted_to_github'
         """
+        complexity_token = _review_complexity.set(complexity)
+        try:
+            return await self._review_pr(pr_number, post_to_github, author)
+        finally:
+            _review_complexity.reset(complexity_token)
+
+    async def _review_pr(self, pr_number: int, post_to_github: bool, author: str) -> dict:
         # Get PR details
         pr = await self.get_pr(pr_number)
         if pr.get("error"):
@@ -238,10 +250,12 @@ class PRReviewMixin:
 
             async with semaphore:
                 try:
+                    from ...ai.complexity import model_for_complexity
+
                     response = await pollinations_client.generate_text(
                         system_prompt=self._get_file_review_system_prompt(),
                         user_prompt=combined_diff,
-                        model=config.ai.model,
+                        model=model_for_complexity(_review_complexity.get()),
                         temperature=0.2,
                         max_tokens=4096,
                     )
@@ -302,10 +316,12 @@ Merge these into ONE review. Deduplicate overlapping points, drop anything trivi
 order by severity (bugs/security first), keep file:line references. Security-sensitive files
 should be called out first if they have any findings."""
 
+        from ...ai.complexity import model_for_complexity
+
         response = await pollinations_client.generate_text(
             system_prompt=self._get_review_system_prompt(),
             user_prompt=user_prompt,
-            model=config.ai.model,
+            model=model_for_complexity(_review_complexity.get()),
             temperature=0.3,
             max_tokens=1200,
         )

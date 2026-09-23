@@ -7,6 +7,7 @@ import {
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createMistralModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
@@ -73,6 +74,15 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
+    // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
+    // OpenRouter exposes no floating alias, so the version is pinned here.
+    "jev-1.13": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "typesafe/jev-1.13",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -84,6 +94,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-5.3-codex": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-5.3-codex-azure-sweden": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
     "gpt-5.4": () =>
@@ -150,6 +172,20 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+
+    // -- OpenAI direct (GPT-6) -------------------------------------------------
+    "gpt-6-sol": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-sol",
+    }),
+    "gpt-6-luna": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+    }),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
@@ -221,7 +257,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
-        "deepinfra/fp8",
+        "novita/fp8",
+    ),
+    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "minimax/fp8",
+    ),
+    "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
+        "tencent/hy3",
+        "phala",
     ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
@@ -269,6 +314,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",
@@ -292,6 +346,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.7-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.7-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.8-flash": () =>
@@ -308,6 +366,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.8-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-flash",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>
@@ -316,6 +378,23 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: {
                 provider: {
                     only: ["Poolside"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
+    // trivial schema, so a caller relying on the upstream default (no
+    // explicit max_tokens) can get finish_reason:"length", content:null
+    // under a normal budget. Matches this route's own max_completion_tokens
+    // cap. Callers who pass an explicit max_tokens still hit the same gap —
+    // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-preview": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-preview",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["tencent/fp8"],
                     allow_fallbacks: false,
                 },
             },
@@ -336,6 +415,22 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: {
                 provider: {
                     only: ["Together"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    // Azure primary, OpenAI second: both OpenRouter tags bill the same
+    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
+    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
+    // The azure tag does not advertise tools, so tool requests are served by
+    // the openai tag at the same rate.
+    "openai/gpt-4o-mini": () =>
+        createOpenRouterModelConfig({
+            model: "openai/gpt-4o-mini",
+            defaultOptions: {
+                provider: {
+                    order: ["azure", "openai"],
+                    ignore: ["azure/swedencentral"],
                     allow_fallbacks: false,
                 },
             },
@@ -366,8 +461,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         }),
-    "MiniMaxAI/MiniMax-M2.7": () =>
-        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -380,18 +473,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
-        "mistralai/mistral-large-2512",
-        "mistral/zdr",
-    ),
+    "mistral-large-direct": () =>
+        createMistralModelConfig({ model: "mistral-large-2512" }),
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "novita/bf16",
+        16384,
     ),
+    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -403,6 +496,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
+    ),
+    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-5.5",
+        "anthropic",
     ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
@@ -416,30 +513,39 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ),
-    "mistral-openrouter-eu": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral/eu",
-    ),
-    "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
+    "gemini-3-flash-openrouter-vertex-global":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-3-flash-preview",
+            "google-vertex/global",
+        ),
+    "gemini-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
         "gemini-3.7-flash",
-        "google-ai-studio/priority",
+        "google-vertex/global",
     ),
-    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+    "gemini-3.8-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.8-flash",
+        "google-vertex/global",
+    ),
+    "gemini-fast-openrouter-vertex-eu": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-ai-studio",
+        "google-vertex/eu",
     ),
-    "gemini-flash-lite-3.5-openrouter-ai-studio-flex":
+    "gemini-flash-lite-3.5-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3.5-flash-lite",
-            "google-ai-studio/flex",
+            "google-vertex/global",
         ),
-    "gemini-large-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+    "gemini-large-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
         "gemini-3.1-pro-preview",
-        "google-ai-studio",
+        "google-vertex/global",
     ),
     "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
+    ),
+    "z-ai/glm-5.3-flashx": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3-flashx",
+        "z-ai/fp8",
     ),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
@@ -474,6 +580,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
+    "accounts/fireworks/models/deepseek-v4p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4p1-flash",
+        }),
+    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4.1-flash",
+        "deepinfra/fp8",
+    ),
     "accounts/fireworks/models/deepseek-v4-flash-vision-exp": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
@@ -501,7 +615,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/qwen3p8-2p4t-a95b",
         }),
 
-    // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
+    // -- Mistral Small ---------------------------------------------------------
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
     // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
     // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
@@ -514,16 +628,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         }),
     "mistral-small-2603": () =>
+        createMistralModelConfig({
+            model: "mistral-small-2603",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["mistral"],
-                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
-                    allow_fallbacks: false,
-                },
-            },
+            defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -561,6 +673,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-opus-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-fable-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5",
@@ -583,33 +700,33 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
-    // -- OpenRouter (Gemini via pinned Google Vertex routes) -----------------
-    "google/gemini-3-flash-preview": createPinnedOpenRouterGeminiConfig(
+    // -- Google Vertex AI (Gemini) -------------------------------------------
+    "google/gemini-3-flash-preview": createVertexGeminiConfig(
         "gemini-3-flash-preview",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.1-pro-preview": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.1-pro-preview": createVertexGeminiConfig(
         "gemini-3.1-pro-preview",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-2.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "global",
     ),
-    "google/gemini-3.5-flash-lite": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.7-flash": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.7-flash": createVertexGeminiConfig(
         "gemini-3.7-flash",
-        "google-vertex/global",
+        "global",
     ),
-    "google/gemini-3.8-flash": createPinnedOpenRouterGeminiConfig(
+    "google/gemini-3.8-flash": createVertexGeminiConfig(
         "gemini-3.8-flash",
-        "google-vertex/global",
+        "global",
     ),
 
-    // -- Google Vertex AI (dedicated Gemini Search services) -----------------
+    // Dedicated Gemini Search services use the same direct Vertex adapter.
     "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
         "global",
@@ -673,6 +790,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/llama-4-scout": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/llama-4-scout",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                max_tokens: 16384,
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
@@ -690,13 +816,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
-    // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
-    "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
-    ),
-
     // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
     // Exact provider pins keep OpenRouter routing and billing deterministic.
     "qwen/qwen3-coder-next": createPinnedOpenRouterConfig(

@@ -37,27 +37,72 @@ function requestedCompletionTokens(request: Record<string, unknown>): number {
     );
 }
 
+function hasToolHistory(value: unknown): boolean {
+    if (!Array.isArray(value)) return false;
+    // Chat messages and Responses input items carry tool history at this level.
+    // Do not recurse into user content or function argument JSON.
+    return value.some(
+        (item) =>
+            item &&
+            typeof item === "object" &&
+            (item.role === "tool" ||
+                item.role === "function" ||
+                item.type === "function_call" ||
+                item.type === "function_call_output" ||
+                item.function_call != null ||
+                (Array.isArray(item.tool_calls) && item.tool_calls.length > 0)),
+    );
+}
+
+function requestsStructuredOutput(format: unknown): boolean {
+    return (
+        !!format &&
+        typeof format === "object" &&
+        "type" in format &&
+        format.type !== "text"
+    );
+}
+
+/** Validate declared text capabilities before any provider attempt. */
+export function textCapabilityError(
+    definition: ModelDefinition | undefined,
+    request: Record<string, unknown>,
+): string | undefined {
+    if (!definition) return;
+    if (
+        definition.tools === false &&
+        ((Array.isArray(request.tools) && request.tools.length > 0) ||
+            (Array.isArray(request.functions) &&
+                request.functions.length > 0) ||
+            forcesToolChoice(request.tool_choice) ||
+            forcesToolChoice(request.function_call) ||
+            hasToolHistory(request.messages) ||
+            hasToolHistory(request.input))
+    )
+        return "This model does not support tool calling or tool history";
+    const text = request.text as { format?: unknown } | undefined;
+    if (
+        definition.supportsStructuredOutput === false &&
+        (requestsStructuredOutput(request.response_format) ||
+            requestsStructuredOutput(text?.format))
+    )
+        return "This model does not support structured output; use text format";
+    if (
+        definition.maxCompletionTokens !== undefined &&
+        requestedCompletionTokens(request) > definition.maxCompletionTokens
+    )
+        return `This model supports at most ${definition.maxCompletionTokens} output tokens`;
+    if (
+        definition.maxReferenceImages !== undefined &&
+        countReferenceImages(request) > definition.maxReferenceImages
+    )
+        return `This model supports at most ${definition.maxReferenceImages} reference images`;
+}
+
 /** Whether a fallback route can honor this text request's public contract. */
 export function supportsTextFallbackRequest(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
 ): boolean {
-    if (!definition) return true;
-    if (
-        definition.supportsForcedToolChoice === false &&
-        (forcesToolChoice(request.tool_choice) ||
-            forcesToolChoice(request.function_call))
-    ) {
-        return false;
-    }
-    if (
-        definition.maxCompletionTokens !== undefined &&
-        requestedCompletionTokens(request) > definition.maxCompletionTokens
-    ) {
-        return false;
-    }
-    return (
-        definition.maxReferenceImages === undefined ||
-        countReferenceImages(request) <= definition.maxReferenceImages
-    );
+    return textCapabilityError(definition, request) === undefined;
 }

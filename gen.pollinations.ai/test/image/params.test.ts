@@ -66,7 +66,7 @@ describe("ImageParamsSchema", () => {
                 }).success,
             ).toBe(true);
         }
-        for (const resolution of ["480p", "768p"] as const) {
+        for (const resolution of ["480p", "768p", "1080p"] as const) {
             expect(
                 ImageParamsSchema.safeParse({
                     model: "minimax/minimax-h3-max-turbo",

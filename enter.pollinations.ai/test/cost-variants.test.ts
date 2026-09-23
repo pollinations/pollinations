@@ -108,15 +108,16 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_256k"],
         [256_001, "context_256k"],
-    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+    ] as const)("Qwen3.7 Flash OpenRouter fallback selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
         expect(
-            bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
+            bill("qwen/qwen3.7-flash:openrouter:alibaba", { promptTextTokens })
+                .costVariant,
         ).toBe(expectedVariant);
     });
 
-    it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
+    it("Qwen3.7 Flash OpenRouter fallback counts cached and media tokens toward its tiers", () => {
         expect(
-            bill("qwen/qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash:openrouter:alibaba", {
                 promptTextTokens: 20_000,
                 promptCachedTokens: 5_000,
                 promptCacheWriteTokens: 2_000,
@@ -125,7 +126,7 @@ describe("long-context cost variants", () => {
             }).costVariant,
         ).toBe("context_32k");
         expect(
-            bill("qwen/qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash:openrouter:alibaba", {
                 promptTextTokens: 200_000,
                 promptCachedTokens: 20_000,
                 promptCacheWriteTokens: 10_000,
@@ -135,7 +136,7 @@ describe("long-context cost variants", () => {
         ).toBe("context_256k");
     });
 
-    it("Qwen3.7 Flash applies every advertised token rate per tier", () => {
+    it("Qwen3.7 Flash OpenRouter fallback applies every advertised token rate per tier", () => {
         const expectedRates = [
             [
                 31_999,
@@ -176,14 +177,16 @@ describe("long-context cost variants", () => {
         ] as const;
 
         for (const [promptTextTokens, variant, rates] of expectedRates) {
-            const billing = bill("qwen/qwen3.7-flash", { promptTextTokens });
+            const billing = bill("qwen/qwen3.7-flash:openrouter:alibaba", {
+                promptTextTokens,
+            });
             expect(billing.costVariant).toBe(variant);
             for (const [usageType, perMillionTokens] of Object.entries(rates)) {
                 expect(
                     billing.priceDefinition[
                         usageType as keyof typeof billing.priceDefinition
                     ],
-                ).toBeCloseTo(perMillionTokens / 1e6, 15);
+                ).toBeCloseTo((perMillionTokens / 1e6) * 1.055, 15);
             }
         }
     });
@@ -195,28 +198,27 @@ describe("long-context cost variants", () => {
         [256_001, "context_256k"],
     ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
         expect(
-            bill("qwen/qwen3.7-flash:alibaba", { promptTextTokens })
-                .costVariant,
+            bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
         ).toBe(expectedVariant);
     });
 
-    it("records direct Alibaba explicit-cache cost without changing the quote", () => {
+    it("records OpenRouter fallback cost while retaining the direct explicit-cache quote", () => {
         const billing = fallbackBill(
             "qwen/qwen3.7-flash",
-            "qwen/qwen3.7-flash:alibaba",
+            "qwen/qwen3.7-flash:openrouter:alibaba",
             { promptCachedTokens: 10_000 },
             { hasExplicitCacheHit: true },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
-        expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00006 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00003, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.00006 * 1.055, 12);
     });
 
-    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+    it("keeps the Llama Scout quote and records the fee-inclusive Novita cost", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:openrouter:vertex-us-east5",
+            "meta/llama-4-scout:openrouter:novita-bf16",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -224,11 +226,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.95 * 1.055, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
-        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.95 * 1.055, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.7,
+            0.95 * 1.055 - 0.5,
             12,
         );
     });
@@ -316,13 +318,13 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 0.4 / 1e6,
-            promptCacheWriteTokens: 4 / 1e6,
-            promptAudioTokens: 4 / 1e6,
-            promptImageTokens: 2 / 1e6,
-            promptVideoTokens: 4 / 1e6,
-            completionTextTokens: 18 / 1e6,
+            promptTextTokens: (4 / 1e6) * 1.055,
+            promptCachedTokens: (0.4 / 1e6) * 1.055,
+            promptCacheWriteTokens: (4 / 1e6) * 1.055,
+            promptAudioTokens: (4 / 1e6) * 1.055,
+            promptImageTokens: (2 / 1e6) * 1.055,
+            promptVideoTokens: (4 / 1e6) * 1.055,
+            completionTextTokens: (18 / 1e6) * 1.055,
         });
     });
 
@@ -341,9 +343,9 @@ describe("long-context cost variants", () => {
             output: baseOutput,
         });
         expect(base.costVariant).toBeUndefined();
-        expect(base.cost.totalCost).toBeCloseTo(0.2375, 12);
+        expect(base.cost.totalCost).toBeCloseTo(0.65, 12);
         expect(base.adjustments).toHaveLength(1);
-        expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
+        expect(base.adjustments[0].cost).toBeCloseTo(0.45, 12);
 
         const long = calculateUsageBilling({
             model: "google/gemini-3.1-pro-preview",
@@ -360,9 +362,32 @@ describe("long-context cost variants", () => {
             },
         });
         expect(long.costVariant).toBe("long_context");
-        expect(long.cost.totalCost).toBeCloseTo(4.375, 12);
+        expect(long.cost.totalCost).toBeCloseTo(8.5, 12);
         expect(long.adjustments).toHaveLength(1);
-        expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
+        expect(long.adjustments[0].cost).toBeCloseTo(4.5, 12);
+    });
+
+    it("keeps Vertex cache-storage pricing when OpenRouter serves the fallback", () => {
+        const billing = calculateUsageBilling({
+            model: "google/gemini-3.1-pro-preview",
+            usage: {},
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview:openrouter:vertex-global",
+            ),
+            quotedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
+            output: {
+                usage: {
+                    prompt_tokens_details: {
+                        cache_write_tokens: 1_000_000,
+                    },
+                },
+            },
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.375 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(4.5 * 1.055, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {
@@ -371,10 +396,10 @@ describe("long-context cost variants", () => {
                 promptTextTokens: 256_000,
             }).priceDefinition,
         ).toMatchObject({
-            promptTextTokens: 0.96 / 1e6,
-            promptCachedTokens: 0.192 / 1e6,
-            promptCacheWriteTokens: 1.2 / 1e6,
-            completionTextTokens: 3.84 / 1e6,
+            promptTextTokens: (0.96 / 1e6) * 1.055,
+            promptCachedTokens: (0.192 / 1e6) * 1.055,
+            promptCacheWriteTokens: (1.2 / 1e6) * 1.055,
+            completionTextTokens: (3.84 / 1e6) * 1.055,
         });
     });
 

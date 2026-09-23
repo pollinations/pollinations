@@ -87,6 +87,9 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
   protect keys while an old exact-string reader is still running.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
+- If a model or provider is missing from the registry, check `git log --all -- <path>`
+  and `gh pr list --state merged --search <model>` before re-adding it — it may have been
+  removed on purpose, added and reverted, or replaced.
 - Trace every reachable runtime route and any configured fallback.
 - Distinguish the configured provider from the provider that served an observed request.
 - Compare the intended change with open PRs and active plan entries.
@@ -197,9 +200,19 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   the migration; verify no audited old IDs remain. Do not rewrite historical
   analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
-- Add aliases only for existing compatibility contracts or explicit approval.
+- New models, including new versions and checkpoints, must have no aliases.
+- Preserve existing alias targets until removal.
+- Retire all legacy aliases through explicit migrations.
 - Keep model names and aliases in `shared/registry/`; use the live model
   catalog for public listings rather than maintaining a duplicate Markdown list.
+- OpenRouter registry costs include the 5.5% credit-purchase fee: write each
+  non-zero base rate and cost-variant rate as `baseRate * 1.055` (for example,
+  `perMillion(0.75) * 1.055`). Include search, cache-storage, and other billable
+  adjustments, including provider-reported charges. Keep `priceMultiplier`
+  unchanged; prices derive from the fee-inclusive cost. Declare this in the
+  registry entries, not a provider-wide transformation. Apply the fee exactly
+  once: same-provider fallbacks may inherit fee-inclusive rates; cross-provider
+  fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

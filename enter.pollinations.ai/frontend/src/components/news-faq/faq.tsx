@@ -1,4 +1,5 @@
-import { Markdown, Surface } from "@pollinations/ui";
+import { Surface } from "@pollinations/ui";
+import { Markdown } from "@pollinations/ui/markdown";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";

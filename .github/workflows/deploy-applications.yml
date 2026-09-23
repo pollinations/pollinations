@@ -34,8 +34,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Test deployment discovery
-        run: node --test operations/deployment/discover.test.cjs
+      - name: Test deployment discovery and health checks
+        run: node --test operations/deployment/discover.test.cjs operations/deployment/deploy.test.cjs
 
       - name: Detect changed applications
         id: detect

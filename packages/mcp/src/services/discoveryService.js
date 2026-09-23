@@ -23,7 +23,7 @@ async function listModels(params, context) {
 
 async function getModelStatus(params, context) {
     const status = await fetchJsonWithAuth(
-        buildUrl("/v1/models/status", { minutes: params.minutes }),
+        buildUrl("/models/status", { minutes: params.minutes }),
         {},
         context,
     );
@@ -62,7 +62,7 @@ export const discoveryTools = [
     ],
     [
         "getModelStatus",
-        "Return recent per-model request counts, errors, and latency from GET /v1/models/status.",
+        "Return recent per-model and per-route request counts, errors, fallback rescues, and latency from GET /models/status.",
         {
             minutes: z
                 .number()

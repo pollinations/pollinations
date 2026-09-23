@@ -84,15 +84,36 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
-                name: "Composio",
+                name: "Connected Apps",
                 description:
-                    "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
                     rates: [
                         {
                             name: "composio.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0002",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "computer",
+                name: "Computer",
+                description:
+                    "A private persistent computer: files and a bash shell that survive between runs.",
+                url: "https://gen.pollinations.ai/mcp/computer",
+                pricing: {
+                    description: "Preview price",
+                    rates: [
+                        {
+                            name: "computer.tool_call.v1",
                             label: "Tool call",
                             kind: "tool_call",
                             price: "0.0002",
@@ -236,6 +257,44 @@ test("routes Composio with the authenticated user", async () => {
         jsonrpc: "2.0",
         id: 1,
         result: { content: [{ type: "text", text: userId }] },
+    });
+});
+
+test("routes Computer with the authenticated user and bills the flat call rate", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, githubId: 583231, githubUsername: "octocat" },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "x-pollinations-user-id": "spoofed-user",
+                "x-pollinations-user-github": "1+spoofed",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [
+                { type: "text", text: `computer:${userId}:583231+octocat` },
+            ],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.9998,
+        packBalance: 0,
     });
 });
 

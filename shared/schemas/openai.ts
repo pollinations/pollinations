@@ -1,6 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { ModelHealthSchema } from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -310,6 +311,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        metadata: z
+            .record(z.string(), z.string())
+            .nullish()
+            .describe(
+                "Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts.",
+            ),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({
@@ -347,7 +354,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
             )
             .optional(),
         temperature: z
@@ -362,7 +369,7 @@ export const CreateChatCompletionRequestSchema = z
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
-        parallel_tool_calls: z.boolean().optional().default(true),
+        parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
@@ -434,7 +441,7 @@ export const CreateResponseRequestSchema = z
         tools: z.array(ResponseFunctionToolSchema).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
-        metadata: z.record(z.string(), z.string()).optional(),
+        metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -742,10 +749,17 @@ export const OpenAIModelSchema = z
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
+        supported_parameters: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: ModelHealthSchema.optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

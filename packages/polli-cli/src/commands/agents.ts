@@ -10,18 +10,30 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type Agent = {
+type AgentBase = {
     id: string;
     name: string;
     title: string;
     description: string | null;
     visibility: "private" | "public";
-    systemPrompt: string;
-    baseModel: string;
-    mcpServers: string[];
     createdAt: string;
     updatedAt: string;
 };
+
+type PromptAgent = AgentBase & {
+    type: "prompt_agent";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: string[];
+};
+
+type CodeAgent = AgentBase & {
+    type: "code_agent";
+    repository: string;
+    deployedCommitSha: string;
+};
+
+type Agent = PromptAgent | CodeAgent;
 
 function readConfig(path: string): Record<string, unknown> {
     try {
@@ -39,7 +51,7 @@ function readConfig(path: string): Record<string, unknown> {
 }
 
 export function agentBody(
-    configPath: string,
+    configPath: string | undefined,
     opts: Record<string, unknown>,
 ): Record<string, unknown> {
     if (
@@ -51,7 +63,7 @@ export function agentBody(
         process.exit(1);
     }
     return {
-        ...readConfig(configPath),
+        ...(configPath && readConfig(configPath)),
         ...(opts.name !== undefined && { name: opts.name }),
         ...(opts.title !== undefined && { title: opts.title }),
         ...(opts.description !== undefined && {
@@ -72,13 +84,24 @@ function printAgents(agents: Agent[]): void {
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
             name: agent.name,
-            base_model: agent.baseModel,
+            type: agent.type,
+            base_model: agent.type === "prompt_agent" ? agent.baseModel : "-",
             visibility: agent.visibility,
-            pollinations_tools: agent.mcpServers.includes("pollinations")
-                ? "yes"
-                : "no",
+            pollinations_tools:
+                agent.type === "prompt_agent"
+                    ? agent.mcpServers.includes("pollinations")
+                        ? "yes"
+                        : "no"
+                    : "built in",
         })),
-        ["id", "name", "base_model", "visibility", "pollinations_tools"],
+        [
+            "id",
+            "name",
+            "type",
+            "base_model",
+            "visibility",
+            "pollinations_tools",
+        ],
     );
 }
 
@@ -120,18 +143,17 @@ const get = new Command("get")
     });
 
 const create = new Command("create")
-    .description("Create a prompt agent")
+    .description("Create a managed agent")
     .requiredOption(
         "--config <file>",
         "JSON agent config file sent directly to the API",
     )
-    .requiredOption("--name <name>", "Callable model name")
-    .requiredOption("--title <title>", "Display title shown in the catalog")
-    .option("--description <text>", "Agent description", "")
+    .option("--name <name>", "Prompt-agent callable model name")
+    .option("--title <title>", "Prompt-agent catalog title")
+    .option("--description <text>", "Prompt-agent description")
     .option(
         "--visibility <visibility>",
         "Agent visibility: private (default) or public",
-        "private",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -155,11 +177,11 @@ const create = new Command("create")
     });
 
 const update = new Command("update")
-    .description("Update an agent")
+    .description("Update an agent; fields you leave out keep their values")
     .argument("<id>", "Agent id")
-    .requiredOption(
+    .option(
         "--config <file>",
-        "JSON agent config file sent directly to the API",
+        'JSON with only the fields to change, e.g. {"systemPrompt": "..."}',
     )
     .option("--name <name>", "Callable model name")
     .option("--title <title>", "Display title shown in the catalog")
@@ -209,10 +231,38 @@ const remove = new Command("delete")
         }
     });
 
+const sync = new Command("sync")
+    .description("Deploy the latest revision of a code agent")
+    .argument("<id>", "Agent id")
+    .action(async (id) => {
+        try {
+            const result = await gen<{
+                updated: boolean;
+                deployedCommitSha: string;
+            }>(`/account/agents/${encodeURIComponent(id)}/sync`, {
+                method: "POST",
+            });
+            if (getOutputMode() === "json") printResult(result);
+            else {
+                printSuccess(
+                    result.updated
+                        ? `Agent deployed at ${result.deployedCommitSha}`
+                        : `Agent already uses ${result.deployedCommitSha}`,
+                );
+            }
+        } catch (error) {
+            printError(
+                `Failed to sync agent: ${error instanceof Error ? error.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    });
+
 export const agentsCommand = new Command("agents")
-    .description("Manage prompt agents")
+    .description("Manage agents")
     .addCommand(list)
     .addCommand(get)
     .addCommand(create)
     .addCommand(update)
+    .addCommand(sync)
     .addCommand(remove);

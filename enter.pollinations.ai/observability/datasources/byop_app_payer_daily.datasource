@@ -16,7 +16,8 @@ SCHEMA >
     `owner_user_id` String,
     `is_external` Bool,
     `billed_paid_calls` AggregateFunction(sum, UInt64),
-    `gross_consumption` AggregateFunction(sum, Float64)
+    `gross_consumption` AggregateFunction(sum, Float64),
+    `paid_consumption` AggregateFunction(sum, Float64)
 
 ENGINE AggregatingMergeTree
 ENGINE_PARTITION_KEY toYYYYMM(day)

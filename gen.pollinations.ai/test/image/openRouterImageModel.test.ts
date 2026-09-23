@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
+    callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -259,6 +260,88 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
     });
 });
 
+describe("OpenRouter FLUX.2 Max", () => {
+    function mockFlux2MaxFetch(requests: Record<string, unknown>[]) {
+        return vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (
+                    href === REFERENCE_IMAGE_URL ||
+                    href === WIDE_REFERENCE_IMAGE_URL
+                ) {
+                    return new Response(
+                        href === WIDE_REFERENCE_IMAGE_URL ? WIDE_PNG : PNG,
+                        { headers: { "Content-Type": "image/png" } },
+                    );
+                }
+                if (href !== OPENROUTER_IMAGE_URL) {
+                    return new Response("unexpected URL", { status: 404 });
+                }
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    data: [{ b64_json: "AQID" }],
+                    usage: { cost: 0.05 },
+                });
+            });
+    }
+
+    it("downloads and inlines reference images as data URIs (BFL rejects redirects on raw URLs)", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockFlux2MaxFetch(requests);
+
+        const result = await callOpenRouterFlux2MaxAPI("test prompt", {
+            ...baseParams,
+            model: "black-forest-labs/flux.2-max:openrouter",
+            image: [REFERENCE_IMAGE_URL, WIDE_REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "black-forest-labs/flux.2-max",
+            prompt: "test prompt",
+            n: 1,
+            seed: 42,
+            provider: {
+                only: ["black-forest-labs/us-3"],
+                allow_fallbacks: false,
+            },
+            aspect_ratio: "1:1",
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+                {
+                    type: "image_url",
+                    image_url: {
+                        url: `data:image/png;base64,${WIDE_PNG.toString("base64")}`,
+                    },
+                },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux.2-max:openrouter",
+            usage: { completionImageTokens: 1.048576 },
+        });
+    });
+
+    it("rejects more than 8 reference images", async () => {
+        await expect(
+            callOpenRouterFlux2MaxAPI("test prompt", {
+                ...baseParams,
+                model: "black-forest-labs/flux.2-max:openrouter",
+                image: Array(9).fill("https://example.com/ref.png"),
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "FLUX.2 Max supports at most 8 reference images",
+        });
+    });
+});
+
 const geminiUsage = {
     prompt_tokens: 9,
     completion_tokens: 1290,
@@ -316,7 +399,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             width: 1024,
             height: 1024,
         });
@@ -335,7 +418,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-2.5-flash-image",
+            actualModel:
+                "google/gemini-2.5-flash-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 9,
                 completionImageTokens: 1290,
@@ -363,7 +447,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-image",
+            model: "google/gemini-3.1-flash-image:openrouter:vertex-global",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -385,7 +469,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3.1-flash-image",
+            actualModel:
+                "google/gemini-3.1-flash-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 12,
                 completionTextTokens: 12,
@@ -411,7 +496,7 @@ describe("OpenRouter Gemini image", () => {
 
         await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-image",
+            model: "google/gemini-3.1-flash-image:openrouter:vertex-global",
             width,
             height,
             reasoning: "fast",
@@ -441,7 +526,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3.1-flash-lite-image",
+            model: "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
             width: 1920,
             height: 1080,
             reasoning: "pro",
@@ -463,7 +548,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3.1-flash-lite-image",
+            actualModel:
+                "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
             usage: {
                 promptTextTokens: 10,
                 completionReasoningTokens: 4,
@@ -492,7 +578,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("test prompt", {
             ...baseParams,
-            model: "google/gemini-3-pro-image",
+            model: "google/gemini-3-pro-image:openrouter:ai-studio-global",
             width: 3840,
             height: 2160,
             reasoning: "pro",
@@ -513,7 +599,8 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            actualModel: "google/gemini-3-pro-image",
+            actualModel:
+                "google/gemini-3-pro-image:openrouter:ai-studio-global",
             usage: {
                 promptTextTokens: 14,
                 completionReasoningTokens: 8,
@@ -537,7 +624,7 @@ describe("OpenRouter Gemini image", () => {
 
         const result = await callOpenRouterGeminiImageAPI("edit prompt", {
             ...baseParams,
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             width: 1280,
             height: 720,
             image: [REFERENCE_IMAGE_URL],
@@ -596,7 +683,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             }),
         ).rejects.toMatchObject({ status: 502 });
     });
@@ -619,7 +706,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("test prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
             }),
         ).rejects.toMatchObject({
             status: 400,
@@ -637,7 +724,7 @@ describe("OpenRouter Gemini image", () => {
         await expect(
             callOpenRouterGeminiImageAPI("edit prompt", {
                 ...baseParams,
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
                 image: [
                     REFERENCE_IMAGE_URL,
                     REFERENCE_IMAGE_URL,

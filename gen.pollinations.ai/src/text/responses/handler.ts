@@ -24,10 +24,14 @@ import {
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
+import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
-import { supportsTextFallbackRequest } from "../fallbackCompatibility.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "../fallbackCompatibility.js";
 import type { ServiceError } from "../types.js";
 import {
     callDirectResponses,
@@ -121,12 +125,14 @@ async function responsesClientForAttempt(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
-    if (endpoint.type === "prompt_agent") {
+    if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;
         if (typeof apiKey !== "string" || !apiKey) {
             throw new Error("Managed agent request has no agent run token");
         }
-        return createPromptAgentResponsesClient(c, endpoint, apiKey);
+        return endpoint.type === "prompt_agent"
+            ? createPromptAgentResponsesClient(c, endpoint, apiKey)
+            : createCodeAgentResponsesClient(c, endpoint, apiKey);
     }
     const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
     if (!target) {
@@ -144,6 +150,12 @@ async function handleDirectResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const capabilityError = textCapabilityError(
+            c.var.model.definition,
+            request,
+        );
+        if (capabilityError)
+            throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),

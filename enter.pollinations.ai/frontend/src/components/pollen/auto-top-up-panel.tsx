@@ -69,6 +69,7 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
+    returnToTopUp?: { redirect?: string };
 };
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
@@ -123,6 +124,7 @@ type ToggleStatus = "off" | "draft" | "on";
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
+    returnToTopUp,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [packAmountUsd, setPackAmountUsd] = useState(
@@ -190,7 +192,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 clearAutoTopUpDraft();
             }
             const response = await apiClient.stripe.billing.portal.$post({
-                json: {},
+                json: returnToTopUp
+                    ? { return: "top-up", redirect: returnToTopUp.redirect }
+                    : {},
             });
             const payload = (await response.json().catch(() => ({}))) as {
                 url?: unknown;
@@ -464,6 +468,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 as="button"
                 type="button"
                 onClick={onSave}
+                intent="commit"
                 disabled={saveDisabled}
                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
@@ -488,7 +493,11 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip triggerAs="span" content={content} className={className}>
+        <Tooltip
+            triggerAs="span"
+            content={content}
+            className={cn("polli:cursor-not-allowed", className)}
+        >
             {children}
         </Tooltip>
     );

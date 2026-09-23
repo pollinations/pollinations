@@ -62,6 +62,7 @@ export type UsageType =
     | "promptAudioSeconds"
     | "promptImageTokens"
     | "promptVideoTokens"
+    | "promptVideoSeconds"
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
@@ -187,22 +188,25 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
+    // When this model or route stops being served (ms epoch), set only when
+    // known: a provider's published retirement, or our own decision to retire
+    // it. Exact cutoff when the provider gives one, else the start of the day.
+    // Fallback routes never inherit it.
+    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
-    /** Internal route limitation: false when forced/named tool selection fails. */
-    supportsForcedToolChoice?: boolean;
+    /** Controls honored by this model through `/v1/chat/completions`. */
+    supportedParameters?: string[];
     reasoning?: boolean;
     search?: boolean;
-    // Supported Perplexity search-context sizes; first entry is the default.
-    // A single entry is fixed and ignores request overrides.
-    searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];
@@ -228,8 +232,10 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
-    /** Internal provider-route output-token cap used for fallback compatibility. */
+    /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
+    /** False when the model rejects JSON/structured output requests. */
+    supportsStructuredOutput?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

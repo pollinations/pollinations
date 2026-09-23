@@ -38,6 +38,7 @@ export const user = sqliteTable("user", {
   // Public branding shared by every community model owned by this account.
   communityProviderName: text("community_provider_name"),
   communityProviderUrl: text("community_provider_url"),
+  communityProviderIconUrl: text("community_provider_icon_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -296,6 +297,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // call is sent a run token that spends the caller's balance.
   //   proxy         → the owner's server, called with its upstream secret
   //   prompt_agent  → an agent Gen runs, named by this row's id
+  //   code_agent    → a single JavaScript module Gen dispatches
   //   endpoint_agent → an agent on the owner's own server
   type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
   // Every listing stores an OpenAI-compatible target. Prompt agents use an
@@ -343,15 +345,15 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
   check(
     "community_endpoint_type",
-    sql`type IN ('proxy', 'prompt_agent', 'endpoint_agent')`,
+    sql`type IN ('proxy', 'prompt_agent', 'code_agent', 'endpoint_agent')`,
   ),
   check(
     "community_endpoint_prompt_agent_model",
-    sql`type != 'prompt_agent' OR upstream_model = id`,
+    sql`type NOT IN ('prompt_agent', 'code_agent') OR upstream_model = id`,
   ),
   check(
     "community_endpoint_base_url",
-    sql`type != 'prompt_agent' OR base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1'`,
+    sql`(type = 'prompt_agent' AND base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1') OR (type = 'code_agent' AND base_url = 'https://code-agent-runtime.invalid/v1/responses') OR type NOT IN ('prompt_agent', 'code_agent')`,
   ),
 ]);
 

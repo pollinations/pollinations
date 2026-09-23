@@ -346,7 +346,7 @@ const chatParamsSchema = {
     parallel_tool_calls: z
         .boolean()
         .optional()
-        .describe("Allow parallel tool calls (default: true)"),
+        .describe("Allow parallel tool calls when supported by the model"),
     functions: z
         .array(
             z.object({

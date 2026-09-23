@@ -36,7 +36,9 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
@@ -59,7 +61,9 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
+    if (model.community) {
+        return model.brandIconUrl;
+    }
     const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

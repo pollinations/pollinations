@@ -174,8 +174,8 @@ def get_script_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def read_prompt_file(name: str) -> str:
-    with open(os.path.join(get_script_dir(), name), "r") as f:
+def read_prompt_file() -> str:
+    with open(os.path.join(get_script_dir(), "project-manager.md"), "r") as f:
         return f.read()
 
 
@@ -194,7 +194,7 @@ PROTECTED_LABELS = {
     "dev": {"DEV-TRACKING", "DEV-VOTING"},
 }
 
-# Pull requests get exactly one kind (listed in tie-break order, see pr-labels.md)
+# Pull requests get exactly one kind (listed in tie-break order, see project-manager.md)
 # plus optional flags.
 PR_KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
 PR_AI_FLAGS = {"BILLING", "SECURITY", "BUG"}
@@ -299,10 +299,10 @@ def classify_with_ai(
             f"{tracking_lines}\n"
         )
 
-    system_prompt = f"""{read_prompt_file("project-manager.md")}
+    system_prompt = f"""{read_prompt_file()}
 {tracking_block}
 ---
-**Context:** Author type is {"internal" if is_internal else "external"}
+**Context:** This is an issue; follow the Issues section. Author type is {"internal" if is_internal else "external"}
 """
 
     user_prompt = f"""
@@ -374,7 +374,11 @@ Body: {ISSUE_BODY[:2000]}
 Changed files ({len(files)}):
 {listed}{more}
 """
-    raw = ask_ai(read_prompt_file("pr-labels.md"), user_prompt)
+    system_prompt = f"""{read_prompt_file()}
+---
+**Context:** This is a pull request; follow the Pull requests section.
+"""
+    raw = ask_ai(system_prompt, user_prompt)
     if raw is None:
         fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
 

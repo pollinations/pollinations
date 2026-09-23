@@ -2,7 +2,6 @@ import {
     Alert,
     Button,
     ConfirmationDialog,
-    CopyButton,
     DiscordIcon,
     Field,
     FieldStack,
@@ -174,23 +173,9 @@ function AccountPage() {
                             <Text size="sm" tone="muted" className="truncate">
                                 {user.email}
                             </Text>
-                            <CopyButton
-                                value={user.id}
-                                tooltip={null}
-                                aria-label="Copy Pollinations ID"
-                                className="mt-1 flex max-w-full items-center gap-2 text-left font-mono text-xs text-theme-text-muted transition-colors hover:text-theme-text-strong"
-                            >
-                                {(copied) => (
-                                    <>
-                                        <span className="truncate">
-                                            {user.id}
-                                        </span>
-                                        <span className="shrink-0 font-sans font-medium">
-                                            {copied ? "Copied" : "Copy"}
-                                        </span>
-                                    </>
-                                )}
-                            </CopyButton>
+                            <p className="mt-1 truncate font-mono text-xs text-theme-text-muted">
+                                {user.id}
+                            </p>
                         </div>
                     </div>
                     <Button

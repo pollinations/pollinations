@@ -255,6 +255,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "xiaomi/mimo-v2.5-pro",
         "xiaomi/fp8",
     ),
+    "xiaomi/mimo-v2.6-flash": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.6-flash",
+        "xiaomi/fp8",
+    ),
+    "xiaomi/mimo-v2.6-pro": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.6-pro",
+        "xiaomi/fp8",
+    ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
         "novita/fp8",

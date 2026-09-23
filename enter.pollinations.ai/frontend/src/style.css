@@ -1,7 +1,8 @@
 @import "@pollinations/ui/app.css";
 
 .resource-dialog {
-    margin-block: auto;
+    /* Keep controls stationary when expandable content changes height. */
+    margin-block: 0;
     height: auto;
     max-height: calc(100dvh - 2rem);
 }

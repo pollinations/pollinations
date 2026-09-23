@@ -75,6 +75,11 @@ const OPENROUTER_ROUTES = [
         "deepinfra/bf16",
     ],
     [
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "moonshotai/kimi-k2.7-code",
+        "streamlake",
+    ],
+    [
         "deepseek/deepseek-v4-pro:openrouter:streamlake",
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",
@@ -660,9 +665,10 @@ describe("static provider fallbacks", () => {
             promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:openrouter:streamlake"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 0.85 / 1_000_000,
+            promptCacheWriteTokens: (0.7125 / 1_000_000) * 1.055,
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,

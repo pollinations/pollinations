@@ -645,13 +645,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "moonshotai/kimi-k2.7-code",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
-        transform: fireworksThinking,
+        config: portkeyConfig["kimi-code-openrouter-moonshot"],
+        transform: mandatoryReasoning,
     },
     {
-        name: "moonshotai/kimi-k2.7-code:deepinfra",
-        config: portkeyConfig["kimi-code-deepinfra"],
-        transform: fireworksThinking,
+        name: "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        config: portkeyConfig["kimi-code-openrouter-streamlake"],
+        transform: mandatoryReasoning,
     },
     {
         name: "moonshotai/kimi-k3",

@@ -319,6 +319,21 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    openRouterKimiMoonshot: [
+        ...TOOL_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+    ],
+    openRouterKimiStreamLake: [
+        ...TOOL_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+        "top_p",
+    ],
     openRouterDeepseekV41Flash: [
         ...CHAT,
         ...SAMPLING,

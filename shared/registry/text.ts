@@ -1769,30 +1769,29 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.7-code": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterKimiMoonshot,
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Fireworks accounts/fireworks/models/kimi-k2p7-code rates (2026-06-14):
-            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
-            promptTextTokens: perMillion(0.95),
-            promptCachedTokens: perMillion(0.19),
-            promptCacheWriteTokens: perMillion(0.95),
-            promptImageTokens: perMillion(0.95),
-            completionTextTokens: perMillion(4.0),
+            // OpenRouter Moonshot AI int4 rates (2026-09-23), including the
+            // account's 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.95) * 1.055,
+            promptCachedTokens: perMillion(0.19) * 1.055,
+            promptCacheWriteTokens: perMillion(0.95) * 1.055,
+            promptImageTokens: perMillion(0.95) * 1.055,
+            completionTextTokens: perMillion(4.0) * 1.055,
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
             "Built for agentic coding — plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 262144,

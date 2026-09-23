@@ -580,8 +580,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3",
         "friendli",
     ),
-    "kimi-code-deepinfra": () =>
-        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.7-Code" }),
+    "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
+        "moonshotai/kimi-k2.7-code",
+        "moonshotai/int4",
+    ),
+    // StreamLake cannot fetch remote image URLs.
+    "kimi-code-openrouter-streamlake": () => ({
+        ...createPinnedOpenRouterConfig(
+            "moonshotai/kimi-k2.7-code",
+            "streamlake",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "alibaba",
@@ -623,10 +633,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p7-code": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p7-code",
-        }),
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",

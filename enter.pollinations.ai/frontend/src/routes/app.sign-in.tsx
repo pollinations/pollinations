@@ -22,6 +22,9 @@ export const Route = createFileRoute("/app/sign-in")({
 function AppSignIn() {
     const { client_id, redirect_uri } = Route.useSearch();
     const { data: session, isPending } = authClient.useSession();
+    // Signed-out background checks can set isPending again.
+    const [sessionChecked, setSessionChecked] = useState(!isPending);
+    if (!isPending && !sessionChecked) setSessionChecked(true);
     const user = session?.user;
     // The issuer signs the whole query. "invalid" means the server knows no
     // such client (hand-typed or expired link); "unreachable" means the
@@ -53,7 +56,7 @@ function AppSignIn() {
     const parsedRedirect = parseAppUrl(redirect_uri);
     const redirectHost = parsedRedirect ? new URL(parsedRedirect).host : "";
 
-    if (isPending || client === "loading")
+    if (!sessionChecked || client === "loading")
         return <AuthModalLoading title="Sign in" />;
 
     if (client === "unreachable") {

@@ -109,8 +109,10 @@ When a pull request fits several kinds, pick the first matching kind in this lis
 ## Flags (zero or more)
 
 - `BILLING`: Changes money-handling code: Stripe, checkout, wallets, balances, debits, refunds, payouts, or Pollen rewards. Not for adding or repricing a model; `MODEL` already covers model pricing
-- `SECURITY`: Changes API keys, permissions, secrets, fraud or ban handling, or allowlists
-- `BUG`: Fixes a defect: something that errored, crashed, returned wrong results, or stopped working. Not for refactors, cleanups, tuning values or prices, routine updates, or new features
+- `SECURITY`: Changes API keys, permissions, secrets or secret files (`secrets/*.json`), fraud or ban handling, or allowlists
+- `BUG`: The main purpose is fixing a defect: something that errored, crashed, returned wrong results, or stopped working. A `fix:` title is a hint, not proof. Not for new features (even ones that also fix something small), refactors, cleanups, tuning values or prices, or routine updates
+- `AUTOMATED`: The author's account type is `Bot`
+- `POLLEN-QUEST`: A linked issue has the `POLLEN-QUEST` label
 
 Return an empty `flags` list when none apply.
 

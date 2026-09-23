@@ -195,13 +195,10 @@ PROTECTED_LABELS = {
 }
 
 # Pull requests get exactly one kind (listed in tie-break order, see project-manager.md)
-# plus optional flags.
+# plus optional flags; the model picks all of them.
 PR_KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-PR_AI_FLAGS = {"BILLING", "SECURITY", "BUG"}
-SECRET_FILE_PATTERN = re.compile(r"(^|/)secrets/[^/]+\.json$|(^|/)\.sops\.yaml$")
+PR_FLAGS = {"BILLING", "SECURITY", "BUG", "AUTOMATED", "POLLEN-QUEST"}
 APP_SUBMISSION_BRANCH = re.compile(r"^auto/app-\d+(?:-|$)")
-# "fix(scope): ..." -> "fix"; the author's own prefix decides BUG when present.
-CONVENTIONAL_TYPE = re.compile(r"^(\w+)(?:\([^)]*\))?!?:")
 
 
 def normalize_labels(project: str, labels: list) -> list:
@@ -364,13 +361,17 @@ Body: {body[:2000]}
     return classification
 
 
-def classify_pr(files: list) -> dict:
-    """Pick one kind and any AI-judged flags for the current pull request."""
+def classify_pr(files: list, linked_issues: list) -> dict:
+    """Pick one kind and any flags for the current pull request."""
     listed = "\n".join(files[:300])
     more = f"\n... and {len(files) - 300} more" if len(files) > 300 else ""
+    author = ITEM_DATA.get("user", {})
     user_prompt = f"""
+Author: {author.get("login", "")} (account type: {author.get("type", "User")})
 Title: {ISSUE_TITLE}
 Body: {ISSUE_BODY[:2000]}
+Linked issues:
+{chr(10).join(linked_issues) or "none"}
 Changed files ({len(files)}):
 {listed}{more}
 """
@@ -387,9 +388,7 @@ Changed files ({len(files)}):
         fail(f"AI returned invalid kind for PR #{ISSUE_NUMBER}: {raw.get('kind')!r}")
 
     flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
-    flags = [
-        f.upper() for f in flags if isinstance(f, str) and f.upper() in PR_AI_FLAGS
-    ]
+    flags = [f.upper() for f in flags if isinstance(f, str) and f.upper() in PR_FLAGS]
     return {"kind": kind, "flags": flags, "reasoning": raw.get("reasoning", "")}
 
 
@@ -590,10 +589,11 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def links_quest_issue() -> bool:
-    """True when the PR title or body references an issue labelled POLLEN-QUEST."""
+def fetch_linked_issues() -> list:
+    """Title and labels of issues the PR title or body references, for the model."""
     refs = set(re.findall(r"(?:#|/issues/)(\d+)", f"{ISSUE_TITLE}\n{ISSUE_BODY}"))
     refs.discard(str(ISSUE_NUMBER))
+    linked = []
     for number in sorted(refs, key=int, reverse=True)[:10]:
         try:
             r = requests.get(
@@ -609,9 +609,10 @@ def links_quest_issue() -> bool:
             fail(
                 f"Failed to fetch referenced issue #{number}: {r.status_code} - {r.text[:200]}"
             )
-        if any(l.get("name") == "POLLEN-QUEST" for l in r.json().get("labels", [])):
-            return True
-    return False
+        issue = r.json()
+        labels = ", ".join(l.get("name", "") for l in issue.get("labels", []))
+        linked.append(f"#{number} {issue.get('title', '')} (labels: {labels or 'none'})")
+    return linked
 
 
 def label_pull_request():
@@ -619,22 +620,8 @@ def label_pull_request():
         log_debug(f"PR #{ISSUE_NUMBER} already has a kind label, skipping")
         return
 
-    files = fetch_pr_files()
-    classification = classify_pr(files)
-    flags = classification["flags"]
-    declared = CONVENTIONAL_TYPE.match(ISSUE_TITLE)
-    if declared:
-        flags = [f for f in flags if f != "BUG"]
-        if declared.group(1).lower() == "fix":
-            flags.append("BUG")
-    labels = [classification["kind"], *flags]
-    if any(SECRET_FILE_PATTERN.search(f) for f in files):
-        labels.append("SECURITY")
-    if ITEM_DATA.get("user", {}).get("type") == "Bot":
-        labels.append("AUTOMATED")
-    if links_quest_issue():
-        labels.append("POLLEN-QUEST")
-    labels = list(dict.fromkeys(labels))
+    classification = classify_pr(fetch_pr_files(), fetch_linked_issues())
+    labels = list(dict.fromkeys([classification["kind"], *classification["flags"]]))
     log_debug(f"PR #{ISSUE_NUMBER} labels: {labels} ({classification['reasoning']})")
 
     if DRY_RUN:

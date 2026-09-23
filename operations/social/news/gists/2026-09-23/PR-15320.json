@@ -1,0 +1,34 @@
+{
+  "pr_number": 15320,
+  "title": "feat: add MAI Image 2.6 Flash via Azure",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15320",
+  "merged_at": "2026-09-23T11:49:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `microsoft/mai-image-2.6-flash` at 0.75× Azure meter cost for generation and one-reference edits; preserves existing public endpoints.\n- East US only, pinned to `2026-07-31`, with the full shared 36-RPM quota (12 RPM per user). No fallback: the Sweden deployment of the same model returned Azure `dependency_error` 500s on every request (2026-09-23) and has been deleted. Both regions draw from one 36-RPM quota, so a second region added no capacity.\n- Validated 768/1024/1536px output, edits, invalid inputs and billing; focused gen tests, gen typecheck and the Enter price snapshot pass.\n- Successor for `microsoft/mai-image-2.5-flash`, which Azure retires on 2026-10-01. 2.6 Flash is Preview (no SLA) and retires 2027-01-09.\n- Known, not introduced here: disconnect/rejoin double execution also affects the live 2.5 Flash and is being investigated separately.\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh Flash bloom",
+    "blurb": "MAI Image 2.6 Flash has landed in the garden via Azure. It handles generations and one-reference edits while the older 2.5 branch prepares for its scheduled retirement.",
+    "summary": "Added `microsoft/mai-image-2.6-flash` via Azure East US for image generation and one-reference edits at 0.75× Azure meter cost, with 36 shared RPM (12 RPM per user) and validated 768, 1024, and 1536px outputs.",
+    "impact": "Builders can use the 2.6 Flash successor through the existing public image endpoints, gaining supported generation and edit coverage ahead of MAI Image 2.5 Flash's October 1, 2026 Azure retirement.",
+    "keywords": [
+      "image generation",
+      "Azure",
+      "MAI Image 2.6 Flash",
+      "image editing",
+      "models",
+      "rate limits"
+    ],
+    "visual_concept": "Depict MAI Image 2.6 Flash as a fast new camera-flower blooming from an Azure-blue cloud watering can, with several crisp pixel image prints at 768, 1024, and 1536 sizes. Polli, wearing tiny photographer goggles, tends the flower and uses one reference picture to help it bloom; a cozy East US garden sign and a small shared-quota water gauge suggest the single deployment without making the scene feel restrictive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny photographer goggles as she tends a blooming MAI Image 2.6 Flash camera-flower fed by a pastel Azure cloud watering can; crisp pixel art prints marked 768, 1024, and 1536 grow beside it, with a one-reference picture clipped to an easel, code-plants, and prominent lime green (#ecf874) garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15320.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny photographer goggles as she tends a blooming MAI Image 2.6 Flash camera-flower fed by a pastel Azure cloud watering can; crisp pixel art prints marked 768, 1024, and 1536 grow beside it, with a one-reference picture clipped to an easel, code-plants, and prominent lime green (#ecf874) garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-23T11:50:14.517294+00:00"
+}

@@ -915,16 +915,11 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                                 </div>
                             )}
                         </div>
-                        {/* Auto-check indicator: quests check themselves on open, so
-                    there's no button. Show a subtle "checking" line only while
-                    the automatic check is in flight; nothing when idle. */}
-                        <div className="mt-3 min-h-5">
-                            {state.checking && (
-                                <LoadingStatus>
-                                    Checking for new quests…
-                                </LoadingStatus>
-                            )}
-                        </div>
+                        {state.checking && (
+                            <LoadingStatus>
+                                Checking for new quests…
+                            </LoadingStatus>
+                        )}
                     </>
                 )}
                 {/* The preview counts available quests and their possible rewards. */}

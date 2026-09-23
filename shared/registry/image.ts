@@ -1110,15 +1110,17 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         // Fal pricing verified 2026-09-20: $0.02 per output megapixel for
         // text-to-image; edits bill $0.11/3 per input and output megapixel.
+        // Metered in whole pixels (UInt32 usage columns), so rates are
+        // per pixel: perMillion(x) = $x per megapixel.
         cost: {
             promptImageTokens: 0, // text-to-image has no input images; edits bill them
-            completionImageTokens: 0.02, // per output megapixel
+            completionImageTokens: perMillion(0.02),
         },
         ...defineCostVariants(
             {
                 edit: {
-                    promptImageTokens: 0.11 / 3, // per input megapixel
-                    completionImageTokens: 0.11 / 3, // per output megapixel
+                    promptImageTokens: perMillion(0.11 / 3),
+                    completionImageTokens: perMillion(0.11 / 3),
                 },
             },
             ({ input }) => (input?.hasImage ? "edit" : undefined),

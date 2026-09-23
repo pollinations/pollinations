@@ -74,7 +74,7 @@ afterEach(() => {
 });
 
 describe("qwenImage21Model", () => {
-    it("generates one seeded PNG and meters output megapixels", async () => {
+    it("generates one seeded PNG and meters output pixels", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -101,7 +101,7 @@ describe("qwenImage21Model", () => {
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
             actualModel: "qwen/qwen-image-2.1",
-            usage: { completionImageTokens: 1.048576 },
+            usage: { completionImageTokens: 1024 * 1024 },
         });
     });
 
@@ -121,7 +121,7 @@ describe("qwenImage21Model", () => {
             height: 736,
         });
         expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: (1280 * 736) / 1_000_000,
+            completionImageTokens: 1280 * 736,
         });
     });
 
@@ -140,7 +140,7 @@ describe("qwenImage21Model", () => {
 
         expect(requests[0].body.image_size).toEqual({ width, height });
         expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: (width * height) / 1_000_000,
+            completionImageTokens: width * height,
         });
     });
 
@@ -175,7 +175,7 @@ describe("qwenImage21Model", () => {
         expect(fetchSpy).not.toHaveBeenCalledWith(EDIT_URL, expect.anything());
     });
 
-    it("routes edits to the edit endpoint and meters input megapixels", async () => {
+    it("routes edits to the edit endpoint and meters input pixels as whole integers", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -187,9 +187,12 @@ describe("qwenImage21Model", () => {
         expect(requests[0].url).toBe(EDIT_URL);
         expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE, INPUT_IMAGE]);
         expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: (2 * 1024 * 512) / 1_000_000,
-            completionImageTokens: 1.048576,
+            promptImageTokens: 2 * 1024 * 512,
+            completionImageTokens: 1024 * 1024,
         });
+        for (const tokens of Object.values(result.trackingData?.usage ?? {})) {
+            expect(Number.isInteger(tokens)).toBe(true);
+        }
     });
 
     it("rejects more than ten reference images before calling Fal", async () => {

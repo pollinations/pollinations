@@ -76,12 +76,12 @@ export async function callQwenImage21API(
         });
     }
 
-    // Edits bill input megapixels too, so read each reference's size while
+    // Edits bill input pixels too, so read each reference's size while
     // inlining it (Fal also fetches redirect-free data URIs most reliably).
     // A reference whose dimensions can't be parsed is rejected outright,
-    // rather than silently billed as 0 input megapixels — fal still charges
+    // rather than silently billed as 0 input pixels — fal still charges
     // for it, so forwarding it unmetered would undercharge the request.
-    let inputMegapixels = 0;
+    let inputPixels = 0;
     const imageUrls = await Promise.all(
         images.map(async (image) => {
             const { buffer, mimeType } = await downloadUserImage(image);
@@ -92,8 +92,7 @@ export async function callQwenImage21API(
                         "qwen-image-2.1 could not determine a reference image's pixel dimensions; provide a PNG, GIF, BMP, or WebP with a valid header",
                 });
             }
-            inputMegapixels +=
-                (dimensions.width * dimensions.height) / 1_000_000;
+            inputPixels += dimensions.width * dimensions.height;
             return `data:${mimeType};base64,${buffer.toString("base64")}`;
         }),
     );
@@ -146,9 +145,11 @@ export async function callQwenImage21API(
         isChild: false,
         trackingData: {
             actualModel: "qwen/qwen-image-2.1",
+            // Whole pixels: usage columns are UInt32, and the registry rates
+            // are per pixel so fal's fractional-megapixel bill is preserved.
             usage: {
-                ...(isEdit ? { promptImageTokens: inputMegapixels } : {}),
-                completionImageTokens: (width * height) / 1_000_000,
+                ...(isEdit ? { promptImageTokens: inputPixels } : {}),
+                completionImageTokens: width * height,
             },
         },
     };

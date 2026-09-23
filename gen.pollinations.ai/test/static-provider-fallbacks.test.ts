@@ -65,6 +65,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "anthropic/claude-opus-5.5:openrouter:anthropic",
+        "anthropic/claude-opus-5.5",
+        "anthropic",
+    ],
+    [
         "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
         "meta/muse-glimmer-30b",
         "deepinfra/bf16",
@@ -487,6 +492,32 @@ describe("static provider fallbacks", () => {
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();
+    });
+
+    it("keeps a retirement date on the route that states it", () => {
+        const parentId = "google/gemini-2.5-flash-lite:search";
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            retirementDate: Date.UTC(2026, 9, 20),
+        };
+        const undatedId = `${parentId}:openrouter:ai-studio`;
+        const datedId = `${parentId}:openrouter:vertex`;
+        const services = mergeFallbacks(
+            { [parentId]: parent },
+            {
+                [parentId]: {
+                    [undatedId]: { provider: "openrouter" },
+                    [datedId]: {
+                        provider: "openrouter",
+                        retirementDate: Date.UTC(2027, 2, 15),
+                    },
+                },
+            },
+        );
+
+        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
+        expect(services[undatedId].retirementDate).toBeUndefined();
+        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {

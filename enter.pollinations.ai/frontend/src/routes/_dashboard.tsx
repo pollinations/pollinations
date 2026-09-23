@@ -172,6 +172,7 @@ export function SignedOutAccountArea({
         <div className="flex flex-col gap-2">
             <Button
                 as="button"
+                intent="brand"
                 data-theme="accent"
                 onClick={() => void signIn()}
                 disabled={isSigningIn}

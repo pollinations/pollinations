@@ -1,7 +1,10 @@
 import {
     Alert,
     Button,
+    CheckIcon,
+    ClipboardIcon,
     ConfirmationDialog,
+    CopyButton,
     DiscordIcon,
     Field,
     FieldStack,
@@ -183,9 +186,7 @@ function AccountPage() {
                         />
                         <Text size="sm" tone="base" className="min-w-0">
                             General questions:{" "}
-                            <InlineLink href="mailto:hello@pollinations.ai">
-                                hello@pollinations.ai
-                            </InlineLink>
+                            <ContactEmail email="hello@pollinations.ai" />
                         </Text>
                     </li>
                     <li className="flex min-w-0 items-start gap-2">
@@ -195,9 +196,7 @@ function AccountPage() {
                         />
                         <Text size="sm" tone="base" className="min-w-0">
                             Billing support:{" "}
-                            <InlineLink href="mailto:billing@pollinations.ai">
-                                billing@pollinations.ai
-                            </InlineLink>
+                            <ContactEmail email="billing@pollinations.ai" />
                         </Text>
                     </li>
                 </ul>
@@ -252,6 +251,32 @@ function AccountPage() {
                 onOpenChange={setDeleteDialogOpen}
             />
         </div>
+    );
+}
+
+function ContactEmail({ email }: { email: string }) {
+    return (
+        <CopyButton
+            value={email}
+            aria-label={`Copy ${email}`}
+            tooltip="Copy email address"
+            copiedTooltip="Email address copied"
+            className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
+        >
+            {(copied) => (
+                <>
+                    <span className="min-w-0 break-all" aria-live="polite">
+                        {copied ? "Copied!" : email}
+                    </span>
+                    <span
+                        className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
+                        aria-hidden="true"
+                    >
+                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                    </span>
+                </>
+            )}
+        </CopyButton>
     );
 }
 

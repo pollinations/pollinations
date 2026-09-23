@@ -58,6 +58,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-22** – **🚀 Claude Opus 5.5** `anthropic/claude-opus-5.5` is available through the unified API: 1M-token context, image input, adaptive thinking, automatic tools, and up to 128K output tokens. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-22** – **🚀 GPT-6 Sol and Luna** Two new paid OpenAI models, `openai/gpt-6-sol` and `openai/gpt-6-luna`, now work through the existing text API. No new endpoint ritual required. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-22** – **✨ GLM-5.3 FlashX** `z-ai/glm-5.3-flashx` brings 1M-token context, image input, and up to 131K output tokens to the unified text API, routed directly to Z.AI. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-21** – **🔗 MCP moves into the workshop** `polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
 - **2026-09-21** – **🤖 The router checks the weather** Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)
 - **2026-09-21** – **🚀 A Grok joins the garden** `x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)
@@ -65,9 +68,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-09-20** – **🎨 Atelier Image Studio** Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org) <!-- app -->
 - **2026-09-20** – **✨ Jev Decisions API** Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-20** – **🤖 Jev 1.13** `typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)
-- **2026-09-19** – **💡 Model discovery now includes vitals** `/v1/models` and `/models` return each model’s recent health, success rate, and request volume—so choosing a model involves slightly less divination. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-19** – **🎨 PersonaMorph turns photos into personas** Connect a Pollinations wallet and use image edits to remake portraits as artistic identities. [Try it](https://personamorph-ai-production.up.railway.app) <!-- app -->
-- **2026-09-19** – **✨ Oracle Mystique deals three illustrated cards** Ask the AI tarot reader for a Past, Present, and Future spread, with generated card art and BYOP OAuth2. [Try it](https://oracle-mystique.up.railway.app) <!-- app -->
 ---
 
 ## 🌱 Introduction

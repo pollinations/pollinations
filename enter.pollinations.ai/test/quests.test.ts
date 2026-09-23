@@ -5,7 +5,7 @@ import {
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -352,7 +352,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -455,6 +455,10 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 15,
         balanceBucket: "tier",
     });
+    expect(byId.get("app_paid_request")?.goal).toEqual({
+        target: 3,
+        unit: "pollen",
+    });
     expectStableCatalogFields("app_users_10", {
         state: "available",
         rewardAmount: 3,
@@ -480,7 +484,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -518,7 +522,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -573,7 +577,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -1260,7 +1264,7 @@ test("app milestones do not record below their thresholds, even with Quest Polle
             userId: user.id,
             pollenUsed: 100,
             paidPollenUsed: 2.99,
-            paidRequests: 0,
+            paidRequests: 100,
         },
     ];
 
@@ -1272,6 +1276,12 @@ test("app milestones do not record below their thresholds, even with Quest Polle
         current: 9,
         target: 10,
         unit: "users",
+    });
+    expect(result.progress).toContainEqual({
+        questId: "app_paid_request",
+        current: 2.99,
+        target: 3,
+        unit: "pollen",
     });
     expect(result.progress).toContainEqual({
         questId: "app_pollen_10",
@@ -1290,7 +1300,7 @@ test("app milestones do not record below their thresholds, even with Quest Polle
     expect(questIds.has("app_pollen_10")).toBe(false);
 });
 
-test("app spending quest does not use gross Pollen when Paid usage is missing", async ({
+test("app spending quests do not use gross Pollen when Paid usage is missing", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1306,7 +1316,12 @@ test("app spending quest does not use gross Pollen when Paid usage is missing", 
     const rewards = await db
         .select()
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "app_pollen_10"));
+        .where(
+            inArray(schema.rewards.questId, [
+                "app_pollen_10",
+                "app_paid_request",
+            ]),
+        );
     expect(rewards).toHaveLength(0);
 });
 
@@ -1321,6 +1336,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         { questId: "app_active", amount: 7 },
         { questId: "app_users_10", amount: 15 },
         { questId: "app_pollen_10", amount: 3 },
+        { questId: "app_paid_request", amount: 15 },
     ];
     mocks.tinybird.state.appUsageResponse = [
         { userId: user.id, pollenUsed: 3, paidPollenUsed: 3, paidRequests: 0 },
@@ -1350,7 +1366,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select()
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
-    expect(rewards).toHaveLength(3);
+    expect(rewards).toHaveLength(4);
     for (const reward of rewards) {
         const claim = { rewardId: reward.id, userId: user.id };
         const claimed = await claimReward(db, claim);
@@ -1366,7 +1382,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select({ value: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 25);
+    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 40);
 });
 
 test("quest check records model-usage rewards per modality", async ({

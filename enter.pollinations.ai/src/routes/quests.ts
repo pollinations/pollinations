@@ -18,8 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v29: the Discord quest links to account connection and the server.
-const CACHE_KEY = "quests:catalog:v29";
+// Bumped to v30: the 15-Pollen app quest requires 3 Paid Pollen spent.
+const CACHE_KEY = "quests:catalog:v30";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

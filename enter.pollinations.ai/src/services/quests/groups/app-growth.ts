@@ -49,16 +49,18 @@ const firstByopExternalUserQuest: QuestDefinition = {
     state: "completed",
 };
 
-const firstPaidSpendInAppQuest: QuestDefinition = {
+const firstPaidSpendInAppQuest = {
+    // Keep the existing ID so earlier recipients cannot earn this again.
     id: "app_paid_request",
-    title: "First Paid Pollen request",
+    title: "First 3 Paid Pollen spent in your app",
     description:
-        "Someone other than you makes a successful Paid Pollen request in your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+        "Other users spend at least 3 Paid Pollen across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Quest Pollen and your own usage do not count.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 15,
     balanceBucket: "tier",
-};
+    goal: { target: 3, unit: "pollen" },
+} satisfies QuestDefinition;
 
 const tenAppUsersQuest = {
     id: "app_users_10",
@@ -143,7 +145,7 @@ export async function evaluateUser(
 
     const proposals = [
         ...(appUsage &&
-        appUsage.paidRequests >= 1 &&
+        appUsage.paidPollenUsed >= firstPaidSpendInAppQuest.goal.target &&
         rewardableQuestIds.has(firstPaidSpendInAppQuest.id)
             ? [{ quest: firstPaidSpendInAppQuest, userId: user.id }]
             : []),
@@ -177,6 +179,10 @@ export async function evaluateUser(
     return {
         proposals,
         progress: [
+            toQuestProgress(
+                firstPaidSpendInAppQuest,
+                appUsage?.paidPollenUsed ?? 0,
+            ),
             toQuestProgress(tenAppUsersQuest, appReach?.externalUsers ?? 0),
             toQuestProgress(paidAppUsageQuest, appUsage?.paidPollenUsed ?? 0),
         ],

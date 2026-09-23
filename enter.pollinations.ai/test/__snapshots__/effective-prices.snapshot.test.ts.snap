@@ -1606,26 +1606,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax/minimax-m2.7": {
     "cost": {
-      "completionTextTokens": 0.000001055,
-      "promptCachedTokens": 0.00000005275,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.0000011394,
+      "promptCachedTokens": 0.00000005697,
+      "promptTextTokens": 0.00000028485,
     },
     "price": {
-      "completionTextTokens": 0.000001055,
-      "promptCachedTokens": 0.00000005275,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.0000011394,
+      "promptCachedTokens": 0.00000005697,
+      "promptTextTokens": 0.00000028485,
     },
   },
-  "minimax/minimax-m2.7:deepinfra": {
+  "minimax/minimax-m2.7:openrouter:minimax": {
     "cost": {
-      "completionTextTokens": 0.000001,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.00000025,
+      "completionTextTokens": 0.000001266,
+      "promptCachedTokens": 0.0000000633,
+      "promptTextTokens": 0.0000003165,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptCachedTokens": 0.00000005,
-      "promptTextTokens": 0.00000025,
+      "completionTextTokens": 0.000001266,
+      "promptCachedTokens": 0.0000000633,
+      "promptTextTokens": 0.0000003165,
     },
   },
   "minimax/minimax-m3": {

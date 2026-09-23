@@ -750,8 +750,8 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "minimax/minimax-m2.7:deepinfra",
-        config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
+        name: "minimax/minimax-m2.7:openrouter:minimax",
+        config: portkeyConfig["minimax-m2.7-openrouter-minimax"],
         transform: mandatoryReasoning,
     },
     {

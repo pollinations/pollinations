@@ -1,0 +1,47 @@
+{
+  "date": "2026-09-22",
+  "period_start": "2026-09-22",
+  "period_end": "2026-09-22",
+  "title": "Four new heavyweight text models joined the API",
+  "summary": "A model-heavy day: four new text models, more direct provider routes, a rebuilt Enter management flow, and docs aligned with production.\n\nThe unified text API gained GLM-5.3 FlashX, Claude Opus 5.5, and GPT-6 Sol and Luna. The new lineup covers long-context and multimodal work: GLM and Opus support 1M-token contexts, Opus includes adaptive thinking and automatic tools, and the GPT-6 models arrive through OpenAI's Responses API with explicit context-tier support.\n\nWan and Qwen models now prefer direct Alibaba routes while retaining existing providers as fallbacks, bringing Alibaba context and cache tiers to supported Qwen text models. Mistral Large 3 fallbacks now go directly to Mistral as well, and seeded requests are translated for upstream compatibility instead of wandering into a 422.\n\nThe Enter interface now unifies sign-in, authorization, device approval, API-key management, top-ups, and error handling. Models, Agents, and MCP catalog tabs are back with consistent forms, permissions, confirmations, and layouts that keep long configuration screens inside the viewport.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 15178,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15271,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15284,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15288,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15291,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15302,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15309,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15312,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15322,
+      "date": "2026-09-22"
+    }
+  ],
+  "generated_at": "2026-09-23T06:30:56.766681+00:00"
+}

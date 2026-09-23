@@ -12,7 +12,6 @@ import {
     Input,
     Section,
     SignOutIcon,
-    Surface,
     Text,
     TrashIcon,
 } from "@pollinations/ui";
@@ -278,24 +277,23 @@ function AccountPage() {
                 <ConnectedApps />
             </div>
 
-            <Surface
-                variant="panel"
-                className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
-            >
-                <Text size="sm" tone="muted">
-                    Permanently close your Pollinations account and revoke all
-                    access.
-                </Text>
-                <Button
-                    type="button"
-                    intent="danger"
-                    icon={<TrashIcon />}
-                    className="shrink-0"
-                    onClick={() => setDeleteDialogOpen(true)}
-                >
-                    Delete account
-                </Button>
-            </Surface>
+            <Section title="Delete account">
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                    <Text size="sm" tone="muted">
+                        Permanently close your Pollinations account and revoke
+                        all access.
+                    </Text>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        icon={<TrashIcon />}
+                        className="shrink-0"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete account
+                    </Button>
+                </div>
+            </Section>
 
             <footer className="flex flex-col gap-4 px-1 text-[13px] text-theme-text-muted">
                 <div className="flex flex-wrap gap-x-5 gap-y-2">

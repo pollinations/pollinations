@@ -27,22 +27,18 @@ type BalanceAccessChipProps = {
 
 const healthStyles = {
     healthy: {
-        label: "Healthy",
         className: "text-intent-success-text",
         icon: <CheckIcon className="h-4 w-4" />,
     },
     degraded: {
-        label: "Degraded",
         className: "text-intent-warning-text",
         icon: <WarningIcon className="h-4 w-4" />,
     },
     down: {
-        label: "Down",
         className: "text-intent-danger-text",
         icon: <XIcon className="h-4 w-4" />,
     },
     unknown: {
-        label: "No data",
         className: "text-theme-text-muted",
         icon: <span className="text-base leading-none">—</span>,
     },
@@ -59,19 +55,26 @@ function ModelHealthIndicator({
     health: ModelHealth;
     communityProxy: boolean;
 }) {
-    const { label, className, icon } = healthStyles[health.status];
+    const { className, icon } = healthStyles[health.status];
+    const reliabilitySample = communityProxy
+        ? `the last ${health.requests} eligible requests (up to seven days)`
+        : "the last 24 hours";
+    const healthLabel =
+        health.status === "unknown"
+            ? "No recent reliability data"
+            : `${health.status === "healthy" ? "Healthy" : "Elevated errors"} across ${reliabilitySample}`;
     const sample = communityProxy
         ? `last ${health.requests} eligible requests · up to 7 days`
         : "last 24 hours";
     const detail =
-        health.status === "unknown" || health.success_rate === null
+        health.status === "unknown" || health.success_rate == null
             ? `No data · ${communityProxy ? "last 7 days" : "last 24 hours"}`
             : `${healthNumber.format(health.success_rate)}% success · ${sample}`;
 
     return (
         <Tooltip
             content={detail}
-            ariaLabel={`${label}: ${detail}`}
+            ariaLabel={healthLabel}
             tapEnabled
             displayContents
         >

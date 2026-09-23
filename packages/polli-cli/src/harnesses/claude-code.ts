@@ -469,7 +469,8 @@ const result = (ctx: HarnessContext): HarnessResult => {
         const profile = config ? ourProfile(config) : undefined;
         configured = Boolean(
             config &&
-                ourProvider(config)?.enabled &&
+                // CCR treats a missing enabled as on; only false disables.
+                ourProvider(config)?.enabled !== false &&
                 profile?.enabled &&
                 profile.model?.startsWith(`${PROVIDER_ID}/`),
         );

@@ -69,7 +69,7 @@ export function ModelPermissionsInput({
         selected === null
             ? "All models"
             : selectedIds.size === 0
-              ? "Generation disabled."
+              ? "Generation disabled"
               : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"}`;
     const displayedModels = models.filter(({ id }) => {
         if (activeTab === "all") return true;

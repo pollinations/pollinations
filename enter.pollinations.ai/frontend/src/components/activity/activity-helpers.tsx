@@ -217,7 +217,10 @@ export function PollenUsageBadges(usage: {
     );
 }
 
-export function ActivityKeyFilter(props: ActivityFilterProps) {
+export function ActivityKeyFilter({
+    unnamedLabel = "Unnamed key",
+    ...props
+}: ActivityFilterProps & { unnamedLabel?: string }) {
     const { apiKeys } = useDeferredValue(
         useLoaderData({ from: "/_dashboard" }),
     );
@@ -235,7 +238,7 @@ export function ActivityKeyFilter(props: ActivityFilterProps) {
                     if (key && !options.some((option) => option.value === id))
                         options.push({
                             value: id,
-                            label: key.name || "Unnamed key",
+                            label: key.name || unnamedLabel,
                         });
                 }
                 return <ActivityFilter {...props} options={options} />;

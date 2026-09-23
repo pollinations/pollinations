@@ -134,6 +134,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     <>
                         <ActivityKeyFilter
                             label="Apps"
+                            unnamedLabel="Unnamed app"
                             missingLabel="Unavailable app"
                             options={appSelectOptions}
                             selected={selectedAppKeyIds}

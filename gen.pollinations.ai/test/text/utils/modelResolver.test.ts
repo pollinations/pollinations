@@ -497,15 +497,13 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Muse Glimmer directly to Fireworks without fallback", () => {
+    it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/muse-glimmer-30b",
-        );
+        expect(result.options.model).toBe("meta-models/Muse-Glimmer-30B");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
         expect(result.options.provider).toBeUndefined();
     });

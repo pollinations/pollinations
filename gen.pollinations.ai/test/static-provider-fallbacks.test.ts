@@ -70,9 +70,9 @@ const OPENROUTER_ROUTES = [
         "anthropic",
     ],
     [
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
+        "meta/muse-glimmer-30b:openrouter:together",
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
     ],
     [
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",

@@ -795,13 +795,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/muse-glimmer-30b",
-        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,
     },
     {
-        name: "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
-        config: portkeyConfig["muse-glimmer-openrouter-deepinfra"],
-        transform: fireworksThinking,
+        name: "meta/muse-glimmer-30b:openrouter:together",
+        config: portkeyConfig["muse-glimmer-openrouter-together"],
+        transform: mandatoryReasoning,
     },
     {
         name: "meta/muse-spark-1.2",

@@ -2455,22 +2455,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-glimmer-30b": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        // Fireworks serverless shutdown, changelog 2026-09-12.
-        retirementDate: new Date("2026-09-25").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.35),
+            // DeepInfra rates (2026-09-23).
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.04),
-            promptImageTokens: perMillion(0.35),
-            completionTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(0.3),
+            completionTextTokens: perMillion(1.2),
         },
         title: "Muse Glimmer 30B",
         description:

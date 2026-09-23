@@ -299,7 +299,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "min_p",
         "repetition_penalty",
-        "seed",
         "reasoning_effort",
         "logit_bias",
     ],

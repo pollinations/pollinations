@@ -492,6 +492,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "zai-org/GLM-5.2": () =>
         createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
+    "meta-models/Muse-Glimmer-30B": () =>
+        createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -536,9 +538,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-fable-5",
         "google-vertex/global",
     ),
-    "muse-glimmer-openrouter-deepinfra": createPinnedOpenRouterConfig(
+    "muse-glimmer-openrouter-together": createPinnedOpenRouterConfig(
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
     ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
@@ -804,10 +806,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
-        }),
-    "accounts/fireworks/models/muse-glimmer-30b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/muse-glimmer-30b",
         }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({

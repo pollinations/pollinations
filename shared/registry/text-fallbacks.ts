@@ -486,15 +486,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/muse-glimmer-30b": {
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
+        "meta/muse-glimmer-30b:openrouter:together": {
             supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.3) * 1.055,
+                // OpenRouter Together rates (2026-09-23), including the
+                // account's 5.5% credit-purchase fee. Costs more than the
+                // primary; Phala was cheaper but rate-limited bursts.
+                promptTextTokens: perMillion(0.35) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
-                promptImageTokens: perMillion(0.3) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
+                promptImageTokens: perMillion(0.35) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
             },
         },
     },

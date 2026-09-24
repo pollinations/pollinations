@@ -1,0 +1,36 @@
+{
+  "pr_number": 15121,
+  "title": "test(gen): assert finish_reason=error keeps choice.error.message",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/15121",
+  "merged_at": "2026-09-24T22:00:02Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n- Test that streaming `finish_reason: \"error\"` keeps `choice.error.message` in tracking.\n- The runtime fix is already merged in #14999; this PR adds only regression coverage.\n\nAddresses #14994\nFixes #15412\n\n## Test plan\n- [x] `npx vitest run test/tracking-observability.test.ts -t \"choice.error.message\"` (1 passed).\n- [x] Biome check on the touched config file.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Error Messages Stay Put",
+    "blurb": "A regression test now keeps watch while streaming errors carry their useful message all the way into tracking. The bees have filed the receipt.",
+    "summary": "Added regression coverage in gen.pollinations.ai to verify that streaming responses with finish_reason: \"error\" retain choice.error.message in tracking observability.",
+    "impact": "Developers can rely on tracking records preserving the original streaming error message when this failure path occurs.",
+    "keywords": [
+      "streaming",
+      "tracking",
+      "observability",
+      "error-handling",
+      "tests"
+    ],
+    "visual_concept": "A cozy observability scene: Polli, wearing tiny inspector glasses, checks a glowing error-message note travelling intact from a retro streaming terminal into a labeled tracking jar, with small code-plants nearby. This is test-only regression coverage, so the image should emphasize careful verification rather than a new feature.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses while carefully placing a glowing pixel note labeled \"error message\" from a retro terminal into a tracking jar; small code-plants and flowers grow around it, with lime green (#ecf874) prominently glowing on the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15121.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses while carefully placing a glowing pixel note labeled \"error message\" from a retro terminal into a tracking jar; small code-plants and flowers grow around it, with lime green (#ecf874) prominently glowing on the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-24T22:01:02.523677+00:00"
+}

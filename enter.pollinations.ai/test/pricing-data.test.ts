@@ -9,6 +9,7 @@ import {
     getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
+    ModelInfoSchema,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import {
@@ -24,7 +25,7 @@ import {
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { type ComponentProps, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, test } from "vitest";
+import { assert, expect, test } from "vitest";
 import {
     formatDisplayPrice,
     formatPriceFlat,
@@ -40,7 +41,10 @@ import {
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
 import { ModelHealthIndicator } from "../frontend/src/components/models/model-status-chips.tsx";
-import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
+import {
+    getPricingVariantControls,
+    ModelPricingLedger,
+} from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -56,17 +60,17 @@ test("health indicators show the current reliability sample", () => {
     for (const [status, label] of [
         [
             "healthy",
-            "Healthy across the last 12 eligible requests (up to seven days)",
+            "Healthy · 90% success · last 12 eligible requests · up to 7 days",
         ],
         [
             "degraded",
-            "Elevated errors across the last 12 eligible requests (up to seven days)",
+            "Degraded · 90% success · last 12 eligible requests · up to 7 days",
         ],
         [
             "down",
-            "Elevated errors across the last 12 eligible requests (up to seven days)",
+            "Down · 90% success · last 12 eligible requests · up to 7 days",
         ],
-        ["unknown", "No recent reliability data"],
+        ["unknown", "No data · last 7 days"],
     ] as const) {
         const markup = renderToStaticMarkup(
             createElement(ModelHealthIndicator, {
@@ -87,7 +91,9 @@ test("health indicators show the current reliability sample", () => {
             health: { status: "healthy", requests: 12, success_rate: 90 },
         }),
     );
-    expect(official).toContain('aria-label="Healthy across the last 24 hours"');
+    expect(official).toContain(
+        'aria-label="Healthy · 90% success · last 24 hours"',
+    );
 });
 
 const getCatalogModels = () => [
@@ -445,12 +451,136 @@ test("cached modality adjustments remain visible without a matching base row", (
         dropdowns: [],
     };
     const markup = renderToStaticMarkup(
-        createElement(ModelPricingLedger, { pricing, access: "quest" }),
+        createElement(ModelPricingLedger, { pricing }),
     );
 
     expect(markup).toContain("Cached input");
     expect(markup).toContain("Cached audio input");
     expect(markup).toContain("0.24");
+});
+
+test.each([
+    "left",
+    "right",
+] as const)("search fees render above normal rates with an icon and their billing unit (%s)", (align) => {
+    const models = getCatalogModelPrices();
+    for (const [kind, unit] of [
+        ["search_query", "/K queries"],
+        ["grounded_prompt", "/K prompts"],
+        ["search_request", "/K req"],
+    ]) {
+        const model = models.find((item) =>
+            item.priceAdjustments?.some(
+                (fee) => fee.kind === kind && fee.quantity === 1_000,
+            ),
+        );
+        assert(model);
+        const markup = renderToStaticMarkup(
+            createElement(ModelPricingLedger, {
+                align,
+                pricing: {
+                    prices: model.prices,
+                    adjustments: model.priceAdjustments ?? [],
+                    dropdowns: [],
+                },
+            }),
+        );
+        const search = markup.indexOf(">Search<");
+        const input = markup.indexOf(">Text in<");
+        expect(search).toBeGreaterThan(-1);
+        expect(input).toBeGreaterThan(search);
+        expect(
+            markup.slice(markup.lastIndexOf("<div", search), search),
+        ).toContain("<svg");
+        expect(markup.slice(search, input)).toContain(unit);
+        expect(markup.slice(search, input)).toContain("border-t");
+    }
+});
+
+test("flat fees join price options while token charges remain with normal rates", () => {
+    const model = getCatalogModelPrices().find((item) =>
+        item.priceAdjustments?.some((fee) => fee.label === "Execution fee"),
+    );
+    assert(model);
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, {
+            pricing: {
+                prices: model.prices,
+                adjustments: model.priceAdjustments ?? [],
+                dropdowns: [],
+            },
+        }),
+    );
+    const fee = markup.indexOf(">Execution fee<");
+    expect(fee).toBeGreaterThan(-1);
+    expect(markup.indexOf("border-t")).toBeGreaterThan(fee);
+    expect(markup.indexOf(">Image out<")).toBeGreaterThan(
+        markup.indexOf("border-t"),
+    );
+
+    const tokenOnly = renderToStaticMarkup(
+        createElement(ModelPricingLedger, {
+            pricing: {
+                prices: [
+                    {
+                        direction: "input",
+                        kind: "text",
+                        price: "1",
+                        unit: "token",
+                    },
+                ],
+                adjustments: [
+                    {
+                        name: "cache",
+                        label: "Cache storage",
+                        kind: "cache_storage",
+                        price: "0.1",
+                        quantity: 1_000_000,
+                        unit: "tokens written",
+                    },
+                ],
+                dropdowns: [],
+            },
+        }),
+    );
+    expect(tokenOnly.indexOf(">Cache storage<")).toBeGreaterThan(
+        tokenOnly.indexOf(">Text in<"),
+    );
+    expect(tokenOnly).not.toContain("border-t");
+});
+
+test("price selectors have a divider before normal rates even without extra fees", () => {
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, {
+            pricing: {
+                prices: [
+                    {
+                        direction: "input",
+                        kind: "text",
+                        price: "1",
+                        unit: "token",
+                    },
+                ],
+                adjustments: [],
+                dropdowns: [
+                    {
+                        key: "context",
+                        label: "Context",
+                        unit: "tokens",
+                        value: "base",
+                        options: [{ value: "base", label: "≤32K" }],
+                        onSelect: () => {},
+                    },
+                ],
+            },
+        }),
+    );
+    expect(markup.indexOf("border-t")).toBeGreaterThan(
+        markup.indexOf(">Context<"),
+    );
+    expect(markup.indexOf(">Text in<")).toBeGreaterThan(
+        markup.indexOf("border-t"),
+    );
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {
@@ -1539,4 +1669,130 @@ test("registry cost blocks contain no sentinel/placeholder negative values", () 
         offenders,
         `Models with placeholder/sentinel pricing — fill in real rates before merging:\n${offenders.join("\n")}`,
     ).toEqual([]);
+});
+
+test("pricing dimensions cover every public rate sheet through the catalog", () => {
+    for (const catalogModel of getCatalogModels()) {
+        if (!catalogModel.pricing_variants?.length) continue;
+        const parsed = ModelInfoSchema.parse(catalogModel);
+        const [model] = getModelPricesFromCatalog([parsed]);
+        assert(model.priceVariants);
+        assert(model.pricingDimensions);
+        const variants = ["", ...model.priceVariants.map(({ name }) => name)];
+        expect(model.pricingDimensions?.length, model.name).toBeGreaterThan(0);
+        for (const dimension of model.pricingDimensions) {
+            expect(Object.keys(dimension.values).sort(), model.name).toEqual(
+                [...variants].sort(),
+            );
+            expect(
+                Object.values(dimension.values).every(Boolean),
+                model.name,
+            ).toBe(true);
+        }
+        for (const variant of variants) {
+            const controls = getPricingVariantControls(model, variant);
+            for (const control of controls) {
+                expect(
+                    control.options.some(({ value }) => value === variant),
+                    model.name,
+                ).toBe(true);
+                for (const option of control.options) {
+                    expect(variants, model.name).toContain(option.value);
+                }
+            }
+        }
+    }
+});
+
+test("quality and resolution changes preserve the other pricing choice", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "x-ai/grok-imagine-image-2.0",
+    );
+    assert(model);
+    const choose = (variant: string, key: string, label: string) =>
+        getPricingVariantControls(model, variant)
+            .find((control) => control.key === key)
+            ?.options.find((option) => option.label === label)?.value;
+    expect(choose("low_2k", "quality", "Medium")).toBe("medium_2k");
+    expect(choose("medium_2k", "resolution", "1K")).toBe("");
+    expect(choose("", "quality", "Low")).toBe("low_1k");
+});
+
+test("dependent video choices select existing prices without impossible combinations", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "alibaba/wan-2.7",
+    );
+    assert(model);
+    const initial = getPricingVariantControls(model, "");
+    expect(
+        initial
+            .find(({ key }) => key === "input")
+            ?.options.map(({ label }) => label),
+    ).toEqual(["Any"]);
+    const resolution = initial.find(({ key }) => key === "resolution");
+    assert(resolution);
+    const highResolution = resolution.options.find(
+        ({ label }) => label === "1080p",
+    )?.value;
+    assert(highResolution !== undefined);
+    const input = getPricingVariantControls(model, highResolution).find(
+        ({ key }) => key === "input",
+    );
+    assert(input);
+    expect(input.options.map(({ label }) => label)).toEqual([
+        "Text/video",
+        "Image",
+    ]);
+    expect(input.options.find(({ label }) => label === "Image")?.value).toBe(
+        "1080p_image",
+    );
+    expect(
+        getPricingVariantControls(model, "1080p_image")[0].options.find(
+            ({ label }) => label === "720p",
+        )?.value,
+    ).toBe("");
+});
+
+test("context changes preserve explicit cache selection and exact pricing ranges", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "qwen/qwen3.7-flash",
+    );
+    assert(model);
+    const context = getPricingVariantControls(model, "explicit_cache").find(
+        ({ key }) => key === "context",
+    );
+    assert(context);
+    expect(context.unit).toBe("tokens");
+    expect(
+        context.options.find(({ label }) => label === ">32K–256K")?.value,
+    ).toBe("context_32k_explicit_cache");
+    expect(context.options.find(({ label }) => label === ">256K")?.value).toBe(
+        "context_256k_explicit_cache",
+    );
+});
+
+test("transcription options preserve existing prompting and speaker prices", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "assemblyai/universal-3.5-pro",
+    );
+    assert(model);
+    const prompting = getPricingVariantControls(model, "diarization").find(
+        ({ key }) => key === "prompting",
+    );
+    assert(prompting);
+    expect(prompting.options.find(({ label }) => label === "On")?.value).toBe(
+        "prompting_diarization",
+    );
+});
+
+test("search pricing exposes separate row labels and values without changing legacy labels", () => {
+    for (const model of getCatalogModels()) {
+        for (const adjustment of model.pricing_adjustments ?? []) {
+            if (adjustment.option?.group !== "search_context") continue;
+            expect(adjustment.option.groupLabel).toBe("Search context");
+            expect(adjustment.option.label).toBe(
+                `${adjustment.option.valueLabel} search context`,
+            );
+        }
+    }
 });

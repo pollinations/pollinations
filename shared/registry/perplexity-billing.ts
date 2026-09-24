@@ -138,6 +138,8 @@ function perplexitySearchBilling(
                     unit: "requests",
                     option: {
                         group: "search_context",
+                        groupLabel: "Search context",
+                        valueLabel: `${size[0].toUpperCase()}${size.slice(1)}`,
                         value: size,
                         label: `${size[0].toUpperCase()}${size.slice(1)} search context`,
                         ...(size === "low" && { default: true }),

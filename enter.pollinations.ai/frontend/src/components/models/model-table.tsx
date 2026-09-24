@@ -24,17 +24,17 @@ import {
 import {
     getModelTitleTooltipContent,
     ModelRow,
+    ModelTestLink,
     PerPollenEstimate,
 } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
-    ModelHealthIndicator,
+    BalanceAccessChip,
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
 import {
-    ModelPricingControls,
     ModelPricingLedger,
     useModelPricingSelection,
 } from "./price-badge.tsx";
@@ -200,8 +200,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         className="h-10 w-px shrink-0 bg-divider"
                     />
                 )}
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex min-w-0 items-center gap-1.5">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex min-h-5 min-w-0 items-center gap-1.5">
                         {titleTooltip ? (
                             <Tooltip
                                 triggerAs="span"
@@ -220,52 +220,41 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
-                        {model.health && (
-                            <ModelHealthIndicator
-                                health={model.health}
-                                communityProxy={Boolean(
-                                    model.community && !model.agent,
-                                )}
-                            />
-                        )}
                     </div>
-                    <CopyValue
-                        value={model.name}
-                        label={`Copy model id ${model.name}`}
-                        showCopyIcon
-                    />
+                    <div className="flex min-h-5 min-w-0 items-center">
+                        <CopyValue
+                            value={model.name}
+                            label={`Copy model id ${model.name}`}
+                            showCopyIcon
+                        />
+                    </div>
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
                             size="footer"
-                            className="inline-flex w-fit max-w-full items-center"
+                            className="inline-flex min-h-5 w-fit max-w-full items-center"
                         >
                             <span className="truncate">{model.publisher}</span>
                         </InlineLink>
                     )}
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                            <MobileMetadataBadges
-                                inputModalities={inputModalities}
-                                capabilities={capabilities}
-                                modalityLabel={modalityLabel}
-                                capabilityLabel={capabilityLabel}
-                                perUserRpm={model.perUserRpm}
-                            />
-                            <ModelPricingControls
-                                model={model}
-                                pricing={pricing}
-                            />
-                        </div>
+                    <MobileMetadataBadges
+                        inputModalities={inputModalities}
+                        capabilities={capabilities}
+                        modalityLabel={modalityLabel}
+                        capabilityLabel={capabilityLabel}
+                        perUserRpm={model.perUserRpm}
+                    />
+                    <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                        <ModelStatusChips
+                            health={model.health}
+                            communityProxy={Boolean(
+                                model.community && !model.agent,
+                            )}
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                        <ModelTestLink model={model} />
                     </div>
-                    {(showNew || showAlpha) && (
-                        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                            <ModelStatusChips
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -284,10 +273,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <ModelPricingLedger
+                        modelName={model.displayName ?? model.name}
                         pricing={pricing}
-                        access={balanceAccess}
                         className="w-full"
                         align="left"
+                        requestBadge={
+                            <BalanceAccessChip access={balanceAccess} />
+                        }
                         hasTools={pollinationsTools}
                         requestEstimate={
                             <PerPollenEstimate model={model} ledger />
@@ -323,7 +315,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
+        <div className="inline-flex min-h-5 items-center gap-1.5 text-theme-text-muted">
             {inputModalities.length > 0 && (
                 <Tooltip
                     triggerAs="span"
@@ -362,7 +354,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     tapEnabled
                     displayContents
                 >
-                    <span className="inline-flex items-center gap-1 text-theme-text-soft">
+                    <span className="inline-flex items-center gap-1">
                         {capabilities.map((key) => {
                             const Icon = CAPABILITY_ICON[key];
                             return <Icon key={key} className="h-4 w-4" />;

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15273,
+  "title": "refactor(enter): simplify account and dashboard content",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15273",
+  "merged_at": "2026-09-24T15:04:38Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Organizes Account into profile, connected apps, support and deletion cards, with copyable support emails. Keeps account deletion disabled after success.\n- Clarifies key permissions and model selection, keeps new secrets visible when the key-list refresh fails, and makes confirmation dialogs compact on narrow screens.\n- Keeps loading inside titled cards and avoids sign-in loading flicker. Preserves the quest load → automatic check → reload flow and reload after claims; simplifies News, connected-app and recent-event fetching, and restores FAQ URL hashes.\n- Preserves the merged model catalog from #15369 and consolidates model/agent title links without changing its design or destinations. Uses optional connected-app descriptions and shared light-mode action-button fills.\n- Validation: 103 pricing/catalog/query tests, 2 integrations tests, Enter typecheck, frontend build and formatting passed locally. Review also covered responsive layouts and error/retry flows. Preview files are locally excluded; fixtures are not committed.\n\nShared button/dialog changes affect other UI package consumers. The separate session-refresh secret-loss edge is tracked in #15401.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The dashboard got a garden path",
+    "blurb": "The Enter dashboard has been gently rearranged so the important bits stop hiding behind each other. Account details, API key controls, quests, and loading states now have clearer little homes.",
+    "summary": "Refactored the Enter account and dashboard UI into clearer account cards, improved API-key permission and model selection flows, resilient secret visibility, compact mobile dialogs, and more reliable loading, quest, news, and FAQ navigation behavior.",
+    "impact": "Users get a calmer dashboard: support emails can be copied, new API secrets remain visible if a key-list refresh stumbles, permissions and models are easier to understand, and pages load within their own titled cards without sign-in flicker.",
+    "keywords": [
+      "enter",
+      "dashboard",
+      "account",
+      "api keys",
+      "permissions",
+      "quests",
+      "ui"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper reorganizing a cozy dashboard garden into labeled beds for Profile, Connected Apps, Support, API Keys, and Quests. A CRT monitor robot can hold a neatly labeled key card while small code-plants grow from the sections, representing clearer navigation and resilient UI states.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, arranging a warm cream dashboard garden into tidy lime green (#ecf874) signposted beds labeled “PROFILE,” “API KEYS,” and “QUESTS”; a friendly CRT monitor robot holds a glowing key card beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15273.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, arranging a warm cream dashboard garden into tidy lime green (#ecf874) signposted beds labeled “PROFILE,” “API KEYS,” and “QUESTS”; a friendly CRT monitor robot holds a glowing key card beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-09-24T15:05:50.711273+00:00"
+}

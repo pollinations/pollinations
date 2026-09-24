@@ -3223,6 +3223,7 @@ curl "https://gen.pollinations.ai/account/key/usage?format=json&limit=100" \
 | `data[].id` * | `string` | — |
 | `data[].toolkit` * | `string` | — |
 | `data[].name` * | `any` | — |
+| `data[].description` | `string` | — |
 | `data[].logo` * | `any` | — |
 | `data[].alias` * | `any` | — |
 | `data[].status` * | `string` | — |

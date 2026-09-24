@@ -128,6 +128,19 @@ mask; add a platform by adding a line.
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
 
+## Dialog layout
+
+`Dialog` uses one responsive frame for forms, confirmations, and results:
+full viewport without a border below 640px, contained with rounded corners on
+larger screens. `size` controls desktop width only. Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter`
+for consistent spacing and actions; avoid overriding viewport dimensions
+in consumers. The frame uses Enter’s themed panel color; inset cards use the
+neutral `Surface` default. `AuthModal` uses the same frame for standalone pages.
+
+Enter's `ResourceDialog` keeps dashboard forms and confirmations contained on
+mobile too, with viewport margins and scrollable content. Keep that exception
+in the shared dashboard wrapper rather than repeating dimensions in consumers.
+
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
@@ -157,6 +170,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
+- `@pollinations/ui/markdown` exports `Markdown` and `Prose`, kept off the
+  root entry so react-markdown only loads where documents render.
 - `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
@@ -168,8 +183,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
-  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
-  `Prose`, `Section`, `StatCard`.
+  `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
+  `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell
@@ -189,8 +204,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
-  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
-  layers.
+  `@pollinations/ui/markdown`, `@pollinations/ui/app-user-menu/sdk`) are
+  built directly from those source layers.
 
 ## Theming
 

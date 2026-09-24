@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import uuid
+from collections.abc import AsyncGenerator
 from typing import Any, cast
 
 from openai import AsyncOpenAI
@@ -30,7 +32,9 @@ def _client() -> AsyncOpenAI:
     )
 
 
-_WORKSPACE_MEDIA_RE = re.compile(r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif)\b", re.I)
+_WORKSPACE_MEDIA_RE = re.compile(
+    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.I
+)
 
 
 def _mentions_unpublished_media(text: str) -> bool:
@@ -48,13 +52,13 @@ def _tool_call_fields(call: Any) -> tuple[str, str, str]:
     return call.id, call.function.name, call.function.arguments
 
 
-async def run_agent_events(
+async def _run_agent_events(
     messages: list[dict[str, Any]],
     *,
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
-):
+) -> AsyncGenerator[dict[str, Any], None]:
     """Run the tool-calling loop, yielding progress events as they happen.
 
     Yields {"type": "tool_start", "id", "name", "arguments"} per tool call,
@@ -66,6 +70,7 @@ async def run_agent_events(
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
+    computer_lock = asyncio.Lock()
     system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
@@ -109,7 +114,7 @@ async def run_agent_events(
         if not tool_calls:
             text = msg.content or ""
             attached = any(
-                a.get("type") in ("video", "audio")
+                a.get("type") in ("video", "audio", "3d", "file")
                 and str(a.get("url", "")).startswith("https://media.pollinations.ai/")
                 for a in artifacts
             )
@@ -128,7 +133,7 @@ async def run_agent_events(
                         "content": (
                             "Your answer references media files that were never "
                             "published. Files in the workspace are NOT delivered "
-                            "to the user. Call upload_media on each final file "
+                            "to the user. Use `assets publish` in Computer bash for each final file "
                             "and include the returned URLs in your answer."
                         ),
                     }
@@ -151,11 +156,15 @@ async def run_agent_events(
                 "arguments": arguments,
             }
 
-        # Execute every tool call in this turn concurrently.
+        # Generation can run concurrently; workspace snapshots must not race.
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                result = await dispatch(name, parse_args(raw_args), routing)
+                if name == "bash":
+                    async with computer_lock:
+                        result = await dispatch(name, parse_args(raw_args), routing)
+                else:
+                    result = await dispatch(name, parse_args(raw_args), routing)
             return call_id, result
 
         keys = ["{}:{}".format(*_tool_call_fields(tc)[1:]) for tc in tool_calls]
@@ -209,6 +218,44 @@ async def run_agent_events(
     }
 
 
+async def run_agent_events(
+    messages: list[dict[str, Any]],
+    *,
+    model: str | None = None,
+    max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    """Run one agent event stream."""
+    from floret.registry import (
+        fetch_model_catalog,
+        reset_request_catalog,
+        set_request_catalog,
+        warm_registry,
+    )
+
+    catalog_token = None
+    try:
+        if settings.catalog_endpoint:
+            await warm_registry()
+            catalog_token = set_request_catalog(await fetch_model_catalog())
+        from floret.tools import mcp
+
+        workspace = f"/workspace/floret/{uuid.uuid4().hex}"
+        used = [False]
+        try:
+            with mcp.workspace(workspace) as used:
+                async for event in _run_agent_events(
+                    messages, model=model, max_iters=max_iters, routing=routing
+                ):
+                    yield event
+        finally:
+            if used[0]:
+                await mcp.cleanup_workspace(workspace)
+    finally:
+        if catalog_token is not None:
+            reset_request_catalog(catalog_token)
+
+
 async def run_agent(
     messages: list[dict[str, Any]],
     *,
@@ -220,13 +267,17 @@ async def run_agent(
 
     Returns {"text", "artifacts", "iterations"}.
     """
-    async for event in run_agent_events(
+    events = run_agent_events(
         messages, model=model, max_iters=max_iters, routing=routing
-    ):
-        if event["type"] == "final":
-            return {
-                "text": event["text"],
-                "artifacts": event["artifacts"],
-                "iterations": event["iterations"],
-            }
+    )
+    try:
+        async for event in events:
+            if event["type"] == "final":
+                return {
+                    "text": event["text"],
+                    "artifacts": event["artifacts"],
+                    "iterations": event["iterations"],
+                }
+    finally:
+        await events.aclose()
     raise RuntimeError("agent event stream ended without a final event")

@@ -19,7 +19,7 @@ import { generationAccess } from "@/utils/generation-access.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
 import { prepareImageEditRequest } from "../routes/images.ts";
 import { mediaPromptRoute } from "./prompt-route.ts";
-import { createMediaResponse, mediaResponseStream } from "./response-output.ts";
+import { createMediaResponse, textResponseStream } from "./response-output.ts";
 
 type MediaProtocol = "responses" | "chat/completions";
 
@@ -181,7 +181,7 @@ export function mediaResponses(protocol: MediaProtocol) {
         // The file is immutable, not the per-request protocol envelope.
         headers.set("Cache-Control", "no-cache");
         if (body.stream === true) {
-            const stream = mediaResponseStream(response);
+            const stream = textResponseStream(response);
             headers.set("Content-Type", "text/event-stream; charset=utf-8");
             c.res = new Response(
                 protocol === "responses"

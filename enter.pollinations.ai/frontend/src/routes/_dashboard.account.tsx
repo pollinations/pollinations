@@ -1,23 +1,33 @@
 import {
     Alert,
     Button,
+    CheckIcon,
+    ClipboardIcon,
+    ConfirmationDialog,
     CopyButton,
-    Dialog,
     DiscordIcon,
+    Field,
     FieldStack,
     GitHubIcon,
     Heading,
+    InlineLink,
     Input,
+    LoadingStatus,
+    MailIcon,
     Section,
-    Surface,
+    SignOutIcon,
     Text,
     TrashIcon,
 } from "@pollinations/ui";
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Await, createFileRoute, redirect } from "@tanstack/react-router";
+import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
-import { Route as DashboardRoute } from "./_dashboard.tsx";
+import {
+    DashboardLoading,
+    LoadError,
+} from "../components/layout/dashboard-loading.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
 
@@ -41,15 +51,348 @@ export const Route = createFileRoute("/_dashboard/account")({
 });
 
 function AccountPage() {
-    const { user, githubUsername, discordAvailable } =
-        DashboardRoute.useLoaderData();
+    const retry = useDashboardRetry("profile");
+    const { user, githubUsername, profile } = useDeferredValue(
+        DashboardRoute.useLoaderData(),
+    );
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isSigningOut, setIsSigningOut] = useState(false);
+    const [signOutError, setSignOutError] = useState<string | null>(null);
+
+    if (!user) return null;
+
+    const displayName =
+        user.name?.trim() || githubUsername || "Pollinations user";
+
+    async function handleSignOut(): Promise<void> {
+        if (isSigningOut) return;
+        setIsSigningOut(true);
+        setSignOutError(null);
+        try {
+            const { error } = await authClient.signOut();
+            if (error) throw error;
+            window.location.href = "/news";
+        } catch (error) {
+            console.error("Sign out failed:", error);
+            setSignOutError("Couldn’t sign out. Please try again.");
+            setIsSigningOut(false);
+        }
+    }
+
+    return (
+        <div className="flex flex-col gap-6">
+            <Section title="Profile">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        {user.image ? (
+                            <img
+                                src={user.image}
+                                alt={`${displayName} avatar`}
+                                className="h-16 w-16 shrink-0 rounded-full"
+                            />
+                        ) : (
+                            <div
+                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-theme-bg-subtle text-theme-text-muted"
+                                aria-hidden="true"
+                            >
+                                <GitHubIcon className="h-7 w-7" />
+                            </div>
+                        )}
+                        <div className="min-w-0">
+                            <Heading as="h3" size="subsection">
+                                {displayName}
+                            </Heading>
+                            <Text size="sm" tone="muted" className="truncate">
+                                {user.email}
+                            </Text>
+                            <p className="mt-1 truncate font-mono text-xs text-theme-text-muted">
+                                {user.id}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        type="button"
+                        intent="commit"
+                        icon={<SignOutIcon />}
+                        disabled={isSigningOut}
+                        className="shrink-0 self-start sm:self-center"
+                        onClick={() => void handleSignOut()}
+                    >
+                        {isSigningOut ? "Signing out…" : "Sign out"}
+                    </Button>
+                </div>
+            </Section>
+
+            {signOutError && <Alert intent="danger">{signOutError}</Alert>}
+
+            <Await
+                promise={profile}
+                fallback={
+                    <DashboardLoading
+                        title="Community"
+                        label="Loading connection settings…"
+                    />
+                }
+            >
+                {(details) =>
+                    details ? (
+                        <CommunityConnections
+                            discordAvailable={details.discordAvailable}
+                        />
+                    ) : (
+                        <Section title="Community">
+                            <LoadError onRetry={retry}>
+                                Couldn’t load connection settings.
+                            </LoadError>
+                        </Section>
+                    )
+                }
+            </Await>
+
+            <div id="connectors" className="scroll-mt-6">
+                <ConnectedApps />
+            </div>
+
+            <Section title="Need help?">
+                <ul className="grid gap-5 text-sm sm:grid-cols-2">
+                    <li className="flex min-w-0 items-start gap-2">
+                        <DiscordIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
+                            aria-hidden="true"
+                        />
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Get help on{" "}
+                            <InlineLink href="https://discord.com/channels/885844321461485618/889573359111774329">
+                                Discord
+                            </InlineLink>
+                        </Text>
+                    </li>
+                    <li className="flex min-w-0 items-start gap-2">
+                        <GitHubIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
+                            aria-hidden="true"
+                        />
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Report a bug on{" "}
+                            <InlineLink href="https://github.com/pollinations/pollinations/issues">
+                                GitHub
+                            </InlineLink>
+                        </Text>
+                    </li>
+                    <li className="flex min-w-0 items-start gap-2">
+                        <MailIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
+                            aria-hidden="true"
+                        />
+                        <Text size="sm" tone="base" className="min-w-0">
+                            General questions:{" "}
+                            <ContactEmail email="hello@pollinations.ai" />
+                        </Text>
+                    </li>
+                    <li className="flex min-w-0 items-start gap-2">
+                        <MailIcon
+                            className="mt-1 h-4 w-4 shrink-0 text-theme-text-base"
+                            aria-hidden="true"
+                        />
+                        <Text size="sm" tone="base" className="min-w-0">
+                            Billing support:{" "}
+                            <ContactEmail email="billing@pollinations.ai" />
+                        </Text>
+                    </li>
+                </ul>
+            </Section>
+
+            <Section title="Delete account">
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                    <Text size="sm" tone="muted">
+                        Permanently delete your account, profile, keys, agents
+                        and models. All remaining Pollen will be lost. This
+                        cannot be undone, and deleted data cannot be recovered.
+                    </Text>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        icon={<TrashIcon />}
+                        className="shrink-0"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete account
+                    </Button>
+                </div>
+            </Section>
+
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+                <span>© 2026 Myceli.AI OÜ</span>
+                <InlineLink
+                    href="https://pollinations.ai/terms"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Terms of Service
+                </InlineLink>
+                <InlineLink
+                    href="https://pollinations.ai/privacy"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Privacy Policy
+                </InlineLink>
+                <InlineLink
+                    href="https://pollinations.ai/refunds"
+                    tone="quiet"
+                    size="footer"
+                >
+                    Refund Policy
+                </InlineLink>
+            </footer>
+
+            <DeleteAccountDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            />
+        </div>
+    );
+}
+
+function ContactEmail({ email }: { email: string }) {
+    return (
+        <CopyButton
+            value={email}
+            aria-label={`Copy ${email}`}
+            tooltip="Copy email address"
+            copiedTooltip="Email address copied"
+            className="polli-link inline-flex max-w-full items-center gap-1.5 text-left align-baseline"
+        >
+            {(copied) => (
+                <>
+                    <span className="min-w-0 break-all" aria-live="polite">
+                        {copied ? "Copied!" : email}
+                    </span>
+                    <span
+                        className="h-3.5 w-3.5 shrink-0 text-theme-text-base [&>svg]:size-full"
+                        aria-hidden="true"
+                    >
+                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                    </span>
+                </>
+            )}
+        </CopyButton>
+    );
+}
+
+type DeleteAccountDialogProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+};
+
+function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
+    const [confirmation, setConfirmation] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    function handleOpenChange(nextOpen: boolean): void {
+        if (isDeleting) return;
+        if (!nextOpen) {
+            setConfirmation("");
+            setError(null);
+        }
+        onOpenChange(nextOpen);
+    }
+
+    async function handleDelete(): Promise<void> {
+        if (confirmation !== DELETE_CONFIRMATION || isDeleting) return;
+
+        setIsDeleting(true);
+        setError(null);
+
+        try {
+            const result = await authClient.deleteUser();
+            if (result.error) {
+                setError(result.error.message || "Account deletion failed.");
+                setIsDeleting(false);
+                return;
+            }
+            window.location.assign("/news");
+        } catch {
+            setError("Account deletion failed. Please try again.");
+            setIsDeleting(false);
+        }
+    }
+
+    return (
+        <ConfirmationDialog
+            open={open}
+            onCancel={() => handleOpenChange(false)}
+            onConfirm={() => void handleDelete()}
+            title="Delete Pollinations account?"
+            confirmLabel={isDeleting ? "Deleting…" : "Delete account"}
+            confirmDisabled={confirmation !== DELETE_CONFIRMATION || isDeleting}
+            cancelDisabled={isDeleting}
+        >
+            <Alert intent="danger" title="This cannot be undone">
+                <div className="flex flex-col gap-3">
+                    <p>Deleting your Pollinations account removes:</p>
+                    <ul className="list-disc space-y-1 pl-5">
+                        <li>
+                            Profile, sessions, GitHub connection, and API keys
+                        </li>
+                        <li>
+                            Pollen balances, access to reward history, agents,
+                            and community models
+                        </li>
+                        <li>Published media listings and tags</li>
+                    </ul>
+                    <p>
+                        We retain only your immutable GitHub user ID with
+                        records of rewards already issued to prevent duplicate
+                        quest payouts.
+                    </p>
+                    <p>
+                        Cached copies of uploaded and generated media may remain
+                        temporarily until their retention period ends. Required
+                        billing and usage records may also be retained.
+                    </p>
+                </div>
+            </Alert>
+
+            <FieldStack
+                label={
+                    <>
+                        Type{" "}
+                        <span className="font-mono font-semibold text-intent-danger-text">
+                            {DELETE_CONFIRMATION}
+                        </span>{" "}
+                        to confirm
+                    </>
+                }
+                error={error}
+            >
+                <Field.Input asChild>
+                    <Input
+                        value={confirmation}
+                        onChange={(event) =>
+                            setConfirmation(event.currentTarget.value)
+                        }
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={isDeleting}
+                    />
+                </Field.Input>
+            </FieldStack>
+        </ConfirmationDialog>
+    );
+}
+
+function CommunityConnections({
+    discordAvailable,
+}: {
+    discordAvailable: boolean;
+}) {
     const [discordConnection, setDiscordConnection] = useState<
         DiscordConnection | null | undefined
     >();
     const [connectionPending, setConnectionPending] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
-
     useEffect(() => {
         if (!discordAvailable) return;
         void (async () => {
@@ -90,10 +433,7 @@ function AccountPage() {
         })();
     }, [discordAvailable]);
 
-    if (!user) return null;
-
-    const displayName = user.name || githubUsername || "Pollinations user";
-
+    const checkingDiscord = discordAvailable && discordConnection === undefined;
     async function handleDiscordConnection(): Promise<void> {
         setConnectionPending(true);
         setConnectionError(null);
@@ -128,288 +468,74 @@ function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <Section title="Profile" framed>
-                <div className="flex items-center gap-4">
-                    {user.image ? (
+        <Section title="Community">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                    {discordConnection?.avatarUrl ? (
                         <img
-                            src={user.image}
-                            alt={`${displayName} avatar`}
-                            className="h-16 w-16 shrink-0 rounded-full"
+                            src={discordConnection.avatarUrl}
+                            alt="Discord avatar"
+                            className="h-10 w-10 shrink-0 rounded-full"
                         />
                     ) : (
-                        <div
-                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-surface-opaque text-theme-text-muted"
-                            aria-hidden="true"
-                        >
-                            <GitHubIcon className="h-7 w-7" />
-                        </div>
+                        <DiscordIcon className="h-6 w-6 shrink-0" />
                     )}
-                    <div className="min-w-0">
-                        <Heading as="h3" size="subsection">
-                            {displayName}
-                        </Heading>
-                        {githubUsername && (
-                            <a
-                                href={`https://github.com/${encodeURIComponent(githubUsername)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-theme-text-base transition-colors hover:text-theme-text-strong"
-                            >
-                                @{githubUsername}
-                            </a>
-                        )}
-                        <Text size="sm" tone="muted" className="truncate">
-                            {user.email}
-                        </Text>
-                    </div>
-                </div>
-                <Surface
-                    variant="card"
-                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                >
                     <div>
                         <Text tone="strong" weight="semibold">
-                            Pollinations ID
+                            Discord
                         </Text>
-                        <Text size="sm" tone="muted">
-                            Your unique account identifier.
-                        </Text>
-                    </div>
-                    <CopyButton
-                        value={user.id}
-                        tooltip={null}
-                        aria-label="Copy Pollinations ID"
-                        className="flex max-w-full items-center gap-2 rounded-lg bg-theme-bg-pale px-3 py-2 text-left font-mono text-xs text-theme-text-base transition-colors hover:text-theme-text-strong"
-                    >
-                        {(copied) => (
-                            <>
-                                <span className="truncate">{user.id}</span>
-                                <span className="shrink-0 font-sans font-medium">
-                                    {copied ? "Copied" : "Copy"}
-                                </span>
-                            </>
+                        {checkingDiscord ? (
+                            <LoadingStatus>
+                                Loading Discord connection…
+                            </LoadingStatus>
+                        ) : (
+                            <Text size="sm" tone="muted">
+                                {!discordAvailable
+                                    ? "Discord linking isn't available in this environment."
+                                    : discordConnection
+                                      ? [
+                                            discordConnection.displayName,
+                                            discordConnection.username &&
+                                                `@${discordConnection.username}`,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" · ")
+                                      : "Connect your Discord identity for community features."}
+                            </Text>
                         )}
-                    </CopyButton>
-                </Surface>
-            </Section>
-
-            {discordAvailable && (
-                <Section title="Connected accounts" framed>
-                    <Surface
-                        variant="card"
-                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                        <div className="flex items-center gap-3">
-                            {discordConnection?.avatarUrl ? (
-                                <img
-                                    src={discordConnection.avatarUrl}
-                                    alt="Discord avatar"
-                                    className="h-10 w-10 shrink-0 rounded-full"
-                                />
-                            ) : (
-                                <DiscordIcon className="h-6 w-6 shrink-0" />
-                            )}
-                            <div>
-                                <Text tone="strong" weight="semibold">
-                                    Discord
-                                </Text>
-                                <Text size="sm" tone="muted">
-                                    {discordConnection
-                                        ? [
-                                              discordConnection.displayName,
-                                              discordConnection.username &&
-                                                  `@${discordConnection.username}`,
-                                          ]
-                                              .filter(Boolean)
-                                              .join(" · ")
-                                        : discordConnection === undefined
-                                          ? "Checking connection..."
-                                          : "Connect your Discord identity for community features."}
-                                </Text>
-                                {discordConnection && (
-                                    <Text size="sm" tone="muted">
-                                        Discord ID: {discordConnection.id}
-                                    </Text>
-                                )}
-                            </div>
-                        </div>
-                        <Button
-                            type="button"
-                            className="shrink-0 self-start sm:self-center"
-                            disabled={
-                                discordConnection === undefined ||
-                                connectionPending
-                            }
-                            onClick={() => void handleDiscordConnection()}
-                        >
-                            {connectionPending
-                                ? "Working..."
-                                : discordConnection
-                                  ? "Disconnect Discord"
-                                  : discordConnection === undefined
-                                    ? "Checking..."
-                                    : "Connect Discord"}
-                        </Button>
-                    </Surface>
-                    {connectionError && (
-                        <Text size="sm" tone="muted">
-                            {connectionError}
-                        </Text>
-                    )}
-                </Section>
-            )}
-
-            <div id="connectors" className="scroll-mt-6">
-                <ConnectedApps />
-            </div>
-
-            <Section title="Danger zone" framed>
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                    <Text tone="strong" weight="semibold">
-                        Delete Pollinations account
-                    </Text>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        className="shrink-0 self-start sm:self-center"
-                        onClick={() => setDeleteDialogOpen(true)}
-                    >
-                        Delete account
-                    </Button>
-                </div>
-                <div className="space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <TrashIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Permanently close your account and revoke access.
-                        </span>
-                    </p>
-                </div>
-            </Section>
-
-            <DeleteAccountDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-            />
-        </div>
-    );
-}
-
-type DeleteAccountDialogProps = {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-};
-
-function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
-    const [confirmation, setConfirmation] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    function handleOpenChange(nextOpen: boolean): void {
-        if (isDeleting) return;
-        if (!nextOpen) {
-            setConfirmation("");
-            setError(null);
-        }
-        onOpenChange(nextOpen);
-    }
-
-    async function handleDelete(): Promise<void> {
-        if (confirmation !== DELETE_CONFIRMATION || isDeleting) return;
-
-        setIsDeleting(true);
-        setError(null);
-
-        const result = await authClient.deleteUser();
-        if (result.error) {
-            setError(result.error.message || "Account deletion failed.");
-            setIsDeleting(false);
-            return;
-        }
-
-        window.location.assign("/news");
-    }
-
-    return (
-        <Dialog
-            open={open}
-            onOpenChange={handleOpenChange}
-            title="Delete Pollinations account?"
-            size="sm"
-        >
-            <div className="mt-4 flex flex-col gap-5 px-6 pb-6">
-                <Alert intent="danger" title="This cannot be undone">
-                    <div className="flex flex-col gap-3">
-                        <p>Deleting your Pollinations account removes:</p>
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                Profile, sessions, GitHub connection, and API
-                                keys
-                            </li>
-                            <li>
-                                Pollen balances, access to reward history,
-                                agents, and community models
-                            </li>
-                            <li>Published media listings and tags</li>
-                        </ul>
-                        <p>
-                            We retain only your immutable GitHub user ID with
-                            records of rewards already issued to prevent
-                            duplicate quest payouts.
-                        </p>
-                        <p>
-                            Cached copies of uploaded and generated media may
-                            remain temporarily until their retention period
-                            ends. Required billing and usage records may also be
-                            retained.
-                        </p>
+                        {discordConnection && (
+                            <Text size="sm" tone="muted">
+                                Discord ID: {discordConnection.id}
+                            </Text>
+                        )}
                     </div>
-                </Alert>
-
-                <FieldStack
-                    label={
-                        <>
-                            Type{" "}
-                            <span className="font-mono font-semibold text-intent-danger-text">
-                                {DELETE_CONFIRMATION}
-                            </span>{" "}
-                            to confirm
-                        </>
-                    }
-                    error={error}
-                >
-                    <Input
-                        value={confirmation}
-                        onChange={(event) =>
-                            setConfirmation(event.currentTarget.value)
-                        }
-                        autoComplete="off"
-                        spellCheck={false}
-                        disabled={isDeleting}
-                    />
-                </FieldStack>
-
-                <div className="flex justify-end gap-2">
-                    <Button
-                        type="button"
-                        onClick={() => handleOpenChange(false)}
-                        disabled={isDeleting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        onClick={() => void handleDelete()}
-                        disabled={
-                            confirmation !== DELETE_CONFIRMATION || isDeleting
-                        }
-                    >
-                        {isDeleting ? "Deleting..." : "Delete account"}
-                    </Button>
                 </div>
+                <Button
+                    type="button"
+                    intent={discordConnection ? "danger" : "commit"}
+                    icon={<DiscordIcon />}
+                    className="shrink-0 self-start sm:self-center"
+                    disabled={
+                        !discordAvailable ||
+                        checkingDiscord ||
+                        connectionPending
+                    }
+                    onClick={() => void handleDiscordConnection()}
+                >
+                    {connectionPending
+                        ? "Working..."
+                        : discordConnection
+                          ? "Disconnect Discord"
+                          : checkingDiscord
+                            ? "Checking..."
+                            : "Connect Discord"}
+                </Button>
             </div>
-        </Dialog>
+            {connectionError && (
+                <Text size="sm" tone="muted">
+                    {connectionError}
+                </Text>
+            )}
+        </Section>
     );
 }

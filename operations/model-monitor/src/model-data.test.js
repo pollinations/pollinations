@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+    attachRouteHealth,
     computeHealthStatus,
     mergeModelHealth,
     migrateFavorites,
     normalizeCatalogModel,
+    primaryRouteStatus,
+    rescuedCount,
+    rollupRows,
 } from "./model-data.js";
 
 const canonical = "anthropic/claude-opus-5";
@@ -122,9 +126,47 @@ test("video aliases use image events while preserving video favorites", () => {
         true,
     );
     assert.equal(results[1].catalogStatus, "historical");
+    assert.equal(results[1].type, "video");
+    assert.equal(results[1].endpointType, "image");
     assert.deepEqual(migrateFavorites(["video-old-video"], results), [
         "video-publisher/video-1",
     ]);
+});
+
+test("renamed community models keep their catalog category and scope", () => {
+    const renamed = normalizeCatalogModel({
+        name: "community/owner/seedance",
+        category: "video",
+        community: true,
+        aliases: ["owner/seedance"],
+    });
+    const [, historical] = mergeModelHealth(
+        [renamed],
+        [
+            {
+                model: "owner/seedance",
+                event_type: "generate.image",
+                provider: "community",
+                total_requests: 3,
+                status_2xx: 3,
+            },
+        ],
+        true,
+    );
+    assert.equal(historical.catalogStatus, "historical");
+    assert.equal(historical.type, "video");
+    assert.equal(historical.community, true);
+});
+
+test("unregistered traffic still falls back to the event type", () => {
+    const [unregistered] = mergeModelHealth(
+        [],
+        [{ model: "owner/deleted", event_type: "generate.image" }],
+        true,
+    );
+    assert.equal(unregistered.catalogStatus, "unregistered");
+    assert.equal(unregistered.type, "image");
+    assert.equal(unregistered.community, false);
 });
 
 test("favorites migrate and deduplicate without erasing unknown selections", () => {
@@ -180,6 +222,152 @@ test("search variants remain complete identities with distinct execution routes"
     ]);
 });
 
+test("a dead primary propped up by a fallback is flagged even though the headline reads healthy", () => {
+    const routed = normalizeCatalogModel({
+        name: "community/example/dead-primary",
+        category: "text",
+    });
+    const headlineStats = {
+        model: routed.name,
+        event_type: "generate.text",
+        provider: "vast",
+        model_used: `${routed.name}:deepinfra`,
+        total_requests: 100,
+        status_2xx: 98,
+        errors_4xx: 0,
+        errors_5xx: 2,
+    };
+    const routeStats = [
+        {
+            model: routed.name,
+            event_type: "generate.text",
+            provider: "vast",
+            model_used: routed.name,
+            fallback_used: false,
+            total_requests: 100,
+            status_2xx: 0,
+            errors_4xx: 0,
+            errors_5xx: 100,
+            served: 0,
+            fallback_rescues: 0,
+            primary_retried_503s: 100,
+        },
+        {
+            model: routed.name,
+            event_type: "generate.text",
+            provider: "deepinfra",
+            model_used: `${routed.name}:deepinfra`,
+            fallback_used: true,
+            total_requests: 100,
+            status_2xx: 98,
+            errors_4xx: 0,
+            errors_5xx: 2,
+            served: 100,
+            fallback_rescues: 98,
+            primary_retried_503s: 0,
+        },
+    ];
+
+    const [merged] = mergeModelHealth([routed], [headlineStats], true);
+    const [withRoutes] = attachRouteHealth([merged], routeStats);
+
+    assert.equal(computeHealthStatus(withRoutes.stats), "on");
+    assert.equal(withRoutes.routes.length, 2);
+    assert.equal(withRoutes.primaryRoute.model_used, routed.name);
+    assert.equal(primaryRouteStatus(withRoutes), "primary-off");
+});
+
+test("a struggling primary quietly rescued by a fallback reads 'rescued', not 'primary-off'", () => {
+    const routed = normalizeCatalogModel({
+        name: "community/example/struggling-primary",
+        category: "text",
+    });
+    const headlineStats = {
+        model: routed.name,
+        event_type: "generate.text",
+        provider: "primary-host",
+        model_used: routed.name,
+        total_requests: 100,
+        status_2xx: 99,
+        errors_4xx: 0,
+        errors_5xx: 1,
+    };
+    const routeStats = [
+        {
+            model: routed.name,
+            event_type: "generate.text",
+            provider: "primary-host",
+            model_used: routed.name,
+            fallback_used: false,
+            total_requests: 20,
+            status_2xx: 18,
+            errors_4xx: 0,
+            errors_5xx: 2,
+            served: 18,
+            fallback_rescues: 0,
+            primary_retried_503s: 0,
+        },
+        {
+            model: routed.name,
+            event_type: "generate.text",
+            provider: "fallback-host",
+            model_used: `${routed.name}:fallback`,
+            fallback_used: true,
+            total_requests: 5,
+            status_2xx: 5,
+            errors_4xx: 0,
+            errors_5xx: 0,
+            served: 5,
+            fallback_rescues: 5,
+            primary_retried_503s: 0,
+        },
+    ];
+
+    const [merged] = mergeModelHealth([routed], [headlineStats], true);
+    const [withRoutes] = attachRouteHealth([merged], routeStats);
+
+    assert.equal(primaryRouteStatus(withRoutes), "rescued");
+});
+
+test("a healthy primary with an idle fallback is flagged as neither off nor rescued", () => {
+    const routed = normalizeCatalogModel({
+        name: "community/example/healthy-primary",
+        category: "text",
+    });
+    const headlineStats = {
+        model: routed.name,
+        event_type: "generate.text",
+        provider: "primary-host",
+        model_used: routed.name,
+        total_requests: 100,
+        status_2xx: 100,
+        errors_4xx: 0,
+        errors_5xx: 0,
+    };
+    const routeStats = [
+        {
+            model: routed.name,
+            event_type: "generate.text",
+            provider: "primary-host",
+            model_used: routed.name,
+            fallback_used: false,
+            total_requests: 100,
+            status_2xx: 100,
+            errors_4xx: 0,
+            errors_5xx: 0,
+            served: 100,
+            fallback_rescues: 0,
+            primary_retried_503s: 0,
+        },
+    ];
+
+    const [merged] = mergeModelHealth([routed], [headlineStats], true);
+    const [withRoutes] = attachRouteHealth([merged], routeStats);
+
+    assert.equal(withRoutes.routes.length, 1);
+    assert.equal(primaryRouteStatus(withRoutes), null);
+});
+
 test("no traffic is neutral, but even one real server failure is not hidden", () => {
     assert.equal(computeHealthStatus(null), "waiting");
     assert.equal(
@@ -195,4 +383,103 @@ test("no traffic is neutral, but even one real server failure is not hidden", ()
         "degraded",
     );
     assert.equal(computeHealthStatus({ status_2xx: 96, errors_5xx: 4 }), "on");
+});
+
+// model_route_health returns a model total and its routes in one response. The
+// two are told apart by is_rollup alone, and getting that wrong is silent: a
+// rollup row attached as a route renders a phantom route that duplicates the
+// model's own numbers.
+const routed = normalizeCatalogModel({
+    name: "acme/rescued",
+    category: "text",
+});
+const rescuedRows = [
+    {
+        model: "acme/rescued",
+        event_type: "generate.text",
+        model_used: "",
+        provider: "acme",
+        is_rollup: 1,
+        fallback_used: 1,
+        // The caller's view: every request settled, none failed.
+        total_requests: 100,
+        status_2xx: 100,
+        errors_4xx: 0,
+        errors_5xx: 0,
+        served: 100,
+        fallback_rescues: 25,
+        retried_503s: 0,
+    },
+    {
+        model: "acme/rescued",
+        event_type: "generate.text",
+        model_used: "acme/rescued",
+        provider: "acme",
+        is_rollup: 0,
+        fallback_used: 0,
+        // The primary's view: called 100 times, failed 25, all retried away.
+        total_requests: 100,
+        status_2xx: 75,
+        errors_4xx: 0,
+        errors_5xx: 25,
+        served: 75,
+        fallback_rescues: 0,
+        retried_503s: 0,
+    },
+    {
+        model: "acme/rescued",
+        event_type: "generate.text",
+        model_used: "acme/rescued:backup",
+        provider: "backup",
+        is_rollup: 0,
+        fallback_used: 1,
+        total_requests: 25,
+        status_2xx: 25,
+        errors_4xx: 0,
+        errors_5xx: 0,
+        served: 25,
+        fallback_rescues: 25,
+        retried_503s: 0,
+    },
+];
+
+test("a rescued request counts as the success the caller experienced", () => {
+    const [model] = attachRouteHealth(
+        mergeModelHealth([routed], rollupRows(rescuedRows), true),
+        rescuedRows,
+    );
+    // The headline is what the caller got, not how many attempts it took.
+    assert.equal(computeHealthStatus(model.stats), "on");
+    assert.equal(model.stats.status_2xx, 100);
+    assert.equal(model.stats.errors_5xx, 0);
+    // The primary still has to own the failures it was rescued from.
+    assert.equal(computeHealthStatus(model.primaryRoute), "off");
+    assert.equal(model.primaryRoute.errors_5xx, 25);
+    assert.equal(rescuedCount(model), 25);
+});
+
+test("the model total is never rendered as one of its own routes", () => {
+    const [model] = attachRouteHealth(
+        mergeModelHealth([routed], rollupRows(rescuedRows), true),
+        rescuedRows,
+    );
+    assert.equal(model.routes.length, 2);
+    assert.ok(
+        model.routes.every((route) => !route.is_rollup),
+        "a rollup row attached as a route duplicates the model under itself",
+    );
+    // Settled requests reconcile against the headline; calls do not, and the
+    // difference is the retried attempts.
+    const settled = model.routes.reduce((sum, r) => sum + r.served, 0);
+    assert.equal(settled, model.stats.total_requests);
+});
+
+test("rollupRows keeps only model totals, and drops the undefined sentinel", () => {
+    assert.deepEqual(
+        rollupRows([
+            ...rescuedRows,
+            { model: "undefined", event_type: "generate.text", is_rollup: 1 },
+        ]).map((row) => row.model_used),
+        [""],
+    );
 });

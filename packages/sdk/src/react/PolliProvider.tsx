@@ -31,28 +31,20 @@ export interface PolliProviderProps {
     appKey: string;
     children: ReactNode;
     /**
-     * Where to persist the user's session token. Defaults to `"localStorage"`.
-     * Accepts `"sessionStorage"` or a custom synchronous `StorageAdapter`
-     * (e.g. cookie-backed or in-memory). Async backends like IndexedDB or
-     * React Native AsyncStorage are not supported — the interface is sync
-     * because hydration runs in a `useEffect`.
+     * Saves the API key and OAuth state. Defaults to `"localStorage"`.
+     * Also accepts `"sessionStorage"` or a custom synchronous adapter.
      */
     storage?: StorageOption;
     /** OAuth scopes to request at login. Defaults to no optional account scopes. */
     permissions?: AccountPermission[];
     /**
-     * Default model slugs to request access to (BYOP). Empty / undefined means
-     * "all models". Per-call `login({ models })` overrides this.
+     * Allowed models; omit or pass [] for all models.
+     * `login({ models })` overrides this default.
      */
     models?: string[];
-    /**
-     * Default pollen budget to request for the minted key. Per-call
-     * `login({ budget })` overrides this.
-     */
+    /** Pollen budget for the key. `login({ budget })` overrides this default. */
     budget?: number;
-    /**
-     * Default key lifetime in days. Per-call `login({ expiry })` overrides this.
-     */
+    /** Key lifetime in days. `login({ expiry })` overrides this default. */
     expiry?: number;
     /** Auth host. Defaults to `https://enter.pollinations.ai`. */
     enterUrl?: string;
@@ -200,10 +192,7 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
 }
 
 /**
- * Provides Pollinations auth state to descendants. Wrap your app once at the
- * root. Holds the delegated API key, handles the OAuth callback, and exposes
- * login/logout. Account data is fetched by opt-in hooks so apps only request
- * the data they render.
+ * Wrap your app to share login state. Account hooks fetch data separately.
  */
 export function PolliProvider({
     appKey,
@@ -225,8 +214,7 @@ export function PolliProvider({
     const stateStorageKey = `polli:${appKey}:oauth_state`;
     const verifierStorageKey = `polli:${appKey}:oauth_verifier`;
     const returnPathStorageKey = `polli:${appKey}:oauth_return_path`;
-    // Authorization codes are single-use; React StrictMode must not exchange
-    // the same callback twice when it replays effects in development.
+    // StrictMode replays effects; authorization codes can only be used once.
     const hydrationStarted = useRef(false);
     const loginStarted = useRef(false);
 
@@ -246,77 +234,88 @@ export function PolliProvider({
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
-            if (nextApiKey) {
-                storage.setItem(storageKey, nextApiKey);
-            } else {
-                storage.removeItem(storageKey);
+            let storageError: Error | null = null;
+            try {
+                if (nextApiKey) {
+                    storage.setItem(storageKey, nextApiKey);
+                } else {
+                    storage.removeItem(storageKey);
+                }
+            } catch (cause) {
+                storageError =
+                    cause instanceof Error
+                        ? cause
+                        : new Error(
+                              nextApiKey
+                                  ? "Could not save app connection"
+                                  : "Could not clear app connection",
+                          );
             }
             setApiKey(nextApiKey);
-            setError(null);
+            setError(storageError);
         },
         [storage, storageKey],
     );
 
-    // Hydrate the stored key or exchange an OAuth callback code.
     useEffect(() => {
         if (typeof window === "undefined" || hydrationStarted.current) return;
         hydrationStarted.current = true;
 
-        const result = consumeOAuthCallback(
-            window.location,
-            storage,
-            stateStorageKey,
-        );
-        const returnPath = storage.getItem(returnPathStorageKey);
-        const callbackUrl = result.cleanedUrl
-            ? (returnPath ?? result.cleanedUrl)
-            : null;
-        if (callbackUrl) window.history.replaceState({}, "", callbackUrl);
+        void (async () => {
+            const result = consumeOAuthCallback(
+                window.location,
+                storage,
+                stateStorageKey,
+            );
+            const returnPath = storage.getItem(returnPathStorageKey);
+            const callbackUrl = result.cleanedUrl
+                ? (returnPath ?? result.cleanedUrl)
+                : null;
+            if (callbackUrl) window.history.replaceState({}, "", callbackUrl);
 
-        if (result.invalidState) {
-            console.warn(
-                "[PolliProvider] dropping auth response with missing or mismatched state",
-            );
-            setError(new Error("Invalid OAuth state"));
-        }
-        if (result.error) {
-            console.warn(
-                `[PolliProvider] auth error: ${result.error}${
-                    result.errorDescription
-                        ? ` — ${result.errorDescription}`
-                        : ""
-                }`,
-            );
-            setError(new Error(result.errorDescription ?? result.error));
+            if (result.invalidState) {
+                console.warn(
+                    "[PolliProvider] dropping auth response with missing or mismatched state",
+                );
+                setError(new Error("Invalid OAuth state"));
+            }
+            if (result.error) {
+                console.warn(
+                    `[PolliProvider] auth error: ${result.error}${
+                        result.errorDescription
+                            ? ` — ${result.errorDescription}`
+                            : ""
+                    }`,
+                );
+                setError(new Error(result.errorDescription ?? result.error));
+                storage.removeItem(verifierStorageKey);
+                storage.removeItem(returnPathStorageKey);
+            }
+
+            if (!result.code) {
+                setApiKey(storage.getItem(storageKey));
+                return;
+            }
+
+            const verifier = storage.getItem(verifierStorageKey);
+            const redirectUrl = currentRedirectUrl();
             storage.removeItem(verifierStorageKey);
             storage.removeItem(returnPathStorageKey);
-        }
+            if (!verifier || !redirectUrl) {
+                setError(new Error("Missing PKCE verifier"));
+                return;
+            }
 
-        const storedKey = storage.getItem(storageKey);
-        if (!result.code) {
-            if (storedKey) setApiKey(storedKey);
-            setIsHydrated(true);
-            return;
-        }
-
-        const verifier = storage.getItem(verifierStorageKey);
-        const redirectUrl = currentRedirectUrl();
-        storage.removeItem(verifierStorageKey);
-        storage.removeItem(returnPathStorageKey);
-        if (!verifier || !redirectUrl) {
-            setError(new Error("Missing PKCE verifier"));
-            setIsHydrated(true);
-            return;
-        }
-
-        void exchangeAuthorizationCode({
-            enterUrl,
-            appKey,
-            redirectUrl,
-            code: result.code,
-            verifier,
-        })
-            .then(updateApiKey)
+            updateApiKey(
+                await exchangeAuthorizationCode({
+                    enterUrl,
+                    appKey,
+                    redirectUrl,
+                    code: result.code,
+                    verifier,
+                }),
+            );
+        })()
             .catch((cause) => {
                 setError(
                     cause instanceof Error
@@ -343,43 +342,50 @@ export function PolliProvider({
             const returnPath = currentReturnPath();
             if (!redirectUrl || !returnPath) return;
             loginStarted.current = true;
-            const extraPermissions = request?.permissions;
-            const perms: AccountPermission[] =
-                extraPermissions && extraPermissions.length > 0
-                    ? Array.from(
-                          new Set([...defaultPermissions, ...extraPermissions]),
-                      )
-                    : [...defaultPermissions];
-            const state = crypto.randomUUID();
-            const verifier = createPkceVerifier();
-            storage.setItem(stateStorageKey, state);
-            storage.setItem(verifierStorageKey, verifier);
-            storage.setItem(returnPathStorageKey, returnPath);
-            void createPkceChallenge(verifier)
-                .then((codeChallenge) => {
-                    window.location.href = buildAuthorizeUrl({
-                        enterUrl,
-                        appKey,
-                        permissions: perms,
-                        redirectUrl,
-                        state,
-                        codeChallenge,
-                        models: request?.models ?? defaultModels,
-                        budget: request?.budget ?? defaultBudget,
-                        expiry: request?.expiry ?? defaultExpiry,
-                    });
-                })
-                .catch((cause) => {
-                    loginStarted.current = false;
+            setError(null);
+            void (async () => {
+                const extraPermissions = request?.permissions;
+                const perms: AccountPermission[] =
+                    extraPermissions && extraPermissions.length > 0
+                        ? Array.from(
+                              new Set([
+                                  ...defaultPermissions,
+                                  ...extraPermissions,
+                              ]),
+                          )
+                        : [...defaultPermissions];
+                const state = crypto.randomUUID();
+                const verifier = createPkceVerifier();
+                storage.setItem(stateStorageKey, state);
+                storage.setItem(verifierStorageKey, verifier);
+                storage.setItem(returnPathStorageKey, returnPath);
+                const codeChallenge = await createPkceChallenge(verifier);
+                window.location.href = buildAuthorizeUrl({
+                    enterUrl,
+                    appKey,
+                    permissions: perms,
+                    redirectUrl,
+                    state,
+                    codeChallenge,
+                    models: request?.models ?? defaultModels,
+                    budget: request?.budget ?? defaultBudget,
+                    expiry: request?.expiry ?? defaultExpiry,
+                });
+            })().catch((cause) => {
+                loginStarted.current = false;
+                try {
                     storage.removeItem(stateStorageKey);
                     storage.removeItem(verifierStorageKey);
                     storage.removeItem(returnPathStorageKey);
-                    setError(
-                        cause instanceof Error
-                            ? cause
-                            : new Error("Could not start authorization"),
-                    );
-                });
+                } catch {
+                    // Keep the original error if cleanup also fails.
+                }
+                setError(
+                    cause instanceof Error
+                        ? cause
+                        : new Error("Could not start authorization"),
+                );
+            });
         },
         [
             enterUrl,

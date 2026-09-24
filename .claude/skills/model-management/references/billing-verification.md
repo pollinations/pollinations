@@ -22,6 +22,10 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 - Calculate expected price from observed usage and compare it with response headers/body and Tinybird. Allow only the repository's normal rounding.
 - Do not change the multiplier to hide incomplete usage accounting.
 - Do not guess unposted units or derive a price from an unrelated provider.
+- To check whether a past pricing change really shipped, read the code deployed at that
+  revision and the billed `generation_event_v2` events around it. A PR title or
+  announcement is not evidence; a same-day multiplier or promotion change can cancel the
+  advertised effect.
 
 ## Provider and fallback attribution
 
@@ -41,6 +45,7 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 
 - Local/dev and staging traffic use the staging workspace; production traffic uses production.
 - Query `generation_event_v2` for the exact model and request time. `model_health` is for health/latency, not billing detail.
+- For production SQL, use `enter.pollinations.ai/observability/scripts/tb-prod.sh` with `FORMAT JSON`; it rejects failed queries. Enable `set -o pipefail` when piping its output so the failure reaches the caller.
 - Confirm every non-zero unit has a corresponding count and price column and that total cost/price reconcile.
 - Tail the worker during the probe. Any missing conversion warning means a billable line may be priced at zero and blocks merge.
 

@@ -23,7 +23,7 @@ export const ActivityToolbar: FC<{
 }) => (
     <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-col gap-2">
                 <ActivityPeriodNavigation
                     label={label}
                     value={period}
@@ -34,11 +34,13 @@ export const ActivityToolbar: FC<{
                 {download}
             </div>
         </div>
-        <div className="grid min-w-0 grid-cols-1 items-start gap-3 @[36rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_14rem]">
-            {children}
-            <div className="min-w-0">
-                <MetricTabs value={metric} onChange={onMetricChange} />
+        {children && (
+            <div className="grid min-w-0 grid-cols-1 items-start gap-3 @[36rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_14rem]">
+                {children}
+                <div className="min-w-0">
+                    <MetricTabs value={metric} onChange={onMetricChange} />
+                </div>
             </div>
-        </div>
+        )}
     </header>
 );

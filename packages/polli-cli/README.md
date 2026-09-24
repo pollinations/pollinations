@@ -25,7 +25,7 @@ Every command is agent-friendly:
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
 - When a call runs out of pollen, the first line of the error is the top-up link.
-- `polli auth status --json` exposes everything about the current session.
+- `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
 ## Get started
 
@@ -36,6 +36,14 @@ printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
 Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+
+```bash
+polli update    # npm install -g @pollinations/cli@latest, if installed globally
+```
+
+For npx or a local/project install, `update` prints instructions instead of creating a second global install.
+
+Interactive commands show an occasional update notice without waiting for the network. Set `NO_UPDATE_NOTIFIER=1` to disable it. Notices are skipped for scripts, pipes, and `--json`; updates are never installed automatically. Updating leaves credentials and harness settings untouched.
 
 ## Generate
 
@@ -92,18 +100,19 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
 ```
 
-Manage agents with API-shaped JSON config files plus their callable model name
-and catalog title:
+Manage agents with API-shaped JSON config files:
 
 ```bash
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
@@ -131,8 +140,8 @@ restores the backup.
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI
-polli harness dsh on              # DeepSeek Harness → Pollinations (default model: deepseek)
-polli harness dsh on --model kimi
+polli harness dsh on              # DeepSeek Harness → Pollinations
+polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
 polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw

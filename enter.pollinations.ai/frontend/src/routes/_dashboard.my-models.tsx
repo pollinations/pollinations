@@ -1,6 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Await, createFileRoute, redirect } from "@tanstack/react-router";
+import { useDeferredValue } from "react";
 import { Deployments } from "../components/community-endpoints";
-import { Route as DashboardRoute } from "./_dashboard.tsx";
+import { DeploymentsPlaceholder } from "../components/community-endpoints/community-endpoints.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/my-models")({
     beforeLoad: ({ context, location }) => {
@@ -15,6 +17,22 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 });
 
 function MyModelsPage() {
-    const { communityEndpointsAllowed } = DashboardRoute.useLoaderData();
-    return <Deployments canPublish={communityEndpointsAllowed} />;
+    const retry = useDashboardRetry("profile");
+    const { profile } = useDeferredValue(DashboardRoute.useLoaderData());
+    return (
+        <Await promise={profile} fallback={<DeploymentsPlaceholder />}>
+            {(details) =>
+                details ? (
+                    <Deployments
+                        canPublish={details.communityEndpointsAllowed}
+                    />
+                ) : (
+                    <DeploymentsPlaceholder
+                        onRetry={retry}
+                        error="Couldn’t load publisher details."
+                    />
+                )
+            }
+        </Await>
+    );
 }

@@ -29,7 +29,7 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
-import { isOpenWebUiChattable, openWebUiChatUrl } from "./open-webui-link.tsx";
+import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     LedgerPriceValue,
     ModelPricingLedger,
@@ -165,16 +165,17 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
     const title = getModelDisplayName(model) || model.name;
     const details = getModelTitleTooltipContent(model);
     const chatSupported = isOpenWebUiChattable(model);
-    const href = chatSupported
-        ? openWebUiChatUrl(model.name)
-        : ["3d", "embedding", "realtime"].includes(model.type)
-          ? undefined
-          : `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`;
-    const content = href ? (
+    const href =
+        !chatSupported && !["3d", "embedding", "realtime"].includes(model.type)
+            ? `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`
+            : undefined;
+    const content = chatSupported ? (
+        <OpenWebUiLink modelId={model.name} title={title} />
+    ) : href ? (
         <InlineLink
             href={href}
             className="inline-flex min-w-0 max-w-full items-baseline"
-            aria-label={`Open ${title} in ${chatSupported ? "Open WebUI" : "Play"}`}
+            aria-label={`Open ${title} in Play`}
         >
             <span className="min-w-0 truncate">{title}</span>
         </InlineLink>
@@ -188,7 +189,7 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
             content={details}
             ariaLabel={`${title}: model details`}
             className="min-w-0"
-            tapEnabled={!href}
+            tapEnabled={!chatSupported && !href}
             displayContents
         >
             {content}

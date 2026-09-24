@@ -1,0 +1,37 @@
+{
+  "pr_number": 15385,
+  "title": "docs: update README — 2026-09-24",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15385",
+  "merged_at": "2026-09-24T07:26:00Z",
+  "labels": [
+    "DOCS",
+    "NEWS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news in the garden",
+    "blurb": "The README got its daily tending: latest hive news, a freshly drawn star trail, and the current crop of community apps.",
+    "summary": "Refreshed README.md with the latest news and star-history data, alongside updated light and dark star-history SVG charts.",
+    "impact": "Visitors to the repository now see current project news, community app highlights, and an up-to-date view of the repository's star growth.",
+    "keywords": [
+      "readme",
+      "documentation",
+      "news",
+      "star-history",
+      "community-apps"
+    ],
+    "visual_concept": "Polli tends a cozy open-source garden shaped like an open README book, pinning a fresh news note beside a gently rising star chart; small code-plant sprouts represent recently published community apps.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, tending an open README book in a warm garden; she pins a fresh \"LATEST NEWS\" note beside a softly glowing rising star chart while little code-plants and flowers grow from the pages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15385.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, tending an open README book in a warm garden; she pins a fresh \"LATEST NEWS\" note beside a softly glowing rising star chart while little code-plants and flowers grow from the pages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-24T07:27:21.380852+00:00"
+}

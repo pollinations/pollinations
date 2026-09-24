@@ -1,0 +1,36 @@
+{
+  "pr_number": 15086,
+  "title": "feat(polli-cli): add whoami as alias of auth status",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/15086",
+  "merged_at": "2026-09-24T21:26:02Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n- Add top-level `polli whoami` that reuses `showAuthStatus` (same output as `polli auth status`, including `--json`)\n- Document the alias in the CLI README\n\nFixes #15034\n\n## Test plan\n- [x] `vitest run` in `packages/polli-cli` (125 passed)\n- [ ] `polli whoami` and `polli auth status` produce identical output\n- [ ] `polli whoami --json` matches `polli auth status --json`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The bee knows itself",
+    "blurb": "Polli CLI learned the ancient terminal greeting: `whoami`. It reports the same auth status as `polli auth status`, because typing fewer words is a fine use of civilization.",
+    "summary": "Added a top-level `polli whoami` alias for `polli auth status`, including identical human-readable and `--json` output, and documented it in the CLI README.",
+    "impact": "CLI users can now quickly check the currently authenticated Polli identity with `polli whoami` while keeping existing scripts compatible through the same JSON response.",
+    "keywords": [
+      "polli-cli",
+      "cli",
+      "authentication",
+      "whoami",
+      "json",
+      "developer-experience"
+    ],
+    "visual_concept": "A cozy terminal identity-check scene: Polli wears tiny librarian glasses and looks into a retro CRT terminal that displays a friendly `WHOAMI?` prompt and a small verified identity card. A few code-plants and flowers grow around the terminal, representing a small but useful CLI command branching from the existing auth command.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, checking her identity at a chunky retro CRT terminal glowing prominently lime green (#ecf874); the screen shows simple pixel text: 'WHOAMI?' and a small verified profile card. Code-plants and pastel flowers curl around the desk in a warm cream, mint, and lavender room. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15086.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, checking her identity at a chunky retro CRT terminal glowing prominently lime green (#ecf874); the screen shows simple pixel text: 'WHOAMI?' and a small verified profile card. Code-plants and pastel flowers curl around the desk in a warm cream, mint, and lavender room. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T21:27:03.792443+00:00"
+}

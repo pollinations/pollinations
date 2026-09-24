@@ -166,7 +166,7 @@ query($query:String!,$after:String){
       ... on Issue{
         number title url author{ ... on User{ databaseId } }
         labels(first:20){ nodes{ name } }
-        closedByPullRequestsReferences(first:10,includeClosedPrs:true){
+        closedByPullRequestsReferences(first:10){
           nodes{ mergedAt }
         }
       }

@@ -8,6 +8,8 @@ export interface HarnessOnOptions {
     model?: string;
     browser?: boolean;
     mcp?: boolean;
+    /** Run a billable smoke request after setup (opt-in). */
+    smoke?: boolean;
 }
 
 export interface HarnessModel {
@@ -27,6 +29,19 @@ export interface HarnessResult {
     mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
+    /**
+     * Lifecycle state for router-backed harnesses (e.g. "awaiting-provider"),
+     * shown verbatim by `polli harness <id> status`.
+     */
+    state?: string;
+    /**
+     * Process exit code the CLI should adopt (0 success, 2 refused
+     * prerequisite, 3 awaiting manual steps, 4 not configured). Unset
+     * means 0.
+     */
+    exitCode?: number;
+    /** Extra human-readable lines the CLI prints after the summary. */
+    notes?: string[];
 }
 
 /** One harness integration. Each adapter owns its setup strategy. */

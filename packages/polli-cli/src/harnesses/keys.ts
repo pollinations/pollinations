@@ -5,7 +5,7 @@ import { printInfo, printSuccess } from "../lib/output.js";
 
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
-const keyIsValid = async (key: string) => {
+export const keyIsValid = async (key: string) => {
     try {
         const info = await gen<{ valid: boolean }>("/account/key", {
             apiKey: key,
@@ -60,4 +60,46 @@ export const resolveHarnessKey = async (
     });
     printSuccess(`Created API key "${name}" for ${harness.label}.`);
     return created.key;
+};
+
+interface ListedKey {
+    id: string;
+    name: string;
+}
+
+/**
+ * Revoke every account key minted for a harness (`polli-harness-<id>`). The
+ * creation endpoint enforces no name uniqueness, so a crashed `on` may have
+ * left duplicates — delete by name, not by a remembered id. Best-effort:
+ * without an account key there is nothing we can do from here.
+ *
+ * Returns the number of revoked keys.
+ */
+export const revokeHarnessKeys = async (harnessId: string): Promise<number> => {
+    const accountKey = resolveApiKey();
+    if (!accountKey) {
+        printInfo(
+            `No polli login available; revoke any "polli-harness-${harnessId}" keys manually: polli keys list`,
+        );
+        return 0;
+    }
+    const name = `polli-harness-${harnessId}`;
+    const keys = await gen<ListedKey[]>("/account/keys", {
+        apiKey: accountKey,
+    });
+    const ours = (Array.isArray(keys) ? keys : []).filter(
+        (key) => key.name === name,
+    );
+    for (const key of ours) {
+        await gen(`/account/keys/${key.id}`, {
+            apiKey: accountKey,
+            method: "DELETE",
+        });
+    }
+    if (ours.length > 0) {
+        printSuccess(
+            `Revoked ${ours.length} API key${ours.length === 1 ? "" : "s"} named "${name}".`,
+        );
+    }
+    return ours.length;
 };

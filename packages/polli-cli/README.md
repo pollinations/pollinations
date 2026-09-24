@@ -140,6 +140,8 @@ restores the backup.
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI
+polli harness codex on            # Codex via Codex Router (pinned v0.6.0)
+polli harness claude-code on      # Claude Code via Claude Code Router (pinned 3.1.1)
 polli harness dsh on              # DeepSeek Harness → Pollinations
 polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
@@ -156,6 +158,21 @@ The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
+
+Codex and Claude Code are driven through their community routers, pinned to
+exact versions so the integration cannot drift: Codex Router
+(`duolahypercho/codex-router` @ `5e1b49e`, v0.6.0) and Claude Code Router
+(`@musistudio/claude-code-router@3.1.1`). `polli harness codex on` installs the
+router clone, registers the `pollinations` generic provider through the
+router's own commands, stores the dedicated key in the router's protected
+credential file, and curates the first-party tool-calling catalog; `off`
+removes only what it created. Claude Code Router only supports provider
+creation through its management UI, so `polli harness claude-code on` starts
+the router, opens the UI with exact values and a fresh child key, and waits
+(read-only) until the new profile verifies; `off` revokes the key once the
+entries are deleted in the UI. Both adapters refuse to touch providers or
+installations they do not own, and `--smoke` sends one billable request after
+setup to prove quota works.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

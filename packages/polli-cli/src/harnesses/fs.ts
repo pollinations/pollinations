@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import {
     accessSync,
     constants,
@@ -5,6 +6,7 @@ import {
     mkdirSync,
     readFileSync,
     renameSync,
+    rmdirSync,
     statSync,
     unlinkSync,
     writeFileSync,
@@ -64,4 +66,57 @@ export const writeTextAtomic = (path: string, text: string, mode?: number) => {
 
 export const removeIfExists = (path: string) => {
     if (existsSync(path)) unlinkSync(path);
+};
+
+/**
+ * Launch an installed command. npm exposes global CLIs on Windows as .cmd
+ * shims, which CreateProcess cannot run directly - they need cmd.exe.
+ */
+export const spawnCommand = (
+    command: string,
+    args: string[],
+    options: Parameters<typeof spawnSync>[2] = {},
+): ReturnType<typeof spawnSync> & { stdout?: string; stderr?: string } =>
+    (process.platform === "win32"
+        ? spawnSync(`"${command}"`, args, { ...options, shell: true })
+        : spawnSync(command, args, options)) as ReturnType<typeof spawnSync> & {
+        stdout?: string;
+        stderr?: string;
+    };
+
+const LOCK_STALE_MS = 30 * 60 * 1000;
+
+/**
+ * Interprocess mutex via atomic mkdir: two `polli harness` processes must
+ * never interpret each other's live transaction journal as a crash. A lock
+ * older than LOCK_STALE_MS is considered abandoned (its holder died).
+ */
+export const withLock = async <T>(
+    lockDir: string,
+    fn: () => T | Promise<T>,
+): Promise<T> => {
+    mkdirSync(dirname(lockDir), { recursive: true, mode: 0o700 });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            mkdirSync(lockDir);
+            break;
+        } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code !== "EEXIST") throw error;
+            const stale =
+                Date.now() - statSync(lockDir).mtimeMs > LOCK_STALE_MS;
+            if (stale && attempt === 0) {
+                rmdirSync(lockDir);
+                continue;
+            }
+            throw new Error(
+                `Another polli harness operation is in progress (lock: ${lockDir}). If it crashed, remove that directory and retry.`,
+            );
+        }
+    }
+    try {
+        return await fn();
+    } finally {
+        rmdirSync(lockDir);
+    }
 };

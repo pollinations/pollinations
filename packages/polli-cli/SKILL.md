@@ -44,7 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|claude-code\|codex\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -212,6 +212,8 @@ polli keys revoke <id>                                             # id comes fr
 ```bash
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
+polli harness codex on              # Codex via Codex Router (pinned v0.6.0)
+polli harness claude-code on        # Claude Code via Claude Code Router (pinned 3.1.1)
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
 polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools

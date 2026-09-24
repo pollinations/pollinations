@@ -1,0 +1,36 @@
+{
+  "pr_number": 15365,
+  "title": "fix: check data dependencies before production promotion",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15365",
+  "merged_at": "2026-09-24T22:22:01Z",
+  "labels": [
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Make the promotion skill explicitly check changed Tinybird resources in production and block on missing resources or failed probes.\n- Verify pending D1 migrations against production history and the existing migrate-before-deploy workflow, including compatibility with the still-running Workers.\n- Record both checks in the promotion PR so prerequisite verification is visible to reviewers.\n- Checked against the current production workflow and Tinybird deployment rules; `git diff --check` passes. Instruction-only change; no deployments.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The gate checks the roots",
+    "blurb": "Production promotions now pause to inspect their Tinybird roots and D1 migration trail. Less guessing at the garden gate, more proof the soil is there.",
+    "summary": "Updated the production-promotion skill to verify changed Tinybird resources and probes in production, check pending D1 migrations against production history and the migrate-before-deploy workflow, and record both results in the promotion PR.",
+    "impact": "Reviewers now get visible prerequisite checks for Tinybird and D1 before a production promotion proceeds, helping deployments stay compatible with running Workers.",
+    "keywords": [
+      "production",
+      "Tinybird",
+      "D1",
+      "migrations",
+      "deployment",
+      "promotion"
+    ],
+    "visual_concept": "A cozy garden gate represents the production-promotion checkpoint: Polli, wearing a tiny safety helmet and clipboard, checks a glowing Tinybird data plant and a migration-map scroll before opening the gate. A small CRT monitor robot displays green checkmarks, with roots and flowers emphasizing dependency checks.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny safety helmet, using a clipboard to inspect glowing code-plant roots beside a garden gate labeled \"PROD\"; a chunky CRT monitor robot shows two lime green (#ecf874) checkmarks for Tinybird and D1 migrations. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, flowers and vines around the gate, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15365.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny safety helmet, using a clipboard to inspect glowing code-plant roots beside a garden gate labeled \"PROD\"; a chunky CRT monitor robot shows two lime green (#ecf874) checkmarks for Tinybird and D1 migrations. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, flowers and vines around the gate, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-24T22:23:45.720745+00:00"
+}

@@ -32,7 +32,6 @@ import {
 import { isOpenWebUiChattable, openWebUiChatUrl } from "./open-webui-link.tsx";
 import {
     LedgerPriceValue,
-    ModelPricingControls,
     ModelPricingLedger,
     useModelPricingSelection,
 } from "./price-badge.tsx";
@@ -161,35 +160,45 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     );
 }
 
-/** One test destination per model, shared by desktop and mobile cards. */
-export function ModelTestLink({ model }: { model: ModelPrice }) {
+/** The model title opens the same destination on desktop and mobile. */
+export function ModelTitle({ model }: { model: ModelPrice }) {
+    const title = getModelDisplayName(model) || model.name;
+    const details = getModelTitleTooltipContent(model);
     const chatSupported = isOpenWebUiChattable(model);
-    if (
-        !chatSupported &&
-        ["3d", "embedding", "realtime"].includes(model.type)
-    ) {
-        return null;
-    }
-    const destination = chatSupported ? "Open WebUI" : "Play";
-    return (
+    const href = chatSupported
+        ? openWebUiChatUrl(model.name)
+        : ["3d", "embedding", "realtime"].includes(model.type)
+          ? undefined
+          : `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`;
+    const content = href ? (
         <InlineLink
-            href={
-                chatSupported
-                    ? openWebUiChatUrl(model.name)
-                    : `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`
-            }
-            size="footer"
-            tone="quiet"
-            title={`Test in ${destination}`}
-            aria-label={`Test ${getModelDisplayName(model) || model.name} in ${destination}`}
+            href={href}
+            className="inline-flex min-w-0 max-w-full items-baseline"
+            aria-label={`Open ${title} in ${chatSupported ? "Open WebUI" : "Play"}`}
         >
-            Test
+            <span className="min-w-0 truncate">{title}</span>
         </InlineLink>
+    ) : (
+        <span className="min-w-0 truncate">{title}</span>
+    );
+
+    return details ? (
+        <Tooltip
+            triggerAs="span"
+            content={details}
+            ariaLabel={`${title}: model details`}
+            className="min-w-0"
+            tapEnabled={!href}
+            displayContents
+        >
+            {content}
+        </Tooltip>
+    ) : (
+        content
     );
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDisplayName = getModelDisplayName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -198,8 +207,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
-    const publicModelName = modelDisplayName || model.name;
-    const titleTooltip = getModelTitleTooltipContent(model);
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
@@ -235,36 +242,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         : "flex-1 min-w-0 self-stretch pl-[25px]"
                 }
             >
-                <div className="flex h-full min-w-0 flex-col justify-center gap-1.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                        {titleTooltip ? (
-                            <Tooltip
-                                triggerAs="span"
-                                content={titleTooltip}
-                                ariaLabel={`${publicModelName}: model details`}
-                                className="min-w-0"
-                                tapEnabled
-                                displayContents
-                            >
-                                <span className="min-w-0 truncate text-base font-medium leading-tight">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-base font-medium leading-tight">
-                                {publicModelName}
-                            </span>
-                        )}
+                <div className="flex h-full min-w-0 flex-col justify-center gap-2">
+                    <div className="flex min-h-5 min-w-0 items-center text-base font-medium leading-tight">
+                        <ModelTitle model={model} />
                     </div>
-                    <CopyValue
-                        value={model.name}
-                        label={`Copy model id ${model.name}`}
-                    />
+                    <div className="flex min-h-5 min-w-0 items-center">
+                        <CopyValue
+                            value={model.name}
+                            label={`Copy model id ${model.name}`}
+                            showCopyIcon
+                        />
+                    </div>
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
                             size="footer"
-                            className="inline-flex w-fit max-w-full items-center"
+                            className="inline-flex min-h-5 w-fit max-w-full items-center"
                         >
                             <span className="truncate">{model.publisher}</span>
                         </InlineLink>
@@ -272,7 +265,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0 ||
                         model.perUserRpm != null) && (
-                        <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                        <div className="inline-flex min-h-5 items-center gap-2.5 text-theme-text-muted">
                             {inputModalities.length > 0 && (
                                 <Tooltip
                                     content={
@@ -336,31 +329,26 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <ModelTestLink model={model} />
-                    </div>
+                    {(model.health || showNew || showAlpha) && (
+                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                            <ModelStatusChips
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden pl-3">
-                <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <ModelPricingControls
-                        model={model}
-                        pricing={pricing}
-                        className="justify-end"
-                    />
-                    <BalanceAccessChip access={balanceAccess} />
-                </div>
                 <ModelPricingLedger
+                    modelName={model.displayName ?? model.name}
                     pricing={pricing}
+                    requestBadge={<BalanceAccessChip access={balanceAccess} />}
                     hasTools={pollinationsTools}
                     requestEstimate={<PerPollenEstimate model={model} ledger />}
                 />

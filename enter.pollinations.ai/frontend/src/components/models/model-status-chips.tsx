@@ -1,11 +1,4 @@
-import {
-    CheckIcon,
-    Chip,
-    SparklesIcon,
-    Tooltip,
-    WarningIcon,
-    XIcon,
-} from "@pollinations/ui";
+import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { FC } from "react";
@@ -28,61 +21,80 @@ type BalanceAccessChipProps = {
 const healthStyles = {
     healthy: {
         className: "text-intent-success-text",
-        icon: <CheckIcon className="h-4 w-4" />,
+        label: "Healthy",
     },
     degraded: {
         className: "text-intent-warning-text",
-        icon: <WarningIcon className="h-4 w-4" />,
+        label: "Degraded",
     },
     down: {
         className: "text-intent-danger-text",
-        icon: <XIcon className="h-4 w-4" />,
+        label: "Down",
     },
     unknown: {
         className: "text-theme-text-muted",
-        icon: <span className="text-base leading-none">—</span>,
+        label: "No data",
     },
 } as const;
+
+export function ModelHealthIcon({
+    status = "healthy",
+    className = "h-5 w-5",
+}: {
+    status?: ModelHealth["status"];
+    className?: string;
+}) {
+    const activeBars = { healthy: 3, degraded: 2, down: 1, unknown: 0 }[status];
+
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className={className}
+            fill="currentColor"
+        >
+            {[6, 11, 16].map((height, index) => (
+                <rect
+                    key={height}
+                    x={4 + index * 6}
+                    y={20 - height}
+                    width="4"
+                    height={height}
+                    rx="2"
+                    opacity={index < activeBars ? 1 : 0.3}
+                />
+            ))}
+        </svg>
+    );
+}
 
 const healthNumber = new Intl.NumberFormat("en", {
     maximumFractionDigits: 1,
 });
 
-function ModelHealthIndicator({
+export function ModelHealthIndicator({
     health,
     communityProxy,
 }: {
     health: ModelHealth;
     communityProxy: boolean;
 }) {
-    const { className, icon } = healthStyles[health.status];
-    const reliabilitySample = communityProxy
-        ? `the last ${health.requests} eligible requests (up to seven days)`
-        : "the last 24 hours";
-    const healthLabel =
-        health.status === "unknown"
-            ? "No recent reliability data"
-            : `${health.status === "healthy" ? "Healthy" : "Elevated errors"} across ${reliabilitySample}`;
+    const { className, label } = healthStyles[health.status];
     const sample = communityProxy
         ? `last ${health.requests} eligible requests · up to 7 days`
         : "last 24 hours";
     const detail =
         health.status === "unknown" || health.success_rate == null
             ? `No data · ${communityProxy ? "last 7 days" : "last 24 hours"}`
-            : `${healthNumber.format(health.success_rate)}% success · ${sample}`;
+            : `${label} · ${healthNumber.format(health.success_rate)}% success · ${sample}`;
 
     return (
-        <Tooltip
-            content={detail}
-            ariaLabel={healthLabel}
-            tapEnabled
-            displayContents
-        >
+        <Tooltip content={detail} ariaLabel={detail} tapEnabled displayContents>
             <span
                 aria-hidden="true"
                 className={`inline-flex h-5 w-5 items-center justify-center ${className}`}
             >
-                {icon}
+                <ModelHealthIcon status={health.status} />
             </span>
         </Tooltip>
     );

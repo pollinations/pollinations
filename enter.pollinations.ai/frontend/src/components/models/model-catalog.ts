@@ -530,6 +530,7 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
               ...basePrice,
               priceVariants,
               priceDefaultLabel: model.pricing_default_label,
+              pricingDimensions: model.pricing_dimensions,
           }
         : basePrice;
 }

@@ -18,7 +18,7 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
-import type { BillingRateDefinition } from "./public-pricing";
+import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
@@ -177,6 +177,7 @@ export type ModelDefinition = {
     // Public label for the base rate sheet selected when no named variant
     // applies, such as "720p" or "≤272K context".
     defaultCostVariantLabel?: string;
+    pricingDimensions?: PricingDimension[];
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection

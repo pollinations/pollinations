@@ -527,7 +527,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily successful billed consumption for all community-model traffic, including direct and BYOP calls. Paid is revenue-bearing consumed value; Quest is free Pollen and is not revenue.",
+      "description": "Daily successful billed consumption for all community-model traffic, including direct and BYOP calls. 75% of it is credited to model owners in the payer's bucket (see BYOM owner rewards), so Paid is consumed value, not Pollinations revenue; Quest is free Pollen.",
       "fieldConfig": {
         "defaults": {
           "color": {

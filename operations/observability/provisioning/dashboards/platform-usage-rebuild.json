@@ -392,7 +392,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily revenue-bearing Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly; values are successful billed consumption, not cash collected. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
+      "description": "Daily Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly. Values are successful billed consumption, not cash collected or Pollinations revenue: BYOP markup and 75% of BYOM spend are credited to app and model owners. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
       "fieldConfig": {
         "defaults": {
           "color": {

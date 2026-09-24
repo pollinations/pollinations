@@ -500,7 +500,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily successful billed Pollen consumed through BYOP, split by end-user funding. Paid is revenue-bearing consumed value; Quest is free Pollen and is not revenue. Reuses the shared daily BYOP query.",
+      "description": "Daily successful billed Pollen consumed through BYOP, split by end-user funding. It includes app markup credited to developers and community-model spend credited to model owners, so Paid is consumed value, not Pollinations revenue; Quest is free Pollen. Reuses the shared daily BYOP query.",
       "fieldConfig": {
         "defaults": {
           "color": {

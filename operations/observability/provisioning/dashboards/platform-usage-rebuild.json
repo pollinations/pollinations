@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Rebuilt platform usage dashboard backed by generation_usage_hourly. Covers authenticated, non-cached generation traffic without duplicating error, model-health, or economics monitoring. Traffic defaults to regular users; legacy public APIs and internal/dev (including monitoring) are separate selectable groups.",
+  "description": "Rebuilt platform usage dashboard backed by generation_usage_hourly. Covers authenticated, non-cached generation traffic without duplicating error, model-health, or economics monitoring. Shows regular user traffic only; excludes legacy APIs and internal/dev traffic, including monitoring.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -115,7 +115,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  sumMerge(all_calls) AS calls,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps,\n  uniqIf(model, model != 'unknown') AS active_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})",
+          "rawSql": "SELECT\n  sumMerge(all_calls) AS calls,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps,\n  uniqIf(model, model != 'unknown') AS active_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'",
           "refId": "A"
         }
       ],
@@ -177,7 +177,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -239,7 +239,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  hour AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  hour AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -365,7 +365,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -429,7 +429,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open Direct API",
-                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -454,7 +454,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOM — Community Models",
-                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -479,7 +479,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -504,7 +504,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -541,7 +541,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  multiIf(\n    is_byop = 1 AND is_community = 1, 'BYOP · BYOM',\n    is_byop = 1, 'BYOP · Pollinations models',\n    is_community = 1, 'BYOM · Direct',\n    'Direct API'\n  ) AS product_path,\n  sumMerge(successful_calls) AS requests,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time, product_path\nORDER BY time, product_path",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  multiIf(\n    is_byop = 1 AND is_community = 1, 'BYOP · BYOM',\n    is_byop = 1, 'BYOP · Pollinations models',\n    is_community = 1, 'BYOM · Direct',\n    'Direct API'\n  ) AS product_path,\n  sumMerge(successful_calls) AS requests,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time, product_path\nORDER BY time, product_path",
           "refId": "A"
         }
       ],
@@ -617,7 +617,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open Direct API",
-                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -642,7 +642,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOM — Community Models",
-                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -667,7 +667,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -692,7 +692,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -803,7 +803,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open Direct API",
-                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/core-api-rebuild/direct-api?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -828,7 +828,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOM — Community Models",
-                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/community-models-rebuild/byom-community-models?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -853,7 +853,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -878,7 +878,7 @@
                   {
                     "targetBlank": false,
                     "title": "Open BYOP Apps",
-                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser&var-traffic_group=${traffic_group:percentencode}"
+                    "url": "/d/byop-apps-rebuild/byop-apps?orgId=1&from=${__from}&to=${__to}&timezone=browser"
                   }
                 ]
               }
@@ -1151,7 +1151,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH top_models AS (\n  SELECT model\n  FROM generation_usage_hourly\n  WHERE $__timeFilter(hour)\n    AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\n  GROUP BY model\n  ORDER BY sumMerge(successful_calls) DESC\n  LIMIT 8\n)\nSELECT\n  toStartOfDay(hour) AS time,\n  if(model IN (SELECT model FROM top_models), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "WITH top_models AS (\n  SELECT model\n  FROM generation_usage_hourly\n  WHERE $__timeFilter(hour)\n    AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\n  GROUP BY model\n  ORDER BY sumMerge(successful_calls) DESC\n  LIMIT 8\n)\nSELECT\n  toStartOfDay(hour) AS time,\n  if(model IN (SELECT model FROM top_models), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -1219,7 +1219,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  uniqIfMerge(apps) AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  uniqIfMerge(apps) AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1280,7 +1280,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_text_tokens) AS prompt,\n  sumMerge(prompt_cached_tokens) AS cached,\n  sumMerge(prompt_cache_write_tokens) AS cache_write,\n  sumMerge(completion_text_tokens) AS completion,\n  sumMerge(completion_reasoning_tokens) AS reasoning\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_text_tokens) AS prompt,\n  sumMerge(prompt_cached_tokens) AS cached,\n  sumMerge(prompt_cache_write_tokens) AS cache_write,\n  sumMerge(completion_text_tokens) AS completion,\n  sumMerge(completion_reasoning_tokens) AS reasoning\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1447,7 +1447,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds) AS audio_seconds,\n  sumMerge(completion_video_seconds) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds) AS audio_seconds,\n  sumMerge(completion_video_seconds) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1473,7 +1473,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** authenticated, non-cached generation events from 9 January 2026\n- **Default:** last 30 days; bars first; tables capped at 50 rows\n- **Not duplicated here:** errors (Tinybird), health (Model Monitor), provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data\n- **Traffic:** regular users by default; internal/dev includes synthetic monitoring. Legacy user counts represent shared API accounts, not individual end users.",
+        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** authenticated, non-cached generation events from 9 January 2026\n- **Default:** last 30 days; bars first; tables capped at 50 rows\n- **Not duplicated here:** errors (Tinybird), health (Model Monitor), provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data\n- **Traffic:** regular users only; excludes legacy APIs and internal/dev traffic, including synthetic monitoring.",
         "mode": "markdown"
       },
       "title": "Data coverage",
@@ -1488,44 +1488,7 @@
     "generation-v2"
   ],
   "templating": {
-    "list": [
-      {
-        "name": "traffic_group",
-        "label": "Traffic",
-        "type": "custom",
-        "query": "Regular users : regular,Legacy public APIs : legacy,Internal / dev : internal,All traffic : all",
-        "current": {
-          "text": "Regular users",
-          "value": "regular"
-        },
-        "options": [
-          {
-            "text": "Regular users",
-            "value": "regular",
-            "selected": true
-          },
-          {
-            "text": "Legacy public APIs",
-            "value": "legacy",
-            "selected": false
-          },
-          {
-            "text": "Internal / dev",
-            "value": "internal",
-            "selected": false
-          },
-          {
-            "text": "All traffic",
-            "value": "all",
-            "selected": false
-          }
-        ],
-        "hide": 0,
-        "multi": false,
-        "includeAll": false,
-        "skipUrlSync": false
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-30d",
@@ -1535,6 +1498,6 @@
   "timezone": "browser",
   "title": "Platform & Usage",
   "uid": "platform-usage-rebuild",
-  "version": 2,
+  "version": 3,
   "weekStart": "monday"
 }

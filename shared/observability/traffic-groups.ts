@@ -1,12 +1,7 @@
-export const TRAFFIC_GROUPS = [
-    { value: "regular", label: "Regular users" },
-    { value: "legacy", label: "Legacy public APIs" },
-    { value: "internal", label: "Internal / dev" },
-    { value: "all", label: "All traffic" },
-] as const;
+const TRAFFIC_GROUPS = ["regular", "legacy", "internal", "all"] as const;
 
-export type TrafficGroup = (typeof TRAFFIC_GROUPS)[number]["value"];
+export type TrafficGroup = (typeof TRAFFIC_GROUPS)[number];
 
 export function isTrafficGroup(value: string | null): value is TrafficGroup {
-    return TRAFFIC_GROUPS.some((group) => group.value === value);
+    return TRAFFIC_GROUPS.some((group) => group === value);
 }

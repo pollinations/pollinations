@@ -27,10 +27,7 @@ const POLL_INTERVALS = {
     "5m": 60000, // Match the model status gateway cache
 };
 
-export function useModelMonitor(
-    aggregationWindow = "60m",
-    trafficGroup = "regular",
-) {
+export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
@@ -81,7 +78,7 @@ export function useModelMonitor(
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}&traffic_group=${trafficGroup}`;
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}&traffic_group=regular`;
             const response = await fetch(url, { signal: controller.signal });
 
             if (!response.ok) {
@@ -98,7 +95,7 @@ export function useModelMonitor(
             console.error("Failed to fetch model health stats:", err);
             setHealthError("Failed to fetch health stats");
         }
-    }, [aggregationWindow, trafficGroup]);
+    }, [aggregationWindow]);
 
     const allModels = useMemo(() => {
         // The rollup rows carry the same shape model_health used to, so the
@@ -118,7 +115,7 @@ export function useModelMonitor(
     }, [fetchModels, fetchRouteStats]);
 
     useEffect(() => {
-        // A population/window switch must never relabel the previous results.
+        // A window switch must never relabel the previous results.
         setRouteStats([]);
         setLastUpdated(null);
         setHealthError(null);

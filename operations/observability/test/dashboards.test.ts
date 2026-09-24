@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
     currentDashboards,
     DEFAULT_DASHBOARD_UID,
     dashboardSrc,
     readDashboardUid,
-    readTrafficGroup,
 } from "../frontend/src/dashboards.ts";
 
 test("keeps top-level dashboards and drops foldered legacy ones", () => {
@@ -42,25 +42,37 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
 test("keeps kiosk mode on the embedded dashboard url", () => {
     assert.equal(
         dashboardSrc("core-api-rebuild"),
-        "/grafana/d/core-api-rebuild?kiosk&var-traffic_group=regular",
+        "/grafana/d/core-api-rebuild?kiosk",
     );
 });
 
-test("passes each selected traffic group to the embedded dashboard", () => {
-    for (const group of ["regular", "legacy", "internal", "all"]) {
-        const url = new URL(
-            dashboardSrc("core-api-rebuild", group),
-            "https://observability.test",
+for (const name of [
+    "platform-usage-rebuild",
+    "core-api-rebuild",
+    "community-models-rebuild",
+    "byop-apps-rebuild",
+]) {
+    test(`${name} keeps regular usage fixed in every aggregate query`, () => {
+        const source = readFileSync(
+            new URL(`../provisioning/dashboards/${name}.json`, import.meta.url),
+            "utf8",
         );
-        assert.equal(url.searchParams.get("var-traffic_group"), group);
-        assert.equal(url.searchParams.has("kiosk"), true);
-    }
-});
-
-test("restores traffic deep links and rejects unsupported groups", () => {
-    assert.equal(readTrafficGroup("?traffic=internal"), "internal");
-    assert.equal(readTrafficGroup("?traffic=legacy"), "legacy");
-    assert.equal(readTrafficGroup("?traffic=all"), "all");
-    assert.equal(readTrafficGroup("?traffic=invalid"), "regular");
-    assert.equal(readTrafficGroup(""), "regular");
-});
+        const queries: string[] = [];
+        JSON.parse(source, (key, value) => {
+            if (key === "rawSql") queries.push(value);
+            return value;
+        });
+        assert.ok(queries.length > 0);
+        for (const query of queries) {
+            const sources =
+                query.match(
+                    /FROM (generation_usage_hourly|byop_app_daily)\b/g,
+                ) ?? [];
+            const filters = query.match(/\btraffic_group = 'regular'/g) ?? [];
+            assert.equal(filters.length, sources.length, query);
+        }
+        // Old URL variables cannot widen the population inside a dashboard.
+        assert.ok(!source.includes("${traffic_group"));
+        assert.ok(!source.includes('"name": "traffic_group"'));
+    });
+}

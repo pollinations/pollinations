@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "BYOM community-model traffic, consumers, Pollen consumption, BYOP overlap, and public model-owner rewards. All BYOM traffic is visible for ecosystem monitoring; direct and BYOP consumption remain separate product paths. Traffic defaults to regular users; legacy public APIs and internal/dev (including monitoring) are separate selectable groups.",
+  "description": "BYOM community-model traffic, consumers, Pollen consumption, BYOP overlap, and public model-owner rewards. All BYOM traffic is visible for ecosystem monitoring; direct and BYOP consumption remain separate product paths. Shows regular user traffic only; excludes legacy APIs and internal/dev traffic, including monitoring.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -183,7 +183,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  uniqIf(model, model != 'unknown') AS active_models,\n  uniqMerge(users) AS community_users,\n  sumMerge(successful_calls) AS community_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_consumption,\n  round(sumMerge(community_reward), 2) AS owner_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\n  AND is_community = 1",
+          "rawSql": "SELECT\n  uniqIf(model, model != 'unknown') AS active_models,\n  uniqMerge(users) AS community_users,\n  sumMerge(successful_calls) AS community_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_consumption,\n  round(sumMerge(community_reward), 2) AS owner_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\n  AND is_community = 1",
           "refId": "A"
         }
       ],
@@ -283,7 +283,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 0) AS direct_calls,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 1) AS byop_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_community = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS community_share_pct,\n  uniqIf(model, is_community = 1 AND model != 'unknown') AS active_models,\n  uniqMergeIf(users, is_community = 1) AS community_users,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'paid'\n  ) AS direct_paid_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'quest'\n  ) AS direct_quest_consumption,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 0) AS direct_calls,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 1) AS byop_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_community = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS community_share_pct,\n  uniqIf(model, is_community = 1 AND model != 'unknown') AS active_models,\n  uniqMergeIf(users, is_community = 1) AS community_users,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'paid'\n  ) AS direct_paid_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'quest'\n  ) AS direct_quest_consumption,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1022,7 +1022,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_pollen,\n  round(sumMerge(community_reward), 2) AS owner_reward\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\n  AND is_community = 1\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_pollen,\n  round(sumMerge(community_reward), 2) AS owner_reward\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\n  AND is_community = 1\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1038,44 +1038,7 @@
     "models"
   ],
   "templating": {
-    "list": [
-      {
-        "name": "traffic_group",
-        "label": "Traffic",
-        "type": "custom",
-        "query": "Regular users : regular,Legacy public APIs : legacy,Internal / dev : internal,All traffic : all",
-        "current": {
-          "text": "Regular users",
-          "value": "regular"
-        },
-        "options": [
-          {
-            "text": "Regular users",
-            "value": "regular",
-            "selected": true
-          },
-          {
-            "text": "Legacy public APIs",
-            "value": "legacy",
-            "selected": false
-          },
-          {
-            "text": "Internal / dev",
-            "value": "internal",
-            "selected": false
-          },
-          {
-            "text": "All traffic",
-            "value": "all",
-            "selected": false
-          }
-        ],
-        "hide": 0,
-        "multi": false,
-        "includeAll": false,
-        "skipUrlSync": false
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-30d",
@@ -1085,6 +1048,6 @@
   "timezone": "browser",
   "title": "BYOM — Community Models",
   "uid": "community-models-rebuild",
-  "version": 2,
+  "version": 3,
   "weekStart": "monday"
 }

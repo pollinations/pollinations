@@ -19,16 +19,10 @@ import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-    isTrafficGroup,
-    TRAFFIC_GROUPS,
-    type TrafficGroup,
-} from "../../../../shared/observability/traffic-groups.ts";
-import {
     currentDashboards,
     type Dashboard,
     dashboardSrc,
     readDashboardUid,
-    readTrafficGroup,
 } from "./dashboards.ts";
 
 function useDashboards(): Dashboard[] {
@@ -54,14 +48,8 @@ function useSelectedDashboard() {
     const [uid, setUid] = useState(() =>
         readDashboardUid(window.location.search),
     );
-    const [trafficGroup, setTrafficGroup] = useState(() =>
-        readTrafficGroup(window.location.search),
-    );
     useEffect(() => {
-        const sync = () => {
-            setUid(readDashboardUid(window.location.search));
-            setTrafficGroup(readTrafficGroup(window.location.search));
-        };
+        const sync = () => setUid(readDashboardUid(window.location.search));
         window.addEventListener("popstate", sync);
         return () => window.removeEventListener("popstate", sync);
     }, []);
@@ -71,13 +59,7 @@ function useSelectedDashboard() {
         window.history.pushState(null, "", url);
         setUid(next);
     };
-    const selectTraffic = (next: TrafficGroup) => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("traffic", next);
-        window.history.pushState(null, "", url);
-        setTrafficGroup(next);
-    };
-    return { uid, select, trafficGroup, selectTraffic };
+    return { uid, select };
 }
 
 function DashboardPicker({
@@ -135,8 +117,8 @@ function Dashboards({
     user: NonNullable<ReturnType<typeof useDashboardSession>["user"]>;
 }) {
     const dashboards = useDashboards();
-    const { uid, select, trafficGroup, selectTraffic } = useSelectedDashboard();
-    const src = dashboardSrc(uid, trafficGroup);
+    const { uid, select } = useSelectedDashboard();
+    const src = dashboardSrc(uid);
     return (
         <div className="flex h-dvh flex-col bg-app-bg">
             <AppHeader navLabel="Observability links">
@@ -145,27 +127,6 @@ function Dashboards({
                     selected={uid}
                     onSelect={select}
                 />
-                {uid !== "users-balances-rebuild" && (
-                    <label className="flex items-center gap-2 text-sm">
-                        Traffic
-                        <select
-                            aria-label="Traffic group"
-                            value={trafficGroup}
-                            onChange={(event) => {
-                                if (isTrafficGroup(event.target.value)) {
-                                    selectTraffic(event.target.value);
-                                }
-                            }}
-                            className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 text-theme-text-strong"
-                        >
-                            {TRAFFIC_GROUPS.map(({ value, label }) => (
-                                <option key={value} value={value}>
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                )}
                 <ColorModeToggle />
                 <DashboardAccountMenu user={user} onSignOut={signOut} />
             </AppHeader>

@@ -2,13 +2,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
 import {
     chat,
+    choice,
     configure,
+    decision,
+    decisions,
     embeddings,
     generateAudio,
     generateImage,
     generateText,
     generateVideo,
+    noul,
     resetClient,
+    score,
 } from "./helpers.js";
 import type { EmbeddingInput } from "./index.js";
 import { PollinationsError } from "./types.js";
@@ -1337,5 +1342,215 @@ describe("Pollinations.accountQuests", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/account/quests",
         );
+    });
+});
+
+describe("Pollinations decisions (TypeSafe Jev)", () => {
+    const mockDecisionResponse = {
+        id: "dec-12345",
+        model: "typesafe/jev-1.13",
+        provider: "TypeSafe",
+        answers: {
+            urgent: {
+                type: "noul",
+                noul: 0.95,
+            },
+            team: {
+                type: "choice",
+                choice: "billing",
+                probabilities: { billing: 0.9, technical: 0.1 },
+                confidence: 0.85,
+            },
+            severity: {
+                type: "score",
+                score: 2.5,
+                legend: {
+                    "0": "Low",
+                    "1": "Medium",
+                    "2": "High",
+                    "3": "Critical",
+                },
+                probabilities: { "0": 0.05, "1": 0.15, "2": 0.5, "3": 0.3 },
+                confidence: 0.72,
+            },
+        },
+        usage: {
+            input_tokens: 350,
+            output_tokens: 42,
+        },
+    };
+
+    it("sends a decision request using options object and returns the typed response", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(mockDecisionResponse));
+
+        const result = await client.decision({
+            state: "Payment failed for 3 consecutive days.",
+            questions: {
+                urgent: noul("Is this urgent?"),
+                team: choice("Which team should handle this?", {
+                    billing: "Payment issues",
+                    technical: "Bugs",
+                }),
+                severity: score("Rate severity", [
+                    "Low",
+                    "Medium",
+                    "High",
+                    "Critical",
+                ]),
+            },
+            model: "typesafe/jev-1.13",
+        });
+
+        expect(result).toEqual(mockDecisionResponse);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/alpha/decisions");
+        expect(init.method).toBe("POST");
+        expect(init.headers["Content-Type"]).toBe("application/json");
+        expect(init.headers.Authorization).toBe("Bearer sk_test");
+
+        const parsedBody = JSON.parse(init.body);
+        expect(parsedBody).toEqual({
+            state: "Payment failed for 3 consecutive days.",
+            model: "typesafe/jev-1.13",
+            questions: {
+                urgent: { type: "noul", instructions: "Is this urgent?" },
+                team: {
+                    type: "choice",
+                    instructions: "Which team should handle this?",
+                    criteria: { billing: "Payment issues", technical: "Bugs" },
+                },
+                severity: {
+                    type: "score",
+                    instructions: "Rate severity",
+                    criteria: ["Low", "Medium", "High", "Critical"],
+                },
+            },
+        });
+    });
+
+    it("sends a decision request using positional arguments and decisions alias", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(mockDecisionResponse));
+
+        const result = await client.decisions(
+            "Server down in production",
+            { urgent: noul("Urgent?") },
+            { model: "jev" },
+        );
+
+        expect(result).toEqual(mockDecisionResponse);
+        const [, init] = fetchMock.mock.calls[0];
+        expect(JSON.parse(init.body)).toEqual({
+            state: "Server down in production",
+            model: "jev",
+            questions: { urgent: { type: "noul", instructions: "Urgent?" } },
+        });
+    });
+
+    it("works via top-level helper functions", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValueOnce(makeResponse(mockDecisionResponse));
+
+        const result = await decision({
+            state: "Invoice overdue",
+            questions: { urgent: noul("Urgent?") },
+        });
+
+        expect(result).toEqual(mockDecisionResponse);
+
+        fetchMock.mockResolvedValueOnce(makeResponse(mockDecisionResponse));
+        const aliasResult = await decisions({
+            state: "Invoice overdue",
+            questions: { urgent: noul("Urgent?") },
+        });
+        expect(aliasResult).toEqual(mockDecisionResponse);
+    });
+
+    it("builder helpers create correct typed question structures", () => {
+        expect(
+            choice("Pick a fruit", { apple: "Red fruit", banana: null }),
+        ).toEqual({
+            type: "choice",
+            instructions: "Pick a fruit",
+            criteria: { apple: "Red fruit", banana: null },
+        });
+
+        expect(score("Rate urgency", ["Low", "Medium", "High"])).toEqual({
+            type: "score",
+            instructions: "Rate urgency",
+            criteria: ["Low", "Medium", "High"],
+        });
+
+        expect(noul("Is it sunny?")).toEqual({
+            type: "noul",
+            instructions: "Is it sunny?",
+        });
+
+        expect(
+            noul("Is it sunny?", {
+                true: "Clear skies",
+                false: "Rainy/cloudy",
+            }),
+        ).toEqual({
+            type: "noul",
+            instructions: "Is it sunny?",
+            criteria: { true: "Clear skies", false: "Rainy/cloudy" },
+        });
+    });
+
+    it("validates required state and non-empty questions", async () => {
+        const client = newClient();
+
+        await expect(
+            client.decision({
+                state: null as unknown as DecisionContent,
+                questions: { q: noul("test") },
+            }),
+        ).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INVALID_STATE",
+            status: 400,
+        });
+
+        await expect(
+            client.decision({
+                state: "hello",
+                questions: {} as unknown as Record<string, DecisionQuestion>,
+            }),
+        ).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INVALID_QUESTIONS",
+            status: 400,
+        });
+    });
+
+    it("handles upstream error responses", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                {
+                    error: {
+                        message: "Model overloaded",
+                        code: "SERVICE_UNAVAILABLE",
+                    },
+                },
+                {
+                    ok: false,
+                    status: 503,
+                },
+            ),
+        );
+
+        await expect(
+            client.decision({
+                state: "Test state",
+                questions: { q: noul("test") },
+            }),
+        ).rejects.toMatchObject({
+            name: "PollinationsError",
+            status: 503,
+        });
     });
 });

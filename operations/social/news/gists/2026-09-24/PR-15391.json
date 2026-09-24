@@ -1,0 +1,36 @@
+{
+  "pr_number": 15391,
+  "title": "fix: stop speculative community monitor token alerts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15391",
+  "merged_at": "2026-09-24T11:25:22Z",
+  "labels": [
+    "BUG",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Stop flagging large prompt counts or cached tokens on unique probes; neither proves incorrect billing.\n- Keep missing and internally inconsistent usage checks.\n- Update the monitor prompt and cover the 235 prompt / 247 total case in the probe test.\n\nTests: `node --test operations/community-monitor/probe-schedule.test.mjs operations/community-monitor/chat-stream.test.mjs operations/community-monitor/image-probe.test.mjs`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fewer false buzzes",
+    "blurb": "The community monitor has stopped mistaking big prompts and cached tokens for billing trouble. It still watches for usage data that is actually missing or does not add up.",
+    "summary": "Updated the community monitor to ignore large prompt-token and cached-token counts on unique probes, while retaining checks for missing or internally inconsistent usage data, including the 235 prompt / 247 total-token case.",
+    "impact": "Monitoring alerts should now focus on genuinely incomplete or contradictory billing usage reports instead of harmless token-count patterns.",
+    "keywords": [
+      "monitoring",
+      "billing",
+      "token-usage",
+      "probes",
+      "tests"
+    ],
+    "visual_concept": "A cozy garden monitoring station where Polli, wearing tiny inspector glasses, calmly compares two token-count scrolls that add up correctly while a CRT monitor robot marks only genuinely mismatched records. The visual metaphor is a less-jumpy watchdog: large seed piles and cached jars are left alone, while missing or inconsistent ledger entries receive attention.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses as she checks a token ledger beside a calm CRT monitor robot; large seed piles labeled \"235\" and \"247\" sit neatly accounted for, while one genuinely mismatched page gets a small alert marker. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around the monitoring desk, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text: \"CHECKED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15391.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses as she checks a token ledger beside a calm CRT monitor robot; large seed piles labeled \"235\" and \"247\" sit neatly accounted for, while one genuinely mismatched page gets a small alert marker. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around the monitoring desk, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text: \"CHECKED\"."
+  },
+  "generated_at": "2026-09-24T11:26:18.598146+00:00"
+}

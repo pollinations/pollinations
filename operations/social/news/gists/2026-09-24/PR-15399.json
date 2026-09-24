@@ -1,0 +1,36 @@
+{
+  "pr_number": 15399,
+  "title": "fix: separate legacy bridge traffic in dashboards and KPI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15399",
+  "merged_at": "2026-09-24T15:11:24Z",
+  "labels": [
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "Replaces #15277 and #15400 with a smaller version. There are two traffic groups. Legacy is the two legacy public API bridge keys: `raw-buzzard` (image) and `legacy-text…gpt-oss` (text). Everything else is every other key.\n\n- A new Tinybird pipe, `generation_events_classified`, adds `traffic_group` (`legacy` / `everything_else`) in one place. It is keyed by exact key ID.\n- `generation_usage_hourly` stores `traffic_group`. The Grafana usage dashboards get a header toggle: Everything else (default) / Legacy / Both.\n- The KPI weekly endpoints (active users, usage, retention, health, segments, agent/MCP) exclude legacy.\n- Users & Balances has no toggle because it mixes account and usage panels. Its usage panels always exclude legacy.\n- Adding a group later means one more branch in the pipe and one more toggle option.\n\n| Last 7 days (prod) | Requests | Users | Pollen |\n|---|---|---|---|\n| Everything else | 3.69M | 8,316 | 4,372 |\n| Legacy | 4.79M | 1 | 422 |\n\n**Verified:** observability tests and build pass. Tinybird is deployed and live on **staging**: both groups are populated and `weekly_active_users` responds.\n\n**Rollout:** deploy Tinybird to prod before merging, because the dashboards read `traffic_group`. The hourly table is backfilled from the materialized pipe.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The old bridge gets a lane",
+    "blurb": "The observability garden now labels the two legacy bridge keys before counting the flowers. Dashboards and weekly KPIs can look at modern traffic without one very busy old bridge doing interpretive statistics.",
+    "summary": "Added a Tinybird `generation_events_classified` pipe that labels exact-key traffic as `legacy` (`raw-buzzard` image and `legacy-text…gpt-oss` text) or `everything_else`, carries the field into `generation_usage_hourly`, and excludes legacy traffic from weekly KPI endpoints.",
+    "impact": "Grafana usage dashboards can switch between Everything else, Legacy, and Both, while weekly active-user, usage, retention, health, segments, and agent/MCP metrics consistently report non-legacy traffic by default.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "grafana",
+      "kpi",
+      "legacy-traffic",
+      "dashboards"
+    ],
+    "visual_concept": "A cozy garden has two clearly marked irrigation channels: a small old wooden bridge carrying legacy request droplets and a broad thriving path for everything else. Polli, wearing a tiny surveyor hat, uses a clipboard to label the paths while a CRT monitor robot happily reads separate counters; code-plants and flowers make the measurement scene feel alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny surveyor hat, carefully placing signs on two garden data streams: an old wooden bridge labeled “LEGACY” and a flourishing lime green (#ecf874) path labeled “EVERYTHING ELSE”; a friendly CRT monitor robot watches two separate glowing counters beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15399.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny surveyor hat, carefully placing signs on two garden data streams: an old wooden bridge labeled “LEGACY” and a flourishing lime green (#ecf874) path labeled “EVERYTHING ELSE”; a friendly CRT monitor robot watches two separate glowing counters beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T15:12:22.135443+00:00"
+}

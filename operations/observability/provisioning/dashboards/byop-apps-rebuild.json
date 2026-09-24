@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "Trusted BYOP client traffic, end users, Paid and Quest consumption, app-owner rewards, and model usage. BYOP attribution requires a populated generation_event_v2 api_key_client_id; the legacy key-name heuristic is intentionally excluded.",
+  "description": "Trusted BYOP client traffic, end users, Paid and Quest consumption, app-owner rewards, and model usage. BYOP attribution requires a populated generation_event_v2 api_key_client_id; the legacy key-name heuristic is intentionally excluded. Traffic defaults to everything except the two legacy API keys; internal/dev usage remains included. Select Legacy public APIs or Both to compare.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -183,7 +183,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  uniqIfMerge(apps) AS active_apps,\n  uniqMerge(users) AS app_users,\n  sumMerge(successful_calls) AS byop_calls,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption,\n  round(sumMerge(byop_reward), 2) AS developer_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND is_byop = 1",
+          "rawSql": "SELECT\n  uniqIfMerge(apps) AS active_apps,\n  uniqMerge(users) AS app_users,\n  sumMerge(successful_calls) AS byop_calls,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption,\n  round(sumMerge(byop_reward), 2) AS developer_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\n  AND is_byop = 1",
           "refId": "A"
         }
       ],
@@ -244,7 +244,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    is_byop = 1\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS byop_share_pct,\n  uniqIfMergeIf(apps, is_byop = 1) AS active_apps,\n  uniqMergeIf(users, is_byop = 1) AS app_users,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 0) AS standard_calls,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 1) AS community_calls,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    is_byop = 1\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS byop_share_pct,\n  uniqIfMergeIf(apps, is_byop = 1) AS active_apps,\n  uniqMergeIf(users, is_byop = 1) AS app_users,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 0) AS standard_calls,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 1) AS community_calls,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -989,7 +989,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "WITH\n  app_rollup AS (\n    SELECT\n      app_id,\n      app_name,\n      owner_user_id,\n      sum(model_calls) AS calls,\n      uniqMerge(user_state) AS users,\n      round(sum(paid_pollen), 2) AS paid_pollen,\n      round(sum(quest_pollen), 2) AS quest_pollen,\n      round(sum(developer_reward), 2) AS developer_reward,\n      round(\n        100 * sumIf(model_calls, is_community) / nullIf(sum(model_calls), 0),\n        1\n      ) AS community_share_pct,\n      arrayStringConcat(topKWeighted(3)(model, model_calls), ', ') AS top_models\n    FROM (\n      SELECT\n        app_id,\n        app_name,\n        owner_user_id,\n        model,\n        is_community,\n        sumMerge(successful_calls) AS model_calls,\n        uniqMergeState(users) AS user_state,\n        sumMergeIf(gross_consumption, funding_source = 'paid') AS paid_pollen,\n        sumMergeIf(gross_consumption, funding_source = 'quest') AS quest_pollen,\n        sumMerge(byop_reward) AS developer_reward\n      FROM byop_app_daily\n      WHERE $__timeFilter(day)\n        AND environment IN ('production', 'debug-prod-copy')\n      GROUP BY app_id, app_name, owner_user_id, model, is_community\n    )\n    GROUP BY app_id, app_name, owner_user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  a.app_name AS app,\n  coalesce(nullIf(u.github_username, ''), a.owner_user_id) AS owner,\n  a.calls,\n  a.users,\n  a.paid_pollen,\n  a.quest_pollen,\n  a.developer_reward,\n  a.community_share_pct,\n  a.top_models\nFROM app_rollup a\nLEFT JOIN latest_users u ON a.owner_user_id = u.id\nORDER BY a.calls DESC\nLIMIT 50",
+          "rawSql": "WITH\n  app_rollup AS (\n    SELECT\n      app_id,\n      app_name,\n      owner_user_id,\n      sum(model_calls) AS calls,\n      uniqMerge(user_state) AS users,\n      round(sum(paid_pollen), 2) AS paid_pollen,\n      round(sum(quest_pollen), 2) AS quest_pollen,\n      round(sum(developer_reward), 2) AS developer_reward,\n      round(\n        100 * sumIf(model_calls, is_community) / nullIf(sum(model_calls), 0),\n        1\n      ) AS community_share_pct,\n      arrayStringConcat(topKWeighted(3)(model, model_calls), ', ') AS top_models\n    FROM (\n      SELECT\n        app_id,\n        app_name,\n        owner_user_id,\n        model,\n        is_community,\n        sumMerge(successful_calls) AS model_calls,\n        uniqMergeState(users) AS user_state,\n        sumMergeIf(gross_consumption, funding_source = 'paid') AS paid_pollen,\n        sumMergeIf(gross_consumption, funding_source = 'quest') AS quest_pollen,\n        sumMerge(byop_reward) AS developer_reward\n      FROM byop_app_daily\n      WHERE $__timeFilter(day)\n        AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic_group:sqlstring} = 'all' OR traffic_group = ${traffic_group:sqlstring})\n      GROUP BY app_id, app_name, owner_user_id, model, is_community\n    )\n    GROUP BY app_id, app_name, owner_user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  a.app_name AS app,\n  coalesce(nullIf(u.github_username, ''), a.owner_user_id) AS owner,\n  a.calls,\n  a.users,\n  a.paid_pollen,\n  a.quest_pollen,\n  a.developer_reward,\n  a.community_share_pct,\n  a.top_models\nFROM app_rollup a\nLEFT JOIN latest_users u ON a.owner_user_id = u.id\nORDER BY a.calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1005,7 +1005,39 @@
     "apps"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "traffic_group",
+        "label": "Traffic",
+        "type": "custom",
+        "query": "Everything else : non_legacy,Legacy public APIs : legacy,Both : all",
+        "current": {
+          "text": "Everything else",
+          "value": "non_legacy"
+        },
+        "options": [
+          {
+            "text": "Everything else",
+            "value": "non_legacy",
+            "selected": true
+          },
+          {
+            "text": "Legacy public APIs",
+            "value": "legacy",
+            "selected": false
+          },
+          {
+            "text": "Both",
+            "value": "all",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "multi": false,
+        "includeAll": false,
+        "skipUrlSync": false
+      }
+    ]
   },
   "time": {
     "from": "now-30d",
@@ -1015,6 +1047,6 @@
   "timezone": "browser",
   "title": "BYOP Apps",
   "uid": "byop-apps-rebuild",
-  "version": 1,
+  "version": 2,
   "weekStart": "monday"
 }

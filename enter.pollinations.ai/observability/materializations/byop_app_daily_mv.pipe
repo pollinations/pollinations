@@ -7,6 +7,7 @@ SQL >
     SELECT
         toDate(start_time) AS day,
         environment,
+        traffic_group,
         api_key_client_id AS app_id,
         coalesce(
             nullIf(nullIf(api_key_created_for_app, ''), 'undefined'), api_key_client_id
@@ -59,12 +60,12 @@ SQL >
                 0
             )
         ) AS community_reward
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
         environment IN ('production', 'debug-prod-copy')
         AND api_key_client_id NOT IN ('', 'undefined')
         AND start_time >= toDateTime('2026-01-09 00:00:00')
-    GROUP BY day, environment, app_id, app_name, owner_user_id, model, is_community, funding_source
+    GROUP BY day, environment, traffic_group, app_id, app_name, owner_user_id, model, is_community, funding_source
 
 TYPE MATERIALIZED
 DATASOURCE byop_app_daily

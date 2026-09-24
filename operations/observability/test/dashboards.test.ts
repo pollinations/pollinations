@@ -5,6 +5,7 @@ import {
     DEFAULT_DASHBOARD_UID,
     dashboardSrc,
     readDashboardUid,
+    readTrafficGroup,
 } from "../frontend/src/dashboards.ts";
 
 test("keeps top-level dashboards and drops foldered legacy ones", () => {
@@ -41,6 +42,25 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
 test("keeps kiosk mode on the embedded dashboard url", () => {
     assert.equal(
         dashboardSrc("core-api-rebuild"),
-        "/grafana/d/core-api-rebuild?kiosk",
+        "/grafana/d/core-api-rebuild?kiosk&var-traffic_group=non_legacy",
     );
+});
+
+test("passes each selected traffic group to the embedded dashboard", () => {
+    for (const group of ["non_legacy", "legacy", "all"]) {
+        const url = new URL(
+            dashboardSrc("core-api-rebuild", group),
+            "https://observability.test",
+        );
+        assert.equal(url.searchParams.get("var-traffic_group"), group);
+        assert.equal(url.searchParams.has("kiosk"), true);
+    }
+});
+
+test("restores traffic deep links and rejects unsupported groups", () => {
+    assert.equal(readTrafficGroup("?traffic=non_legacy"), "non_legacy");
+    assert.equal(readTrafficGroup("?traffic=legacy"), "legacy");
+    assert.equal(readTrafficGroup("?traffic=all"), "all");
+    assert.equal(readTrafficGroup("?traffic=invalid"), "non_legacy");
+    assert.equal(readTrafficGroup(""), "non_legacy");
 });

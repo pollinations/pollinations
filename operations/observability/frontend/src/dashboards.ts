@@ -1,3 +1,15 @@
+export const TRAFFIC_GROUPS = [
+    { value: "non_legacy", label: "Everything else" },
+    { value: "legacy", label: "Legacy public APIs" },
+    { value: "all", label: "Both" },
+] as const;
+
+export type TrafficGroup = (typeof TRAFFIC_GROUPS)[number]["value"];
+
+export function isTrafficGroup(value: string | null): value is TrafficGroup {
+    return TRAFFIC_GROUPS.some((group) => group.value === value);
+}
+
 /**
  * Dashboard list for the header picker.
  *
@@ -43,6 +55,11 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
-export function dashboardSrc(uid: string): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
+export function dashboardSrc(uid: string, trafficGroup = "non_legacy"): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&var-traffic_group=${encodeURIComponent(trafficGroup)}`;
+}
+
+export function readTrafficGroup(search: string): TrafficGroup {
+    const value = new URLSearchParams(search).get("traffic");
+    return isTrafficGroup(value) ? value : "non_legacy";
 }

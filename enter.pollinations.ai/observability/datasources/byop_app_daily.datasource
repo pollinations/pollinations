@@ -8,6 +8,7 @@ TOKEN "tinybird_read" READ
 SCHEMA >
     `day` Date,
     `environment` LowCardinality(String),
+    `traffic_group` LowCardinality(String),
     `app_id` String,
     `app_name` String,
     `owner_user_id` String,
@@ -24,4 +25,4 @@ SCHEMA >
 
 ENGINE AggregatingMergeTree
 ENGINE_PARTITION_KEY toYYYYMM(day)
-ENGINE_SORTING_KEY day, environment, app_id, owner_user_id, model, is_community, funding_source
+ENGINE_SORTING_KEY day, environment, traffic_group, app_id, owner_user_id, model, is_community, funding_source

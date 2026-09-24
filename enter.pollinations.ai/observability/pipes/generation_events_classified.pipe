@@ -1,0 +1,16 @@
+DESCRIPTION >
+    Separates the two shared legacy API keys from all other traffic.
+    Changing these key IDs requires rebuilding dependent materialized views.
+
+NODE classified_events
+SQL >
+    SELECT
+        *,
+        if(
+            api_key_id IN (
+                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image
+                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text
+            ), 'legacy',
+            'non_legacy'
+        ) AS traffic_group
+    FROM generation_event_v2

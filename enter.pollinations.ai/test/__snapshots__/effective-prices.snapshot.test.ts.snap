@@ -3381,6 +3381,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000458925,
     },
   },
+  "xiaomi/mimo-v2.6-flash": {
+    "cost": {
+      "completionTextTokens": 0.0000002954,
+      "promptCachedTokens": 0.000000002954,
+      "promptTextTokens": 0.0000001477,
+    },
+    "price": {
+      "completionTextTokens": 0.0000002954,
+      "promptCachedTokens": 0.000000002954,
+      "promptTextTokens": 0.0000001477,
+    },
+  },
+  "xiaomi/mimo-v2.6-pro": {
+    "cost": {
+      "completionTextTokens": 0.00000091785,
+      "promptCachedTokens": 0.000000003798,
+      "promptTextTokens": 0.000000458925,
+    },
+    "price": {
+      "completionTextTokens": 0.00000091785,
+      "promptCachedTokens": 0.000000003798,
+      "promptTextTokens": 0.000000458925,
+    },
+  },
   "z-ai/glm-5.2": {
     "cost": {
       "completionTextTokens": 0.0000044,

@@ -57,6 +57,7 @@ describe("AppUserMenu", () => {
 
         expect(html).toContain("Pollinations Connect");
         expect(html).toContain("mask:url(");
+        expect(html.match(/mask:url\(/g)).toHaveLength(2);
     });
 
     test("shows Permissions only when the connected key has an id", () => {

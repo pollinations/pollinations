@@ -34,6 +34,7 @@ import {
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import {
+    getFixedResolution,
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
@@ -1702,6 +1703,88 @@ test("pricing dimensions cover every public rate sheet through the catalog", () 
             }
         }
     }
+});
+
+test("fixed resolution is omitted from metadata and price selectors", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "bytedance/seedance-2.0",
+    );
+    assert(model);
+    expect(getFixedResolution(model)).toBe("720p");
+    for (const variant of ["", "video_in"]) {
+        const controls = getPricingVariantControls(model, variant);
+        expect(controls.map(({ key }) => key)).toEqual(["reference_video"]);
+    }
+    const markup = renderToStaticMarkup(createElement(ModelRow, { model }));
+    expect(markup).not.toContain("Output resolution:");
+    expect(markup).not.toContain("720p</span>");
+    expect(markup).not.toContain(">Resolution<");
+    expect(getFixedResolution({})).toBeUndefined();
+});
+
+test("resolution stays with pricing when another option leaves only one choice", () => {
+    const model = getCatalogModelPrices().find(
+        ({ name }) => name === "alibaba/wan-2.7",
+    );
+    assert(model?.pricingDimensions);
+    // Put input first to exercise the dependent resolution control.
+    const inputFirst = {
+        ...model,
+        pricingDimensions: [...model.pricingDimensions].reverse(),
+    };
+    expect(getFixedResolution(inputFirst)).toBeUndefined();
+    const resolution = getPricingVariantControls(
+        inputFirst,
+        "1080p_image",
+    ).find(({ key }) => key === "resolution");
+    assert(resolution);
+    expect(resolution.options.map(({ label }) => label)).toEqual(["1080p"]);
+});
+
+test("selectors and flat fees each have a dotted boundary before usage rates", () => {
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, {
+            pricing: {
+                prices: [
+                    {
+                        direction: "input",
+                        kind: "text",
+                        price: "1",
+                        unit: "token",
+                    },
+                ],
+                adjustments: [
+                    {
+                        name: "search",
+                        label: "Search",
+                        kind: "search_query",
+                        price: "2",
+                        quantity: 1_000,
+                        unit: "search queries",
+                    },
+                ],
+                dropdowns: [
+                    {
+                        key: "context",
+                        label: "Context",
+                        unit: "tokens",
+                        value: "base",
+                        options: [{ value: "base", label: "≤32K" }],
+                        onSelect: () => {},
+                    },
+                ],
+            },
+        }),
+    );
+    const selectors = markup.indexOf(">Context<");
+    const fees = markup.indexOf(">Search<");
+    const rates = markup.indexOf(">Text in<");
+    expect(selectors).toBeGreaterThan(-1);
+    expect(fees).toBeGreaterThan(selectors);
+    expect(rates).toBeGreaterThan(fees);
+    expect(markup.slice(selectors, fees)).toContain("border-dotted");
+    expect(markup.slice(fees, rates)).toContain("border-dotted");
+    expect(markup.match(/border-dotted/g)).toHaveLength(2);
 });
 
 test("quality and resolution changes preserve the other pricing choice", () => {

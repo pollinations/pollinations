@@ -12,7 +12,6 @@ import {
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
-    getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
     hasPollinationsTools,
@@ -21,12 +20,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import {
-    getModelTitleTooltipContent,
-    ModelRow,
-    ModelTestLink,
-    PerPollenEstimate,
-} from "./model-row.tsx";
+import { ModelRow, ModelTitle, PerPollenEstimate } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
@@ -166,8 +160,6 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
-    const displayName = getModelDisplayName(model);
-    const titleTooltip = getModelTitleTooltipContent(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -176,7 +168,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
-    const publicModelName = displayName || model.name;
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
@@ -201,25 +192,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                     />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <div className="flex min-h-5 min-w-0 items-center gap-1.5">
-                        {titleTooltip ? (
-                            <Tooltip
-                                triggerAs="span"
-                                content={titleTooltip}
-                                ariaLabel={`${publicModelName}: model details`}
-                                className="min-w-0"
-                                tapEnabled
-                                displayContents
-                            >
-                                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                {publicModelName}
-                            </span>
-                        )}
+                    <div className="flex min-h-5 min-w-0 items-center text-sm font-medium leading-tight">
+                        <ModelTitle model={model} />
                     </div>
                     <div className="flex min-h-5 min-w-0 items-center">
                         <CopyValue
@@ -244,17 +218,18 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         capabilityLabel={capabilityLabel}
                         perUserRpm={model.perUserRpm}
                     />
-                    <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <ModelTestLink model={model} />
-                    </div>
+                    {(model.health || showNew || showAlpha) && (
+                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                            <ModelStatusChips
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 

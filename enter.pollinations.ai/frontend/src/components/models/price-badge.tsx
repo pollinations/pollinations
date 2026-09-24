@@ -19,10 +19,12 @@ import {
     TokensIcon,
     Tooltip,
     VideoIcon,
+    WalletIcon,
 } from "@pollinations/ui";
 import { type FC, type ReactNode, useState } from "react";
 import { formatDisplayPrice } from "./formatters.ts";
-import { PRICE_ICON } from "./model-icons.tsx";
+import { ContextIcon, PRICE_ICON } from "./model-icons.tsx";
+import { getFixedResolution } from "./model-info.ts";
 import type {
     ModelPrice,
     ModelPriceAdjustment,
@@ -172,38 +174,48 @@ export function getPricingVariantControls(
         ];
     }
     const variants = ["", ...model.priceVariants.map(({ name }) => name)];
-    return dimensions.map((dimension, index) => {
-        const candidates = variants.filter((variant) =>
-            dimensions
-                .slice(0, index)
-                .every(({ values }) => values[variant] === values[variantName]),
-        );
-        const score = (variant: string) =>
-            dimensions
-                .slice(index + 1)
-                .filter(({ values }) => values[variant] === values[variantName])
-                .length;
-        const options = [
-            ...new Set(candidates.map((variant) => dimension.values[variant])),
-        ].map((label) => {
-            const matches = candidates.filter(
-                (variant) => dimension.values[variant] === label,
+    const fixedResolution = getFixedResolution(model);
+    return dimensions
+        .map((dimension, index) => {
+            const candidates = variants.filter((variant) =>
+                dimensions
+                    .slice(0, index)
+                    .every(
+                        ({ values }) => values[variant] === values[variantName],
+                    ),
             );
-            const value = matches.includes(variantName)
-                ? variantName
-                : matches.reduce((best, variant) =>
-                      score(variant) > score(best) ? variant : best,
-                  );
-            return { value, label };
-        });
-        return {
-            key: dimension.key,
-            label: dimension.label,
-            unit: dimension.unit,
-            value: variantName,
-            options,
-        };
-    });
+            const score = (variant: string) =>
+                dimensions
+                    .slice(index + 1)
+                    .filter(
+                        ({ values }) => values[variant] === values[variantName],
+                    ).length;
+            const options = [
+                ...new Set(
+                    candidates.map((variant) => dimension.values[variant]),
+                ),
+            ].map((label) => {
+                const matches = candidates.filter(
+                    (variant) => dimension.values[variant] === label,
+                );
+                const value = matches.includes(variantName)
+                    ? variantName
+                    : matches.reduce((best, variant) =>
+                          score(variant) > score(best) ? variant : best,
+                      );
+                return { value, label };
+            });
+            return {
+                key: dimension.key,
+                label: dimension.label,
+                unit: dimension.unit,
+                value: variantName,
+                options,
+            };
+        })
+        .filter(
+            ({ key }) => key !== "resolution" || fixedResolution === undefined,
+        );
 }
 
 export const useModelPricingSelection = (
@@ -276,7 +288,7 @@ const PRICING_OPTION_ICONS: Record<string, typeof TokensIcon> = {
     reference_video: VideoIcon,
     input: ImageIcon,
     image_size: ExpandIcon,
-    context: TokensIcon,
+    context: ContextIcon,
     cache: DatabaseIcon,
     prompting: ChatIcon,
     diarization: MicIcon,
@@ -716,17 +728,29 @@ export const ModelPricingLedger: FC<{
                 className,
             )}
         >
+            {requestBadge && (
+                <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
+                    {align === "right" && <span aria-hidden="true" />}
+                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <div className="flex justify-end pr-2">{requestBadge}</div>
+                    <span aria-hidden="true" />
+                </div>
+            )}
             {requestEstimate && (
-                <div
-                    className={cn(
-                        "mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-divider pt-0.5 pb-1",
-                        align === "right"
-                            ? "col-start-2 col-end-[-1]"
-                            : "col-span-full",
-                    )}
-                >
+                <div className="grid col-span-full grid-cols-subgrid items-center pt-0.5">
+                    {align === "right" && <span aria-hidden="true" />}
+                    <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
-                    {requestBadge}
+                    <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                        /pollen
+                    </span>
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            "col-end-[-1] my-1 border-t border-divider",
+                            align === "right" ? "col-start-2" : "col-start-1",
+                        )}
+                    />
                 </div>
             )}
             {(pricing.dropdowns.length > 0 ||
@@ -738,6 +762,18 @@ export const ModelPricingLedger: FC<{
                         pricing={pricing}
                         align={align}
                     />
+                    {pricing.dropdowns.length > 0 &&
+                        (extraFees.length > 0 || hasTools) && (
+                            <span
+                                aria-hidden="true"
+                                className={cn(
+                                    "col-end-[-1] my-1 border-t border-dotted border-divider opacity-70",
+                                    align === "right"
+                                        ? "col-start-2"
+                                        : "col-start-1",
+                                )}
+                            />
+                        )}
                     <UsagePriceRows adjustments={extraFees} align={align} />
                     {hasTools && <ToolsPricingRow align={align} />}
                     {(rateRows.length > 0 ||
@@ -745,7 +781,7 @@ export const ModelPricingLedger: FC<{
                         <span
                             aria-hidden="true"
                             className={cn(
-                                "col-end-[-1] my-1 border-t border-divider",
+                                "col-end-[-1] my-1 border-t border-dotted border-divider opacity-70",
                                 align === "right"
                                     ? "col-start-2"
                                     : "col-start-1",

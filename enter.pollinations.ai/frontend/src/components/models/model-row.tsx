@@ -31,6 +31,7 @@ import {
 } from "./model-status-chips.tsx";
 import { isOpenWebUiChattable, openWebUiChatUrl } from "./open-webui-link.tsx";
 import {
+    LedgerPriceValue,
     ModelPricingLedger,
     useModelPricingSelection,
 } from "./price-badge.tsx";
@@ -104,13 +105,10 @@ export const PerPollenEstimate: FC<{
             displayContents
         >
             {ledger ? (
-                <span className="text-sm text-theme-text-muted">
-                    {!isFree && !isUnavailable && "≈ "}
-                    <span className="text-sm font-semibold tabular-nums text-theme-text-strong">
-                        {value}
-                    </span>{" "}
-                    {requestLabel} /pollen
-                </span>
+                <LedgerPriceValue
+                    value={value}
+                    prefix={!isFree && !isUnavailable ? "≈" : undefined}
+                />
             ) : (
                 <ModelRateValue value={value} unit="req /pollen" />
             )}
@@ -162,35 +160,45 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     );
 }
 
-/** One test destination per model, shared by desktop and mobile cards. */
-export function ModelTestLink({ model }: { model: ModelPrice }) {
+/** The model title opens the same destination on desktop and mobile. */
+export function ModelTitle({ model }: { model: ModelPrice }) {
+    const title = getModelDisplayName(model) || model.name;
+    const details = getModelTitleTooltipContent(model);
     const chatSupported = isOpenWebUiChattable(model);
-    if (
-        !chatSupported &&
-        ["3d", "embedding", "realtime"].includes(model.type)
-    ) {
-        return null;
-    }
-    const destination = chatSupported ? "Open WebUI" : "Play";
-    return (
+    const href = chatSupported
+        ? openWebUiChatUrl(model.name)
+        : ["3d", "embedding", "realtime"].includes(model.type)
+          ? undefined
+          : `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`;
+    const content = href ? (
         <InlineLink
-            href={
-                chatSupported
-                    ? openWebUiChatUrl(model.name)
-                    : `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`
-            }
-            size="footer"
-            tone="quiet"
-            title={`Test in ${destination}`}
-            aria-label={`Test ${getModelDisplayName(model) || model.name} in ${destination}`}
+            href={href}
+            className="inline-flex min-w-0 max-w-full items-baseline"
+            aria-label={`Open ${title} in ${chatSupported ? "Open WebUI" : "Play"}`}
         >
-            Test
+            <span className="min-w-0 truncate">{title}</span>
         </InlineLink>
+    ) : (
+        <span className="min-w-0 truncate">{title}</span>
+    );
+
+    return details ? (
+        <Tooltip
+            triggerAs="span"
+            content={details}
+            ariaLabel={`${title}: model details`}
+            className="min-w-0"
+            tapEnabled={!href}
+            displayContents
+        >
+            {content}
+        </Tooltip>
+    ) : (
+        content
     );
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDisplayName = getModelDisplayName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -199,8 +207,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
-    const publicModelName = modelDisplayName || model.name;
-    const titleTooltip = getModelTitleTooltipContent(model);
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
@@ -237,25 +243,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 }
             >
                 <div className="flex h-full min-w-0 flex-col justify-center gap-2">
-                    <div className="flex min-h-5 min-w-0 items-center gap-2">
-                        {titleTooltip ? (
-                            <Tooltip
-                                triggerAs="span"
-                                content={titleTooltip}
-                                ariaLabel={`${publicModelName}: model details`}
-                                className="min-w-0"
-                                tapEnabled
-                                displayContents
-                            >
-                                <span className="min-w-0 truncate text-base font-medium leading-tight">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-base font-medium leading-tight">
-                                {publicModelName}
-                            </span>
-                        )}
+                    <div className="flex min-h-5 min-w-0 items-center text-base font-medium leading-tight">
+                        <ModelTitle model={model} />
                     </div>
                     <div className="flex min-h-5 min-w-0 items-center">
                         <CopyValue
@@ -340,17 +329,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <ModelTestLink model={model} />
-                    </div>
+                    {(model.health || showNew || showAlpha) && (
+                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                            <ModelStatusChips
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,4 +1,11 @@
-import { Button, ButtonGroup, ChevronIcon, TabButton } from "@pollinations/ui";
+import {
+    Button,
+    ButtonGroup,
+    ChevronIcon,
+    Chip,
+    TabButton,
+    Text,
+} from "@pollinations/ui";
 import { useState } from "react";
 import { ConsentModelPicker } from "../auth/consent-model-picker.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
@@ -35,9 +42,9 @@ export function ModelPermissionsInput({
     onChange: (models: string[]) => void;
     disabled?: boolean;
 }) {
-    const [activeTab, setActiveTab] = useState<ModelTab | "selected" | null>(
-        null,
-    );
+    const [activeTab, setActiveTab] = useState<
+        ModelTab | "selected" | "all" | null
+    >(null);
     const offeredIds = new Set(models.map(({ id }) => id));
     const categorizedIds = new Set<string>();
     const idsByTab = new Map<ModelTab, Set<string>>();
@@ -55,65 +62,105 @@ export function ModelPermissionsInput({
         idsByTab.set("other", new Set(otherIds.map(({ id }) => id)));
     }
     const selectedIds = new Set(selected ?? models.map(({ id }) => id));
-    const hasSelectedModels = models.some(({ id }) => selectedIds.has(id));
-    const shownTabs = [...idsByTab].filter(
-        ([, ids]) =>
-            activeTab !== null || [...ids].some((id) => selectedIds.has(id)),
-    );
-    const displayedModels = models.filter(({ id }) =>
-        activeTab === "selected"
-            ? selectedIds.has(id)
-            : activeTab !== null && idsByTab.get(activeTab)?.has(id),
-    );
+    const selectedCategories = [...idsByTab]
+        .filter(([, ids]) => [...ids].some((id) => selectedIds.has(id)))
+        .map(([tab]) => TAB_LABELS[tab]);
+    const summary =
+        selected === null
+            ? "All models"
+            : selectedIds.size === 0
+              ? "Generation disabled"
+              : `${selectedIds.size} ${selectedIds.size === 1 ? "model" : "models"}`;
+    const displayedModels = models.filter(({ id }) => {
+        if (activeTab === "all") return true;
+        if (activeTab === "selected") return selectedIds.has(id);
+        return activeTab !== null && idsByTab.get(activeTab)?.has(id);
+    });
     return (
         <>
-            {(activeTab !== null || hasSelectedModels) && (
+            {activeTab === null ? (
+                <Text
+                    as="div"
+                    size="sm"
+                    className="polli:min-h-8 polli:leading-5 col-span-2 row-start-2 flex min-w-0 flex-wrap items-start gap-x-3 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                >
+                    {selectedCategories.length > 0 && (
+                        <span className="flex min-w-0 flex-wrap gap-x-1">
+                            {selectedCategories.map((category) => (
+                                <span
+                                    key={category}
+                                    className="inline-flex h-8 items-center"
+                                >
+                                    <Chip
+                                        size="sm"
+                                        className="polli:text-sm polli:leading-5"
+                                    >
+                                        {category}
+                                    </Chip>
+                                </span>
+                            ))}
+                        </span>
+                    )}
+                    <span className="inline-flex h-8 items-center whitespace-nowrap text-xs text-theme-text-muted">
+                        {summary}
+                    </span>
+                </Text>
+            ) : (
                 <ButtonGroup
                     aria-label="Model categories"
-                    className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                    className="col-span-2 row-start-2 py-1.5 sm:col-span-1 sm:col-start-2 sm:row-start-1"
                 >
-                    {shownTabs.map(([tab]) => (
+                    <TabButton
+                        size="xs"
+                        active={activeTab === "selected"}
+                        disabled={disabled}
+                        onClick={() => setActiveTab("selected")}
+                    >
+                        Selected
+                    </TabButton>
+                    <TabButton
+                        size="xs"
+                        className="mr-2"
+                        active={activeTab === "all"}
+                        disabled={disabled}
+                        onClick={() => setActiveTab("all")}
+                    >
+                        All
+                    </TabButton>
+                    {[...idsByTab].map(([tab]) => (
                         <TabButton
                             key={tab}
                             size="xs"
                             active={activeTab === tab}
-                            disabled={disabled || activeTab === null}
+                            disabled={disabled}
                             onClick={() => setActiveTab(tab)}
                         >
                             {TAB_LABELS[tab]}
                         </TabButton>
                     ))}
-                    {activeTab !== null && (
-                        <TabButton
-                            size="xs"
-                            active={activeTab === "selected"}
-                            disabled={disabled}
-                            onClick={() => setActiveTab("selected")}
-                        >
-                            Selected
-                        </TabButton>
-                    )}
                 </ButtonGroup>
             )}
-            <Button
-                type="button"
-                size="sm"
-                intent="neutral"
-                className="col-start-2 row-start-1 gap-1.5 justify-self-end sm:col-start-3"
-                aria-label={
-                    activeTab === null
-                        ? "Expand model selector"
-                        : "Collapse model selector"
-                }
-                aria-expanded={activeTab !== null}
-                disabled={disabled}
-                onClick={() =>
-                    setActiveTab(activeTab === null ? "selected" : null)
-                }
-            >
-                {activeTab === null && <span>Edit</span>}
-                <ChevronIcon expanded={activeTab !== null} />
-            </Button>
+            <div className="col-start-2 row-start-1 flex h-8 items-center justify-self-end sm:col-start-3">
+                <Button
+                    type="button"
+                    size="sm"
+                    intent="neutral"
+                    className="gap-1.5"
+                    aria-label={
+                        activeTab === null
+                            ? "Choose models"
+                            : "Collapse model selector"
+                    }
+                    aria-expanded={activeTab !== null}
+                    disabled={disabled}
+                    onClick={() =>
+                        setActiveTab(activeTab === null ? "selected" : null)
+                    }
+                >
+                    {activeTab === null && <span>Choose models</span>}
+                    <ChevronIcon expanded={activeTab !== null} />
+                </Button>
+            </div>
             {activeTab !== null && (
                 <div className="col-span-2 w-full pt-2 sm:col-span-3">
                     <ConsentModelPicker

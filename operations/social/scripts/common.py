@@ -122,6 +122,33 @@ def github_api_request(
     return resp
 
 
+def post_discord_webhook(
+    webhook_url: str,
+    *,
+    json_body: Optional[Dict] = None,
+    files: Optional[Dict] = None,
+) -> requests.Response:
+    """Retry explicit Discord server failures without replaying timed-out posts."""
+    url = webhook_url
+    if "wait=" not in url:
+        url += ("&" if "?" in url else "?") + "wait=true"
+
+    for attempt in range(MAX_RETRIES):
+        if files is not None:
+            resp = requests.post(url, files=files, timeout=30)
+        else:
+            resp = requests.post(url, json=json_body or {}, timeout=30)
+        if resp.status_code < 500:
+            return resp
+        print(
+            f"  Discord webhook {resp.status_code} on attempt "
+            f"{attempt + 1}/{MAX_RETRIES}"
+        )
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
+    return resp
+
+
 def parse_json_response(response: str) -> Optional[Dict]:
     """Parse JSON from AI response, stripping markdown fences."""
     text = response.strip()

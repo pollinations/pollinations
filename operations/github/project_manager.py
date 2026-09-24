@@ -82,9 +82,9 @@ CONFIG = {
             "source_options": {"Team": "00bb2074", "Community": "55f6f20d"},
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
-                "Urgent": "0f53228f",
+                "Urgent": "0a3c2fd1",
                 "High": "dc7fa85f",
-                "Medium": "15fd4fac",
+                "Medium": "e874fe65",
                 "Low": "7495a981",
             },
         },

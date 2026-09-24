@@ -1628,6 +1628,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.05,
     },
   },
+  "minimax/minimax-h3-max": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.16,
+      },
+      "768p": {
+        "completionVideoSeconds": 0.08,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.05,
+    },
+  },
   "minimax/minimax-h3-max-turbo": {
     "cost": {
       "completionVideoSeconds": 0.00625,

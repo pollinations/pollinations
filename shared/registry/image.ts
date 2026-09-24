@@ -1633,6 +1633,68 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
+    "minimax/minimax-h3-max": {
+        aliases: ["minimax-h3-max"],
+        provider: "fal",
+        publisher: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-09-24").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionVideoSeconds: 0.05, // 480p per output second.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.08 },
+                "1080p": { completionVideoSeconds: 0.16 },
+            },
+            matchResolution("768p", "1080p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "480p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: {
+                        "": "480p",
+                        "768p": "768p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["480p", "768p", "1080p"],
+        title: "MiniMax H3 Max",
+        description:
+            "High-quality 5–15 second video from text, start/end frames, or reference media with synchronized audio at 480p, 768p, or 1080p",
+        inputModalities: ["text", "image", "video", "audio"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
+        maxReferenceImages: 2,
+        minDuration: 5,
+        maxDuration: 15,
+        defaultDuration: 5,
+        allowedDurations: [5, 10, 15],
+    },
     "minimax/minimax-h3-max-turbo": {
         aliases: [],
         provider: "fal",

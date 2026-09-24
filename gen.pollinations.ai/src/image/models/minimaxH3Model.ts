@@ -7,6 +7,13 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const H3_ENDPOINT = "https://queue.fal.run/minimax/h3/text-to-video";
+const H3_MAX_MODEL = "minimax/minimax-h3-max";
+const H3_MAX_TEXT_ENDPOINT =
+    "https://queue.fal.run/minimax/h3-max/text-to-video";
+const H3_MAX_IMAGE_ENDPOINT =
+    "https://queue.fal.run/minimax/h3-max/image-to-video";
+const H3_MAX_R2V_ENDPOINT =
+    "https://queue.fal.run/minimax/h3-max/reference-to-video";
 const H3_MAX_TURBO_MODEL = "minimax/minimax-h3-max-turbo";
 const H3_MAX_TURBO_TEXT_ENDPOINT =
     "https://queue.fal.run/minimax/h3-max-turbo/text-to-video";
@@ -20,13 +27,13 @@ const H3_RESOLUTIONS = {
     "768p": "768P",
     "2k": "2K",
 } as const;
-const H3_MAX_TURBO_RESOLUTIONS = {
+const H3_MAX_RESOLUTIONS = {
     "480p": "480P",
     "768p": "768P",
     "1080p": "1080P",
 } as const;
-const H3_MAX_TURBO_DURATIONS = [5, 10, 15] as const;
-const H3_MAX_TURBO_ASPECT_RATIOS = [
+const H3_MAX_DURATIONS = [5, 10, 15] as const;
+const H3_MAX_ASPECT_RATIOS = [
     "21:9",
     "16:9",
     "4:3",
@@ -189,48 +196,72 @@ export async function callMinimaxH3API(
     );
 }
 
-export async function callMinimaxH3MaxTurboAPI(
+async function callFalMinimaxMaxVariant(
+    title: string,
+    modelId: string,
+    textEndpoint: string,
+    imageEndpoint: string,
+    r2vEndpoint: string | undefined,
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const duration = safeParams.duration ?? H3_MAX_TURBO_DURATIONS[0];
-    if (!(H3_MAX_TURBO_DURATIONS as readonly number[]).includes(duration)) {
+    const duration = safeParams.duration ?? H3_MAX_DURATIONS[0];
+    if (!(H3_MAX_DURATIONS as readonly number[]).includes(duration)) {
         throw UpstreamError.fromProvider(400, {
-            message: "MiniMax H3 Max Turbo supports 5, 10, or 15 seconds",
+            message: `${title} supports 5, 10, or 15 seconds`,
         });
     }
 
     const resolution = safeParams.resolution ?? "480p";
     const upstreamResolution =
-        H3_MAX_TURBO_RESOLUTIONS[
-            resolution as keyof typeof H3_MAX_TURBO_RESOLUTIONS
-        ];
+        H3_MAX_RESOLUTIONS[resolution as keyof typeof H3_MAX_RESOLUTIONS];
     if (!upstreamResolution) {
         throw UpstreamError.fromProvider(400, {
-            message: `MiniMax H3 Max Turbo does not support ${resolution}`,
+            message: `${title} does not support ${resolution}`,
         });
     }
 
     const images = safeParams.image ?? [];
     const hasFrames = images.length > 0;
-    const endpoint = hasFrames
-        ? H3_MAX_TURBO_IMAGE_ENDPOINT
-        : H3_MAX_TURBO_TEXT_ENDPOINT;
+    const hasReference =
+        (safeParams.reference_images?.length ?? 0) > 0 ||
+        (safeParams.reference_videos?.length ?? 0) > 0 ||
+        (safeParams.reference_audios?.length ?? 0) > 0;
+
+    if (hasFrames && hasReference) {
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Frame inputs (image[]) and reference media (reference_images, reference_videos, reference_audios) cannot be combined.",
+        });
+    }
+
+    if (hasReference && !r2vEndpoint) {
+        throw UpstreamError.fromProvider(400, {
+            message: `${title} does not support reference media`,
+        });
+    }
+
+    const endpoint =
+        hasReference && r2vEndpoint
+            ? r2vEndpoint
+            : hasFrames
+              ? imageEndpoint
+              : textEndpoint;
     const requestedAspectRatio = safeParams.aspectRatio;
     if (
         !hasFrames &&
         requestedAspectRatio &&
-        !H3_MAX_TURBO_ASPECT_RATIOS.includes(
-            requestedAspectRatio as (typeof H3_MAX_TURBO_ASPECT_RATIOS)[number],
+        !H3_MAX_ASPECT_RATIOS.includes(
+            requestedAspectRatio as (typeof H3_MAX_ASPECT_RATIOS)[number],
         )
     ) {
         throw UpstreamError.fromProvider(400, {
-            message: `MiniMax H3 Max Turbo does not support aspectRatio ${requestedAspectRatio}`,
+            message: `${title} does not support aspectRatio ${requestedAspectRatio}`,
         });
     }
 
     return callFalH3API(
-        "MiniMax H3 Max Turbo",
+        title,
         endpoint,
         {
             prompt,
@@ -239,24 +270,84 @@ export async function callMinimaxH3MaxTurboAPI(
             seed: safeParams.seed,
             enable_safety_checker: true,
             prompt_expansion_mode: "balanced",
-            ...(hasFrames
+            ...(hasReference
                 ? {
-                      image_url: images[0],
-                      ...(images[1] ? { end_image_url: images[1] } : {}),
-                  }
-                : {
                       aspect_ratio:
                           requestedAspectRatio ??
                           (safeParams.dimensionsExplicit
                               ? closestRatioLogSpace(
                                     safeParams.width,
                                     safeParams.height,
-                                    H3_MAX_TURBO_ASPECT_RATIOS,
+                                    H3_MAX_ASPECT_RATIOS,
                                 )
                               : "16:9"),
-                  }),
+                      ...(safeParams.reference_images?.length
+                          ? {
+                                reference_image_urls:
+                                    safeParams.reference_images,
+                            }
+                          : {}),
+                      ...(safeParams.reference_videos?.length
+                          ? {
+                                reference_video_urls:
+                                    safeParams.reference_videos,
+                            }
+                          : {}),
+                      ...(safeParams.reference_audios?.length
+                          ? {
+                                reference_audio_urls:
+                                    safeParams.reference_audios,
+                            }
+                          : {}),
+                  }
+                : hasFrames
+                  ? {
+                        image_url: images[0],
+                        ...(images[1] ? { end_image_url: images[1] } : {}),
+                    }
+                  : {
+                        aspect_ratio:
+                            requestedAspectRatio ??
+                            (safeParams.dimensionsExplicit
+                                ? closestRatioLogSpace(
+                                      safeParams.width,
+                                      safeParams.height,
+                                      H3_MAX_ASPECT_RATIOS,
+                                  )
+                                : "16:9"),
+                    }),
         },
         duration,
+        modelId,
+    );
+}
+
+export async function callMinimaxH3MaxAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    return callFalMinimaxMaxVariant(
+        "MiniMax H3 Max",
+        H3_MAX_MODEL,
+        H3_MAX_TEXT_ENDPOINT,
+        H3_MAX_IMAGE_ENDPOINT,
+        H3_MAX_R2V_ENDPOINT,
+        prompt,
+        safeParams,
+    );
+}
+
+export async function callMinimaxH3MaxTurboAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    return callFalMinimaxMaxVariant(
+        "MiniMax H3 Max Turbo",
         H3_MAX_TURBO_MODEL,
+        H3_MAX_TURBO_TEXT_ENDPOINT,
+        H3_MAX_TURBO_IMAGE_ENDPOINT,
+        undefined,
+        prompt,
+        safeParams,
     );
 }

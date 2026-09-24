@@ -5,7 +5,7 @@ import type {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-/** Semantic soft-fill roles. Label recipes live on Chip. */
+/** Semantic action roles. Label recipes live on Chip. */
 type ButtonIntent = "danger" | "info" | "neutral" | "brand" | "commit";
 export type ButtonAppearance = "pill" | "raised";
 
@@ -37,22 +37,21 @@ const themeClasses =
     "polli:bg-theme-bg-active polli:text-theme-text-strong " +
     "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
-// Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
-// No filled CTAs at rest. Two outlined families share one look: `brand` for
-// signing in (identity, calm pale hover) and `commit` for granting or saving
-// (fills with the accent only under the pointer or keyboard focus).
+// Primary actions have a soft accent fill in light mode and an outline in dark.
+// `brand` keeps a calm hover; `commit` strengthens the fill on hover and focus.
 const outlined =
-    "polli:border polli:border-theme-text-soft polli:bg-surface-white polli:text-theme-text-strong " +
+    "polli:border polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:text-theme-text-strong " +
     "polli:transition-colors polli:[.dark_&]:bg-transparent";
 const intentClasses: Record<ButtonIntent, string> = {
-    brand: `${outlined} polli:hover:bg-theme-text-soft/10`,
+    brand: `${outlined} polli:hover:bg-theme-bg-active/50 polli:[.dark_&]:hover:bg-theme-text-soft/10`,
     commit:
         `${outlined} polli:hover:border-theme-bg-active polli:hover:bg-theme-bg-active ` +
         "polli:focus-visible:border-theme-bg-active polli:focus-visible:bg-theme-bg-active " +
         "polli:[.dark_&]:hover:bg-theme-bg-active polli:[.dark_&]:focus-visible:bg-theme-bg-active",
     danger:
-        "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
-        "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
+        "polli:border polli:border-intent-danger-text polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
+        "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors " +
+        "polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-intent-danger-bg-hover polli:[.dark_&]:focus-visible:bg-intent-danger-bg-hover",
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
@@ -83,7 +82,7 @@ const buttonClasses = ({
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
     return cn(
-        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border polli:border polli:border-transparent",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",

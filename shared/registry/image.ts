@@ -1634,7 +1634,7 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "minimax/minimax-h3-max": {
-        aliases: ["minimax-h3-max"],
+        aliases: [],
         provider: "fal",
         publisher: "MiniMax",
         category: "video",

@@ -892,7 +892,7 @@ Use `duration` to set video length, `aspectRatio` for orientation, and `audio` w
 
 You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.
 
-Seedance 2.0, Seedance 2.5, Wan 3.0, and MiniMax H3 Max also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.
+Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.
 
 Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).
 

@@ -5,6 +5,7 @@ import {
     DEFAULT_DASHBOARD_UID,
     dashboardSrc,
     readDashboardUid,
+    readTraffic,
 } from "../frontend/src/dashboards.ts";
 
 test("keeps top-level dashboards and drops foldered legacy ones", () => {
@@ -40,7 +41,13 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
 
 test("keeps kiosk mode on the embedded dashboard url", () => {
     assert.equal(
-        dashboardSrc("core-api-rebuild"),
-        "/grafana/d/core-api-rebuild?kiosk",
+        dashboardSrc("core-api-rebuild", "legacy"),
+        "/grafana/d/core-api-rebuild?kiosk&var-traffic=legacy",
     );
+});
+
+test("defaults to regular traffic and rejects unknown values", () => {
+    assert.equal(readTraffic(""), "regular");
+    assert.equal(readTraffic("?traffic=all"), "all");
+    assert.equal(readTraffic("?traffic=internal"), "regular");
 });

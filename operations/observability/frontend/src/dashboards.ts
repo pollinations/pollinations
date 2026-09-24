@@ -43,6 +43,19 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
-export function dashboardSrc(uid: string): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
+/**
+ * Traffic populations of `generation_usage_hourly`. Legacy is the two legacy
+ * public API bridge keys (`is_legacy`); regular is everything else.
+ */
+export const TRAFFIC = ["regular", "legacy", "all"] as const;
+export type Traffic = (typeof TRAFFIC)[number];
+
+export function readTraffic(search: string): Traffic {
+    const value = new URLSearchParams(search).get("traffic");
+    return TRAFFIC.find((traffic) => traffic === value) ?? "regular";
+}
+
+/** Kiosk mode hides Grafana's variable controls, so the header passes them. */
+export function dashboardSrc(uid: string, traffic: Traffic): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&var-traffic=${traffic}`;
 }

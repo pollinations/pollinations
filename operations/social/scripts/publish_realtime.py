@@ -203,7 +203,7 @@ def main():
         print(f"  FATAL: Could not download image for Discord: {e}")
         sys.exit(1)
 
-    # Post to Discord (retries transient 5xx/429)
+    # Post to Discord (retries server failures)
     try:
         if image_bytes:
             files = {

@@ -77,24 +77,14 @@ CONFIG = {
         "dev": {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
-            "internal_only": True,
+            # Team vs Community; the SUPPORT view lists Community issues.
+            "source_field_id": "PVTSSF_lADOBS76fs4AwCAMzhjSPy4",
+            "source_options": {"Team": "00bb2074", "Community": "55f6f20d"},
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
-                "Urgent": "0f53228f",
                 "High": "dc7fa85f",
-                "Medium": "15fd4fac",
+                "Medium": "e874fe65",
                 "Low": "7495a981",
-            },
-        },
-        "support": {
-            "id": "PVT_kwDOBS76fs4BLr1H",
-            "name": "Support",
-            "internal_only": False,
-            "priority_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7NAkI",
-            "priority_options": {
-                "Urgent": "5b4c403c",
-                "High": "509f6cf1",
-                "Low": "ca5161be",
             },
         },
     },
@@ -210,16 +200,6 @@ def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
     return list(dict.fromkeys([kind, *([item_type] if item_type in types else []), *picked]))
 
 
-def get_fallback_classification(_: bool) -> dict:
-    return {
-        "project": None,
-        "priority": None,
-        "labels": [],
-        "tracking_issue": None,
-        "reasoning": "AI classification failed; skipping automation"
-    }
-
-
 def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
     """Ask the model for a JSON object, retrying transport and parse errors."""
     for attempt in range(3):
@@ -267,12 +247,12 @@ def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
 def classify_with_ai(
     is_internal: bool,
     tracking_issues: Optional[list] = None,
-) -> dict:
+) -> Optional[dict]:
     tracking_block = ""
     if tracking_issues:
         tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
         tracking_block = (
-            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for dev issues)\n"
+            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for team issues)\n"
             f"{tracking_lines}\n"
         )
 
@@ -291,26 +271,21 @@ Body: {ISSUE_BODY[:2000]}
 
     raw = ask_ai(system_prompt, user_prompt)
     if raw is None:
-        return get_fallback_classification(is_internal)
+        return None
 
     is_app_submission = raw.get("is_app_submission", False)
 
-    project = str(raw.get("project", "")).lower()
-    if project not in ["dev", "support"]:
-        log_error(f"AI returned invalid project: {project}")
-        return get_fallback_classification(is_internal)
-
-    priority = raw.get("priority")
-    if project == "support":
-        if priority not in {"High", "Low"}:
+    # Team priority is set by hand; community issues get High, Medium or Low.
+    priority = None
+    if not is_internal:
+        priority = raw.get("priority")
+        if priority not in {"High", "Medium", "Low"}:
             log_error(f"AI returned invalid priority: {priority}")
-            priority = "Low"
-    else:
-        priority = None
+            priority = "Medium"
 
     labels = parse_labels(raw, ISSUE_TYPES, ISSUE_FLAGS)
     if labels is None:
-        return get_fallback_classification(is_internal)
+        return None
 
     tracking_raw = raw.get("tracking_issue")
     tracking_number = None
@@ -322,7 +297,6 @@ Body: {ISSUE_BODY[:2000]}
         tracking_number = int(tracking_raw.strip().lstrip("#"))
 
     classification = {
-        "project": project,
         "priority": priority,
         "labels": labels,
         "tracking_issue": tracking_number,
@@ -662,28 +636,22 @@ def main():
 
     tracking_issues = fetch_tracking_issues()
     classification = classify_with_ai(is_internal, tracking_issues)
-    
+    if classification is None:
+        fail(f"AI classification failed for issue #{ISSUE_NUMBER}")
+
     if classification.get("is_app_submission"):
         # Not labelled APP-SUBMISSION: a person confirms before the app review starts.
         log_debug("AI detected app submission, routing to Dev project")
         add_to_project(CONFIG["projects"]["dev"]["id"])
         return
 
-    if not classification.get("project"):
-        fail(f"AI classification failed for issue #{ISSUE_NUMBER}")
-
-    project_key = classification["project"].lower()
-
-    if project_key == "dev" and not is_internal:
-        log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
-        project_key = "support"
-    
-    priority = classification.get("priority", "Low")
-    if project_key == "support" and is_paid_customer(real_author_id):
-        log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent")
-        priority = "Urgent"
-    log_debug(f"Classified: project={project_key}, priority={priority}")
-    project = CONFIG["projects"][project_key]
+    source = "Team" if is_internal else "Community"
+    priority = classification["priority"]
+    if source == "Community" and is_paid_customer(real_author_id):
+        log_debug(f"Author {real_author} (id={real_author_id}) is a paying customer; raising priority to High")
+        priority = "High"
+    log_debug(f"Classified: source={source}, priority={priority}")
+    project = CONFIG["projects"]["dev"]
 
     labels = classification["labels"]
     pinned = set(existing_labels) & PINNED_TYPES
@@ -691,27 +659,20 @@ def main():
         labels = [l for l in labels if l not in ISSUE_TYPES] + sorted(pinned)
     log_debug(f"Labels: {labels}")
     if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{project_key}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     item_id = add_to_project(project["id"])
-
-    if project_key == "support":
-        priority_option = project.get("priority_options", {}).get(priority)
-        if priority_option and project.get("priority_field_id"):
-            set_project_field(
-                project["id"],
-                item_id,
-                project["priority_field_id"],
-                priority_option,
-            )
+    set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
+    if priority:
+        set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
     if RELABEL or not set(existing_labels) & set(KINDS):
         set_labels(labels)
     else:
         log_debug(f"Issue #{ISSUE_NUMBER} already has a kind label; keeping its labels")
 
-    # Parent new Dev issues under the best-fit tracking issue (skip tracking issues themselves)
+    # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
     is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels
-    if project_key == "dev" and ISSUE_DB_ID and not is_tracking_issue:
+    if source == "Team" and ISSUE_DB_ID and not is_tracking_issue:
         parent = classification.get("tracking_issue")
         valid_parents = {e["number"] for e in tracking_issues}
         if parent in valid_parents:

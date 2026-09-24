@@ -1,0 +1,36 @@
+{
+  "pr_number": 15402,
+  "title": "fix: limit model changes news card to live changes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15402",
+  "merged_at": "2026-09-24T15:18:28Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "The model changes card on enter listed retirements and price changes through November, most of which are not deployed yet. This trims it to what #15361 shipped to production on Sep 24.\n\n- Lists the five models that are now Paid Pollen only\n- Adds the ~5% price increase on GLM 5.2 and Kimi K2.7 Code, which was missing\n- Keeps the DeepSeek V4 Flash increase, the V4 Pro / Muse Glimmer decreases and the Kimi K2.7 Code tool-call note\n- Drops Sonar, Qwen, Command A+, Nova, MAI, Gemini and Grok items until their PRs ship\n- Replaces the \"Starting Sep 25\" label with the actual date\n\nChecked each item against the live `gen.pollinations.ai/text/models` catalog.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "News from the living hive",
+    "blurb": "The model-changes card now reports what has actually landed in production, rather than consulting the calendar from the future. Five Paid Pollen-only models and the current GLM 5.2, Kimi K2.7 Code, DeepSeek V4, V4 Pro, and Muse Glimmer changes are all accounted for.",
+    "summary": "Updated Enter's model-changes news card to match the live Sep 24 production catalog: five Paid Pollen-only models, roughly 5% GLM 5.2 and Kimi K2.7 Code price updates, DeepSeek V4 Flash, V4 Pro, Muse Glimmer, and the Kimi tool-call note.",
+    "impact": "Users now see the actual deployed model availability and pricing changes, dated with the real release date, while unshipped Sonar, Qwen, Command A+, Nova, MAI, Gemini, and Grok updates stay out of the card until they land.",
+    "keywords": [
+      "enter",
+      "model catalog",
+      "pricing",
+      "news card",
+      "Paid Pollen",
+      "UI"
+    ],
+    "visual_concept": "Depict Polli as a careful newsroom editor in a cozy garden terminal, replacing a future-dated stack of model notices with a small, clearly current bulletin pinned to a lime-green board. A CRT monitor shows a tidy live model catalog, with code-plants and calendar pages representing only changes that have bloomed in production.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny editor visor, carefully pinning a current model bulletin onto a prominent lime green (#ecf874) garden news board beside a glowing retro terminal showing a live catalog; old future calendar pages rest neatly in a tray, while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle pixel-font text: 'LIVE CHANGES', nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15402.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny editor visor, carefully pinning a current model bulletin onto a prominent lime green (#ecf874) garden news board beside a glowing retro terminal showing a live catalog; old future calendar pages rest neatly in a tray, while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle pixel-font text: 'LIVE CHANGES', nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-09-24T15:19:33.068738+00:00"
+}

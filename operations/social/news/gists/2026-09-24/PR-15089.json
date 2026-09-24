@@ -1,0 +1,36 @@
+{
+  "pr_number": 15089,
+  "title": "fix(social): retry Discord webhook 5xx responses",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/15089",
+  "merged_at": "2026-09-24T23:12:39Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Retry explicit Discord webhook 5xx responses up to three times.\n- Do not replay network timeouts, where the message may already have been posted.\n- Use the shared sender for realtime, weekly, and model-news posts.\n\nAddresses #15023 (the observed 503; leave the workflow issue open until a successful run).\nFixes #15418.\n\nThe separate #15002 Reddit publishing failure is not addressed.\n\n## Verification\n- Local smoke checks: 503/500 retry, no 429 or timeout replay, multipart payload preserved.\n- Python compile check.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The webhook gets three tries",
+    "blurb": "Discord 5xx hiccups now get up to three careful retries before the hive gives up. Timeouts stay untouched, because a message might already be happily buzzing in the channel.",
+    "summary": "Social publishing now retries explicit Discord webhook 5xx responses up to three times through a shared sender used by realtime, weekly, and model-news posts, while leaving 429s and network timeouts unreplayed.",
+    "impact": "Discord announcements should recover automatically from transient 500/503 responses without risking duplicate posts after an ambiguous timeout.",
+    "keywords": [
+      "discord",
+      "webhooks",
+      "retries",
+      "social-pipeline",
+      "reliability"
+    ],
+    "visual_concept": "A cozy garden-post office where Polli carefully sends a message-envelope through a retro Discord-like webhook terminal three times after a small 503 error sign; the repeated attempts are represented by three gentle stepping stones, while a timeout cloud is deliberately left alone. Include code-plants and a reliable shared dispatch box to represent the common sender.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny postal cap, carefully sending a message envelope through a chunky retro webhook terminal glowing lime green (#ecf874); three small retry stamps lead past a gentle pixel sign reading “503”, while a sleepy timeout cloud remains untouched. Code-plants and tiny flowers grow around a shared dispatch box, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15089.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny postal cap, carefully sending a message envelope through a chunky retro webhook terminal glowing lime green (#ecf874); three small retry stamps lead past a gentle pixel sign reading “503”, while a sleepy timeout cloud remains untouched. Code-plants and tiny flowers grow around a shared dispatch box, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T23:13:36.321052+00:00"
+}

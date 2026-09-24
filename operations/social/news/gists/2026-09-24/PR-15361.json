@@ -1,0 +1,38 @@
+{
+  "pr_number": 15361,
+  "title": "fix: move fireworks serverless models before the sep 25 shutdown",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15361",
+  "merged_at": "2026-09-24T11:35:49Z",
+  "labels": [
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fireworks shuts down its serverless API on Sep 25 (changelog, Sep 12), and seven of our models still run there. This moves each of them to a new provider before that date. Model IDs don't change, and each model is its own commit.\n\nAccess follows our model rule. Quest Pollen is paid for by Azure credits, so a model stays open to Quest only when Azure serves it. Five of these models have no Azure deployment we can use. They move to providers we pay in cash, so they become paid-only.\n\n- **DeepSeek V4 Flash**: Fireworks → Azure (Sweden, 10M TPM), with DeepInfra as fallback.\n  - It is our busiest Fireworks model (~11.4K requests/week), so it moves to credits and stays Quest.\n  - The quota covers last week's peak with no minute over.\n  - The price follows Azure's meter at our 0.75× Azure rate: $0.22/$0.66 → $0.33/$0.99 per M tokens.\n  - Unlike Fireworks, Azure and DeepInfra reason only when asked. Both routes default to `reasoning_effort: \"high\"`, and callers can still override it.\n  - Azure retires this model on Dec 3, so it needs another move before then.\n- **Kimi K2.6**: Fireworks → Azure East US, then a second Azure deployment in Sweden, then DeepInfra.\n  - It stays Quest at the same price ($0.95/$4.00).\n  - One 2M TPM deployment would have overflowed for ~3 minutes last week, so there are two (4M in total, no overflow).\n  - Azure rejects image URLs, so gen sends images as base64. The converter now handles as many images as the model advertises (30 here, 20 for Bedrock models) instead of a flat 8.\n  - On forced tool calls, DeepInfra leaks tool-call tokens into the reply unless reasoning is off, so gen turns reasoning off for those requests.\n- **DeepSeek V4 Flash Vision**: Fireworks → DeepInfra.\n  - There is no Azure deployment, so it becomes paid-only.\n  - The price stays about the same: $0.22/$0.66 → $0.216/$0.647.\n  - No fallback yet. SiliconFlow via OpenRouter is tested and ready for a follow-up; Novita rate-limited bursts.\n- **DeepSeek V4 Pro**: Fireworks → Alibab",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seven models find new flowers",
+    "blurb": "Before Fireworks folds its serverless tent, seven model routes have been replanted with new providers. The model IDs stay put; the plumbing gets a very necessary migration.",
+    "summary": "Moved seven Fireworks Serverless-backed models ahead of its September 25 shutdown while preserving model IDs, including DeepSeek V4 Flash on Azure Sweden with DeepInfra fallback and Kimi K2.6 across two Azure regions plus DeepInfra.",
+    "impact": "Apps can keep calling the same model IDs through the provider transition; DeepSeek V4 Flash and Kimi K2.6 remain Quest-accessible through Azure, while image inputs now scale to each model's advertised limit, including 30 images for Kimi K2.6.",
+    "keywords": [
+      "models",
+      "providers",
+      "Fireworks",
+      "Azure",
+      "DeepInfra",
+      "fallbacks",
+      "billing"
+    ],
+    "visual_concept": "A cozy provider-migration garden: Polli guides labeled model seed packets from a retiring Fireworks server shed to sturdy Azure and DeepInfra greenhouse terminals, with routes shown as gentle vine-like cables. A CRT monitor robot helps carry packets, while code-plants and flowers make the continuity of unchanged model IDs visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries model seed packets from a small retiring server shed to two warm greenhouse terminals labeled “AZURE” and “DEEPINFRA”; a cute CRT-monitor robot helps beside blooming code-plants and lime green (#ecf874) vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15361.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries model seed packets from a small retiring server shed to two warm greenhouse terminals labeled “AZURE” and “DEEPINFRA”; a cute CRT-monitor robot helps beside blooming code-plants and lime green (#ecf874) vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T11:36:50.342690+00:00"
+}

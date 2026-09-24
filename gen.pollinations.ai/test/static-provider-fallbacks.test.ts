@@ -762,6 +762,36 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
+        const sonar = TEXT_SERVICES["perplexity/sonar"];
+        for (const request of [
+            { response_format: { type: "json_object" } },
+            { text: { format: { type: "json_object" } } },
+        ]) {
+            expect(textCapabilityError(sonar, request)).toMatch(
+                /does not support JSON mode/,
+            );
+        }
+        for (const request of [
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "answer",
+                        schema: {
+                            type: "object",
+                            properties: { capital: { type: "string" } },
+                        },
+                    },
+                },
+            },
+            { response_format: { type: "text" } },
+            {},
+        ]) {
+            expect(textCapabilityError(sonar, request)).toBeUndefined();
+        }
+    });
+
     it("uses the same primary and single fallback for both API formats", () => {
         const primary = "meta/llama-4-scout";
         const novita = `${primary}:openrouter:novita-bf16`;

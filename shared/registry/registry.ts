@@ -236,6 +236,8 @@ export type ModelDefinition = {
     maxCompletionTokens?: number;
     /** False when the model rejects JSON/structured output requests. */
     supportsStructuredOutput?: boolean;
+    /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
+    supportsJsonMode?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

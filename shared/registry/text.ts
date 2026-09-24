@@ -1684,6 +1684,9 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,
+        // The Agent API answers json_object with an empty object; json_schema
+        // works.
+        supportsJsonMode: false,
         search: true,
         contextLength: 128000,
         isSpecialized: false,

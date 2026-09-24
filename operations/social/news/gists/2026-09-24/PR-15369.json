@@ -1,0 +1,37 @@
+{
+  "pr_number": 15369,
+  "title": "refactor(enter): simplify model list pricing and health display",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15369",
+  "merged_at": "2026-09-24T12:30:41Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Organizes pricing into Pollen access, requests per Pollen, price options and extra fees, then usage rates. Uses right-aligned values, a solid overview divider and dotted detail dividers.\n- Adds registry metadata for separate context, resolution, quality and other price selectors. Omits fixed resolution from the UI. Billing rates and variant selection rules are unchanged.\n- Fixes Gemini Search fees appearing among token rates without an icon; preserves prompt/query billing units.\n- Adds rounded health bars with gray bars for no data, concise tooltips, model ID copy icons and consistent spacing. Model titles link to Open WebUI or Play with an arrow.\n- Validation: 103 pricing/catalog/query tests, Enter typecheck, frontend build and formatting pass. Gen typecheck passed in the previous round. Local simulated health and labels are excluded.\n\nIndependent of #15273.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The price tags learned manners",
+    "blurb": "The model catalog now puts Pollen access, request costs, options, extra fees, and usage rates in a sensible little row instead of letting them mingle unsupervised. Health bars got rounder, model IDs got copy buttons, and Gemini Search fees now arrive wearing their proper icon.",
+    "summary": "Refactored the Enter model list to group Pollen access, requests-per-Pollen, selectable price options, extra fees, and usage rates with clearer dividers, while adding registry metadata for context, resolution, quality, and other selectors without changing billing rates or variant rules.",
+    "impact": "Users can scan model pricing and health more reliably, see Gemini Search prompt/query fees in the right place with an icon, copy model IDs, and open each model in Open WebUI or Play directly from its title.",
+    "keywords": [
+      "enter",
+      "model-catalog",
+      "pricing",
+      "health-status",
+      "registry",
+      "gemini-search",
+      "ui-ux"
+    ],
+    "visual_concept": "A cozy garden-market model catalog where Polli acts as a meticulous librarian, arranging labeled seed packets into clear pricing sections while a CRT robot reads rounded health gauges. Pixel flowers and code-plants represent model variants; neatly separated signs represent Pollen access, request rates, options, and usage, with a small magnifying-glass/search seed packet for Gemini Search fees.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she organizes a lime green (#ecf874) garden-market price board into clean labeled sections; beside her, a chunky CRT monitor robot happily checks rounded health bars while code-plants and pastel flowers grow from tidy pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle CRT glow, pixel-font text: \"MODEL GARDEN\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15369.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she organizes a lime green (#ecf874) garden-market price board into clean labeled sections; beside her, a chunky CRT monitor robot happily checks rounded health bars while code-plants and pastel flowers grow from tidy pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle CRT glow, pixel-font text: \"MODEL GARDEN\"."
+  },
+  "generated_at": "2026-09-24T12:31:46.120588+00:00"
+}

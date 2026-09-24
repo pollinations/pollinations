@@ -5,8 +5,10 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
+import { callAlibabaImage } from "./models/alibabaImageModel.ts";
 import {
     callAzureFlux2,
+    callAzureFlux11Pro,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
@@ -855,6 +857,20 @@ const generateImage = async (
             }
         }
 
+        case "black-forest-labs/flux.1.1-pro":
+        case "black-forest-labs/flux.1.1-pro:azure:sweden": {
+            try {
+                return await callAzureFlux11Pro(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Azure FLUX 1.1 Pro generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "black-forest-labs/flux.2-pro":
         case "black-forest-labs/flux.2-flex": {
             try {
@@ -872,7 +888,9 @@ const generateImage = async (
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
-        case "microsoft/mai-image-2.5-flash": {
+        case "microsoft/mai-image-2.5-flash":
+        case "microsoft/mai-image-2.6-flash":
+        case "microsoft/mai-image-2.6": {
             try {
                 return await callAzureMaiImage(prompt, safeParams, userInfo);
             } catch (error) {
@@ -938,6 +956,9 @@ const generateImage = async (
             return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
+            return await callAlibabaImage(prompt, safeParams, "wan2.7-image");
+
+        case "alibaba/wan-2.7-image:replicate":
             return await callWanImageAPI(prompt, safeParams, false);
 
         case "alibaba/wan-2.7-image-pro":
@@ -947,6 +968,13 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "qwen/qwen-image-3":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-3.0-pro",
+            );
+
+        case "qwen/qwen-image-3:fal":
             return await callQwenImage3API(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":

@@ -80,7 +80,10 @@ let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 let modelCatalogExpiresAt = 0;
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const response = await fetch(url, {
+    const catalogUrl = new URL(url);
+    // Keep the full accessible catalog so the search bar can offer status:all.
+    catalogUrl.searchParams.set("reliability", "all");
+    const response = await fetch(catalogUrl, {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -527,6 +530,7 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
               ...basePrice,
               priceVariants,
               priceDefaultLabel: model.pricing_default_label,
+              pricingDimensions: model.pricing_dimensions,
           }
         : basePrice;
 }

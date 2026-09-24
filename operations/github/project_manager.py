@@ -275,13 +275,10 @@ Body: {ISSUE_BODY[:2000]}
 
     is_app_submission = raw.get("is_app_submission", False)
 
-    # Team priority is set by hand; community issues get High, Medium or Low.
-    priority = None
-    if not is_internal:
-        priority = raw.get("priority")
-        if priority not in {"High", "Medium", "Low"}:
-            log_error(f"AI returned invalid priority: {priority}")
-            priority = "Medium"
+    priority = raw.get("priority")
+    if priority not in {"High", "Medium", "Low"}:
+        log_error(f"AI returned invalid priority: {priority}")
+        priority = "Medium"
 
     labels = parse_labels(raw, ISSUE_TYPES, ISSUE_FLAGS)
     if labels is None:

@@ -21,7 +21,7 @@ type Connection = {
     id: string;
     toolkit: string;
     name: string | null;
-    description: string;
+    description?: string;
     logo: string | null;
     alias: string | null;
 };

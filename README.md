@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-23** – **🤖 GPT-5.3 Codex** `openai/gpt-5.3-codex` is now available with a 400K-token context window, tool use, structured output, images, files, reasoning, streaming, and terminal workflows. [Try the API](https://gen.pollinations.ai/docs)
+- **2026-09-23** – **🚀 MiMo V2.6 Flash and Pro** Two Xiaomi models join the text API with image input, tools, streaming, JSON schema, reasoning controls, and a frankly excessive 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-23** – **🎨 New Azure image models** Generate and edit with `microsoft/mai-image-2.6`, its faster Flash sibling, and `black-forest-labs/flux.1.1-pro` through the existing image API. [Try image generation](https://pollinations.ai/play)
+- **2026-09-23** – **✨ Floret gets 3D output** Floret now uses shared authenticated media tools and can produce downloadable 3D generations alongside editable, publishable media.
+- **2026-09-23** – **⚡ GPT Image overflow** `gpt-image-2`, Flare, and Sunburst can absorb larger generation bursts through Azure with OpenAI fallback; Flare and Sunburst also cost 25% less.
+- **2026-09-23** – **🎯 ShouldIApply** Paste a resume and job description to estimate your odds of clearing the initial screen before beginning the traditional application odyssey. [Try it](https://notsointresting.github.io/shouldiapply) <!-- app -->
 - **2026-09-22** – **🚀 Claude Opus 5.5** `anthropic/claude-opus-5.5` is available through the unified API: 1M-token context, image input, adaptive thinking, automatic tools, and up to 128K output tokens. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-22** – **🚀 GPT-6 Sol and Luna** Two new paid OpenAI models, `openai/gpt-6-sol` and `openai/gpt-6-luna`, now work through the existing text API. No new endpoint ritual required. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-22** – **✨ GLM-5.3 FlashX** `z-ai/glm-5.3-flashx` brings 1M-token context, image input, and up to 131K output tokens to the unified text API, routed directly to Z.AI. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-21** – **🔗 MCP moves into the workshop** `polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
-- **2026-09-21** – **🤖 The router checks the weather** Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)
-- **2026-09-21** – **🚀 A Grok joins the garden** `x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-21** – **🎨 A garden for generated pixels** Bees Pollination is a simple browser-based prompt-to-image generator connected to your Pollinations account. [Try it](https://halimyassine.github.io/bees-pollination-app) <!-- app -->
-- **2026-09-20** – **🎨 Atelier Image Studio** Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org) <!-- app -->
-- **2026-09-20** – **✨ Jev Decisions API** Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-20** – **🤖 Jev 1.13** `typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)
 ---
 
 ## 🌱 Introduction

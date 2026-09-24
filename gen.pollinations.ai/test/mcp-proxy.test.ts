@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
@@ -313,4 +314,41 @@ test("rejects MCP batch requests at the proxy", async () => {
     );
 
     expect(response.status).toBe(400);
+});
+
+test("accepts an ag_ run token on MCP routes via the parent key", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    expect(token).toMatch(/^ag_/);
+
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/pollinations",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "pollinations proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), parent.userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });

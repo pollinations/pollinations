@@ -51,6 +51,7 @@ for (const name of [
     "core-api-rebuild",
     "community-models-rebuild",
     "byop-apps-rebuild",
+    "users-balances-rebuild",
 ]) {
     test(`${name} keeps regular usage fixed in every aggregate query`, () => {
         const source = readFileSync(
@@ -66,10 +67,12 @@ for (const name of [
         for (const query of queries) {
             const sources =
                 query.match(
-                    /FROM (generation_usage_hourly|byop_app_daily)\b/g,
+                    /(?:FROM|JOIN) (generation_usage_hourly|byop_app_daily|user_first_activity_mv|generation_events_classified)\b/g,
                 ) ?? [];
             const filters = query.match(/\btraffic_group = 'regular'/g) ?? [];
             assert.equal(filters.length, sources.length, query);
+            // Raw events would bypass the shared key classification.
+            assert.doesNotMatch(query, /\bFROM generation_event_v2\b/);
         }
         // Old URL variables cannot widen the population inside a dashboard.
         assert.ok(!source.includes("${traffic_group"));

@@ -7,7 +7,7 @@ One list for issues and pull requests. Judge issues by what the reporter describ
 
 ## Kind (pick exactly ONE)
 
-When several kinds fit, pick the first matching kind in this list.
+When several kinds fit, pick the first matching kind in this list. `kind` is always one of these eight; `BUG`, `FEATURE`, `QUESTION`, `OUTAGE` and `TRACKING` are types, never kinds.
 
 1. `MODEL`: Adding, updating, removing, or rerouting models; provider routing and fallbacks; model pricing; GPU workers that serve models (`shared/registry/`, `gen.pollinations.ai/src/text/configs/`, `operations/infrastructure/gpu/`); problems with a specific model's output or availability, including image, text, audio, and video generation. An app under `apps/` that picks or routes models is `APPS`, not `MODEL`
 2. `ECONOMICS`: Internal bookkeeping and business numbers: provider costs, invoices, revenue, ledger, KPIs, product analytics such as sign-in and signup funnels, bounce rates and referrals (`operations/economics/`, `operations/kpi/`). Code that charges, pays, or bans users is not `ECONOMICS`
@@ -45,8 +45,8 @@ Return an empty `flags` list when none apply.
 {
   "is_app_submission": true | false,
   "priority": "High" | "Medium" | "Low",
-  "kind": "API",
-  "type": "QUESTION",
+  "kind": "MODEL" | "ECONOMICS" | "MONITORING" | "APPS" | "INFRA" | "UI-UX" | "API" | "DOCS",
+  "type": "BUG" | "FEATURE" | "QUESTION" | "OUTAGE" | "TRACKING" | null,
   "flags": ["BILLING"],
   "tracking_issue": 1234 | null,
   "reasoning": "brief explanation"
@@ -80,7 +80,7 @@ For an internal author, set `tracking_issue` to the issue number of the single b
 
 ```json
 {
-  "kind": "MODEL",
+  "kind": "MODEL" | "ECONOMICS" | "MONITORING" | "APPS" | "INFRA" | "UI-UX" | "API" | "DOCS",
   "type": "BUG" | null,
   "flags": ["BILLING"],
   "reasoning": "brief explanation"

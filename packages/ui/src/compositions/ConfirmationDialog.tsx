@@ -79,6 +79,7 @@ export function ConfirmationDialog({
             open={open}
             onOpenChange={(next) => !next && onCancel()}
             size={size}
+            fullscreenOnMobile={false}
             contentClassName="polli:overflow-hidden"
         >
             <DialogBody actions={actions}>

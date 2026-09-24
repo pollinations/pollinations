@@ -5,6 +5,7 @@
 // them as an empty feed, which the Worker already treats as "no data". Tests
 // that assert on these requests stub fetch themselves and take precedence.
 const PUBLIC_PIPES = new Set([
+    "/v0/pipes/model_catalog_health.json",
     "/v0/pipes/model_route_health.json",
     "/v0/pipes/public_model_stats.json",
 ]);

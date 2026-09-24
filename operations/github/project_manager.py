@@ -84,7 +84,6 @@ CONFIG = {
             "priority_options": {
                 "Urgent": "0a3c2fd1",
                 "High": "dc7fa85f",
-                "Medium": "e874fe65",
                 "Low": "7495a981",
             },
         },

@@ -55,7 +55,7 @@ Return an empty `flags` list when none apply.
 
 ## Priority (external authors only)
 
-For an external author, pick exactly one of `High` or `Low`. Do **not** return `Urgent` or `Medium`:
+For an external author, pick exactly one of `High` or `Low`. Do **not** return `Urgent`:
 
 - `High`: Bugs breaking functionality, blocking issues, billing problems, outages
 - `Low`: Minor issues, cosmetic bugs, general questions, documentation, feature requests, integration help

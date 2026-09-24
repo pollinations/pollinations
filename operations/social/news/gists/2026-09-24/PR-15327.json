@@ -1,0 +1,37 @@
+{
+  "pr_number": 15327,
+  "title": "feat: add video input to inclusionai/ling-3.0-flash-vl (quest #15318)",
+  "author": "SvirepyiBambr",
+  "url": "https://github.com/pollinations/pollinations/pull/15327",
+  "merged_at": "2026-09-24T23:23:30Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes #15318\n\nAdds video input to the paid-only `inclusionai/ling-3.0-flash-vl` Text API model.\n\n### What changed\n- `shared/schemas/openai.ts` — accepts `video_url` content parts (the video content format the pinned OpenRouter `deepinfra/fp16` route consumes).\n- `shared/registry/text.ts` + `text-parameters.ts` — registers `video` in `inputModalities` and adds a `promptVideoTokens` rate, so provider-reported `video_tokens` are metered accurately.\n- `gen.pollinations.ai/src/text/availableModels.ts` + `configs/modelConfigs.ts` — keeps the pinned `deepinfra/fp16` no-fallback OpenRouter route and advertises the modality.\n- `gen.pollinations.ai/src/docs/text-generation.md` + `apidocs-recipes.md` — documents the video `content` format.\n- Tests: `test/text/ling-video.test.ts` (video_url parsing + registry modality/pricing + pinned no-fallback route), `test/usage-headers.test.ts` (video_tokens → promptVideoTokens mapping, incl. cached+text split), `test/text/utils/modelResolver.test.ts`, plus the price snapshot.\n\n### Verification\n`npx vitest run` on the affected suites: 109/109 passed (video parsing, usage mapping, registry pricing, resolver). `biome check` clean on every changed file. Usage is metered from provider-reported `prompt_tokens_details.video_tokens`; no silent fallback is introduced — the route stays pinned to `deepinfra/fp16` with `allow_fallbacks: false`.\n\nExisting text and image input keep working (covered by the new parsing test).\n\n## Maintainer follow-up\n- Prices reported `image_tokens` at the prompt rate (same as the qwen3.8-27b pattern): `openaiUsageToUsage` splits them out of text, and unrated usage bills 0",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive watches clips",
+    "blurb": "Ling 3.0 Flash VL can now take video alongside text and images. Send it a clip, and the meter counts the video tokens instead of making up folklore.",
+    "summary": "Added `video_url` content parts to the paid-only `inclusionai/ling-3.0-flash-vl` Text API model, with video input advertised on its pinned OpenRouter `deepinfra/fp16` route and provider-reported `video_tokens` metered through `promptVideoTokens`.",
+    "impact": "Developers can send videos to `inclusionai/ling-3.0-flash-vl` using the documented content format while retaining existing text and image inputs, with video usage accurately reflected in billing.",
+    "keywords": [
+      "video input",
+      "ling-3.0-flash-vl",
+      "text API",
+      "OpenRouter",
+      "usage metering",
+      "multimodal"
+    ],
+    "visual_concept": "A cozy multimodal analysis desk: a retro terminal displays a short video clip as chunky film frames flowing into a clearly labeled video-token jar. Polli, wearing tiny editor headphones, attentively feeds a film strip into the terminal while code-plants and flowers grow around it, representing video joining the existing text-and-image API inputs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny video-editor headphones as she feeds a chunky film strip into a glowing retro terminal; the screen shows simple pixel-font text \"VIDEO INPUT\" and a small jar of video tokens, with flowering code-plants nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15327.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny video-editor headphones as she feeds a chunky film strip into a glowing retro terminal; the screen shows simple pixel-font text \"VIDEO INPUT\" and a small jar of video tokens, with flowering code-plants nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T23:24:32.723364+00:00"
+}

@@ -5,6 +5,7 @@ import { gen, requireKey } from "../lib/api.js";
 import {
     getOutputMode,
     printError,
+    printInfo,
     printResult,
     printSuccess,
     printTable,
@@ -13,6 +14,10 @@ import {
 type AgentBase = {
     id: string;
     name: string;
+    // The exact string to pass as `model` when calling this agent, e.g.
+    // "community/octocat/my-agent". Null only for agents predating the
+    // GitHub-linked-owner requirement.
+    model: string | null;
     title: string;
     description: string | null;
     visibility: "private" | "public";
@@ -84,6 +89,9 @@ function printAgents(agents: Agent[]): void {
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
             name: agent.name,
+            model: agent.model
+                ? chalk.hex("#a78bfa").bold(agent.model)
+                : chalk.dim("- (link GitHub to get a callable model name)"),
             type: agent.type,
             base_model: agent.type === "prompt_agent" ? agent.baseModel : "-",
             visibility: agent.visibility,
@@ -97,6 +105,7 @@ function printAgents(agents: Agent[]): void {
         [
             "id",
             "name",
+            "model",
             "type",
             "base_model",
             "visibility",
@@ -167,6 +176,19 @@ const create = new Command("create")
             else {
                 printSuccess(`Agent created: ${agent.id}`);
                 printAgents([agent]);
+                if (agent.model) {
+                    printInfo(
+                        `Call it with model: ${agent.model}\n` +
+                            "It can take a minute or two to become callable while the model catalog refreshes " +
+                            '— if you get "Invalid model or alias" right away, just wait and retry rather than ' +
+                            "running `agents sync` (that only redeploys code-agent source, it doesn't speed this up).",
+                    );
+                } else {
+                    printInfo(
+                        "This agent has no callable model name yet: link a GitHub account to your Pollinations " +
+                            "account and it will get one automatically (check with `agents get`).",
+                    );
+                }
             }
         } catch (error) {
             printError(

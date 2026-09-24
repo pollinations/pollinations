@@ -497,15 +497,13 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Muse Glimmer directly to Fireworks without fallback", () => {
+    it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/muse-glimmer-30b",
-        );
+        expect(result.options.model).toBe("meta-models/Muse-Glimmer-30B");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
         expect(result.options.provider).toBeUndefined();
     });
@@ -590,6 +588,8 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
+        ["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
         [
             "minimax/minimax-m2.7:openrouter:minimax",
@@ -636,19 +636,24 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
+    it("routes DeepSeek to the exact Azure 0731 checkpoint with reasoning on", () => {
         const result = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4-flash",
         });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4-flash-0731",
-        );
+        expect(result.options.model).toBe("DeepSeek-V4-Flash-0731");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4-Flash-0731",
         });
-        expect(result.options.provider).toBeUndefined();
+        expect(result.options.reasoning_effort).toBe("high");
+        expect(
+            resolveModelConfig(messages, {
+                model: "deepseek/deepseek-v4-flash",
+                reasoning_effort: "none",
+            }).options.reasoning_effort,
+        ).toBe("none");
     });
 
     it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {
@@ -666,32 +671,29 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
+    it("routes DeepSeek Vision to the exact DeepInfra vision checkpoint", () => {
         const result = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4-flash-vision-exp",
         });
 
         expect(result.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
+            "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek Pro to the exact Fireworks 0813 checkpoint", () => {
+    it("routes DeepSeek Pro to the exact 0813 checkpoint on Alibaba", () => {
         const result = resolveModelConfig(messages, { model: "deepseek-pro" });
 
-        expect(result.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4-pro-0813",
-        );
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+        expect(result.options.model).toBe("deepseek/deepseek-v4-pro-0813");
+        expect(result.options.provider).toEqual({
+            only: ["alibaba"],
+            allow_fallbacks: false,
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Command A+ to the exact Azure deployment without fallback", () => {

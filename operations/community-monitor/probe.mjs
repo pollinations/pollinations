@@ -133,14 +133,9 @@ function estimateCost(model) {
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
 }
 
-// Basic billing-integrity sanity checks on a single probe response. These are
-// NOT availability signals (the catalog uses final request outcomes) --
-// they flag "the numbers we're about to pay this owner on look implausible
-// for a short, cache-busted prompt", for a human to investigate. Thresholds are
-// deliberately loose (calibrated against real tokenizer variance seen across
-// the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
-// ~35 tokens depending on the model's tokenizer) -- the goal is to catch
-// clear anomalies (0, or 10x+ too many), not to nitpick normal variance.
+// Check usage fields for missing or internally inconsistent values. A short
+// probe can still have many prompt or cached tokens if an upstream adds or
+// reuses its own prefix; neither is evidence of incorrect billing.
 function billingSanityFlags(usage, content) {
     const flags = [];
     if (!usage) {
@@ -158,8 +153,6 @@ function billingSanityFlags(usage, content) {
         usage.cache_read_input_tokens ??
         0;
     if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    if (cached > 0)
-        flags.push("cached tokens on a cache-busted single-message prompt");
     if (p != null && cached > p)
         flags.push("cached_tokens exceeds prompt_tokens");
     const reasoning =
@@ -172,9 +165,6 @@ function billingSanityFlags(usage, content) {
         flags.push(
             "total_tokens differs from prompt_tokens + completion_tokens",
         );
-    const uncached = p != null && cached <= p ? p - cached : undefined;
-    if (uncached != null && uncached > 100)
-        flags.push("implausible uncached prompt token count");
     if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
     if (!content?.trim()) flags.push("empty completion content");
     return flags;

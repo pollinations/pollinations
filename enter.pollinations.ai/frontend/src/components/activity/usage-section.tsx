@@ -1,5 +1,6 @@
 import {
     InlineLink,
+    LoadingStatus,
     Table,
     TableBody,
     TableCell,
@@ -7,11 +8,12 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
+    ActivityKeyFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
     downloadFile,
@@ -46,7 +48,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
     onSelectedKeyIdsChange,
     onSelectedModelsChange,
 }) => {
-    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const filters: FilterState = {
         period,
         metric,
@@ -55,6 +56,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
     };
     const {
         loading,
+        refreshing,
         error,
         fetchUsage,
         usedModels,
@@ -69,22 +71,15 @@ export const UsageSection: FC<UsageSectionProps> = ({
         value: k.id,
         label: k.label,
     }));
-    for (const id of selectedKeyIds) {
-        const key = apiKeys.find((key) => key.id === id);
-        if (key && !keySelectOptions.some((option) => option.value === id))
-            keySelectOptions.push({
-                value: id,
-                label: key.name || "Unnamed key",
-            });
-    }
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
         label: m.label,
     }));
-    const downloadDisabled = loading || !hasPeriodData;
-    const downloadDisabledReason = loading
-        ? "Loading usage data"
-        : "No transactions to download for this selected period";
+    const downloadDisabled = loading || refreshing || !hasPeriodData;
+    const downloadDisabledReason =
+        loading || refreshing
+            ? "Loading usage data"
+            : "No transactions to download for this selected period";
 
     function downloadDetailedUsage(): void {
         if (downloadDisabled) return;
@@ -124,7 +119,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
             >
                 {hasPeriodData && (
                     <>
-                        <ActivityFilter
+                        <ActivityKeyFilter
                             label="Keys"
                             missingLabel="Unavailable key"
                             options={keySelectOptions}
@@ -145,6 +140,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
 
             <UsageChartView
                 loading={loading}
+                refreshing={refreshing}
                 error={error}
                 fetchUsage={fetchUsage}
                 chartData={chartData}
@@ -160,7 +156,13 @@ export const UsageSection: FC<UsageSectionProps> = ({
 
 type UsageChartViewProps = Pick<
     ReturnType<typeof useUsageData>,
-    "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
+    | "loading"
+    | "refreshing"
+    | "error"
+    | "fetchUsage"
+    | "chartData"
+    | "stats"
+    | "hasData"
 > & {
     metric: Metric;
     period: ActivityPeriod;
@@ -169,6 +171,7 @@ type UsageChartViewProps = Pick<
 
 const UsageChartView: FC<UsageChartViewProps> = ({
     loading,
+    refreshing,
     error,
     fetchUsage,
     chartData,
@@ -180,31 +183,12 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 }) => {
     return (
         <>
-            <div className="min-h-[180px]">
-                {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching usage data…
-                        </p>
-                    </div>
+            <SectionContent loading={loading} label="Loading usage…">
+                {refreshing && <LoadingStatus>Updating usage…</LoadingStatus>}
+                {error && (
+                    <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}
-                {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <div className="text-center">
-                            <p className="text-sm text-intent-danger-text font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchUsage()}
-                                className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {!loading && !error && hasData && (
+                {hasData && (
                     <Chart
                         key={`${period.granularity}:${period.period}`}
                         period={period}
@@ -218,10 +202,10 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         metric={metric}
                     />
                 )}
-                {!loading && !error && !hasData && <UsageEmptyState />}
-            </div>
+                {!error && !hasData && <UsageEmptyState />}
+            </SectionContent>
 
-            {!loading && !error && hasData && (
+            {!loading && hasData && (
                 <ModelBreakdownTable stats={stats} metric={metric} />
             )}
         </>
@@ -232,10 +216,7 @@ const UsageEmptyState: FC = () => (
     <ActivityEmptyState>
         No usage in this period. Once you start using the API, your deductions
         will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an API key
-        </InlineLink>
-        .
+        <InlineLink href="/keys">Create an API key</InlineLink>.
     </ActivityEmptyState>
 );
 
@@ -255,13 +236,26 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                 aria-label="Usage by model"
                 className="min-w-[340px] [&_tr:hover]:bg-transparent"
             >
-                <TableHead className="sr-only">
+                <TableHead>
                     <TableRow>
-                        <TableHeaderCell scope="col">Model</TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            className="px-2 py-1 font-normal"
+                        >
+                            Model
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            scope="col"
+                            align="right"
+                            className="px-2 py-1 font-normal"
+                        >
                             Share
                         </TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            align="right"
+                            className="px-2 py-1 font-normal"
+                        >
                             {metric === "pollen" ? "Pollen" : "Requests"}
                         </TableHeaderCell>
                     </TableRow>

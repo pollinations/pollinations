@@ -74,16 +74,6 @@ const CATEGORY_MODALITIES: Record<
     "community-agent": "text",
 };
 
-const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
-    "text",
-    "images",
-    "video",
-    "3d",
-    "audio",
-    "realtime",
-    "embeddings",
-];
-
 export function getModelDisplayCategory(
     category: ModelCategory,
     community = false,
@@ -127,22 +117,4 @@ export function getModelCategoriesFromCatalog(
             models: categoryModels,
         };
     }).filter(({ models }) => models.length > 0);
-}
-
-export function computeCategoryModalities(
-    allowedModels: string[] | null,
-    categories: ModelCategoryGroup[] = [],
-): ModelCategoryGroup["modality"][] {
-    if (categories.length === 0) {
-        return allowedModels === null ? ALL_MODALITIES : [];
-    }
-
-    const selected = allowedModels === null ? null : new Set(allowedModels);
-    const modalities = categories
-        .filter(
-            ({ models }) =>
-                selected === null || models.some(({ id }) => selected.has(id)),
-        )
-        .map(({ modality }) => modality);
-    return [...new Set(modalities)];
 }

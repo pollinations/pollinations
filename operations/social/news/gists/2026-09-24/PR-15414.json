@@ -1,0 +1,35 @@
+{
+  "pr_number": 15414,
+  "title": "docs: note the quest payout query reads 10 PRs on purpose",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15414",
+  "merged_at": "2026-09-24T23:41:12Z",
+  "labels": [
+    "DOCS"
+  ],
+  "pr_body_excerpt": "- Adds a code comment: the quest payout query reads at most 10 linked PRs per quest on purpose\n- Process for multi-winner quests (e.g. #15054): close losing PRs before merging winners, so every paid PR stays within the first 10\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Ten Bees, One Payout",
+    "blurb": "A small trail marker now explains why quest payout checks stop at 10 linked PRs. For multi-winner quests, close the non-winners first so the rewarded work stays in the basket.",
+    "summary": "Documented that the GitHub contribution quest payout query intentionally reads only the first 10 linked PRs, with guidance to close losing PRs before merging winners in multi-winner quests such as #15054.",
+    "impact": "Quest maintainers now have a clear workflow for keeping every paid winning PR within the query's intentional 10-PR window.",
+    "keywords": [
+      "quests",
+      "payouts",
+      "github",
+      "contributions",
+      "documentation"
+    ],
+    "visual_concept": "Polli acts as a careful quest keeper, counting ten approved PR scrolls in a cozy garden ledger while a few closed, non-winning scrolls rest neatly aside; a code-plant and a small retro terminal make the query-limit context visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully counting exactly ten glowing PR scrolls beside a retro terminal and a pot of code-flowers; a few closed scrolls are neatly stacked aside. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: '10 PRs'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15414.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully counting exactly ten glowing PR scrolls beside a retro terminal and a pot of code-flowers; a few closed scrolls are neatly stacked aside. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: '10 PRs'."
+  },
+  "generated_at": "2026-09-24T23:42:09.561936+00:00"
+}

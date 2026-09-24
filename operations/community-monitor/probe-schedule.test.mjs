@@ -123,7 +123,7 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
             "x-model-used": "fallback/text",
         });
         res.end(
-            `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }], usage: { prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 } })}\n\ndata: [DONE]\n\n`,
+            `data: ${JSON.stringify({ choices: [{ delta: { content: marker } }], usage: { prompt_tokens: 235, completion_tokens: 12, total_tokens: 247, prompt_tokens_details: { cached_tokens: 16 } } })}\n\ndata: [DONE]\n\n`,
         );
     });
     server.listen(0, "127.0.0.1");
@@ -180,6 +180,7 @@ test("CLI probes only selected due IDs, persists backoff, and allows a one-off r
     failing = false;
     const diagnostic = await run(["--model", "tester/text"]);
     assert.equal(JSON.parse(diagnostic.stdout).results[0].fallbackUsed, true);
+    assert.deepEqual(JSON.parse(diagnostic.stdout).billingFlagsByModel, {});
     state = await readJson(statePath);
     assert.equal(state.spend.probes["tester/text"].failures, 0);
     assert.equal(state.spend.lastActualPollen, routineSpend.lastActualPollen);

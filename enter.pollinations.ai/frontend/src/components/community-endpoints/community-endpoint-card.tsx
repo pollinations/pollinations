@@ -14,7 +14,6 @@ import {
     GitHubIcon,
     GlobeIcon,
     IconButton,
-    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -28,7 +27,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { openWebUiChatUrl } from "../models/open-webui-link.tsx";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
@@ -87,7 +86,16 @@ export function CommunityEndpointCard({
                         <BeakerIcon className="h-4 w-4" aria-hidden="true" />
                     )
                 }
-                title={endpoint.title}
+                title={
+                    testableModelId ? (
+                        <OpenWebUiLink
+                            modelId={testableModelId}
+                            title={endpoint.title}
+                        />
+                    ) : (
+                        endpoint.title
+                    )
+                }
                 description={endpoint.description}
                 badges={
                     <>
@@ -128,16 +136,6 @@ export function CommunityEndpointCard({
                         >
                             Activity
                         </Link>
-                        {testableModelId && (
-                            <InlineLink
-                                href={openWebUiChatUrl(testableModelId)}
-                                size="footer"
-                                tone="quiet"
-                                title="Test in Open WebUI"
-                            >
-                                Test
-                            </InlineLink>
-                        )}
                     </>
                 }
                 actions={

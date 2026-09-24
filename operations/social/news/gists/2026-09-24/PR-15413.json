@@ -1,0 +1,38 @@
+{
+  "pr_number": 15413,
+  "title": "fix: bill MiniMax H3 Max Turbo at fal list rates",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15413",
+  "merged_at": "2026-09-24T23:32:47Z",
+  "labels": [
+    "BUG",
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Fix: H3 Max Turbo still billed the launch promo rates (\\$0.00625/\\$0.01/\\$0.02 per s); the 2026-09-15 restore never happened\n- Sets fal list rates: \\$0.025 / \\$0.04 / \\$0.08 per output second (480p/768p/1080p), verified on fal.ai 2026-09-25\n- fal promo (half list) runs until Sep 30, so we overcharge ~2x until then, then match list\n- Replaces the price part of #14431 (stacked on #14747); credit @ElliotEtag\n\nCo-authored-by: ElliotEtag <$(gh api users/ElliotEtag -q .id)+ElliotEtag@users.noreply.github.com>\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Turbo gets its price tag",
+    "blurb": "MiniMax H3 Max Turbo’s billing labels have been replanted at fal’s standard list rates. Each output resolution now has a clear, matching per-second price.",
+    "summary": "Fixed MiniMax H3 Max Turbo billing to use fal list rates of $0.025/s at 480p, $0.04/s at 768p, and $0.08/s at 1080p instead of the lingering launch-promo rates.",
+    "impact": "Developers using H3 Max Turbo now receive billing that consistently matches fal’s documented per-output-second list rates across all three resolutions.",
+    "keywords": [
+      "billing",
+      "MiniMax H3 Max Turbo",
+      "fal.ai",
+      "video",
+      "pricing",
+      "model registry"
+    ],
+    "visual_concept": "A cozy billing garden where Polli, wearing a tiny accountant visor, carefully replaces old price tags on three glowing video-film plants labeled 480p, 768p, and 1080p. A small CRT monitor robot holds a tidy rate card while flowers and code-vines grow around the resolution markers, representing accurate model-registry pricing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor while updating three neat price tags beside glowing video-film plants labeled 480p, 768p, and 1080p; a cute chunky CRT monitor robot holds a rate card among flowers and code-vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"LIST RATES\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15413.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor while updating three neat price tags beside glowing video-film plants labeled 480p, 768p, and 1080p; a cute chunky CRT monitor robot holds a rate card among flowers and code-vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"LIST RATES\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-24T23:33:47.729784+00:00"
+}

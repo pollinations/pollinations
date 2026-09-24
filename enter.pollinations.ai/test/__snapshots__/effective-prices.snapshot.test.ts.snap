@@ -1216,6 +1216,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000079125,
     },
   },
+  "google/gemini-3.8-flash-lite-tts": {
+    "cost": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
+  "google/gemini-3.8-flash-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
   "google/gemini-3.8-flash:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.00000395625,

@@ -145,11 +145,45 @@ export const XAI_TTS_VOICES = [
     "zenith",
 ] as const;
 
+export const GEMINI_TTS_VOICES = [
+    "Zephyr",
+    "Puck",
+    "Charon",
+    "Kore",
+    "Fenrir",
+    "Leda",
+    "Orus",
+    "Aoede",
+    "Callirrhoe",
+    "Autonoe",
+    "Enceladus",
+    "Iapetus",
+    "Umbriel",
+    "Algieba",
+    "Despina",
+    "Erinome",
+    "Algenib",
+    "Rasalgethi",
+    "Laomedeia",
+    "Achernar",
+    "Alnilam",
+    "Schedar",
+    "Gacrux",
+    "Pulcherrima",
+    "Achird",
+    "Zubenelgenubi",
+    "Vindemiatrix",
+    "Sadachbia",
+    "Sadaltager",
+    "Sulafat",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
     ...XAI_TTS_VOICES,
+    ...GEMINI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
@@ -472,6 +506,49 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "google/gemini-3.8-flash-tts": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Google AI Studio route, verified 2026-09-24, plus the
+            // mandatory 5.5% OpenRouter credit fee. Text input is $0.50 per 1M
+            // tokens; audio output is $9 per 1M tokens at 32 tokens per second.
+            promptTextTokens: (0.5 / 1_000_000) * 1.055,
+            completionAudioTokens: (9 / 1_000_000) * 1.055,
+        },
+        title: "Gemini 3.8 Flash TTS",
+        description:
+            "Expressive, style-steerable speech across 30 voices for creative narration",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
+    },
+    "google/gemini-3.8-flash-lite-tts": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Google AI Studio route, verified 2026-09-24, plus the
+            // mandatory 5.5% OpenRouter credit fee. Text input is $0.50 per 1M
+            // tokens; audio output is $6 per 1M tokens at 32 tokens per second.
+            promptTextTokens: (0.5 / 1_000_000) * 1.055,
+            completionAudioTokens: (6 / 1_000_000) * 1.055,
+        },
+        title: "Gemini 3.8 Flash Lite TTS",
+        description: "Fast, high-throughput speech across 30 voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
     },
     "assemblyai/universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2", "universal-2"],

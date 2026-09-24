@@ -4,6 +4,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     CSM_VOICES,
+    GEMINI_TTS_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
     XAI_TTS_VOICES,
@@ -84,7 +85,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS returns WAV, or raw 24 kHz PCM when set to pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -2000,8 +2001,7 @@ export async function generateQwenTts(opts: {
     });
 }
 
-const OPENROUTER_FISH_TTS_ENDPOINT =
-    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
 const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
@@ -2037,7 +2037,7 @@ export async function generateOpenRouterFishSpeech(opts: {
     );
 
     const response = await ensureUpstreamOk(
-        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -2054,7 +2054,7 @@ export async function generateOpenRouterFishSpeech(opts: {
                 },
             }),
         }),
-        OPENROUTER_FISH_TTS_ENDPOINT,
+        OPENROUTER_SPEECH_ENDPOINT,
     );
 
     const generationId = response.headers.get("x-generation-id");
@@ -2076,6 +2076,144 @@ export async function generateOpenRouterFishSpeech(opts: {
             ...(generationId ? { "x-generation-id": generationId } : {}),
         },
     });
+}
+
+const GEMINI_TTS_SAMPLE_RATE = 24000;
+// Google bills generated speech at 32 audio tokens per second.
+const GEMINI_TTS_AUDIO_TOKENS_PER_SECOND = 32;
+const GEMINI_TTS_DEFAULT_VOICE = "Kore";
+
+// OpenRouter returns raw 16-bit mono PCM; wrap it so browsers and players can
+// open the result.
+function pcmToWav(
+    pcm: Uint8Array,
+    sampleRate: number,
+): Uint8Array<ArrayBuffer> {
+    const wav = new Uint8Array(44 + pcm.byteLength);
+    const view = new DataView(wav.buffer);
+    const writeAscii = (offset: number, value: string) => {
+        for (let i = 0; i < value.length; i++) {
+            wav[offset + i] = value.charCodeAt(i);
+        }
+    };
+    writeAscii(0, "RIFF");
+    view.setUint32(4, 36 + pcm.byteLength, true);
+    writeAscii(8, "WAVEfmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeAscii(36, "data");
+    view.setUint32(40, pcm.byteLength, true);
+    wav.set(pcm, 44);
+    return wav;
+}
+
+export async function generateOpenRouterGeminiSpeech(opts: {
+    modelName:
+        | "google/gemini-3.8-flash-tts"
+        | "google/gemini-3.8-flash-lite-tts";
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+
+    const requestedVoice =
+        opts.voice === "alloy" ? GEMINI_TTS_DEFAULT_VOICE : opts.voice;
+    const voice = GEMINI_TTS_VOICES.find(
+        (candidate) => candidate.toLowerCase() === requestedVoice.toLowerCase(),
+    );
+    if (!voice) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+
+    const inputBytes = new TextEncoder().encode(text).byteLength;
+    log.info(
+        "Gemini TTS request: model={model}, voice={voice}, bytes={bytes}",
+        {
+            model: modelName,
+            voice,
+            bytes: inputBytes,
+        },
+    );
+
+    // Gemini TTS only produces PCM upstream; other formats are rejected.
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: modelName,
+                input: text,
+                voice,
+                response_format: "pcm",
+                provider: {
+                    only: ["google-ai-studio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_SPEECH_ENDPOINT,
+    );
+
+    const pcm = new Uint8Array(await response.arrayBuffer());
+    const samples = Math.floor(pcm.byteLength / 2);
+    if (samples === 0) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: `${modelName} returned no audio`,
+            requestUrl: new URL(OPENROUTER_SPEECH_ENDPOINT),
+        });
+    }
+
+    // OpenRouter reports no usage for speech, so derive it: exact audio tokens
+    // from the PCM length, and input tokens at roughly four UTF-8 bytes each.
+    const audioSeconds = samples / GEMINI_TTS_SAMPLE_RATE;
+    const usage = {
+        promptTextTokens: Math.ceil(inputBytes / 4),
+        completionAudioTokens: Math.ceil(
+            audioSeconds * GEMINI_TTS_AUDIO_TOKENS_PER_SECOND,
+        ),
+    };
+    log.info("Gemini TTS success: model={model}, seconds={seconds}", {
+        model: modelName,
+        seconds: audioSeconds,
+    });
+
+    const generationId = response.headers.get("x-generation-id");
+    const isPcm = responseFormat === "pcm";
+    return new Response(
+        isPcm
+            ? pcm
+            : pcmToWav(pcm.subarray(0, samples * 2), GEMINI_TTS_SAMPLE_RATE),
+        {
+            status: 200,
+            headers: {
+                "Content-Type": isPcm
+                    ? `audio/pcm;rate=${GEMINI_TTS_SAMPLE_RATE};channels=1`
+                    : "audio/wav",
+                ...buildUsageHeaders(modelName, usage),
+                "x-tts-voice": voice,
+                ...(generationId ? { "x-generation-id": generationId } : {}),
+            },
+        },
+    );
 }
 
 export async function generateXaiSpeech(opts: {
@@ -2765,6 +2903,19 @@ async function dispatchAudioGeneration(
             return withSafetyHeaders(
                 c,
                 await generateOpenRouterFishSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: openRouterApiKey,
+                    log,
+                }),
+            );
+        case "google/gemini-3.8-flash-tts":
+        case "google/gemini-3.8-flash-lite-tts":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterGeminiSpeech({
+                    modelName: model,
                     text,
                     voice,
                     responseFormat,

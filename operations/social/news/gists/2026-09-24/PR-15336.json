@@ -1,0 +1,37 @@
+{
+  "pr_number": 15336,
+  "title": "fix: stop gen tests from calling live Tinybird",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15336",
+  "merged_at": "2026-09-24T22:47:18Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "Gen tests were timing out at random in unrelated tests (e.g. runs [35845883864](https://github.com/pollinations/pollinations/actions/runs/35845883864), [35852307496](https://github.com/pollinations/pollinations/actions/runs/35852307496)) because ordinary requests in the test Worker called production Tinybird:\n\n- Catalog routes (`/models`, `/v1/models`, `/text/models`, …) fetch `model_route_health` on every call since #15157 (676 KB per response).\n- Paid-key requests fetch `public_model_stats` for the balance preflight. Test KV is reset per test, so its 1 h cache never hits.\n- Production caches both (cf `cacheTtl`, KV); miniflare ignores `cacheTtl`. One local run made 91 such calls: p50 0.4 s, p90 0.9 s, max 31 s.\n\nChanges:\n\n- Adds a gen setup file that answers those two public pipes with `{ data: [] }`, the empty feed the Worker already handles. Tests that assert on these requests still spy on `fetch` first.\n- Removes the leftover `vi.resetModules()` in `models-retrieve.test.ts`. Its only consumer went away in #15052, and it forced a ~650 ms Worker re-import before every test.\n\nNo assertions or timeouts changed. Registry size is not the cause: with the network stubbed, catalog requests take 0–17 ms on both `main` and `codex/add-mai-image-2-6`.\n\n| Local gen suite | Before | After (2 runs) |\n|---|---|---|\n| Test time | 130 s, 2 timeouts | 52–54 s, 0 failures |\n| `models-retrieve.test.ts` | 21 s | 0.2 s |\n| Live Tinybird calls | 91 | 0 |\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The test hive stays local",
+    "blurb": "The gen test suite was occasionally wandering out to production Tinybird for a snack. It now gets the same empty public feeds from a local stub, and the slow re-import ritual has been retired.",
+    "summary": "Gen Worker tests now stub Tinybird's `model_route_health` and `public_model_stats` public pipes with `{ data: [] }` and remove an obsolete per-test `vi.resetModules()` re-import.",
+    "impact": "The gen suite avoids 91 live Tinybird calls per run, cutting local test time from about 130 seconds with intermittent timeouts to 52–54 seconds with no failures.",
+    "keywords": [
+      "gen",
+      "tests",
+      "Tinybird",
+      "Vitest",
+      "CI",
+      "test reliability"
+    ],
+    "visual_concept": "Depict Polli as a careful test gardener routing two leaky production-data pipes into a small local test greenhouse, where they safely pour empty `{ data: [] }` droplets into a retro terminal. Tiny flowers and code-plants represent the now-stable suite, while a small crossed-out long loading bar hints at the removed module reset.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, sealing two oversized data pipes labeled `model_route_health` and `public_model_stats` so they feed a cozy local test greenhouse with little `{ data: [] }` droplets; a retro terminal and blooming code-plants glow beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT scanlines and a small pixel-font sign reading `0 LIVE CALLS`."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15336.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, sealing two oversized data pipes labeled `model_route_health` and `public_model_stats` so they feed a cozy local test greenhouse with little `{ data: [] }` droplets; a retro terminal and blooming code-plants glow beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT scanlines and a small pixel-font sign reading `0 LIVE CALLS`."
+  },
+  "generated_at": "2026-09-24T22:48:19.843705+00:00"
+}

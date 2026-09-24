@@ -1,4 +1,6 @@
 import { bloom } from "./bloom.js";
+import { claudeCode } from "./claude-code-router.js";
+import { codex } from "./codex-router.js";
 import { dsh } from "./dsh.js";
 import { openclaw } from "./openclaw.js";
 import { opencode } from "./opencode.js";
@@ -13,4 +15,6 @@ export const HARNESSES: HarnessAdapter[] = [
     openclaw,
     pi,
     prime,
+    codex,
+    claudeCode,
 ];

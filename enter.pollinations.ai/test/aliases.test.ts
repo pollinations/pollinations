@@ -154,8 +154,10 @@ test("GPT-5.5 is available without paid-only gating", () => {
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
-        ["openai/gpt-image-2.5-flare", 1],
-        ["openai/gpt-image-2.5-sunburst", 1],
+        // Azure quota covers less than twice Kimi's peak, so overflow reaches
+        // the cash-paid DeepInfra fallback.
+        ["moonshotai/kimi-k2.6", 1],
+        ["moonshotai/kimi-k2.6:azure:sweden", 1],
     ]);
 
     for (const model of getModels()) {
@@ -222,7 +224,7 @@ test("Amazon Nova media models use the AWS billing provider", () => {
     }
 });
 
-test("DeepSeek V4 models are billed at provider cost", () => {
+test("DeepSeek V4 models are billed at their route's multiplier", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
@@ -230,14 +232,19 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedProviders = {
-        "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4-flash": "azure",
         "deepseek/deepseek-v4.1-flash": "fireworks",
-        "deepseek/deepseek-v4-pro": "fireworks",
+        "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": undefined,
         "deepseek/deepseek-v4.1-flash": undefined,
-        "deepseek/deepseek-v4-pro": undefined,
+        "deepseek/deepseek-v4-pro": true,
+    } as const;
+    const expectedMultipliers = {
+        "deepseek/deepseek-v4-flash": 0.75,
+        "deepseek/deepseek-v4.1-flash": 1,
+        "deepseek/deepseek-v4-pro": 1,
     } as const;
 
     for (const model of [
@@ -259,7 +266,10 @@ test("DeepSeek V4 models are billed at provider cost", () => {
         expect(definition.provider).toBe(expectedProviders[model]);
         expect(definition.paidOnly).toBe(expectedPaidOnly[model]);
         expect(cost.totalCost).toBeCloseTo(expectedCost, 8);
-        expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+        expect(price.totalPrice).toBeCloseTo(
+            cost.totalCost * expectedMultipliers[model],
+            8,
+        );
     }
 });
 

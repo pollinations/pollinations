@@ -277,7 +277,7 @@
  * AppHeader innerClassName) live in app source, which this build never
  * scans — polli:* utilities used that way must be listed here.
  */
-@source inline("polli:max-w-6xl polli:flex-row");
+@source inline("polli:max-w-6xl polli:flex-row polli:hover:bg-theme-text-muted/15 polli:focus-visible:bg-theme-text-muted/15");
 
 /* Respect the OS "reduce motion" setting app-wide: collapse transitions and
    animations to near-instant (the drawer slide, slider transforms, etc.). */

@@ -1065,9 +1065,15 @@ describe("tracking observability", () => {
     });
 
     it.each([
-        false,
-        true,
-    ])("tracks a streamed policy rejection as unbilled 4xx (choice error %s)", async (nested) => {
+        [false, "Gemini blocked the request: PROHIBITED_CONTENT", 422],
+        [true, "Gemini blocked the request: PROHIBITED_CONTENT", 422],
+        [false, "I can't help with that request.", 422],
+        [
+            false,
+            "Upstream error from DeepInfra: Tool call id was 2tpesxk_0 but must be a-z, A-Z, 0-9, with a length of 9.",
+            400,
+        ],
+    ] as const)("tracks a streamed rejection as unbilled 4xx (%s, %s)", async (nested, message, status) => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1078,7 +1084,7 @@ describe("tracking observability", () => {
         const consumePollen = vi.fn(async (_amount: number) => {});
         const error = {
             code: 400,
-            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            message,
             metadata: { error_type: "invalid_request" },
         };
         const event = nested
@@ -1123,9 +1129,12 @@ describe("tracking observability", () => {
             "generation_event_v2",
         );
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
-            responseStatus: 422,
+            responseStatus: status,
             isBilledUsage: false,
-            errorResponseCode: "content_policy_violation",
+            errorResponseCode:
+                status === 422
+                    ? "content_policy_violation"
+                    : "upstream_finish_reason_error",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -2225,6 +2234,60 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0.00035);
     });
 
+    it("bills Wan reference-video seconds through headers and emits one event", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = new Response("video", {
+            headers: {
+                "content-type": "video/mp4",
+                "x-model-used": "alibaba/wan-3.0",
+                "x-usage-prompt-video-seconds": "3",
+                "x-usage-completion-video-seconds": "5",
+            },
+        });
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.image",
+            upstream,
+            "alibaba/wan-3.0",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            tokenCountPromptVideoSeconds: 3,
+            tokenPricePromptVideoSeconds: 0.068,
+            tokenCountCompletionVideoSeconds: 5,
+            totalCost: 0.544,
+            totalPrice: 0.544,
+        });
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.544);
+    });
+
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -3228,20 +3291,19 @@ describe("trackResponse modelUsed", () => {
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                        "x-model-used": "qwen/qwen3.7-flash",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+            candidateFixture("qwen/qwen3.7-flash"),
         );
 
-        // The reported variant is the caller's unchanged public tier; the
-        // served cost independently uses Alibaba's explicit-cache rate.
-        expect(tracking.costVariant).toBe("context_256k");
+        // Both the quote and serving cost use the direct explicit-cache rate.
+        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
     });
 
     it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
@@ -3252,19 +3314,19 @@ describe("trackResponse modelUsed", () => {
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                        "x-model-used": "qwen/qwen3.7-flash",
                         "x-usage-prompt-cached-tokens": "1000000",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+            candidateFixture("qwen/qwen3.7-flash"),
             // Even a stale request-side hint must not override what the
             // provider actually reported on the response.
             { hasExplicitCacheHit: true },
         );
 
         expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
     });
 
     it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
@@ -3287,15 +3349,15 @@ describe("trackResponse modelUsed", () => {
             new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
                 headers: {
                     "content-type": "text/event-stream",
-                    "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                    "x-model-used": "qwen/qwen3.7-flash",
                 },
             }),
-            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+            candidateFixture("qwen/qwen3.7-flash"),
         );
 
-        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
     });
 });
 

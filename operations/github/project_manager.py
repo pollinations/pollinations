@@ -82,8 +82,8 @@ CONFIG = {
             "source_options": {"Team": "00bb2074", "Community": "55f6f20d"},
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
-                "Urgent": "0a3c2fd1",
                 "High": "dc7fa85f",
+                "Medium": "e874fe65",
                 "Low": "7495a981",
             },
         },
@@ -275,13 +275,13 @@ Body: {ISSUE_BODY[:2000]}
 
     is_app_submission = raw.get("is_app_submission", False)
 
-    # Team priority is set by hand; community issues get High or Low.
+    # Team priority is set by hand; community issues get High, Medium or Low.
     priority = None
     if not is_internal:
         priority = raw.get("priority")
-        if priority not in {"High", "Low"}:
+        if priority not in {"High", "Medium", "Low"}:
             log_error(f"AI returned invalid priority: {priority}")
-            priority = "Low"
+            priority = "Medium"
 
     labels = parse_labels(raw, ISSUE_TYPES, ISSUE_FLAGS)
     if labels is None:
@@ -648,8 +648,8 @@ def main():
     source = "Team" if is_internal else "Community"
     priority = classification["priority"]
     if source == "Community" and is_paid_customer(real_author_id):
-        log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent")
-        priority = "Urgent"
+        log_debug(f"Author {real_author} (id={real_author_id}) is a paying customer; raising priority to High")
+        priority = "High"
     log_debug(f"Classified: source={source}, priority={priority}")
     project = CONFIG["projects"]["dev"]
 

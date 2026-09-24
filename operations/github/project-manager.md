@@ -44,7 +44,7 @@ Return an empty `flags` list when none apply.
 ```json
 {
   "is_app_submission": true | false,
-  "priority": "High" | "Low" | null,
+  "priority": "High" | "Medium" | "Low" | null,
   "kind": "API",
   "type": "QUESTION",
   "flags": ["BILLING"],
@@ -55,12 +55,13 @@ Return an empty `flags` list when none apply.
 
 ## Priority (external authors only)
 
-For an external author, pick exactly one of `High` or `Low`. Do **not** return `Urgent`:
+For an external author, pick exactly one:
 
-- `High`: Bugs breaking functionality, blocking issues, billing problems, outages
-- `Low`: Minor issues, cosmetic bugs, general questions, documentation, feature requests, integration help
+- `High`: Blocking or broken for users: bugs that break functionality, billing or payment problems, outages
+- `Medium`: A real problem with a workaround or limited impact, or a concrete, well-scoped request
+- `Low`: Nice-to-have ideas and feature wishes, general questions, documentation, cosmetic issues
 
-`Urgent` is reserved for paid customers and is applied automatically downstream — never return it.
+Paying customers are raised to `High` automatically downstream.
 
 For an internal author, always return `null`: team priority is set manually.
 

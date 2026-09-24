@@ -46,8 +46,8 @@ test("keeps kiosk mode on the embedded dashboard url", () => {
     );
 });
 
-test("defaults to regular traffic and rejects unknown values", () => {
-    assert.equal(readTraffic(""), "regular");
+test("defaults to everything except legacy and rejects unknown values", () => {
+    assert.equal(readTraffic(""), "everything_else");
     assert.equal(readTraffic("?traffic=all"), "all");
-    assert.equal(readTraffic("?traffic=internal"), "regular");
+    assert.equal(readTraffic("?traffic=internal"), "everything_else");
 });

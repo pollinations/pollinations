@@ -183,7 +183,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  uniqIfMerge(apps) AS active_apps,\n  uniqMerge(users) AS app_users,\n  sumMerge(successful_calls) AS byop_calls,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption,\n  round(sumMerge(byop_reward), 2) AS developer_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND ('$traffic' = 'all' OR is_legacy = ('$traffic' = 'legacy'))\n  AND is_byop = 1",
+          "rawSql": "SELECT\n  uniqIfMerge(apps) AS active_apps,\n  uniqMerge(users) AS app_users,\n  sumMerge(successful_calls) AS byop_calls,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption,\n  round(sumMerge(byop_reward), 2) AS developer_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND is_byop = 1",
           "refId": "A"
         }
       ],
@@ -244,7 +244,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    is_byop = 1\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS byop_share_pct,\n  uniqIfMergeIf(apps, is_byop = 1) AS active_apps,\n  uniqMergeIf(users, is_byop = 1) AS app_users,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 0) AS standard_calls,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 1) AS community_calls,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND ('$traffic' = 'all' OR is_legacy = ('$traffic' = 'legacy'))\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, is_byop = 1 AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    is_byop = 1\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS byop_share_pct,\n  uniqIfMergeIf(apps, is_byop = 1) AS active_apps,\n  uniqMergeIf(users, is_byop = 1) AS app_users,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_byop = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 0) AS standard_calls,\n  sumMergeIf(successful_calls, is_byop = 1 AND is_community = 1) AS community_calls,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(byop_reward, is_byop = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1008,8 +1008,8 @@
     "list": [
       {
         "current": {
-          "text": "Regular",
-          "value": "regular"
+          "text": "Everything else",
+          "value": "everything_else"
         },
         "hide": 2,
         "name": "traffic",
@@ -1017,8 +1017,8 @@
         "options": [
           {
             "selected": true,
-            "text": "Regular",
-            "value": "regular"
+            "text": "Everything else",
+            "value": "everything_else"
           },
           {
             "selected": false,
@@ -1027,11 +1027,11 @@
           },
           {
             "selected": false,
-            "text": "All",
+            "text": "Both",
             "value": "all"
           }
         ],
-        "query": "Regular : regular, Legacy : legacy, All : all",
+        "query": "Everything else : everything_else, Legacy : legacy, Both : all",
         "type": "custom"
       }
     ]

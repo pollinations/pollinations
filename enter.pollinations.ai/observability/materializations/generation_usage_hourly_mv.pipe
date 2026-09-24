@@ -2,19 +2,15 @@ DESCRIPTION >
     Materializes generation_event_v2 usage at hourly dashboard grain.
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
-    is_legacy marks the two legacy public API bridge keys (image + text), so
-    dashboards can show regular traffic, legacy traffic, or both. Changing
-    the key list requires repopulating this datasource.
+    traffic_group comes from generation_events_classified, so dashboards can
+    show legacy bridge traffic, everything else, or both.
 
 NODE generation_usage_hourly_mv_node
 SQL >
     SELECT
         toStartOfHour(start_time) AS hour,
         environment,
-        api_key_id IN (
-            'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image bridge
-            '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text bridge
-        ) AS is_legacy,
+        traffic_group,
         coalesce(
             nullIf(nullIf(resolved_model_requested, ''), 'undefined'),
             nullIf(nullIf(model_used, ''), 'undefined'),
@@ -124,11 +120,11 @@ SQL >
                 )
             )
         ) AS completion_video_tokens
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
         environment IN ('production', 'debug-prod-copy')
         AND start_time >= toDateTime('2026-01-09 00:00:00')
-    GROUP BY hour, environment, is_legacy, model, workload, funding_source, is_byop, is_community, business_stream
+    GROUP BY hour, environment, traffic_group, model, workload, funding_source, is_byop, is_community, business_stream
 
 TYPE MATERIALIZED
 DATASOURCE generation_usage_hourly

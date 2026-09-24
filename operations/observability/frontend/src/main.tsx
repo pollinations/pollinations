@@ -20,6 +20,7 @@ import {
     currentDashboards,
     type Dashboard,
     dashboardSrc,
+    hasTrafficSelector,
     readDashboardUid,
     readTraffic,
     TRAFFIC,
@@ -130,23 +131,24 @@ function Dashboards({
                     selected={uid}
                     onSelect={select}
                 />
-                <fieldset
-                    aria-label="Traffic"
-                    className="m-0 flex gap-1 border-0 p-0"
-                >
-                    {TRAFFIC.map((option) => (
-                        <TabButton
-                            key={option}
-                            active={option === traffic}
-                            size="sm"
-                            variant="ghost"
-                            className="capitalize"
-                            onClick={() => selectTraffic(option)}
-                        >
-                            {option}
-                        </TabButton>
-                    ))}
-                </fieldset>
+                {hasTrafficSelector(uid) && (
+                    <fieldset
+                        aria-label="Traffic"
+                        className="m-0 flex gap-1 border-0 p-0"
+                    >
+                        {TRAFFIC.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={value === traffic}
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => selectTraffic(value)}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                )}
                 <ColorModeToggle />
                 <DashboardAccountMenu user={user} onSignOut={signOut} />
             </AppHeader>

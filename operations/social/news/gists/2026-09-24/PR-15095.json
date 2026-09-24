@@ -1,0 +1,37 @@
+{
+  "pr_number": 15095,
+  "title": "feat(enter): allow up to 365 days on earnings endpoints",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/15095",
+  "merged_at": "2026-09-24T22:56:09Z",
+  "labels": [
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "## Summary\n- Allow up to 365 days on both earnings endpoints, matching earnings-event retention.\n- Keep usage-history endpoints capped at 90 days.\n- Add focused boundary tests for both earnings routes.\n\nAddresses #12771 (earnings history only; the leaderboard remains open).\nFixes #15415",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A year of honey receipts",
+    "blurb": "Earnings history can now stretch across a full 365 days, matching how long the event ledger keeps its pollen. Usage history remains a tidy 90-day window, because not every drawer needs to become an attic.",
+    "summary": "Both account earnings endpoints now accept up to 365 days of history, matching earnings-event retention, while usage-history endpoints remain capped at 90 days.",
+    "impact": "Creators and developers can retrieve a full year of earnings data from the API without splitting their reporting into shorter date ranges.",
+    "keywords": [
+      "earnings",
+      "billing",
+      "account-api",
+      "history",
+      "retention",
+      "creator-tools"
+    ],
+    "visual_concept": "Depict Polli as a careful beekeeper-accountant in a cozy garden shed, opening a year-long honey ledger beside a retro terminal showing an earnings chart. A calendar with four gentle seasons and a 365-day label represents the expanded range, while a smaller 90-day usage notebook sits nearby; code-plants and flowers keep the scene rooted in the hive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, light blue translucent wings, and a tiny accountant visor, opening a large honey-colored ledger marked “365 DAYS” beside a lime green (#ecf874) retro terminal showing a simple earnings chart; a small “90 DAYS” usage notebook, flowering code-plants, and seasonal garden calendar sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15095.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, light blue translucent wings, and a tiny accountant visor, opening a large honey-colored ledger marked “365 DAYS” beside a lime green (#ecf874) retro terminal showing a simple earnings chart; a small “90 DAYS” usage notebook, flowering code-plants, and seasonal garden calendar sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-24T22:56:59.453532+00:00"
+}

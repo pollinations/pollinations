@@ -707,6 +707,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
     },
     {
+        name: "xiaomi/mimo-v2.6-flash",
+        config: portkeyConfig["xiaomi/mimo-v2.6-flash"],
+    },
+    {
+        name: "xiaomi/mimo-v2.6-pro",
+        config: portkeyConfig["xiaomi/mimo-v2.6-pro"],
+    },
+    {
         name: "google/gemini-3.1-pro-preview",
         config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(

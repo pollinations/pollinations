@@ -431,6 +431,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [

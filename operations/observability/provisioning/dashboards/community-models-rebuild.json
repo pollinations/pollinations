@@ -211,6 +211,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -543,6 +544,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
@@ -656,6 +658,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
@@ -769,6 +772,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [

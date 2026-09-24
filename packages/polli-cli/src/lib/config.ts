@@ -47,7 +47,7 @@ export const clearCredentials = () => {
 
 let _keyOverride: string | undefined;
 
-export const setKeyOverride = (key: string) => {
+export const setKeyOverride = (key: string | undefined) => {
     _keyOverride = key;
 };
 

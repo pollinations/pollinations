@@ -4,11 +4,12 @@ import {
     DownloadIcon,
     MultiSelect,
     SproutIcon,
-    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
+import { useDeferredValue } from "react";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -43,6 +44,7 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
                 </span>
             ) : (
                 <MultiSelect
+                    ariaLabel={label}
                     fullWidth
                     options={[
                         ...options,
@@ -114,7 +116,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             triggerAs="span"
             content={disabledReason}
             align="center"
-            className="inline-flex"
+            className="inline-flex polli:cursor-not-allowed"
         >
             {button}
         </Tooltip>
@@ -127,9 +129,9 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
 export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     children,
 }) => (
-    <Surface className="flex h-[180px] items-center justify-center text-center">
+    <div className="flex h-[180px] items-center justify-center text-center">
         <p className="max-w-md text-sm text-theme-text-muted">{children}</p>
-    </Surface>
+    </div>
 );
 
 export function downloadFile(url: string): void {
@@ -189,10 +191,10 @@ export function PollenUsageBadges(usage: {
         : usage.tierRequests.toLocaleString();
     const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="grid min-w-44 grid-cols-2 items-center justify-items-start gap-2">
+        <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">
             <PaidChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -201,7 +203,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >
@@ -212,5 +214,35 @@ export function PollenUsageBadges(usage: {
                 {quest}
             </TierChip>
         </div>
+    );
+}
+
+export function ActivityKeyFilter({
+    unnamedLabel = "Unnamed key",
+    ...props
+}: ActivityFilterProps & { unnamedLabel?: string }) {
+    const { apiKeys } = useDeferredValue(
+        useLoaderData({ from: "/_dashboard" }),
+    );
+    return (
+        <Await
+            promise={apiKeys}
+            fallback={
+                <ActivityFilter {...props} missingLabel="Loading key name…" />
+            }
+        >
+            {(keys) => {
+                const options = [...props.options];
+                for (const id of props.selected) {
+                    const key = keys?.find((key) => key.id === id);
+                    if (key && !options.some((option) => option.value === id))
+                        options.push({
+                            value: id,
+                            label: key.name || unnamedLabel,
+                        });
+                }
+                return <ActivityFilter {...props} options={options} />;
+            }}
+        </Await>
     );
 }

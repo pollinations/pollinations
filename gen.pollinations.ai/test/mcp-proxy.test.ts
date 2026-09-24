@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
@@ -84,9 +85,9 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
-                name: "Composio",
+                name: "Connected Apps",
                 description:
-                    "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
@@ -313,4 +314,43 @@ test("rejects MCP batch requests at the proxy", async () => {
     );
 
     expect(response.status).toBe(400);
+});
+
+test("bills FFmpeg MCP usage when authorized with an ag_ run token", async () => {
+    const parent = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "ffmpeg proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), parent.userId)).toEqual({
+        tierBalance: 0.75,
+        packBalance: 0,
+    });
 });

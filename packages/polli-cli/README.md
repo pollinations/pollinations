@@ -25,7 +25,7 @@ Every command is agent-friendly:
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
 - When a call runs out of pollen, the first line of the error is the top-up link.
-- `polli auth status --json` exposes everything about the current session.
+- `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
 ## Get started
 
@@ -100,6 +100,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15393,
+  "title": "fix: discarded-issue job and pre-labelled PRs in Dev",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15393",
+  "merged_at": "2026-09-24T12:16:55Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Two small fixes to the repo organization automation.\n\n- The hourly job that closes Dev issues marked `Discarded` read only the first 100 of ~5,400 project items. It now searches open issues in the Dev project instead: open issues are all it can close, and the org-wide search still covers issues from other repos (e.g. `pollinations/admin`). Test run: checked 163, closed 0\n- A PR opened with a kind label already set (e.g. #15394) skipped the Dev project along with the labelling, so it never showed in the PR view. The project add now happens first",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The lost PRs found Dev",
+    "blurb": "The repo gardener stopped inspecting only the first shelf of a very large issue cupboard. Discarded Dev issues are now found through open-issue search, and pre-labelled PRs get their rightful spot in the project view.",
+    "summary": "Repo automation now searches open Dev-project issues instead of only the first 100 of roughly 5,400 project items when closing Discarded issues, and adds pre-labelled PRs to the Dev project before label handling can skip them.",
+    "impact": "Maintainers get reliable cleanup across organization repositories and can see already-kind-labelled PRs in the Dev project view immediately.",
+    "keywords": [
+      "github-actions",
+      "dev-project",
+      "issue-cleanup",
+      "pull-requests",
+      "automation"
+    ],
+    "visual_concept": "A cozy project garden has a large filing shelf of issue cards, with Polli using a magnifying glass to find cards marked Discarded among open-issue flowers; a pre-labelled PR card is being placed into the Dev project board first. This represents replacing the shallow 100-item scan with an open-issue search and ensuring labelled PRs are still added to the board.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny gardener glasses as she files a pre-labelled PR card onto a glowing Dev project board beside a garden of open-issue flowers and a magnifying glass over a Discarded card; lime green (#ecf874) is prominent, with warm cream, mint, lavender, and peach surroundings. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and pixel-font text reading “DEV”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15393.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny gardener glasses as she files a pre-labelled PR card onto a glowing Dev project board beside a garden of open-issue flowers and a magnifying glass over a Discarded card; lime green (#ecf874) is prominent, with warm cream, mint, lavender, and peach surroundings. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and pixel-font text reading “DEV”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-24T12:18:01.237114+00:00"
+}

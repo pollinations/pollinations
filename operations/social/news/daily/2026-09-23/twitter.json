@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-23",
+  "period_start": "2026-09-23",
+  "period_end": "2026-09-23",
+  "generated_at": "2026-09-24T06:30:47.627029+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-23/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: 3 image models (MAI Image 2.6 Flash/standard + FLUX 1.1 Pro), fewer GPT Image queues, GPT-5.3 Codex, and MiMo V2.6. Discovery now favors recently reliable models. 18 PRs; the garden has opinions about uptime."
+}

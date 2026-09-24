@@ -1125,7 +1125,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows (up to 365, matching earnings event retention) or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description:

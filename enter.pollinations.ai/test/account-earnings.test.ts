@@ -297,3 +297,22 @@ test("GET /api/account/earnings accepts up to 365 days and rejects above", async
     );
     expect(rejected.status).toBe(400);
 });
+
+test("GET /api/account/earnings/transactions accepts up to 365 days and rejects above", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=365",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=366",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(rejected.status).toBe(400);
+});

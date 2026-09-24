@@ -559,8 +559,10 @@ def fetch_linked_issues() -> list:
 
 
 def label_pull_request():
+    # Every open PR sits next to the issues in Dev, where views separate them.
+    add_to_project(CONFIG["projects"]["dev"]["id"])
     if not RELABEL and set(get_existing_labels()) & set(KINDS):
-        log_debug(f"PR #{ISSUE_NUMBER} already has a kind label, skipping")
+        log_debug(f"PR #{ISSUE_NUMBER} already has a kind label; keeping its labels")
         return
 
     files = fetch_pr_files()
@@ -575,8 +577,6 @@ def label_pull_request():
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     set_labels(labels)
-    # Every open PR sits next to the issues in Dev, where views separate them.
-    add_to_project(CONFIG["projects"]["dev"]["id"])
 
 
 def main():

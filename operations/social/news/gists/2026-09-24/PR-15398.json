@@ -1,0 +1,39 @@
+{
+  "pr_number": 15398,
+  "title": "Add GATEKEEPER to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15398",
+  "merged_at": "2026-09-24T13:14:01Z",
+  "labels": [
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "- Adds [GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) to games\n- A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether \n\nFixes #15341",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The rules bloom mid-run",
+    "blurb": "GATEKEEPER has entered the games garden: a tiny arcade arena where the rulebook is written just before the buzzer. Polli recommends reading which colour is fatal before introducing yourself to it.",
+    "summary": "Added GATEKEEPER to the games collection, a 60-second AI-authored arcade arena where a language model defines each run's sustaining and fatal colours before play begins.",
+    "impact": "Players can now jump into a fresh GATEKEEPER run with shifting, model-written survival rules instead of a fixed arcade rulebook.",
+    "keywords": [
+      "games",
+      "gatekeeper",
+      "community-app",
+      "arcade",
+      "ai-rules",
+      "language-model"
+    ],
+    "visual_concept": "Depict GATEKEEPER as a cozy arcade arena with a retro rule terminal generating a new colour-coded survival notice. Polli, wearing a tiny referee visor, studies the glowing rules while hopping between friendly colour tiles and avoiding clearly marked fatal ones; code-plants and pixel flowers soften the arena edges.",
+    "image_prompt": "Cozy pixel art scene of GATEKEEPER, a small 60-second arcade arena where a retro CRT terminal writes live colour rules in chunky pixel text: 'GREEN = SAFE' and 'PURPLE = AVOID'; Polli, the cute yellow-and-brown striped bee mascot with light-blue wings, pink blush, and a tiny referee visor, carefully hops toward the safe lime green (#ecf874) tiles beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and playful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15398.jpg",
+    "prompt": "Cozy pixel art scene of GATEKEEPER, a small 60-second arcade arena where a retro CRT terminal writes live colour rules in chunky pixel text: 'GREEN = SAFE' and 'PURPLE = AVOID'; Polli, the cute yellow-and-brown striped bee mascot with light-blue wings, pink blush, and a tiny referee visor, carefully hops toward the safe lime green (#ecf874) tiles beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and playful."
+  },
+  "generated_at": "2026-09-24T13:15:28.619516+00:00",
+  "app_name": "GATEKEEPER",
+  "app_url": "https://khuzaima3232.github.io/gatekeeper"
+}

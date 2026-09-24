@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
 | [🛠️ ShouldIApply](https://notsointresting.github.io/shouldiapply) | ShouldIApply tells job seekers their real, calibrated odds of passing a job's initial screen — before they waste the effort applying. Paste your resume and a job description. The app sends them to Pol | [@notsointresting](https://github.com/notsointresting) |
 | [🎬 Aizen (TTS)](https://fantasyvvillain-pixel.github.io/Aizen-) | App Description: A static web app with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE sign-in flow entirely on the client side, without the need for a backend server | [@fantasyvvillain-pixel](https://github.com/fantasyvvillain-pixel) |
 | [🖼️ Bees Pollination](https://halimyassine.github.io/bees-pollination-app) | Bees Pollination is a simple AI image generation app powered by Pollinations. Users connect their Pollinations account, enter a text prompt, and generate an image directly in the browser using the Pol | [@halimyassine](https://github.com/halimyassine) |
@@ -37,7 +38,6 @@
 | [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
 | [🖼️ PersonaMorph](https://personamorph-ai-production.up.railway.app) | A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
 | [🖼️ baboolharech](https://baboolharech-lgtm.github.io/Fith) | App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft | [@baboolharech-lgtm](https://github.com/baboolharech-lgtm) |
-| [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

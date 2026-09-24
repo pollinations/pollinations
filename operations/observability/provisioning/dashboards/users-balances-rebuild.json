@@ -495,7 +495,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  funding_source AS metric,\n  sumMerge(gross_consumption) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND funding_source IN ('paid', 'quest')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  funding_source AS metric,\n  sumMerge(gross_consumption) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group != 'legacy'\n  AND funding_source IN ('paid', 'quest')\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -995,7 +995,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY day\nORDER BY day",
+          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n          AND traffic_group != 'legacy'\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group != 'legacy'\nGROUP BY day\nORDER BY day",
           "refId": "A"
         }
       ],

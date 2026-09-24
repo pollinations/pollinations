@@ -10,6 +10,7 @@ import {
 } from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { CheckIcon } from "../../primitives/icons/index.tsx";
+import { LoadingStatus } from "../../primitives/LoadingStatus.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
 
@@ -186,7 +187,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
 export function AuthModalLoading({
     title,
     subject,
-    message = "This only takes a moment.",
+    message = "Loading…",
 }: {
     title: string;
     subject?: ReactNode;
@@ -194,13 +195,7 @@ export function AuthModalLoading({
 }) {
     return (
         <AuthFlowLayout title={title} subject={subject}>
-            <output className="polli:flex polli:items-center polli:gap-2 polli:font-body polli:text-sm polli:text-theme-text-muted">
-                <span
-                    aria-hidden="true"
-                    className="polli:h-4 polli:w-4 polli:shrink-0 polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent"
-                />
-                {message}
-            </output>
+            <LoadingStatus>{message}</LoadingStatus>
         </AuthFlowLayout>
     );
 }

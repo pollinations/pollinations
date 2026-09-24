@@ -45,6 +45,7 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 
 - Local/dev and staging traffic use the staging workspace; production traffic uses production.
 - Query `generation_event_v2` for the exact model and request time. `model_health` is for health/latency, not billing detail.
+- For production SQL, use `enter.pollinations.ai/observability/scripts/tb-prod.sh` with `FORMAT JSON`; it rejects failed queries. Enable `set -o pipefail` when piping its output so the failure reaches the caller.
 - Confirm every non-zero unit has a corresponding count and price column and that total cost/price reconcile.
 - Tail the worker during the probe. Any missing conversion warning means a billable line may be priced at zero and blocks merge.
 

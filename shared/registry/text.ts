@@ -48,6 +48,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.2),
@@ -72,6 +73,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        retirementDate: new Date("2027-02-09").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.05),
@@ -138,6 +140,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "openai/gpt-5.3-codex": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        retirementDate: new Date("2027-08-24").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptCachedTokens: perMillion(0.175),
+            // Azure exposes cache writes as an input-token subtype and has no
+            // separate Global Standard write meter for this checkpoint.
+            promptCacheWriteTokens: perMillion(1.75),
+            completionTextTokens: perMillion(14),
+        },
+        title: "GPT-5.3 Codex",
+        description:
+            "Coding-focused reasoner for complex software engineering and agentic tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxCompletionTokens: 128000,
+        tools: true,
+        reasoning: true,
+        contextLength: 400000,
+        isSpecialized: true,
+    },
     "openai/gpt-5.4": {
         supportedParameters: CHAT_PARAMETERS.azureGpt54,
         aliases: [
@@ -150,6 +181,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        retirementDate: new Date("2027-09-02").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.5),
@@ -177,6 +209,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.4",
         description:
@@ -196,6 +239,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
+        retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.75),
@@ -225,6 +269,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
+        retirementDate: new Date("2027-10-26").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
@@ -250,6 +295,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.5",
         description:
@@ -269,6 +325,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
+        retirementDate: new Date("2028-01-11").getTime(),
         // OpenRouter's standard OpenAI endpoint discounts Azure output more
         // deeply than input/cache. One third matches its output rate and keeps
         // the other dimensions below that endpoint under a uniform multiplier.
@@ -297,6 +354,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
@@ -315,6 +383,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
+        retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -340,6 +409,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
@@ -358,6 +438,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
+        retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.2),
@@ -383,6 +464,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
@@ -401,6 +493,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
+        retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(10.0),
@@ -426,6 +519,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-6 Astra",
         description:
@@ -433,6 +537,114 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(5),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6 Sol",
+        description: "Reasoning for complex coding and agentic workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6-luna": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    completionTextTokens: perMillion(0.75),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6 Luna",
+        description: "Efficient reasoning for focused, high-volume tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -498,6 +710,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
+        // Azure model catalog; the retirement schedule says 2026-10-16.
+        retirementDate: new Date("2026-10-13").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.8),
@@ -520,6 +734,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        // OVHcloud AI Endpoints catalog model_eol_date.
+        retirementDate: new Date("2026-10-01").getTime(),
         priceMultiplier: 1,
         cost: {
             // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
@@ -609,6 +825,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        retirementDate: new Date("2027-06-15").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.6),
@@ -638,6 +855,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
+        retirementDate: new Date("2027-08-24").getTime(),
         priceMultiplier: 0.75,
         cost: {
             // Azure GPT Audio 1.5 Global meters, verified against account
@@ -798,6 +1016,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
+        // Vertex AI model versions.
+        retirementDate: new Date("2026-10-20").getTime(),
         priceMultiplier: 1.055,
         paidOnly: true,
         cost: {
@@ -823,7 +1043,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.azureOpenReasoning,
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
@@ -832,16 +1052,19 @@ const TEXT_BASE_SERVICES = {
             "deepseek-flash",
             "deepseek",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
-        priceMultiplier: 1,
+        // Azure model catalog and retirement schedule (Preview).
+        retirementDate: new Date("2026-12-03").getTime(),
+        priceMultiplier: 0.75,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Azure Global Standard "V4 Flash 0731" meters (2026-09-23).
+            promptTextTokens: perMillion(0.44),
+            promptCachedTokens: perMillion(0.014),
+            completionTextTokens: perMillion(1.32),
         },
         title: "DeepSeek V4 Flash 0731",
         description: "Fast reasoning and coding at bargain prices",
@@ -877,20 +1100,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-09-01).
+        // DeepInfra rates (2026-09-23): list $0.44/$1.32 with an open-ended
+        // 51% discount.
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            promptImageTokens: perMillion(0.22),
-            completionTextTokens: perMillion(0.66),
+            promptTextTokens: perMillion(0.2156),
+            promptCachedTokens: perMillion(0.0069),
+            promptImageTokens: perMillion(0.2156),
+            completionTextTokens: perMillion(0.6468),
         },
         title: "DeepSeek V4 Flash Vision Exp",
         description:
@@ -960,17 +1184,22 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-pro": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV4Pro,
         aliases: ["deepseek-v4-pro", "deepseek-pro"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-04-24").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.32),
-            promptCachedTokens: perMillion(0.044),
-            completionTextTokens: perMillion(3.96),
+            // OpenRouter Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
+            // including the account's 5.5% credit-purchase fee. Alibaba
+            // halves them the rest of the day; costs are not time-based, so
+            // the peak rate applies all day and never undercharges.
+            promptTextTokens: perMillion(1.122) * 1.055,
+            promptCachedTokens: perMillion(0.1122) * 1.055,
+            completionTextTokens: perMillion(3.366) * 1.055,
         },
         title: "DeepSeek V4 Pro 0813",
         description: "Deep reasoning and strong coding for demanding problems",
@@ -978,7 +1207,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "x-ai/grok-4.20": {
@@ -1001,6 +1230,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
+        retirementDate: new Date("2027-04-06").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -1024,6 +1254,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
+        retirementDate: new Date("2027-05-12").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(1.25),
@@ -1050,6 +1281,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
+        retirementDate: new Date("2027-08-24").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         // Microsoft Foundry Global Standard rates, published August 26, 2026.
@@ -1107,6 +1339,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<200K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<200K",
+                        "long_context": "≥200K",
+                    },
+                },
+            ],
         ),
         title: "Grok 4.7",
         description:
@@ -1136,6 +1379,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
+        // Vertex AI model versions.
+        retirementDate: new Date("2026-10-20").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         // Vertex base rates for Gemini 2.5 Flash Lite.
@@ -1204,6 +1449,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
+        // Its Azure gpt-5.4-mini route.
+        retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.75),
@@ -1224,6 +1471,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
+        // Its Azure gpt-5.5 route.
+        retirementDate: new Date("2027-10-26").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
@@ -1248,6 +1497,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "MIDIjourney Large",
         description:
@@ -1418,6 +1678,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-opus-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
+        // Verify against AWS's price list when the launch-day entry appears.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(5),
+            completionTextTokens: perMillion(20),
+        },
+        title: "Claude Opus 5.5",
+        description:
+            "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: ["claude-fable-5"],
@@ -1445,7 +1732,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
-        supportedParameters: CHAT_PARAMETERS.bedrockFable51,
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
         provider: "aws",
         publisher: "Anthropic",
@@ -1484,6 +1771,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
+        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
+        retirementDate: new Date("2026-09-27").getTime(),
         priceMultiplier: 1,
         billing: PERPLEXITY_SONAR_BILLING,
         cost: {
@@ -1508,6 +1797,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
+        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
+        retirementDate: new Date("2026-09-27").getTime(),
         priceMultiplier: 1,
         billing: PERPLEXITY_PRO_BILLING,
         cost: {
@@ -1535,6 +1826,8 @@ const TEXT_BASE_SERVICES = {
         publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
+        // Perplexity Sonar Chat Completions sunset (docs: supported until this date).
+        retirementDate: new Date("2026-09-27").getTime(),
         priceMultiplier: 1,
         billing: PERPLEXITY_REASONING_BILLING,
         cost: {
@@ -1553,7 +1846,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.6": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.azureOpenReasoning,
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
@@ -1562,11 +1855,14 @@ const TEXT_BASE_SERVICES = {
             "kimi-thinking",
             "kimi",
         ],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
+        // Azure model catalog and retirement schedule (Preview).
+        retirementDate: new Date("2027-04-16").getTime(),
         priceMultiplier: 1,
+        // Azure Global Standard "K2.6 Thinking" meters (2026-09-23).
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
@@ -1578,35 +1874,36 @@ const TEXT_BASE_SERVICES = {
             "Agentic all-rounder that shows its chain-of-thought reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 262000,
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.7-code": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterKimiMoonshot,
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Fireworks accounts/fireworks/models/kimi-k2p7-code rates (2026-06-14):
-            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
-            promptTextTokens: perMillion(0.95),
-            promptCachedTokens: perMillion(0.19),
-            promptCacheWriteTokens: perMillion(0.95),
-            promptImageTokens: perMillion(0.95),
-            completionTextTokens: perMillion(4.0),
+            // OpenRouter Moonshot AI int4 rates (2026-09-23), including the
+            // account's 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.95) * 1.055,
+            promptCachedTokens: perMillion(0.19) * 1.055,
+            promptCacheWriteTokens: perMillion(0.95) * 1.055,
+            promptImageTokens: perMillion(0.95) * 1.055,
+            completionTextTokens: perMillion(4.0) * 1.055,
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
             "Built for agentic coding — plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -1912,6 +2209,57 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "xiaomi/mimo-v2.6-flash": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Xiaomi",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        cost: {
+            promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.0028) * 1.055,
+            completionTextTokens: perMillion(0.28) * 1.055,
+        },
+        title: "MiMo V2.6 Flash",
+        description:
+            "Fast, efficient multimodal reasoning for agents and coding",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "xiaomi/mimo-v2.6-pro": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Xiaomi",
+        category: "text",
+        addedDate: new Date("2026-09-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        cost: {
+            promptTextTokens: perMillion(0.435) * 1.055,
+            promptCachedTokens: perMillion(0.0036) * 1.055,
+            completionTextTokens: perMillion(0.87) * 1.055,
+        },
+        title: "MiMo V2.6 Pro",
+        description:
+            "Flagship long-context reasoning and coding at higher capability",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-3.1-pro-preview": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini3,
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
@@ -1952,6 +2300,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<200K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<200K",
+                        "long_context": "≥200K",
+                    },
+                },
+            ],
         ),
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro Preview",
@@ -2020,17 +2379,20 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.2": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.openRouterGlmFlashx,
         aliases: ["glm-5.2", "glm-5p2", "glm"],
-        provider: "fireworks",
+        provider: "openrouter",
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.4),
-            promptCachedTokens: perMillion(0.14),
-            completionTextTokens: perMillion(4.4),
+            // OpenRouter Z.AI FP8 rates (2026-09-23), including the account's
+            // 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(1.4) * 1.055,
+            promptCachedTokens: perMillion(0.26) * 1.055,
+            completionTextTokens: perMillion(4.4) * 1.055,
         },
         title: "Z.ai GLM-5.2",
         description:
@@ -2086,6 +2448,34 @@ const TEXT_BASE_SERVICES = {
         title: "Z.ai GLM-5.3 Flash",
         description:
             "Low-cost million-token multimodal reasoning for agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "z-ai/glm-5.3-flashx": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGlmFlashx,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-09-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Z.AI fp8 route rates (2026-09-19), including the
+            // mandatory 5.5% OpenRouter credit fee. Image inputs are
+            // tokenized into promptTextTokens; no separate usage is reported.
+            promptTextTokens: perMillion(0.37) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(1.25) * 1.055,
+        },
+        title: "Z.ai GLM-5.3 FlashX",
+        description:
+            "Faster million-token multimodal reasoning for agents and visual analysis",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -2196,9 +2586,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25) * 1.055,
-            promptCachedTokens: perMillion(0.05) * 1.055,
-            completionTextTokens: perMillion(1) * 1.055,
+            // OpenRouter Novita FP8 rates (2026-09-23), including the
+            // account's 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.27) * 1.055,
+            promptCachedTokens: perMillion(0.054) * 1.055,
+            completionTextTokens: perMillion(1.08) * 1.055,
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",
@@ -2237,20 +2629,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-glimmer-30b": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["muse-glimmer"],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.35),
+            // DeepInfra rates (2026-09-23).
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.04),
-            promptImageTokens: perMillion(0.35),
-            completionTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(0.3),
+            completionTextTokens: perMillion(1.2),
         },
         title: "Muse Glimmer 30B",
         description:
@@ -2381,6 +2774,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<256K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<256K",
+                        "long_context": "≥256K",
+                    },
+                },
+            ],
         ),
         title: "Qwen3.7 Plus",
         description:
@@ -2475,21 +2879,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: ["qwen3.8-max"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2) * 1.055,
-            promptCachedTokens: perMillion(0.25) * 1.055,
-            promptCacheWriteTokens: perMillion(2.5) * 1.055,
-            promptImageTokens: perMillion(2) * 1.055,
-            promptVideoTokens: perMillion(2) * 1.055,
-            completionTextTokens: perMillion(6) * 1.055,
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
         },
         title: "Qwen3.8 Max",
         description:
@@ -2535,24 +2939,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-flash": {
-        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: [],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-09-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
-        // price with a single 0-1M context tier (2026-09-05). OpenRouter
-        // publishes one prompt rate and no separate image/video rates.
         cost: {
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.016) * 1.055,
-            promptCacheWriteTokens: perMillion(0.2) * 1.055,
-            promptImageTokens: perMillion(0.15) * 1.055,
-            promptVideoTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.47) * 1.055,
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
         },
         title: "Qwen3.8 Flash",
         description:
@@ -2567,63 +2968,133 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-flash": {
-        supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+        supportedParameters: CHAT_PARAMETERS.alibabaQwen,
         aliases: ["qwen3.7-flash"],
-        provider: "openrouter",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens overrides apply from 32K and 256K
-        // total prompt tokens.
-        cost: {
-            promptTextTokens: perMillion(0.03) * 1.055,
-            promptCachedTokens: perMillion(0.006) * 1.055,
-            promptCacheWriteTokens: perMillion(0.038) * 1.055,
-            promptImageTokens: perMillion(0.03) * 1.055,
-            promptVideoTokens: perMillion(0.03) * 1.055,
-            completionTextTokens: perMillion(0.13) * 1.055,
-        },
         ...defineCostVariants(
             {
                 context_32k: {
-                    promptTextTokens: perMillion(0.1) * 1.055,
-                    promptCachedTokens: perMillion(0.02) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.125) * 1.055,
-                    promptImageTokens: perMillion(0.1) * 1.055,
-                    promptVideoTokens: perMillion(0.1) * 1.055,
-                    completionTextTokens: perMillion(0.4) * 1.055,
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
                 },
                 context_256k: {
-                    promptTextTokens: perMillion(0.2) * 1.055,
-                    promptCachedTokens: perMillion(0.04) * 1.055,
-                    promptCacheWriteTokens: perMillion(0.25) * 1.055,
-                    promptImageTokens: perMillion(0.2) * 1.055,
-                    promptVideoTokens: perMillion(0.2) * 1.055,
-                    completionTextTokens: perMillion(0.8) * 1.055,
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
+                },
+                explicit_cache: {
+                    promptCachedTokens: perMillion(0.003),
+                },
+                context_32k_explicit_cache: {
+                    promptTextTokens: perMillion(0.1),
+                    promptCachedTokens: perMillion(0.01),
+                    promptCacheWriteTokens: perMillion(0.125),
+                    promptImageTokens: perMillion(0.1),
+                    promptVideoTokens: perMillion(0.1),
+                    completionTextTokens: perMillion(0.4),
+                },
+                context_256k_explicit_cache: {
+                    promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
+                    promptVideoTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0.8),
                 },
             },
-            ({ usage }) => {
+            ({ usage, input }) => {
                 const promptTokens = totalPromptTokens(usage);
-                if (promptTokens >= 256_000) return "context_256k";
-                if (promptTokens >= 32_000) return "context_32k";
-                return undefined;
+                const tier =
+                    promptTokens > 256_000
+                        ? "context_256k"
+                        : promptTokens > 32_000
+                          ? "context_32k"
+                          : undefined;
+                if (!input?.hasExplicitCacheHit) return tier;
+                if (tier === "context_256k") {
+                    return "context_256k_explicit_cache";
+                }
+                if (tier === "context_32k") {
+                    return "context_32k_explicit_cache";
+                }
+                return "explicit_cache";
             },
             {
                 context_32k: {
-                    label: "32K+ context",
+                    label: ">32K context",
                     description:
-                        "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+                        "Direct Alibaba rates above 32,000 prompt tokens; the higher rates apply to the whole request.",
                 },
                 context_256k: {
-                    label: "256K+ context",
+                    label: ">256K context",
                     description:
-                        "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+                        "Direct Alibaba rates above 256,000 prompt tokens; the highest rates apply to the whole request.",
+                },
+                explicit_cache: {
+                    label: "Explicit cache, ≤32K context",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost 10% of input; creation costs 125%.",
+                },
+                context_32k_explicit_cache: {
+                    label: "Explicit cache, >32K context",
+                    description:
+                        "Direct Alibaba >32K rates with explicit-cache reads at 10% of input.",
+                },
+                context_256k_explicit_cache: {
+                    label: "Explicit cache, >256K context",
+                    description:
+                        "Direct Alibaba >256K rates with explicit-cache reads at 10% of input.",
                 },
             },
-            "<32K context",
+            "≤32K context, implicit/no cache",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤32K",
+                        "context_32k": ">32K–256K",
+                        "context_256k": ">256K",
+                        "explicit_cache": "≤32K",
+                        "context_32k_explicit_cache": ">32K–256K",
+                        "context_256k_explicit_cache": ">256K",
+                    },
+                },
+                {
+                    "key": "cache",
+                    "label": "Cache",
+                    "values": {
+                        "": "Default",
+                        "context_32k": "Default",
+                        "context_256k": "Default",
+                        "explicit_cache": "Explicit",
+                        "context_32k_explicit_cache": "Explicit",
+                        "context_256k_explicit_cache": "Explicit",
+                    },
+                },
+            ],
         ),
+        cost: {
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.006),
+            promptCacheWriteTokens: perMillion(0.038),
+            promptImageTokens: perMillion(0.03),
+            promptVideoTokens: perMillion(0.03),
+            completionTextTokens: perMillion(0.13),
+        },
         title: "Qwen3.7 Flash",
         description:
             "Ultra-low-cost multimodal reasoning for agents and visual tasks",
@@ -2678,6 +3149,8 @@ const TEXT_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
+        // Alibaba Model Studio notice on postponed legacy retirements.
+        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",

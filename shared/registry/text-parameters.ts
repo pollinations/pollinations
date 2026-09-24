@@ -397,6 +397,26 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
+    // Mirrors the route's published `supported_parameters`, which reports
+    // max_tokens and no max_completion_tokens.
+    openRouterLing: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "logit_bias",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+    ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [
         "max_tokens",

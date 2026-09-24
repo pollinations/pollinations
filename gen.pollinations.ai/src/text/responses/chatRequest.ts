@@ -158,6 +158,37 @@ function messageContent(
                 ),
             ];
         }
+        if (!output && allowImages && part.type === "video_url") {
+            const video = part.video_url;
+            const videoUrl =
+                typeof video === "string"
+                    ? video
+                    : video && typeof video === "object"
+                      ? (video as JsonObject).url
+                      : undefined;
+            if (typeof videoUrl !== "string" || !videoUrl) {
+                invalidRequest(
+                    "messages",
+                    "Chat video content requires a video URL",
+                );
+            }
+            const mimeType =
+                video && typeof video === "object"
+                    ? (video as JsonObject).mime_type
+                    : undefined;
+            return [
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_video",
+                        video_url: videoUrl,
+                        ...(typeof mimeType === "string"
+                            ? { mime_type: mimeType }
+                            : {}),
+                    },
+                    part,
+                ),
+            ];
+        }
         return invalidRequest(
             "messages",
             `Unsupported Chat content part: ${String(part.type ?? "unknown")}`,

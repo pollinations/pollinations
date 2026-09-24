@@ -154,6 +154,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.0-flash-vl",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.0-flash-vl");
+        expect(result.options.provider).toEqual({
+            only: ["deepinfra/fp16"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "tencent/hy4-preview",

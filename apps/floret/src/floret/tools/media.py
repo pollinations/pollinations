@@ -1,23 +1,13 @@
-"""Media hosting (media.pollinations.ai) + workspace transfer tools.
-
-`upload_media` turns local bytes (data URIs, bash-workspace files, or authenticated
-Pollinations URLs) into public, unauthenticated URLs — the form video reference
-frames and chat clients need. `fetch_media` is the inverse: it downloads media
-into the bash workspace so ffmpeg can process it, keeping the API key out of the
-shell environment.
-"""
+"""Publish data URIs and authenticated media URLs to public media hosting."""
 
 from __future__ import annotations
 
-import asyncio
 import base64
 import mimetypes
 import os
 import uuid
 
-from floret.config import settings  # noqa: F401  (patched in tests)
 from floret.tools.gen import _fetch_bytes, _http_client, _key
-from floret.tools.shell import _workdir
 
 MEDIA_BASE = "https://media.pollinations.ai"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -27,15 +17,6 @@ _EXT_BY_MIME = {"image/jpeg": ".jpg", "audio/mpeg": ".mp3"}
 
 def _ext_for(mime: str) -> str:
     return _EXT_BY_MIME.get(mime) or mimetypes.guess_extension(mime) or ".bin"
-
-
-def _workspace_path(name: str) -> str:
-    """Resolve `name` inside the bash workspace, refusing path escapes."""
-    workdir = os.path.realpath(_workdir())
-    full = os.path.realpath(os.path.join(workdir, name))
-    if os.path.commonpath([workdir, full]) != workdir:
-        raise ValueError(f"path {name!r} is outside the workspace")
-    return full
 
 
 def _name_for_bytes(data: bytes) -> str:
@@ -67,7 +48,7 @@ def _name_for_bytes(data: bytes) -> str:
 
 
 async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
-    """Return (bytes, filename) for a data URI, http(s) URL, or workspace path."""
+    """Return (bytes, filename) for a data URI or HTTP(S) URL."""
     if source.startswith("data:"):
         header, _, b64 = source.partition(",")
         if len(b64) > ((MAX_UPLOAD_BYTES + 2) // 3) * 4:
@@ -84,20 +65,9 @@ async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
             path_name if mimetypes.guess_type(path_name)[0] else _name_for_bytes(data)
         )
         return data, name
-    full = _workspace_path(source)
-    if not os.path.isfile(full):
-        raise ValueError(f"workspace file not found: {source!r}")
-    if os.path.getsize(full) > MAX_UPLOAD_BYTES:
-        raise ValueError(f"media exceeds {MAX_UPLOAD_BYTES} byte upload limit")
-
-    def read_file() -> bytes:
-        with open(full, "rb") as file:
-            return file.read(MAX_UPLOAD_BYTES + 1)
-
-    data = await asyncio.to_thread(read_file)
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise ValueError(f"media exceeds {MAX_UPLOAD_BYTES} byte upload limit")
-    return data, filename or os.path.basename(full)
+    raise ValueError(
+        "source must be an HTTP(S) URL or data URI; publish Computer files with assets publish"
+    )
 
 
 async def upload_media(source: str, filename: str | None = None) -> str:
@@ -115,20 +85,3 @@ async def upload_media(source: str, filename: str | None = None) -> str:
     if not isinstance(url, str) or not url:
         raise RuntimeError("media upload response did not contain a URL")
     return url
-
-
-async def fetch_media(url: str, filename: str | None = None) -> str:
-    """Download media (with auth for Pollinations URLs) into the bash workspace.
-
-    Returns the filename relative to the workspace, ready to use in `bash`.
-    """
-    name = filename or os.path.basename(url.split("?", 1)[0]) or "media.bin"
-    full = _workspace_path(name)
-    data = await _fetch_bytes(url)
-
-    def write_file() -> None:
-        with open(full, "wb") as file:
-            file.write(data)
-
-    await asyncio.to_thread(write_file)
-    return os.path.relpath(full, os.path.realpath(_workdir()))

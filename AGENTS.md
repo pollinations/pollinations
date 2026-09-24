@@ -201,6 +201,13 @@ npx vitest run test/file.test.ts
 - After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
+### Design Questions
+
+- Before committing to a design, surface unresolved choices that could materially change the user outcome, scope, UX, constraints, or architecture. Ask even when the request is executable if the answer could improve it.
+- Investigate facts available in the codebase or documentation yourself. Ask the user about intent and tradeoffs. Prefer one consequential question at a time; group up to three only when their answers are independent. Give a recommendation and its tradeoff, while allowing another answer.
+- Use each answer to revise the design and subsequent questions. Stop when consequential choices are settled; handle routine, reversible details autonomously. Briefly reflect the resulting design before building.
+- Avoid repeating answered questions or asking for permission already given. Existing safety approval requirements still apply.
+
 ## Compact Instructions
 
 Preserve during compaction: modified files/lines, code/diffs/implementation details, test and command results/errors, plan/progress/pending work, user preferences/corrections, and architectural decisions/rationale.
@@ -236,7 +243,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-Query current repository labels when needed; use established names rather than creating new labels ad hoc.
+Issues and PRs share one label list, defined in `operations/github/project-manager.md`: one kind (`MODEL`, `ECONOMICS`, `MONITORING`, `APPS`, `INFRA`, `UI-UX`, `API`, `DOCS`), at most one type (`BUG`, `FEATURE`, `QUESTION`, `TRACKING`), and flags (`BILLING`, `SECURITY`, `AUTOMATED`, `POLLEN-QUEST` on PRs only). Workflow labels (`APP-*`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
 
 ## Contributor Attribution
 

@@ -79,6 +79,18 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
+    // OpenRouter xAI tag for Grok 4.7 (2026-09-21). web_search_options is
+    // withheld: OpenRouter bills web search per call ($0.005), a non-token
+    // charge our cost model can't meter yet.
+    openRouterGrok47: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "seed",
+        "structured_outputs",
+        "reasoning_effort",
+    ],
     azureGrok46: [
         ...CHAT,
         ...SAMPLING,
@@ -91,8 +103,8 @@ export const CHAT_PARAMETERS = {
     // Haiku 4.5 / Sonnet & Opus 4.6: sampling only without thinking; JSON schema only.
     bedrockClaudeSampling: [...SAMPLED_CHAT, "top_k", "reasoning_effort"],
     bedrockClaudeNoSampling: [...CHAT, ...TOOLS, "reasoning_effort", "stop"],
-    // Fable 5.1 rejects forced tool choice; auto alone is not an adjustable control.
-    bedrockFable51: [...CHAT, "reasoning_effort", "tools", "stop"],
+    // Fable 5.1 and Opus 5.5 reject forced tool choice.
+    bedrockClaudeNoForcedTools: [...CHAT, "reasoning_effort", "tools", "stop"],
     openRouterHaiku: [
         ...CHAT,
         ...SAMPLING,
@@ -135,6 +147,9 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
+    vertexGemini25: [...SAMPLED_CHAT, "seed", "reasoning_effort"],
+    vertexGemini3: [...SAMPLED_CHAT, "seed", "reasoning_effort"],
+    vertexGemini35: [...TOOL_CHAT, "seed", "reasoning_effort", "stop"],
     vertexGeminiSearch: [...SAMPLED_CHAT, "seed", "reasoning_effort"],
     nova: [...CHAT, ...SAMPLING, ...TOOLS, "stop"],
     mercury: [...TOOL_CHAT, ...OPENROUTER_REASONING, "temperature", "stop"],
@@ -146,6 +161,8 @@ export const CHAT_PARAMETERS = {
         "stop",
     ],
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
+    // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
+    azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
     ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
     openRouterMistralSmall32: [
@@ -267,10 +284,13 @@ export const CHAT_PARAMETERS = {
         ...PENALTIES,
         ...OPENROUTER_REASONING,
         "top_k",
-        "min_p",
         "repetition_penalty",
         "seed",
-        "logit_bias",
+    ],
+    openRouterMinimax27FirstParty: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
@@ -279,9 +299,39 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "min_p",
         "repetition_penalty",
-        "seed",
         "reasoning_effort",
         "logit_bias",
+    ],
+    // OpenRouter endpoint parameters (2026-09-23) for Fireworks replacements.
+    openRouterDeepseekV4Pro: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "structured_outputs",
+        "top_k",
+    ],
+    openRouterStreamLakeReasoning: [
+        ...SAMPLED_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    openRouterKimiMoonshot: [
+        ...TOOL_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+    ],
+    openRouterKimiStreamLake: [
+        ...TOOL_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+        "top_p",
     ],
     openRouterDeepseekV41Flash: [
         ...CHAT,
@@ -299,7 +349,7 @@ export const CHAT_PARAMETERS = {
         "top_k",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
-    openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
     // seed or logprobs in supported_parameters. Forced tool_choice isn't
     // supported (only "auto"/"none"), so "tools" is declared alone.
@@ -364,6 +414,18 @@ export const CHAT_PARAMETERS = {
         "stop",
         "seed",
         ...OPENROUTER_REASONING,
+    ],
+    // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
+    openRouterGlmFlashx: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
     ],
     // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
     // excluded via provider.ignore so pricing stays fixed. Both tags report

@@ -2,27 +2,16 @@ import {
     Alert,
     BeakerIcon,
     BotIcon,
-    Button,
-    ChevronIcon,
     ClockIcon,
-    Dropdown,
-    DropdownItem,
     EditableCombobox,
-    EditableComboboxToken,
-    ExternalLinkButton,
-    GitHubIcon,
     InlineLink,
     McpIcon,
-    SearchIcon,
     Section,
     SparklesIcon,
     TabButton,
     TokensIcon,
-    TrendUpIcon,
     UsageIcon,
-    WarningIcon,
 } from "@pollinations/ui";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -33,12 +22,17 @@ import {
     useRef,
     useState,
 } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import {
+    MODEL_FILTER_LABELS,
+    ModelFilterTokens,
+} from "./model-filter-tokens.tsx";
 import {
     ensureModelQueryDefaults,
     getExplicitModelQuerySource,
@@ -49,7 +43,6 @@ import {
     getModelQueryVisibleSearch,
     MODEL_QUERY_FILTER_KEYS,
     type ModelQueryDraftFilter,
-    type ModelQueryFilter,
     type ModelQueryFilterKey,
     type ModelQueryFilterToken,
     matchesModelQuery,
@@ -59,6 +52,8 @@ import {
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
+import { ModelSortMenu } from "./model-sort-menu.tsx";
+import { ModelHealthIcon } from "./model-status-chips.tsx";
 import {
     type SectionType,
     sectionLabels,
@@ -81,6 +76,12 @@ const MODEL_SECTION_ORDER: SectionType[] = [
 type PrimaryTab = "models" | "agent" | "mcp";
 type SearchParam = "q" | "agentQ" | "mcpQ";
 
+const PRIMARY_TABS = [
+    { value: "models", label: "Models", Icon: BeakerIcon },
+    { value: "agent", label: "Agents", Icon: BotIcon },
+    { value: "mcp", label: "MCP", Icon: McpIcon },
+] as const;
+
 const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
 const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
 const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
@@ -96,68 +97,6 @@ const QUERY_FILTER_KEYS_BY_TAB: Record<
     agent: AGENT_QUERY_FILTER_KEYS,
     mcp: MCP_QUERY_FILTER_KEYS,
 };
-
-const PRIMARY_TABS: Array<{
-    value: PrimaryTab;
-    label: string;
-    Icon: FC<{ className?: string }>;
-}> = [
-    { value: "models", label: "Models", Icon: BeakerIcon },
-    { value: "agent", label: "Agents", Icon: BotIcon },
-    { value: "mcp", label: "MCP", Icon: McpIcon },
-];
-
-const TabCount: FC<{ value: number }> = ({ value }) => (
-    <span
-        aria-hidden="true"
-        className="text-[0.8em] font-normal tabular-nums text-theme-text-muted"
-    >
-        {value}
-    </span>
-);
-
-const SORT_OPTIONS: Array<{
-    value: ModelSort;
-    label: string;
-    accessibleLabel: string;
-}> = [
-    {
-        value: "popular",
-        label: "Most Popular",
-        accessibleLabel: "Most popular",
-    },
-    {
-        value: "newest",
-        label: "Last Added",
-        accessibleLabel: "Date added, newest first",
-    },
-    {
-        value: "price-low",
-        label: "Price: Low",
-        accessibleLabel: "Lowest price first",
-    },
-    {
-        value: "price-high",
-        label: "Price: High",
-        accessibleLabel: "Highest price first",
-    },
-    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
-    {
-        value: "title-desc",
-        label: "Name: Z–A",
-        accessibleLabel: "Name: Z to A",
-    },
-    {
-        value: "publisher",
-        label: "Publisher: A–Z",
-        accessibleLabel: "Publisher: A to Z",
-    },
-    {
-        value: "publisher-desc",
-        label: "Publisher: Z–A",
-        accessibleLabel: "Publisher: Z to A",
-    },
-];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
     all: "all",
@@ -199,103 +138,11 @@ function categorizeModels(
     return categorized;
 }
 
-function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (
-        event.key !== "ArrowDown" &&
-        event.key !== "ArrowUp" &&
-        event.key !== "Home" &&
-        event.key !== "End"
-    ) {
-        return;
-    }
-
-    const items = Array.from(
-        event.currentTarget.querySelectorAll<HTMLElement>(
-            '[role="menuitemradio"]',
-        ),
-    );
-    if (items.length === 0) return;
-
-    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-    const nextIndex =
-        event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? items.length - 1
-              : event.key === "ArrowDown"
-                ? (currentIndex + 1) % items.length
-                : (currentIndex - 1 + items.length) % items.length;
-
-    event.preventDefault();
-    items[nextIndex]?.focus();
-}
-
 const isSourceSuggestion = (option: string): boolean =>
     option
         .slice(option.lastIndexOf(" ") + 1)
         .toLowerCase()
         .startsWith("source:");
-
-const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
-    access: "Access",
-    source: "Source",
-    status: "Status",
-    publisher: "Publisher",
-    id: "ID",
-    type: "Type",
-    capability: "Capability",
-};
-
-const formatFilterValue = (filter: ModelQueryFilter): string =>
-    filter.key === "id" || filter.key === "publisher"
-        ? filter.value
-        : filter.value.replaceAll("-", " ");
-
-type ModelFilterTokensProps = {
-    tokens: ModelQueryFilterToken[];
-    draft?: ModelQueryDraftFilter;
-    pendingRemovalIndex?: number;
-    onEdit: (token: ModelQueryFilterToken) => void;
-};
-
-const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
-    tokens,
-    draft,
-    pendingRemovalIndex,
-    onEdit,
-}) => {
-    if (tokens.length === 0 && !draft) {
-        return (
-            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
-        );
-    }
-
-    return (
-        <>
-            {tokens.map((token) => {
-                const label = MODEL_FILTER_LABELS[token.filter.key];
-                const value = formatFilterValue(token.filter);
-                return (
-                    <EditableComboboxToken
-                        key={`${token.index}:${token.token}`}
-                        label={label}
-                        value={value}
-                        highlighted={pendingRemovalIndex === token.index}
-                        aria-label={`Change ${label} filter: ${value}`}
-                        onClick={() => onEdit(token)}
-                    />
-                );
-            })}
-            {draft && (
-                <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
-                    <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
-                        {MODEL_FILTER_LABELS[draft.key]}:
-                    </span>
-                </div>
-            )}
-        </>
-    );
-};
 
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
@@ -331,6 +178,7 @@ export const Models: FC = () => {
     const lastPushedSearchRef = useRef(urlSearch);
     const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [catalogLoading, setCatalogLoading] = useState(true);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
     const allModels = useMemo(
@@ -390,11 +238,6 @@ export const Models: FC = () => {
         () => categorizeModels(modelModels),
         [modelModels],
     );
-    const primaryTabCounts: Record<PrimaryTab, number> = {
-        models: modelSections.all.length,
-        agent: agentModels.length,
-        mcp: MCP_SERVERS.length,
-    };
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -452,7 +295,8 @@ export const Models: FC = () => {
                     console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
-                }),
+                })
+                .finally(() => setCatalogLoading(false)),
         [],
     );
 
@@ -627,15 +471,6 @@ export const Models: FC = () => {
         });
     };
 
-    const setActivePrimaryTab = (primaryTab: PrimaryTab) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                category: primaryTab === "models" ? undefined : primaryTab,
-            }),
-        });
-    };
-
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
             search: (previous) => ({
@@ -645,102 +480,78 @@ export const Models: FC = () => {
         });
     };
 
-    const activeSortLabel =
-        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Most Popular";
-    const activeSortAccessibleLabel =
-        SORT_OPTIONS.find(({ value }) => value === activeSort)
-            ?.accessibleLabel ?? "Most popular";
     return (
         <div className="flex flex-col gap-6">
             <Section
-                title="Models"
-                framed
-                actionClassName="w-full sm:ml-auto sm:w-auto"
+                title={
+                    activePrimaryTab === "agent"
+                        ? "Agents"
+                        : activePrimaryTab === "mcp"
+                          ? "MCP"
+                          : "Models"
+                }
+                actionClassName="ml-auto"
                 action={
-                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                        <ExternalLinkButton
+                    activePrimaryTab === "models" && (
+                        <InlineLink
                             href="https://model-monitor.pollinations.ai"
-                            className="self-start sm:self-center"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap"
                         >
-                            <span className="inline-flex items-center gap-1.5">
-                                <TrendUpIcon className="h-4 w-4" />
-                                Model Health
-                            </span>
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            href="https://github.com/pollinations/pollinations/issues/5321"
-                            className="self-start sm:self-center"
-                        >
-                            <span className="inline-flex items-center gap-1.5">
-                                <GitHubIcon className="h-4 w-4" />
-                                Vote for next model
-                            </span>
-                        </ExternalLinkButton>
-                    </div>
+                            <ModelHealthIcon />
+                            Model health
+                        </InlineLink>
+                    )
                 }
             >
-                <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex w-full flex-col gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                            {PRIMARY_TABS.map((tab) => {
-                                const TabIcon = tab.Icon;
-                                return (
+                <div className="flex flex-col items-start gap-3">
+                    <fieldset
+                        className="flex min-w-0 flex-wrap gap-1.5"
+                        aria-label="Catalog type"
+                    >
+                        {PRIMARY_TABS.map(({ value, label, Icon }) => (
+                            <TabButton
+                                key={value}
+                                active={activePrimaryTab === value}
+                                onClick={() =>
+                                    setActiveTab(
+                                        value === "models" ? "all" : value,
+                                    )
+                                }
+                                ariaLabel={label}
+                            >
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Icon
+                                        className="h-4 w-4"
+                                        aria-hidden="true"
+                                    />
+                                    {label}
+                                </span>
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                    {activePrimaryTab === "models" && (
+                        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                                {MODEL_SECTION_ORDER.filter(
+                                    (section) =>
+                                        section === "all" ||
+                                        modelSections[section].length > 0,
+                                ).map((section) => (
                                     <TabButton
-                                        key={tab.value}
-                                        active={activePrimaryTab === tab.value}
-                                        onClick={() =>
-                                            setActivePrimaryTab(tab.value)
-                                        }
-                                        size="lg"
-                                        ariaLabel={`${tab.label}, ${primaryTabCounts[tab.value]} ${tab.value === "mcp" ? "servers" : tab.value === "agent" ? "agents" : "models"}`}
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={sectionLabels[section]}
                                     >
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <TabIcon className="h-4 w-4" />
-                                            {tab.label}
-                                            <TabCount
-                                                value={
-                                                    primaryTabCounts[tab.value]
-                                                }
-                                            />
-                                        </span>
+                                        {sectionLabels[section]}
                                     </TabButton>
-                                );
-                            })}
-                        </div>
-                        {activePrimaryTab === "models" && (
-                            <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {MODEL_SECTION_ORDER.filter(
-                                        (section) =>
-                                            section === "all" ||
-                                            modelSections[section].length > 0,
-                                    ).map((section) => (
-                                        <TabButton
-                                            key={section}
-                                            active={activeTab === section}
-                                            onClick={() =>
-                                                setActiveTab(section)
-                                            }
-                                            ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
-                                        >
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {sectionLabels[section]}
-                                                <TabCount
-                                                    value={
-                                                        modelSections[section]
-                                                            .length
-                                                    }
-                                                />
-                                            </span>
-                                        </TabButton>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0 max-w-md flex-1 basis-[240px]">
+                        <div className="catalog-search min-w-0 flex-1 basis-[240px]">
                             <div>
                                 <EditableCombobox
                                     value={visibleSearch}
@@ -769,6 +580,7 @@ export const Models: FC = () => {
                                     }
                                     aria-label={`Search ${searchTarget}`}
                                     autoComplete="off"
+                                    contentClassName="catalog-search-panel"
                                     startContent={
                                         <ModelFilterTokens
                                             tokens={renderedFilterTokens}
@@ -777,6 +589,23 @@ export const Models: FC = () => {
                                                 pendingRemovalIndex
                                             }
                                             onEdit={editFilter}
+                                            onChange={(token, value) => {
+                                                setSearch(
+                                                    replaceModelQueryFilterToken(
+                                                        getCancelledDraftSearch(),
+                                                        token.index,
+                                                        `${token.filter.key}:${value}`,
+                                                    ),
+                                                );
+                                                setDraftFilter(undefined);
+                                                setEditingFilterToken(
+                                                    undefined,
+                                                );
+                                                setPendingRemovalIndex(
+                                                    undefined,
+                                                );
+                                                setSearchOpen(false);
+                                            }}
                                         />
                                     }
                                 />
@@ -784,62 +613,10 @@ export const Models: FC = () => {
                         </div>
                         {activeTab !== "mcp" && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <Dropdown
-                                    align="end"
-                                    className="w-max p-2"
-                                    trigger={(open) => (
-                                        <Button
-                                            type="button"
-                                            size="md"
-                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                            className="shrink-0 justify-end gap-2"
-                                        >
-                                            <span className="text-right">
-                                                {activeSortLabel}
-                                            </span>
-                                            <ChevronIcon expanded={open} />
-                                        </Button>
-                                    )}
-                                >
-                                    {(close) => (
-                                        <div
-                                            role="menu"
-                                            aria-label="Sort models"
-                                            onKeyDown={handleSortMenuKeyDown}
-                                            className="flex flex-col gap-1"
-                                        >
-                                            {SORT_OPTIONS.map((option) => (
-                                                <DropdownItem
-                                                    key={option.value}
-                                                    role="menuitemradio"
-                                                    aria-label={
-                                                        option.accessibleLabel
-                                                    }
-                                                    aria-checked={
-                                                        activeSort ===
-                                                        option.value
-                                                    }
-                                                    onClick={() => {
-                                                        setActiveSort(
-                                                            option.value,
-                                                        );
-                                                        close();
-                                                    }}
-                                                    className={
-                                                        activeSort ===
-                                                        option.value
-                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                            : "justify-end text-right"
-                                                    }
-                                                >
-                                                    <span className="flex-1 text-right">
-                                                        {option.label}
-                                                    </span>
-                                                </DropdownItem>
-                                            ))}
-                                        </div>
-                                    )}
-                                </Dropdown>
+                                <ModelSortMenu
+                                    value={activeSort}
+                                    onChange={setActiveSort}
+                                />
                             </div>
                         )}
                     </div>
@@ -847,72 +624,76 @@ export const Models: FC = () => {
                 {(activePrimaryTab === "agent" ||
                     (activePrimaryTab === "models" &&
                         explicitModelSource !== "official")) && (
-                    <aside
-                        aria-label="Community privacy notice"
-                        className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
+                    <Alert
+                        intent="advisory"
+                        title="Community privacy"
+                        className="polli:bg-transparent"
                     >
-                        <WarningIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-warning-text" />
-                        <span className="min-w-0">
-                            <strong className="font-semibold text-theme-text-strong">
-                                Community privacy
-                            </strong>{" "}
-                            — Independent providers and configured fallbacks
-                            process requests under their own policies.{" "}
-                            <strong className="font-semibold text-theme-text-strong">
-                                Avoid sensitive data.
-                            </strong>{" "}
-                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                                <InlineLink
-                                    href="https://gen.pollinations.ai/docs#tag/Safety"
-                                    showIcon={false}
-                                >
-                                    Privacy filter
-                                </InlineLink>
-                                <span aria-hidden="true">·</span>
-                                <InlineLink
-                                    href="https://pollinations.ai/privacy"
-                                    showIcon={false}
-                                >
-                                    Privacy Policy
-                                </InlineLink>
-                            </span>
+                        Independent providers and configured fallbacks process
+                        requests under their own policies.{" "}
+                        <strong className="font-semibold text-theme-text-strong">
+                            Avoid sensitive data.
+                        </strong>{" "}
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
+                                Privacy filter
+                            </InlineLink>
+                            <span aria-hidden="true">·</span>
+                            <InlineLink href="https://pollinations.ai/privacy">
+                                Privacy Policy
+                            </InlineLink>
                         </span>
-                    </aside>
-                )}
-                {catalogError && activeTab !== "mcp" && (
-                    <Alert intent="danger" className="mb-4">
-                        {catalogError}
                     </Alert>
                 )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
-                ) : query && sectionModels[activeTab].length === 0 ? (
-                    <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match{" "}
-                        {visibleSearch.trim()
-                            ? `“${visibleSearch.trim()}”`
-                            : "the selected filters"}
-                        .
-                    </p>
                 ) : (
-                    <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <UnifiedModelTable
-                            listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
-                            allModels={sectionModels.all}
-                            imageModels={sectionModels.image}
-                            videoModels={sectionModels.video}
-                            model3dModels={sectionModels["3d"]}
-                            audioModels={sectionModels.audio}
-                            realtimeModels={sectionModels.realtime}
-                            textModels={sectionModels.text}
-                            embeddingModels={sectionModels.embedding}
-                            agentModels={sectionModels.agent}
-                            activeTab={activeTab}
-                        />
-                    </div>
+                    <SectionContent
+                        loading={catalogLoading}
+                        label={
+                            activePrimaryTab === "agent"
+                                ? "Loading agents…"
+                                : "Loading models…"
+                        }
+                    >
+                        {catalogError ? (
+                            <LoadError
+                                onRetry={() => {
+                                    setCatalogLoading(true);
+                                    void loadModelCatalog();
+                                }}
+                            >
+                                {catalogError}
+                            </LoadError>
+                        ) : query && sectionModels[activeTab].length === 0 ? (
+                            <p className="py-8 text-center text-sm text-theme-text-muted">
+                                No {searchTarget.toLowerCase()} match{" "}
+                                {visibleSearch.trim()
+                                    ? `“${visibleSearch.trim()}”`
+                                    : "the selected filters"}
+                                .
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <UnifiedModelTable
+                                    listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
+                                    allModels={sectionModels.all}
+                                    imageModels={sectionModels.image}
+                                    videoModels={sectionModels.video}
+                                    model3dModels={sectionModels["3d"]}
+                                    audioModels={sectionModels.audio}
+                                    realtimeModels={sectionModels.realtime}
+                                    textModels={sectionModels.text}
+                                    embeddingModels={sectionModels.embedding}
+                                    agentModels={sectionModels.agent}
+                                    activeTab={activeTab}
+                                />
+                            </div>
+                        )}
+                    </SectionContent>
                 )}
                 {activeTab !== "mcp" && (
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
                         {activeTab === "agent" && (
                             <p className="flex items-start gap-1.5">
                                 <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />

@@ -39,16 +39,16 @@ export const ModelHealthSchema = z
         }),
         success_rate: z.number().min(0).max(100).nullable().meta({
             description:
-                "Successful requests as a percentage over the last 24h; null with no measured requests.",
+                "Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests.",
         }),
         requests: z.number().int().nonnegative().meta({
             description:
-                "Measured final responses over the last 24h — also a rough popularity signal.",
+                "Number of eligible final responses in the health sample (at most 50 for community proxies).",
         }),
     })
     .meta({
         description:
-            "Recent gateway reliability over a rolling 24h window, refreshed roughly every 60s. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health.",
+            "Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
     });
 
 export type ModelHealth = z.infer<typeof ModelHealthSchema>;
@@ -93,6 +93,20 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     pricing_default_label: z.string().optional(),
+    pricing_dimensions: z
+        .array(
+            z.object({
+                key: z.string(),
+                label: z.string(),
+                unit: z.string().optional(),
+                values: z
+                    .record(z.string(), z.string())
+                    .describe(
+                        "Display values keyed by pricing variant name; the empty key is base pricing.",
+                    ),
+            }),
+        )
+        .optional(),
     pricing_adjustments: z
         .array(
             z.object({
@@ -110,6 +124,9 @@ export const ModelInfoSchema = z.object({
                         value: z.string(),
                         label: z.string(),
                         default: z.boolean().optional(),
+                        groupLabel: z.string().optional(),
+                        valueLabel: z.string().optional(),
+                        unit: z.string().optional(),
                     })
                     .optional(),
             }),
@@ -248,6 +265,7 @@ export function modelInfoFromDefinition(
                   )
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
+        pricing_dimensions: service.pricingDimensions,
         pricing_adjustments: service.billing?.adjustments?.map((rule) =>
             pricingAdjustmentInfoFromRule(rule, service),
         ),

@@ -53,6 +53,7 @@ import {
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import { ModelSortMenu } from "./model-sort-menu.tsx";
+import { ModelHealthIcon } from "./model-status-chips.tsx";
 import {
     type SectionType,
     sectionLabels,
@@ -509,7 +510,7 @@ export const Models: FC = () => {
                             size="sm"
                             className="inline-flex items-center gap-1.5 whitespace-nowrap"
                         >
-                            <UsageIcon className="h-4 w-4" />
+                            <ModelHealthIcon />
                             Model health
                         </InlineLink>
                     )

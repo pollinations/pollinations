@@ -70,9 +70,19 @@ const OPENROUTER_ROUTES = [
         "anthropic",
     ],
     [
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
+        "meta/muse-glimmer-30b:openrouter:together",
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
+    ],
+    [
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "moonshotai/kimi-k2.7-code",
+        "streamlake",
+    ],
+    [
+        "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
     ],
     [
         "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
@@ -308,7 +318,7 @@ describe("static provider fallbacks", () => {
             priceMultiplier: 1,
             fallbacks: [`${model}:openrouter:perplexity`],
         });
-        expect(primary.paidOnly).not.toBe(true);
+        expect(primary).not.toHaveProperty("paidOnly", true);
         expect(findModelByName(model)?.config()).toMatchObject({
             provider: "perplexity-ai",
             model: upstream,
@@ -351,6 +361,42 @@ describe("static provider fallbacks", () => {
                 cost: searchFee * 1.055,
             });
         }
+    });
+
+    it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
+        const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
+        const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
+        expect(primary).toMatchObject({
+            provider: "azure",
+            aliases: [],
+            fallbacks: ["openai/gpt-5.3-codex:azure:sweden"],
+            priceMultiplier: 0.75,
+            maxCompletionTokens: 128000,
+        });
+        expect(fallback).toMatchObject({
+            provider: "azure",
+            fallbackOnly: true,
+            hidden: true,
+            aliases: [],
+        });
+        expect(primary).not.toHaveProperty("paidOnly", true);
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(fallback.cost).toEqual(primary.cost);
+
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-5.3-codex",
+            usage: {
+                promptTextTokens: 10,
+                promptCachedTokens: 4,
+                promptCacheWriteTokens: 2,
+                completionTextTokens: 5,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000917, 12);
+        expect(billing.price.totalPrice).toBe(0.00006877);
+        expect(billing.price.totalPrice).toBe(billing.servedPrice);
     });
 
     it("preserves the Astra quote while recording Data Zone costs", () => {
@@ -456,6 +502,32 @@ describe("static provider fallbacks", () => {
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();
+    });
+
+    it("keeps a retirement date on the route that states it", () => {
+        const parentId = "google/gemini-2.5-flash-lite:search";
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            retirementDate: Date.UTC(2026, 9, 20),
+        };
+        const undatedId = `${parentId}:openrouter:ai-studio`;
+        const datedId = `${parentId}:openrouter:vertex`;
+        const services = mergeFallbacks(
+            { [parentId]: parent },
+            {
+                [parentId]: {
+                    [undatedId]: { provider: "openrouter" },
+                    [datedId]: {
+                        provider: "openrouter",
+                        retirementDate: Date.UTC(2027, 2, 15),
+                    },
+                },
+            },
+        );
+
+        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
+        expect(services[undatedId].retirementDate).toBeUndefined();
+        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {
@@ -593,9 +665,10 @@ describe("static provider fallbacks", () => {
             promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:openrouter:streamlake"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 0.85 / 1_000_000,
+            promptCacheWriteTokens: (0.7125 / 1_000_000) * 1.055,
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,

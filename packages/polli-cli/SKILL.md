@@ -44,7 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|claude-code\|codex\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -212,6 +212,10 @@ polli keys revoke <id>                                             # id comes fr
 ```bash
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
+polli harness claude-code on        # isolated Claude Code profile through Claude Code Router
+polli harness codex on              # explicit Pollinations provider through Codex Router
+polli harness codex on --model openai/gpt-5.4-nano
+polli harness claude-code on --no-smoke # configure without live billable probes
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
 polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
@@ -224,9 +228,9 @@ polli harness pi off                # restore the Pi config backed up before "on
 polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
 ```
-Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, OpenCode, OpenClaw, and Pi require their installed commands.
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; the other adapters require their installed commands. Claude Code Router (`>=3.1.1 <4.0.0`) also requires the `claude` command; Codex Router requires `>=0.6.0 <1.0.0` and completed guided setup. Router adapters run a one-word response, streaming, tool-call, and dedicated-key usage check unless `--no-smoke` is passed.
 
-Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). Claude Code Router uses its authenticated management API and an isolated `scope: ccr` profile; Codex Router uses its protected generic-provider files. Neither adapter replaces native client login or unrelated settings. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

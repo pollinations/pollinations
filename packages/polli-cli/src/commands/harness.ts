@@ -53,6 +53,10 @@ const withOnOptions = (command: Command) =>
         .option("--model <id>", "Default model for the harness")
         .option("--no-mcp", "Skip MCP tool configuration")
         .option(
+            "--no-smoke",
+            "Skip the live text, streaming, tool, and usage checks",
+        )
+        .option(
             "--no-browser",
             "Print the login URL instead of opening a browser",
         );

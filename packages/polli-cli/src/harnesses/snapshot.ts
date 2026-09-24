@@ -65,6 +65,10 @@ const loadSnapshot = (
     return JSON.parse(text) as Snapshot;
 };
 
+/** Whether this exact harness/file set has a persisted ownership snapshot. */
+export const hasSnapshot = (ctx: HarnessContext, id: string, paths: string[]) =>
+    readTextIfExists(snapshotPath(ctx, id, paths)) !== null;
+
 /**
  * Apply a config update with a persisted pre-change snapshot. A failed update
  * is rolled back immediately; a successful update stays reversible with `off`.

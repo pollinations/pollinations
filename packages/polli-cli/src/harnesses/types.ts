@@ -8,6 +8,7 @@ export interface HarnessOnOptions {
     model?: string;
     browser?: boolean;
     mcp?: boolean;
+    smoke?: boolean;
 }
 
 export interface HarnessModel {
@@ -23,8 +24,15 @@ export interface HarnessResult {
     harness: string;
     label: string;
     configured: boolean;
+    installed?: boolean;
+    ready?: boolean;
+    provider?: boolean;
+    key?: boolean;
+    version?: string;
     model?: string;
     mcp?: boolean;
+    smoke?: boolean;
+    prerequisites?: string[];
     files: string[];
     outcome?: OffOutcome;
 }

@@ -46,6 +46,17 @@ const MODEL3D_BASE_SERVICES = {
                 },
             },
             "Low resolution",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "Low",
+                        "medium": "Medium",
+                        "high": "High",
+                    },
+                },
+            ],
         ),
         title: "Trellis 2",
         description: "Image-to-3D generation with selectable output detail",

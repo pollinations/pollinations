@@ -93,6 +93,20 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     pricing_default_label: z.string().optional(),
+    pricing_dimensions: z
+        .array(
+            z.object({
+                key: z.string(),
+                label: z.string(),
+                unit: z.string().optional(),
+                values: z
+                    .record(z.string(), z.string())
+                    .describe(
+                        "Display values keyed by pricing variant name; the empty key is base pricing.",
+                    ),
+            }),
+        )
+        .optional(),
     pricing_adjustments: z
         .array(
             z.object({
@@ -110,6 +124,9 @@ export const ModelInfoSchema = z.object({
                         value: z.string(),
                         label: z.string(),
                         default: z.boolean().optional(),
+                        groupLabel: z.string().optional(),
+                        valueLabel: z.string().optional(),
+                        unit: z.string().optional(),
                     })
                     .optional(),
             }),
@@ -248,6 +265,7 @@ export function modelInfoFromDefinition(
                   )
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
+        pricing_dimensions: service.pricingDimensions,
         pricing_adjustments: service.billing?.adjustments?.map((rule) =>
             pricingAdjustmentInfoFromRule(rule, service),
         ),

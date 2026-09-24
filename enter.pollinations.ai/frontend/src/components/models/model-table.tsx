@@ -12,7 +12,6 @@ import {
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
-    getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
     hasPollinationsTools,
@@ -21,11 +20,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import {
-    getModelTitleTooltipContent,
-    ModelRow,
-    PerPollenEstimate,
-} from "./model-row.tsx";
+import { ModelRow, ModelTitle, PerPollenEstimate } from "./model-row.tsx";
 import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
@@ -34,7 +29,6 @@ import {
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
 import {
-    ModelPricingControls,
     ModelPricingLedger,
     useModelPricingSelection,
 } from "./price-badge.tsx";
@@ -166,8 +160,6 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
-    const displayName = getModelDisplayName(model);
-    const titleTooltip = getModelTitleTooltipContent(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -176,7 +168,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
-    const publicModelName = displayName || model.name;
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
@@ -200,70 +191,45 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         className="h-10 w-px shrink-0 bg-divider"
                     />
                 )}
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                        {titleTooltip ? (
-                            <Tooltip
-                                triggerAs="span"
-                                content={titleTooltip}
-                                ariaLabel={`${publicModelName}: model details`}
-                                className="min-w-0"
-                                tapEnabled
-                                displayContents
-                            >
-                                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                    {publicModelName}
-                                </span>
-                            </Tooltip>
-                        ) : (
-                            <span className="min-w-0 truncate text-left text-sm font-medium leading-tight">
-                                {publicModelName}
-                            </span>
-                        )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex min-h-5 min-w-0 items-center text-sm font-medium leading-tight">
+                        <ModelTitle model={model} />
                     </div>
-                    <CopyValue
-                        value={model.name}
-                        label={`Copy model id ${model.name}`}
-                        showCopyIcon
-                    />
+                    <div className="flex min-h-5 min-w-0 items-center">
+                        <CopyValue
+                            value={model.name}
+                            label={`Copy model id ${model.name}`}
+                            showCopyIcon
+                        />
+                    </div>
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
                             size="footer"
-                            className="inline-flex w-fit max-w-full items-center"
+                            className="inline-flex min-h-5 w-fit max-w-full items-center"
                         >
                             <span className="truncate">{model.publisher}</span>
                         </InlineLink>
                     )}
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                            <MobileMetadataBadges
-                                inputModalities={inputModalities}
-                                capabilities={capabilities}
-                                modalityLabel={modalityLabel}
-                                capabilityLabel={capabilityLabel}
-                                perUserRpm={model.perUserRpm}
-                            />
-                            <ModelPricingControls
-                                model={model}
-                                pricing={pricing}
+                    <MobileMetadataBadges
+                        inputModalities={inputModalities}
+                        capabilities={capabilities}
+                        modalityLabel={modalityLabel}
+                        capabilityLabel={capabilityLabel}
+                        perUserRpm={model.perUserRpm}
+                    />
+                    {(model.health || showNew || showAlpha) && (
+                        <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                            <ModelStatusChips
+                                health={model.health}
+                                communityProxy={Boolean(
+                                    model.community && !model.agent,
+                                )}
+                                showNew={showNew}
+                                showAlpha={showAlpha}
                             />
                         </div>
-                    </div>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                        <ModelStatusChips
-                            health={model.health}
-                            communityProxy={Boolean(
-                                model.community && !model.agent,
-                            )}
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -282,9 +248,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <ModelPricingLedger
+                        modelName={model.displayName ?? model.name}
                         pricing={pricing}
                         className="w-full"
                         align="left"
+                        requestBadge={
+                            <BalanceAccessChip access={balanceAccess} />
+                        }
                         hasTools={pollinationsTools}
                         requestEstimate={
                             <PerPollenEstimate model={model} ledger />
@@ -320,7 +290,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
+        <div className="inline-flex min-h-5 items-center gap-1.5 text-theme-text-muted">
             {inputModalities.length > 0 && (
                 <Tooltip
                     triggerAs="span"
@@ -359,7 +329,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     tapEnabled
                     displayContents
                 >
-                    <span className="inline-flex items-center gap-1 text-theme-text-soft">
+                    <span className="inline-flex items-center gap-1">
                         {capabilities.map((key) => {
                             const Icon = CAPABILITY_ICON[key];
                             return <Icon key={key} className="h-4 w-4" />;

@@ -593,6 +593,7 @@ describe("static provider fallbacks", () => {
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
+            "x-ai/grok-4.6:xai",
         ]);
         expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
             TEXT_SERVICES["x-ai/grok-4.6"].cost,
@@ -876,6 +877,11 @@ describe("static provider fallbacks", () => {
             responsesEndpoint:
                 "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
             responsesAuthHeader: "api-key",
+        });
+        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            model: "grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

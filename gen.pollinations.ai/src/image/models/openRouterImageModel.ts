@@ -27,7 +27,6 @@ const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
 // Docs show PNG, but the live endpoint returned WebP (2026-09-23).
-const RECRAFT_FLASH_MEDIA_TYPES = ["image/webp", "image/png"];
 const RECRAFT_FLASH_ASPECT_RATIOS = [
     "1:1",
     "4:3",
@@ -752,14 +751,6 @@ export async function callOpenRouterRecraftFlashAPI(
     if (!generatedImage?.b64_json) {
         throw buildOpenRouterNoImageError(data);
     }
-    if (!RECRAFT_FLASH_MEDIA_TYPES.includes(generatedImage.media_type ?? "")) {
-        throw UpstreamError.fromProvider(502, {
-            message: `OpenRouter image API returned unsupported media type: ${generatedImage.media_type || "missing"}`,
-            responseBody: JSON.stringify(data),
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
-        });
-    }
-
     logOps("Recraft Flash generation complete", {
         aspectRatio,
         providerCost: data.usage?.cost,

@@ -1166,37 +1166,6 @@ describe("OpenRouter Recraft Flash", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it.each([
-        "image/webp",
-        "image/png",
-    ])("accepts a %s response", async (mediaType) => {
-        useOpenRouterKey();
-        mockFlashResponse([], mediaType);
-
-        const result = await callOpenRouterRecraftFlashAPI(
-            "raster",
-            flashParams,
-        );
-
-        expect(result.buffer).toEqual(PNG);
-    });
-
-    it.each([
-        null,
-        "image/svg+xml",
-        "image/gif",
-    ])("rejects a %s response media type", async (mediaType) => {
-        useOpenRouterKey();
-        mockFlashResponse([], mediaType);
-
-        await expect(
-            callOpenRouterRecraftFlashAPI("bad media", flashParams),
-        ).rejects.toMatchObject({
-            status: 502,
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
-        });
-    });
-
     it("maps a content-policy rejection to a 400", async () => {
         useOpenRouterKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

@@ -1414,6 +1414,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000422,
     },
   },
+  "inclusionai/ling-3.0-flash-vl": {
+    "cost": {
+      "completionTextTokens": 0.0000001899,
+      "promptCachedTokens": 0.00000001266,
+      "promptImageTokens": 0.0000000633,
+      "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
+    },
+    "price": {
+      "completionTextTokens": 0.0000001899,
+      "promptCachedTokens": 0.00000001266,
+      "promptImageTokens": 0.0000000633,
+      "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
+    },
+  },
   "krea/krea-2-medium": {
     "cost": {
       "completionImageTokens": 0.03,
@@ -1630,18 +1646,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax/minimax-h3-max-turbo": {
     "cost": {
-      "completionVideoSeconds": 0.00625,
+      "completionVideoSeconds": 0.025,
     },
     "costVariants": {
       "1080p": {
-        "completionVideoSeconds": 0.02,
+        "completionVideoSeconds": 0.08,
       },
       "768p": {
-        "completionVideoSeconds": 0.01,
+        "completionVideoSeconds": 0.04,
       },
     },
     "price": {
-      "completionVideoSeconds": 0.00625,
+      "completionVideoSeconds": 0.025,
     },
   },
   "minimax/minimax-m2.7": {

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15397,
+  "title": "feat: add xAI direct as third Grok 4.6 fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15397",
+  "merged_at": "2026-09-24T23:51:54Z",
+  "labels": [
+    "FEATURE",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Grok 4.6 only falls back between two Azure regions, so anything that hits Grok on Azure as a whole (timeouts in both regions, both regions rate-limited) reaches users: about 5% of real requests over the last 17 days.\n\n- Adds `x-ai/grok-4.6:xai` (`api.x.ai`, model `grok-4.6`) after East US → Sweden, using the existing `XAI_API_KEY`\n- Records cost at xAI's rates from `/v1/language-models/grok-4.6`: $2 in, $0.50 cached, $6 out, with text, cached and output doubled from 200K prompt tokens. Callers keep the Azure price at 0.75×\n- Costs cash only when both Azure regions fail; estimated under $2/week at current traffic\n\nVerified locally with both Azure keys broken:\n- **Catalog:** the route stays hidden and is rejected when requested by name.\n- **Served by xAI:** plain requests, the alias, streaming with usage and `[DONE]`, a tiny `max_tokens`, parallel and forced tools, JSON schema, `reasoning_effort`, two-image input, prompt caching and an 8-request burst all came back from `x-ai/grok-4.6:xai` with `x-fallback-target: config.targets[2]`.\n- **Billing:** cost in staging `generation_event_v2` matched xAI's `cost_in_usd_ticks` exactly.\n- **Errors:** `presence_penalty` returns a clear 400, same as Azure.\n- **Primary:** with real keys, East US still serves first.\n\nGen and enter test suites and type checks pass.\n\nNote: xAI keeps API requests for 30 days for abuse review unless Zero Data Retention (ZDR) is enabled on the team.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A third Grok hive",
+    "blurb": "Grok 4.6 now has a third route home. When both Azure regions are having a long afternoon, the request can quietly continue through xAI instead.",
+    "summary": "Added the hidden `x-ai/grok-4.6:xai` provider as Grok 4.6's third fallback after Azure East US and Sweden, preserving Azure-first routing while supporting streaming, tools, JSON schema, reasoning effort, images, and prompt caching when both Azure regions fail.",
+    "impact": "Grok 4.6 requests now have a direct xAI recovery path for Azure-wide timeouts or rate limits, while callers keep the existing Azure-facing price and primary East US route.",
+    "keywords": [
+      "grok-4.6",
+      "xai",
+      "fallbacks",
+      "azure",
+      "text-api",
+      "reliability"
+    ],
+    "visual_concept": "Depict Grok 4.6 as a cozy three-path garden network: two Azure-colored relay flowers lead to a third xAI starry telescope/terminal route, with Polli calmly guiding a glowing request packet along the backup path. A CRT monitor robot can watch the three routes light up, while code-vines and flowers make the failover feel like a healthy garden rather than an alarm.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny route-planner cap as she guides a glowing request packet through a three-branch garden of code-vines: two relay flowers and a third starry xAI telescope terminal; a chunky CRT monitor robot watches the fallback paths light up. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text \"GROK 4.6\", nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15397.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny route-planner cap as she guides a glowing request packet through a three-branch garden of code-vines: two relay flowers and a third starry xAI telescope terminal; a chunky CRT monitor robot watches the fallback paths light up. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text \"GROK 4.6\", nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T23:52:46.886896+00:00"
+}

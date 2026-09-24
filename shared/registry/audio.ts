@@ -499,6 +499,16 @@ const AUDIO_BASE_SERVICES = {
                 },
             },
             "Standard transcription",
+            [
+                {
+                    "key": "diarization",
+                    "label": "Speakers",
+                    "values": {
+                        "": "Standard",
+                        "diarization": "Identify",
+                    },
+                },
+            ],
         ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
@@ -564,6 +574,28 @@ const AUDIO_BASE_SERVICES = {
                 },
             },
             "Standard transcription",
+            [
+                {
+                    "key": "prompting",
+                    "label": "Prompting",
+                    "values": {
+                        "": "Off",
+                        "prompting": "On",
+                        "diarization": "Off",
+                        "prompting_diarization": "On",
+                    },
+                },
+                {
+                    "key": "diarization",
+                    "label": "Speakers",
+                    "values": {
+                        "": "Standard",
+                        "prompting": "Standard",
+                        "diarization": "Identify",
+                        "prompting_diarization": "Identify",
+                    },
+                },
+            ],
         ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:

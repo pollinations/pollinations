@@ -28,6 +28,33 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+function countReferenceVideos(value: unknown): number {
+    if (Array.isArray(value)) {
+        return value.reduce(
+            (total, item) => total + countReferenceVideos(item),
+            0,
+        );
+    }
+    if (!value || typeof value !== "object") return 0;
+
+    const record = value as Record<string, unknown>;
+    if (record.type === "video_url" || record.type === "input_video") return 1;
+    return Object.values(record).reduce<number>(
+        (total, item) => total + countReferenceVideos(item),
+        0,
+    );
+}
+
+/** Routes that declare no modalities at all (community endpoints, agents)
+ * are left to their own contract; only a declared modality list gates. */
+function declaresNoVideo(definition: ModelDefinition): boolean {
+    return (
+        Array.isArray(definition.inputModalities) &&
+        definition.inputModalities.length > 0 &&
+        !definition.inputModalities.includes("video")
+    );
+}
+
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -97,6 +124,13 @@ export function textCapabilityError(
         countReferenceImages(request) > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
+    if (
+        definition.maxReferenceVideos !== undefined &&
+        countReferenceVideos(request) > definition.maxReferenceVideos
+    )
+        return `This model supports at most ${definition.maxReferenceVideos} reference videos`;
+    if (declaresNoVideo(definition) && countReferenceVideos(request) > 0)
+        return "This model does not support video input";
 }
 
 /** Whether a fallback route can honor this text request's public contract. */

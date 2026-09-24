@@ -797,6 +797,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
+        name: "inclusionai/ling-3.0-flash-vl",
+        config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
+    },
+    {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinking,

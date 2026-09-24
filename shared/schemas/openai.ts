@@ -89,14 +89,26 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
-// Video URL content type - currently supported by Gemini models only
-// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+// Video URL content type. Gemini takes YouTube, gs:// and https:// URLs; the
+// OpenRouter pinned-route models (e.g. inclusionai/ling-3.0-flash-vl) take
+// https:// and data:video/...;base64 URLs.
 const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
     type: z.literal("video_url"),
-    video_url: z.object({
-        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
-        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
-    }),
+    video_url: z
+        .object({
+            url: z
+                .string()
+                .describe(
+                    "Video URL: https:// or data:video/...;base64, plus YouTube and gs:// for Gemini models.",
+                ),
+            mime_type: z
+                .string()
+                .optional()
+                .describe(
+                    "Video MIME type, e.g. video/mp4. Auto-detected for YouTube URLs.",
+                ),
+        })
+        .describe("Reference video for models advertising video input."),
 });
 
 // Anthropic prompt caching support
@@ -648,6 +660,7 @@ export const CompletionUsageSchema = z
                     .nullish(),
                 cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
+                video_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         reasoning_tokens: z.number().int().nonnegative().nullish(),

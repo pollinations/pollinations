@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code, Codex, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -33,6 +33,8 @@ opencode upgrade
 openclaw update
 pi update self
 prime-agent update
+codex-router update
+npm install -g @musistudio/claude-code-router
 ```
 
 Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `>=22.19.0`. Upgrade Node before updating either harness if needed. Bloom requires Python 3.12 or newer. Stop a running DSH server before launching its replacement, and back up saved sessions before a major harness upgrade.
@@ -47,6 +49,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [Claude Code](https://claude.com/claude-code) | **Available now** — `polli harness claude-code on` | Configures Claude Code through [Claude Code Router](https://github.com/musistudio/claude-code-router): a dedicated provider plus an isolated `Pollinations` profile, applied through the router's own management API. |
+| [Codex](https://developers.openai.com/codex) | **Available now** — `polli harness codex on` | Configures Codex through [Codex Router](https://github.com/duolahypercho/codex-router): a `pollinations` generic provider, its protected key, and the live Pollinations catalog, all through `codex-router`'s own commands. |
 
 ## Bloom CLI
 
@@ -107,3 +111,95 @@ polli harness prime off
 ```
 
 `on` requires Prime Agent to be installed with its official installer. It registers the current compatible Pollinations model catalog in `~/.prime/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`.
+
+## Claude Code
+
+```bash
+npm install -g @musistudio/claude-code-router   # if it is not installed yet
+ccr start
+npx @pollinations/cli@latest harness claude-code on
+polli harness claude-code status
+polli harness claude-code off
+```
+
+`on` requires Claude Code Router to be installed and **running**: polli changes the router's
+configuration through the same authenticated management API its own UI uses (`getConfig` /
+`saveConfig` on `service.json`'s `ccr_web_token`), because the router keeps its config in
+`config.sqlite` and its running instance owns that file. If the router is not running, `on`
+stops before login or key creation and tells you to run `ccr start`.
+
+It adds a `pollinations` provider (base URL `https://gen.pollinations.ai/v1`, a dedicated
+Pollinations key, and the live tool-calling catalog) and an isolated `Pollinations` profile for
+the `claude-code` agent with `scope: ccr`, so nothing is written into `~/.claude` or your native
+Claude login until you launch Claude Code through that profile. Choose another default model with
+`--model <id>`.
+
+Apply the profile the way the router expects:
+
+```bash
+ccr Pollinations              # launch Claude Code through the profile
+# or: ccr ui → Agent Config → Claude Code → Pollinations
+```
+
+`status` reports whether the router is running, whether the Pollinations provider and profile are
+present, and the selected model. `off` removes only that provider and profile through the same
+API, does not re-apply a profile, and restores `~/.claude/settings.json` byte-for-byte when
+nothing else has edited it since `on`.
+
+### Troubleshooting
+
+- `on` says the router is not running: start it with `ccr start`. Polli changes the router's
+  configuration through its management API, so it never edits `config.sqlite` behind a stopped
+  router's back.
+- The management API answers `401`: the router is running with a different web token than the one
+  in `service.json`. Restart it with `ccr start` so a fresh `service.json` is published.
+- Version skew: after `npm install -g @musistudio/claude-code-router`, run
+  `polli harness claude-code on` again so the provider's model list is refreshed from the live
+  catalog.
+
+## Codex
+
+```bash
+codex-router setup --guided     # if Codex Router is not set up yet
+npx @pollinations/cli@latest harness codex on
+polli harness codex status
+polli harness codex off
+```
+
+`on` requires [Codex Router](https://github.com/duolahypercho/codex-router) on `PATH`. It stops
+before login or key creation if the router is missing, and prints the official installers.
+
+Everything happens through the router's own commands: a generic provider
+(`providers generic add pollinations --base-url https://gen.pollinations.ai/v1 --adapter
+openai-chat`), its protected key, the curated live catalog
+(`curate-models pollinations --models … --apply`), the Codex wiring (`enable`, the same step
+`codex-router setup` runs), and the routed default model (`control model-set`). The dedicated
+Pollinations key is written with the router's own credential code, never into `config.toml`,
+never into your shell history, and never into a second config file. Because `enable` is also what
+installs the router's background service, `on` is the full "make Codex route through the router"
+step rather than a half-configuration. Choose another default model with `--model <id>`.
+
+```bash
+# optional end-to-end check through the router (one small billed request);
+# the slug is pollinations/<model id>, and the probe asks for its own confirmation
+codex-router test-model pollinations/openai/gpt-5.4-nano --live --yes
+```
+
+`status` reports whether the provider is enabled, the key is stored, the Codex wiring is present,
+and which model is selected. `off` runs the router's own `providers generic remove pollinations`
+(withdrawing the provider's key, curated routes, and picker decisions) plus `codex-router
+disable` — the router's own inverse of `enable`, and only when polli was the run that added that
+wiring. It restores your `config.toml` byte-for-byte when nothing else has edited it since `on`;
+otherwise only the Pollinations-owned entries are removed, leaving the router, its service, and
+other providers installed.
+
+### Troubleshooting
+
+- `on` stops at `Codex Router is required`: install the router, run `codex-router setup --guided`
+  (it needs a signed-in Codex CLI), then run `polli harness codex on` again.
+- `on` stops at the credential step: the router is the source of truth —
+  `codex-router providers generic credential pollinations status`. If it reports the key as
+  missing, `codex-router providers generic credential pollinations set` accepts one by hand.
+- Version skew: after `codex-router update`, run `polli harness codex on` again so the curated
+  catalog and the routed default model are refreshed.
+

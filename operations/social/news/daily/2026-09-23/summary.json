@@ -1,0 +1,83 @@
+{
+  "date": "2026-09-23",
+  "period_start": "2026-09-23",
+  "period_end": "2026-09-23",
+  "title": "The image API got three new models and fewer queues",
+  "summary": "A busy garden day: bigger-context text models, a much wider image bench, healthier discovery, and shared tools spreading through the ecosystem.\n\nMAI Image 2.6 and its Flash variant joined the public image endpoints for generation and one-reference edits, while Azure-hosted FLUX 1.1 Pro added seed-aware PNG generation with regional fallback. GPT Image 2, Flare, and Sunburst also lost their local per-user RPM ceilings where OpenAI overflow is available, so larger bursts can run until upstream capacity is actually exhausted.\n\nGPT-5.3 Codex is now available through Azure with a verified 400K-token context window, supporting tools, reasoning, files, images, structured output, streaming, and terminal workflows. Xiaomi MiMo V2.6 Flash and Pro also landed with image input and million-token context windows, while MiniMax M2.7 was rerouted so requests once again receive the model they asked for rather than an accidental successor.\n\nPublic model discovery now favors community proxy models that have cleared an 80% success rate across their recent eligible requests, while unknown-health models and the complete catalog remain available when needed. The contributor publishing path also opened to selected MCP Quest agents and Saauf, which means more community models can make it into that catalog through the existing workflow.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 15279,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15282,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15298,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15304,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15311,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15319,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15320,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15328,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15330,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15331,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15333,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15338,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15339,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15343,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15346,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15351,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15367,
+      "date": "2026-09-23"
+    },
+    {
+      "number": 15375,
+      "date": "2026-09-23"
+    }
+  ],
+  "generated_at": "2026-09-24T06:30:47.627029+00:00"
+}

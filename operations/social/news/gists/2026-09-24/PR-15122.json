@@ -1,0 +1,37 @@
+{
+  "pr_number": 15122,
+  "title": "test(gen): bill FFmpeg MCP usage for ag_ run tokens",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/15122",
+  "merged_at": "2026-09-24T23:02:57Z",
+  "labels": [
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "## Summary\n- Test the `/mcp/ffmpeg` route with an `ag_` agent run token.\n- Verify the parent wallet pays the usage receipt and the upstream MCP never receives the bearer.\n\nAddresses #14171 (MCP regression coverage only; live Floret verification and docs remain).\nFixes #15417.\n\n## Test plan\n- `cd gen.pollinations.ai && npx vitest run test/mcp-proxy.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The receipt finds its hive",
+    "blurb": "A regression test now follows an ag_ agent run token through the FFmpeg MCP route, making sure the right wallet gets the tiny tab. The upstream service keeps its hands off the bearer token.",
+    "summary": "Added MCP proxy regression coverage verifying that `/mcp/ffmpeg` bills an `ag_` agent run token's parent wallet while withholding the bearer token from the upstream MCP.",
+    "impact": "This protects the FFmpeg MCP billing path so agent-run usage receipts stay attached to the parent wallet and upstream MCP services do not receive client bearer credentials.",
+    "keywords": [
+      "mcp",
+      "ffmpeg",
+      "billing",
+      "agent-run-tokens",
+      "regression-test",
+      "gen"
+    ],
+    "visual_concept": "A cozy billing-and-routing scene: Polli, wearing a tiny accountant visor, guides a glowing usage receipt from an ag_ token to a parent-wallet flower pot while a friendly CRT monitor robot runs the FFmpeg route. A sealed bearer-token envelope remains safely outside the upstream MCP garden gate, with code-plants and soft lime-green terminal light reinforcing secure routing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully delivering a glowing usage receipt from an `ag_` token to a parent-wallet flower pot beside a friendly CRT monitor robot; a sealed bearer-token envelope stays outside a small upstream garden gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, pixel-font text: \"ROUTE RECEIPT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15122.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully delivering a glowing usage receipt from an `ag_` token to a parent-wallet flower pot beside a friendly CRT monitor robot; a sealed bearer-token envelope stays outside a small upstream garden gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, pixel-font text: \"ROUTE RECEIPT\"."
+  },
+  "generated_at": "2026-09-24T23:03:57.835658+00:00"
+}

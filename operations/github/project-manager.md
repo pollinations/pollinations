@@ -57,9 +57,11 @@ Return an empty `flags` list when none apply.
 
 For an external author, pick exactly one:
 
-- `High`: Blocking or broken for users: bugs that break functionality, billing or payment problems, outages
-- `Medium`: A real problem with a workaround or limited impact, or a concrete, well-scoped request
-- `Low`: Nice-to-have ideas and feature wishes, general questions, documentation, cosmetic issues
+- `High`: Something is broken or blocking for users: bugs that break functionality, billing or payment problems, outages
+- `Medium`: Something is wrong but users have a workaround or the impact is limited
+- `Low`: Feature requests and ideas (however detailed or well-scoped), questions, integration help, documentation, cosmetic issues
+
+Priority reflects harm to users today, not how valuable or well-written a request is.
 
 Paying customers are raised to `High` automatically downstream.
 

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15405,
+  "title": "feat: split Quest vs Paid spending by community models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15405",
+  "merged_at": "2026-09-24T16:06:37Z",
+  "labels": [
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Start every linear time-series y-axis at 0 across the five observability dashboards (21 panels), with a test that fails if a new panel doesn't. The balance panels keep their soft minimum so negative balances stay visible; the log-scale concentration panel is unchanged.\n- Split Users & Balances \"Quest vs Paid spending\" into Paid/Quest × Pollinations/community models. Totals are unchanged: community spending was already included but not visible. Over the last 90 days it was 2.8% of Paid and 18.6% of Quest, and the 07/11 spike is Quest Pollen spent on one community model.\n- Fix panel descriptions that called Paid consumption revenue. 75% of community-model spend and all BYOP markup are credited back to owners in the payer's bucket, so Paid consumption isn't cash or Pollinations revenue.\n\nChecked with `npm test`, the new query against production Tinybird, and the panel rendered in a local Grafana.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger grows branches",
+    "blurb": "The observability garden now separates Paid and Quest spending by Pollinations and community models. The totals were always there; now the paths through the pollen are visible too.",
+    "summary": "Updated 21 observability dashboard panels so linear time-series axes begin at zero, and split the Users & Balances Quest vs Paid spending view into Paid/Quest × Pollinations/community-model series while preserving totals.",
+    "impact": "Operators can now clearly identify community-model spending—including the 07/11 Quest spike—while dashboard descriptions accurately distinguish consumption from revenue and new panels are tested for zero-based axes.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "dashboards",
+      "community-models",
+      "quest",
+      "spending",
+      "monitoring"
+    ],
+    "visual_concept": "A cozy accounting garden: Polli, wearing tiny accountant glasses, tends four labeled flowering branches representing Paid and Quest spending across Pollinations and community models. A friendly CRT monitor robot displays a zero-based chart with a visible community-model bloom, while vines and code-plants make the dashboard work feel like careful garden bookkeeping.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, tending four code-plants labeled Paid, Quest, Pollinations, and Community beside a chunky CRT monitor robot showing a clean chart whose axis starts at 0; one Quest community-model plant has a tall flowering spike. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, dark purple (#110518) pixel outlines, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15405.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, tending four code-plants labeled Paid, Quest, Pollinations, and Community beside a chunky CRT monitor robot showing a clean chart whose axis starts at 0; one Quest community-model plant has a tall flowering spike. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, dark purple (#110518) pixel outlines, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-24T16:15:08.974413+00:00"
+}

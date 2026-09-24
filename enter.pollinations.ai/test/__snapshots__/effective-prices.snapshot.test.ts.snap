@@ -1270,6 +1270,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000422,
     },
   },
+  "inclusionai/ling-3.0-flash-vl": {
+    "cost": {
+      "completionTextTokens": 0.0000001899,
+      "promptCachedTokens": 0.00000001266,
+      "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
+    },
+    "price": {
+      "completionTextTokens": 0.0000001899,
+      "promptCachedTokens": 0.00000001266,
+      "promptTextTokens": 0.0000000633,
+      "promptVideoTokens": 0.0000000633,
+    },
+  },
   "krea/krea-2-medium": {
     "cost": {
       "completionImageTokens": 0.03,

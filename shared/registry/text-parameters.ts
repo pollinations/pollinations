@@ -230,6 +230,25 @@ export const CHAT_PARAMETERS = {
         "stop",
         "logit_bias",
     ],
+    // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
+    openRouterLing: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "logit_bias",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+    ],
+    // OpenRouter Novita tag for Hy3 (2026-09-12).
     openRouterNemotron: [
         ...CHAT,
         ...SAMPLING,

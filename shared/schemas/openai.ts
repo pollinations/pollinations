@@ -89,8 +89,10 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
-// Video URL content type - currently supported by Gemini models only
-// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+// Video URL content type. Gemini models accept YouTube and gs:// URLs
+// natively; OpenRouter routes with video-capable upstreams (e.g.
+// inclusionai/ling-3.0-flash-vl pinned to deepinfra/fp16) accept https://
+// and data: URLs, which pass through unmodified.
 const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
     type: z.literal("video_url"),
     video_url: z.object({

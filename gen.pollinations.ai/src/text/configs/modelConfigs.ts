@@ -239,6 +239,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
+    // -- xAI direct -----------------------------------------------------------
+    "grok-4.6-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.6",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(

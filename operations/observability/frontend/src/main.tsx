@@ -6,14 +6,12 @@ import {
     useDashboardSession,
 } from "@pollinations/auth/react";
 import {
-    Alert,
     AppHeader,
     ChevronIcon,
     ColorModeToggle,
     Dropdown,
     DropdownItem,
     TabButton,
-    Text,
 } from "@pollinations/ui";
 import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useEffect, useState } from "react";
@@ -22,7 +20,10 @@ import {
     currentDashboards,
     type Dashboard,
     dashboardSrc,
+    hasTrafficSelector,
     readDashboardUid,
+    readTraffic,
+    TRAFFIC,
 } from "./dashboards.ts";
 
 function useDashboards(): Dashboard[] {
@@ -44,22 +45,24 @@ function useDashboards(): Dashboard[] {
     return dashboards;
 }
 
-function useSelectedDashboard() {
-    const [uid, setUid] = useState(() =>
-        readDashboardUid(window.location.search),
-    );
+/** State kept in one URL search parameter, so links and back/forward work. */
+function useUrlParam<T extends string>(
+    name: string,
+    read: (search: string) => T,
+) {
+    const [value, setValue] = useState(() => read(window.location.search));
     useEffect(() => {
-        const sync = () => setUid(readDashboardUid(window.location.search));
+        const sync = () => setValue(read(window.location.search));
         window.addEventListener("popstate", sync);
         return () => window.removeEventListener("popstate", sync);
-    }, []);
-    const select = (next: string) => {
+    }, [read]);
+    const select = (next: T) => {
         const url = new URL(window.location.href);
-        url.searchParams.set("d", next);
+        url.searchParams.set(name, next);
         window.history.pushState(null, "", url);
-        setUid(next);
+        setValue(next);
     };
-    return { uid, select };
+    return [value, select] as const;
 }
 
 function DashboardPicker({
@@ -117,8 +120,9 @@ function Dashboards({
     user: NonNullable<ReturnType<typeof useDashboardSession>["user"]>;
 }) {
     const dashboards = useDashboards();
-    const { uid, select } = useSelectedDashboard();
-    const src = dashboardSrc(uid);
+    const [uid, select] = useUrlParam("d", readDashboardUid);
+    const [traffic, selectTraffic] = useUrlParam("traffic", readTraffic);
+    const src = dashboardSrc(uid, traffic);
     return (
         <div className="flex h-dvh flex-col bg-app-bg">
             <AppHeader navLabel="Observability links">
@@ -127,6 +131,24 @@ function Dashboards({
                     selected={uid}
                     onSelect={select}
                 />
+                {hasTrafficSelector(uid) && (
+                    <fieldset
+                        aria-label="Traffic"
+                        className="m-0 flex gap-1 border-0 p-0"
+                    >
+                        {TRAFFIC.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={value === traffic}
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => selectTraffic(value)}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                )}
                 <ColorModeToggle />
                 <DashboardAccountMenu user={user} onSignOut={signOut} />
             </AppHeader>
@@ -144,20 +166,15 @@ function Dashboards({
 
 function App() {
     const { user, isPending, error } = useDashboardSession();
-    if (isPending)
+    if (isPending || error || !user)
         return (
-            <main>
-                <Text>Checking sign-in…</Text>
-            </main>
+            <DashboardSignIn
+                appName="Observability"
+                onSignIn={signIn}
+                isPending={isPending}
+                sessionError={error}
+            />
         );
-    if (error)
-        return (
-            <main>
-                <Alert>{error}</Alert>
-            </main>
-        );
-    if (!user)
-        return <DashboardSignIn appName="Observability" onSignIn={signIn} />;
     return <Dashboards user={user} />;
 }
 const root = document.getElementById("root");

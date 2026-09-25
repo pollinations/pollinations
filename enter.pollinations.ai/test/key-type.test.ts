@@ -1,4 +1,5 @@
 import {
+    getKeyAccessContext,
     isAppKey,
     isPublishableKey,
     readRedirectUris,
@@ -16,6 +17,45 @@ function makeKey(metadata: Record<string, unknown> | null): ApiKey {
         metadata,
     };
 }
+
+describe("standalone key access context", () => {
+    it("keeps ordinary secrets and publisher app keys in the key editor", () => {
+        expect(getKeyAccessContext(makeKey(null))).toBeUndefined();
+        expect(
+            getKeyAccessContext(makeKey({ keyType: "secret" })),
+        ).toBeUndefined();
+        expect(
+            getKeyAccessContext(
+                makeKey({
+                    keyType: "publishable",
+                    redirectUris: ["https://app.example/cb"],
+                }),
+            ),
+        ).toBeUndefined();
+    });
+
+    it("recognizes registered and legacy app grants", () => {
+        expect(
+            getKeyAccessContext({
+                ...makeKey(null),
+                byopClientKeyId: "app-id",
+            }),
+        ).toBe("app");
+        expect(
+            getKeyAccessContext(
+                makeKey({ redirectOrigin: "https://app.example" }),
+            ),
+        ).toBe("app");
+    });
+
+    it("uses device wording even when the device belongs to an app", () => {
+        const key = makeKey({ deviceUserCode: "test-code" });
+        expect(getKeyAccessContext(key)).toBe("device");
+        expect(getKeyAccessContext({ ...key, byopClientKeyId: "app-id" })).toBe(
+            "device",
+        );
+    });
+});
 
 // The edit dialog renders the redirect-URI / earnings fields when
 // isPublishableKey is true, so anything it renders must also pass

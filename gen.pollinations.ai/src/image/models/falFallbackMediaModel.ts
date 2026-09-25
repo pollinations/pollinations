@@ -111,8 +111,6 @@ export async function callFalFallbackImage(
         return {
             buffer,
             mimeType,
-            isMature: false,
-            isChild: false,
             trackingData: {
                 actualModel: params.model,
                 usage: {

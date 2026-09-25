@@ -43,6 +43,31 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
-export function dashboardSrc(uid: string): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
+/**
+ * `traffic_group` values of `generation_usage_hourly` (see the Tinybird pipe
+ * `generation_events_classified`), plus `all` for both together.
+ */
+export const TRAFFIC = [
+    { value: "everything_else", label: "Everything else" },
+    { value: "legacy", label: "Legacy" },
+    { value: "all", label: "Both" },
+] as const;
+export type Traffic = (typeof TRAFFIC)[number]["value"];
+
+export function readTraffic(search: string): Traffic {
+    const value = new URLSearchParams(search).get("traffic");
+    return (
+        TRAFFIC.find((traffic) => traffic.value === value)?.value ??
+        "everything_else"
+    );
+}
+
+/** Users & Balances mixes usage and account panels, so it always excludes legacy. */
+export function hasTrafficSelector(uid: string): boolean {
+    return uid !== "users-balances-rebuild";
+}
+
+/** Kiosk mode hides Grafana's variable controls, so the header passes them. */
+export function dashboardSrc(uid: string, traffic: Traffic): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&var-traffic=${traffic}`;
 }

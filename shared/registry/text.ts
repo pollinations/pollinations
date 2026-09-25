@@ -209,6 +209,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.4",
         description:
@@ -284,6 +295,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.5",
         description:
@@ -332,6 +354,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
@@ -376,6 +409,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
@@ -420,6 +464,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
@@ -464,6 +519,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-6 Astra",
         description:
@@ -509,6 +575,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-6 Sol",
         description: "Reasoning for complex coding and agentic workflows",
@@ -552,6 +629,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "GPT-6 Luna",
         description: "Efficient reasoning for focused, high-volume tasks",
@@ -1251,6 +1339,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<200K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<200K",
+                        "long_context": "≥200K",
+                    },
+                },
+            ],
         ),
         title: "Grok 4.7",
         description:
@@ -1398,6 +1497,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
         ),
         title: "MIDIjourney Large",
         description:
@@ -1915,6 +2025,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "inclusionai/ling-3.0-flash-vl": {
+        supportedParameters: CHAT_PARAMETERS.openRouterLing,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "inclusionAI",
+        category: "text",
+        addedDate: new Date("2026-09-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter DeepInfra fp16 route rates (2026-09-19), including
+            // the mandatory 5.5% OpenRouter credit fee. OpenRouter publishes
+            // one prompt rate and no separate image/video rates: images and
+            // video parts are tokenized into the prompt total.
+            promptTextTokens: perMillion(0.06) * 1.055,
+            promptCachedTokens: perMillion(0.012) * 1.055,
+            promptImageTokens: perMillion(0.06) * 1.055,
+            promptVideoTokens: perMillion(0.06) * 1.055,
+            completionTextTokens: perMillion(0.18) * 1.055,
+        },
+        title: "Ling 3.0 Flash VL",
+        description:
+            "Low-cost multimodal MoE with image and video understanding and tool calling",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],
@@ -2190,6 +2331,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<200K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<200K",
+                        "long_context": "≥200K",
+                    },
+                },
+            ],
         ),
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro Preview",
@@ -2653,6 +2805,17 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "<256K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "<256K",
+                        "long_context": "≥256K",
+                    },
+                },
+            ],
         ),
         title: "Qwen3.7 Plus",
         description:
@@ -2927,6 +3090,33 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤32K context, implicit/no cache",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤32K",
+                        "context_32k": ">32K–256K",
+                        "context_256k": ">256K",
+                        "explicit_cache": "≤32K",
+                        "context_32k_explicit_cache": ">32K–256K",
+                        "context_256k_explicit_cache": ">256K",
+                    },
+                },
+                {
+                    "key": "cache",
+                    "label": "Cache",
+                    "values": {
+                        "": "Default",
+                        "context_32k": "Default",
+                        "context_256k": "Default",
+                        "explicit_cache": "Explicit",
+                        "context_32k_explicit_cache": "Explicit",
+                        "context_256k_explicit_cache": "Explicit",
+                    },
+                },
+            ],
         ),
         cost: {
             promptTextTokens: perMillion(0.03),

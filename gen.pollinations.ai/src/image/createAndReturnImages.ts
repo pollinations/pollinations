@@ -26,6 +26,7 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
@@ -948,6 +949,9 @@ const generateImage = async (
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-flash":
+            return await callOpenRouterRecraftFlashAPI(prompt, safeParams);
 
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);

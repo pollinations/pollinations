@@ -645,6 +645,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Veo 3.1 Fast",
@@ -722,6 +732,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Seedance 1.0 Pro Fast",
@@ -761,6 +782,24 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "video_in": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "video_in": "Yes",
+                    },
+                },
+            ],
         ),
         title: "Seedance 2.0",
         description:
@@ -807,6 +846,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p"],
         title: "Seedance 2.0 Mini",
@@ -942,6 +991,26 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                        "1080p_image": "1080p",
+                    },
+                },
+                {
+                    "key": "input",
+                    "label": "Input",
+                    "values": {
+                        "": "Any",
+                        "1080p": "Text/video",
+                        "1080p_image": "Image",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
@@ -999,6 +1068,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
@@ -1092,6 +1172,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "Image generation",
+            [
+                {
+                    "key": "operation",
+                    "label": "Operation",
+                    "values": {
+                        "": "Generation",
+                        "edit": "Editing",
+                    },
+                },
+            ],
         ),
         title: "Qwen Image",
         description:
@@ -1131,6 +1221,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
         ),
         title: "Qwen Image 3",
         description:
@@ -1233,6 +1333,28 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "Medium · 1K",
+            [
+                {
+                    "key": "quality",
+                    "label": "Quality",
+                    "values": {
+                        "": "Medium",
+                        "low_1k": "Low",
+                        "low_2k": "Low",
+                        "medium_2k": "Medium",
+                    },
+                },
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "low_1k": "1K",
+                        "low_2k": "2K",
+                        "medium_2k": "2K",
+                    },
+                },
+            ],
         ),
         resolutions: ["1k", "2k"],
         title: "Grok Imagine Image 2.0",
@@ -1264,6 +1386,25 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
+    },
+    "recraft/recraft-v4.1-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter bills 4,175 image tokens per image (same convention
+            // as Recraft Vector): $0.007 fixed per output image, verified
+            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
+            completionImageTokens: 0.007 * 1.055,
+        },
+        title: "Recraft V4.1 Flash",
+        description: "Fast, low-cost raster image generation from text",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
@@ -1322,6 +1463,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Grok Imagine Video 1.5",
@@ -1384,6 +1536,28 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "video_in_480p": "480p",
+                        "video_in_720p": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "720p": "No",
+                        "video_in_480p": "Yes",
+                        "video_in_720p": "Yes",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
@@ -1455,6 +1629,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                        "2k": "2K",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "768p", "2k"],
         title: "MiniMax H3",
@@ -1475,14 +1660,14 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
+        // fal list rates (launch promotion ends 2026-09-30), verified 2026-09-25.
         cost: {
-            completionVideoSeconds: 0.00625, // 480p per output second.
+            completionVideoSeconds: 0.025, // 480p per output second.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.01 },
-                "1080p": { completionVideoSeconds: 0.02 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {
@@ -1498,6 +1683,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
@@ -1596,6 +1792,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Pruna p-video",
@@ -1637,6 +1843,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "1024 tier",
+            [
+                {
+                    "key": "image_size",
+                    "label": "Max side",
+                    "unit": "px",
+                    "values": {
+                        "2048": ">1024",
+                        "": "≤1024",
+                    },
+                },
+            ],
         ),
         title: "Nova Canvas",
         description: "Image generation with editing and inpainting tools",

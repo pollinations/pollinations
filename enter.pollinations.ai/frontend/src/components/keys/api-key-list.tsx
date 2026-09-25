@@ -213,9 +213,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     }
                                     displayContents
                                 >
-                                    <Chip size="sm">
+                                    <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                                         +{extraRedirectUriCount}
-                                    </Chip>
+                                    </span>
                                 </Tooltip>
                             )}
                         </span>

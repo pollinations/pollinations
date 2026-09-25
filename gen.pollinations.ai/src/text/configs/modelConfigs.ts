@@ -239,6 +239,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
+    // -- xAI direct -----------------------------------------------------------
+    "grok-4.6-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.6",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(
@@ -295,6 +303,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.0-flash-vl",
+        "deepinfra/fp16",
+    ),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
         "tencent/hy3",
         "phala",

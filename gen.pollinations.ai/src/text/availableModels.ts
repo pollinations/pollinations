@@ -404,6 +404,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6-azure-sweden"],
     },
     {
+        name: "x-ai/grok-4.6:xai",
+        config: portkeyConfig["grok-4.6-xai"],
+    },
+    {
         name: "openai/gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
@@ -791,6 +795,10 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.0-flash-vl",
+        config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
     {
         name: "tencent/hy3:openrouter:phala",

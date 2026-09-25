@@ -9,6 +9,7 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    LoadingStatus,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -891,6 +892,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
+                {state.loading && (
+                    <LoadingStatus>Loading quests…</LoadingStatus>
+                )}
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
@@ -900,6 +904,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             pollen={claimedStats.pollen}
                             claimable={claimable}
                         />
+                    )}
+                    {state.checking && (
+                        <LoadingStatus>Checking for new quests…</LoadingStatus>
                     )}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (

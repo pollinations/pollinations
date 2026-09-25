@@ -13,6 +13,7 @@ import {
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -34,8 +35,6 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
-import { callQwenImage3API } from "./models/qwenImage3Model.ts";
-import { callQwenImage21API } from "./models/qwenImage21Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
@@ -969,7 +968,11 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "qwen/qwen-image-2.1":
-            return await callQwenImage21API(prompt, safeParams);
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-2.1",
+            );
 
         case "qwen/qwen-image-3":
             return await callAlibabaImage(
@@ -979,7 +982,11 @@ const generateImage = async (
             );
 
         case "qwen/qwen-image-3:fal":
-            return await callQwenImage3API(prompt, safeParams);
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-3:fal",
+            );
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":

@@ -1,0 +1,38 @@
+{
+  "pr_number": 15236,
+  "title": "feat: add qwen/qwen-image-2.1 via fal",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15236",
+  "merged_at": "2026-09-25T15:53:26Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `qwen/qwen-image-2.1` (Alibaba Qwen Image 2.1) via fal, paid-only, no aliases. Text-to-image and editing with up to 10 reference images.\n- Routes to `alibaba/qwen-image-2.1/text-to-image`, or `/edit` when reference images are supplied.\n- No fallback: Replicate has `qwen/qwen-image-2`, but it is a different version, not 2.1.\n\n### Maintainer follow-up\n- **One fal Qwen handler**: `falQwenImageModel.ts` serves both Qwen Image 2.1 and the Qwen Image 3 fal fallback from one table (replaces `qwenImage3Model.ts`).\n- **Aspect ratios**: without explicit dimensions, `aspectRatio` keeps the default ~1 MP area (16:9 → 1376×768, 21:9 → 1568×672), for both models. Explicit sizes pass through as before.\n- **Qwen 3 2K boundary**: 2K above 2,250,000 px, as DashScope bills it (was 1536×1536, which underbilled requests in between).\n- **Edits send `guidance_scale` 4**: fal's default of no guidance leaves edits noisy. Guidance doubles fal's edit price.\n- **Billing from fal's count**: gen reads `x-fal-billable-units` (helper from #15454) and computes no sizes itself. Rates are fal's unit prices: $0.02 per MP for generation and $0.11/3 per MP for edits. Usage is whole millionths of a MP, which fits the UInt32 columns.\n- **Safety**: fal's safety checker is off on both fal Qwen routes. Bedrock Guardrails is the safety system (#15441).\n\n### Verification\n- Staging E2E on 2ad8e468a7: a 1024² generation billed 1 MP ($0.02) and a one-reference edit billed 3 MP ($0.11). Tinybird, the wallet debit and fal's usage API all agree.\n\nFixes #15314\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_018KYryAWAc97Nz3Gp2MgyR8\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Qwen gets a bigger canvas",
+    "blurb": "Qwen Image 2.1 has landed through fal, with a proper editing desk for up to ten reference images. Polli checked the billable pixels too, because apparently pixels now require accounting.",
+    "summary": "Added paid-only Alibaba Qwen Image 2.1 via fal for text-to-image and reference-guided editing with up to 10 images, routing generations to `alibaba/qwen-image-2.1/text-to-image` and edits to `/edit` with fal-reported usage billing.",
+    "impact": "Developers can generate with Qwen Image 2.1 or make guided edits from up to 10 references, while 1024×1024 generations bill as 1 MP ($0.02) and one-reference edits as 3 MP ($0.11) using fal's billable-unit count.",
+    "keywords": [
+      "qwen-image-2.1",
+      "fal",
+      "image-generation",
+      "image-editing",
+      "reference-images",
+      "billing",
+      "models"
+    ],
+    "visual_concept": "A cozy image-making garden studio represents Qwen Image 2.1: Polli tends a large framed pixel illustration while ten small reference-image cards feed into a friendly retro art terminal. A labeled text-to-image path and an edit path meet at the same glowing Qwen workstation, visually showing generation and multi-reference editing; tiny pixel flowers and code-plants keep it part of the hive.",
+    "image_prompt": "Cozy pixel art scene in a warm garden art studio: Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny painter's beret while arranging ten little reference-image cards beside a chunky retro terminal labeled in simple pixel text “QWEN 2.1”; the terminal paints a lush image from two signposted paths, “TEXT” and “EDIT,” amid code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15236.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden art studio: Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny painter's beret while arranging ten little reference-image cards beside a chunky retro terminal labeled in simple pixel text “QWEN 2.1”; the terminal paints a lush image from two signposted paths, “TEXT” and “EDIT,” amid code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T15:54:30.049309+00:00"
+}

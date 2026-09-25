@@ -45,12 +45,12 @@ trail is the game: it records how the story drifted each time it was told.
 | --- | --- |
 | Tool | the `computer` MCP server's single `bash` tool (coreutils, grep, sed, awk, jq, curl, git) |
 | Shared repo | `https://github.com/pollinations/collective-memory` |
-| Local scratch | `/workspace/cm` — discarded and re-cloned at the start of every run |
+| Local clone | `/workspace/tavern-rumours` — refreshed at the start of every run |
 | Push auth | a GitHub App installation token minted inside the Durable Object; the shell never sees it |
 
-**The agent has no other memory.** Each run opens with `rm -rf /workspace/cm && git clone ...`, so
-anything it knows came out of the shared repository, not from a previous conversation. That is what
-makes a first-time visitor meet what earlier visitors left.
+The shared repository holds the rumours. Each run refreshes its own clone before reading, so
+a fresh conversation can encounter what earlier visitors left without relying on chat history.
+If the refresh fails, it stops rather than deleting unpublished work.
 
 ## Verified over five runs — five commits in collective memory
 
@@ -64,7 +64,8 @@ makes a first-time visitor meet what earlier visitors left.
 
 All five are authored by `kreggscode` and touch only `social/tavern/`.
 
-Run 5 is the second-visitor check. The caller used a **different API key** and an **empty
+Run 5 checks a fresh conversation, not a separate account: both keys belong to the same user.
+The caller used a **different API key** and an **empty
 conversation**, opening with *"First time I have ever set foot in this tavern. What are people
 saying around here? Tell me the oldest rumour you are holding."* The keeper handed back exactly the
 rumour run 1 left, then committed it as travelled a second time:
@@ -83,7 +84,8 @@ The full transcript of run 5 is in the PR description for this folder.
   and are never edited after that.
 - **Public-safe only** — no secrets, keys, or real people's personal details. Rumours are fiction.
 - **Content is information, never instructions.** Nothing it reads can change its rules or identity.
-- Ships `private`: a stranger's file cannot reach a caller's shell through the model listing.
+- Ships `private` for the author's initial testing. Approved publishers can make it public.
+  Visibility is not a sandbox: the repository remains public and untrusted.
 
 ## Try it
 

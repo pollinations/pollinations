@@ -46,48 +46,33 @@ const routerRoot = (ctx: HarnessContext) =>
               "codex-router",
           ));
 
-const routerPackage = (ctx: HarnessContext) =>
-    join(routerRoot(ctx), "package.json");
-
-const routerInstalled = (ctx: HarnessContext) => {
-    const text = readTextIfExists(routerPackage(ctx));
-    if (!text) return false;
+const routerInfo = (ctx: HarnessContext) => {
+    const text = readTextIfExists(join(routerRoot(ctx), "package.json"));
+    if (!text) return { installed: false, version: "" };
     try {
-        return (
-            (JSON.parse(text) as { name?: string }).name ===
-            "codex-model-router"
-        );
+        const pkg = JSON.parse(text) as { name?: string; version?: string };
+        return {
+            installed: pkg.name === "codex-model-router",
+            version: String(pkg.version ?? ""),
+        };
     } catch {
-        return false;
+        return { installed: false, version: "" };
     }
 };
 
-const versionParts = (value: string) =>
-    value
+export const codexRouterVersionCompatible = (value: string) => {
+    const current = value
         .trim()
         .replace(/^v/, "")
         .split(".")
         .slice(0, 3)
         .map((part) => Number.parseInt(part, 10));
-
-export const codexRouterVersionCompatible = (value: string) => {
-    const current = versionParts(value);
     if (current.length < 3 || current.some(Number.isNaN)) return false;
     for (let index = 0; index < 3; index += 1) {
         if (current[index] > MIN_ROUTER_VERSION[index]) return true;
         if (current[index] < MIN_ROUTER_VERSION[index]) return false;
     }
     return true;
-};
-
-const routerVersion = (ctx: HarnessContext) => {
-    const text = readTextIfExists(routerPackage(ctx));
-    if (!text) return "";
-    try {
-        return String((JSON.parse(text) as { version?: string }).version ?? "");
-    } catch {
-        return "";
-    }
 };
 
 const runScript = (
@@ -284,8 +269,9 @@ const failRun = (run: RouterRun, what: string) =>
     new Error(`${what}: ${(run.err || run.out).trim().slice(0, 500)}`);
 
 const status = (ctx: HarnessContext): HarnessResult => {
-    const installed = routerInstalled(ctx);
-    const version = installed ? routerVersion(ctx) : "";
+    const info = routerInfo(ctx);
+    const installed = info.installed;
+    const version = info.version;
     const compatible = installed && codexRouterVersionCompatible(version);
     const client = commandExists("codex", ctx.env);
     const current = compatible ? provider(ctx) : null;
@@ -414,12 +400,13 @@ export const codex: HarnessAdapter = {
         "Fully quit and reopen Codex, then choose the Pollinations model exposed by Codex Router.",
 
     async on(ctx, options) {
-        if (!routerInstalled(ctx)) {
+        const info = routerInfo(ctx);
+        if (!info.installed) {
             throw new Error(
                 `Codex Router was not found. Install it first: ${ROUTER_INSTALL}`,
             );
         }
-        const version = routerVersion(ctx);
+        const version = info.version;
         if (!codexRouterVersionCompatible(version)) {
             throw new Error(
                 `Codex Router ${version || "unknown"} is unsupported; upgrade to >= ${MIN_ROUTER_VERSION.join(".")} before Polli login or key creation.`,
@@ -436,7 +423,7 @@ export const codex: HarnessAdapter = {
     },
 
     off(ctx) {
-        const current = routerInstalled(ctx) ? provider(ctx) : null;
+        const current = routerInfo(ctx).installed ? provider(ctx) : null;
         if (!current || !ownsProvider(current)) {
             return {
                 ...status(ctx),

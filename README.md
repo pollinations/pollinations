@@ -28,6 +28,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 What TTS](https://bloodtubes6-cmyk.github.io/Blood) | App Description: A static web application featuring an Arabic interface with Right-to-Left (RTL) support. It implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely on the client side, requi | [@bloodtubes6-cmyk](https://github.com/bloodtubes6-cmyk) |
+| [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
+| [🛠️ ShouldIApply](https://notsointresting.github.io/shouldiapply) | ShouldIApply tells job seekers their real, calibrated odds of passing a job's initial screen — before they waste the effort applying. Paste your resume and a job description. The app sends them to Pol | [@notsointresting](https://github.com/notsointresting) |
 | [🎬 Aizen (TTS)](https://fantasyvvillain-pixel.github.io/Aizen-) | App Description: A static web app with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE sign-in flow entirely on the client side, without the need for a backend server | [@fantasyvvillain-pixel](https://github.com/fantasyvvillain-pixel) |
 | [🖼️ Bees Pollination](https://halimyassine.github.io/bees-pollination-app) | Bees Pollination is a simple AI image generation app powered by Pollinations. Users connect their Pollinations account, enter a text prompt, and generate an image directly in the browser using the Pol | [@halimyassine](https://github.com/halimyassine) |
 | [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
@@ -35,9 +38,6 @@
 | [🎬 Text to speech](https://thinglover21-ux.github.io/My-app-mod) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@thinglover21-ux](https://github.com/thinglover21-ux) |
 | [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
 | [🖼️ PersonaMorph](https://personamorph-ai-production.up.railway.app) | A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🖼️ baboolharech](https://baboolharech-lgtm.github.io/Fith) | App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft | [@baboolharech-lgtm](https://github.com/baboolharech-lgtm) |
-| [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
-| [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-09-21** – **🔗 MCP moves into the workshop** `polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
-- **2026-09-21** – **🤖 The router checks the weather** Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)
-- **2026-09-21** – **🚀 A Grok joins the garden** `x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-21** – **🎨 A garden for generated pixels** Bees Pollination is a simple browser-based prompt-to-image generator connected to your Pollinations account. [Try it](https://halimyassine.github.io/bees-pollination-app) <!-- app -->
-- **2026-09-20** – **🎨 Atelier Image Studio** Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org) <!-- app -->
-- **2026-09-20** – **✨ Jev Decisions API** Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-20** – **🤖 Jev 1.13** `typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)
-- **2026-09-19** – **💡 Model discovery now includes vitals** `/v1/models` and `/models` return each model’s recent health, success rate, and request volume—so choosing a model involves slightly less divination. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-19** – **🎨 PersonaMorph turns photos into personas** Connect a Pollinations wallet and use image edits to remake portraits as artistic identities. [Try it](https://personamorph-ai-production.up.railway.app) <!-- app -->
-- **2026-09-19** – **✨ Oracle Mystique deals three illustrated cards** Ask the AI tarot reader for a Past, Present, and Future spread, with generated card art and BYOP OAuth2. [Try it](https://oracle-mystique.up.railway.app) <!-- app -->
+- **2026-09-24** – **🎯 Video input for Ling 3.0 Flash VL** Send `video_url` alongside text and images to `inclusionai/ling-3.0-flash-vl`. The hive watches clips now. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-24** – **✨ `polli whoami`** Check which Polli identity your CLI is using with one small, script-friendly command: `polli whoami`.
+- **2026-09-24** – **🚀 Seven models, same IDs** Fireworks-backed models moved before the shutdown, keeping existing calls alive; Kimi K2.6 can now accept up to 30 images per request.
+- **2026-09-24** – **🎮 GATEKEEPER** A 60-second arcade arena where an AI writes each run’s survival rules. Fixed rulebooks were apparently too stable. [Try it](https://khuzaima3232.github.io/gatekeeper) <!-- app -->
+- **2026-09-23** – **🤖 GPT-5.3 Codex** `openai/gpt-5.3-codex` is now available with a 400K-token context window, tool use, structured output, images, files, reasoning, streaming, and terminal workflows. [Try the API](https://gen.pollinations.ai/docs)
+- **2026-09-23** – **🚀 MiMo V2.6 Flash and Pro** Two Xiaomi models join the text API with image input, tools, streaming, JSON schema, reasoning controls, and a frankly excessive 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-23** – **🎨 New Azure image models** Generate and edit with `microsoft/mai-image-2.6`, its faster Flash sibling, and `black-forest-labs/flux.1.1-pro` through the existing image API. [Try image generation](https://pollinations.ai/play)
+- **2026-09-23** – **✨ Floret gets 3D output** Floret now uses shared authenticated media tools and can produce downloadable 3D generations alongside editable, publishable media.
+- **2026-09-23** – **⚡ GPT Image overflow** `gpt-image-2`, Flare, and Sunburst can absorb larger generation bursts through Azure with OpenAI fallback; Flare and Sunburst also cost 25% less.
+- **2026-09-23** – **🎯 ShouldIApply** Paste a resume and job description to estimate your odds of clearing the initial screen before beginning the traditional application odyssey. [Try it](https://notsointresting.github.io/shouldiapply) <!-- app -->
 ---
 
 ## 🌱 Introduction
@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on

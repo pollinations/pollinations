@@ -274,6 +274,49 @@ test("restored auth allows old and future names without expanding account or com
     ]);
 });
 
+test("keys allowed the retired Sonar Pro models still reach Sonar and nothing else", async () => {
+    // The canonical IDs migration 0062 stored before Sonar Pro and Reasoning
+    // Pro became aliases of Sonar.
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: {
+                id: "test",
+                permissions: {
+                    models: [
+                        "perplexity/sonar-pro",
+                        "perplexity/sonar-reasoning-pro",
+                    ],
+                },
+            },
+        }),
+    );
+    app.get("/:model", (c) => {
+        const requested = c.req.param("model");
+        c.set("model", { requested, resolved: resolveModelName(requested) });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+        "perplexity-reasoning",
+        "perplexity/sonar",
+    ]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status, model).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["perplexity/sonar"],
+        });
+    }
+    const other = await app.request("/flux");
+    expect(other.status).toBe(403);
+});
+
 test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1")).toBe(
         "https://enter.pollinations.ai/edit-key?id=key-1",
@@ -409,12 +452,17 @@ test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeResponse, paidResponse, generation] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker("/text/paid-only-check?model=mistral", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+    ]);
 
     expect(freeResponse.status).toBe(200);
     expect(paidResponse.status).toBe(200);
@@ -443,10 +491,6 @@ test("filters OpenRouter text models by paid balance", async ({
         openRouterModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/text/paid-only-check?model=mistral",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
     expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
     if (TEXT_BALANCE_NOTICE_ENABLED) {
         expect(await generation.text()).toContain(
@@ -456,7 +500,45 @@ test("filters OpenRouter text models by paid balance", async ({
             "private, no-store",
         );
     }
-});
+}, 15_000);
+
+test("requires paid balance for direct OpenAI GPT-6 models", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
+    const [freeResponse, paidResponse, responses] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        Promise.all(
+            models.map((model) =>
+                fetchWorker(`/text/paid-only-check?model=${model}`, {
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                }),
+            ),
+        ),
+    ]);
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const freeNames = new Set(freeModels.data.map((model) => model.id));
+    const paidNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const [index, model] of models.entries()) {
+        expect(freeNames.has(model)).toBe(false);
+        expect(paidNames.has(model)).toBe(true);
+        expect(responses[index].status).toBe(
+            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
+        );
+    }
+}, 15_000);
 
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
@@ -516,12 +598,18 @@ test("requires paid balance for Recraft vector", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeCatalog, paidCatalog, generation] = await Promise.all([
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker(
+            "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+        ),
+    ]);
     const freeModels = (await freeCatalog.json()) as { name: string }[];
     const paidModels = (await paidCatalog.json()) as { name: string }[];
 
@@ -536,12 +624,8 @@ test("requires paid balance for Recraft vector", async ({
         ),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
     expect(generation.status).toBe(402);
-});
+}, 15_000);
 
 test("Scout catalog exposes its enforced output capabilities", async () => {
     const response = await fetchWorker("/models");

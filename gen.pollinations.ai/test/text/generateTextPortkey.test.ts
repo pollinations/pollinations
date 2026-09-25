@@ -191,6 +191,79 @@ describe("generateTextPortkey", () => {
         expect(billing.price.totalPrice).toBe(0.0013155);
     });
 
+    it("falls back from both Azure Grok regions to xAI direct at the primary price", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(String(input));
+                hosts.push(url.hostname);
+                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
+                if (url.hostname !== "api.x.ai") {
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status: 429 },
+                    );
+                }
+                const headers = new Headers(init?.headers);
+                expect(headers.has("api-key")).toBe(false);
+                expect(headers.get("authorization")).toBe(
+                    `Bearer ${env.XAI_API_KEY}`,
+                );
+                return Response.json({
+                    model: "grok-4.6",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Paris" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Observed xAI usage (2026-09-24): reasoning is additive
+                    // and cost_in_usd_ticks reported $0.001296.
+                    usage: {
+                        prompt_tokens: 648,
+                        completion_tokens: 1,
+                        total_tokens: 776,
+                        prompt_tokens_details: {
+                            text_tokens: 648,
+                            image_tokens: 0,
+                            cached_tokens: 512,
+                        },
+                        completion_tokens_details: { reasoning_tokens: 127 },
+                    },
+                });
+            },
+        );
+        const { result, index } = await withModelFallback(
+            ["x-ai/grok-4.6", ...TEXT_SERVICES["x-ai/grok-4.6"].fallbacks].map(
+                (id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                }),
+            ),
+            ({ id }) =>
+                generateTextPortkey([{ role: "user", content: "Capital?" }], {
+                    model: id,
+                }),
+        );
+        expect(index).toBe(2);
+        expect(hosts).toEqual([
+            "myceli-prod-eastus.cognitiveservices.azure.com",
+            "myceli-prod-swedencentral.cognitiveservices.azure.com",
+            "api.x.ai",
+        ]);
+        const billing = calculateUsageBilling({
+            model: "x-ai/grok-4.6",
+            usage: openaiUsageToUsage(
+                result.usage as Parameters<typeof openaiUsageToUsage>[0],
+            ),
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:xai"],
+            quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.001296, 12);
+        expect(billing.price.totalPrice).toBe(0.000972);
+    });
+
     it("routes Gemini through direct Vertex via Portkey", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",

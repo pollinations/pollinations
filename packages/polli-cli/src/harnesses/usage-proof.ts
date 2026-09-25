@@ -1,25 +1,11 @@
 import { gen } from "../lib/api.js";
 import { resolveApiKey } from "../lib/config.js";
 
-interface KeyUsageResponse {
-    usage: unknown[];
-    count: number;
-}
-
-interface AccountKeyRow {
-    start: string;
-    lastRequest: string | null;
-    enabled: boolean;
-}
-
-interface AccountKeysResponse {
-    data: AccountKeyRow[];
-}
-
 export const keyUsageCount = async (apiKey: string): Promise<number> => {
-    const result = await gen<KeyUsageResponse>("/account/key/usage?limit=1", {
-        apiKey,
-    });
+    const result = await gen<{ usage: unknown[]; count: number }>(
+        "/account/key/usage?limit=1",
+        { apiKey },
+    );
     return Number(result.count ?? result.usage?.length ?? 0);
 };
 
@@ -27,9 +13,9 @@ const accountLastRequest = async (apiKey: string): Promise<number | null> => {
     const accountKey = resolveApiKey();
     if (!accountKey || accountKey === apiKey) return null;
     try {
-        const result = await gen<AccountKeysResponse>("/account/keys", {
-            apiKey: accountKey,
-        });
+        const result = await gen<{
+            data: { start: string; lastRequest: string | null; enabled: boolean }[];
+        }>("/account/keys", { apiKey: accountKey });
         const row = result.data?.find(
             (item) =>
                 item.enabled !== false &&
@@ -55,9 +41,7 @@ export const waitForKeyUsageIncrease = async (
         const count = await keyUsageCount(apiKey);
         if (count > before) return count;
 
-        // Account usage rows can lag behind the API-key record itself.
-        // When the Polli account session is available, lastRequest is an
-        // immediate server-side proof that this exact child key was used.
+        // Account key metadata can surface before usage history finishes indexing.
         const lastRequest = await accountLastRequest(apiKey);
         if (
             lastRequest !== null &&
@@ -66,7 +50,6 @@ export const waitForKeyUsageIncrease = async (
         ) {
             return before + 1;
         }
-
         if (attempt + 1 < attempts) {
             await new Promise((resolve) => setTimeout(resolve, delayMs));
         }

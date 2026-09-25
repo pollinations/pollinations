@@ -23,6 +23,8 @@ export type DialogProps = {
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
+    /** Fill narrow viewports; disable for compact confirmations. */
+    fullscreenOnMobile?: boolean;
     showBackdrop?: boolean;
     backdropBlur?: boolean;
     positionerClassName?: string;
@@ -40,6 +42,7 @@ export const Dialog: FC<DialogProps> = ({
     ariaLabel,
     labelledBy,
     size = "md",
+    fullscreenOnMobile = true,
     showBackdrop = true,
     backdropBlur = true,
     positionerClassName,
@@ -76,7 +79,10 @@ export const Dialog: FC<DialogProps> = ({
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-0 polli:sm:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
+                        fullscreenOnMobile
+                            ? "polli:p-0 polli:sm:p-4"
+                            : "polli:p-4",
                         positionerClassName,
                     )}
                 >
@@ -85,7 +91,10 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
+                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            fullscreenOnMobile
+                                ? "polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container"
+                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-2xl polli:shadow-container",
                             sizeClasses[size],
                             contentClassName,
                         )}

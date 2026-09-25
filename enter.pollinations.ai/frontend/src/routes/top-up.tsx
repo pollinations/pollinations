@@ -11,6 +11,7 @@ import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
+import { SectionContent } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
@@ -157,8 +158,7 @@ function TopUpPage() {
         );
     }
 
-    if (!wallet || billing === undefined)
-        return <AuthModalLoading title="Top-up" />;
+    if (!wallet) return <AuthModalLoading title="Top-up" />;
 
     return (
         <AuthFlowScreen
@@ -175,19 +175,26 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            <BuyPollenPanel
-                initialBillingState={billing}
-                selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                onSelectedPackAmountChange={(amount) => {
-                    const pack = getPollenPackByAmount(amount);
-                    if (pack) {
-                        void navigate({
-                            search: (prev) => ({ ...prev, pack: pack.packKey }),
-                        });
-                    }
-                }}
-                returnToTopUp={{ redirect: search.redirect }}
-            />
+            {billing === undefined ? (
+                <SectionContent loading label="Loading billing details…" />
+            ) : (
+                <BuyPollenPanel
+                    initialBillingState={billing}
+                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                    onSelectedPackAmountChange={(amount) => {
+                        const pack = getPollenPackByAmount(amount);
+                        if (pack) {
+                            void navigate({
+                                search: (prev) => ({
+                                    ...prev,
+                                    pack: pack.packKey,
+                                }),
+                            });
+                        }
+                    }}
+                    returnToTopUp={{ redirect: search.redirect }}
+                />
+            )}
         </AuthFlowScreen>
     );
 }

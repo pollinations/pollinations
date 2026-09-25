@@ -134,6 +134,36 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-09-06").getTime(),
             retirementDate: new Date("2027-08-24").getTime(),
         },
+        "x-ai/grok-4.6:xai": {
+            provider: "xai",
+            addedDate: new Date("2026-09-24").getTime(),
+            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
+            // bill at the text input rate; reasoning bills as output.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4),
+                        promptCachedTokens: perMillion(1),
+                        completionTextTokens: perMillion(12),
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
+        },
     },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
@@ -293,6 +323,11 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.6": {
+        "moonshotai/kimi-k2.6:azure:sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-23").getTime(),
+            retirementDate: new Date("2027-04-16").getTime(),
+        },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -481,15 +516,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/muse-glimmer-30b": {
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
+        "meta/muse-glimmer-30b:openrouter:together": {
             supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.3) * 1.055,
+                // OpenRouter Together rates (2026-09-23), including the
+                // account's 5.5% credit-purchase fee. Costs more than the
+                // primary; Phala was cheaper but rate-limited bursts.
+                promptTextTokens: perMillion(0.35) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
-                promptImageTokens: perMillion(0.3) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
+                promptImageTokens: perMillion(0.35) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
             },
         },
     },
@@ -694,19 +732,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.7-code": {
-        "moonshotai/kimi-k2.7-code:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
-            // DeepInfra `deprecated` time; it then forwards requests to
-            // Kimi-K3 at Kimi-K3's price.
-            retirementDate: new Date("2026-09-29T23:36:12Z").getTime(),
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterKimiStreamLake,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.68),
-                promptCachedTokens: perMillion(0.136),
-                promptCacheWriteTokens: perMillion(0.85),
-                promptImageTokens: perMillion(0.68),
-                completionTextTokens: perMillion(3.4),
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $0.95/$4.00), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.7125) * 1.055,
+                promptCachedTokens: perMillion(0.1425) * 1.055,
+                promptCacheWriteTokens: perMillion(0.7125) * 1.055,
+                promptImageTokens: perMillion(0.7125) * 1.055,
+                completionTextTokens: perMillion(3.0) * 1.055,
             },
         },
     },
@@ -719,6 +756,34 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.18) * 1.055,
                 promptCachedTokens: perMillion(0.036) * 1.055,
                 completionTextTokens: perMillion(0.9) * 1.055,
+            },
+        },
+    },
+    "deepseek/deepseek-v4-pro": {
+        "deepseek/deepseek-v4-pro:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterStreamLakeReasoning,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $1.32/$3.96), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.462) * 1.055,
+                promptCachedTokens: perMillion(0.0154) * 1.055,
+                completionTextTokens: perMillion(1.386) * 1.055,
+            },
+        },
+    },
+    "z-ai/glm-5.2": {
+        "z-ai/glm-5.2:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // DeepInfra FP4 rates (2026-09-23): list $0.75/$2.40 with an
+                // open-ended 25% discount.
+                promptTextTokens: perMillion(0.5625),
+                promptCachedTokens: perMillion(0.105),
+                completionTextTokens: perMillion(1.8),
             },
         },
     },

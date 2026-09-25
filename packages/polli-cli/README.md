@@ -25,7 +25,7 @@ Every command is agent-friendly:
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
 - When a call runs out of pollen, the first line of the error is the top-up link.
-- `polli auth status --json` exposes everything about the current session.
+- `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
 ## Get started
 

@@ -533,7 +533,9 @@ api.post(
                 c.req.query("preserve_metadata") === "true" ||
                 c.req.header("x-preserve-metadata") === "true";
 
-            let uploadBytes = new Uint8Array(fileBuffer);
+            let uploadBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(
+                fileBuffer,
+            );
             if (
                 !preserveMetadata &&
                 contentType.toLowerCase().startsWith("image/")

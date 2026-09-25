@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
-import { authClient } from "../auth.ts";
+import { authClient, type User } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
 import {
     LoadError,
@@ -17,34 +17,23 @@ import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
+import { createDashboardSessionResolver } from "../lib/dashboard-session.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
-let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
-    null;
-let dashboardSessionExpiresAt = 0;
 
-function getDashboardSession() {
-    if (!dashboardSessionPromise || Date.now() >= dashboardSessionExpiresAt) {
-        dashboardSessionExpiresAt = Date.now() + DASHBOARD_DATA_STALE_TIME;
-        dashboardSessionPromise = authClient.getSession().catch((error) => {
-            dashboardSessionPromise = null;
-            throw error;
-        });
-    }
-    return dashboardSessionPromise;
-}
+// A failed refresh here must never be treated the same as an expired or
+// revoked session — see dashboard-session.ts for why, and
+// dashboard-session.test.ts for the regression coverage (a refresh blip
+// right after creating a key must not discard the new secret by tearing
+// down the dashboard route out from under the create-key dialog).
+const dashboardSession = createDashboardSessionResolver<User>(
+    () => authClient.getSession(),
+    DASHBOARD_DATA_STALE_TIME,
+);
 
 export const Route = createFileRoute("/_dashboard")({
     staleTime: DASHBOARD_DATA_STALE_TIME,
-    beforeLoad: async () => {
-        const result = await getDashboardSession();
-        if (result.error) {
-            dashboardSessionPromise = null;
-            dashboardSessionExpiresAt = 0;
-            throw new Error("Authentication failed.");
-        }
-        return { user: result.data?.user ?? null };
-    },
+    beforeLoad: () => dashboardSession.resolve(),
     loader: ({ context }) => {
         const user = context.user;
         const apiKeys = user

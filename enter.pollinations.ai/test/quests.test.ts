@@ -1940,7 +1940,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
-test("reporters earn 3 Pollen per fixed issue, but not for old or administrative issues", async ({
+test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1949,10 +1949,16 @@ test("reporters earn 3 Pollen per fixed issue, but not for old or administrative
     await mocks.enable("github", "tinybird");
 
     const afterLaunch = "2026-09-24T12:00:00Z";
+    const excludedTitles: Record<number, string> = {
+        9107: "[Community Publisher Access]: Example",
+        9109: "[App Submission]: Example",
+        9110: "[Project Submission]: Example",
+        9111: "[QUEST]: Example",
+    };
     const issues = [
         { number: 9101, labels: [], mergedAt: afterLaunch },
         { number: 9102, labels: [{ name: "BUG" }], mergedAt: afterLaunch },
-        { number: 9103, labels: [], mergedAt: "2026-09-22T12:00:00Z" },
+        { number: 9103, labels: [], mergedAt: "2026-03-27T19:45:45Z" },
         {
             number: 9104,
             labels: [{ name: "APP-SUBMISSION" }],
@@ -1965,15 +1971,16 @@ test("reporters earn 3 Pollen per fixed issue, but not for old or administrative
         },
         { number: 9106, labels: [], mergedAt: null },
         { number: 9107, labels: [], mergedAt: afterLaunch },
+        { number: 9108, labels: [], mergedAt: "2026-03-27T19:45:46Z" },
+        { number: 9109, labels: [], mergedAt: afterLaunch },
+        { number: 9110, labels: [], mergedAt: afterLaunch },
+        { number: 9111, labels: [], mergedAt: afterLaunch },
     ];
     for (const issue of issues) {
         mocks.github.state.questIssues.push({
             number: issue.number,
             state: "closed",
-            title:
-                issue.number === 9107
-                    ? "[Community Publisher Access]: Example"
-                    : `Issue ${issue.number}`,
+            title: excludedTitles[issue.number] ?? `Issue ${issue.number}`,
             html_url: `https://github.com/pollinations/pollinations/issues/${issue.number}`,
             body: "A useful issue report",
             created_at: "2026-09-22T00:00:00Z",
@@ -2013,9 +2020,12 @@ test("reporters earn 3 Pollen per fixed issue, but not for old or administrative
         [
             `quest:github:reported_issue:9101:github:${user.githubId}`,
             `quest:github:reported_issue:9102:github:${user.githubId}`,
+            `quest:github:reported_issue:9108:github:${user.githubId}`,
         ],
     );
-    expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([3, 3]);
+    expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
+        3, 3, 3,
+    ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
     ).toBe(true);
@@ -2030,7 +2040,7 @@ test("reporters earn 3 Pollen per fixed issue, but not for old or administrative
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 6);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

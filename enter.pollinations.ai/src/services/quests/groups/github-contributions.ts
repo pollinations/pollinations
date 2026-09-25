@@ -26,7 +26,10 @@ const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "APP-SUBMISSION",
     "AUTOMATED",
 ]);
-const ISSUE_REPORT_LAUNCH = Date.parse("2026-09-23T19:45:46Z");
+// Fixed 180-day lookback from launch; later visits must not move the cutoff.
+const ISSUE_REPORT_START = Date.parse("2026-03-27T19:45:46Z");
+const ISSUE_REPORT_EXCLUDED_TITLE =
+    /\[(?:App|Project) Submission\]|^\[(?:Community(?: Model)? Publisher Access|QUEST)\]/i;
 const REPO_OWNER = "pollinations";
 const REPO_NAME = "pollinations";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
@@ -301,20 +304,20 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         const data: PaginatedSearchData<ReportedIssueNode> = await graphql<
             PaginatedSearchData<ReportedIssueNode>
         >(token, REPORTED_ISSUES_QUERY, {
-            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-09-23`,
+            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-03-27`,
             after,
         });
         for (const issue of data.search.nodes) {
             if (
                 issue.author?.databaseId !== user.githubId ||
-                issue.title.startsWith("[Community Publisher Access]") ||
+                ISSUE_REPORT_EXCLUDED_TITLE.test(issue.title) ||
                 issue.labels.nodes.some((label) =>
                     ISSUE_REPORT_EXCLUDED_LABELS.has(label.name),
                 ) ||
                 !issue.closedByPullRequestsReferences.nodes.some(
                     (pr) =>
                         pr.mergedAt !== null &&
-                        Date.parse(pr.mergedAt) >= ISSUE_REPORT_LAUNCH,
+                        Date.parse(pr.mergedAt) >= ISSUE_REPORT_START,
                 )
             ) {
                 continue;

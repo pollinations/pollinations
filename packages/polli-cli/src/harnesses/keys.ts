@@ -3,6 +3,33 @@ import { ApiError, gen } from "../lib/api.js";
 import { resolveApiKey } from "../lib/config.js";
 import { printInfo, printSuccess } from "../lib/output.js";
 
+/** The dedicated child key each harness mints (see `resolveHarnessKey`). */
+export const harnessKeyName = (harnessId: string) =>
+    `polli-harness-${harnessId}`;
+
+/**
+ * Check the usage side effect of a completed smoke request: the dedicated key
+ * must show a request recorded at/after `sinceMs`, or the router answered from
+ * a cache or under a different account. A missing side effect throws a clear
+ * harness error so the caller can roll back like a smoke failure.
+ */
+export const assertKeyUsage = async (keyName: string, sinceMs: number) => {
+    const { data } = await gen<{
+        data: Array<{ name: string | null; lastRequest: string | null }>;
+    }>("/account/keys", { apiKey: resolveApiKey() });
+    const recorded = data.some((key) => {
+        if (key.name !== keyName || key.lastRequest === null) return false;
+        const at = new Date(key.lastRequest).getTime();
+        return Number.isFinite(at) && at >= sinceMs;
+    });
+    if (!recorded) {
+        throw new Error(
+            `No request recorded for harness key "${keyName}" after the smoke test. ` +
+                "The router may not be attributing traffic to the dedicated key — check: polli keys list --json",
+        );
+    }
+};
+
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
 const keyIsValid = async (key: string) => {
@@ -46,7 +73,7 @@ export const resolveHarnessKey = async (
     const accountKey =
         resolveApiKey() ??
         (await loginWithDeviceFlow({ browser: options.browser }));
-    const name = `polli-harness-${harness.id}`;
+    const name = harnessKeyName(harness.id);
     const created = await gen<{ key: string }>("/account/keys", {
         method: "POST",
         apiKey: accountKey,

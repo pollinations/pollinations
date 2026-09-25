@@ -7,10 +7,18 @@ import {
     rmSync,
     writeFileSync,
 } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { codex, configureCodex } from "./codex.js";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from "vitest";
 import type { HarnessContext } from "./types.js";
 
 // A stand-in for the Codex Router checkout: the same script names and CLI
@@ -67,6 +75,14 @@ let home: string;
 let router: string;
 let ctx: HarnessContext;
 
+// The `/account/keys` read behind `assertKeyUsage`: a fresh `lastRequest`
+// passes the usage check, a stale one fails it.
+let keyUsageFresh = true;
+let apiServer: Server;
+const previousBaseUrl = process.env.POLLINATIONS_BASE_URL;
+let codex: typeof import("./codex.js").codex;
+let configureCodex: typeof import("./codex.js").configureCodex;
+
 const executable = (dir: string, name: string) => {
     const file = join(dir, process.platform === "win32" ? `${name}.cmd` : name);
     writeFileSync(file, "");
@@ -79,7 +95,34 @@ const state = () => {
         : { log: [] };
 };
 
+beforeAll(async () => {
+    apiServer = createServer((_req, res) => {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(
+            JSON.stringify({
+                data: [
+                    {
+                        name: "polli-harness-codex",
+                        lastRequest: keyUsageFresh
+                            ? new Date().toISOString()
+                            : new Date(0).toISOString(),
+                    },
+                ],
+            }),
+        );
+    });
+    await new Promise<void>((resolve) =>
+        apiServer.listen(0, "127.0.0.1", resolve),
+    );
+    const address = apiServer.address();
+    if (!address || typeof address === "string")
+        throw new Error("No test port");
+    process.env.POLLINATIONS_BASE_URL = `http://127.0.0.1:${address.port}`;
+    ({ codex, configureCodex } = await import("./codex.js"));
+});
+
 beforeEach(() => {
+    keyUsageFresh = true;
     home = mkdtempSync(join(tmpdir(), "polli-codex-"));
     router = join(home, "router");
     mkdirSync(join(router, "src"), { recursive: true });
@@ -109,6 +152,14 @@ beforeEach(() => {
 });
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
+
+afterAll(async () => {
+    if (previousBaseUrl === undefined) delete process.env.POLLINATIONS_BASE_URL;
+    else process.env.POLLINATIONS_BASE_URL = previousBaseUrl;
+    await new Promise<void>((resolve, reject) =>
+        apiServer.close((error) => (error ? reject(error) : resolve())),
+    );
+});
 
 describe("codex adapter", () => {
     it("stops with install guidance when the router or Codex is missing", async () => {
@@ -163,7 +214,7 @@ describe("codex adapter", () => {
         expect(state()).toMatchObject({
             provider: {
                 id: "pollinations",
-                baseUrl: "https://gen.pollinations.ai/v1",
+                baseUrl: `${process.env.POLLINATIONS_BASE_URL}/v1`,
             },
             key: "sk_dedicated",
             models: ["pollinations/z-ai/glm-5.3-flash"],
@@ -216,6 +267,90 @@ describe("codex adapter", () => {
             key: "sk_first",
             models: ["pollinations/a/one"],
         });
+    });
+
+    it("rolls back when the dedicated key shows no request after the smoke test", async () => {
+        keyUsageFresh = false;
+        await expect(
+            configureCodex(ctx, "a/one", async () => "sk_dedicated"),
+        ).rejects.toThrow(
+            'No request recorded for harness key "polli-harness-codex"',
+        );
+        expect(state()).toMatchObject({
+            provider: null,
+            key: null,
+            models: [],
+        });
+    });
+
+    it("passes the usage check when the dedicated key records the smoke request", async () => {
+        keyUsageFresh = true;
+        await configureCodex(ctx, "a/one", async () => "sk_dedicated");
+        expect(state()).toMatchObject({
+            key: "sk_dedicated",
+            models: ["pollinations/a/one"],
+        });
+    });
+
+    it("reads curated models from the router's state-dir overrides", async () => {
+        await configureCodex(ctx, "a/one", async () => "sk_dedicated");
+        const override = join(home, "override");
+        mkdirSync(override);
+        writeFileSync(
+            join(override, "user-models.json"),
+            JSON.stringify({
+                models: [{ provider: "pollinations", slug: "override/box" }],
+            }),
+        );
+        expect(
+            (
+                await codex.status({
+                    ...ctx,
+                    env: { ...ctx.env, CODEX_ROUTER_STATE_DIR: override },
+                })
+            ).model,
+        ).toBe("override/box");
+
+        const stateDir = join(home, "state");
+        mkdirSync(stateDir);
+        writeFileSync(
+            join(stateDir, "user-models.json"),
+            JSON.stringify({
+                models: [{ provider: "pollinations", slug: "model/router" }],
+            }),
+        );
+        expect(
+            (
+                await codex.status({
+                    ...ctx,
+                    env: {
+                        ...ctx.env,
+                        MODEL_ROUTER_STATE_DIR: stateDir,
+                        CODEX_ROUTER_STATE_DIR: override,
+                    },
+                })
+            ).model,
+        ).toBe("model/router");
+
+        const full = join(home, "full-models.json");
+        writeFileSync(
+            full,
+            JSON.stringify({
+                models: [{ provider: "pollinations", slug: "full/path" }],
+            }),
+        );
+        expect(
+            (
+                await codex.status({
+                    ...ctx,
+                    env: {
+                        ...ctx.env,
+                        MODEL_ROUTER_STATE_DIR: stateDir,
+                        MODEL_ROUTER_USER_MODELS: full,
+                    },
+                })
+            ).model,
+        ).toBe("full/path");
     });
 
     it("off removes the provider, its key and routes", async () => {

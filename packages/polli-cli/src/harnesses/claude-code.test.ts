@@ -8,9 +8,16 @@ import {
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type CcrConfig, ccrDir } from "./ccr.js";
-import { claudeCode, configureClaudeCode } from "./claude-code.js";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from "vitest";
+import type { CcrConfig } from "./ccr.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -42,21 +49,21 @@ let config: CcrConfig;
 let smokeStatus: number;
 let smokeModels: string[];
 
+// The `/account/keys` read behind `assertKeyUsage`: a fresh `lastRequest`
+// passes the usage check, a stale one fails it.
+let keyUsageFresh = true;
+const previousBaseUrl = process.env.POLLINATIONS_BASE_URL;
+let ccrDir: typeof import("./ccr.js").ccrDir;
+let claudeCode: typeof import("./claude-code.js").claudeCode;
+let configureClaudeCode: typeof import("./claude-code.js").configureClaudeCode;
+
 const executable = (dir: string, name: string) => {
     const file = join(dir, process.platform === "win32" ? `${name}.cmd` : name);
     writeFileSync(file, "");
     chmodSync(file, 0o755);
 };
 
-beforeEach(async () => {
-    home = mkdtempSync(join(tmpdir(), "polli-ccr-"));
-    smokeStatus = 200;
-    smokeModels = [];
-    config = {
-        APIKEY: "sk-ccr-local",
-        Providers: [structuredClone(foreign)],
-        profile: { profiles: [structuredClone(nativeProfile)] },
-    };
+beforeAll(async () => {
     server = createServer((req, res) => {
         let body = "";
         req.on("data", (chunk) => {
@@ -67,10 +74,24 @@ beforeEach(async () => {
                 res.writeHead(status, { "content-type": "application/json" });
                 res.end(JSON.stringify(value));
             };
+            if (req.method === "GET" && req.url === "/account/keys") {
+                return send(200, {
+                    data: [
+                        {
+                            name: "polli-harness-claude-code",
+                            lastRequest: keyUsageFresh
+                                ? new Date().toISOString()
+                                : new Date(0).toISOString(),
+                        },
+                    ],
+                });
+            }
             if (req.url === "/v1/messages") {
                 smokeModels.push(JSON.parse(body).model);
                 return smokeStatus === 200
-                    ? send(200, { content: [{ type: "text", text: "pong" }] })
+                    ? send(200, {
+                          content: [{ type: "text", text: "pong" }],
+                      })
                     : send(smokeStatus, { error: { message: "no route" } });
             }
             const { method, args } = JSON.parse(body);
@@ -89,6 +110,22 @@ beforeEach(async () => {
         server.listen(0, "127.0.0.1", resolve),
     );
     const { port } = server.address() as { port: number };
+    process.env.POLLINATIONS_BASE_URL = `http://127.0.0.1:${port}`;
+    ({ ccrDir } = await import("./ccr.js"));
+    ({ claudeCode, configureClaudeCode } = await import("./claude-code.js"));
+});
+
+beforeEach(async () => {
+    keyUsageFresh = true;
+    home = mkdtempSync(join(tmpdir(), "polli-ccr-"));
+    smokeStatus = 200;
+    smokeModels = [];
+    config = {
+        APIKEY: "sk-ccr-local",
+        Providers: [structuredClone(foreign)],
+        profile: { profiles: [structuredClone(nativeProfile)] },
+    };
+    const { port } = server.address() as { port: number };
     const bin = join(home, "bin");
     mkdirSync(bin);
     executable(bin, "ccr");
@@ -105,8 +142,15 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-    server.close();
     rmSync(home, { recursive: true, force: true });
+});
+
+afterAll(async () => {
+    await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+    );
+    if (previousBaseUrl === undefined) delete process.env.POLLINATIONS_BASE_URL;
+    else process.env.POLLINATIONS_BASE_URL = previousBaseUrl;
 });
 
 const owned = () => ({
@@ -148,7 +192,7 @@ describe("claude-code adapter", () => {
         await configureClaudeCode(ctx, settings);
         const { provider, profile } = owned();
         expect(provider).toMatchObject({
-            api_base_url: "https://gen.pollinations.ai/v1",
+            api_base_url: `${process.env.POLLINATIONS_BASE_URL}/v1`,
             api_key: "sk_dedicated",
             models: models.map((m) => m.id),
         });
@@ -184,6 +228,18 @@ describe("claude-code adapter", () => {
         smokeStatus = 400;
         await expect(configureClaudeCode(ctx, settings)).rejects.toThrow(
             "Smoke test through Claude Code Router failed",
+        );
+        expect(config).toEqual(before);
+    });
+
+    it("passes the usage check on a fresh request and rolls back otherwise", async () => {
+        await configureClaudeCode(ctx, settings);
+        expect(owned().provider).toBeDefined();
+
+        keyUsageFresh = false;
+        const before = structuredClone(config);
+        await expect(configureClaudeCode(ctx, settings)).rejects.toThrow(
+            'No request recorded for harness key "polli-harness-claude-code"',
         );
         expect(config).toEqual(before);
     });

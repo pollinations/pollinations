@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { BASE_URL } from "../lib/config.js";
 import { commandExists, readTextIfExists } from "./fs.js";
-import { resolveHarnessKey } from "./keys.js";
+import { assertKeyUsage, harnessKeyName, resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
@@ -78,11 +78,23 @@ const storeKey = (ctx: HarnessContext, key: string) => {
     }
 };
 
+/**
+ * Curated models live in the router's own user-models file. Resolve it exactly
+ * like the router does (`src/user-models.mjs` `USER_MODELS_PATH` over
+ * `src/paths.mjs` `STATE_DIR`), so `status` sees the same models under any
+ * state-dir override.
+ */
 const curatedModels = (ctx: HarnessContext): string[] => {
     const home = ctx.env.CODEX_HOME?.trim() || join(ctx.home, ".codex");
-    const text = readTextIfExists(
-        join(home, "codex-router", "user-models.json"),
-    );
+    const stateDir =
+        ctx.env.MODEL_ROUTER_STATE_DIR?.trim() ||
+        ctx.env.CODEX_ROUTER_STATE_DIR?.trim() ||
+        ctx.env.KIMI_CODEX_STATE_DIR?.trim() ||
+        join(home, "codex-router");
+    const file =
+        ctx.env.MODEL_ROUTER_USER_MODELS?.trim() ||
+        join(stateDir, "user-models.json");
+    const text = readTextIfExists(file);
     if (!text) return [];
     return (JSON.parse(text).models as { provider: string; slug: string }[])
         .filter((m) => m.provider === PROVIDER)
@@ -151,6 +163,7 @@ export const configureCodex = async (
             "--apply",
         ]);
         if (!curate.ok) throw fail(curate, "Codex Router");
+        const since = Date.now();
         const smoke = router(ctx, "compatibility-test.mjs", [
             `${PROVIDER}/${model}`,
             "--live",
@@ -160,6 +173,7 @@ export const configureCodex = async (
         ]);
         if (!smoke.ok)
             throw fail(smoke, "Smoke test through Codex Router failed");
+        await assertKeyUsage(harnessKeyName(ID), since);
     } catch (error) {
         if (added) generic(ctx, "remove", PROVIDER);
         else {

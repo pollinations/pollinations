@@ -11,7 +11,7 @@ import {
     serviceRunning,
 } from "./ccr.js";
 import { commandExists } from "./fs.js";
-import { resolveHarnessKey } from "./keys.js";
+import { assertKeyUsage, harnessKeyName, resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import type {
     HarnessAdapter,
@@ -90,7 +90,9 @@ export const configureClaudeCode = async (
             service,
             "getGatewayStatus",
         );
+        const since = Date.now();
         await smokeTest(saved, endpoint, settings.model);
+        await assertKeyUsage(harnessKeyName(ID), since);
     } catch (error) {
         await rpc(service, "saveConfig", before);
         throw error;

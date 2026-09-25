@@ -1,0 +1,40 @@
+{
+  "pr_number": 15424,
+  "title": "Add What TTS to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15424",
+  "merged_at": "2026-09-25T03:52:53Z",
+  "labels": [
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "- Adds [What TTS](https://bloodtubes6-cmyk.github.io/Blood) to video_audio\n- App Description: A static web application featuring an Arabic interface with Right-to-Left (RTL) support. It implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely on the client side, requi\n\nFixes #15423",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A voice in the garden",
+    "blurb": "What TTS has landed in video_audio, bringing an Arabic-first voice tool into the hive. It signs in with Pollinations OAuth right in the browser, because apparently even static pages can keep secrets properly now.",
+    "summary": "Added What TTS to the video_audio app catalog: a static Arabic RTL web app that implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely client-side.",
+    "impact": "Arabic-speaking builders can now discover and use What TTS through video_audio with right-to-left UI support and browser-based Pollinations authentication.",
+    "keywords": [
+      "community-app",
+      "what-tts",
+      "text-to-speech",
+      "arabic",
+      "rtl",
+      "oauth",
+      "video-audio"
+    ],
+    "visual_concept": "Depict a cozy Arabic-language voice garden: flowing right-to-left sound-wave glyphs rise from a small retro browser terminal while Polli warmly tends a microphone-shaped code-plant. The scene represents What TTS, client-side PKCE sign-in as a small key-and-lock bloom, and accessible Arabic RTL interaction rather than an abstract audio feature.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny headphones as she tends a microphone-shaped code-plant beside a retro browser terminal showing simple right-to-left Arabic sound-wave text and a little blooming key icon for PKCE login; lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15424.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny headphones as she tends a microphone-shaped code-plant beside a retro browser terminal showing simple right-to-left Arabic sound-wave text and a little blooming key icon for PKCE login; lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T03:53:57.556272+00:00",
+  "app_name": "What TTS",
+  "app_url": "https://bloodtubes6-cmyk.github.io/Blood"
+}

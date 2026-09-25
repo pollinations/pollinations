@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { detectImageMimeType } from "@shared/image-mime.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -58,9 +59,15 @@ export function resolveQwenImageSize(params: ImageParams): {
     return { width: roundTo32(w * scale), height: roundTo32(h * scale) };
 }
 
-/** Qwen Image 3 only accepts 512×512 to 2048×2048 total pixels. */
+/**
+ * Qwen Image 3 takes explicit sizes as given (DashScope accepts any W×H in
+ * range and bills its 1K/2K tier on the requested area), between 512×512 and
+ * 2048×2048 total pixels.
+ */
 export function resolveQwenImage3Size(params: ImageParams) {
-    const size = resolveQwenImageSize(params);
+    const size = params.dimensionsExplicit
+        ? { width: params.width, height: params.height }
+        : resolveQwenImageSize(params);
     const pixels = size.width * size.height;
     if (pixels < 512 * 512 || pixels > 2048 * 2048) {
         throw UpstreamError.fromProvider(400, {
@@ -74,7 +81,10 @@ export function resolveQwenImage3Size(params: ImageParams) {
 // Pixel-billed edits meter each reference, so an unreadable one is rejected
 // rather than forwarded unbilled.
 async function toMeteredDataUri(image: string) {
-    const { buffer, mimeType } = await downloadUserImage(image);
+    const download = await downloadUserImage(image);
+    const { buffer } = download;
+    // Hosts often label images application/octet-stream; trust the bytes.
+    const mimeType = detectImageMimeType(buffer) ?? download.mimeType;
     const dimensions = readImageDimensions(buffer, mimeType);
     if (!dimensions) {
         throw UpstreamError.fromProvider(400, {

@@ -13,8 +13,10 @@ INPUT_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 INPUT_PNG.writeUInt32BE(1024, 16);
 INPUT_PNG.writeUInt32BE(512, 20);
 const INPUT_IMAGE = `data:image/png;base64,${INPUT_PNG.toString("base64")}`;
-// Same bytes, undecodable mime type: readImageDimensions returns null for it.
-const UNMETERABLE_IMAGE = `data:application/octet-stream;base64,${INPUT_PNG.toString("base64")}`;
+// Same bytes under a generic mime type: sniffed and metered as PNG.
+const OCTET_STREAM_PNG = `data:application/octet-stream;base64,${INPUT_PNG.toString("base64")}`;
+// Not an image header: no pixel dimensions to meter.
+const UNMETERABLE_IMAGE = `data:application/octet-stream;base64,${Buffer.alloc(24).toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "qwen/qwen-image-2.1",
@@ -193,6 +195,19 @@ describe("qwenImage21Model", () => {
         for (const tokens of Object.values(result.trackingData?.usage ?? {})) {
             expect(Number.isInteger(tokens)).toBe(true);
         }
+    });
+
+    it("sniffs and meters a PNG reference served as application/octet-stream", async () => {
+        const requests: FalRequest[] = [];
+        mockFal(requests);
+
+        const result = await callQwen21("edit the reference", {
+            ...baseParams,
+            image: [OCTET_STREAM_PNG],
+        });
+
+        expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE]);
+        expect(result.trackingData?.usage?.promptImageTokens).toBe(1024 * 512);
     });
 
     it("rejects more than ten reference images before calling Fal", async () => {

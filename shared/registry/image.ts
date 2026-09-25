@@ -1250,7 +1250,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptImageTokens: 0.003, // per reference image ingested
-            completionImageTokens: 0.04, // per image up to 1536x1536
+            completionImageTokens: 0.04, // per image up to 2,250,000 pixels
         },
         ...defineCostVariants(
             {
@@ -1260,14 +1260,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             ({ input }) =>
-                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
-                    ? "2k"
-                    : undefined,
+                // DashScope bills 2K above 2,250,000 output pixels.
+                (input?.megapixels ?? 0) > 2.25 ? "2k" : undefined,
             {
                 "2k": {
                     label: "2K",
                     description:
-                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                        "Applies when the requested output exceeds 2,250,000 total pixels (about 1500×1500).",
                 },
             },
             "1K",

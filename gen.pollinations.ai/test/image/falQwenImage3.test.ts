@@ -114,6 +114,23 @@ describe("qwenImage3Model", () => {
         });
     });
 
+    it("forwards explicit dimensions without rounding", async () => {
+        const requests: FalRequest[] = [];
+        mockFal(requests);
+
+        await callQwen3("odd size", {
+            ...baseParams,
+            width: 1000,
+            height: 700,
+            dimensionsExplicit: true,
+        });
+
+        expect(requests[0].body.image_size).toEqual({
+            width: 1000,
+            height: 700,
+        });
+    });
+
     it.each([
         1, 3,
     ])("routes edits with %i reference image(s) and meters each input", async (imageCount) => {

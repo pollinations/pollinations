@@ -5,6 +5,7 @@ import {
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     filterPermissionsToVisibleModels,
@@ -216,7 +217,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: [OPENAPI_TAGS.account],
             description: "Create an API key for the current session user.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -265,7 +266,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: [OPENAPI_TAGS.account],
             description:
                 "List all API keys for the current user with pollenBalance.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
@@ -317,7 +318,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: [OPENAPI_TAGS.account],
             description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -412,7 +413,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/metadata",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: [OPENAPI_TAGS.account],
             description: "Update metadata for an API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

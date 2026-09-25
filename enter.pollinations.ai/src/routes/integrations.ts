@@ -1,3 +1,4 @@
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_USER_ID_HEADER } from "@shared/registry/mcp.ts";
@@ -78,7 +79,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "List Connected Apps",
             responses: {
                 200: {
@@ -99,7 +100,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/toolkits",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Search Connectable Apps",
             responses: {
                 200: {
@@ -126,7 +127,7 @@ export const integrationsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Connect App",
             responses: {
                 200: { description: "Hosted authentication URL" },
@@ -152,7 +153,7 @@ export const integrationsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: [OPENAPI_TAGS.connectedApps],
             summary: "Disconnect App",
             responses: { 204: { description: "App disconnected" } },
         }),

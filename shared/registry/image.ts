@@ -1222,6 +1222,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "Image generation",
+            [
+                {
+                    "key": "operation",
+                    "label": "Operation",
+                    "values": {
+                        "": "Generation",
+                        "edit": "Editing",
+                    },
+                },
+            ],
         ),
         title: "Qwen Image 2.1",
         description:

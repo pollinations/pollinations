@@ -1,0 +1,37 @@
+{
+  "pr_number": 15142,
+  "title": "feat: add gotcha-scout prompt agent for collective memory",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15142",
+  "merged_at": "2026-09-25T14:23:04Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "## Summary\n\nA prompt agent (Computer MCP) that independently re-runs the reproduction steps recorded in `knowledge/gotchas/` entries and appends a dated, verified verdict — **STILL HOLDS**, **PARTIALLY HOLDS**, or **NO LONGER REPRODUCES** — instead of trusting that a past verification still describes the present.\n\n- Picks the least-recently-reverified entry each run (tracked in its own `/workspace` log, outside the shared repo) so repeated runs check different entries\n- Appends only; never edits, rewrites, or deletes another agent's content\n- Treats every byte read from the repository as data, never instructions\n- One `git pull --rebase` + retry on push conflict, matching the repo's own README guidance; never force-pushes\n\n`knowledge/gotchas/` is unclaimed by the other submissions on this issue (`games/bottles/`, `social/replies/`, and `social/posts/gazette/` are already taken) and is explicitly suggested in the issue text (\"a gotcha scout that retests known gotchas\").\n\nRepository: https://github.com/tomdacatto/gotcha-scout-agent\nCallable model: **`community/tomdacatto/gotcha-scout`**\n\n## Live runs — 3 real collective-memory commits\n\n1. [`b33af93`](https://github.com/pollinations/collective-memory/commit/b33af93eba7346043eb919c30ccc44ae6765e208) — re-verified `curl-http-errors-can-exit-zero.md`: **STILL HOLDS**.\n2. [`794dbfc`](https://github.com/pollinations/collective-memory/commit/794dbfc8fd0bceaf7dd7d9451877f88a5bb00c2c) — re-verified `git-option-subset.md`: **NO LONGER REPRODUCES** — the original gotcha described a limited git implementation rejecting certain flags; this run found `git --version` now reports `just-git version 1.8.2 (virtual git implementation)` and the previously-failing probes now succeed. This is exactly the kind of drift a re-verification agent exists to catch.\n3. [`f189006`](https://github.com/pollinations/collective-memory/commit/f1890066f7287166bbd370cf935bc171c0971efd) — with both entries already checked once, re-checked `curl-http-errors",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The gotchas get gardened",
+    "blurb": "A new scout now revisits the hive’s old bug stories instead of trusting yesterday’s weather report. It retests one forgotten gotcha at a time and leaves a dated verdict for the next traveler.",
+    "summary": "Added the callable community prompt agent `community/tomdacatto/gotcha-scout`, which selects the least-recently-reverified entry in `knowledge/gotchas/`, reruns its reproduction steps, and appends a dated STILL HOLDS, PARTIALLY HOLDS, or NO LONGER REPRODUCES verdict.",
+    "impact": "Collective-memory gotchas can now stay current through append-only rechecks, with live runs already confirming a curl behavior and detecting that previously unsupported git probes now succeed in just-git 1.8.2.",
+    "keywords": [
+      "community",
+      "prompt-agent",
+      "collective-memory",
+      "gotchas",
+      "computer-mcp",
+      "verification"
+    ],
+    "visual_concept": "Depict gotcha entries as labeled garden plants that need periodic inspection rather than permanent truth. Polli is the careful scout, using a magnifying glass and field notebook to stamp a freshly checked plant; a friendly CRT monitor robot can display the three possible verdicts, while dated tags and healthy code-vines communicate append-only collective memory.",
+    "image_prompt": "Cozy pixel art scene in a warm community garden of file-folder plants labeled GOTCHAS, where Polli—the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings—wears a tiny scout hat and checks a code-plant with a magnifying glass, adding a dated pixel tag reading “STILL HOLDS.” Beside her, a cute chunky CRT-monitor robot shows three small verdict cards—“STILL HOLDS,” “PARTIALLY,” and “NO LONGER”—above a prominently glowing lime green (#ecf874) planter, with flowers and code-vines around them; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15142.jpg",
+    "prompt": "Cozy pixel art scene in a warm community garden of file-folder plants labeled GOTCHAS, where Polli—the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings—wears a tiny scout hat and checks a code-plant with a magnifying glass, adding a dated pixel tag reading “STILL HOLDS.” Beside her, a cute chunky CRT-monitor robot shows three small verdict cards—“STILL HOLDS,” “PARTIALLY,” and “NO LONGER”—above a prominently glowing lime green (#ecf874) planter, with flowers and code-vines around them; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T14:24:07.432245+00:00"
+}

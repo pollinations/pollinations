@@ -1,0 +1,35 @@
+{
+  "pr_number": 15436,
+  "title": "refactor(enter): remove dashboard loading chatter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15436",
+  "merged_at": "2026-09-25T12:08:02Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Removes route-level loading cards and per-section loading messages; content appears as each request resolves.\n- Keeps errors and feedback for explicit actions such as saving or deleting.\n- Removes the now-unused placeholder code; no data fetching or API behavior changes.\n\nValidation: Biome and git diff checks passed. Full frontend build will run in CI; this worktree has no installed dependencies.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Less waiting room, more dashboard",
+    "blurb": "The dashboard stopped narrating every tiny loading moment. Sections now quietly bloom into view as their data arrives, while save and delete actions still tell you when they need to.",
+    "summary": "Removed route-level loading cards, per-section loading messages, and unused dashboard placeholder code so Enter dashboard content renders independently as each request resolves, with explicit action feedback retained for saves and deletes.",
+    "impact": "Dashboard users will see account, keys, Pollen, models, activity, quests, and top-up content appear progressively without a layer of loading chatter, while actionable errors and confirmations remain visible.",
+    "keywords": [
+      "enter-dashboard",
+      "ui-ux",
+      "loading-states",
+      "progressive-rendering",
+      "frontend"
+    ],
+    "visual_concept": "A cozy garden dashboard where several little panels bloom open naturally instead of being covered by loading cards. Polli, wearing a tiny gardener's hat, observes the calm progressive reveal beside a retro terminal; small code-plants and flowers represent independently arriving sections, while a clear save/checkmark sign remains for explicit actions.",
+    "image_prompt": "A cozy pixel art garden-hackerspace dashboard where account cards, charts, keys, and Pollen panels gently bloom open one by one from code-plants, with no cluttered loading signs; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener's hat and watching warmly beside a retro CRT terminal with a lime green (#ecf874) glow and a small pixel checkmark for saved actions. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15436.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace dashboard where account cards, charts, keys, and Pollen panels gently bloom open one by one from code-plants, with no cluttered loading signs; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener's hat and watching warmly beside a retro CRT terminal with a lime green (#ecf874) glow and a small pixel checkmark for saved actions. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-25T12:09:13.684279+00:00"
+}

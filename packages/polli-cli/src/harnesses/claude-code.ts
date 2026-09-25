@@ -28,16 +28,13 @@ const PROFILE_ID = "pollinations-claude-code";
 const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 const MIN_CCR_VERSION = [3, 1, 1] as const;
 
-const versionParts = (value: string) =>
-    value
+export const ccrVersionCompatible = (value: string) => {
+    const current = value
         .trim()
         .replace(/^v/, "")
         .split(".")
         .slice(0, 3)
         .map((part) => Number.parseInt(part, 10));
-
-export const ccrVersionCompatible = (value: string) => {
-    const current = versionParts(value);
     if (current.length < 3 || current.some(Number.isNaN)) return false;
     for (let index = 0; index < 3; index += 1) {
         if (current[index] > MIN_CCR_VERSION[index]) return true;

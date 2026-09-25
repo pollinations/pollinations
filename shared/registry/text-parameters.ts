@@ -161,6 +161,8 @@ export const CHAT_PARAMETERS = {
         "stop",
     ],
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
+    // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
+    azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
     ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
     openRouterMistralSmall32: [
@@ -297,9 +299,39 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "min_p",
         "repetition_penalty",
-        "seed",
         "reasoning_effort",
         "logit_bias",
+    ],
+    // OpenRouter endpoint parameters (2026-09-23) for Fireworks replacements.
+    openRouterDeepseekV4Pro: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "structured_outputs",
+        "top_k",
+    ],
+    openRouterStreamLakeReasoning: [
+        ...SAMPLED_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    openRouterKimiMoonshot: [
+        ...TOOL_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+    ],
+    openRouterKimiStreamLake: [
+        ...TOOL_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+        "top_p",
     ],
     openRouterDeepseekV41Flash: [
         ...CHAT,
@@ -364,6 +396,24 @@ export const CHAT_PARAMETERS = {
         "seed",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
+    ],
+    // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
+    openRouterLing: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "logit_bias",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
     ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [

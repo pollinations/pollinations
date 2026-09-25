@@ -49,8 +49,9 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
-(see `.env.example`), install `community-monitor.service`, then run
+Install Node and Claude Code 2.1.280 or newer (required for Opus 5.5),
+clone/copy this directory, populate `.env` (see `.env.example`),
+install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
 Moving credentials requires the separate, scoped approval in AGENTS.md's
@@ -185,7 +186,7 @@ message limits and cooldowns remain unchanged.
 
 ## Model/effort
 
-The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+The deployed agent is pinned to `claude-opus-5-5` at medium effort in
 `loop.sh`. Every cycle starts with a fresh context containing the complete
 current `CYCLE.md`. Medium effort is intentional: routine checks are
 mechanical, but owner replies and billing diagnostics require controlled

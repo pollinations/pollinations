@@ -5,7 +5,7 @@ import { printInfo, printSuccess } from "../lib/output.js";
 
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
-const keyIsValid = async (key: string) => {
+export const keyIsValid = async (key: string) => {
     try {
         const info = await gen<{ valid: boolean }>("/account/key", {
             apiKey: key,

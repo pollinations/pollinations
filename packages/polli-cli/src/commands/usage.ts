@@ -74,11 +74,11 @@ export function resolveKeyIds(
     keys: UsageKeyInfo[],
     requested: string[],
 ): string[] {
-    return requested.map((want) => {
+    return requested.flatMap((want) => {
         const byId = keys.find((k) => k.id === want);
-        if (byId) return byId.id;
-        const byName = keys.find((k) => k.name === want);
-        if (byName) return byName.id;
+        if (byId) return [byId.id];
+        const byName = keys.filter((k) => k.name === want);
+        if (byName.length > 0) return byName.map((k) => k.id);
         const needle = want.toLowerCase();
         const near = keys
             .filter((k) => k.name?.toLowerCase().includes(needle))

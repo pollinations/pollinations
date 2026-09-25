@@ -60,12 +60,15 @@ const stripConfig = (ctx: HarnessContext, before: string | null) => {
             (/^\s*AI_PROVIDER\s*=/u.test(line) && provider !== "pollinations"),
     );
     // Put back the user's own values that `on` replaced, unless set since.
+    // A provider picked after `on` keeps its own key: the old AI_API_KEY
+    // would override it.
     const kept = parseEnv(filtered.join("\n"));
     append(
         filtered,
         (before ?? "").split("\n").filter((line) => {
             const key = replacedLine.exec(line)?.[1];
-            return key !== undefined && !(key in kept);
+            if (key === undefined || key in kept) return false;
+            return !(key === "AI_API_KEY" && "AI_PROVIDER" in kept);
         }),
     );
     const next = filtered.join("\n");

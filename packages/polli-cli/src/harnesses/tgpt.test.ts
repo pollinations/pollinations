@@ -92,6 +92,24 @@ describe("tgpt harness", () => {
         });
     });
 
+    it("does not bring the old key back to a provider picked after on", () => {
+        mkdirSync(join(home, ".config", "tgpt"), { recursive: true });
+        writeFileSync(
+            configFile(),
+            "AI_PROVIDER=groq\nAI_API_KEY=old-provider-key\n",
+        );
+        configureTgpt(ctx, "sk_test_key");
+        writeFileSync(
+            configFile(),
+            "AI_PROVIDER=openrouter\nOPENROUTER_API_KEY=new-key\n",
+        );
+        expect(disableTgpt(ctx).outcome).toBe("unchanged");
+        expect(parseEnv(read())).toEqual({
+            AI_PROVIDER: "openrouter",
+            OPENROUTER_API_KEY: "new-key",
+        });
+    });
+
     it("stops before configuration when tgpt is unavailable", async () => {
         await expect(tgpt.on(ctx, {})).rejects.toThrow("tgpt was not found");
         expect(existsSync(configFile())).toBe(false);

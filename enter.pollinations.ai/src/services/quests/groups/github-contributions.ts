@@ -26,8 +26,8 @@ const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "APP-SUBMISSION",
     "AUTOMATED",
 ]);
-// Fixed 180-day lookback from launch; later visits must not move the cutoff.
-const ISSUE_REPORT_START = Date.parse("2026-03-27T19:45:46Z");
+// Fixed 30-day lookback from launch; later visits must not move the cutoff.
+const ISSUE_REPORT_START = Date.parse("2026-08-24T19:45:46Z");
 const ISSUE_REPORT_EXCLUDED_TITLE =
     /\[(?:App|Project) Submission\]|^\[(?:Community(?: Model)? Publisher Access|QUEST)\]/i;
 const REPO_OWNER = "pollinations";
@@ -54,10 +54,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 2,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -306,7 +306,7 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         const data: PaginatedSearchData<ReportedIssueNode> = await graphql<
             PaginatedSearchData<ReportedIssueNode>
         >(token, REPORTED_ISSUES_QUERY, {
-            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-03-27`,
+            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-08-24`,
             after,
         });
         for (const issue of data.search.nodes) {

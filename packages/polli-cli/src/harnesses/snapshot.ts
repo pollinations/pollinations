@@ -106,12 +106,16 @@ export const applyWithSnapshot = (
     writeSnapshot(ctx, id, paths, snapshot);
 };
 
-/** Restore untouched files byte-for-byte; otherwise strip only our config. */
+/**
+ * Restore untouched files byte-for-byte; otherwise strip only our config.
+ * `strip` can read a file's content from before the first `on` (null when
+ * unknown) to put back user values that `on` replaced.
+ */
 export const restoreOrStrip = (
     ctx: HarnessContext,
     id: string,
     paths: string[],
-    strip: () => boolean,
+    strip: (before: (path: string) => string | null) => boolean,
 ): OffOutcome => {
     const snapshot = loadSnapshot(ctx, id, paths);
     if (
@@ -127,7 +131,8 @@ export const restoreOrStrip = (
         return "restored";
     }
 
-    const outcome = strip() ? "stripped" : "unchanged";
+    const before = (path: string) => snapshot?.files[path]?.before ?? null;
+    const outcome = strip(before) ? "stripped" : "unchanged";
     clearSnapshot(ctx, id, paths);
     return outcome;
 };

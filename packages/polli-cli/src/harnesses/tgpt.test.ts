@@ -75,6 +75,23 @@ describe("tgpt harness", () => {
         expect(read()).toBe("LATER=keep\n");
     });
 
+    it("puts back the user's provider and key when the file changed after on", () => {
+        mkdirSync(join(home, ".config", "tgpt"), { recursive: true });
+        writeFileSync(
+            configFile(),
+            "AI_PROVIDER=groq\nAI_API_KEY=old-provider-key\nOTHER_KEY=keep\n",
+        );
+        configureTgpt(ctx, "sk_test_key");
+        writeFileSync(configFile(), `${read()}LATER=keep\n`);
+        expect(disableTgpt(ctx).outcome).toBe("stripped");
+        expect(parseEnv(read())).toEqual({
+            AI_PROVIDER: "groq",
+            AI_API_KEY: "old-provider-key",
+            OTHER_KEY: "keep",
+            LATER: "keep",
+        });
+    });
+
     it("stops before configuration when tgpt is unavailable", async () => {
         await expect(tgpt.on(ctx, {})).rejects.toThrow("tgpt was not found");
         expect(existsSync(configFile())).toBe(false);

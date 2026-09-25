@@ -125,7 +125,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
     );
 };
 
-/** Same height as the chart and loading states so the card never jumps. */
+/** Same height as the chart so the card never jumps. */
 export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     children,
 }) => (
@@ -225,12 +225,7 @@ export function ActivityKeyFilter({
         useLoaderData({ from: "/_dashboard" }),
     );
     return (
-        <Await
-            promise={apiKeys}
-            fallback={
-                <ActivityFilter {...props} missingLabel="Loading key name…" />
-            }
-        >
+        <Await promise={apiKeys} fallback={<ActivityFilter {...props} />}>
             {(keys) => {
                 const options = [...props.options];
                 for (const id of props.selected) {

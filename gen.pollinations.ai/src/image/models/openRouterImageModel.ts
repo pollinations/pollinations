@@ -25,6 +25,15 @@ const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
+// Docs show PNG, but the live endpoint returned WebP (2026-09-23).
+const RECRAFT_FLASH_ASPECT_RATIOS = [
+    "1:1",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16",
+] as const;
 const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
@@ -692,6 +701,69 @@ export async function callOpenRouterGeminiImageAPI(
         trackingData: {
             actualModel: safeParams.model,
             usage,
+        },
+    };
+}
+
+function resolveRecraftFlashAspectRatio(
+    safeParams: ImageParams,
+): (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number] | "auto" {
+    const requested = safeParams.aspectRatio;
+    if (!requested) {
+        return closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            RECRAFT_FLASH_ASPECT_RATIOS,
+        );
+    }
+    if (requested === "adaptive") return "auto";
+    if (
+        !(RECRAFT_FLASH_ASPECT_RATIOS as readonly string[]).includes(requested)
+    ) {
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${requested}" is not supported by Recraft V4.1 Flash. Supported: auto, ${RECRAFT_FLASH_ASPECT_RATIOS.join(", ")}.`,
+        });
+    }
+    return requested as (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number];
+}
+
+export async function callOpenRouterRecraftFlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const aspectRatio = resolveRecraftFlashAspectRatio(safeParams);
+    const data = await postOpenRouterImage(
+        apiKey,
+        {
+            model: RECRAFT_FLASH_MODEL,
+            prompt,
+            n: 1,
+            aspect_ratio: aspectRatio,
+            provider: {
+                only: ["recraft"],
+                allow_fallbacks: false,
+            },
+        },
+        "OpenRouter Recraft Flash request failed",
+    );
+    const generatedImage = data.data?.[0];
+    if (!generatedImage?.b64_json) {
+        throw buildOpenRouterNoImageError(data);
+    }
+    logOps("Recraft Flash generation complete", {
+        aspectRatio,
+        providerCost: data.usage?.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(generatedImage.b64_json),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: RECRAFT_FLASH_MODEL,
+            // OpenRouter bills this endpoint a fixed $0.007 per output image.
+            usage: { completionImageTokens: 1 },
         },
     };
 }

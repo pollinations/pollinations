@@ -133,6 +133,8 @@ type PaginatedSearchData<TNode> = {
     };
 };
 
+// Reads at most 10 linked PRs per quest on purpose: close losing PRs before
+// merging winners so every paid PR stays within the first 10.
 const QUEST_ISSUES_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:100){

@@ -125,7 +125,10 @@ export default defineConfig(async ({ mode }) => {
                 import.meta.resolve("@cloudflare/vitest-pool-workers"),
             ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
-            setupFiles: ["./test/setup/apply-migrations.ts"],
+            setupFiles: [
+                "./test/setup/apply-migrations.ts",
+                "./test/setup/public-tinybird-pipes.ts",
+            ],
             exclude: [...configDefaults.exclude],
             deps: {
                 optimizer: {

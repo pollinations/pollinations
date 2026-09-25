@@ -1387,6 +1387,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1,
     },
+    "recraft/recraft-v4.1-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter bills 4,175 image tokens per image (same convention
+            // as Recraft Vector): $0.007 fixed per output image, verified
+            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
+            completionImageTokens: 0.007 * 1.055,
+        },
+        title: "Recraft V4.1 Flash",
+        description: "Fast, low-cost raster image generation from text",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
         provider: "fal",
@@ -1641,14 +1660,14 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
+        // fal list rates (launch promotion ends 2026-09-30), verified 2026-09-25.
         cost: {
-            completionVideoSeconds: 0.00625, // 480p per output second.
+            completionVideoSeconds: 0.025, // 480p per output second.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.01 },
-                "1080p": { completionVideoSeconds: 0.02 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {

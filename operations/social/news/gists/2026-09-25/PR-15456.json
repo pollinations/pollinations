@@ -1,0 +1,37 @@
+{
+  "pr_number": 15456,
+  "title": "fix: stop routine community token alerts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15456",
+  "merged_at": "2026-09-25T15:57:44Z",
+  "labels": [
+    "BUG",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Removes routine token-count and billing-arithmetic flags from community probes.\n- Updates the monitor prompt to ignore old flags while preserving real protocol-failure alerts and requested diagnostics.\n- Keeps probe usage for spend accounting and verifies inconsistent totals no longer produce alerts.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The alarm learned manners",
+    "blurb": "The community monitor stopped buzzing about routine token arithmetic. It still keeps an eye out for actual protocol trouble, because not every number needs a tiny emergency hat.",
+    "summary": "Community probes now ignore routine token-count and billing-arithmetic flags, while retaining protocol-failure alerts, requested diagnostics, and probe-based spend accounting.",
+    "impact": "Monitoring will stay focused on real protocol failures and requested diagnostics instead of producing alerts when usage totals are inconsistent.",
+    "keywords": [
+      "community-monitor",
+      "monitoring",
+      "probes",
+      "token-accounting",
+      "alerts",
+      "billing"
+    ],
+    "visual_concept": "Depict Polli as a calm garden monitor keeper beside a cozy retro terminal: harmless token-count alert papers are being sorted into a compost bin while a single genuine protocol-warning flower remains clearly visible. The scene represents quieter, more useful monitoring without losing real diagnostics.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she gently files harmless token-count alert papers into a compost bin beside a retro CRT monitoring terminal; one healthy code-flower labeled \"PROTOCOL\" is carefully watched in a lime green (#ecf874) garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) pixel outlines, nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15456.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she gently files harmless token-count alert papers into a compost bin beside a retro CRT monitoring terminal; one healthy code-flower labeled \"PROTOCOL\" is carefully watched in a lime green (#ecf874) garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) pixel outlines, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-09-25T16:00:05.619543+00:00"
+}

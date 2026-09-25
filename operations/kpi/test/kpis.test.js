@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildDailyComparison } from "../src/lib/dailyComparison";
-import { formatValue } from "../src/lib/format";
+import { calcChange, formatValue } from "../src/lib/format";
 import {
     KPI_VIEWS,
     KPIS,
@@ -9,10 +9,107 @@ import {
     kpiView,
     kpiViewById,
     kpiViewId,
+    pollenSpendSeries,
 } from "../src/lib/kpis";
 import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
+
+describe("Pollen spend by category", () => {
+    const row = KPIS.find((item) => item.key === "pollenByCategory");
+
+    it("graphs the top three regular categories by last completed week", () => {
+        const weeks = [
+            { pollenAudio: 999 },
+            {
+                pollenText: 20,
+                pollenVideo: 40,
+                pollenImage: 30,
+                pollenAudio: 1,
+                pollenCommunity: 1000,
+                pollenOther: 2000,
+            },
+        ];
+        expect(pollenSpendSeries(weeks).map(({ key }) => key)).toEqual([
+            "pollenVideo",
+            "pollenImage",
+            "pollenText",
+        ]);
+        expect(
+            pollenSpendSeries(weeks, "pollenCommunity").map(({ key }) => key),
+        ).toEqual(["pollenCommunity"]);
+    });
+
+    it("does not invent categories for missing data, but keeps zero spend", () => {
+        expect(pollenSpendSeries([])).toEqual([]);
+        expect(pollenSpendSeries([{}])).toEqual([]);
+        expect(
+            pollenSpendSeries([{ pollenText: 0 }]).map(({ key }) => key),
+        ).toEqual(["pollenText"]);
+    });
+
+    it("cycles between categories and makes each available to the graph", () => {
+        const week = { pollenText: 120, pollenImage: 80, pollenVideo: 40 };
+        expect([0, 1, 2].map((i) => kpiValue(kpiView(row, i), week))).toEqual([
+            120, 80, 40,
+        ]);
+        for (let i = 0; i < row.views.length; i++) {
+            expect(kpiViewById(kpiViewId(row, i)).key).toBe(row.views[i].key);
+        }
+        expect(kpiView(row, row.views.length).key).toBe("pollenText");
+    });
+
+    it("keeps community separate and missing data distinct from zero spend", () => {
+        const view = kpiView(row, 0);
+        expect(kpiValue(view, { pollenText: 20, pollenCommunity: 200 })).toBe(
+            20,
+        );
+        expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+        expect(
+            formatValue(kpiValue(view, { pollenText: 0 }), view.format),
+        ).toBe("$0");
+    });
+
+    it("shows a drop to zero as -100%, without inventing growth from zero or missing data", () => {
+        expect(calcChange(0, 10)).toBe(-100);
+        expect(calcChange(15, 10)).toBe(50);
+        expect(calcChange(10, 0)).toBeNull();
+        expect(calcChange(undefined, 10)).toBeNull();
+    });
+});
+
+describe("agent and MCP KPI rows", () => {
+    it("labels the agent volume as observed runs and explains historical coverage", () => {
+        const row = KPIS.find((item) => item.key === "agentUsage");
+        expect(kpiView(row, 0).name).toBe("Agents · observed runs");
+        for (const view of row.views) {
+            expect(view.tooltip).toContain("recorded internal model/tool call");
+            expect(view.tooltip).toContain("Aug 24, 2026");
+        }
+    });
+
+    it.each([
+        ["agentUsage", "agentRequests", "agentUsers"],
+        ["mcpUsage", "mcpCalls", "mcpUsers"],
+    ])("keeps %s in one switchable row", (key, volume, users) => {
+        const row = KPIS.find((item) => item.key === key);
+        expect(row.views).toHaveLength(2);
+        const week = { [volume]: 410, [users]: 12 };
+        expect(kpiValue(kpiView(row, 0), week)).toBe(410);
+        expect(kpiValue(kpiView(row, 1), week)).toBe(12);
+        expect(kpiValue(kpiView(row, 2), week)).toBe(410);
+        for (const index of [0, 1]) {
+            const view = kpiView(row, index);
+            expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: null }), view.format),
+            ).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: 0 }), view.format),
+            ).toBe("0");
+        }
+    });
+});
 
 describe("dashboard time range", () => {
     it("defaults to 12 weeks and accepts the supported 20-week view", () => {

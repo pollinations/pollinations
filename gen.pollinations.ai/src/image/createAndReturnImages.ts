@@ -5,12 +5,15 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
+import { callAlibabaImage } from "./models/alibabaImageModel.ts";
 import {
     callAzureFlux2,
+    callAzureFlux11Pro,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -20,9 +23,11 @@ import {
 import { callKreaImageAPI } from "./models/kreaModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
+    callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
@@ -31,7 +36,6 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
-import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
@@ -39,6 +43,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
+import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
 import { callZImageFalAPI } from "./models/zImageFalModel.ts";
@@ -47,7 +52,6 @@ import { sanitizeString } from "./util.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
 import {
     analyzeImageSafety,
-    type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
@@ -91,8 +95,6 @@ type AzureGPTImageUsage = {
 export type ImageGenerationResult = {
     buffer: Buffer;
     mimeType?: string;
-    isMature: boolean;
-    isChild: boolean;
     // Tracking data for enter service headers
     trackingData: TrackingData;
 };
@@ -310,6 +312,9 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // Every endpoint is a resource dedicated to a single model: Azure abuse blocks
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
+// gpt-image-2.5 quota is a single subscription-wide Global Standard pool
+// (12 RPM per model, not per region), so each 2.5 model has exactly one
+// dedicated resource; extra regions would add no capacity.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     "openai/gpt-image-1-mini": [
         {
@@ -394,6 +399,16 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
     "openai/gpt-image-2.5-flare": [
         {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-flare",
+            modelName: "gpt-image-2.5-flare",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+    ],
+    "openai/gpt-image-2.5-flare:openai": [
+        {
             provider: "openai",
             baseUrl: "https://api.openai.com/v1",
             modelName: "gpt-image-2.5-flare",
@@ -402,6 +417,16 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         },
     ],
     "openai/gpt-image-2.5-sunburst": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-25-sunburst-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-sunburst",
+            modelName: "gpt-image-2.5-sunburst",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+    ],
+    "openai/gpt-image-2.5-sunburst:openai": [
         {
             provider: "openai",
             baseUrl: "https://api.openai.com/v1",
@@ -679,12 +704,8 @@ const callGPTImageWithEndpoint = async (
         `GPT Image billable usage: promptText=${usage.promptTextTokens}, promptCached=${usage.promptCachedTokens}, promptImage=${usage.promptImageTokens}, completionText=${usage.completionTextTokens}, completionImage=${usage.completionImageTokens}`,
     );
 
-    // Azure doesn't provide content safety information directly, so we'll set defaults
-    // In a production environment, you might want to use a separate content moderation service
     return {
         buffer: imageBuffer,
-        isMature: false, // Default assumption
-        isChild: false, // Default assumption
         trackingData: {
             actualModel: safeParams.model,
             usage,
@@ -740,7 +761,9 @@ const generateImage = async (
         case "openai/gpt-image-2.5-sunburst":
         case "openai/gpt-image-1-mini:openai":
         case "openai/gpt-image-1.5:openai":
-        case "openai/gpt-image-2:openai": {
+        case "openai/gpt-image-2:openai":
+        case "openai/gpt-image-2.5-flare:openai":
+        case "openai/gpt-image-2.5-sunburst:openai": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
@@ -767,8 +790,8 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
-        case "google/gemini-3.1-flash-image:openrouter:ai-studio":
-        case "google/gemini-3.1-flash-lite-image": {
+        case "google/gemini-3.1-flash-lite-image":
+        case "google/gemini-3-pro-image": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -779,10 +802,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+                return await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
-                    "OpenRouter Gemini image generation or safety check failed:",
+                    "Vertex Gemini image generation or safety check failed:",
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -790,8 +813,10 @@ const generateImage = async (
             }
         }
 
-        case "google/gemini-3-pro-image":
-        case "google/gemini-3-pro-image:openrouter:vertex-global": {
+        case "google/gemini-2.5-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
+        case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -826,6 +851,20 @@ const generateImage = async (
             }
         }
 
+        case "black-forest-labs/flux.1.1-pro":
+        case "black-forest-labs/flux.1.1-pro:azure:sweden": {
+            try {
+                return await callAzureFlux11Pro(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Azure FLUX 1.1 Pro generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "black-forest-labs/flux.2-pro":
         case "black-forest-labs/flux.2-flex": {
             try {
@@ -837,7 +876,15 @@ const generateImage = async (
             }
         }
 
-        case "microsoft/mai-image-2.5-flash": {
+        case "black-forest-labs/flux.2-max":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
+        case "black-forest-labs/flux.2-max:openrouter":
+            return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
+
+        case "microsoft/mai-image-2.5-flash":
+        case "microsoft/mai-image-2.6-flash":
+        case "microsoft/mai-image-2.6": {
             try {
                 return await callAzureMaiImage(prompt, safeParams, userInfo);
             } catch (error) {
@@ -896,6 +943,9 @@ const generateImage = async (
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
+        case "recraft/recraft-v4.1-flash":
+            return await callOpenRouterRecraftFlashAPI(prompt, safeParams);
+
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
 
@@ -903,6 +953,9 @@ const generateImage = async (
             return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
+            return await callAlibabaImage(prompt, safeParams, "wan2.7-image");
+
+        case "alibaba/wan-2.7-image:replicate":
             return await callWanImageAPI(prompt, safeParams, false);
 
         case "alibaba/wan-2.7-image-pro":
@@ -911,8 +964,26 @@ const generateImage = async (
         case "qwen/qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
+        case "qwen/qwen-image-2.1":
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-2.1",
+            );
+
         case "qwen/qwen-image-3":
-            return await callQwenImage3API(prompt, safeParams);
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-3.0-pro",
+            );
+
+        case "qwen/qwen-image-3:fal":
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-3:fal",
+            );
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
@@ -943,22 +1014,6 @@ const generateImage = async (
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
-const extractMaturityFlags = (
-    result: ImageGenerationResult,
-): ContentSafetyFlags => {
-    const r = result as ImageGenerationResult & {
-        has_nsfw_concept?: boolean;
-        concept?: { special_scores?: Record<string, number> };
-    };
-    const isMature = Boolean(r.isMature || r.has_nsfw_concept);
-    const isChild =
-        Boolean(r.isChild) ||
-        Object.values(r.concept?.special_scores || {})
-            ?.slice(1)
-            .some((score) => score > -0.05);
-    return { isMature, isChild };
-};
-
 const prepareMetadata = (
     prompt: string,
     originalPrompt: string,
@@ -971,25 +1026,29 @@ const prepareMetadata = (
  * Processes the image buffer with format conversion and metadata
  * @param {Buffer} buffer - The raw image buffer
  * @param {Object} metadataObj - Metadata to embed in the image
- * @param {Object} maturity - Additional maturity information
+ * @param {Object} resultMetadata - Generation result fields to embed
  * @returns {Promise<Buffer>} - The processed image buffer
  */
 const processImageBuffer = async (
     buffer: Buffer,
     metadataObj: object,
-    maturity: object,
+    resultMetadata: object,
 ): Promise<Buffer> => {
     const processedBuffer = await convertToJpeg(buffer);
-    return await writeExifMetadata(processedBuffer, metadataObj, maturity);
+    return await writeExifMetadata(
+        processedBuffer,
+        metadataObj,
+        resultMetadata,
+    );
 };
 
 /**
- * Creates and returns images with metadata, checking for NSFW content.
+ * Creates and returns images with metadata.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
  * @param {string} originalPrompt - The original prompt before any transformations.
  * @param {Object} userInfo - User authentication info for safety logging.
- * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
+ * @returns {Promise<ImageGenerationResult>}
  */
 export async function createAndReturnImageCached(
     prompt: string,
@@ -1001,21 +1060,8 @@ export async function createAndReturnImageCached(
         // Generate the image using the appropriate model
         const result = await generateImage(prompt, safeParams, userInfo);
 
-        // Extract maturity flags
-        const maturityFlags = extractMaturityFlags(result);
-        const { isMature, isChild } = maturityFlags;
-        logError("isMature", isMature, "concepts", isChild);
-
-        // Safety check
-        if (safeParams.safe && isMature) {
-            throw UpstreamError.fromProvider(400, {
-                message:
-                    "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
-            });
-        }
-
         // Prepare metadata
-        const { buffer: _buffer, ...maturity } = result;
+        const { buffer: _buffer, ...resultMetadata } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
@@ -1027,14 +1073,12 @@ export async function createAndReturnImageCached(
                 : await processImageBuffer(
                       result.buffer,
                       metadataObj,
-                      maturity,
+                      resultMetadata,
                   );
 
         return {
             buffer: processedBuffer,
             mimeType: result.mimeType,
-            isChild,
-            isMature,
             trackingData: result.trackingData,
         };
     } catch (error) {

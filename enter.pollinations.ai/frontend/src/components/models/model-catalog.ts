@@ -1,3 +1,4 @@
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -76,22 +77,13 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 }
 
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
-
-export function mergeModelCatalogs(
-    catalogs: readonly ApiModelInfo[][],
-): ApiModelInfo[] {
-    const modelsById = new Map<string, ApiModelInfo>();
-    for (const catalog of catalogs) {
-        for (const model of catalog) {
-            const id = getCatalogModelId(model);
-            if (id && !modelsById.has(id)) modelsById.set(id, model);
-        }
-    }
-    return [...modelsById.values()];
-}
+let modelCatalogExpiresAt = 0;
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const response = await fetch(url, {
+    const catalogUrl = new URL(url);
+    // Keep the full accessible catalog so the search bar can offer status:all.
+    catalogUrl.searchParams.set("reliability", "all");
+    const response = await fetch(catalogUrl, {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -104,17 +96,13 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
-    if (options.refresh) modelCatalogPromise = null;
+    // Health changes over time; share requests without keeping a snapshot forever.
+    if (options.refresh || Date.now() >= modelCatalogExpiresAt) {
+        modelCatalogPromise = null;
+        modelCatalogExpiresAt = Date.now() + 60_000;
+    }
     modelCatalogPromise ??= import("../../config.ts")
-        .then(async ({ config }) => {
-            const catalogs = await Promise.all([
-                fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
-            ]);
-            return mergeModelCatalogs(catalogs);
-        })
+        .then(({ config }) => fetchCatalog(`${config.genBaseUrl}/models`))
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -195,6 +183,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
+        health: model.health,
         agent: model.agent,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,
@@ -202,6 +191,9 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         description: getCatalogDescriptionWithoutName(model),
         publisher: model.publisher,
         brandUrl: model.brand_url,
+        brandIconUrl: isCommunityProviderIconUrl(model.brand_icon_url)
+            ? model.brand_icon_url
+            : undefined,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         supportedEndpoints: model.supported_endpoints,
@@ -538,6 +530,7 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
               ...basePrice,
               priceVariants,
               priceDefaultLabel: model.pricing_default_label,
+              pricingDimensions: model.pricing_dimensions,
           }
         : basePrice;
 }

@@ -83,8 +83,6 @@ export async function callCommunityImageEndpoint(
     }
     return {
         buffer: Buffer.from(bytes),
-        isMature: false,
-        isChild: false,
         trackingData: {
             usage: communityImageUsage(endpoint, body),
         },

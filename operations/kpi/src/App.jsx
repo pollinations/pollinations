@@ -17,6 +17,7 @@ import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
 import { LineChart } from "./components/LineChart";
+import { PollenSpendChart } from "./components/PollenSpendChart";
 import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
@@ -31,10 +32,23 @@ const EXPORT_COLUMNS = [
     ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
+    ["pollenText", "Text Pollen spent (USD)"],
+    ["pollenImage", "Image Pollen spent (USD)"],
+    ["pollenVideo", "Video Pollen spent (USD)"],
+    ["pollenAudio", "Audio Pollen spent (USD)"],
+    ["pollenRealtime", "Realtime Pollen spent (USD)"],
+    ["pollenEmbedding", "Embedding Pollen spent (USD)"],
+    ["pollen3d", "3D Pollen spent (USD)"],
+    ["pollenCommunity", "Community Pollen spent (USD)"],
+    ["pollenOther", "Tools / other Pollen spent (USD)"],
     ["packPurchases", "Pack purchases"],
     ["communityUserPct", "Community models user %"],
     ["communityRequestPct", "Community models request %"],
     ["communityAvailability", "Community models availability %"],
+    ["agentRequests", "Observed agent runs"],
+    ["agentUsers", "Observed agent unique users"],
+    ["mcpCalls", "Recorded MCP calls"],
+    ["mcpUsers", "MCP unique users"],
 ];
 
 function exportCsv(weeklyData) {
@@ -128,19 +142,15 @@ const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
     const { user, isPending, error } = useDashboardSession();
-    if (isPending)
+    if (isPending || error || !user)
         return (
-            <main>
-                <Text>Checking sign-in…</Text>
-            </main>
+            <DashboardSignIn
+                appName="KPI"
+                onSignIn={signIn}
+                isPending={isPending}
+                sessionError={error}
+            />
         );
-    if (error)
-        return (
-            <main>
-                <Alert>Could not check your session. Please reload.</Alert>
-            </main>
-        );
-    if (!user) return <DashboardSignIn appName="KPI" onSignIn={signIn} />;
     return <Dashboard accountUser={user} />;
 }
 
@@ -360,6 +370,8 @@ function Dashboard({ accountUser }) {
                     data={dailyComparison}
                     signupsSyncedAt={signupsSyncedAt}
                 />
+
+                <PollenSpendChart weeks={fullWeeks} />
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart

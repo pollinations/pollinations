@@ -62,7 +62,7 @@ const brandWordmarkMask: CSSProperties = {
 
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
-    githubUsername?: string;
+    accountName?: string;
     githubAvatarUrl?: string;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -146,7 +146,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
-    githubUsername,
+    accountName,
     githubAvatarUrl,
     onSignOut,
     accountArea,
@@ -273,9 +273,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     const effectiveAccountArea =
         accountArea ??
-        (githubUsername && onSignOut ? (
+        (accountName && onSignOut ? (
             <AccountMenuButton
-                username={githubUsername}
+                username={accountName}
                 avatarUrl={githubAvatarUrl ?? ""}
                 onSignOut={onSignOut}
                 onNavigate={closeDrawer}

@@ -18,7 +18,7 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
-import type { BillingRateDefinition } from "./public-pricing";
+import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
@@ -62,6 +62,7 @@ export type UsageType =
     | "promptAudioSeconds"
     | "promptImageTokens"
     | "promptVideoTokens"
+    | "promptVideoSeconds"
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
@@ -176,6 +177,7 @@ export type ModelDefinition = {
     // Public label for the base rate sheet selected when no named variant
     // applies, such as "720p" or "≤272K context".
     defaultCostVariantLabel?: string;
+    pricingDimensions?: PricingDimension[];
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection
@@ -187,17 +189,21 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
+    // When this model or route stops being served (ms epoch), set only when
+    // known: a provider's published retirement, or our own decision to retire
+    // it. Exact cutoff when the provider gives one, else the start of the day.
+    // Fallback routes never inherit it.
+    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
-    /** Internal route limitation: false when forced/named tool selection fails. */
-    supportsForcedToolChoice?: boolean;
     /** Controls honored by this model through `/v1/chat/completions`. */
     supportedParameters?: string[];
     reasoning?: boolean;
@@ -227,8 +233,12 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
-    /** Internal provider-route output-token cap used for fallback compatibility. */
+    /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
+    /** False when the model rejects JSON/structured output requests. */
+    supportsStructuredOutput?: boolean;
+    /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
+    supportsJsonMode?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

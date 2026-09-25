@@ -76,7 +76,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
     const previousFallbacks = source.fallbacks;
     try {
         source.fallbacks = ["microsoft/trellis-2"];
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
 
         const upstreams: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -128,7 +128,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
         expect(upstreams).toEqual(["hyper3d/rodin-2.5", "microsoft/trellis-2"]);
     } finally {
         source.fallbacks = previousFallbacks;
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
     }
 });
 
@@ -136,7 +136,7 @@ workerTest(
     "legacy Trellis IDs use the canonical resolution default",
     async ({ paidApiKey }) => {
         getRegistryModelDefinition("microsoft/trellis-2");
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         try {
             const resolutions: unknown[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -209,7 +209,7 @@ workerTest(
                 "high",
             ]);
         } finally {
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     },
 );

@@ -12,6 +12,7 @@ jobs:
   lint:
     name: Lint and build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -73,11 +74,15 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
+      - name: Test SDK
+        run: npm test --workspace @pollinations/sdk
+
       - name: Test maintenance scripts
         run: >-
           node --test
           .github/scripts/*.test.mjs
           enter.pollinations.ai/scripts/*.test.mjs
+          enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
           operations/deployment/*.test.cjs
@@ -105,6 +110,7 @@ jobs:
   enter:
     name: Test enter.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -178,6 +184,7 @@ jobs:
   gen:
     name: Test gen.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -224,6 +231,7 @@ jobs:
   gate:
     name: Check formatting and linting
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, enter, gen]
     if: always()
 

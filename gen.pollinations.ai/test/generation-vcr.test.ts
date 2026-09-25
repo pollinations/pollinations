@@ -27,6 +27,45 @@ const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
 const replicateDeliveryHost = "replicate.delivery";
 
+// Perplexity's Agent API lists sources in a search_results item (IDs are not
+// in order across searches) and reports cache writes and searches its own way.
+const PERPLEXITY_SEARCH_RESULTS = {
+    type: "search_results",
+    queries: ["vcr sonar"],
+    results: [
+        {
+            id: 2,
+            url: "https://example.test/second",
+            title: "Second",
+            snippet: "two",
+            date: null,
+            last_updated: "2026-09-22",
+            source: "web",
+        },
+        {
+            id: 1,
+            url: "https://example.test/first",
+            title: "First",
+            snippet: "one",
+            date: "2026-09-01",
+            last_updated: "2026-09-21",
+            source: "web",
+        },
+    ],
+};
+const PERPLEXITY_USAGE = {
+    input_tokens: 4000,
+    input_tokens_details: {
+        cache_creation_input_tokens: 3500,
+        cache_read_input_tokens: 0,
+        cached_tokens: 0,
+    },
+    output_tokens: 100,
+    output_tokens_details: { reasoning_tokens: 0 },
+    total_tokens: 4100,
+    tool_calls_details: { search_web: { invocation: 2, cost_usd: 0.005 } },
+};
+
 afterEach(async () => {
     await teardownFetchMock();
 });
@@ -67,6 +106,7 @@ function createGenerationMocks() {
         requests: Array<{
             body: Record<string, unknown>;
             headers: Record<string, string>;
+            url: string;
         }>;
         omitUsage: boolean;
         failStream: boolean;
@@ -90,13 +130,16 @@ function createGenerationMocks() {
         responsesState.requests.push({
             body,
             headers: Object.fromEntries(request.headers.entries()),
+            url: request.url,
         });
+        const perplexity = body.model === "perplexity/sonar";
         const response = {
             id: "resp_direct_test",
             object: "response",
             model: body.model,
             status: "completed",
             output: [
+                ...(perplexity ? [PERPLEXITY_SEARCH_RESULTS] : []),
                 {
                     id: "msg_direct_test",
                     type: "message",
@@ -111,16 +154,18 @@ function createGenerationMocks() {
                     ],
                 },
             ],
-            usage: {
-                input_tokens: 12,
-                input_tokens_details: {
-                    cached_tokens: 2,
-                    cache_write_tokens: 1,
-                },
-                output_tokens: 7,
-                output_tokens_details: { reasoning_tokens: 3 },
-                total_tokens: 19,
-            },
+            usage: perplexity
+                ? PERPLEXITY_USAGE
+                : {
+                      input_tokens: 12,
+                      input_tokens_details: {
+                          cached_tokens: 2,
+                          cache_write_tokens: 1,
+                      },
+                      output_tokens: 7,
+                      output_tokens_details: { reasoning_tokens: 3 },
+                      total_tokens: 19,
+                  },
         };
         if (responsesState.omitUsage) {
             delete (response as { usage?: unknown }).usage;
@@ -208,6 +253,7 @@ function createGenerationMocks() {
             handlerMap: {
                 "openrouter.ai": responsesHandler,
                 "myceli-prod-eastus.openai.azure.com": responsesHandler,
+                "api.perplexity.ai": responsesHandler,
             },
             reset: () => {
                 responsesState.requests = [];
@@ -419,15 +465,6 @@ async function fakePortkeyResponse(request: Request) {
         : model;
 
     if (body.stream) {
-        const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
-            ? {
-                  search_context_size: "low",
-                  cost: {
-                      request_cost: 0.007,
-                      total_cost: 0.00701,
-                  },
-              }
-            : {};
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
@@ -453,7 +490,6 @@ async function fakePortkeyResponse(request: Request) {
                 prompt_tokens: 7,
                 completion_tokens: 3,
                 total_tokens: 10,
-                ...streamUsageExtras,
             },
         };
         const usageChunk = prompt.includes("vcr missing chat stream usage")
@@ -522,31 +558,6 @@ async function fakePortkeyResponse(request: Request) {
             promptTokens: 9,
             completionTokens: 2,
             citations: ["https://example.test/source"],
-        },
-        {
-            matches: prompt.includes("vcr perplexity reported cost"),
-            content: "snapshot perplexity response",
-            promptTokens: 10,
-            completionTokens: 5,
-            usageExtras: {
-                search_context_size: "low",
-                cost: {
-                    request_cost: 0.006,
-                    total_cost: 0.00602,
-                },
-            },
-        },
-        {
-            matches: prompt.includes("vcr perplexity invalid cost"),
-            content: "snapshot perplexity response",
-            promptTokens: 10,
-            completionTokens: 5,
-            usageExtras: {
-                search_context_size: "low",
-                cost: {
-                    request_cost: "not-a-number",
-                },
-            },
         },
         {
             matches: prompt.includes("vcr moderated text"),
@@ -659,7 +670,6 @@ async function fakePortkeyResponse(request: Request) {
                           total_tokens:
                               (selectedCase?.promptTokens || 7) +
                               (selectedCase?.completionTokens || 3),
-                          ...selectedCase?.usageExtras,
                       },
                   }),
         },
@@ -1565,7 +1575,8 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
         modelUsed: "openai/gpt-5.6-luna",
         isBilledUsage: false,
         totalPrice: 0,
-        errorResponseCode: "upstream_finish_reason_error",
+        errorResponseCode: "upstream_error",
+        errorMessage: "provider failed",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
@@ -1986,11 +1997,11 @@ test("canonical model headers preserve provider-reported payload models", async 
     });
 });
 
-test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
+test("Sonar searches through Perplexity's Agent API and bills each search", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
+    await mocks.enable("tinybird", "responsesDirect");
 
     const { response, wait } = await fetchWorker("/v1/chat/completions", {
         method: "POST",
@@ -2000,53 +2011,132 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [
-                { role: "user", content: "vcr perplexity reported cost" },
-            ],
+            messages: [{ role: "user", content: "vcr sonar search" }],
+            frequency_penalty: 0.5,
+            web_search_options: { search_context_size: "medium" },
+            search_domain_filter: ["wikipedia.org"],
+            search_recency_filter: "week",
         }),
     });
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        usage?: Record<string, unknown>;
-    };
+    const body = (await response.json()) as Record<string, unknown>;
+    // Result-ID order, so an inline [n] is citations[n - 1].
+    expect(body.citations).toEqual([
+        "https://example.test/first",
+        "https://example.test/second",
+    ]);
+    expect(body.search_results).toEqual([
+        {
+            url: "https://example.test/first",
+            title: "First",
+            snippet: "one",
+            date: "2026-09-01",
+            last_updated: "2026-09-21",
+            source: "web",
+        },
+        {
+            url: "https://example.test/second",
+            title: "Second",
+            snippet: "two",
+            date: null,
+            last_updated: "2026-09-22",
+            source: "web",
+        },
+    ]);
     expect(body.usage).toMatchObject({
-        prompt_tokens: 10,
-        completion_tokens: 5,
-        total_tokens: 15,
+        prompt_tokens: 4000,
+        prompt_tokens_details: { cache_write_tokens: 3500 },
+        server_tool_use_details: { web_search_requests: 2 },
     });
-    expect(body.usage).not.toHaveProperty("cost");
-    expect(body.usage).not.toHaveProperty("search_context_size");
     await wait();
 
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const upstream = mocks.responsesDirect.state.requests[0];
+    expect(upstream.url).toBe("https://api.perplexity.ai/v1/agent");
+    expect(upstream.body).toMatchObject({
+        model: "perplexity/sonar",
+        instructions: expect.stringContaining("[1][2]"),
+        // Legacy Sonar always searched; the Agent API skips simple questions.
+        tool_choice: "required",
+        tools: [
+            {
+                type: "web_search",
+                search_context_size: "medium",
+                filters: {
+                    search_domain_filter: ["wikipedia.org"],
+                    search_recency_filter: "week",
+                },
+            },
+        ],
+    });
+    expect(upstream.body).not.toHaveProperty("frequency_penalty");
+    expect(upstream.body).not.toHaveProperty("web_search_options");
+
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
         modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 10,
-        tokenCountCompletionText: 5,
+        modelUsed: "perplexity/sonar",
         isBilledUsage: true,
+        adjustmentCosts: { "perplexity.web_search.v1": 0.005 },
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
     });
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
-    // Itemized search fee rides along in the Map columns, keyed by rule id.
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_low.search_request.v1": 0.006,
-    });
-    expect(mocks.tinybird.state.events[0].adjustmentUnits).toEqual({
-        "perplexity.sonar_low.search_request.v1": 1,
-    });
+    // 4,000 input tokens (3,500 of them cache writes) at $0.25/M, 100 output
+    // tokens at $2.50/M, and two searches at $2.50/1K.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00625, 8);
 });
 
-test("Perplexity aliases add no options and allow explicit override", async ({
+test("streaming Sonar sends its sources with the finish chunk", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
+    await mocks.enable("tinybird", "responsesDirect");
 
-    for (const [model, requestedSize] of [
-        ["perplexity-high", undefined],
-        ["sonar-deep", "low"],
-    ] as const) {
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity/sonar",
+            stream: true,
+            messages: [{ role: "user", content: "vcr sonar stream" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const chunks = (await response.text())
+        .split("\n\n")
+        .filter((line) => line.startsWith("data: {"))
+        .map((line) => JSON.parse(line.slice(6)));
+    const finish = chunks.find(
+        (chunk) => chunk.choices?.[0]?.finish_reason === "stop",
+    );
+    expect(finish.citations).toEqual([
+        "https://example.test/first",
+        "https://example.test/second",
+    ]);
+    expect(chunks.at(-1).usage).toMatchObject({
+        server_tool_use_details: { web_search_requests: 2 },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        isBilledUsage: true,
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
+    });
+});
+
+test("retired Sonar models answer as Sonar with web search on", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "sonar-reasoning-pro",
+        "perplexity",
+    ]) {
         const { response, wait } = await fetchWorker("/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -2055,12 +2145,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
             },
             body: JSON.stringify({
                 model,
-                messages: [{ role: "user", content: `context ${model}` }],
-                ...(requestedSize && {
-                    web_search_options: {
-                        search_context_size: requestedSize,
-                    },
-                }),
+                messages: [{ role: "user", content: `vcr retired ${model}` }],
             }),
         });
 
@@ -2070,21 +2155,21 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         await wait();
     }
 
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
-    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
-        "web_search_options",
-    );
-    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
-    });
+    for (const { body } of mocks.responsesDirect.state.requests) {
+        expect(body).toMatchObject({
+            model: "perplexity/sonar",
+            tools: [{ type: "web_search" }],
+        });
+    }
 });
 
-test("forwards a medium search context and bills the medium fee", async ({
+test("Responses requests to Sonar search by default and bill each search", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
             "content-type": "application/json",
@@ -2092,7 +2177,55 @@ test("forwards a medium search context and bills the medium fee", async ({
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [{ role: "user", content: "medium context" }],
+            input: "vcr sonar responses",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests[0].body).toMatchObject({
+        model: "perplexity/sonar",
+        tools: [{ type: "web_search" }],
+    });
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        isBilledUsage: true,
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
+    });
+});
+
+test("simple text lists Sonar's sources", async ({ paidApiKey, mocks }) => {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    const { response } = await fetchWorker(
+        "/text/vcr%20sonar%20text?model=sonar",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe(
+        "direct response\n\n---\nSources:\n[1] https://example.test/first\n[2] https://example.test/second\n",
+    );
+});
+
+test("forwards web search options untouched to other models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "context gpt-5-nano" }],
             web_search_options: { search_context_size: "medium" },
         }),
     });
@@ -2104,138 +2237,7 @@ test("forwards a medium search context and bills the medium fee", async ({
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
         web_search_options: { search_context_size: "medium" },
     });
-    // The reply reports no tier, so the fee follows what the caller asked for.
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_medium.search_request.v1": 0.008,
-    });
-});
-
-test("forwards search options untouched and bills the requested tier", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    for (const [model, searchContextSize] of [
-        ["perplexity/sonar-pro", "low"],
-        ["perplexity/sonar-reasoning-pro", "high"],
-        ["openai/gpt-5-nano", "medium"],
-    ] as const) {
-        const { response, wait } = await fetchWorker("/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${paidApiKey}`,
-            },
-            body: JSON.stringify({
-                model,
-                messages: [{ role: "user", content: `context ${model}` }],
-                web_search_options: {
-                    search_context_size: searchContextSize,
-                },
-            }),
-        });
-
-        expect(response.status).toBe(200);
-        await response.text();
-        await wait();
-    }
-
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
-    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
-    });
-    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
-        web_search_options: { search_context_size: "high" },
-    });
-    expect(mocks.portkeyDirect.state.requests[2]).toMatchObject({
-        web_search_options: { search_context_size: "medium" },
-    });
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_pro_low.search_request.v1": 0.006,
-    });
-    expect(mocks.tinybird.state.events[1].adjustmentCosts).toEqual({
-        "perplexity.sonar_reasoning_high.search_request.v1": 0.014,
-    });
-    expect(mocks.tinybird.state.events[2].adjustmentCosts).toBeUndefined();
-});
-
-test("streaming chat completions bill provider-reported Perplexity request cost", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "perplexity/sonar",
-            stream: true,
-            messages: [{ role: "user", content: "vcr perplexity stream cost" }],
-        }),
-    });
-
-    expect(response.status).toBe(200);
-    await response.text();
-    await wait();
-
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
-        modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 7,
-        tokenCountCompletionText: 3,
-        isBilledUsage: true,
-    });
-    // 0.007 provider-reported request fee + 0.00001 token cost.
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
-});
-
-test("malformed provider-reported cost bills the static fee, not a 5xx", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "perplexity/sonar",
-            messages: [
-                { role: "user", content: "vcr perplexity invalid cost" },
-            ],
-        }),
-    });
-
-    // Clamp-and-alert: a malformed provider cost on an otherwise-good
-    // generation no longer fails the request. The response succeeds and the
-    // request is billed at the static registry fee.
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        usage?: Record<string, unknown>;
-    };
-    expect(body.usage).not.toHaveProperty("cost");
-    await wait();
-
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
-        modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 10,
-        tokenCountCompletionText: 5,
-        isBilledUsage: true,
-    });
-    // 0.005 static request fee + 0.000015 token cost (10 prompt + 5 completion
-    // @ $1/1M). Provider request_cost was malformed → static fee substituted.
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.005015, 8);
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toBeUndefined();
 });
 
 test("non-stream chat completions keep moderation telemetry in generation events", async ({

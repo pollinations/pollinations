@@ -41,6 +41,11 @@ const SOURCES = [
         load: () => api.weekly("retention", RETENTION_WEEKS),
     },
     {
+        label: "Agent/MCP usage",
+        key: "agentMcpUsage",
+        load: (weeks) => api.weekly("agent-mcp-usage", weeks),
+    },
+    {
         label: "User segments",
         key: "segments",
         load: (weeks) => api.weekly("user-segments", weeks),
@@ -59,6 +64,7 @@ const REQUIRED = {
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
+    agentMcpUsage: "Tinybird (agent/MCP usage)",
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
@@ -143,6 +149,15 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.
                 pollenRevenue: row.revenue_usd,
+                pollenText: row.pollen_text,
+                pollenImage: row.pollen_image,
+                pollenVideo: row.pollen_video,
+                pollenAudio: row.pollen_audio,
+                pollenRealtime: row.pollen_realtime,
+                pollenEmbedding: row.pollen_embedding,
+                pollen3d: row.pollen_3d,
+                pollenCommunity: row.pollen_community,
+                pollenOther: row.pollen_other,
                 paidPollenPct: row.paid_pollen_pct,
                 communityUserPct: row.served_community_user_pct,
                 communityUserPctAll: row.community_user_pct,
@@ -152,6 +167,12 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
             mergeInto(weekMap, raw.revenue, (row) => ({
                 revenue: row.revenue,
                 packPurchases: row.purchases,
+            }));
+            mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
+                agentRequests: row.agent_requests,
+                agentUsers: row.agent_users,
+                mcpCalls: row.mcp_calls,
+                mcpUsers: row.mcp_users,
             }));
             mergeInto(weekMap, raw.health, (row) => ({
                 availability: row.availability,

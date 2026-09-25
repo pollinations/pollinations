@@ -113,6 +113,9 @@ const runScript = (
     };
 };
 
+const generic = (ctx: HarnessContext, ...args: string[]) =>
+    runScript(ctx, "providers.mjs", ["generic", ...args]);
+
 const parseJson = <T>(run: RouterRun, what: string): T => {
     if (!run.ok) {
         throw new Error(
@@ -127,12 +130,7 @@ const parseJson = <T>(run: RouterRun, what: string): T => {
 };
 
 const provider = (ctx: HarnessContext): GenericProvider | null => {
-    const run = runScript(ctx, "providers.mjs", [
-        "generic",
-        "show",
-        PROVIDER,
-        "--json",
-    ]);
+    const run = generic(ctx, "show", PROVIDER, "--json");
     if (!run.ok) return null;
     return parseJson<{ provider: GenericProvider }>(
         run,
@@ -149,13 +147,7 @@ const ownsProvider = (value: GenericProvider | null) =>
     );
 
 const credentialConfigured = (ctx: HarnessContext) => {
-    const run = runScript(ctx, "providers.mjs", [
-        "generic",
-        "credential",
-        PROVIDER,
-        "status",
-        "--json",
-    ]);
+    const run = generic(ctx, "credential", PROVIDER, "status", "--json");
     if (!run.ok) return false;
     return (
         parseJson<{ configured?: boolean }>(
@@ -183,39 +175,13 @@ const storedKey = (ctx: HarnessContext) => {
 };
 
 const setCredential = (ctx: HarnessContext, key: string) => {
-    const bridge = [
-        'import { pathToFileURL } from "node:url";',
-        'import { join } from "node:path";',
-        "const src = process.env.POLLI_CODEX_ROUTER_SRC;",
-        'const mod = await import(pathToFileURL(join(src, "providers.mjs")).href);',
-        'let value = "";',
-        "for await (const chunk of process.stdin) value += chunk;",
-        'await mod.runGenericCommand(["credential","pollinations","set","--json"],',
-        "{ prompt: () => value.trim() });",
-    ].join(" ");
-    const run = spawnSync(
-        process.execPath,
-        ["--input-type=module", "-e", bridge],
-        {
-            env: {
-                ...process.env,
-                ...ctx.env,
-                POLLI_CODEX_ROUTER_SRC: join(routerRoot(ctx), "src"),
-            },
-            input: key,
-            encoding: "utf-8",
-            windowsHide: true,
-        },
+    const run = runScript(
+        ctx,
+        "providers.mjs",
+        ["generic", "credential", PROVIDER, "set", "--stdin", "--json"],
+        key,
     );
-    if (run.status !== 0) {
-        throw new Error(
-            `Codex Router rejected the dedicated key: ${(
-                run.stderr || run.stdout
-            )
-                .trim()
-                .slice(0, 500)}`,
-        );
-    }
+    if (!run.ok) throw failRun(run, "Codex Router credential setup");
 };
 
 const userModelsPath = (ctx: HarnessContext) =>
@@ -244,8 +210,7 @@ const selectedModels = (ctx: HarnessContext): string[] => {
 };
 
 const addProvider = (ctx: HarnessContext) =>
-    runScript(ctx, "providers.mjs", [
-        "generic",
+    generic(ctx,
         "add",
         PROVIDER,
         "--name",
@@ -258,10 +223,10 @@ const addProvider = (ctx: HarnessContext) =>
         OWNER_MARKER,
         "--no-apply",
         "--json",
-    ]);
+    );
 
 const removeProvider = (ctx: HarnessContext) =>
-    runScript(ctx, "providers.mjs", ["generic", "remove", PROVIDER, "--json"]);
+    generic(ctx, "remove", PROVIDER, "--json");
 
 const curateModel = (ctx: HarnessContext, model: string) =>
     runScript(ctx, "curate-models.mjs", [

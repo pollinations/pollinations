@@ -1,0 +1,37 @@
+{
+  "pr_number": 15441,
+  "title": "fix: safety block error body; remove unused NSFW output check",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15441",
+  "merged_at": "2026-09-25T13:21:49Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Fix: a request blocked by the Bedrock safety filter (`safe=sexual` etc.) now returns `code: content_blocked` and the triggered categories. Before, the shared error handler replaced the custom body with a generic 400.\n- Removes the old provider-flag output check (`isMature`/`isChild` → 400 \"NSFW content detected\", plus a 5 s sleep) and the flags from every image model. Only Azure Flux Kontext and fal Z-Image ever set them, and prod `generation_event_v2` has 0 hits in 60 days.\n- Keeps the image `safe` boolean: it still drives the Gemini safety threshold and the Azure prompt check.\n- Updates `docs/safety.md` and the block test, which now runs through the production error handler (it fails on main).\n\n| Blocked request | Body |\n|---|---|\n| Before | `code: BAD_REQUEST`, \"Something was wrong with the input data…\" |\n| After | `code: content_blocked`, \"Request blocked by safety filter: sexual\" |\n\nConflicts: the model-retirement branch deletes `novaCanvasModel.ts`, and #15236 adds `isMature: false` lines that need dropping after this merges.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The safety gate speaks plainly",
+    "blurb": "When an image request meets a safety filter, the hive now returns the actual note instead of a generic shrug. The old, mostly ornamental provider-flag check has also been composted.",
+    "summary": "Blocked Bedrock image requests using `safe=sexual` and related filters now preserve a `content_blocked` response with the triggered safety categories through the production error handler, while the unused `isMature`/`isChild` output-flag check and its 5-second delay were removed.",
+    "impact": "API clients can now reliably distinguish safety-filtered requests from generic bad input and receive messages such as `Request blocked by safety filter: sexual`; the existing `safe` boolean continues to control Gemini thresholds and Azure prompt checks.",
+    "keywords": [
+      "image-api",
+      "safety",
+      "content_blocked",
+      "bedrock",
+      "error-handling",
+      "gen"
+    ],
+    "visual_concept": "A cozy garden API safety gate is correctly stamping a clear `CONTENT BLOCKED` notice on a request leaf, rather than sending it into a vague error fog. Polli, wearing a tiny librarian-style safety visor, calmly reads the labeled notice while a small CRT robot holds a tidy error-response printout; flowering code-plants and a retired dusty flag sign represent removal of the unused provider output flags.",
+    "image_prompt": "Cozy pixel art scene of a lime green (#ecf874) garden safety gate correctly labeling a glowing request leaf with simple pixel text `CONTENT BLOCKED`, while Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears tiny safety visor glasses and calmly reads the notice beside flowering code-plants; a cute CRT-monitor robot holds a clean error printout, with an old dusty flag tucked into the compost. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15441.jpg",
+    "prompt": "Cozy pixel art scene of a lime green (#ecf874) garden safety gate correctly labeling a glowing request leaf with simple pixel text `CONTENT BLOCKED`, while Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings—wears tiny safety visor glasses and calmly reads the notice beside flowering code-plants; a cute CRT-monitor robot holds a clean error printout, with an old dusty flag tucked into the compost. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-25T13:22:45.692744+00:00"
+}

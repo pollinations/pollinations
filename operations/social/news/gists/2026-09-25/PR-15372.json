@@ -1,0 +1,37 @@
+{
+  "pr_number": 15372,
+  "title": "feat: reward issue reporters after fixes merge",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15372",
+  "merged_at": "2026-09-25T02:09:36Z",
+  "labels": [
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Adds a repeatable 3 Quest Pollen reward per reported issue closed by a merged PR.\n- Uses the reporter’s linked GitHub ID and an issue-specific reward key; repeat checks cannot pay twice.\n- Includes PRs merged since 2026-03-27 19:45 UTC (the 180 days before launch).\n- Excludes app submissions, quest issues, automated issues, and community publisher access requests, including older unlabeled submissions.\n- Tests the cutoff, exclusions, claiming, and idempotency.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Good bug reports bear pollen",
+    "blurb": "A well-spotted issue can now bloom into 3 Pollen once the fix lands. The hive has started leaving tiny thank-you notes for people who notice the loose floorboards.",
+    "summary": "Added a repeatable 3 Pollen Quest reward for GitHub issue reporters when a linked fix PR merges, using each reporter’s linked GitHub ID and an issue-specific key to ensure every eligible report is rewarded only once.",
+    "impact": "People whose eligible reported issues are fixed by merged PRs—including fixes merged since 2026-03-27 19:45 UTC—can claim 3 Pollen per issue, while app submissions, Quest issues, automated reports, and publisher-access requests stay out of the reward path.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github",
+      "issue reporting",
+      "rewards",
+      "billing"
+    ],
+    "visual_concept": "Polli is a warm, observant bug gardener: she spots a tiny pixel bug on a code-plant and pins a small issue note to it, while a freshly repaired plant blooms into a 3-Pollen flower. A linked GitHub-style issue card and a single stamped reward token convey that each useful report gets one claim after its fix merges; a cheerful CRT Monitor Robot can hold the merged code printout.",
+    "image_prompt": "In a cozy pixel-art garden workshop, Polli—the cute yellow bee mascot with dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blush, light blue rounded wings, and a tiny gardener tool belt—pins an issue note beside a repaired code-plant blooming with a glowing \"3 POLLEN\" flower, while a chunky CRT monitor robot proudly holds a merged code printout. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream soil, lavender and peach flowers, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; pixel-font text: \"FIXED\" and \"3 POLLEN\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15372.jpg",
+    "prompt": "In a cozy pixel-art garden workshop, Polli—the cute yellow bee mascot with dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blush, light blue rounded wings, and a tiny gardener tool belt—pins an issue note beside a repaired code-plant blooming with a glowing \"3 POLLEN\" flower, while a chunky CRT monitor robot proudly holds a merged code printout. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream soil, lavender and peach flowers, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; pixel-font text: \"FIXED\" and \"3 POLLEN\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-25T02:10:43.672996+00:00"
+}

@@ -26,10 +26,6 @@ function roundToMultipleOf32(value: number): number {
     return Math.max(32, Math.round(value / 32) * 32);
 }
 
-// Matches the default 1024x1024 side length (models.ts IMAGE_DEFAULT_SIDE_LENGTHS)
-// so the total output area stays constant regardless of aspect ratio.
-const DEFAULT_OUTPUT_AREA = 1024 * 1024;
-
 // safeParams.width/height default to a fixed square when the caller sends
 // aspectRatio without explicit dimensions, so aspectRatio must be resolved
 // into a size here — otherwise every non-explicit request renders square.
@@ -44,14 +40,10 @@ function resolveImageSize(safeParams: ImageParams): {
             height: roundToMultipleOf32(safeParams.height),
         };
     }
+    // Keep the default output area (width x height is the model default here)
+    // while matching the requested ratio.
     const [w, h] = ratio.split(":").map(Number);
-    if (!w || !h) {
-        return {
-            width: roundToMultipleOf32(safeParams.width),
-            height: roundToMultipleOf32(safeParams.height),
-        };
-    }
-    const scale = Math.sqrt(DEFAULT_OUTPUT_AREA / (w * h));
+    const scale = Math.sqrt((safeParams.width * safeParams.height) / (w * h));
     return {
         width: roundToMultipleOf32(w * scale),
         height: roundToMultipleOf32(h * scale),

@@ -403,8 +403,6 @@ export async function callOpenRouterSeedreamProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "bytedance/seedream-4.5",
             usage: {
@@ -461,8 +459,6 @@ export async function callOpenRouterGrokImagineProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
@@ -523,8 +519,6 @@ export async function callOpenRouterGrokImagineImage2API(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
@@ -593,8 +587,6 @@ export async function callOpenRouterFlux2MaxAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "black-forest-labs/flux.2-max:openrouter",
             usage: {
@@ -696,8 +688,6 @@ export async function callOpenRouterGeminiImageAPI(
 
     return {
         buffer: finalImageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage,
@@ -758,8 +748,6 @@ export async function callOpenRouterRecraftFlashAPI(
 
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: RECRAFT_FLASH_MODEL,
             // OpenRouter bills this endpoint a fixed $0.007 per output image.
@@ -840,8 +828,6 @@ export async function callOpenRouterRecraftVectorAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         mimeType: SVG_MEDIA_TYPE,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.

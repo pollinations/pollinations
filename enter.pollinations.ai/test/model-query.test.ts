@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    AGENT_QUERY_FILTER_KEYS,
     ensureModelQueryDefaults,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
@@ -106,12 +107,36 @@ describe("model query defaults", () => {
             "SOURCE:community status:all",
         );
     });
+
+    it("uses only defaults supported by the current list", () => {
+        expect(ensureModelQueryDefaults("", AGENT_QUERY_FILTER_KEYS)).toBe(
+            "status:reliable",
+        );
+        expect(
+            ensureModelQueryDefaults(
+                "publisher:alice",
+                AGENT_QUERY_FILTER_KEYS,
+            ),
+        ).toBe("status:reliable publisher:alice");
+        for (const query of ["status:all", "STATUS:healthy", "status:"]) {
+            expect(
+                ensureModelQueryDefaults(query, AGENT_QUERY_FILTER_KEYS),
+            ).toBe(query);
+        }
+        expect(ensureModelQueryDefaults("", [])).toBe("");
+        expect(ensureModelQueryDefaults("github", [])).toBe("github");
+    });
 });
 
-it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
-    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
+it.each([
+    { community: false, agent: false },
+    { community: true, agent: false },
+    { community: true, agent: true },
+    { community: false, agent: true },
+])("uses the same reliability cutoff for %j", (kind) => {
+    for (const successRate of [0, 70, 80, 80.1, 90, 100, null]) {
         const candidate = model({
-            community: true,
+            ...kind,
             health: {
                 status: successRate == null ? "unknown" : "degraded",
                 requests: successRate == null ? 0 : 50,
@@ -119,23 +144,16 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             },
         });
         const visible = successRate == null || successRate > 80;
-        expect(matches(candidate, "source:community status:reliable")).toBe(
-            visible,
-        );
         expect(matches(candidate, "status:reliable")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
+        expect(matches(candidate, "status:healthy")).toBe(false);
     }
-    const official = model({
-        health: { status: "down", requests: 50, success_rate: 0 },
-    });
-    expect(matches(official, "status:reliable")).toBe(false);
-    expect(
-        matches(
-            { ...official, community: true, agent: true },
-            "status:reliable",
-        ),
-    ).toBe(false);
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    expect(matches(model(kind), "status:reliable")).toBe(true);
+    expect(matches(model(kind), "status:healthy")).toBe(false);
+});
+
+it("keeps reliable and healthy as distinct status options", () => {
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
     expect(
         matches(
             model({
@@ -209,7 +227,7 @@ describe("model query filter tokens", () => {
     });
 
     it("treats filters unsupported by the current tab as plain text", () => {
-        const agentKeys = ["publisher", "id", "capability"] as const;
+        const agentKeys = AGENT_QUERY_FILTER_KEYS;
         const query = "source:community access:paid capability:agent";
 
         expect(parseModelQuery(query, agentKeys)).toEqual({
@@ -395,12 +413,18 @@ describe("getModelQuerySuggestions", () => {
     });
 
     it("only suggests filters supported by the current tab", () => {
-        const agentKeys = ["publisher", "id", "capability"] as const;
+        const agentKeys = AGENT_QUERY_FILTER_KEYS;
 
         expect(getModelQuerySuggestions("", models, agentKeys)).toEqual([
             "capability:",
             "id:",
             "publisher:",
+            "status:",
+        ]);
+        expect(getModelQuerySuggestions("status:", models, agentKeys)).toEqual([
+            "status:all ",
+            "status:healthy ",
+            "status:reliable ",
         ]);
         expect(getModelQuerySuggestions("access:", models, agentKeys)).toEqual(
             [],

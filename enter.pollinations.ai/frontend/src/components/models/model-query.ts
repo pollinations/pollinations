@@ -44,6 +44,17 @@ export const MODEL_QUERY_FILTER_KEYS = [
     "type",
     "capability",
 ] as const;
+export const AGENT_QUERY_FILTER_KEYS = [
+    "status",
+    "publisher",
+    "id",
+    "capability",
+] as const;
+
+const DEFAULT_MODEL_QUERY_FILTERS: ModelQueryFilter[] = [
+    { key: "source", value: "official" },
+    { key: "status", value: "reliable" },
+];
 
 const isModelAccess = (value: string): value is ModelAccess =>
     ACCESS_VALUES.includes(value as ModelAccess);
@@ -117,7 +128,10 @@ export function getExplicitModelQuerySource(
 }
 
 /** Make default catalog filters visible and editable in the search bar. */
-export function ensureModelQueryDefaults(query: string): string {
+export function ensureModelQueryDefaults(
+    query: string,
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
+): string {
     const normalizedQuery = query.trim();
     const keys = normalizedQuery
         .toLowerCase()
@@ -125,9 +139,9 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:reliable"].filter(
-            (token) => !keys.includes(token.split(":")[0]),
-        ),
+        ...DEFAULT_MODEL_QUERY_FILTERS.filter(
+            ({ key }) => supportedKeys.includes(key) && !keys.includes(key),
+        ).map(({ key, value }) => `${key}:${value}`),
         normalizedQuery,
     ]
         .filter(Boolean)
@@ -307,7 +321,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return Boolean(model.community) === (filter.value === "community");
         case "status":
             if (filter.value === "all") return true;
-            if (filter.value === "reliable" && model.community && !model.agent)
+            if (filter.value === "reliable")
                 return isModelReliable(model.health?.success_rate);
             return model.health?.status === "healthy";
         case "publisher": {

@@ -77,9 +77,7 @@ export async function runGenericCommand(args, deps = {}) {
       return;
     }
     if (sub === "set") {
-      let input = "";
-      for await (const chunk of process.stdin) input += chunk;
-      state.key = deps.prompt ? deps.prompt("key") : input.trim();
+      state.key = deps.prompt ? deps.prompt("key") : "";
       save(state);
       console.log(JSON.stringify({ configured: Boolean(state.key) }));
       return;

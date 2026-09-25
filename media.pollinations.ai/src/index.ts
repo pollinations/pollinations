@@ -9,6 +9,7 @@ import {
     resolver,
     validator,
 } from "hono-openapi";
+import { removeMetadata } from "picscrub";
 import { z } from "zod";
 import type { CatalogItem, CatalogPage } from "./catalog.ts";
 import {
@@ -24,7 +25,6 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
-
 import {
     rawUploadFileName,
     readMedia,
@@ -291,7 +291,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata (EXIF/GPS/XMP) is stripped by default to protect privacy (pass ?preserve_metadata=true or X-Preserve-Metadata: true to retain). Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -391,7 +391,7 @@ api.post(
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
         const jsonMaxSize = Math.min(uploadMaxSize, MAX_BUFFERED_SIZE);
 
-        let fileBuffer: ArrayBuffer | undefined;
+        let fileBuffer: ArrayBuffer | Uint8Array | undefined;
         let stagedUpload: StagedMultipartUpload | undefined;
         let fileSize: number;
         let contentType: string;
@@ -593,6 +593,85 @@ api.post(
                 tags.length > 0 || requestedId !== undefined
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
+
+            const preserveMetadata =
+                c.req.query("preserve_metadata") === "true" ||
+                c.req.header("x-preserve-metadata") === "true";
+
+            if (
+                !preserveMetadata &&
+                contentType.toLowerCase().startsWith("image/")
+            ) {
+                if (fileBuffer) {
+                    try {
+                        const stripped = await removeMetadata(
+                            new Uint8Array(fileBuffer),
+                            {
+                                preserveOrientation: true,
+                                preserveColorProfile: true,
+                            },
+                        );
+                        if (stripped.removedMetadata.length > 0) {
+                            fileBuffer = stripped.data;
+                            fileSize = stripped.cleanedSize;
+                        }
+                    } catch {
+                        // Fall back to original bytes on odd formats or unparseable images without failing upload
+                    }
+                } else if (stagedUpload?.bytes) {
+                    try {
+                        const stripped = await removeMetadata(
+                            stagedUpload.bytes,
+                            {
+                                preserveOrientation: true,
+                                preserveColorProfile: true,
+                            },
+                        );
+                        if (stripped.removedMetadata.length > 0) {
+                            stagedUpload = {
+                                ...stagedUpload,
+                                bytes: stripped.data,
+                                size: stripped.cleanedSize,
+                            };
+                            fileSize = stripped.cleanedSize;
+                        }
+                    } catch {
+                        // Fall back to original bytes on odd formats or unparseable images without failing upload
+                    }
+                } else if (
+                    stagedUpload?.temporaryKey &&
+                    stagedUpload.size <= 50 * 1024 * 1024
+                ) {
+                    try {
+                        const tempObj = await c.env.MEDIA_BUCKET.get(
+                            stagedUpload.temporaryKey,
+                        );
+                        if (tempObj) {
+                            const rawBytes = new Uint8Array(
+                                await tempObj.arrayBuffer(),
+                            );
+                            const stripped = await removeMetadata(rawBytes, {
+                                preserveOrientation: true,
+                                preserveColorProfile: true,
+                            });
+                            if (stripped.removedMetadata.length > 0) {
+                                await c.env.MEDIA_BUCKET.delete(
+                                    stagedUpload.temporaryKey,
+                                );
+                                stagedUpload = {
+                                    ...stagedUpload,
+                                    temporaryKey: undefined,
+                                    bytes: stripped.data,
+                                    size: stripped.cleanedSize,
+                                };
+                                fileSize = stripped.cleanedSize;
+                            }
+                        }
+                    } catch {
+                        // Fall back to staged file
+                    }
+                }
+            }
 
             const putOptions: R2PutOptions = {
                 ...(requestedId !== undefined && {
@@ -981,6 +1060,7 @@ app.use(
             "Authorization",
             "X-File-Name",
             "Content-Disposition",
+            "X-Preserve-Metadata",
         ],
         exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
     }),

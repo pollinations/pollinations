@@ -92,6 +92,11 @@ function getJsonLd(path: string): string | null {
     return null;
 }
 
+function hasFileExtension(pathname: string): boolean {
+    const lastSegment = pathname.slice(pathname.lastIndexOf("/") + 1);
+    return lastSegment.includes(".");
+}
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
@@ -103,6 +108,19 @@ export default {
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("text/html")) {
             return response;
+        }
+
+        // A request for a static asset (a path with a file extension) that came
+        // back as HTML means the asset is missing, and the SPA fallback served
+        // index.html instead. Browsers reject that with:
+        //   "text/html" is not a valid JavaScript MIME type
+        // (typically a stale hashed chunk after a redeploy). Return 404 instead
+        // of the HTML shell so clients treat it as a missing file, not a script.
+        if (hasFileExtension(url.pathname)) {
+            return new Response("Not Found", {
+                status: 404,
+                headers: { "content-type": "text/plain; charset=utf-8" },
+            });
         }
 
         const path = url.pathname === "" ? "/" : url.pathname;

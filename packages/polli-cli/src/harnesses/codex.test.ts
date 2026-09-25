@@ -319,9 +319,10 @@ describe("on/off lifecycle", () => {
             expect(JSON.parse(readFileSync(authJson, "utf8"))).toEqual({
                 OPENAI_API_KEY: "rXJ5eus7dK8mN2pQvL4wZ6yT1bC3xH9f",
             });
-            const onStatus = (await codex.status(
-                ctx,
-            )) as unknown as Record<string, unknown>;
+            const onStatus = (await codex.status(ctx)) as unknown as Record<
+                string,
+                unknown
+            >;
             expect(onStatus.authJson).toBe(true);
 
             const off = await codex.off(ctx);

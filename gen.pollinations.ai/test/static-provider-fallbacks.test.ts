@@ -173,32 +173,33 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it.each(["qwen/qwen3.7-flash", "qwen/qwen3.8-flash", "qwen/qwen3.8-max"])(
-        "preserves direct Responses support for %s",
-        (model) => {
-            const request = {
-                model,
-                input: "Hello",
-                stream: false,
-                store: false as const,
-                safe: undefined,
-            };
-            expect(resolveDirectResponsesTarget(model, request)).toMatchObject({
-                endpoint:
-                    "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
-                model: model.slice("qwen/".length),
-            });
-            expect(
-                resolveDirectResponsesTarget(
-                    `${model}:openrouter:alibaba`,
-                    request,
-                ),
-            ).toMatchObject({
-                endpoint: "https://openrouter.ai/api/v1/responses",
-                model,
-            });
-        },
-    );
+    it.each([
+        "qwen/qwen3.7-flash",
+        "qwen/qwen3.8-flash",
+        "qwen/qwen3.8-max",
+    ])("preserves direct Responses support for %s", (model) => {
+        const request = {
+            model,
+            input: "Hello",
+            stream: false,
+            store: false as const,
+            safe: undefined,
+        };
+        expect(resolveDirectResponsesTarget(model, request)).toMatchObject({
+            endpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            model: model.slice("qwen/".length),
+        });
+        expect(
+            resolveDirectResponsesTarget(
+                `${model}:openrouter:alibaba`,
+                request,
+            ),
+        ).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+            model,
+        });
+    });
 
     it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
@@ -378,24 +379,24 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it.each(["openai/gpt-6-luna", "openai/gpt-6-sol"] as const)(
-        "keeps the same price and Quest access when %s falls back to OpenAI",
-        (model) => {
-            const primary = TEXT_SERVICES[model];
-            const fallback = TEXT_SERVICES[`${model}:openai`];
-            expect(primary.provider).toBe("azure");
-            expect(primary.fallbacks).toEqual([`${model}:openai`]);
-            expect(primary.paidOnly).toBe(false);
-            expect(fallback.provider).toBe("openai");
-            expect(fallback.paidOnly).toBe(false);
-            expect(fallback.cost).toEqual(primary.cost);
-            expect(fallback.costVariants).toEqual(primary.costVariants);
-            expect(fallback.priceMultiplier).toBe(1);
-            expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
-                responsesEndpoint: "https://api.openai.com/v1/responses",
-            });
-        },
-    );
+    it.each([
+        "openai/gpt-6-luna",
+        "openai/gpt-6-sol",
+    ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openai`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:openai`]);
+        expect(primary.paidOnly).toBe(false);
+        expect(fallback.provider).toBe("openai");
+        expect(fallback.paidOnly).toBe(false);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.costVariants).toEqual(primary.costVariants);
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+        });
+    });
 
     it("uses Fal first for Grok Video Pro without changing prices or access", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
@@ -718,31 +719,25 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])(
-        "rejects unsupported Scout capabilities on both routes: %j",
-        (request) => {
-            const before = JSON.stringify(request);
-            expect(
-                textCapabilityError(
-                    TEXT_SERVICES["meta/llama-4-scout"],
-                    request,
-                ),
-            ).toMatch(/does not support/);
-            expect(
-                supportsTextFallbackRequest(
-                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
-                    request,
-                ),
-            ).toBe(false);
-            expect(JSON.stringify(request)).toBe(before);
-            expect(
-                supportsTextFallbackRequest(
-                    TEXT_SERVICES["meta/llama-4-scout"],
-                    request,
-                ),
-            ).toBe(false);
-        },
-    );
+    ])("rejects unsupported Scout capabilities on both routes: %j", (request) => {
+        const before = JSON.stringify(request);
+        expect(
+            textCapabilityError(TEXT_SERVICES["meta/llama-4-scout"], request),
+        ).toMatch(/does not support/);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(false);
+        expect(JSON.stringify(request)).toBe(before);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout"],
+                request,
+            ),
+        ).toBe(false);
+    });
 
     it.each([
         { tool_choice: "auto" },
@@ -778,17 +773,14 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])(
-        "allows defaults and large payloads through Novita (case %#)",
-        (request) => {
-            expect(
-                supportsTextFallbackRequest(
-                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
-                    request,
-                ),
-            ).toBe(true);
-        },
-    );
+    ])("allows defaults and large payloads through Novita (case %#)", (request) => {
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(true);
+    });
 
     it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
         const sonar = TEXT_SERVICES["perplexity/sonar"];

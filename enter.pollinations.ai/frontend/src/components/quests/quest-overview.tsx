@@ -906,7 +906,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         />
                     )}
                     {state.checking && (
-                        <LoadingStatus>Checking for new quests…</LoadingStatus>
+                        <LoadingStatus>Refreshing quests…</LoadingStatus>
                     )}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (

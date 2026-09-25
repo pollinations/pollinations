@@ -1940,7 +1940,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
-test("reporters earn 2 Pollen per issue fixed since the 30-day cutoff, excluding administrative issues", async ({
+test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1958,7 +1958,7 @@ test("reporters earn 2 Pollen per issue fixed since the 30-day cutoff, excluding
     const issues = [
         { number: 9101, labels: [], mergedAt: afterLaunch },
         { number: 9102, labels: [{ name: "BUG" }], mergedAt: afterLaunch },
-        { number: 9103, labels: [], mergedAt: "2026-08-24T19:45:45Z" },
+        { number: 9103, labels: [], mergedAt: "2026-06-25T19:45:45Z" },
         {
             number: 9104,
             labels: [{ name: "APP-SUBMISSION" }],
@@ -1971,7 +1971,7 @@ test("reporters earn 2 Pollen per issue fixed since the 30-day cutoff, excluding
         },
         { number: 9106, labels: [], mergedAt: null },
         { number: 9107, labels: [], mergedAt: afterLaunch },
-        { number: 9108, labels: [], mergedAt: "2026-08-24T19:45:46Z" },
+        { number: 9108, labels: [], mergedAt: "2026-06-25T19:45:46Z" },
         { number: 9109, labels: [], mergedAt: afterLaunch },
         { number: 9110, labels: [], mergedAt: afterLaunch },
         { number: 9111, labels: [], mergedAt: afterLaunch },

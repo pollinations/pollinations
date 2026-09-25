@@ -143,8 +143,6 @@ export async function callQwenImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "qwen/qwen-image",
             // Flat per-image pricing on Replicate; report 1 image token.

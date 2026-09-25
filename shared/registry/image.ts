@@ -62,6 +62,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
+    "black-forest-labs/flux.1.1-pro": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            completionImageTokens: 0.04, // Azure Global Standard, $40/1K images in East US and Sweden Central.
+        },
+        title: "FLUX 1.1 Pro",
+        description:
+            "Fast text-to-image generation with precise dimensions and reproducible seeds",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "black-forest-labs/flux.2-pro": {
         aliases: ["flux-2-pro"],
         provider: "azure",
@@ -165,6 +182,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-05").getTime(),
+        // Azure retirement schedule; the model catalog says 2026-11-15.
+        retirementDate: new Date("2026-10-01").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
@@ -182,12 +201,60 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure MAI edit route takes one input image.
     },
+    "microsoft/mai-image-2.6-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-22").getTime(),
+        retirementDate: new Date("2027-01-09").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure Global Standard meters, verified 2026-09-22 in both regions.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(2.5),
+            completionImageTokens: perMillion(19),
+        },
+        title: "MAI Image 2.6 Flash",
+        description:
+            "Photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
+    "microsoft/mai-image-2.6": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        retirementDate: new Date("2027-01-09").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12,
+        // Azure Global Standard meters, verified 2026-09-23.
+        cost: {
+            promptTextTokens: perMillion(5),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(38),
+        },
+        title: "MAI Image 2.6",
+        description:
+            "Detailed photorealistic generation and single-reference editing with strong instruction following",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1,
+    },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
+        // Vertex AI model page.
+        retirementDate: new Date("2027-03-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1.055,
         cost: {
@@ -403,6 +470,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
+        retirementDate: new Date("2027-04-07").getTime(),
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
@@ -422,6 +490,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
+        retirementDate: new Date("2026-12-16").getTime(),
         priceMultiplier: 0.75,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
@@ -444,9 +513,9 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
+        retirementDate: new Date("2027-10-21").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
-        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -466,9 +535,10 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
+        // Azure model catalog; the retirement schedule says 2027-09-09.
+        retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        perUserRpm: 12,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
             promptTextTokens: perMillion(5),
@@ -489,9 +559,10 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
+        // Azure model catalog; the retirement schedule says 2027-09-09.
+        retirementDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        perUserRpm: 12,
+        priceMultiplier: 0.75,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
             promptTextTokens: perMillion(5),
@@ -574,6 +645,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Veo 3.1 Fast",
@@ -651,6 +732,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Seedance 1.0 Pro Fast",
@@ -690,6 +782,24 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "video_in": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "video_in": "Yes",
+                    },
+                },
+            ],
         ),
         title: "Seedance 2.0",
         description:
@@ -736,6 +846,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p"],
         title: "Seedance 2.0 Mini",
@@ -775,13 +895,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.6": {
         aliases: ["wan2.6", "wan-i2v", "wan"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // Alibaba wan2.6-t2v / wan2.6-i2v, locked to 720p ($0.10/s). Native audio is bundled
         // into the per-second rate, so there is no separate audio line.
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
@@ -871,6 +991,26 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                        "1080p_image": "1080p",
+                    },
+                },
+                {
+                    "key": "input",
+                    "label": "Input",
+                    "values": {
+                        "": "Any",
+                        "1080p": "Text/video",
+                        "1080p_image": "Image",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
@@ -892,22 +1032,25 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-3.0": {
         aliases: ["wan-3.0"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Fal Prime rates verified against live endpoints on 2026-08-25.
+        // Alibaba Prime Singapore list rates; input video is also billed.
         cost: {
+            promptVideoSeconds: 0.068,
             completionVideoSeconds: 0.068, // per sec at 480p
         },
         ...defineCostVariants(
             {
                 "720p": {
+                    promptVideoSeconds: 0.14,
                     completionVideoSeconds: 0.14,
                 },
                 "1080p": {
+                    promptVideoSeconds: 0.28,
                     completionVideoSeconds: 0.28,
                 },
             },
@@ -925,6 +1068,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
@@ -947,13 +1101,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.7-image": {
         aliases: ["wan2.7-image", "wan-img", "wan-image"],
-        provider: "replicate",
+        provider: "alibaba",
         publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
+        // Alibaba Singapore: $0.03 per generated or edited image.
         cost: {
             completionImageTokens: 0.03, // per image
         },
@@ -1018,6 +1172,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "Image generation",
+            [
+                {
+                    "key": "operation",
+                    "label": "Operation",
+                    "values": {
+                        "": "Generation",
+                        "edit": "Editing",
+                    },
+                },
+            ],
         ),
         title: "Qwen Image",
         description:
@@ -1028,14 +1192,14 @@ const IMAGE_BASE_SERVICES = {
     },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
-        provider: "fal",
+        provider: "alibaba",
         publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptImageTokens: 0.003, // per reference image ingested by Fal
+            promptImageTokens: 0.003, // per reference image ingested
             completionImageTokens: 0.04, // per image up to 1536x1536
         },
         ...defineCostVariants(
@@ -1057,6 +1221,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
         ),
         title: "Qwen Image 3",
         description:
@@ -1095,6 +1269,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        // xAI retires the slug and redirects it to grok-imagine-image-2.0.
+        retirementDate: new Date("2026-11-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
@@ -1157,6 +1333,28 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "Medium · 1K",
+            [
+                {
+                    "key": "quality",
+                    "label": "Quality",
+                    "values": {
+                        "": "Medium",
+                        "low_1k": "Low",
+                        "low_2k": "Low",
+                        "medium_2k": "Medium",
+                    },
+                },
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "low_1k": "1K",
+                        "low_2k": "2K",
+                        "medium_2k": "2K",
+                    },
+                },
+            ],
         ),
         resolutions: ["1k", "2k"],
         title: "Grok Imagine Image 2.0",
@@ -1188,6 +1386,25 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
+    },
+    "recraft/recraft-v4.1-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter bills 4,175 image tokens per image (same convention
+            // as Recraft Vector): $0.007 fixed per output image, verified
+            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
+            completionImageTokens: 0.007 * 1.055,
+        },
+        title: "Recraft V4.1 Flash",
+        description: "Fast, low-cost raster image generation from text",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
@@ -1246,6 +1463,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "480p", "1080p"],
         title: "Grok Imagine Video 1.5",
@@ -1308,6 +1536,28 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "720p": "720p",
+                        "video_in_480p": "480p",
+                        "video_in_720p": "720p",
+                    },
+                },
+                {
+                    "key": "reference_video",
+                    "label": "Video input",
+                    "values": {
+                        "": "No",
+                        "720p": "No",
+                        "video_in_480p": "Yes",
+                        "video_in_720p": "Yes",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
@@ -1379,6 +1629,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                        "2k": "2K",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "768p", "2k"],
         title: "MiniMax H3",
@@ -1399,14 +1660,14 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
+        // fal list rates (launch promotion ends 2026-09-30), verified 2026-09-25.
         cost: {
-            completionVideoSeconds: 0.00625, // 480p per output second.
+            completionVideoSeconds: 0.025, // 480p per output second.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.01 },
-                "1080p": { completionVideoSeconds: 0.02 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {
@@ -1422,6 +1683,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
@@ -1520,6 +1792,16 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
         ),
         resolutions: ["720p", "1080p"],
         title: "Pruna p-video",
@@ -1538,6 +1820,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
+        // Bedrock Legacy endOfLifeTime.
+        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
         priceMultiplier: 1,
         // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
@@ -1559,6 +1843,17 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "1024 tier",
+            [
+                {
+                    "key": "image_size",
+                    "label": "Max side",
+                    "unit": "px",
+                    "values": {
+                        "2048": ">1024",
+                        "": "≤1024",
+                    },
+                },
+            ],
         ),
         title: "Nova Canvas",
         description: "Image generation with editing and inpainting tools",
@@ -1572,6 +1867,8 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
+        // Bedrock Legacy endOfLifeTime.
+        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
         priceMultiplier: 1,
         cost: {
             completionVideoSeconds: 0.08, // per sec

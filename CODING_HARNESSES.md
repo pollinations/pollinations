@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, Claude Code (through Claude Code Router), Codex (through Codex Router), DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code (through Claude Code Router), Codex (through Codex Router), DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -51,6 +51,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
 ## Bloom CLI
 
@@ -73,11 +74,11 @@ ccr "Pollinations"
 polli harness claude-code off
 ```
 
-`on` requires both `claude` and Claude Code Router (CCR) `>=3.1.1`, and requires the CCR service to already be running. Missing prerequisites stop the command **before** Polli login or child-key creation. Polli uses CCR's authenticated management RPC rather than editing its live SQLite database. It adds one provider with id `pollinations-polli-harness` and one isolated `scope: "ccr"` Claude profile, so native Claude login, global settings, providers, and other profiles are left alone. The provider's secret lives only in CCR's own configuration.
+`on` requires both `claude` and Claude Code Router (CCR) `>=3.1.1`, and requires the CCR service to already be running. Missing prerequisites stop the command **before** Polli login or child-key creation. Polli uses CCR's authenticated management RPC rather than editing its live SQLite database. It adds one Pollinations provider and one isolated `scope: "ccr"` Claude profile, so native Claude login, global settings, providers, and other profiles are left alone. The provider secret lives only in CCR's own configuration.
 
-Models come from Pollinations' live compatible model catalog; choose another with `--model <id>`. Before `on` succeeds, Polli sends a tiny one-word `pong` through CCR's Anthropic-facing gateway and then confirms the request appeared in `GET /account/key/usage` for the dedicated child key. `status` reports router/client/service/version/provider/profile readiness. `off` removes only the Polli-owned provider/profile, leaving CCR itself and unrelated state installed.
+Models come from Pollinations' live compatible model catalog; choose another with `--model <id>`. Before `on` succeeds, Polli sends a tiny one-word `pong` through CCR and confirms activity for the dedicated child key. `status` reports router/client/service/version/provider/profile readiness. `off` removes only Polli-owned provider/profile state, leaving CCR and unrelated configuration installed.
 
-If `status` says the router is installed but not ready, run `ccr start`. If CCR's version is too old, upgrade it with the npm command above. If a different provider already uses the name `Pollinations`, Polli refuses to overwrite it.
+If `status` says the router is installed but not ready, run `ccr start`. If CCR is too old, upgrade it with the npm command above. Polli refuses to overwrite a foreign Pollinations provider/profile.
 
 ## Codex through Codex Router
 
@@ -89,11 +90,21 @@ polli harness codex status
 polli harness codex off
 ```
 
-`on` requires Codex and Codex Router `>=0.6.0`. Polli uses Codex Router's current generic-provider and model-curation interfaces instead of pointing Codex directly at Pollinations. It creates an owned generic provider named `pollinations`, stores the dedicated child key in Codex Router's protected credential store, and curates the selected live Pollinations model. Native Codex ChatGPT login and unrelated Codex/router providers are not replaced.
+`on` requires Codex and Codex Router `>=0.6.0`. Polli drives Codex Router's generic-provider, protected-credential, model-curation, and compatibility-test paths rather than pointing Codex directly at Pollinations. It creates an owned `pollinations` provider, stores the dedicated child key in the router's protected credential store, and curates the selected live Pollinations model. Native Codex ChatGPT login and unrelated Codex/router configuration are preserved.
 
-Choose the routed model with `--model <id>`. Before setup is reported successful, Codex Router runs its billed `test-model --quick` compatibility path and Polli confirms that the dedicated key's `/account/key/usage` count increased. For deeper troubleshooting or pre-production validation, Codex Router's full `test-model MODEL --live --yes --json` exercises basic response, streaming, tool calling, stateless tool-result replay, and compaction.
+Choose the routed model with `--model <id>`. Before setup succeeds, Codex Router runs its compatibility smoke and Polli verifies dedicated-key activity. `status` reports client/router/provider/key/model readiness. `off` removes only Polli-owned provider, credential, and routed model state; it never removes Codex Router itself. Foreign provider state is never overwritten.
 
-`status` reports Codex, router version, owned provider, protected key and curated-model readiness. `off` removes only the Polli-owned generic provider, its protected credential and routes; Codex Router remains installed. A pre-existing `pollinations` generic provider without Polli's ownership marker is never overwritten. If version skew is reported, update Codex Router before retrying; Polli intentionally stops before login/key creation when the router or Codex client is missing.
+## tgpt
+
+```bash
+brew install tgpt # or use another official installation method
+polli harness tgpt on
+tgpt "Hello"
+```
+
+tgpt already includes a Pollinations provider. `on` selects it for text generation and writes a dedicated key and model to `~/.config/tgpt/config.conf`, making tgpt use the authenticated `gen.pollinations.ai` endpoint. Choose another model with `--model <id>`; `off` restores the previous file or removes only the Pollinations values if the file changed later.
+
+The default model is `openai/gpt-5.4-nano`. Polli clears any generic `AI_API_KEY` from this file so it cannot override the dedicated `POLLINATIONS_API_KEY`; the original file is backed up. Exported environment variables, a local `config.conf`, or `--config` can override this user-level setup. `off` does not revoke the account key.
 
 ## DeepSeek Harness
 

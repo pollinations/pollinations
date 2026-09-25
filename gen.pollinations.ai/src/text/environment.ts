@@ -13,10 +13,12 @@ const TEXT_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "MISTRAL_API_KEY",
+    "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
     "PORTKEY_GATEWAY_URL",
+    "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
 type TextEnvironmentKey = (typeof TEXT_ENV_KEYS)[number];

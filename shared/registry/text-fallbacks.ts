@@ -15,6 +15,22 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
+    // Max currently requires reasoning and rejects forced tool choice.
+    "qwen/qwen3.8-max": {
+        "qwen/qwen3.8-max:openrouter:alibaba": {
+            provider: "openrouter",
+            supportedParameters: CHAT_PARAMETERS.qwen38Max,
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.25) * 1.055,
+                promptCacheWriteTokens: perMillion(2.5) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
+            },
+        },
+    },
     "perplexity/sonar": {
         "perplexity/sonar:openrouter:perplexity": {
             supportedParameters: CHAT_PARAMETERS.openRouterSonar,
@@ -84,9 +100,16 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.3-codex": {
+        "openai/gpt-5.3-codex:azure:sweden": {
+            provider: "azure",
+            retirementDate: new Date("2027-08-24").getTime(),
+        },
+    },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
+            retirementDate: new Date("2028-01-11").getTime(),
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -109,6 +132,37 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
+            retirementDate: new Date("2027-08-24").getTime(),
+        },
+        "x-ai/grok-4.6:xai": {
+            provider: "xai",
+            addedDate: new Date("2026-09-24").getTime(),
+            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
+            // bill at the text input rate; reasoning bills as output.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4),
+                        promptCachedTokens: perMillion(1),
+                        completionTextTokens: perMillion(12),
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
         },
     },
     "deepseek/deepseek-v4-flash": {
@@ -138,14 +192,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        "minimax/minimax-m2.7:openrouter:minimax": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(1),
+                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
+                // including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.06) * 1.055,
+                completionTextTokens: perMillion(1.2) * 1.055,
             },
         },
     },
@@ -195,137 +251,83 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.7-flash": {
-        "qwen/qwen3.7-flash:alibaba": {
-            supportedParameters: CHAT_PARAMETERS.alibabaQwen,
-            provider: "alibaba",
-            addedDate: new Date("2026-09-02").getTime(),
-            // This bypasses OpenRouter but deliberately keeps Alibaba as the
-            // inference provider, so it covers gateway/transport failures, not
-            // an Alibaba-wide outage or rate limit.
-            // The caller keeps the public OpenRouter quote. Direct Alibaba has
-            // the same token rates except explicit cache reads cost 10% of
-            // input instead of 20%; cache creation costs 125% on both routes.
-            // Alibaba's tiers are >32K and >256K, unlike OpenRouter's inclusive
-            // thresholds, so served cost is selected independently below.
-            // There is no fallback loss; explicit hits and exact boundaries
-            // can make the direct route cheaper than the unchanged quote.
+        "qwen/qwen3.7-flash:openrouter:alibaba": {
+            provider: "openrouter",
+            supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+            // OpenRouter's min_prompt_tokens overrides apply from 32K and 256K
+            // total prompt tokens.
+            cost: {
+                promptTextTokens: perMillion(0.03) * 1.055,
+                promptCachedTokens: perMillion(0.006) * 1.055,
+                promptCacheWriteTokens: perMillion(0.038) * 1.055,
+                promptImageTokens: perMillion(0.03) * 1.055,
+                promptVideoTokens: perMillion(0.03) * 1.055,
+                completionTextTokens: perMillion(0.13) * 1.055,
+            },
             ...defineCostVariants(
                 {
                     context_32k: {
-                        promptTextTokens: perMillion(0.1),
-                        promptCachedTokens: perMillion(0.02),
-                        promptCacheWriteTokens: perMillion(0.125),
-                        promptImageTokens: perMillion(0.1),
-                        promptVideoTokens: perMillion(0.1),
-                        completionTextTokens: perMillion(0.4),
+                        promptTextTokens: perMillion(0.1) * 1.055,
+                        promptCachedTokens: perMillion(0.02) * 1.055,
+                        promptCacheWriteTokens: perMillion(0.125) * 1.055,
+                        promptImageTokens: perMillion(0.1) * 1.055,
+                        promptVideoTokens: perMillion(0.1) * 1.055,
+                        completionTextTokens: perMillion(0.4) * 1.055,
                     },
                     context_256k: {
-                        promptTextTokens: perMillion(0.2),
-                        promptCachedTokens: perMillion(0.04),
-                        promptCacheWriteTokens: perMillion(0.25),
-                        promptImageTokens: perMillion(0.2),
-                        promptVideoTokens: perMillion(0.2),
-                        completionTextTokens: perMillion(0.8),
-                    },
-                    explicit_cache: {
-                        promptCachedTokens: perMillion(0.003),
-                    },
-                    context_32k_explicit_cache: {
-                        promptTextTokens: perMillion(0.1),
-                        promptCachedTokens: perMillion(0.01),
-                        promptCacheWriteTokens: perMillion(0.125),
-                        promptImageTokens: perMillion(0.1),
-                        promptVideoTokens: perMillion(0.1),
-                        completionTextTokens: perMillion(0.4),
-                    },
-                    context_256k_explicit_cache: {
-                        promptTextTokens: perMillion(0.2),
-                        promptCachedTokens: perMillion(0.02),
-                        promptCacheWriteTokens: perMillion(0.25),
-                        promptImageTokens: perMillion(0.2),
-                        promptVideoTokens: perMillion(0.2),
-                        completionTextTokens: perMillion(0.8),
+                        promptTextTokens: perMillion(0.2) * 1.055,
+                        promptCachedTokens: perMillion(0.04) * 1.055,
+                        promptCacheWriteTokens: perMillion(0.25) * 1.055,
+                        promptImageTokens: perMillion(0.2) * 1.055,
+                        promptVideoTokens: perMillion(0.2) * 1.055,
+                        completionTextTokens: perMillion(0.8) * 1.055,
                     },
                 },
-                ({ usage, input }) => {
+                ({ usage }) => {
                     const promptTokens = totalPromptTokens(usage);
-                    const tier =
-                        promptTokens > 256_000
-                            ? "context_256k"
-                            : promptTokens > 32_000
-                              ? "context_32k"
-                              : undefined;
-                    if (!input?.hasExplicitCacheHit) return tier;
-                    if (tier === "context_256k") {
-                        return "context_256k_explicit_cache";
-                    }
-                    if (tier === "context_32k") {
-                        return "context_32k_explicit_cache";
-                    }
-                    return "explicit_cache";
+                    if (promptTokens >= 256_000) return "context_256k";
+                    if (promptTokens >= 32_000) return "context_32k";
+                    return undefined;
                 },
                 {
                     context_32k: {
-                        label: ">32K context",
+                        label: "32K+ context",
                         description:
-                            "Direct Alibaba rates above 32,000 prompt tokens; the higher rates apply to the whole request.",
+                            "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
                     },
                     context_256k: {
-                        label: ">256K context",
+                        label: "256K+ context",
                         description:
-                            "Direct Alibaba rates above 256,000 prompt tokens; the highest rates apply to the whole request.",
-                    },
-                    explicit_cache: {
-                        label: "Explicit cache, ≤32K context",
-                        description:
-                            "Direct Alibaba explicit-cache reads cost 10% of input; creation costs 125%.",
-                    },
-                    context_32k_explicit_cache: {
-                        label: "Explicit cache, >32K context",
-                        description:
-                            "Direct Alibaba >32K rates with explicit-cache reads at 10% of input.",
-                    },
-                    context_256k_explicit_cache: {
-                        label: "Explicit cache, >256K context",
-                        description:
-                            "Direct Alibaba >256K rates with explicit-cache reads at 10% of input.",
+                            "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
                     },
                 },
-                "≤32K context, implicit/no cache",
+                "<32K context",
             ),
-            cost: {
-                promptTextTokens: perMillion(0.03),
-                promptCachedTokens: perMillion(0.006),
-                promptCacheWriteTokens: perMillion(0.038),
-                promptImageTokens: perMillion(0.03),
-                promptVideoTokens: perMillion(0.03),
-                completionTextTokens: perMillion(0.13),
-            },
         },
     },
     "qwen/qwen3.8-flash": {
-        "qwen/qwen3.8-flash:alibaba": {
-            supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
-            provider: "alibaba",
-            addedDate: new Date("2026-09-05").getTime(),
-            // This bypasses OpenRouter but deliberately keeps Alibaba as the
-            // inference provider, so it covers gateway/transport failures, not
-            // an Alibaba-wide outage or rate limit.
-            // Direct Alibaba Singapore charges the same $0.15/M input, $0.016/M
-            // implicit and explicit cache reads, $0.20/M cache creation, and
-            // $0.47/M output before OpenRouter credit fees, with no context
-            // tiers. Declare direct costs explicitly to omit that fee.
+        "qwen/qwen3.8-flash:openrouter:alibaba": {
+            provider: "openrouter",
+            supportedParameters: CHAT_PARAMETERS.qwen38Max,
+            // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
+            // price with a single 0-1M context tier (2026-09-05). OpenRouter
+            // publishes one prompt rate and no separate image/video rates.
             cost: {
-                promptTextTokens: perMillion(0.15),
-                promptCachedTokens: perMillion(0.016),
-                promptCacheWriteTokens: perMillion(0.2),
-                promptImageTokens: perMillion(0.15),
-                promptVideoTokens: perMillion(0.15),
-                completionTextTokens: perMillion(0.47),
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.016) * 1.055,
+                promptCacheWriteTokens: perMillion(0.2) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                promptVideoTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.47) * 1.055,
             },
         },
     },
     "moonshotai/kimi-k2.6": {
+        "moonshotai/kimi-k2.6:azure:sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-23").getTime(),
+            retirementDate: new Date("2027-04-16").getTime(),
+        },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -485,6 +487,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-opus-5.5": {
+        "anthropic/claude-opus-5.5:openrouter:anthropic": {
+            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-22").getTime(),
+            // Temporary OpenRouter fallback until a direct Azure route and
+            // its price are verified against this route's effective cost.
+            cost: {
+                promptTextTokens: perMillion(4) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptCacheWriteTokens: perMillion(5) * 1.055,
+                completionTextTokens: perMillion(20) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
@@ -499,15 +516,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/muse-glimmer-30b": {
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
+        "meta/muse-glimmer-30b:openrouter:together": {
             supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.3) * 1.055,
+                // OpenRouter Together rates (2026-09-23), including the
+                // account's 5.5% credit-purchase fee. Costs more than the
+                // primary; Phala was cheaper but rate-limited bursts.
+                promptTextTokens: perMillion(0.35) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
-                promptImageTokens: perMillion(0.3) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
+                promptImageTokens: perMillion(0.35) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
             },
         },
     },
@@ -606,6 +626,8 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
+            // OpenRouter expiration_date.
+            retirementDate: new Date("2026-10-20").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.01) * 1.055,
@@ -710,16 +732,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.7-code": {
-        "moonshotai/kimi-k2.7-code:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterKimiStreamLake,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.68),
-                promptCachedTokens: perMillion(0.136),
-                promptCacheWriteTokens: perMillion(0.85),
-                promptImageTokens: perMillion(0.68),
-                completionTextTokens: perMillion(3.4),
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $0.95/$4.00), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.7125) * 1.055,
+                promptCachedTokens: perMillion(0.1425) * 1.055,
+                promptCacheWriteTokens: perMillion(0.7125) * 1.055,
+                promptImageTokens: perMillion(0.7125) * 1.055,
+                completionTextTokens: perMillion(3.0) * 1.055,
             },
         },
     },
@@ -732,6 +756,34 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.18) * 1.055,
                 promptCachedTokens: perMillion(0.036) * 1.055,
                 completionTextTokens: perMillion(0.9) * 1.055,
+            },
+        },
+    },
+    "deepseek/deepseek-v4-pro": {
+        "deepseek/deepseek-v4-pro:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterStreamLakeReasoning,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $1.32/$3.96), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.462) * 1.055,
+                promptCachedTokens: perMillion(0.0154) * 1.055,
+                completionTextTokens: perMillion(1.386) * 1.055,
+            },
+        },
+    },
+    "z-ai/glm-5.2": {
+        "z-ai/glm-5.2:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // DeepInfra FP4 rates (2026-09-23): list $0.75/$2.40 with an
+                // open-ended 25% discount.
+                promptTextTokens: perMillion(0.5625),
+                promptCachedTokens: perMillion(0.105),
+                completionTextTokens: perMillion(1.8),
             },
         },
     },

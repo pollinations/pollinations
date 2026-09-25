@@ -230,9 +230,16 @@ async function runMigrationForTest(): Promise<void> {
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID in one direct update", async () => {
         expect(publishedMappings).toHaveLength(158);
-        expect(new Map(modelMappings)).toEqual(
-            new Map([...publishedMappings, ...hiddenMappings]),
-        );
+        // A later retirement may turn a 0062 target into an alias of its
+        // successor, so compare where each target resolves today.
+        expect(
+            new Map(
+                modelMappings.map(([retired, canonical]) => [
+                    retired,
+                    resolveModelName(canonical),
+                ]),
+            ),
+        ).toEqual(new Map([...publishedMappings, ...hiddenMappings]));
         expect(modelMappings).toHaveLength(159);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
             159,
@@ -253,10 +260,11 @@ describe("standardize model permissions migration", () => {
         expect(migrationSql).not.toContain("AS MATERIALIZED");
         for (const [retiredId, canonicalId] of modelMappings) {
             if (retiredId !== "zimage-fal") {
-                expect(resolveModelName(retiredId)).toBe(canonicalId);
-                expect(
-                    getRegistryModelDefinition(canonicalId).aliases,
-                ).toContain(retiredId);
+                const currentId = resolveModelName(canonicalId);
+                expect(resolveModelName(retiredId)).toBe(currentId);
+                expect(getRegistryModelDefinition(currentId).aliases).toContain(
+                    retiredId,
+                );
             }
             expect(migrationSql).toContain(
                 `('${retiredId}', '${canonicalId}')`,

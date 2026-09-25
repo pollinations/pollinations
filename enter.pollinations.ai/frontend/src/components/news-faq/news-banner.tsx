@@ -31,10 +31,11 @@ const PINNED_NEWS: Highlight[] = [
         description:
             "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
         details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
+            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B, Qwen3 Coder 30B.",
             "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
             "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
             "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
+            "Retired by their providers, so their IDs now redirect: Nova Canvas → GPT Image 1 Mini, which ignores seeds; Nova Reel → Pruna p-video, Paid Pollen only and up to 10s; MAI Image 2.5 Flash → MAI Image 2.6 Flash.",
         ],
     },
     {

@@ -16,7 +16,7 @@ const OUTPUT_IMAGE = Buffer.from("mai-output");
 const USER_INFO = {} as AuthResult;
 
 const baseParams: ImageParams = {
-    model: "microsoft/mai-image-2.5-flash",
+    model: "microsoft/mai-image-2.6-flash",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -35,7 +35,7 @@ function successResponse(usage: Record<string, number>): Response {
     return Response.json({
         created: 1788561305,
         data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
-        model: "MAI-Image-2.5-Flash",
+        model: "MAI-Image-2.6-Flash",
         size: "1024x1024",
         usage,
     });
@@ -146,14 +146,14 @@ describe("callAzureMaiImage", () => {
 
         expect(fetchSpy).toHaveBeenCalledOnce();
         expect(requestBody).toEqual({
-            model: "MAI-Image-2.5-Flash",
+            model: "MAI-Image-2.6-Flash",
             prompt: "a red bicycle",
             width: 1280,
             height: 768,
         });
         expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
         expect(result.trackingData).toEqual({
-            actualModel: "microsoft/mai-image-2.5-flash",
+            actualModel: "microsoft/mai-image-2.6-flash",
             usage: {
                 promptTextTokens: 24,
                 completionImageTokens: 960,
@@ -195,7 +195,7 @@ describe("callAzureMaiImage", () => {
         expect(editInit?.headers).not.toHaveProperty("Content-Type");
         const formData = editInit?.body as FormData;
         expect(formData).toBeInstanceOf(FormData);
-        expect(formData.get("model")).toBe("MAI-Image-2.5-Flash");
+        expect(formData.get("model")).toBe("MAI-Image-2.6-Flash");
         expect(formData.get("prompt")).toBe("make the bicycle blue");
         expect(formData.has("width")).toBe(false);
         expect(formData.has("height")).toBe(false);
@@ -230,7 +230,6 @@ describe("callAzureMaiImage", () => {
     it.each([
         [700, 1024, "at least 768px"],
         [1000, 1000, "multiples of 16px"],
-        [1088, 1024, "1,048,576 pixels"],
     ])("rejects %ix%i generation dimensions before calling Azure", async (width, height, fragment) => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

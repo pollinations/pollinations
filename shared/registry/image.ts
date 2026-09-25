@@ -176,33 +176,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
     },
-    "microsoft/mai-image-2.5-flash": {
-        aliases: [],
-        provider: "azure",
-        publisher: "Microsoft",
-        category: "image",
-        addedDate: new Date("2026-09-05").getTime(),
-        // Azure retirement schedule; the model catalog says 2026-11-15.
-        retirementDate: new Date("2026-10-01").getTime(),
-        paidOnly: false,
-        priceMultiplier: 0.75,
-        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
-        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
-        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
-        cost: {
-            promptTextTokens: perMillion(1.75),
-            promptImageTokens: perMillion(1.75),
-            completionImageTokens: perMillion(19.5),
-        },
-        title: "MAI Image 2.5 Flash",
-        description:
-            "Quick photorealistic generation and single-reference editing with accurate text rendering",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
-    },
     "microsoft/mai-image-2.6-flash": {
-        aliases: [],
+        // MAI Image 2.5 Flash retired on Azure 2026-10-01.
+        aliases: ["microsoft/mai-image-2.5-flash"],
         provider: "azure",
         publisher: "Microsoft",
         category: "image",
@@ -465,7 +441,15 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "openai/gpt-image-1-mini": {
-        aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
+        aliases: [
+            "gpt-image",
+            "gpt-image-1-mini",
+            "gptimage",
+            // Nova Canvas reached Bedrock end of life 2026-09-30.
+            "amazon/nova-canvas-v1",
+            "amazon-nova-canvas",
+            "nova-canvas",
+        ],
         provider: "azure",
         publisher: "OpenAI",
         category: "image",
@@ -1767,6 +1751,10 @@ const IMAGE_BASE_SERVICES = {
             "p-video-1080p",
             "pruna-video-1080p",
             "p-video",
+            // Nova Reel reached Bedrock end of life 2026-09-30.
+            "amazon/nova-reel-v1",
+            "amazon-nova-reel",
+            "nova-reel",
         ],
         provider: "replicate",
         publisher: "Pruna",
@@ -1813,77 +1801,6 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 10,
         defaultDuration: 5,
-    },
-    "amazon/nova-canvas-v1": {
-        aliases: ["amazon-nova-canvas", "nova-canvas"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "image",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
-        cost: {
-            completionImageTokens: 0.04, // per image
-        },
-        ...defineCostVariants(
-            {
-                "2048": {
-                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
-                },
-            },
-            ({ input }) =>
-                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
-            {
-                "2048": {
-                    label: "2048 tier",
-                    description:
-                        "Applies when either output dimension exceeds 1024 pixels.",
-                },
-            },
-            "1024 tier",
-            [
-                {
-                    "key": "image_size",
-                    "label": "Max side",
-                    "unit": "px",
-                    "values": {
-                        "2048": ">1024",
-                        "": "≤1024",
-                    },
-                },
-            ],
-        ),
-        title: "Nova Canvas",
-        description: "Image generation with editing and inpainting tools",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Nova Canvas route forwards one input image.
-    },
-    "amazon/nova-reel-v1": {
-        aliases: ["amazon-nova-reel", "nova-reel"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "video",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionVideoSeconds: 0.08, // per sec
-        },
-        title: "Nova Reel",
-        description:
-            "Long-form video — clips from 6 seconds up to 2 minutes at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 6,
-        maxDuration: 120,
-        defaultDuration: 6,
-        durationStep: 6,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

@@ -178,16 +178,6 @@ export function createPerplexityModelConfig(
     };
 }
 
-export function createOVHcloudModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        textEnvironmentValue("OVHCLOUD_API_KEY"),
-        overrides,
-    );
-}
-
 export function createOVHcloudOAIConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

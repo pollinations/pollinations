@@ -193,8 +193,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
+        config: portkeyConfig["qwen/qwen3-coder-30b-a3b-instruct"],
+        // Non-reasoning model: drop reasoning controls before forwarding.
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.coding),
             stripReasoning,

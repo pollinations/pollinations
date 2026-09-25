@@ -84,7 +84,7 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
             ["nvidia/nemotron-3-ultra", "top_k", true],
-            ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
+            ["qwen/qwen3-coder-30b-a3b-instruct", "seed", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
             [

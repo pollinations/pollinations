@@ -22,7 +22,6 @@ export type PricingInput = {
     quality?: string;
     hasImage?: boolean;
     hasReferenceVideo?: boolean;
-    maxImageDimension?: number;
     megapixels?: number;
     searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;

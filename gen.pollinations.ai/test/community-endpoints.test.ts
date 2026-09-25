@@ -9110,7 +9110,7 @@ fixtureTest(
 
 fixtureTest(
     "uses the served model's transform for a registry fallback",
-    async ({ apiKey }) => {
+    async ({ paidApiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
@@ -9152,7 +9152,12 @@ fixtureTest(
                 "fetch",
                 vi.fn(async (input, init) => {
                     const request = new Request(input, init);
-                    if (isChatCompletionsRequest(request)) {
+                    // The qwen-coder primary is an OpenRouter route (/api/v1/...).
+                    if (
+                        new URL(request.url).pathname.endsWith(
+                            "/v1/chat/completions",
+                        )
+                    ) {
                         const body = (await request.json()) as {
                             messages: { role: string }[];
                         };
@@ -9199,7 +9204,7 @@ fixtureTest(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${apiKey}`,
+                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({

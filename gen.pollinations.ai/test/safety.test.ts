@@ -8,6 +8,7 @@ import {
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
+import { handleError } from "@shared/error.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import {
     parseSafeFeatures,
@@ -491,18 +492,17 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
             },
         });
 
-        const response = await safetyApp().request(
-            "/scan/blocked?safe=sexual",
-            undefined,
-            configuredEnv,
-        );
+        // Production's error handler formats the body, so test through it.
+        const response = await safetyApp()
+            .onError(handleError)
+            .request("/scan/blocked?safe=sexual", undefined, configuredEnv);
 
         expect(response.status).toBe(400);
+        expect(response.headers.get("X-Safety-Applied")).toBe("sexual");
         expect(await response.json()).toMatchObject({
             error: {
-                type: "safety_error",
                 code: "content_blocked",
-                safety: { triggered: ["sexual"] },
+                message: "Request blocked by safety filter: sexual",
             },
         });
     });

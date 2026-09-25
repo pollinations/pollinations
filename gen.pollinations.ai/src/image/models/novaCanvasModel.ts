@@ -17,8 +17,6 @@ interface NovaCanvasResponse {
  */
 interface ImageGenerationResult {
     buffer: Buffer;
-    isMature: boolean;
-    isChild: boolean;
     trackingData: {
         actualModel: string;
         usage: {
@@ -168,8 +166,6 @@ export async function callNovaCanvasAPI(
 
         return {
             buffer: imageBuffer,
-            isMature: false,
-            isChild: false,
             trackingData: {
                 actualModel: "amazon/nova-canvas-v1",
                 usage: {

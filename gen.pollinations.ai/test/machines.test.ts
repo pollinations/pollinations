@@ -14,11 +14,12 @@ function stubSmol(machines: Machine[] = []) {
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
         const request = new Request(input, init);
-        if (!request.url.startsWith(SMOL)) return realFetch(input, init);
+        const url = new URL(request.url);
+        if (url.origin !== SMOL) return realFetch(input, init);
         expect(request.headers.get("authorization")).toBe(
             "Bearer not-a-secret-workers-test-only",
         );
-        const path = request.url.slice(SMOL.length);
+        const path = url.pathname;
         if (path === "/v1/machines" && request.method === "GET") {
             return Response.json(machines);
         }

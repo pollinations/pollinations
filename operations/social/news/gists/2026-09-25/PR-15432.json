@@ -1,0 +1,38 @@
+{
+  "pr_number": 15432,
+  "title": "fix: limit reported-issue quest to 30 days and 2 Pollen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15432",
+  "merged_at": "2026-09-25T09:20:25Z",
+  "labels": [
+    "BUG",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Limits retroactive issue rewards to the fixed 30-day pre-launch window.\n- Pays 2 Quest Pollen per qualifying merged-PR issue.\n- Explains each pending issue reward on the Quests page.\n- Updates quest tests for the cutoff and reward amount.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A tidy little reward window",
+    "blurb": "The reported-issue Quest now knows exactly which past contributions belong in its garden: merged-PR issues from the 30-day pre-launch window, worth 2 Pollen each. Pending rewards also come with an explanation, because mysterious pollen is how folklore starts.",
+    "summary": "Fixed the reported-issue Quest so qualifying merged-PR issue rewards are limited to the 30-day pre-launch window, pay a fixed 2 Pollen each, and show an explanation for every pending reward on the Quests page.",
+    "impact": "Contributors can now clearly see which reported issues qualify, why a reward is pending, and that each qualifying merged-PR issue earns 2 Quest Pollen.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github-contributions",
+      "billing",
+      "rewards",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper wearing a tiny accountant visor, checking a cozy pixel calendar with a clearly marked 30-day garden window and placing exactly two glowing Pollen seeds beside each qualifying issue-card plant. A friendly CRT monitor robot holds a Quest ledger explaining pending rewards, with flowers and code-vines growing around the desk.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny accountant visor while checking a retro calendar marked “30 DAYS” and placing two glowing Pollen seeds beside qualifying code-plant issue cards; a friendly CRT monitor robot holds a small Quest ledger labeled “PENDING REWARD.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden desk, flowers and vines, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15432.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny accountant visor while checking a retro calendar marked “30 DAYS” and placing two glowing Pollen seeds beside qualifying code-plant issue cards; a friendly CRT monitor robot holds a small Quest ledger labeled “PENDING REWARD.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden desk, flowers and vines, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T09:21:28.719378+00:00"
+}

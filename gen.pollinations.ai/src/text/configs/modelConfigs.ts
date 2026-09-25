@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import { textEnvironmentValue } from "../environment.js";
+import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -11,7 +12,7 @@ import {
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
-    createPerplexityModelConfig,
+    createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -239,6 +240,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
+    // -- xAI direct -----------------------------------------------------------
+    "grok-4.6-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.6",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(
@@ -295,6 +304,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.0-flash-vl",
+        "deepinfra/fp16",
+    ),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
         "tencent/hy3",
         "phala",
@@ -784,22 +797,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Perplexity -----------------------------------------------------------
-    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
-    "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
-    "perplexity/sonar": createPinnedOpenRouterConfig(
-        "perplexity/sonar",
-        "perplexity",
-    ),
-    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-pro",
-        "perplexity",
-    ),
-    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ),
+    // The Sonar transform turns the caller's search options into web_search
+    // tool settings.
+    "perplexity/sonar": (options?: TransformOptions) =>
+        createPerplexityAgentConfig(
+            "perplexity/sonar",
+            options?.perplexityWebSearch,
+        ),
 
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({

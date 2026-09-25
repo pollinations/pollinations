@@ -28,7 +28,7 @@ import {
 } from "react";
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -101,6 +101,7 @@ export function DeploymentsPlaceholder({
     error?: string | null;
     onRetry?: () => void;
 }) {
+    if (!error) return null;
     const titles = canPublish
         ? ["Publisher info", "Agents", "Models"]
         : ["Agents", "Models"];
@@ -108,14 +109,7 @@ export function DeploymentsPlaceholder({
         <div className="flex flex-col gap-6">
             {titles.map((title) => (
                 <Section key={title} title={title}>
-                    <SectionContent
-                        loading={!error}
-                        label={`Loading ${title.toLowerCase()}…`}
-                    >
-                        {error && (
-                            <LoadError onRetry={onRetry}>{error}</LoadError>
-                        )}
-                    </SectionContent>
+                    <LoadError onRetry={onRetry}>{error}</LoadError>
                 </Section>
             ))}
         </div>

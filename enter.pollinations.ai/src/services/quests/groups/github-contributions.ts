@@ -133,8 +133,7 @@ type PaginatedSearchData<TNode> = {
     };
 };
 
-// Reads at most 10 linked PRs per quest on purpose: close losing PRs before
-// merging winners so every paid PR stays within the first 10.
+// Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:100){
@@ -143,7 +142,7 @@ query($query:String!){
         number state title url body
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
-        closedByPullRequestsReferences(first:10){
+        closedByPullRequestsReferences(first:100){
           nodes{ number mergedAt author{ ... on User{ databaseId } } }
         }
       }

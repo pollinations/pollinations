@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "What TTS",
+    "url": "https://bloodtubes6-cmyk.github.io/Blood",
+    "description": "App Description: A static web application featuring an Arabic interface with Right-to-Left (RTL) support. It implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely on the client side, requi",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "bloodtubes6-cmyk",
+    "githubUserId": "318248677",
+    "repositoryUrl": "https://github.com/bloodtubes6-cmyk/Blood",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-25",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15423",
+    "approvedDate": "2026-09-25",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎮",
     "name": "GATEKEEPER",
     "url": "https://khuzaima3232.github.io/gatekeeper",

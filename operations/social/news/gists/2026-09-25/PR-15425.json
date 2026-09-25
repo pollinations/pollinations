@@ -1,0 +1,36 @@
+{
+  "pr_number": 15425,
+  "title": "chore: update app metrics 2026-09-25",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15425",
+  "merged_at": "2026-09-25T04:13:32Z",
+  "labels": [
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The Garden Counted Itself",
+    "blurb": "The app garden's daily census is in. Request and repository metrics have been refreshed, because even a wildflower patch benefits from a clipboard.",
+    "summary": "Automated daily refresh of request and repository metrics in operations/app-management/app.json for 2026-09-25.",
+    "impact": "Internal app-management data now reflects the latest app activity and repository statistics.",
+    "keywords": [
+      "app-metrics",
+      "automation",
+      "app-management",
+      "repository-metrics",
+      "operations"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden keeper with a clipboard, checking labeled code-plants whose leaves represent app requests and repository stars. Include a small retro terminal showing simple rising metric bars, with flowers and vines suggesting a healthy app ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, carefully tallying code-plants on a clipboard beside a retro terminal showing simple app metric bars. Lime green (#ecf874) is prominent among warm cream, mint, and lavender garden beds, with pixel flowers and soft CRT glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15425.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, carefully tallying code-plants on a clipboard beside a retro terminal showing simple app metric bars. Lime green (#ecf874) is prominent among warm cream, mint, and lavender garden beds, with pixel flowers and soft CRT glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-09-25T04:14:32.701651+00:00"
+}

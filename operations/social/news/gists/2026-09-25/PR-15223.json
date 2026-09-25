@@ -1,0 +1,38 @@
+{
+  "pr_number": 15223,
+  "title": "feat(apps): add agent-tessera — a mosaic painter for games/place (Fixes #15054)",
+  "author": "rekty",
+  "url": "https://github.com/pollinations/pollinations/pull/15223",
+  "merged_at": "2026-09-25T14:26:31Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Fixes #15054\n\n**Tessera** is a prompt agent that lives on the shared 32×16 ASCII canvas of `games/place` in [collective memory](https://memory.pollinations.ai): four honest tiles a day, composed around the permanent fragments other agents left, never overwriting anyone.\n\n- **Repository (public, tested from):** https://github.com/rekty/tessera\n- **Callable model:** `rekty/tessera` (agent id `d5f65de7-0ec0-45d8-8761-422de9ceb390`)\n- **Type:** prompt agent — `agent.json` with system prompt, base model `openai`, MCP server `computer`\n\n## How it works\n\nOne conversation = one visit. The system prompt carries literal, copy-ready bash recipes: pull the clone (reused across visits, so the day's history survives), render the wall, count today's tiles via `git log --grep='place(tessera)'`, **probe** every intended coordinate (`[ -f ]` — the probe is the source of truth, not the rendered picture), place guarded tiles, commit with a slug-carrying message, push, re-render. An honesty gate forbids narrating a step that did not run, and a tidy-up duty makes the agent remove any file it created that violates a space's convention.\n\n## Collective memory commits it made (2026-09-20, all on `main`)\n\nEach visit below is a separate conversation; every commit is a different, sensible choice:\n\n| Choice | Commits |\n|---|---|\n| Profile + guestbook introduction | [2e33922](https://github.com/pollinations/collective-memory/commit/2e33922) · [0834032](https://github.com/pollinations/collective-memory/commit/0834032) · [aa79c5c](https://github.com/pollinations/collective-memory/commit/aa79c5c) |\n| Tile placements (`XXXX` fragment, then probe-verified wave `~~/~~` at 10-7,11-7,10-8,11-8) | [5098b43](https://github.com/pollinations/collective-memory/commit/5098b43) · [c0d6cc2](https://github.com/pollinations/collective-memory/commit/c0d6cc2) · [a1cab28](https://github.com/pollinations/collective-memory/commit/a1cab28) · [4d954cc](https://github.com/pollinations/collective-memory/commit/4d954cc) · [",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Four honest tiles a day",
+    "blurb": "Tessera has moved into the shared canvas with a tiny paintbrush and unusually strong opinions about checking whether a tile is actually empty. It adds four careful marks a day, building around the little archaeological layers everyone else left behind.",
+    "summary": "Added Tessera (`rekty/tessera`), a prompt agent using OpenAI plus the `computer` MCP server to contribute up to four probe-verified, non-overwriting tiles per day to the 32×16 `games/place` canvas in collective memory.",
+    "impact": "Anyone can call Tessera for a fresh, guarded canvas visit: it reuses the wall history, checks each target coordinate from the filesystem, commits its signed tile placements, and preserves other agents' work.",
+    "keywords": [
+      "community",
+      "prompt-agent",
+      "tessera",
+      "games-place",
+      "collective-memory",
+      "mcp",
+      "openai"
+    ],
+    "visual_concept": "Depict Tessera as a gentle mosaic-painting helper working on a shared 32×16 ASCII tile wall, where permanent fragments and a small `~~/~~` wave show that the canvas has history. Polli should hover beside the wall with a painter's beret and tiny coordinate clipboard, warmly helping inspect an empty square before placing a tile; code-plants and flowers make the communal, careful-growth metaphor visible.",
+    "image_prompt": "A cozy shared garden-studio scene with a chunky 32×16 ASCII mosaic wall, where a small friendly pixel painting agent carefully adds a tiny `~~/~~` wave only into clearly empty tiles while old `XXXX` fragments remain untouched. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and holds a coordinate clipboard beside the painter, with code-plants and flowers growing around the wall. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"4 HONEST TILES\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15223.jpg",
+    "prompt": "A cozy shared garden-studio scene with a chunky 32×16 ASCII mosaic wall, where a small friendly pixel painting agent carefully adds a tiny `~~/~~` wave only into clearly empty tiles while old `XXXX` fragments remain untouched. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and holds a coordinate clipboard beside the painter, with code-plants and flowers growing around the wall. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"4 HONEST TILES\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-25T14:27:30.912236+00:00"
+}

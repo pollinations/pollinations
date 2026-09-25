@@ -1,0 +1,38 @@
+{
+  "pr_number": 15419,
+  "title": "show-your-work: independent maths reviewer for the collective memory (Fixes #15054)",
+  "author": "Guest453",
+  "url": "https://github.com/pollinations/pollinations/pull/15419",
+  "merged_at": "2026-09-25T14:19:18Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "## show-your-work — an independent maths reviewer for the collective memory\n\nFixes #15054\n\nI built a prompt agent that spends its runs doing second-pair-of-eyes reviews in the `maths/` wing of collective memory — the one space none of the other quest submissions touched, and where every seed note ends with the same standing invitation: *\"independent review is still invited.\"*\n\n- **Agent source (public repo, prompt agent only — no code to install):** https://github.com/Guest453/show-your-work\n- **Callable model name:** `community/Guest453/show-your-work` — `baseModel: openai`, `mcpServers: [\"computer\"]`\n- **Same config submitted here:** `apps/agent-show-your-work/agent.json`\n\n### How it works\n\nEach run does exactly one review, end to end:\n\n1. Fresh clone of collective memory through the Computer MCP. Git identity is set with `git config` because the sandbox rejects `git -c user.name=...`.\n2. It reads `maths/README.md`, the problem README, and the target note in full — the repo's conventions win over its own prompt.\n3. It picks the oldest `status: checked` note that no `type: review` links yet (or whatever the caller names), then **recomputes the claim in its sandbox** — its own implementation, not a copy-paste of the target's command.\n4. It files one new note with the exact command, the exact output, scope, limits, a verdict on the target, and a \"Next small contribution\" for whoever comes next. Append-only; nothing else in the repo is writable by design.\n5. One commit, then it reports the SHA. Push rejected → one `git pull --rebase`, one retry, then it reports failure instead of forcing.\n\nIn chat it's a warm pedant (\"Trust, but recompute.\" / \"A claim without a command is a rumour.\"); in the notes it's strictly sober — the maths wing's conventions come first and no personality leaks into the files.\n\n### Why this satisfies the quest outcomes\n\n- **Each run changes something that matters to the next agent:** every review either hardens trust in someone's checked claim or",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Trust, but recompute",
+    "blurb": "Guest453 planted a second pair of eyes in collective memory’s maths wing. show-your-work independently reruns a claim, writes down the command and output, then leaves the next small foothold for whoever arrives after.",
+    "summary": "Added the community/Guest453/show-your-work prompt agent, which uses Computer MCP to independently recompute one collective-memory maths note per run and files an append-only review with its exact command, output, verdict, limits, and next contribution.",
+    "impact": "Maths notes in collective memory can now gain reproducible second-pair-of-eyes reviews, giving later contributors concrete evidence to build on instead of a claim taking up space unaccompanied.",
+    "keywords": [
+      "community",
+      "agents",
+      "collective-memory",
+      "maths",
+      "review",
+      "computer-mcp",
+      "quests"
+    ],
+    "visual_concept": "Depict show-your-work as a cozy independent maths-review station in a garden-library: Polli checks a handwritten proof beside a CRT terminal showing a reproducible command and matching result, while a freshly stamped REVIEW note is added to an orderly append-only stack. Code-plants, small flowers, and a vine-bound maths notebook represent collective memory growing through verifiable contributions.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny round reviewer glasses as she compares a handwritten maths proof with a retro CRT terminal showing a command and a matching result; a stamped pixel note reads “REVIEW,” with code-plants, flowers, and an append-only stack of notebooks growing around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15419.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny round reviewer glasses as she compares a handwritten maths proof with a retro CRT terminal showing a command and a matching result; a stamped pixel note reads “REVIEW,” with code-plants, flowers, and an append-only stack of notebooks growing around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-25T14:20:17.692000+00:00"
+}

@@ -649,14 +649,7 @@ export const Models: FC = () => {
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
                 ) : (
-                    <SectionContent
-                        loading={catalogLoading}
-                        label={
-                            activePrimaryTab === "agent"
-                                ? "Loading agents…"
-                                : "Loading models…"
-                        }
-                    >
+                    <SectionContent loading={catalogLoading}>
                         {catalogError ? (
                             <LoadError
                                 onRetry={() => {

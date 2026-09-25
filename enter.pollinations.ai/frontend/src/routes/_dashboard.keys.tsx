@@ -15,10 +15,7 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
-import {
-    DashboardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
@@ -102,18 +99,7 @@ function KeysPage() {
     }
 
     return (
-        <Await
-            promise={apiKeys}
-            fallback={
-                <div className="flex flex-col gap-6">
-                    <DashboardLoading
-                        title="Secrets"
-                        label="Loading secret keys…"
-                    />
-                    <DashboardLoading title="Apps" label="Loading app keys…" />
-                </div>
-            }
-        >
+        <Await promise={apiKeys} fallback={null}>
             {(keys) => (
                 <KeysContent
                     key={user?.id}

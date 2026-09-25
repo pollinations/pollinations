@@ -14,10 +14,7 @@ import {
 } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
-import {
-    LoadError,
-    SectionContent,
-} from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -65,12 +62,7 @@ function PollenPage() {
     return (
         <div className="flex flex-col gap-6">
             <Section title="Wallet">
-                <Await
-                    promise={balance}
-                    fallback={
-                        <SectionContent loading label="Loading balance…" />
-                    }
-                >
+                <Await promise={balance} fallback={null}>
                     {(balances) =>
                         balances ? (
                             <Await
@@ -93,15 +85,7 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <Await
-                    promise={billing}
-                    fallback={
-                        <SectionContent
-                            loading
-                            label="Loading billing details…"
-                        />
-                    }
-                >
+                <Await promise={billing} fallback={null}>
                     {(billingState) => (
                         <BuyPollenPanel
                             initialBillingState={billingState}

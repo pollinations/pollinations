@@ -1,5 +1,6 @@
-import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
+import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -15,17 +16,9 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-function isClientInputError(details: unknown): boolean {
-    const serialized =
-        typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
-        serialized,
-    );
-}
-
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withUpstreamRequestUrl(
+export function withUpstreamRequestUrl(
     completion: ChatCompletion,
     requestUrl: URL,
 ): ChatCompletion {
@@ -88,8 +81,8 @@ function extractErrorMessage(details: unknown): string | null {
 
 /**
  * Some OpenAI-compatible gateways return an upstream rate limit inside an
- * otherwise successful completion. Normalize only an explicit 429; other
- * finish errors are not necessarily retryable.
+ * otherwise successful completion. Normalize explicit rate limits and input/
+ * policy rejections; other finish errors (e.g. malformed tool output) stay unchanged.
  */
 function responseBodyError(
     completion: ChatCompletion,
@@ -101,11 +94,21 @@ function responseBodyError(
         const details = choice.error;
         if (!details || typeof details !== "object") continue;
         const embedded = details as { code?: unknown; status?: unknown };
-        if (embedded.code !== 429 && embedded.status !== 429) continue;
+        if (
+            embedded.code !== 429 &&
+            embedded.status !== 429 &&
+            apiErrorStatus(details, 502) >= 500
+        )
+            continue;
 
         return {
             message: extractErrorMessage(details) ?? undefined,
-            status: 429,
+            status:
+                typeof embedded.status === "number"
+                    ? embedded.status
+                    : typeof embedded.code === "number"
+                      ? embedded.code
+                      : undefined,
             details,
         };
     }
@@ -113,6 +116,7 @@ function responseBodyError(
 
 function createApiError(
     response: Response,
+    responseBody: string,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -122,11 +126,10 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = isClientInputError(details)
-        ? 400
-        : remapUpstreamStatus(response.status);
+    error.status = apiErrorStatus(details, response.status);
     error.upstreamStatus = response.status;
     error.details = details;
+    error.responseBody = responseBody;
     error.model = modelName;
     error.requestUrl = requestUrl;
     error.upstreamHeaders = collectUpstreamHeaders(response.headers);
@@ -182,6 +185,7 @@ export async function genericOpenAIClient(
 
         const preparedMessages = prepareMessages(messages);
         const {
+            key: _key,
             additionalHeaders: _additionalHeaders,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
@@ -223,6 +227,7 @@ export async function genericOpenAIClient(
         try {
             response = await fetcher(endpointUrl, {
                 method: "POST",
+                redirect: "manual",
                 headers,
                 body: JSON.stringify(requestBody),
             });
@@ -242,7 +247,13 @@ export async function genericOpenAIClient(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName, requestUrl);
+            throw createApiError(
+                response,
+                errorText,
+                errorDetails,
+                modelName,
+                requestUrl,
+            );
         }
 
         if (options.stream) {
@@ -278,10 +289,16 @@ export async function genericOpenAIClient(
         }
 
         let data: ChatCompletion;
+        let responseBody: string | undefined;
         try {
-            data = (await response.json()) as ChatCompletion;
+            responseBody = await response.text();
+            data = JSON.parse(responseBody) as ChatCompletion;
         } catch (thrown: unknown) {
-            throw withUpstreamContext(thrown, requestUrl);
+            const error = withUpstreamContext(thrown, requestUrl);
+            error.responseBody = responseBody;
+            error.upstreamStatus = response.status;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
         }
         const responseError = responseBodyError(data);
         if (responseError) {
@@ -292,16 +309,18 @@ export async function genericOpenAIClient(
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;
-            error.status = isClientInputError(errorDetails)
-                ? 400
-                : typeof errorDetails.status === "number"
-                  ? remapUpstreamStatus(errorDetails.status)
-                  : 502;
-            error.upstreamStatus =
+            const upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status
-                    : undefined;
-            error.details = errorDetails.details;
+                    : typeof errorDetails.code === "number" &&
+                        errorDetails.code >= 400 &&
+                        errorDetails.code <= 599
+                      ? errorDetails.code
+                      : undefined;
+            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
+            error.upstreamStatus = upstreamStatus;
+            error.details = errorDetails.details ?? errorDetails;
+            error.responseBody = responseBody;
             error.model = modelName;
             error.requestUrl = requestUrl;
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);

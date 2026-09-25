@@ -100,6 +100,7 @@ export const loadModels = async () => {
         if (Array.isArray(arr)) {
             textModels = arr.map((m) => ({
                 id: m.id || m.name || m,
+                aliases: m.aliases || [],
                 name: m.title || getRealModelName(m.id || m.name || m),
                 description: m.description || m.id || m.name || m,
                 type: "text",
@@ -126,6 +127,7 @@ export const loadModels = async () => {
                 const outputMods = m.output_modalities || ["image"];
                 return {
                     id,
+                    aliases: m.aliases || [],
                     name:
                         typeof m === "object" && m.title
                             ? m.title
@@ -153,6 +155,7 @@ export const loadModels = async () => {
                 const id = typeof m === "string" ? m : m.name || m.id || m;
                 return {
                     id,
+                    aliases: m.aliases || [],
                     name:
                         typeof m === "object" && m.title
                             ? m.title

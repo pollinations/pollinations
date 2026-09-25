@@ -6,6 +6,10 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
 export type MockGithubState = {
+    secretScanningPublicKeys: Array<{
+        key_identifier: string;
+        key: string;
+    }>;
     user: {
         id: number;
         login: string;
@@ -23,7 +27,7 @@ export type MockGithubState = {
         created_at: string;
         updated_at: string;
         closed_at: string | null;
-        user: { login: string } | null;
+        user: { login: string; databaseId?: number | null } | null;
         assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
         closedByPullRequestsReferences?: Array<{
@@ -49,6 +53,7 @@ export type MockGithubState = {
 
 export function createMockGithub(): MockAPI<MockGithubState> {
     const state: MockGithubState = {
+        secretScanningPublicKeys: [],
         user: {
             id: 12345,
             login: "testuser",
@@ -86,6 +91,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAPI = new Hono()
         .use("*", trackRequest)
+        .get("/meta/public_keys/secret_scanning", (c) =>
+            c.json({ public_keys: state.secretScanningPublicKeys }),
+        )
         .get("/search/issues", (c) => {
             if (state.failQuestSearch) {
                 return c.json({ message: "rate limited" }, 403);
@@ -98,7 +106,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ errors: [{ message: "rate limited" }] }, 200);
             }
             const body = (await c.req.json()) as {
-                variables?: { query?: string };
+                variables?: { query?: string; after?: string | null };
             };
             const search = body.variables?.query ?? "";
             if (search.includes("is:pr")) {
@@ -113,12 +121,25 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ data: { search: { nodes } } });
             }
 
-            const nodes = state.questIssues.map((issue) => ({
+            const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+            const issues = state.questIssues.filter(
+                (issue) =>
+                    (!author || issue.user?.login === author) &&
+                    (!search.includes("label:POLLEN-QUEST") ||
+                        issue.labels?.some(
+                            (label) => label.name === "POLLEN-QUEST",
+                        )),
+            );
+            const start = Number(body.variables?.after ?? 0);
+            const nodes = issues.slice(start, start + 100).map((issue) => ({
                 number: issue.number,
                 state: issue.state.toUpperCase(),
                 title: issue.title,
                 url: issue.html_url,
                 body: issue.body,
+                author: issue.user
+                    ? { databaseId: issue.user.databaseId ?? null }
+                    : null,
                 assignees: {
                     nodes: (issue.assignees ?? []).map((assignee) => ({
                         login: assignee.login,
@@ -130,7 +151,19 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                     nodes: issue.closedByPullRequestsReferences ?? [],
                 },
             }));
-            return c.json({ data: { search: { nodes } } });
+            const next = start + nodes.length;
+            return c.json({
+                data: {
+                    search: {
+                        nodes,
+                        pageInfo: {
+                            hasNextPage: next < issues.length,
+                            endCursor:
+                                next < issues.length ? String(next) : null,
+                        },
+                    },
+                },
+            });
         })
         .get("/user/emails", (c) => {
             return c.json([
@@ -176,6 +209,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     };
 
     const reset = () => {
+        state.secretScanningPublicKeys = [];
         state.requests = [];
     };
 

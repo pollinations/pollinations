@@ -43,14 +43,15 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Update the CLI | `polli update` (global installs only; npx/local get instructions) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
 
 One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
-with `polli auth status`.
+with `polli auth status` (or `polli whoami`).
 Override the stored key for a single command with `--key <key>`.
 
 ## Recipes
@@ -59,7 +60,7 @@ Override the stored key for a single command with `--key <key>`.
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe).
+Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
 
 ### Upload a local file to get a public URL
 ```bash
@@ -149,6 +150,7 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
@@ -160,7 +162,7 @@ polli quests --claimable # only rewards ready to claim
 ```bash
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
-polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini --required-safety privacy,secrets,sexual,violence,shield
+polli my-models create --name my-model --title "My Model" --api chat_completions --url https://api.example.com/v1/chat/completions --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini --required-safety privacy,secrets,sexual,violence,shield
 polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
 polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
@@ -188,10 +190,11 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 polli agents list
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. Use server IDs from the MCP catalog. Updates replace the complete agent configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
@@ -203,26 +206,29 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness
 ```bash
 polli harness --help                # supported harnesses
+polli harness bloom on              # create a dedicated key for Bloom CLI
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
-polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
 polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
+polli harness tgpt on               # use tgpt's Pollinations provider with a dedicated key
+polli harness tgpt off              # restore tgpt's previous configuration
 ```
-Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; OpenCode, OpenClaw, and Pi require their installed commands.
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
 
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash
@@ -239,7 +245,7 @@ polli docs --open                   # open in browser
 
 ## Agent operating rules
 
-1. **Run `polli auth status` first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.
+1. **Run `polli auth status` (or `polli whoami`) first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.
 2. **Prefer `--json`** whenever you'll parse the output. Never grep human-formatted tables.
 3. **Don't hardcode model IDs.** Fetch the live list with `polli models --type <type>`. Model availability changes.
 4. **Before picking a model for production use, check `polli models --stats`.** Rule of thumb for "healthy": `err%` ≤ 5, `avg` latency in a reasonable range for the modality (standard text <5s, image <10s, video <60s), and `requests` high enough to be statistically meaningful (ignore rows with <10 requests — noise). **Filter by capability first, then optimize by health** — e.g. for a reasoning task, narrow to models where `reasoning: true` (via `polli models --type text --json`), *then* cross-reference against `--stats` output. The healthiest model overall may not support the capability you need. **Reasoning models are inherently slower — expect 5–50s, not <5s**; when picking among them, prioritize low `err%` and request count over raw latency, and compare latency only within the reasoning-capable subset.
@@ -252,6 +258,8 @@ polli docs --open                   # open in browser
 
 - Forgetting `--output` on binary generators (image/audio/video) — the file goes to a default path, which may not be what the user wants.
 - Using `polli gen text --json` expecting OpenAI chat-completions shape — the CLI's `--json` wraps its own structure. Use `polli docs /v1/chat/completions` to see the raw API shape if you need it.
-- Running commands without auth — `polli auth status` tells you who you're logged in as and your balance in one call.
+- Running commands without auth — `polli auth status` / `polli whoami` tells you who you're logged in as and your balance in one call.
 - **`gen text` streams to a TTY, buffers when piped.** The default now auto-detects — a human at the terminal sees tokens tick in, a pipe/redirect gets the full response once. Force either mode with `--stream` or `--no-stream`. For scripts and chains like `polli gen text … | polli gen audio …`, you don't need to do anything; buffering happens automatically.
 - **Translating a `polli` workflow into a browser app.** `gen.pollinations.ai` requires a bearer token for generation requests, so a plain client-side `fetch` with no auth returns 401 unless it is served from cache. Mint a scoped key with `polli keys create` and proxy via your own backend.
+- **Backgrounded `polli gen` can fail silently** — no output file, empty log, no error (a safety rejection is an explicit 400). Run in the foreground; if backgrounded, check the `--output` file exists and retry once in the foreground before calling it failed.
+- **Content-safety 400s aren't only about violence.** Body-focused action phrasing can trip a sexual-content category on some edit models. Rephrase the benign intent neutrally (e.g. sport framing) and retry with a new seed.

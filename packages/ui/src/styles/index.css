@@ -10,8 +10,10 @@
 @import "tailwindcss/theme.css" layer(theme) prefix(polli);
 @import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
 @import "./fonts.css";
+@import "./links.css";
 @import "./tokens.css";
 @import "../modules/wallet/styles.css";
+@import "./theme.css";
 
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
@@ -43,6 +45,18 @@
     background-color: var(--polli-color-scrollbar-thumb);
 }
 
+.polli-dialog-floating-controls::before {
+    content: "";
+    position: absolute;
+    inset: -2rem 0 0;
+    z-index: -1;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--polli-color-bg-pale) 40%
+    );
+}
+
 .polli-input-number-clean::-webkit-inner-spin-button,
 .polli-input-number-clean::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -56,7 +70,7 @@
 .polli-input,
 .polli-textarea {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -72,12 +86,13 @@
 
 .polli-input-shell {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
 
 .polli-input-shell:focus-within {
+    border-color: var(--polli-color-border);
     box-shadow: 0 0 0 1px var(--polli-color-border);
 }
 
@@ -89,22 +104,30 @@
     box-shadow: none;
 }
 
+/* `data-error` is set by the primitive; `data-invalid` by an invalid Field.Root
+   (Ark), so a field with an error text also paints its control red. */
 .polli-input[data-error="true"],
-.polli-textarea[data-error="true"] {
+.polli-input[data-invalid],
+.polli-textarea[data-error="true"],
+.polli-textarea[data-invalid] {
     border-color: var(--polli-color-danger-border);
 }
 
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
+.polli-input[data-invalid]:focus,
+.polli-input[data-invalid]:focus-visible,
 .polli-textarea[data-error="true"]:focus,
-.polli-textarea[data-error="true"]:focus-visible {
+.polli-textarea[data-error="true"]:focus-visible,
+.polli-textarea[data-invalid]:focus,
+.polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
     box-shadow: 0 0 0 1px var(--polli-color-danger-border);
 }
 
 .polli-textarea {
-    --polli-textarea-resizer-color: var(--polli-color-border);
-    scrollbar-color: var(--polli-color-border) transparent;
+    --polli-textarea-resizer-color: var(--polli-color-divider);
+    scrollbar-color: var(--polli-color-divider) transparent;
 }
 
 .polli-textarea:focus {
@@ -254,7 +277,7 @@
  * AppHeader innerClassName) live in app source, which this build never
  * scans — polli:* utilities used that way must be listed here.
  */
-@source inline("polli:max-w-6xl polli:flex-row");
+@source inline("polli:max-w-6xl polli:flex-row polli:hover:bg-theme-text-muted/15 polli:focus-visible:bg-theme-text-muted/15");
 
 /* Respect the OS "reduce motion" setting app-wide: collapse transitions and
    animations to near-instant (the drawer slide, slider transforms, etc.). */

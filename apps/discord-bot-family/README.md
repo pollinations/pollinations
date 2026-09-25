@@ -25,8 +25,35 @@ each bot gets the shared channels plus any bot-specific ones.
 ## run
 
 ```bash
-./start-all.sh         # spawns one process per bot
+./start-all.sh         # local/launchd: spawns one process per bot
+node start-all.js      # systemd launcher used in production (same bot list)
 ```
+
+## deployment (production)
+
+Runs on the `monitoring-agents` EC2 box (ssh alias `community-monitor`,
+details in `operations/infrastructure/gpu/GPU_INSTANCES.md`) as three systemd
+units from `systemd/`:
+
+| unit | app | entry |
+|------|-----|-------|
+| `discord-bots.service` | `discord-bot-family` | `node start-all.js` |
+| `catgpt-bot.service` | `../catgpt-bot` | `tsx bot.ts` |
+| `opposite-prompt-bot.service` | `../opposite-prompt-bot` | `tsx bot.ts` |
+
+Checkout lives at `/home/ubuntu/discord-bots` (sparse clone of `main` with the
+three app dirs). Each app has a live-only `.env` (bot tokens,
+`TEXT_POLLINATIONS_TOKEN`) that is never committed.
+
+```bash
+ssh community-monitor "cd /home/ubuntu/discord-bots && git pull && \
+  for d in discord-bot-family catgpt-bot opposite-prompt-bot; do (cd apps/\$d && npm ci); done && \
+  sudo systemctl restart discord-bots catgpt-bot opposite-prompt-bot"
+ssh community-monitor "sudo journalctl -u discord-bots -f"
+```
+
+Unit changes: copy `systemd/*.service` to `/etc/systemd/system/`, then
+`sudo systemctl daemon-reload`.
 
 each bot runs independently via `cli.ts`:
 ```bash

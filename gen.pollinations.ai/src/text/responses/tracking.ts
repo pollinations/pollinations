@@ -34,6 +34,7 @@ export function getResponsesEventUsage(event: unknown): {
 } | null {
     const parsed = ResponseTerminalEventSchema.safeParse(event);
     if (!parsed.success) return null;
+    if (!parsed.data.response.usage) return null;
     return {
         ...(parsed.data.response.model
             ? { model: parsed.data.response.model }
@@ -53,6 +54,7 @@ export function isResponsesFailure(value: unknown): boolean {
         response?: { status?: unknown };
     };
     return (
+        event.type === "error" ||
         event.type === "response.failed" ||
         event.status === "failed" ||
         event.response?.status === "failed"

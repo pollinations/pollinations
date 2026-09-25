@@ -1,3 +1,5 @@
+import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import debug from "debug";
 import { fetchUserImage, MAX_IMAGE_SIZE, UserImageError } from "@/userImage.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
@@ -5,7 +7,21 @@ import type { TransformFn } from "../types.js";
 
 const log = debug("pollinations:transforms:imageUrl");
 
-const MAX_IMAGES_PER_REQUEST = 8;
+/** Cap for models that don't declare how many images they accept. */
+const DEFAULT_MAX_IMAGES = 8;
+
+/**
+ * The model's advertised image limit, which the request already passed, so
+ * conversion never rejects what the capability check accepted.
+ */
+function maxImageUrls(requestedModel: string | undefined): number {
+    const definition = requestedModel
+        ? (TEXT_SERVICES as Record<string, ModelDefinition | undefined>)[
+              requestedModel
+          ]
+        : undefined;
+    return definition?.maxReferenceImages ?? DEFAULT_MAX_IMAGES;
+}
 
 /**
  * Inlines one image URL from a chat message.
@@ -47,7 +63,11 @@ interface ContentPart {
     [key: string]: unknown;
 }
 
-type ImageConversionContext = { imageCount: number; totalBytes: number };
+type ImageConversionContext = {
+    imageCount: number;
+    totalBytes: number;
+    maxImages: number;
+};
 
 async function processContentPart(
     part: ContentPart,
@@ -62,9 +82,9 @@ async function processContentPart(
     }
 
     context.imageCount += 1;
-    if (context.imageCount > MAX_IMAGES_PER_REQUEST) {
+    if (context.imageCount > context.maxImages) {
         throw new UserImageError(
-            `Too many image URLs in request (max ${MAX_IMAGES_PER_REQUEST}).`,
+            `Too many image URLs in request (max ${context.maxImages}).`,
             "image_too_large",
         );
     }
@@ -104,7 +124,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
     const provider = config?.provider as string | undefined;
     const requiresBase64ImageUrls = config?.requiresBase64ImageUrls === true;
 
-    if (provider !== "bedrock" && !requiresBase64ImageUrls) {
+    if (!requiresBase64ImageUrls) {
         return { messages, options };
     }
 
@@ -114,6 +134,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
     const context: ImageConversionContext = {
         imageCount: 0,
         totalBytes: 0,
+        maxImages: maxImageUrls(options?.requestedModel),
     };
     const processedMessages = [];
     for (const message of messages) {

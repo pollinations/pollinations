@@ -136,8 +136,7 @@ export const Tooltip: FC<TooltipProps> = ({
         }
     };
 
-    // Universal cursor for every tooltip trigger across the app.
-    // `cursor-help` = standard "?" pointer that means "more info on hover".
+    // Informational triggers use help; action wrappers can override the cursor.
     const triggerClassName = cn(
         "polli-control polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
         className,
@@ -145,13 +144,12 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const cursorClass = displayContents
         ? "polli:contents"
-        : "polli:cursor-help";
+        : "polli:cursor-inherit";
 
-    // Thin popup. Portaling keeps fixed positioning viewport-based even when a
-    // trigger sits inside a transformed parent; typography opts out of trigger
-    // inheritance so bold labels do not make the whole tooltip shout.
+    // Portal past the trigger's layout; stay inside modal dialogs so the popup
+    // shares their stacking and accessible subtree.
     const popupClasses =
-        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
+        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-surface-menu polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:text-xs polli:rounded-md polli:shadow-md polli:z-[130] polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
 
     const popupNode = content ? (
         <span
@@ -175,7 +173,11 @@ export const Tooltip: FC<TooltipProps> = ({
     ) : null;
     const tooltipPopup =
         popupNode && typeof document !== "undefined"
-            ? createPortal(popupNode, document.body)
+            ? createPortal(
+                  popupNode,
+                  triggerRef.current?.closest('[role="dialog"]') ??
+                      document.body,
+              )
             : popupNode;
     const contentNode = (
         <>

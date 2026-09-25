@@ -5,6 +5,19 @@ on:
     types: [opened]
   pull_request_target:
     types: [opened]
+  # Re-classify existing items, replacing their classifier labels (defaults to every open PR).
+  workflow_dispatch:
+    inputs:
+      pr_numbers:
+        description: "Space-separated PR numbers (empty with no issue numbers = all open PRs)"
+        required: false
+      issue_numbers:
+        description: "Space-separated issue numbers"
+        required: false
+      dry_run:
+        description: "Log the changes without applying them"
+        type: boolean
+        default: true
 
 concurrency:
   group: project-manager-${{ github.event.issue.number || github.event.pull_request.number }}
@@ -19,18 +32,18 @@ jobs:
       contents: read
       repository-projects: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Generate Pollinations AI Token
         id: pollinations-ai
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -38,9 +51,45 @@ jobs:
         run: pip install requests
 
       - name: Organize issue or PR
+        if: github.event_name != 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: python operations/github/project_manager.py
+
+      - name: Organize existing issues and PRs
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
+          PR_NUMBERS: ${{ inputs.pr_numbers }}
+          ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          RELABEL: "1"
+        run: |
+          # $1 = event key (pull_request|issue), $2 = number
+          organize() {
+            case "$2" in
+              ''|*[!0-9]*) echo "Skipping invalid number: $2"; return 0 ;;
+            esac
+            if [ "$1" = pull_request ]; then
+              event=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$2" --jq '{pull_request: .}') || return 1
+            else
+              event=$(gh api "repos/$GITHUB_REPOSITORY/issues/$2" \
+                --jq 'if .pull_request then error("#\(.number) is a pull request") else {issue: .} end') || return 1
+            fi
+            GITHUB_EVENT="$event" python operations/github/project_manager.py
+          }
+          prs="$PR_NUMBERS"
+          if [ -z "$PR_NUMBERS$ISSUE_NUMBERS" ]; then
+            prs=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 --json number --jq '.[].number')
+          fi
+          failed=0
+          for number in $prs; do organize pull_request "$number" || failed=$((failed + 1)); done
+          for number in $ISSUE_NUMBERS; do organize issue "$number" || failed=$((failed + 1)); done
+          echo "Failed items: $failed"
+          [ "$failed" -eq 0 ]

@@ -19,7 +19,7 @@ const REF_VIDEO_URL = "https://media.pollinations.ai/ref-motion.mp4";
 const REF_AUDIO_URL = "https://media.pollinations.ai/ref-sound.mp3";
 
 const baseParams: ImageParams = {
-    model: "wan-3.0",
+    model: "alibaba/wan-3.0",
     width: 1280,
     height: 720,
     dimensionsExplicit: false,
@@ -93,10 +93,37 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
 describe("Wan 3.0 Prime via Fal", () => {
+    it("waits beyond five minutes without submitting another generation", async () => {
+        vi.useFakeTimers();
+        const requests: ProviderRequest[] = [];
+        const fetchSpy = mockFalFetch(requests);
+        const fetchResult = fetchSpy.getMockImplementation();
+        if (!fetchResult)
+            throw new Error("Missing Fal test fetch implementation");
+        const started = Date.now();
+        fetchSpy.mockImplementation(async (url, init) => {
+            if (String(url) === STATUS_URL && Date.now() - started < 360_000) {
+                return Response.json({ status: "IN_PROGRESS" });
+            }
+            return fetchResult(url, init);
+        });
+        const generation = callWan3FalAPI("a slow generation", baseParams);
+        const assertion = expect(generation).resolves.toMatchObject({
+            buffer: Buffer.from(VIDEO_BYTES),
+            trackingData: { usage: { completionVideoSeconds: 5 } },
+        });
+        await vi.advanceTimersByTimeAsync(362_000);
+        await assertion;
+        expect(
+            requests.filter((request) => request.url === TEXT_ENDPOINT),
+        ).toHaveLength(1);
+    });
+
     it.each([
         [undefined, "480p", false, [], "16:9", TEXT_ENDPOINT],
         ["720p", "720p", true, [], "9:16", TEXT_ENDPOINT],
@@ -140,7 +167,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             mimeType: "video/mp4",
             durationSeconds: 5,
             trackingData: {
-                actualModel: "wan-3.0",
+                actualModel: "alibaba/wan-3.0",
                 usage: { completionVideoSeconds: 5 },
             },
         });
@@ -216,7 +243,7 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body).not.toHaveProperty("reference_videos");
         expect(requests[0].body).not.toHaveProperty("reference_audios");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-3.0",
+            actualModel: "alibaba/wan-3.0",
             usage: { completionVideoSeconds: 5 },
         });
     });

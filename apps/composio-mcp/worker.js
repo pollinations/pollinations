@@ -1,6 +1,7 @@
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import {
     COMPOSIO_TOOL_CALL_PRICE,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../shared/registry/mcp.ts";
 
@@ -86,6 +87,7 @@ function connectionSummary(account, toolkit) {
         id: account.id,
         toolkit: account.toolkit?.slug,
         name: toolkit?.name || null,
+        description: toolkit?.meta?.description || "",
         logo: toolkit?.meta?.logo || null,
         alias: account.alias || null,
         status: account.status,
@@ -222,16 +224,19 @@ async function loadRouterSession(userId, sessionId, env, fetchImpl) {
 }
 
 function routerUsage(payload, status) {
-    if (
-        payload?.method !== "tools/call" ||
-        payload?.params?.name !== "COMPOSIO_MULTI_EXECUTE_TOOL" ||
-        status < 200 ||
-        status >= 300
-    ) {
+    if (payload?.method !== "tools/call" || !payload.params?.name) {
         return undefined;
     }
     const tools = payload.params.arguments?.tools;
-    const units = Array.isArray(tools) ? Math.max(1, tools.length) : 1;
+    const billable =
+        payload.params.name === "COMPOSIO_MULTI_EXECUTE_TOOL" &&
+        status >= 200 &&
+        status < 300;
+    const units = billable
+        ? Array.isArray(tools)
+            ? Math.max(1, tools.length)
+            : 1
+        : 0;
     return {
         cost: units * COMPOSIO_TOOL_CALL_PRICE,
         tool: payload.params.name,
@@ -267,6 +272,7 @@ async function proxyRouter(request, userId, payload, env, fetchImpl) {
     const headers = new Headers(request.headers);
     headers.set("x-api-key", env.COMPOSIO_API_KEY);
     headers.delete(MCP_USER_ID_HEADER);
+    headers.delete(MCP_USER_GITHUB_HEADER);
     if (transportSessionId) {
         headers.set("mcp-session-id", transportSessionId);
     } else {
@@ -286,10 +292,7 @@ async function proxyRouter(request, userId, payload, env, fetchImpl) {
     } catch {
         throw new ComposioFailure(502, "Composio MCP request failed");
     }
-    const result = withMcpUsageHeaders(
-        new Response(response.body, response),
-        routerUsage(payload, response.status),
-    );
+    const result = new Response(response.body, response);
     result.headers.set(
         "mcp-session-id",
         encodeSession(
@@ -314,9 +317,14 @@ function jsonError(error) {
 async function handleManagement(request, userId, env, fetchImpl) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/connections") {
-        return Response.json({
-            data: await listConnections(userId, env, fetchImpl),
+        const connections = await listConnections(userId, env, fetchImpl);
+        // An active-account snapshot, not a count of completed auth flows.
+        console.info({
+            event: "composio.connections_listed",
+            userId,
+            toolkits: connections.map(({ toolkit }) => toolkit),
         });
+        return Response.json({ data: connections });
     }
     if (request.method === "GET" && url.pathname === "/toolkits") {
         return Response.json({
@@ -336,6 +344,11 @@ async function handleManagement(request, userId, env, fetchImpl) {
             env,
             fetchImpl,
         );
+        console.info({
+            event: "composio.connection_link_created",
+            userId,
+            toolkit: body.toolkit,
+        });
         return Response.json({ redirectUrl: link.redirect_url });
     }
     const connectionMatch = url.pathname.match(/^\/connections\/([^/]+)$/);
@@ -354,8 +367,12 @@ async function handleManagement(request, userId, env, fetchImpl) {
 export function createWorker({ fetchImpl }) {
     return {
         async fetch(request, env) {
+            const startedAt = Date.now();
+            let userId;
+            let payload;
+            let response;
             try {
-                const userId = requireUserId(request);
+                userId = requireUserId(request);
                 const url = new URL(request.url);
                 if (url.pathname !== "/") {
                     return await handleManagement(
@@ -365,11 +382,11 @@ export function createWorker({ fetchImpl }) {
                         fetchImpl,
                     );
                 }
-                const payload = await request
+                payload = await request
                     .clone()
                     .json()
                     .catch(() => null);
-                return await proxyRouter(
+                response = await proxyRouter(
                     request,
                     userId,
                     payload,
@@ -377,8 +394,28 @@ export function createWorker({ fetchImpl }) {
                     fetchImpl,
                 );
             } catch (error) {
-                return jsonError(error);
+                response = jsonError(error);
+                console.info({
+                    event: "composio.request_failed",
+                    userId,
+                    route: new URL(request.url).pathname,
+                    httpStatus: response.status,
+                });
             }
+            const usage = routerUsage(payload, response.status);
+            if (usage) {
+                // Keep tool discovery and auth visible without billing them.
+                // HTTP status is transport status; Composio's execution logs
+                // retain tool-level results, including errors inside HTTP 200.
+                console.info({
+                    event: "composio.tool_call",
+                    userId,
+                    tool: usage.tool,
+                    httpStatus: response.status,
+                    durationMs: Date.now() - startedAt,
+                });
+            }
+            return withMcpUsageHeaders(response, usage);
         },
     };
 }

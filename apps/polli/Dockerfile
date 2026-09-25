@@ -1,8 +1,15 @@
+FROM node:22-slim AS node
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libjemalloc2 \
@@ -42,18 +49,26 @@ ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 
 WORKDIR /app
 
+COPY --from=node /usr/local /usr/local
+COPY --from=node /app/node_modules ./node_modules
+ENV PATH=/usr/local/bin:$PATH
+
 COPY requirements.txt .
 
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt && \
-    pip install playwright
+    pip install --index-url https://download.pytorch.org/whl/cpu torch==2.7.1+cpu && \
+    pip install -r requirements.txt
 
 RUN playwright install chromium
 RUN playwright install-deps
 
 COPY . .
 
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid 1000 --create-home appuser && \
+    mkdir --mode 0770 /run/polli-studio && \
+    chown -R appuser:appuser /app /run/polli-studio && \
+    chmod -R a+rX /ms-playwright
+USER 1000:1000
 
 CMD ["python", "main.py"]

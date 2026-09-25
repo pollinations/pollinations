@@ -8,6 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
@@ -20,7 +21,6 @@ const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
-/** What the consent page stored when the user approved the request. */
 type StoredCode = {
     key: string;
     clientId: string;
@@ -84,7 +84,7 @@ export const oauthRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         validator("json", CreateCodeSchema),
         async (c) => {
-            c.var.auth.requireUser();
+            const user = c.var.auth.requireUser();
             const body = c.req.valid("json");
 
             // Re-validate the client/redirect binding server-side; the same
@@ -125,6 +125,9 @@ export const oauthRoutes = new Hono<Env>()
             };
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
+            });
+            captureFromRequest(c, "authorize_granted", user.id, {
+                client_id: body.clientId,
             });
 
             return c.json({ code });

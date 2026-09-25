@@ -5,8 +5,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Route selection
 
 - Prefer managed serverless inference.
-- For equivalent routes, prefer **Azure**, then **Fireworks**, then **OpenRouter** because of Pollinations' credit position and effective economics.
-- Treat **DeepInfra** as a parallel funded-balance lane. Use it when it is the best eligible route, but do not move a healthy Azure or Fireworks route there merely to consume balance.
+- For equivalent primary and fallback routes, prefer **Azure**, then **Fireworks**.
 - Before choosing a route, enumerate the exact model across the preferred providers, the current provider, and other already-integrated providers. Compare current posted price, credit eligibility, availability, quotas, capabilities, latency, and maturity.
 - Do not route to a provider solely because an old model name matches. Verify the exact canonical checkpoint, capabilities, limits, latency, and pricing.
 - Direct providers remain valid when the preferred platforms lack an equivalent route or the direct API has a material capability advantage.
@@ -21,9 +20,10 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 
 ## Fallbacks
 
-- Default to **no Pollinations fallback** for new routes.
-- Add or change a fallback only with explicit confirmation of the exact pair and proof of model identity, capabilities, parameters, permissions, billing, provider attribution, and economics.
-- Use the shared generic fallback system when an already-approved production pair needs migration; do not build a model-specific retry layer.
+- For every model addition or modification, use a fresh web search to discover viable fallback routes across current provider catalogs. Treat search results as discovery only: verify availability and exact-route pricing with current official provider sources and a live probe. Present the best candidate's exact provider, deployment, and upstream model ID, comparing identity, capabilities, parameters, formats, safety/privacy, reliability, latency, price, permissions, billing, and expected load.
+- Recommend whether to configure the candidate. A fallback is not automatic: use `none found` when no viable route exists, or recommend `none` with the concrete reason when the best candidate is unacceptable. Flag the resulting reliability gap explicitly.
+- Add or change a fallback only after explicit confirmation of the exact pair. Use the shared generic fallback system; do not build a model-specific retry layer.
+- Directly probe both routes and force the configured fallback through the full applicable local E2E matrix. Prove permissions, billing, provider attribution, cache behavior, errors, and burst capacity independently for the fallback.
 - Provider-managed fallback is distinct from Pollinations fallback. Preserve the provider default unless its tradeoffs require a product decision, and disclose those tradeoffs before editing.
 - Never add a more expensive fallback when users are billed from the cheaper primary quote unless the economics are explicitly accepted.
 
@@ -42,5 +42,5 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Keep aliases only when they serve a current compatibility purpose. Do not add speculative aliases.
 - Set `addedDate` once for a genuinely new public model; never refresh it for provider, price, or metadata updates.
 - Descriptions are user-facing for developers: state practical capabilities or differentiators, never repeat the model title, and never mention internal routing.
-- Every new brand must map to an existing catalog SVG and render correctly.
+- Every new publisher must map to an existing catalog SVG and render correctly.
 - One focused PR per model or tightly coupled family. Secret changes always use their own dedicated PR.

@@ -1,19 +1,16 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    resolveHomePath,
     writeTextAtomic,
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
-import {
-    applyWithSnapshot,
-    clearSnapshot,
-    restoreSnapshot,
-} from "./snapshot.js";
+import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type {
     HarnessAdapter,
     HarnessContext,
@@ -24,18 +21,12 @@ import type {
 const ID = "pi";
 const LABEL = "Pi";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
 
 export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;
     if (!configured?.trim()) return join(ctx.home, ".pi", "agent");
-    const expanded =
-        configured === "~"
-            ? ctx.home
-            : configured.startsWith("~/") || configured.startsWith("~\\")
-              ? join(ctx.home, configured.slice(2))
-              : configured;
-    return resolve(expanded);
+    return resolveHomePath(ctx.home, configured);
 };
 
 const modelsPath = (ctx: HarnessContext) =>
@@ -75,8 +66,6 @@ const readKey = (ctx: HarnessContext): string | null => {
 const providerConfig = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
-    // Pi validates custom providers before resolving their auth.json entry.
-    apiKey: PROVIDER,
     compat: {
         supportsStore: false,
         supportsDeveloperRole: false,
@@ -184,7 +173,9 @@ const result = (ctx: HarnessContext): HarnessResult => {
     const provider = providers?.[PROVIDER] as
         | Record<string, unknown>
         | undefined;
-    const hasProvider = provider?.apiKey === PROVIDER;
+    const hasProvider =
+        provider?.baseUrl === `${BASE_URL}/v1` &&
+        provider?.api === "openai-completions";
 
     const authEntry = authData[PROVIDER] as Record<string, unknown> | undefined;
     const hasKey =
@@ -220,12 +211,7 @@ export const configurePi = (
 };
 
 export const disablePi = (ctx: HarnessContext): HarnessResult => {
-    const managedFiles = files(ctx);
-    let outcome: HarnessResult["outcome"] = "restored";
-    if (restoreSnapshot(ctx, ID, managedFiles) !== "restored") {
-        outcome = stripConfig(ctx) ? "stripped" : "unchanged";
-        clearSnapshot(ctx, ID, managedFiles);
-    }
+    const outcome = restoreOrStrip(ctx, ID, files(ctx), () => stripConfig(ctx));
     return { ...result(ctx), configured: false, outcome };
 };
 
@@ -242,12 +228,7 @@ export const pi: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels();
-        if (!models.some((candidate) => candidate.id === model)) {
-            throw new Error(
-                `Model "${model}" is not a tool-calling text model. Run: polli models`,
-            );
-        }
+        const models = await fetchHarnessModels(model);
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },

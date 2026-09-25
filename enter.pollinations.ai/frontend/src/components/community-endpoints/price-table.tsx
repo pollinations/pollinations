@@ -1,7 +1,6 @@
 import {
     Chip,
     Input,
-    Surface,
     Table,
     TableBody,
     TableCell,
@@ -68,7 +67,7 @@ export function PriceGroups({
     if (rows.length === 0) return null;
 
     return (
-        <Surface className="overflow-hidden p-0">
+        <div className="overflow-hidden">
             <div className="overflow-x-auto">
                 <Table className="min-w-[32rem]">
                     <TableHead>
@@ -103,7 +102,7 @@ export function PriceGroups({
                     </TableBody>
                 </Table>
             </div>
-        </Surface>
+        </div>
     );
 }
 
@@ -345,6 +344,10 @@ export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
 
 export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
+// Speech (TTS) models bill the input text per character against the
+// completion-audio price.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
+
 export function basePriceKeysForModality(
     modality: CommunityEndpointModality,
 ): PriceFieldKey[] {
@@ -354,9 +357,11 @@ export function basePriceKeysForModality(
           ? BASE_VIDEO_PRICE_KEYS
           : modality === "transcription"
             ? BASE_TRANSCRIPTION_PRICE_KEYS
-            : modality === "embedding"
-              ? BASE_EMBEDDING_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+            : modality === "speech"
+              ? BASE_SPEECH_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
 }
 
 export function returnedPriceFields(

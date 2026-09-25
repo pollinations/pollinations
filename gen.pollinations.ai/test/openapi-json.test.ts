@@ -2,6 +2,10 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import {
+    CreateChatCompletionRequestSchema,
+    CreateResponseRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 
@@ -52,6 +56,25 @@ const ENTER_SCHEMA = {
 };
 
 describe("/openapi.json", () => {
+    it("accepts omitted, null, and string-map metadata on both text APIs", () => {
+        for (const schema of [
+            CreateChatCompletionRequestSchema,
+            CreateResponseRequestSchema,
+        ]) {
+            for (const metadata of [
+                undefined,
+                null,
+                {},
+                { model: "inner-model", custom_key: "value" },
+            ]) {
+                expect(schema.shape.metadata.parse(metadata)).toEqual(metadata);
+            }
+            expect(
+                schema.shape.metadata.safeParse({ model: 123 }).success,
+            ).toBe(false);
+        }
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -85,6 +108,170 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        for (const path of [
+            "/models",
+            "/v1/models",
+            "/text/models",
+            "/image/models",
+            "/video/models",
+            "/audio/models",
+            "/embeddings/models",
+            "/3d/models",
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, "get", "parameters"],
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        in: "header",
+                        name: "pollinations-model-source",
+                        schema: expect.objectContaining({
+                            enum: ["official", "community"],
+                        }),
+                    }),
+                ]),
+            );
+        }
+
+        for (const [path, method] of [
+            ["/image/{prompt}", "get"],
+            ["/video/{prompt}", "get"],
+            ["/3d/{prompt}", "get"],
+            ["/3d/{prompt}", "post"],
+            ["/audio/{text}", "get"],
+            ["/v1/images/generations", "post"],
+            ["/v1/images/edits", "post"],
+            ["/v1/audio/speech", "post"],
+            ["/v1/audio/voice-changer", "post"],
+            ["/v1/audio/voice-isolator", "post"],
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, method, "responses", "200", "headers", "Link"],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
+        for (const path of [
+            "/v1/audio/transcriptions",
+            "/v1/audio/speech/with-timestamps",
+        ]) {
+            expect(schema).not.toHaveProperty([
+                "paths",
+                path,
+                "post",
+                "responses",
+                "200",
+                "headers",
+                "Link",
+            ]);
+        }
+
+        const imageEditOperation = schema.paths["/v1/images/edits"] as {
+            post: {
+                requestBody: {
+                    required: boolean;
+                    content: Record<string, { schema: unknown }>;
+                };
+            };
+        };
+        const editBody = imageEditOperation.post.requestBody;
+        expect(editBody.required).toBe(true);
+        expect(editBody.content["application/json"].schema).toMatchObject({
+            type: "object",
+            required: ["prompt", "image"],
+            properties: {
+                image: { anyOf: expect.any(Array) },
+                response_format: {
+                    enum: ["url", "b64_json"],
+                    default: "b64_json",
+                },
+            },
+        });
+        const multipart = editBody.content["multipart/form-data"].schema;
+        expect(multipart).toMatchObject({
+            anyOf: [
+                { required: ["prompt", "image"] },
+                { required: ["prompt", "image[]"] },
+            ],
+        });
+        const multipartProperties = collectPropertySets(multipart);
+        expect(multipartProperties.some((fields) => "n" in fields)).toBe(false);
+        expect(multipartProperties).toContainEqual(
+            expect.objectContaining({
+                image: {
+                    anyOf: [
+                        expect.objectContaining({
+                            type: "string",
+                            format: "binary",
+                        }),
+                        { type: "string" },
+                        expect.objectContaining({ type: "array", minItems: 1 }),
+                    ],
+                },
+            }),
+        );
+
+        const modelProperties = collectPropertySets(
+            schema.paths["/models"],
+        ).find(
+            (properties) =>
+                "name" in properties &&
+                "category" in properties &&
+                "community" in properties,
+        );
+        if (!modelProperties) throw new Error("Model schema not found");
+        expect((modelProperties.category as { enum?: string[] }).enum).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ]);
+        expect(
+            (
+                modelProperties.input_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video"]);
+        expect(
+            (
+                modelProperties.output_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video", "embedding", "3d"]);
+
+        const openAIModelProperties = collectPropertySets(
+            schema.paths["/v1/models"],
+        ).find(
+            (properties) =>
+                "id" in properties &&
+                "owned_by" in properties &&
+                "community" in properties,
+        );
+        expect(openAIModelProperties).toEqual(
+            expect.objectContaining({
+                aliases: expect.any(Object),
+                category: expect.any(Object),
+                community: expect.any(Object),
+                title: expect.any(Object),
+            }),
+        );
+
+        const statusOperation = schema.paths["/models/status"] as {
+            get: {
+                parameters: { name: string }[];
+            };
+        };
+        expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "minutes",
+        ]);
 
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>

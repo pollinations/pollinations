@@ -1,9 +1,15 @@
 import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+    Await,
+    createFileRoute,
+    Outlet,
+    useRouter,
+} from "@tanstack/react-router";
+import { useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -36,71 +42,64 @@ export const Route = createFileRoute("/_dashboard")({
         }
         return { user: result.data?.user ?? null };
     },
-    loader: async ({ context }) => {
-        if (!context.user) {
-            return {
-                user: null,
-                githubUsername: "",
-                apiKeys: [] as ApiKey[],
-                tierBalance: 0,
-                packBalance: 0,
-                communityEndpointsAllowed: false,
-                discordAvailable: false,
-                billingState: null,
-                paidWeek: 0,
-                tierWeek: 0,
-            };
-        }
-
-        const [
-            apiKeysResult,
-            d1BalanceResult,
-            profileResult,
-            billingState,
-            earningsTodayResult,
-        ] = await Promise.all([
-            apiClient["api-keys"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : { data: [] })),
-            apiClient.customer.balance
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.account.profile
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.stripe.billing
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.customer.balance.today
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
-        const sessionUser = context.user as typeof context.user & {
+    loader: ({ context }) => {
+        const user = context.user;
+        const apiKeys = user
+            ? apiClient["api-keys"]
+                  .$get()
+                  .then(async (r) =>
+                      r.ok ? ((await r.json()).data as ApiKey[]) : null,
+                  )
+                  .catch(() => null)
+            : Promise.resolve([] as ApiKey[]);
+        const balance = user
+            ? apiClient.customer.balance
+                  .$get()
+                  .then((r) => (r.ok ? r.json() : null))
+                  .catch(() => null)
+            : Promise.resolve(null);
+        const profile = user
+            ? apiClient.account.profile
+                  .$get()
+                  .then((r) => (r.ok ? r.json() : null))
+                  .catch(() => null)
+            : Promise.resolve(null);
+        const earnings = user
+            ? apiClient.customer.balance.today
+                  .$get()
+                  .then((r) => (r.ok ? r.json() : null))
+                  .catch(() => null)
+            : Promise.resolve(null);
+        const sessionUser = user as typeof user & {
             githubUsername?: string | null;
         };
-
         return {
-            user: context.user,
-            githubUsername:
-                profileResult?.githubUsername ??
-                sessionUser.githubUsername ??
-                "",
-            apiKeys: (apiKeysResult.data || []) as ApiKey[],
-            tierBalance: d1BalanceResult?.tierBalance ?? 0,
-            packBalance: d1BalanceResult?.packBalance ?? 0,
-            communityEndpointsAllowed:
-                profileResult?.communityEndpointsAllowed ?? false,
-            discordAvailable: profileResult?.discordAvailable ?? false,
-            billingState,
-            paidWeek: earningsTodayResult?.paidWeek ?? 0,
-            tierWeek: earningsTodayResult?.tierWeek ?? 0,
+            user,
+            githubUsername: sessionUser?.githubUsername ?? "",
+            apiKeys,
+            balance,
+            profile,
+            earnings,
         };
     },
     component: DashboardLayout,
 });
 
+export function useDashboardRetry(resource: "balance" | "profile") {
+    const router = useRouter();
+    return async () => {
+        await router.invalidate({
+            filter: (match) => match.routeId === Route.id,
+            sync: true,
+        });
+        await router.state.matches.find((match) => match.routeId === Route.id)
+            ?.loaderData?.[resource];
+    };
+}
+
 function DashboardLayout() {
-    const data = Route.useLoaderData();
+    const retry = useDashboardRetry("balance");
+    const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     async function handleSignOut(): Promise<void> {
@@ -118,19 +117,34 @@ function DashboardLayout() {
     return (
         <DashboardShell
             navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
-            githubUsername={data.githubUsername}
+            accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
             showFooterLinks={Boolean(data.user)}
             walletArea={
                 data.user ? (
-                    <SidebarWallet
-                        tierBalance={data.tierBalance}
-                        packBalance={data.packBalance}
-                        paidWeek={data.paidWeek}
-                        tierWeek={data.tierWeek}
-                    />
+                    <Await promise={data.balance} fallback={null}>
+                        {(balance) =>
+                            balance ? (
+                                <Await
+                                    promise={data.earnings}
+                                    fallback={<SidebarWallet {...balance} />}
+                                >
+                                    {(earnings) => (
+                                        <SidebarWallet
+                                            {...balance}
+                                            {...earnings}
+                                        />
+                                    )}
+                                </Await>
+                            ) : (
+                                <LoadError onRetry={retry}>
+                                    Couldn’t load your balance.
+                                </LoadError>
+                            )
+                        }
+                    </Await>
                 ) : undefined
             }
         >
@@ -139,13 +153,18 @@ function DashboardLayout() {
     );
 }
 
-export function SignedOutAccountArea() {
-    const { isSigningIn, error, signIn } = useGitHubSignIn();
+export function SignedOutAccountArea({
+    callbackURL,
+}: {
+    callbackURL?: string;
+} = {}) {
+    const { isSigningIn, error, signIn } = useGitHubSignIn(callbackURL);
 
     return (
         <div className="flex flex-col gap-2">
             <Button
                 as="button"
+                intent="brand"
                 data-theme="accent"
                 onClick={() => void signIn()}
                 disabled={isSigningIn}

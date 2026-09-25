@@ -18,9 +18,9 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Pollinations-Safe: privacy" \
-  -d '{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}'
+  -d '{"model":"openai/gpt-5.4-nano","messages":[{"role":"user","content":"email me at a@example.com"}]}'
 ```
 
 Large requests check the latest 50,000 text characters, across up to 25 text parts, in one safety call.
 
-Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.
+Blocked requests return `400` with `error.code: "content_blocked"`; the message names the triggered categories. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.

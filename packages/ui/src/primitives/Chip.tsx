@@ -10,9 +10,11 @@ type ChipIntent =
     | "neutral"
     | "success"
     | "warning"
+    | "info"
     | "danger";
 
 const chipSizes = {
+    icon: "polli:h-5 polli:w-5 polli:p-0 polli:text-xs",
     sm: "polli:h-5 polli:px-2 polli:text-xs",
     md: "polli:h-6 polli:px-2.5 polli:text-sm",
     lg: "polli:h-7 polli:px-3 polli:text-sm",
@@ -27,6 +29,7 @@ const intentClasses: Record<ChipIntent, string> = {
     success:
         "polli:bg-intent-success-bg-bright/15 polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };
 

@@ -148,7 +148,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  sumMerge(successful_calls) AS core_calls,\n  uniqMerge(users) AS core_users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'",
+          "rawSql": "SELECT\n  sumMerge(successful_calls) AS core_calls,\n  uniqMerge(users) AS core_users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_consumption,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_consumption\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND business_stream = 'core'",
           "refId": "A"
         }
       ],
@@ -176,6 +176,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -209,7 +210,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    business_stream = 'core'\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  uniqMergeIf(users, business_stream = 'core') AS core_users,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'quest') AS quest_consumption,\n  round(\n    100 * sumMergeIf(successful_calls, business_stream = 'core')\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS core_share_pct,\n  sumMergeIf(prompt_text_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cached_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cache_write_tokens, business_stream = 'core')\n    + sumMergeIf(completion_text_tokens, business_stream = 'core')\n    + sumMergeIf(completion_reasoning_tokens, business_stream = 'core') AS text_tokens,\n  sumMergeIf(prompt_image_tokens, business_stream = 'core')\n    + sumMergeIf(completion_image_tokens, business_stream = 'core') AS image_tokens,\n  sumMergeIf(completion_video_tokens, business_stream = 'core') AS video_tokens,\n  round(\n    sumMergeIf(prompt_audio_seconds, business_stream = 'core')\n    + sumMergeIf(completion_audio_seconds, business_stream = 'core'),\n    2\n  ) AS audio_seconds,\n  round(sumMergeIf(completion_video_seconds, business_stream = 'core'), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.text') AS text,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.image') AS image,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.embedding') AS embedding,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.audio') AS audio,\n  sumMergeIf(successful_calls, business_stream = 'core' AND workload = 'generate.video') AS video,\n  sumMergeIf(\n    successful_calls,\n    business_stream = 'core'\n    AND workload NOT IN (\n      'generate.text',\n      'generate.image',\n      'generate.embedding',\n      'generate.audio',\n      'generate.video'\n    )\n  ) AS other,\n  uniqMergeIf(users, business_stream = 'core') AS core_users,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, business_stream = 'core' AND funding_source = 'quest') AS quest_consumption,\n  round(\n    100 * sumMergeIf(successful_calls, business_stream = 'core')\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS core_share_pct,\n  sumMergeIf(prompt_text_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cached_tokens, business_stream = 'core')\n    + sumMergeIf(prompt_cache_write_tokens, business_stream = 'core')\n    + sumMergeIf(completion_text_tokens, business_stream = 'core')\n    + sumMergeIf(completion_reasoning_tokens, business_stream = 'core') AS text_tokens,\n  sumMergeIf(prompt_image_tokens, business_stream = 'core')\n    + sumMergeIf(completion_image_tokens, business_stream = 'core') AS image_tokens,\n  sumMergeIf(completion_video_tokens, business_stream = 'core') AS video_tokens,\n  round(\n    sumMergeIf(prompt_audio_seconds, business_stream = 'core')\n    + sumMergeIf(completion_audio_seconds, business_stream = 'core'),\n    2\n  ) AS audio_seconds,\n  round(sumMergeIf(completion_video_seconds, business_stream = 'core'), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -343,6 +344,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
@@ -545,6 +547,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -594,7 +597,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH (\n  SELECT topKWeighted(8)(model, model_calls)\n  FROM (\n    SELECT model, sumMerge(successful_calls) AS model_calls\n    FROM generation_usage_hourly\n    WHERE $__timeFilter(hour)\n      AND environment IN ('production', 'debug-prod-copy')\n      AND business_stream = 'core'\n    GROUP BY model\n  )\n) AS top_models\nSELECT\n  toStartOfDay(hour) AS time,\n  if(has(top_models, model), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "WITH (\n  SELECT topKWeighted(8)(model, model_calls)\n  FROM (\n    SELECT model, sumMerge(successful_calls) AS model_calls\n    FROM generation_usage_hourly\n    WHERE $__timeFilter(hour)\n      AND environment IN ('production', 'debug-prod-copy')\n      AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n      AND business_stream = 'core'\n    GROUP BY model\n  )\n) AS top_models\nSELECT\n  toStartOfDay(hour) AS time,\n  if(has(top_models, model), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND business_stream = 'core'\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -775,7 +778,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  sumMerge(prompt_text_tokens)\n    + sumMerge(prompt_cached_tokens)\n    + sumMerge(prompt_cache_write_tokens)\n    + sumMerge(completion_text_tokens)\n    + sumMerge(completion_reasoning_tokens) AS text_tokens,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  round(sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds), 2) AS audio_seconds,\n  round(sumMerge(completion_video_seconds), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND business_stream = 'core'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  sumMerge(prompt_text_tokens)\n    + sumMerge(prompt_cached_tokens)\n    + sumMerge(prompt_cache_write_tokens)\n    + sumMerge(completion_text_tokens)\n    + sumMerge(completion_reasoning_tokens) AS text_tokens,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  round(sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds), 2) AS audio_seconds,\n  round(sumMerge(completion_video_seconds), 2) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND business_stream = 'core'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -804,6 +807,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -992,7 +996,36 @@
     "models"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "Everything else",
+          "value": "everything_else"
+        },
+        "hide": 2,
+        "name": "traffic",
+        "label": "Traffic",
+        "options": [
+          {
+            "selected": true,
+            "text": "Everything else",
+            "value": "everything_else"
+          },
+          {
+            "selected": false,
+            "text": "Legacy",
+            "value": "legacy"
+          },
+          {
+            "selected": false,
+            "text": "Both",
+            "value": "all"
+          }
+        ],
+        "query": "Everything else : everything_else, Legacy : legacy, Both : all",
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-30d",

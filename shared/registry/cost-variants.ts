@@ -3,6 +3,8 @@
 // helpers at module-init time while registry.ts imports their service maps,
 // so a value import back into registry.ts would create an evaluation-order
 // cycle that silently empties MODEL_REGISTRY in bundled workers.
+
+import type { PricingDimension } from "./public-pricing";
 import type {
     CostDefinition,
     CostVariantMetadata,
@@ -22,7 +24,7 @@ export type PricingInput = {
     hasReferenceVideo?: boolean;
     maxImageDimension?: number;
     megapixels?: number;
-    searchContextSize?: "low" | "high";
+    searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
     /** Provider confirmed this response used an explicit prompt-cache entry. */
@@ -88,17 +90,24 @@ export function defineCostVariants<
     ) => (keyof V & string) | undefined,
     costVariantMetadata: { [K in keyof V]: CostVariantMetadata },
     defaultCostVariantLabel: string,
+    pricingDimensions?: Array<
+        Omit<PricingDimension, "values"> & {
+            values: Record<(keyof V & string) | "", string>;
+        }
+    >,
 ): Pick<
     ModelDefinition,
     | "costVariants"
     | "selectCostVariant"
     | "costVariantMetadata"
     | "defaultCostVariantLabel"
+    | "pricingDimensions"
 > {
     return {
         costVariants,
         selectCostVariant,
         costVariantMetadata,
         defaultCostVariantLabel,
+        pricingDimensions,
     };
 }

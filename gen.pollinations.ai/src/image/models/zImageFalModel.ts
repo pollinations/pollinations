@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -12,14 +12,15 @@ type FalZImageResponse = {
         url?: string;
         content_type?: string;
     }>;
-    has_nsfw_concepts?: boolean[];
 };
 
 async function readFalResponse(response: Response): Promise<FalZImageResponse> {
     try {
         return (await response.json()) as FalZImageResponse;
     } catch {
-        throw new HttpError("Z-Image Fal returned invalid JSON", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Z-Image Fal returned invalid JSON",
+        });
     }
 }
 
@@ -29,7 +30,9 @@ export async function callZImageFalAPI(
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey) {
-        throw new HttpError("Z-Image Fal fallback is not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Z-Image Fal fallback is not configured",
+        });
     }
 
     const response = await fetchUpstream(ZIMAGE_FAL_ENDPOINT, {
@@ -56,7 +59,9 @@ export async function callZImageFalAPI(
     const result = await readFalResponse(response);
     const image = result.images?.[0];
     if (!image?.url) {
-        throw new HttpError("Z-Image Fal returned no image", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Z-Image Fal returned no image",
+        });
     }
 
     const imageResponse = await fetchUpstream(image.url, {
@@ -70,10 +75,8 @@ export async function callZImageFalAPI(
             image.content_type ||
             imageResponse.headers.get("content-type") ||
             undefined,
-        isMature: result.has_nsfw_concepts?.[0] ?? false,
-        isChild: false,
         trackingData: {
-            actualModel: "zimage-fal",
+            actualModel: "tongyi-mai/z-image-turbo:fal",
             usage: { completionImageTokens: 1 },
         },
     };

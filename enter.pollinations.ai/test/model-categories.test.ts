@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    computeCategoryModalities,
-    getModelCategoriesFromCatalog,
-} from "../frontend/src/components/models/model-categories.ts";
+import { getModelCategoriesFromCatalog } from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
 const catalog = [
@@ -71,30 +68,6 @@ describe("model categories", () => {
         ]);
     });
 
-    it("reports the correct OAuth modality for each community category", () => {
-        const categories = getModelCategoriesFromCatalog(catalog);
-
-        expect(
-            computeCategoryModalities(["community-text"], categories),
-        ).toEqual(["text"]);
-        expect(
-            computeCategoryModalities(["community-image"], categories),
-        ).toEqual(["images"]);
-        expect(
-            computeCategoryModalities(["community-agent"], categories),
-        ).toEqual(["text"]);
-        expect(
-            computeCategoryModalities(
-                ["official-text", "community-text", "community-image"],
-                categories,
-            ),
-        ).toEqual(["text", "images"]);
-        expect(computeCategoryModalities(null, categories)).toEqual([
-            "text",
-            "images",
-        ]);
-    });
-
     it("accepts categories independently of the model query", () => {
         expect(validateModelSearch({})).toEqual({
             category: undefined,
@@ -137,20 +110,23 @@ describe("model categories", () => {
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
-        expect(validateModelSearch({ sort: "brand" })).toEqual({
+        expect(validateModelSearch({ sort: "publisher" })).toEqual({
             category: undefined,
             q: undefined,
             agentQ: undefined,
             mcpQ: undefined,
-            sort: "brand",
+            sort: "publisher",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
             "title-desc",
         );
         expect(validateModelSearch({ sort: "oldest" }).sort).toBeUndefined();
-        expect(validateModelSearch({ sort: "brand-desc" }).sort).toBe(
-            "brand-desc",
+        expect(validateModelSearch({ sort: "publisher-desc" }).sort).toBe(
+            "publisher-desc",
         );
+        expect(
+            validateModelSearch({ sort: "brand-desc" }).sort,
+        ).toBeUndefined();
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             category: undefined,
             q: undefined,

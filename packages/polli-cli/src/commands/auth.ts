@@ -288,3 +288,7 @@ export const authCommand = new Command("auth")
     .addCommand(login)
     .addCommand(logout)
     .addCommand(status);
+
+export const whoamiCommand = new Command("whoami")
+    .description("Show current auth status and balance (alias of auth status)")
+    .action(showAuthStatus);

@@ -9,12 +9,10 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Tooltip,
 } from "@pollinations/ui";
 import { useMemo, useState } from "react";
 import {
     DataTable,
-    HeaderHint,
     TableScroller,
     withUniqueRowKeys,
 } from "../components/DataTable";
@@ -54,16 +52,6 @@ const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
     "needs account check": "account incomplete",
 };
 
-const CLOSE_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
-    ready: "Vendor source and account coverage checks are complete for this vendor-month.",
-    "missing document":
-        "Transaction evidence is missing or still unresolved. This item blocks the monthly close.",
-    "needs provider check":
-        "The vendor statement, dashboard export, or other archived source is missing. No vendor cost is inferred.",
-    "needs account check":
-        "Vendor data exists, but the active account coverage is incomplete or the source is not assigned to a known account.",
-};
-
 const FUNDING_LABEL: Record<ProviderCloseRow["fundingStatus"], string> = {
     billed: "Cash",
     "credit/free": "Credit / free",
@@ -87,44 +75,23 @@ type PreviewSelection = {
 function StatusBadge({ row }: { row: ProviderCloseRow }) {
     if (row.partial) {
         return (
-            <Tooltip
-                triggerAs="span"
-                content="The current month is open and excluded from close-readiness counts."
-            >
-                <Chip intent="neutral" size="sm">
-                    open
-                </Chip>
-            </Tooltip>
+            <Chip intent="neutral" size="sm">
+                open
+            </Chip>
         );
     }
     return (
-        <Tooltip triggerAs="span" content={CLOSE_HINT[row.closeStatus]}>
-            <Chip intent={CLOSE_INTENT[row.closeStatus]} size="sm">
-                {CLOSE_LABEL[row.closeStatus]}
-            </Chip>
-        </Tooltip>
+        <Chip intent={CLOSE_INTENT[row.closeStatus]} size="sm">
+            {CLOSE_LABEL[row.closeStatus]}
+        </Chip>
     );
 }
 
 function FundingValue({ row }: { row: ProviderCloseRow }) {
-    const hint =
-        row.fundingStatus === "needs check"
-            ? "Unknown until the vendor statement is checked."
-            : row.fundingStatus === "unknown"
-              ? "The historical vendor funding could not be reconstructed; the gap is documented."
-              : row.fundingStatus === "not applicable"
-                ? "Internal usage has no external vendor bill."
-                : row.fundingStatus === "credit/free"
-                  ? "The checked vendor statement creates no cash payable amount."
-                  : row.fundingStatus === "mixed"
-                    ? "This month contains both vendor-billed and credit-funded usage."
-                    : "The checked vendor statement contains a cash payable amount.";
     return (
-        <Tooltip triggerAs="span" content={hint}>
-            <span className="whitespace-nowrap text-sm text-theme-text-soft">
-                {FUNDING_LABEL[row.fundingStatus]}
-            </span>
-        </Tooltip>
+        <span className="whitespace-nowrap text-sm text-theme-text-soft">
+            {FUNDING_LABEL[row.fundingStatus]}
+        </span>
     );
 }
 
@@ -170,12 +137,12 @@ function EvidenceListDialog({
             title={`Vendor source · ${selection.vendor} · ${monthName(selection.month)}`}
             size="md"
         >
-            <div className="flex max-h-[70vh] flex-col px-6 pb-6 pt-3">
-                <p className="pb-3 text-sm text-theme-text-soft">
+            <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-3">
+                <p className="shrink-0 pb-3 text-sm text-theme-text-soft">
                     Statements, invoices, dashboard exports, or usage records
                     collected from the vendor.
                 </p>
-                <ol className="min-h-0 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
+                <ol className="min-h-0 flex-1 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
                     {selection.items.map((item, index) => (
                         <li
                             key={item.evidence}
@@ -202,7 +169,7 @@ function EvidenceListDialog({
                         </li>
                     ))}
                 </ol>
-                <div className="flex justify-end pt-4">
+                <div className="flex shrink-0 justify-end pt-4">
                     <Button type="button" size="sm" onClick={onClose}>
                         Close
                     </Button>
@@ -374,26 +341,14 @@ export function ProviderCloseTab({
                     <DataTable className="min-w-[900px]">
                         <TableHead>
                             <TableRow>
-                                <TableHeaderCell>
-                                    <HeaderHint hint="One vendor-source and account-coverage status. Transaction documents are checked in the month-level result; tax filing confirmation remains separate.">
-                                        Status
-                                    </HeaderHint>
-                                </TableHeaderCell>
+                                <TableHeaderCell>Status</TableHeaderCell>
                                 <TableHeaderCell>Vendor</TableHeaderCell>
-                                <TableHeaderCell>
-                                    <HeaderHint hint="How the archived vendor source says this vendor-month was funded. Unknown means the historical gap is documented but not reconstructed.">
-                                        Funding
-                                    </HeaderHint>
+                                <TableHeaderCell>Funding</TableHeaderCell>
+                                <TableHeaderCell align="right">
+                                    Cash-funded
                                 </TableHeaderCell>
                                 <TableHeaderCell align="right">
-                                    <HeaderHint hint="Vendor cost recorded by the archived source as cash-funded. This is usage cost, not an invoice-to-payment match.">
-                                        Cash-funded
-                                    </HeaderHint>
-                                </TableHeaderCell>
-                                <TableHeaderCell align="right">
-                                    <HeaderHint hint="Vendor usage covered by credits or explicitly verified as free. This is not a cash cost.">
-                                        Credit / free
-                                    </HeaderHint>
+                                    Credit / free
                                 </TableHeaderCell>
                                 <TableHeaderCell>Evidence</TableHeaderCell>
                             </TableRow>

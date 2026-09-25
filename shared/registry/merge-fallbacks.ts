@@ -5,11 +5,13 @@ import type { ModelDefinition } from "./registry";
  * in for.
  *
  * Everything left out is inherited from that model, so the public identity a
- * caller sees — title, brand, modalities — can never drift from the model they
+ * caller sees — title, publisher, modalities — can never drift from the model they
  * asked for. `provider` is required because it is the one thing a route must
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
  * hidden and fallback-only, carries no aliases, and never chains further.
+ * `retirementDate` is not inherited either: a route can outlive the one it
+ * backs up, so it states its own date or has none.
  */
 export type FallbackDefinition = Partial<
     Omit<
@@ -69,6 +71,7 @@ export function mergeFallbacks<
             fallbacks: _fallbacks,
             fallbackOnly: _fallbackOnly,
             hidden: _hidden,
+            retirementDate: _retirementDate,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {

@@ -1,3 +1,4 @@
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -45,7 +46,7 @@ export async function updateAutoTopUpSettings(
     input: AutoTopUpInput,
 ): Promise<
     | { ok: true; overview: BillingOverview }
-    | { ok: false; status: 400; error: string }
+    | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
         await env.DB.prepare(
@@ -57,6 +58,10 @@ export async function updateAutoTopUpSettings(
             .run();
 
         return { ok: true, overview: await getBillingOverview(env, userId) };
+    }
+
+    if (isUserBanned(await getUserStripeBillingRow(env.DB, userId))) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
     }
 
     const pack =
@@ -105,14 +110,18 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    await env.DB.prepare(
+    const updated = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = ?
-            WHERE id = ?`,
+            WHERE id = ? AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())`,
     )
         .bind(packAmountUsd, userId)
         .run();
+
+    if (!updated.meta.changes) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
+    }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
@@ -122,6 +131,10 @@ export async function processAutoTopUpForUser(
     userId: string,
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
+
+    if (isUserBanned(user)) {
+        return { status: "skipped", reason: "account restricted" };
+    }
 
     if (!user.autoTopUpEnabled) {
         return { status: "skipped", reason: "auto top-up disabled" };
@@ -581,6 +594,7 @@ async function claimAutoTopUpAttempt(
                 FROM user
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
+                    AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
             )

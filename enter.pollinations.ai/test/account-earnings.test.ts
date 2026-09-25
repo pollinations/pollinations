@@ -176,7 +176,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             entity_name: "BYOP App",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             pollen_earned: 0.1,
         },
@@ -198,7 +198,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
         cursor_event_id: "event-1",
         timestamp: "2026-04-14 12:10:00",
         entity_name: "BYOP App",
-        model: "openai-fast",
+        model: "openai/gpt-5-nano",
         meter_source: "tier",
         pollen_earned: 0.1,
     });
@@ -276,4 +276,43 @@ test("GET /api/account/earnings?format=csv neutralizes app name formulas", async
     const [, row] = csv.split("\n");
 
     expect(row).toContain(`"'=HYPERLINK(""https://example.test"",""click"")"`);
+});
+
+test("GET /api/account/earnings accepts up to 365 days and rejects above", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.earningsResponse = [earningsRow()];
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=365",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=366",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(rejected.status).toBe(400);
+});
+
+test("GET /api/account/earnings/transactions accepts up to 365 days and rejects above", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=365",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=366",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(rejected.status).toBe(400);
 });

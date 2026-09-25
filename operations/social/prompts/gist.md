@@ -36,7 +36,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 - `gen.pollinations.ai/` — API gateway and text/chat generation Worker. Focus on: new models, streaming improvements, compatibility changes
 - `pollinations.ai/` — main frontend. Focus on: UI redesigns, new pages, UX improvements users see directly
 - `packages/sdk/` — client SDK. Focus on: new hooks, API changes developers use
-- `packages/mcp/` — MCP server for AI agents. Focus on: new tools, model access
+- `packages/mcp/` — hosted stateless MCP handlers. Focus on: new tools, model access
 
 **Community & Apps** (category: `community`):
 - `apps/`, `projects/`, `examples/`, `notebooks/` — community submissions. Focus on: what the app does, who built it, celebrate the contributor

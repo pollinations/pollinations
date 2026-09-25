@@ -3,6 +3,7 @@ import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callAzureFlux2,
+    callAzureFlux11Pro,
     callAzureFluxKontext,
 } from "../../src/image/models/azureFluxKontextModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -15,7 +16,7 @@ const OUTPUT_IMAGE = Buffer.from("kontext-output");
 const USER_INFO = {} as AuthResult;
 
 const baseParams: ImageParams = {
-    model: "kontext",
+    model: "black-forest-labs/flux.1-kontext-pro",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -31,8 +32,11 @@ const baseParams: ImageParams = {
 
 beforeEach(() => {
     syncImageEnv(
-        { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
-        ["AZURE_MYCELI_PROD_API_KEY"],
+        {
+            AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
+            AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-sweden-key",
+        } as CloudflareBindings,
+        ["AZURE_MYCELI_PROD_API_KEY", "AZURE_MYCELI_PROD_SWEDEN_API_KEY"],
     );
 });
 
@@ -73,7 +77,7 @@ describe("callAzureFluxKontext", () => {
         });
         expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
         expect(result.trackingData).toMatchObject({
-            actualModel: "kontext",
+            actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -155,7 +159,7 @@ describe("callAzureFluxKontext", () => {
         });
     });
 
-    it("maps a filtered successful response to a safe client error", async () => {
+    it("maps a filtered successful response without removing provider diagnostics", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -190,14 +194,20 @@ describe("callAzureFluxKontext", () => {
             },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
-            finishReason: "content_filter",
-            filteredCategories: ["sexual"],
+            data: [
+                {
+                    finish_reason: "content_filter",
+                    content_filter_results: {
+                        sexual: { filtered: true, severity: "high" },
+                    },
+                    revised_prompt: "private rewritten prompt",
+                },
+            ],
+            prompt: "private prompt must not be logged",
         });
-        expect(error.responseBody).not.toContain("private");
     });
 
-    it("records a safe response summary when Azure returns no image", async () => {
+    it("preserves the complete response when Azure returns no image", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -227,18 +237,117 @@ describe("callAzureFluxKontext", () => {
             upstreamHeaders: { "x-ms-request-id": "azure-request-empty" },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
+            data: [
+                {
+                    source_url: "https://private.example/source.png",
+                    unexpected: "metadata only",
+                },
+            ],
             message: "generation completed without an image",
         });
-        expect(error.responseBody).not.toContain("private.example");
-        expect(error.responseBody).not.toContain("metadata only");
+    });
+});
+
+describe("callAzureFlux11Pro", () => {
+    it.each([
+        [
+            "black-forest-labs/flux.1.1-pro",
+            "myceli-prod-eastus",
+            "test-azure-key",
+        ],
+        [
+            "black-forest-labs/flux.1.1-pro:azure:sweden",
+            "myceli-prod-swedencentral",
+            "test-sweden-key",
+        ],
+    ] as const)("routes %s with exact dimensions, seed, and flat image usage", async (model, resource, apiKey) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                expect(url.toString()).toBe(
+                    `https://${resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-pro-1.1?api-version=preview`,
+                );
+                expect(init?.headers).toMatchObject({
+                    Authorization: `Bearer ${apiKey}`,
+                });
+                expect(JSON.parse(init?.body as string)).toEqual({
+                    model: "FLUX-1.1-pro",
+                    prompt: "blue ceramic teapot",
+                    width: 768,
+                    height: 1024,
+                    seed: 42,
+                    output_format: "png",
+                    num_images: 1,
+                });
+                return Response.json({
+                    data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                });
+            });
+
+        const result = await callAzureFlux11Pro(
+            "blue ceramic teapot",
+            { ...baseParams, model, width: 768 },
+            USER_INFO,
+        );
+
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
+        expect(result.trackingData).toMatchObject({
+            actualModel: model,
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it.each([
+        [{ width: 257 }, "multiples of 32"],
+        [{ width: 1440, height: 1440 }, "1.6 megapixels"],
+        [{ image: [INPUT_IMAGE_URL] as string[] }, "text-to-image"],
+        [{ guidance_scale: 4.5 }, "guidance_scale"],
+        [{ transparent: true }, "transparency"],
+    ] as const)("rejects unsupported parameters with a useful 400", async (overrides, message) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAzureFlux11Pro(
+                "blue ceramic teapot",
+                {
+                    ...baseParams,
+                    model: "black-forest-labs/flux.1.1-pro",
+                    ...overrides,
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(message),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("preserves provider content-filter errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                { error: { message: "Request blocked by content filter" } },
+                { status: 400 },
+            ),
+        );
+
+        await expect(
+            callAzureFlux11Pro(
+                "unsafe request",
+                { ...baseParams, model: "black-forest-labs/flux.1.1-pro" },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 422,
+            errorCode: "content_policy_violation",
+        });
     });
 });
 
 describe("callAzureFlux2", () => {
     it.each([
-        ["flux-2-pro", "FLUX.2-pro", "flux-2-pro"],
-        ["flux-2-flex", "FLUX.2-flex", "flux-2-flex"],
+        ["black-forest-labs/flux.2-pro", "FLUX.2-pro", "flux-2-pro"],
+        ["black-forest-labs/flux.2-flex", "FLUX.2-flex", "flux-2-flex"],
     ] as const)("routes %s with exact dimensions and provider-reported megapixels", async (model, upstreamModel, modelPath) => {
         let requestBody: Record<string, unknown> | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
@@ -249,7 +358,7 @@ describe("callAzureFlux2", () => {
             return Response.json({
                 data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                 request_meta: {
-                    cost: model === "flux-2-pro" ? 4.5 : 10,
+                    cost: model === "black-forest-labs/flux.2-pro" ? 4.5 : 10,
                     input_mp: 0,
                     output_mp: 1.5,
                 },
@@ -305,7 +414,7 @@ describe("callAzureFlux2", () => {
             "combine them",
             {
                 ...baseParams,
-                model: "flux-2-pro",
+                model: "black-forest-labs/flux.2-pro",
                 image: [INPUT_IMAGE_URL, secondInputUrl],
             },
             USER_INFO,
@@ -332,7 +441,7 @@ describe("callAzureFlux2", () => {
                 {
                     ...baseParams,
                     ...dimensions,
-                    model: "flux-2-pro",
+                    model: "black-forest-labs/flux.2-pro",
                 },
                 USER_INFO,
             ),
@@ -348,7 +457,7 @@ describe("callAzureFlux2", () => {
                 "too many references",
                 {
                     ...baseParams,
-                    model: "flux-2-pro",
+                    model: "black-forest-labs/flux.2-pro",
                     image: Array(9).fill(INPUT_IMAGE_URL),
                 },
                 USER_INFO,
@@ -369,7 +478,7 @@ describe("callAzureFlux2", () => {
         await expect(
             callAzureFlux2(
                 "missing usage",
-                { ...baseParams, model: "flux-2-flex" },
+                { ...baseParams, model: "black-forest-labs/flux.2-flex" },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({
@@ -395,7 +504,7 @@ describe("callAzureFlux2", () => {
         await expect(
             callAzureFlux2(
                 "filtered request",
-                { ...baseParams, model: "flux-2-pro" },
+                { ...baseParams, model: "black-forest-labs/flux.2-pro" },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({

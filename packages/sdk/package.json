@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/sdk",
-  "version": "5.1.0-alpha.6",
+  "version": "5.1.0-alpha.7",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -94,6 +94,9 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/pollinations"
+  },
+  "dependencies": {
+    "eventsource-parser": "3.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

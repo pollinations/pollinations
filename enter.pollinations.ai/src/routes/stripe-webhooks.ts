@@ -100,7 +100,7 @@ function readUserIdFromMetadata(
     return metadata?.userId || metadata?.pollinations_user_id || "";
 }
 
-async function recordFailedCardFingerprintFromCharge({
+async function recordCardFingerprintFromCharge({
     env,
     event,
     charge,
@@ -125,7 +125,7 @@ async function recordFailedCardFingerprintFromCharge({
         });
     } catch (err) {
         console.error(
-            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
+            `Failed to record Stripe card fingerprint for event ${event.id}:`,
             err,
         );
     }
@@ -420,7 +420,7 @@ function emitPaymentIntentAnalytics(
             );
             const snapshot = snapshotFromCharge(charge);
             if (recordFailedCardFingerprint) {
-                await recordFailedCardFingerprintFromCharge({
+                await recordCardFingerprintFromCharge({
                     env: c.env,
                     event,
                     charge,
@@ -604,10 +604,17 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
                 // without an additional Stripe API call. Pack credit still
-                // happens via checkout.session.completed; successful cards
-                // don't feed the failed-card gate ledger.
+                // happens via checkout.session.completed. The card fingerprint
+                // feeds the new-card gate ledger so a tester rotating stolen
+                // cards that happen to work locks the gate like failed ones.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
+                await recordCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,

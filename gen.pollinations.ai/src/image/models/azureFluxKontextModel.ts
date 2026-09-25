@@ -3,7 +3,6 @@ import {
     ensureUpstreamOk,
     UpstreamError,
 } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
     AuthResult,
@@ -30,14 +29,25 @@ const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 
+const AZURE_FLUX_11_PRO_ROUTES = {
+    "black-forest-labs/flux.1.1-pro": {
+        resource: "myceli-prod-eastus",
+        apiKeyEnv: "AZURE_MYCELI_PROD_API_KEY",
+    },
+    "black-forest-labs/flux.1.1-pro:azure:sweden": {
+        resource: "myceli-prod-swedencentral",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    },
+} as const;
+
 const AZURE_FLUX_2_CONFIG = {
-    "flux-2-pro": {
+    "black-forest-labs/flux.2-pro": {
         upstreamModel: "FLUX.2-pro",
         modelPath: "flux-2-pro",
         title: "FLUX.2 Pro",
         maxReferenceImages: 8,
     },
-    "flux-2-flex": {
+    "black-forest-labs/flux.2-flex": {
         upstreamModel: "FLUX.2-flex",
         modelPath: "flux-2-flex",
         title: "FLUX.2 Flex",
@@ -79,19 +89,19 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
         : undefined;
 }
 
-function shortString(value: unknown): string | undefined {
-    return typeof value === "string" ? value.slice(0, 500) : undefined;
+function stringValue(value: unknown): string | undefined {
+    return typeof value === "string" ? value : undefined;
 }
 
 function errorSummary(value: unknown): Record<string, string> | undefined {
-    if (typeof value === "string") return { message: value.slice(0, 500) };
+    if (typeof value === "string") return { message: value };
     const error = asRecord(value);
     if (!error) return undefined;
 
     const summary = {
-        code: shortString(error.code),
-        message: shortString(error.message),
-        type: shortString(error.type),
+        code: stringValue(error.code),
+        message: stringValue(error.message),
+        type: stringValue(error.type),
     };
     const entries = Object.entries(summary).filter(
         (entry): entry is [string, string] => Boolean(entry[1]),
@@ -108,24 +118,6 @@ function filteredCategories(value: unknown): string[] {
         .sort();
 }
 
-function summarizeUnexpectedResponse(data: AzureFluxResponse): string {
-    const first = data.data?.[0];
-    const root = data as Record<string, unknown>;
-    const firstRecord = asRecord(first);
-    const summary = {
-        responseKeys: Object.keys(root).sort(),
-        dataCount: Array.isArray(data.data) ? data.data.length : undefined,
-        firstDataKeys: firstRecord
-            ? Object.keys(firstRecord).sort()
-            : undefined,
-        finishReason: shortString(first?.finish_reason),
-        message: shortString(data.message) || shortString(first?.message),
-        error: errorSummary(data.error) || errorSummary(first?.error),
-        filteredCategories: filteredCategories(first?.content_filter_results),
-    };
-    return JSON.stringify(summary);
-}
-
 function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const first = data.data?.[0];
     const categories = filteredCategories(first?.content_filter_results);
@@ -136,9 +128,9 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const rootError = errorSummary(data.error);
     const itemError = errorSummary(first?.error);
     return firstContentPolicyMessage([
-        shortString(first?.finish_reason)?.replaceAll("_", " "),
-        shortString(data.message),
-        shortString(first?.message),
+        stringValue(first?.finish_reason)?.replaceAll("_", " "),
+        stringValue(data.message),
+        stringValue(first?.message),
         rootError?.message,
         rootError?.code?.replaceAll("_", " "),
         itemError?.message,
@@ -146,7 +138,7 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     ]);
 }
 
-async function ensureAzureFluxOk(
+export async function ensureAzureImageOk(
     response: Response,
     endpoint: string,
 ): Promise<void> {
@@ -174,7 +166,7 @@ async function ensureAzureFluxOk(
 }
 
 async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
-    await ensureAzureFluxOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
+    await ensureAzureImageOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
 }
 
 function greatestCommonDivisor(a: number, b: number): number {
@@ -250,7 +242,7 @@ export async function callAzureFluxKontext(
             requestBody.input_image = buffer.toString("base64");
         } catch (error) {
             logError("Error processing image for editing:", error);
-            if (error instanceof HttpError) throw error;
+            if (error instanceof UpstreamError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
     } else {
@@ -282,7 +274,7 @@ export async function callAzureFluxKontext(
 
     if (!data.data?.[0]?.b64_json) {
         const requestUrl = new URL(AZURE_FLUX_KONTEXT_ENDPOINT);
-        const responseBody = summarizeUnexpectedResponse(data);
+        const responseBody = JSON.stringify(data);
         const upstreamHeaders = collectUpstreamHeaders(response.headers);
         const rejectionReason = contentPolicyReason(data);
 
@@ -309,19 +301,115 @@ export async function callAzureFluxKontext(
     // Convert base64 to buffer
     const imageBuffer = base64ToBuffer(data.data[0].b64_json);
 
-    // Return result with content safety flags from Azure response
     return {
         buffer: imageBuffer,
-        isMature:
-            asRecord(asRecord(data.data[0].content_filter_results)?.sexual)
-                ?.filtered === true,
-        isChild: false, // Azure doesn't provide child detection
         trackingData: {
-            actualModel: "kontext",
+            actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
             },
+        },
+    };
+}
+
+export async function callAzureFlux11Pro(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    const model = safeParams.model as keyof typeof AZURE_FLUX_11_PRO_ROUTES;
+    const route = AZURE_FLUX_11_PRO_ROUTES[model];
+    if (!route) {
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Azure FLUX 1.1 Pro route: ${model}`,
+        });
+    }
+    if (safeParams.image.length > 0) {
+        throw UpstreamError.fromProvider(400, {
+            message: "FLUX 1.1 Pro supports text-to-image generation only",
+        });
+    }
+    if (safeParams.guidance_scale !== undefined || safeParams.transparent) {
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "FLUX 1.1 Pro does not support guidance_scale or transparency",
+        });
+    }
+    const { width, height } = safeParams;
+    if (
+        width < 256 ||
+        height < 256 ||
+        width > 1440 ||
+        height > 1440 ||
+        width % 32 !== 0 ||
+        height % 32 !== 0 ||
+        width * height > 1_600_000
+    ) {
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "FLUX 1.1 Pro requires 256–1440px sides in multiples of 32 and at most 1.6 megapixels",
+        });
+    }
+
+    const apiKey = getImageEnv(route.apiKeyEnv);
+    if (!apiKey)
+        throw new Error(
+            `${route.apiKeyEnv} not found in environment variables`,
+        );
+    await requireSafePrompt(prompt, safeParams, userInfo);
+
+    const endpoint = `https://${route.resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-pro-1.1?api-version=preview`;
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            model: "FLUX-1.1-pro",
+            prompt: sanitizeString(prompt),
+            width,
+            height,
+            seed: safeParams.seed,
+            output_format: "png",
+            num_images: 1,
+        }),
+    });
+    await ensureAzureImageOk(response, endpoint);
+
+    const data = (await response.json()) as AzureFluxResponse;
+    const firstImage = data.data?.[0];
+    const encodedImage = firstImage?.b64_json;
+    if (!encodedImage) {
+        const requestUrl = new URL(endpoint);
+        const responseBody = JSON.stringify(data);
+        const upstreamHeaders = collectUpstreamHeaders(response.headers);
+        const rejectionReason = contentPolicyReason(data);
+        if (rejectionReason) {
+            throw new UpstreamError(CONTENT_POLICY_STATUS, {
+                message: contentPolicyMessage(rejectionReason),
+                errorCode: CONTENT_POLICY_ERROR_CODE,
+                requestUrl,
+                upstreamStatus: response.status,
+                responseBody,
+                upstreamHeaders,
+            });
+        }
+        throw new UpstreamError(502, {
+            message: "Azure FLUX 1.1 Pro returned no image",
+            requestUrl,
+            upstreamStatus: response.status,
+            responseBody,
+            upstreamHeaders,
+        });
+    }
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: model,
+            usage: { completionImageTokens: 1, totalTokenCount: 1 },
         },
     };
 }
@@ -332,25 +420,22 @@ function validateFlux2Dimensions(
     height: number,
 ): void {
     if (width < AZURE_FLUX_2_MIN_SIDE || height < AZURE_FLUX_2_MIN_SIDE) {
-        throw new HttpError(
-            `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
+        });
     }
     if (
         width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
         height % AZURE_FLUX_2_DIMENSION_STEP !== 0
     ) {
-        throw new HttpError(
-            `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
+        });
     }
     if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
-        throw new HttpError(
-            `${modelTitle} supports at most 4,194,304 pixels`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} supports at most 4,194,304 pixels`,
+        });
     }
 }
 
@@ -368,15 +453,16 @@ export async function callAzureFlux2(
     const model = safeParams.model as AzureFlux2Model;
     const config = AZURE_FLUX_2_CONFIG[model];
     if (!config) {
-        throw new HttpError(`Unsupported Azure FLUX.2 model: ${model}`, 400);
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Azure FLUX.2 model: ${model}`,
+        });
     }
 
     validateFlux2Dimensions(config.title, safeParams.width, safeParams.height);
     if (safeParams.image.length > config.maxReferenceImages) {
-        throw new HttpError(
-            `${config.title} supports at most ${config.maxReferenceImages} reference images`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${config.title} supports at most ${config.maxReferenceImages} reference images`,
+        });
     }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
@@ -406,10 +492,9 @@ export async function callAzureFlux2(
             const { buffer } = await downloadUserImage(imageUrl);
             const imageSafetyResult = await analyzeImageSafety(buffer);
             if (!imageSafetyResult.safe) {
-                const error = new HttpError(
-                    `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
-                    400,
-                );
+                const error = UpstreamError.fromProvider(400, {
+                    message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+                });
                 await logGptImageError(
                     prompt,
                     safeParams,
@@ -437,13 +522,13 @@ export async function callAzureFlux2(
         },
         body: JSON.stringify(requestBody),
     });
-    await ensureAzureFluxOk(response, endpoint);
+    await ensureAzureImageOk(response, endpoint);
 
     const data = (await response.json()) as AzureFluxResponse;
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         const requestUrl = new URL(endpoint);
-        const responseBody = summarizeUnexpectedResponse(data);
+        const responseBody = JSON.stringify(data);
         const upstreamHeaders = collectUpstreamHeaders(response.headers);
         const rejectionReason = contentPolicyReason(data);
 
@@ -479,15 +564,13 @@ export async function callAzureFlux2(
             message: `Azure ${config.title} returned no billing metadata`,
             requestUrl: new URL(endpoint),
             upstreamStatus: response.status,
-            responseBody: summarizeUnexpectedResponse(data),
+            responseBody: JSON.stringify(data),
             upstreamHeaders: collectUpstreamHeaders(response.headers),
         });
     }
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: {

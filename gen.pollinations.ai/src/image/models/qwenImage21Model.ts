@@ -89,7 +89,7 @@ export async function callQwenImage21API(
             if (!dimensions) {
                 throw UpstreamError.fromProvider(400, {
                     message:
-                        "qwen-image-2.1 could not determine a reference image's pixel dimensions; provide a PNG, GIF, BMP, or WebP with a valid header",
+                        "qwen-image-2.1 could not determine a reference image's pixel dimensions; provide a JPEG, PNG, GIF, BMP, or WebP with a valid header",
                 });
             }
             inputPixels += dimensions.width * dimensions.height;

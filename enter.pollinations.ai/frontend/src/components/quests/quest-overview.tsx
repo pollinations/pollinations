@@ -821,6 +821,11 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 key: reward.id,
                 rewardId: reward.id,
                 title: reward.title,
+                description: reward.questId?.startsWith(
+                    "github:reported_issue:",
+                )
+                    ? "Your issue was closed by a merged pull request."
+                    : undefined,
                 url: reward.url ?? undefined,
                 issueNumber: githubNumberFromUrl(reward.url) ?? undefined,
                 reward: reward.pollenAmount,

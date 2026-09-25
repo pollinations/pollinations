@@ -1,0 +1,36 @@
+{
+  "pr_number": 15445,
+  "title": "fix: register Ask Jev in the hosted MCP catalog",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15445",
+  "merged_at": "2026-09-25T10:59:22Z",
+  "labels": [
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds Ask Jev to the shared MCP catalog at `/mcp/ask-jev`, completing the discovery wiring missing from #15111.\n- Reuses the existing MCP proxy and downstream billing, preserving caller credentials without adding a second charge.\n- Adds service bindings for local, test, staging, and production, plus source documentation.\n- Validated with 18 gateway/docs tests, 9 Ask Jev tests, Gen typecheck, Biome, and environment binding checks.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Ask Jev joins the hive",
+    "blurb": "Ask Jev is now properly listed in the hosted MCP garden at `/mcp/ask-jev`. Same proxy, same caller credentials, no mysterious second pollen tollbooth.",
+    "summary": "Registered Ask Jev in the shared hosted MCP catalog at `/mcp/ask-jev`, with environment service bindings and documentation while reusing the existing MCP proxy and downstream billing path.",
+    "impact": "MCP clients can now discover and use Ask Jev through the hosted catalog, with caller credentials preserved and no additional charge layer.",
+    "keywords": [
+      "MCP",
+      "Ask Jev",
+      "hosted catalog",
+      "discovery",
+      "proxy",
+      "billing"
+    ],
+    "visual_concept": "A cozy MCP discovery garden: Polli helps a friendly Ask Jev terminal sign find its place among labeled tool-path flowers, while a CRT robot happily points to the newly visible `/mcp/ask-jev` route. A single glowing pollen path runs through the proxy garden to show credentials and billing continuing cleanly through one route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular blushes, light-blue translucent wings, and a tiny librarian scarf, placing a garden sign reading `/mcp/ask-jev` beside a friendly retro terminal among code-flowers; a chunky CRT-monitor robot points excitedly at the newly mapped path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, with a small pixel-font label: `HOSTED MCP`."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15445.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular blushes, light-blue translucent wings, and a tiny librarian scarf, placing a garden sign reading `/mcp/ask-jev` beside a friendly retro terminal among code-flowers; a chunky CRT-monitor robot points excitedly at the newly mapped path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, with a small pixel-font label: `HOSTED MCP`."
+  },
+  "generated_at": "2026-09-25T11:00:30.271734+00:00"
+}

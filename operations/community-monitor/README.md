@@ -33,7 +33,7 @@ Live-only on the box, never committed:
   Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
   the service environment. Never place the token in MCP command-line arguments.
 - `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
-  probe backoff and billing flags). Preserve it during deployments to retain cooldowns and
+  probe backoff and protocol alerts). Preserve it during deployments to retain cooldowns and
   prevent duplicate posts.
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
@@ -218,7 +218,7 @@ Health data is edge-cached for 60 seconds. `reliability=all` (or the
 This is discovery only: exact-ID calls and fallback targets remain available.
 Manual hiding, privacy, key permissions and paid access remain unchanged.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
-The monitor retains diagnostics, billing/protocol warnings, served-model and
+The monitor retains requested diagnostics, protocol warnings, served-model and
 fallback notices, official-model alerts and daily leaderboards. After a daily
 leaderboard posts, it reports only community models newly filtered from
 discovery and those back in listings since the previous check, with their

@@ -5,12 +5,16 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from typing import Any
+import uuid
+from collections.abc import AsyncGenerator
+from typing import Any, cast
 
 from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
+from floret.routing import RoutingPreferences
 from floret.toolset import TOOL_SCHEMAS, dispatch, parse_args
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,9 @@ def _client() -> AsyncOpenAI:
     )
 
 
-_WORKSPACE_MEDIA_RE = re.compile(r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif)\b", re.I)
+_WORKSPACE_MEDIA_RE = re.compile(
+    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.I
+)
 
 
 def _mentions_unpublished_media(text: str) -> bool:
@@ -46,24 +52,29 @@ def _tool_call_fields(call: Any) -> tuple[str, str, str]:
     return call.id, call.function.name, call.function.arguments
 
 
-async def run_agent_events(
+async def _run_agent_events(
     messages: list[dict[str, Any]],
     *,
     model: str | None = None,
     max_iters: int | None = None,
-):
+    routing: RoutingPreferences | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
     """Run the tool-calling loop, yielding progress events as they happen.
 
-    Yields {"type": "tool_start", "name"} per tool call, then exactly one
+    Yields {"type": "tool_start", "id", "name", "arguments"} per tool call,
+    then exactly one
     {"type": "final", "text", "artifacts", "iterations"}.
     """
-    model = model or settings.brain_model
+    routing = routing or RoutingPreferences()
+    model = routing.text or model or settings.brain_model
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
+    computer_lock = asyncio.Lock()
+    system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
-        {"role": "system", "content": build_system_prompt()},
+        {"role": "system", "content": system_prompt},
         *messages,
     ]
     artifacts: list[dict[str, Any]] = []
@@ -74,12 +85,12 @@ async def run_agent_events(
     for iteration in range(max_iters):
         completion = await client.chat.completions.create(
             model=model,
-            messages=convo,
-            tools=TOOL_SCHEMAS,
+            messages=cast(list[ChatCompletionMessageParam], convo),
+            tools=cast(list[ChatCompletionToolParam], TOOL_SCHEMAS),
             tool_choice="auto",
         )
         msg = completion.choices[0].message
-        tool_calls = msg.tool_calls or []
+        tool_calls = cast(list[Any], msg.tool_calls or [])
 
         # Record the assistant turn (with any tool_calls) verbatim.
         assistant_entry: dict[str, Any] = {
@@ -103,7 +114,7 @@ async def run_agent_events(
         if not tool_calls:
             text = msg.content or ""
             attached = any(
-                a.get("type") in ("video", "audio")
+                a.get("type") in ("video", "audio", "3d", "file")
                 and str(a.get("url", "")).startswith("https://media.pollinations.ai/")
                 for a in artifacts
             )
@@ -122,7 +133,7 @@ async def run_agent_events(
                         "content": (
                             "Your answer references media files that were never "
                             "published. Files in the workspace are NOT delivered "
-                            "to the user. Call upload_media on each final file "
+                            "to the user. Use `assets publish` in Computer bash for each final file "
                             "and include the returned URLs in your answer."
                         ),
                     }
@@ -137,14 +148,23 @@ async def run_agent_events(
             return
 
         for tc in tool_calls:
-            _, name, _ = _tool_call_fields(tc)
-            yield {"type": "tool_start", "name": name}
+            call_id, name, arguments = _tool_call_fields(tc)
+            yield {
+                "type": "tool_start",
+                "id": call_id,
+                "name": name,
+                "arguments": arguments,
+            }
 
-        # Execute every tool call in this turn concurrently.
+        # Generation can run concurrently; workspace snapshots must not race.
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                result = await dispatch(name, parse_args(raw_args))
+                if name == "bash":
+                    async with computer_lock:
+                        result = await dispatch(name, parse_args(raw_args), routing)
+                else:
+                    result = await dispatch(name, parse_args(raw_args), routing)
             return call_id, result
 
         keys = ["{}:{}".format(*_tool_call_fields(tc)[1:]) for tc in tool_calls]
@@ -186,7 +206,10 @@ async def run_agent_events(
             "content": "Iteration limit reached. Write your final answer now using what you have.",
         }
     )
-    final = await client.chat.completions.create(model=model, messages=convo)
+    final = await client.chat.completions.create(
+        model=model,
+        messages=cast(list[ChatCompletionMessageParam], convo),
+    )
     yield {
         "type": "final",
         "text": final.choices[0].message.content or "",
@@ -195,21 +218,66 @@ async def run_agent_events(
     }
 
 
+async def run_agent_events(
+    messages: list[dict[str, Any]],
+    *,
+    model: str | None = None,
+    max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    """Run one agent event stream."""
+    from floret.registry import (
+        fetch_model_catalog,
+        reset_request_catalog,
+        set_request_catalog,
+        warm_registry,
+    )
+
+    catalog_token = None
+    try:
+        if settings.catalog_endpoint:
+            await warm_registry()
+            catalog_token = set_request_catalog(await fetch_model_catalog())
+        from floret.tools import mcp
+
+        workspace = f"/workspace/floret/{uuid.uuid4().hex}"
+        used = [False]
+        try:
+            with mcp.workspace(workspace) as used:
+                async for event in _run_agent_events(
+                    messages, model=model, max_iters=max_iters, routing=routing
+                ):
+                    yield event
+        finally:
+            if used[0]:
+                await mcp.cleanup_workspace(workspace)
+    finally:
+        if catalog_token is not None:
+            reset_request_catalog(catalog_token)
+
+
 async def run_agent(
     messages: list[dict[str, Any]],
     *,
     model: str | None = None,
     max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
 ) -> dict[str, Any]:
     """Run the tool-calling loop over `messages` (OpenAI chat format).
 
     Returns {"text", "artifacts", "iterations"}.
     """
-    async for event in run_agent_events(messages, model=model, max_iters=max_iters):
-        if event["type"] == "final":
-            return {
-                "text": event["text"],
-                "artifacts": event["artifacts"],
-                "iterations": event["iterations"],
-            }
+    events = run_agent_events(
+        messages, model=model, max_iters=max_iters, routing=routing
+    )
+    try:
+        async for event in events:
+            if event["type"] == "final":
+                return {
+                    "text": event["text"],
+                    "artifacts": event["artifacts"],
+                    "iterations": event["iterations"],
+                }
+    finally:
+        await events.aclose()
     raise RuntimeError("agent event stream ended without a final event")

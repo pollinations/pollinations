@@ -16,6 +16,7 @@ SCHEMA >
 `start_time`      DateTime               `json:$.startTime`,
 `end_time`        DateTime               `json:$.endTime`,
 `response_time`   Float32                `json:$.responseTime` DEFAULT 0,
+`attempt_response_time` Nullable(Float32) `json:$.attemptResponseTime` DEFAULT NULL,
 `response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
 `environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
 `event_type`      LowCardinality(String) `json:$.eventType`,
@@ -74,6 +75,7 @@ SCHEMA >
 `token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
 `token_price_prompt_cache_write`   Float64  `json:$.tokenPricePromptCacheWrite` DEFAULT 0,
 `token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
+`token_price_prompt_video_seconds` Float64 `json:$.tokenPricePromptVideoSeconds` DEFAULT 0,
 `token_price_prompt_audio_seconds` Float64  `json:$.tokenPricePromptAudioSeconds` DEFAULT 0,
 `token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
 `token_price_prompt_video`         Float64  `json:$.tokenPricePromptVideo` DEFAULT 0,
@@ -96,6 +98,7 @@ SCHEMA >
 `token_count_completion_reasoning` UInt32   `json:$.tokenCountCompletionReasoning` DEFAULT 0,
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
+`token_count_prompt_video_seconds` Float64 `json:$.tokenCountPromptVideoSeconds` DEFAULT 0,
 `token_count_prompt_audio_seconds`     Float64 `json:$.tokenCountPromptAudioSeconds` DEFAULT 0,
 `token_count_completion_audio_seconds` Float64 `json:$.tokenCountCompletionAudioSeconds` DEFAULT 0,
 `token_count_completion_video_seconds` Float64 `json:$.tokenCountCompletionVideoSeconds` DEFAULT 0,
@@ -142,7 +145,23 @@ SCHEMA >
 
 -- Network
 `ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
-`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined'
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
+
+-- Agent runs: the request_id of the call that minted the run token, grouping
+-- one agent call's model steps and tool calls. The parent row is free, so a
+-- run costs the sum over its children.
+--
+-- Deploy this only once main's byop_app_payer_daily_mv is live. Adding a column
+-- is a metadata-only ALTER, but creating a materialized view on this table in
+-- the same deployment makes Tinybird rebuild the table instead -- a full copy of
+-- every row, which it then refuses to do without a FORWARD_QUERY. Verified on
+-- staging: with that view already deployed, this is "ALTER TABLE, no data
+-- movement required".
+`parent_request_id` String               `json:$.parentRequestId` DEFAULT '',
+
+-- Request-time listing classification. Empty on historical events and on
+-- regular models; never infer an agent from the community provider alone.
+`community_endpoint_type` String        `json:$.communityEndpointType` DEFAULT ''
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

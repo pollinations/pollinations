@@ -9,9 +9,11 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -19,13 +21,19 @@ from pydantic import BaseModel
 
 from floret.agent import run_agent, run_agent_events
 from floret.config import _api_key_override, settings
+from floret.routing import (
+    RoutingInput,
+    RoutingPreferences,
+    RoutingRegistryUnavailable,
+    RoutingValidationError,
+    validate_routing,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextlib.asynccontextmanager
-async def _lifespan(_: FastAPI):
-    # pick_model returns "" if the registry cache is cold inside a running loop.
+async def _lifespan(_: FastAPI) -> AsyncGenerator[None]:
     from floret.registry import warm_registry
 
     try:
@@ -56,6 +64,8 @@ class ChatRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
     stream: bool = False
+    stream_options: dict[str, Any] | None = None
+    routing: RoutingInput | None = None
 
 
 def _files_dir() -> str:
@@ -156,9 +166,21 @@ async def _build_content(
             else:
                 md_lines.append(f"_(audio narration attached: “{label}…”)_")
 
+        elif kind in {"3d", "file"}:
+            md_lines.append(f"[Download {kind}]({art['url']})")
+
     markdown = "\n\n".join(md_lines)
     content_parts = [{"type": "text", "text": markdown}] + parts
     return markdown, content_parts
+
+
+def _include_stream_usage(stream_options: dict[str, Any] | None) -> bool:
+    """Return whether an OpenAI-compatible terminal usage chunk was requested."""
+    return bool(stream_options and stream_options.get("include_usage") is True)
+
+
+def _zero_usage() -> dict[str, int]:
+    return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
 
 def _to_openai_messages(messages: list[ChatMessage]) -> list[dict[str, Any]]:
@@ -170,14 +192,23 @@ def _sse_frame(
     model: str,
     delta: dict[str, Any],
     finish_reason: str | None = None,
+    usage: dict[str, int] | None = None,
+    include_usage: bool = False,
+    choices: list[dict[str, Any]] | None = None,
 ) -> str:
     payload = {
         "id": chunk_id,
         "object": "chat.completion.chunk",
         "created": int(time.time()),
         "model": model,
-        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+        "choices": (
+            choices
+            if choices is not None
+            else [{"index": 0, "delta": delta, "finish_reason": finish_reason}]
+        ),
     }
+    if include_usage:
+        payload["usage"] = usage
     return f"data: {json.dumps(payload)}\n\n"
 
 
@@ -185,7 +216,11 @@ _STREAM_DONE = object()
 
 
 async def _sse_events(
-    messages: list[dict[str, Any]], model: str, api_key: str | None
+    messages: list[dict[str, Any]],
+    model: str,
+    api_key: str | None,
+    routing: RoutingPreferences,
+    include_usage: bool,
 ) -> AsyncIterator[str]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
@@ -203,7 +238,7 @@ async def _sse_events(
 
     async def _pump() -> None:
         try:
-            async for event in run_agent_events(messages):
+            async for event in run_agent_events(messages, routing=routing):
                 await queue.put(event)
         except Exception as exc:
             await queue.put(exc)
@@ -212,7 +247,12 @@ async def _sse_events(
 
     pump = asyncio.create_task(_pump())
     try:
-        yield _sse_frame(chunk_id, model, {"role": "assistant", "content": ""})
+        yield _sse_frame(
+            chunk_id,
+            model,
+            {"role": "assistant", "content": ""},
+            include_usage=include_usage,
+        )
         while True:
             try:
                 item = await asyncio.wait_for(
@@ -227,68 +267,134 @@ async def _sse_events(
                 raise item
             if item["type"] == "tool_start":
                 yield _sse_frame(
-                    chunk_id, model, {"content": f"*→ {item['name']}…*\n\n"}
+                    chunk_id,
+                    model,
+                    {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": item["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": item["name"],
+                                    "arguments": item["arguments"],
+                                },
+                            }
+                        ]
+                    },
+                    include_usage=include_usage,
                 )
             elif item["type"] == "nudge":
-                yield _sse_frame(
-                    chunk_id, model, {"content": f"*→ {item['reason']}…*\n\n"}
-                )
+                reason = str(item["reason"]).replace("\r", " ").replace("\n", " ")
+                yield f": progress {reason}\n\n"
             elif item["type"] == "final":
                 markdown, _ = await _build_content(item["text"], item["artifacts"])
-                yield _sse_frame(chunk_id, model, {"content": markdown})
-        yield _sse_frame(chunk_id, model, {}, finish_reason="stop")
-    except Exception as exc:
+                yield _sse_frame(
+                    chunk_id,
+                    model,
+                    {"content": markdown},
+                    include_usage=include_usage,
+                )
+        yield _sse_frame(
+            chunk_id,
+            model,
+            {},
+            finish_reason="stop",
+            include_usage=include_usage,
+        )
+        if include_usage:
+            yield _sse_frame(
+                chunk_id,
+                model,
+                {},
+                usage=_zero_usage(),
+                include_usage=True,
+                choices=[],
+            )
+    except Exception:
         logger.exception("streaming chat_completions failed")
         yield _sse_frame(
-            chunk_id, model, {"content": f"\n\n[error: {exc}]"}, finish_reason="stop"
+            chunk_id,
+            model,
+            {"content": "\n\n[error: Generation failed.]"},
+            finish_reason="stop",
+            include_usage=include_usage,
         )
     finally:
         pump.cancel()
+        try:
+            await pump
+        except asyncio.CancelledError:
+            pass
         _api_key_override.reset(token)
     yield "data: [DONE]\n\n"
 
 
-def _spendable_credential(http_request: Request) -> str | None:
-    """The Pollinations key this request may spend, if any.
-
-    Whatever the caller sent as a bearer. For a delegating community model the
-    gateway makes that a short-lived `ag_` run token in place of the endpoint's
-    saved secret, but the agent does not care which kind of key it holds — it
-    just spends the one it was given.
-    """
+def _agent_run_token(http_request: Request) -> str | None:
+    """Return the gateway-minted run token; reject direct user credentials."""
     header = http_request.headers.get("Authorization", "")
-    key = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    return key or None
+    if not header:
+        return None
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not token.startswith("ag_"):
+        raise HTTPException(
+            status_code=401,
+            detail="Floret requires an agent run token.",
+        )
+    return token
 
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
-    api_key = _spendable_credential(http_request)
+    api_key = _agent_run_token(http_request)
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail="Missing API key. Pass it as Authorization: Bearer <key>.",
+            detail="Missing agent run token.",
         )
+
+    if settings.catalog_endpoint:
+        from floret.registry import warm_registry
+
+        try:
+            await warm_registry()
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(
+                status_code=503, detail="Model catalog unavailable."
+            ) from None
+
+    token = _api_key_override.set(api_key or None)
+    try:
+        routing = await validate_routing(request.routing)
+    except RoutingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"field": exc.field, "model": exc.model, "reason": exc.reason},
+        ) from exc
+    except RoutingRegistryUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    finally:
+        _api_key_override.reset(token)
+
     if request.stream:
         return StreamingResponse(
             _sse_events(
                 _to_openai_messages(request.messages),
                 request.model,
                 api_key or None,
+                routing,
+                _include_stream_usage(request.stream_options),
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     token = _api_key_override.set(api_key or None)
     try:
-        result = await run_agent(_to_openai_messages(request.messages))
+        result = await run_agent(_to_openai_messages(request.messages), routing=routing)
         markdown, content_parts = await _build_content(
             result["text"], result["artifacts"]
-        )
-        content_block: Any = (
-            content_parts[0]["text"] if len(content_parts) == 1 else content_parts
         )
         return {
             "id": f"chatcmpl-polli-{uuid.uuid4().hex[:12]}",
@@ -298,7 +404,11 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             "choices": [
                 {
                     "index": 0,
-                    "message": {"role": "assistant", "content": content_block},
+                    "message": {
+                        "role": "assistant",
+                        "content": markdown,
+                        "content_blocks": content_parts,
+                    },
                     "finish_reason": "stop",
                 }
             ],
@@ -306,9 +416,9 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         }
     except HTTPException:
         raise
-    except Exception as exc:
+    except Exception:
         logger.exception("chat_completions failed")
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail="Generation failed.") from None
     finally:
         _api_key_override.reset(token)
 
@@ -336,6 +446,14 @@ async def chat_completions_get() -> dict[str, Any]:
                 "model": "floret",
                 "messages": [{"role": "user", "content": "Hi!"}],
                 "stream": True,
+                "routing": {
+                    "text": "auto",
+                    "web_search": "auto",
+                    "image_generation": "auto",
+                    "image_editing": "auto",
+                    "video": "auto",
+                    "audio": "auto",
+                },
             },
         },
     }

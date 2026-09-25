@@ -1,51 +1,98 @@
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
-describe("OpenRouter Gemini routing", () => {
+describe("Vertex Gemini routing with OpenRouter fallback", () => {
     const routes = [
         [
             "gemini-3-flash",
-            "google/gemini-3-flash-preview",
+            "gemini-3-flash-preview",
+            "google/gemini-3-flash-preview:openrouter:vertex-global",
             "google-vertex/global",
         ],
-        ["gemini-fast", "google/gemini-2.5-flash-lite", "google-vertex/eu"],
+        [
+            "gemini-fast",
+            "gemini-2.5-flash-lite",
+            "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+            "google-vertex/eu",
+        ],
         [
             "gemini-large",
-            "google/gemini-3.1-pro-preview",
+            "gemini-3.1-pro-preview",
+            "google/gemini-3.1-pro-preview:openrouter:vertex-global",
             "google-vertex/global",
         ],
-        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
+        [
+            "gemini",
+            "gemini-3.7-flash",
+            "google/gemini-3.7-flash:openrouter:vertex-global",
+            "google-vertex/global",
+        ],
+        [
+            "google/gemini-3.8-flash",
+            "gemini-3.8-flash",
+            "google/gemini-3.8-flash:openrouter:vertex-global",
+            "google-vertex/global",
+        ],
         [
             "gemini-flash-lite-3.5",
-            "google/gemini-3.5-flash-lite",
+            "gemini-3.5-flash-lite",
+            "google/gemini-3.5-flash-lite:openrouter:vertex-global",
             "google-vertex/global",
         ],
     ] as const;
 
     it.each(
         routes,
-    )("pins %s to %s on %s without fallback", (model, upstreamModel, providerTag) => {
+    )("routes %s directly to Vertex %s", (model, upstreamModel) => {
         const { options } = resolveModelConfig([], { model });
 
         expect(options.model).toBe(upstreamModel);
+        expect(options.provider).toBeUndefined();
+        expect(options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": upstreamModel,
+            "strict-openai-compliance": "false",
+        });
+    });
+
+    it.each(
+        routes,
+    )("pins the %s fallback to %s", (_model, upstreamModel, fallback, providerTag) => {
+        const { options } = resolveModelConfig([], { model: fallback });
+
+        expect(options.model).toBe(`google/${upstreamModel}`);
         expect(options.provider).toEqual({
             only: [providerTag],
             allow_fallbacks: false,
         });
         expect(options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
     });
 
-    it.each([
-        "gemini-3-flash",
-        "gemini",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
-    ])("does not inject code execution for %s", async (model) => {
+    it.each(
+        routes,
+    )("publishes direct Vertex parameters for %s and OpenRouter parameters for its fallback", (_model, _upstreamModel, fallback) => {
+        const primary = fallback.split(
+            ":openrouter:",
+        )[0] as keyof typeof TEXT_SERVICES;
+        const direct = TEXT_SERVICES[primary].supportedParameters ?? [];
+        const openRouter = TEXT_SERVICES[fallback].supportedParameters ?? [];
+
+        expect(direct).toContain("reasoning_effort");
+        expect(direct).not.toContain("reasoning");
+        expect(direct).not.toContain("include_reasoning");
+        expect(openRouter).toContain("reasoning");
+        expect(openRouter).toContain("include_reasoning");
+    });
+
+    it.each(
+        routes.map(([model]) => model),
+    )("does not inject code execution for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 
@@ -56,9 +103,27 @@ describe("OpenRouter Gemini routing", () => {
 
     it.each(
         routes.map(([model]) => model),
-    )("adapts explicit Google Search for %s", async (model) => {
+    )("adapts explicit Google Search for direct %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
+
+        const { options } = await transform([], {
+            tools: [{ type: "google_search" }],
+        });
+
+        expect(options.tools).toEqual([
+            {
+                type: "function",
+                function: { name: "google_search" },
+            },
+        ]);
+    });
+
+    it.each(
+        routes.map(([, , fallback]) => fallback),
+    )("adapts Google Search for OpenRouter fallback %s", async (fallback) => {
+        const transform = findModelByName(fallback)?.transform;
+        if (!transform) throw new Error(`${fallback} transform missing`);
 
         const { options } = await transform([], {
             tools: [{ type: "google_search" }],
@@ -74,25 +139,31 @@ describe("OpenRouter Gemini routing", () => {
 
     it.each(
         routes.map(([model]) => model),
-    )("adapts legacy Google Search functions for %s", async (model) => {
+    )("preserves tools with structured output for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "lookup",
+                    parameters: { type: "object", properties: {} },
+                },
+            },
+        ];
 
         const { options } = await transform([], {
-            tools: [{ type: "function", function: { name: "google_search" } }],
+            tools,
+            response_format: { type: "json_object" },
         });
 
-        expect(options.tools).toEqual([
-            {
-                type: "openrouter:web_search",
-                parameters: { engine: "native" },
-            },
-        ]);
+        expect(options.tools).toEqual(tools);
     });
 });
 
 describe("Vertex Gemini Search routing", () => {
     const routes = [
+        "google/gemini-2.5-flash-lite:search",
         "gemini-search",
         "gemini-2.5-flash-search",
         "gemini-2.5-flash-lite-search",
@@ -165,7 +236,7 @@ describe("Vertex Gemini Search routing", () => {
         expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
-    it("drops logit_bias from explicit search on the 2.5 general route", async () => {
+    it("preserves logit_bias with explicit search on the 2.5 route", async () => {
         const transform = findModelByName("gemini-fast")?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
@@ -174,7 +245,7 @@ describe("Vertex Gemini Search routing", () => {
             logit_bias: { "1": -1 },
         });
 
-        expect(options.logit_bias).toBeUndefined();
+        expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
     it("preserves logit_bias without native search on the 2.5 route", async () => {

@@ -1,0 +1,12 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci && npm ci --prefix ../../packages/mcp",
+  "build": "npm run test",
+  "deploy": "npm run deploy",
+  "watch": ["packages/mcp/"],
+  "verify": [
+    "https://mcp.myceli.ai/health",
+    "https://mcp.pollinations.ai/health"
+  ]
+}

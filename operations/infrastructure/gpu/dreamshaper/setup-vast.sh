@@ -35,6 +35,7 @@ if ! command -v cloudflared >/dev/null || \
     dpkg -i /tmp/cloudflared.deb >/dev/null
 fi
 
+install -d -m 755 "$(dirname "$WORK_DIR")"
 if [ -d "$WORK_DIR/.git" ]; then
     git -C "$WORK_DIR" fetch --depth 1 origin "$GIT_BRANCH"
     git -C "$WORK_DIR" checkout FETCH_HEAD
@@ -104,8 +105,21 @@ set -euo pipefail
 PORT=$PORT
 
 screen -wipe >/dev/null 2>&1 || true
+# Stop the detached supervisor before its Uvicorn children, otherwise the
+# loop can relaunch the parent while cleanup is still in progress.
+pkill -TERM -f "/root/run-dreamshaper.sh" 2>/dev/null || true
 screen -S dreamshaper -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+# Uvicorn's spawned workers and resource tracker can outlive their parent.
+# This venv is dedicated to DreamShaper, so terminate every process using it.
+pkill -TERM -f "$VENV/bin/python" 2>/dev/null || true
+for _ in 1 2 3 4 5; do
+    if ! pgrep -f "$VENV/bin/python" >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+pkill -KILL -f "$VENV/bin/python" 2>/dev/null || true
 fuser -k -TERM \"\$PORT/tcp\" >/dev/null 2>&1 || true
 for _ in 1 2 3 4 5; do
     if ! fuser \"\$PORT/tcp\" >/dev/null 2>&1; then

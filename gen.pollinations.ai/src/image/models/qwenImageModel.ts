@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Qwen-Image generation via Replicate.
  *
@@ -12,14 +13,13 @@
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
@@ -122,11 +122,13 @@ export async function callQwenImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
+        throw toReplicateUpstreamError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${modelLabel} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${modelLabel} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {
@@ -141,10 +143,8 @@ export async function callQwenImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
-            actualModel: hasImage ? "qwen-image-edit" : "qwen-image",
+            actualModel: "qwen/qwen-image",
             // Flat per-image pricing on Replicate; report 1 image token.
             usage: {
                 completionImageTokens: 1,

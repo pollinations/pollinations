@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
+import { Button, type ButtonProps } from "../primitives/Button.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type CopyValue = string | (() => string | Promise<string>);
@@ -21,9 +22,13 @@ export type CopyButtonProps = Omit<
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
     tooltipClampToViewport?: boolean;
+    tooltipMaxWidth?: number;
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
+    variant?: "plain" | "button";
+    /** Button intent, used with `variant="button"`. */
+    intent?: ButtonProps<"button">["intent"];
     onCopied?: () => void;
     onCopyError?: (error: unknown) => void;
 };
@@ -35,9 +40,12 @@ export function CopyButton({
     tooltip = "📋 Click to copy",
     tooltipAlign,
     tooltipClampToViewport,
+    tooltipMaxWidth,
     copiedTooltip = "✅ Copied!",
     tooltipClassName,
     className,
+    variant = "plain",
+    intent,
     onCopied,
     onCopyError,
     ...buttonProps
@@ -69,18 +77,23 @@ export function CopyButton({
         }
     }
 
+    const Control = variant === "button" ? Button : "button";
     const button = (
-        <button
+        <Control
             {...buttonProps}
+            {...(variant === "button" && intent ? { intent } : {})}
             type="button"
             onClick={handleCopy}
             className={cn(
                 "polli-control",
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
                 typeof className === "function" ? className(copied) : className,
             )}
         >
             {typeof children === "function" ? children(copied) : children}
-        </button>
+        </Control>
     );
 
     // A copy button with its own visible label doesn't need a hover tooltip —
@@ -95,8 +108,15 @@ export function CopyButton({
             content={copied ? copiedTooltip : tooltip}
             align={tooltipAlign}
             clampToViewport={tooltipClampToViewport}
+            maxWidth={tooltipMaxWidth}
             displayContents
-            className={tooltipClassName}
+            tapEnabled={false}
+            className={cn(
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
+                tooltipClassName,
+            )}
         >
             {button}
         </Tooltip>

@@ -5,7 +5,6 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -20,17 +19,28 @@ import {
 } from "@shared/schemas/openai.ts";
 import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
-import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const CACHE_PARAMS = [
+    "image",
+    "transparent",
+    "guidance_scale",
+    "reasoning",
+    "duration",
+    "fps",
+    "resolution",
+    "aspectRatio",
+    "audio",
+] as const;
 
 function imageResponse(
     data: { url?: string; b64_json?: string; media_type?: string },
@@ -49,8 +59,11 @@ function responseImageUsage(
     response: Response,
 ): OpenAIImageUsage {
     const usage = parseUsageHeaders(response.headers);
-    const modelUsed = response.headers.get("x-model-used");
-    if (!modelUsed) throw new Error("Image response is missing x-model-used");
+    // Objects cached before usage metadata was introduced have no model
+    // header. The route already resolved the model before the cache lookup.
+    const modelUsed =
+        response.headers.get("x-model-used") ?? c.var.model.resolved;
+    c.header("x-model-used", modelUsed);
 
     for (const [name, value] of Object.entries(
         buildUsageHeaders(modelUsed, usage),
@@ -112,6 +125,7 @@ async function parseEditInput(c: Context): Promise<{
     quality?: string;
     seed?: number;
     safe?: SafeValue;
+    response_format: "url" | "b64_json";
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -121,20 +135,20 @@ async function parseEditInput(c: Context): Promise<{
         try {
             formData = c.get("formData") || (await c.req.formData());
         } catch {
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Invalid multipart form data",
             });
         }
         const prompt = formData.get("prompt") as string;
         if (!prompt)
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Missing required field: prompt",
             });
 
         const imageUrls: string[] = [];
         for (const entry of [
-            ...(formData.getAll("image") as (File | string)[]),
-            ...(formData.getAll("image[]") as (File | string)[]),
+            ...formData.getAll("image"),
+            ...formData.getAll("image[]"),
         ]) {
             if (typeof entry === "string") {
                 imageUrls.push(entry);
@@ -146,8 +160,17 @@ async function parseEditInput(c: Context): Promise<{
             }
         }
         if (!imageUrls.length)
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Missing required field: image",
+            });
+
+        const format =
+            CreateImageEditRequestSchema.shape.response_format.safeParse(
+                formData.get("response_format") ?? undefined,
+            );
+        if (!format.success)
+            throw new UpstreamError(400, {
+                message: 'response_format must be "url" or "b64_json"',
             });
 
         return {
@@ -156,9 +179,10 @@ async function parseEditInput(c: Context): Promise<{
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
             safe: formData.get("safe") as string | null,
+            response_format: format.data,
             extra: {
-                ...(formData.has("safe")
-                    ? { safe: formData.get("safe") as string }
+                ...(formData.has("resolution")
+                    ? { resolution: formData.get("resolution") as string }
                     : {}),
             },
         };
@@ -169,7 +193,7 @@ async function parseEditInput(c: Context): Promise<{
         Record<string, unknown>;
     const parsed = CreateImageEditRequestSchema.safeParse(body);
     if (!parsed.success)
-        throw new UpstreamError(400 as ContentfulStatusCode, {
+        throw new UpstreamError(400, {
             message: parsed.error.issues.map((i) => i.message).join(", "),
         });
 
@@ -178,136 +202,194 @@ async function parseEditInput(c: Context): Promise<{
             ? [parsed.data.image]
             : parsed.data.image.map((i) => i.image_url);
     if (!imageUrls.length)
-        throw new UpstreamError(400 as ContentfulStatusCode, {
+        throw new UpstreamError(400, {
             message: "Missing required field: image",
         });
 
-    const extra = collectPassthrough(body, "seed");
-    const { seed, ...passthrough } = extra as { seed?: number } & Record<
-        string,
-        unknown
-    >;
     return {
         prompt: parsed.data.prompt,
         imageUrls,
         size: parsed.data.size,
         quality: parsed.data.quality,
-        seed,
+        seed: body.seed as number | undefined,
         safe: body.safe as SafeValue,
-        extra: passthrough,
+        response_format: parsed.data.response_format,
+        extra: collectPassthrough(body, "resolution"),
     };
 }
 
 // --- Exported handlers ---
 
-export async function handleImageGeneration(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
+type EditInput = Omit<
+    Awaited<ReturnType<typeof parseEditInput>>,
+    "response_format"
+>;
 
-    const body = c.req.valid("json" as never) as CreateImageRequest &
-        Record<string, unknown>;
-    const model = c.var.model.resolved;
-    if (body.response_format === "url" && c.var.model.communityEndpoint) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                'Community image models support response_format "b64_json" only',
-        });
-    }
-    const resolved = resolveParams(body);
-    const safePrompt = await applySafety(
-        c,
-        body.prompt,
-        body.safe as SafeValue,
-    );
+/**
+ * Build the JSON edits body the coordinator replays. Every entry point
+ * (native edits, Chat, Responses) hashes this same normalized body, so
+ * identical edits share one cache key and one generation.
+ */
+export async function prepareImageEditRequest(
+    c: Context<Env>,
+    { imageUrls, extra, ...input }: EditInput,
+) {
+    const body = {
+        ...extra,
+        ...input,
+        model: c.var.model.requested,
+        quality: input.quality || "medium",
+        safe: normalizeSafeValue(input.safe),
+        prompt: await applySafetyToInput(c, input.prompt, input.safe),
+        image: imageUrls.map((image_url) => ({ image_url })),
+    };
+    // Replay the JSON edits contract even when the caller uploaded multipart files.
+    // Leave random seed selection to execution so retries without a seed still join.
+    const identity = normalizedJsonBody(JSON.stringify(body));
+    c.set("generationRequestBody", identity);
+    c.set("generationCacheBody", identity);
+    c.set("generationRequestContentType", "application/json");
+    if (c.var.track) c.var.track.streamRequested = false;
+    return body;
+}
 
-    const response = await generateImageOrVideoResponse(c, safePrompt, {
+/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
+export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
+    const { response_format, ...input } = await parseEditInput(c);
+    const body = await prepareImageEditRequest(c, input);
+    c.req.addValidatedData("json", {
         ...body,
-        prompt: safePrompt,
-        ...collectPassthrough(body, "image"),
-        ...resolved,
-        model,
+        image: input.imageUrls,
+        response_format,
     });
-    c.var.track.overrideResponseTracking(response.clone());
-    const usage = responseImageUsage(c, response);
-    const mediaType = response.headers.get("content-type") || undefined;
-    const mediaData =
-        mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
+    await next();
+});
 
-    if (body.response_format === "url") {
-        const origin = getPublicOrigin(c);
-        const imageUrl = new URL(
-            `${origin}/image/${encodeURIComponent(safePrompt)}`,
+/** Parse the normalized, already-safe edit body replayed by the coordinator. */
+export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
+    async (c, next) => {
+        const { imageUrls, extra, response_format, ...input } =
+            await parseEditInput(c);
+        c.req.addValidatedData("json", {
+            ...extra,
+            ...input,
+            model: c.var.model.requested,
+            image: imageUrls,
+            response_format,
+        });
+        await next();
+    },
+);
+
+/** Normalize the generation body and hash the parts that shape the file. */
+export const prepareOpenAIImageGeneration = createMiddleware<Env>(
+    async (c, next) => {
+        const body = c.req.valid("json" as never) as CreateImageRequest &
+            Record<string, unknown>;
+
+        // This endpoint returns a complete image/JSON, never an SSE stream.
+        // A passthrough stream flag must not bypass durable media storage.
+        if (c.var.track) c.var.track.streamRequested = false;
+        const resolved = resolveParams(body);
+        const safePrompt = await applySafetyToInput(
+            c,
+            body.prompt,
+            body.safe as SafeValue,
         );
-        for (const [key, value] of Object.entries({
-            model,
-            ...resolved,
-        }))
-            imageUrl.searchParams.set(key, String(value));
-        if (typeof body.resolution === "string") {
-            imageUrl.searchParams.set("resolution", body.resolution);
+        Object.assign(body, resolved, {
+            model: c.var.model.requested,
+            prompt: safePrompt,
+        });
+        c.set("generationRequestBody", JSON.stringify(body));
+        // Only the prompt, the model and the generation parameters change the
+        // bytes. Response formatting and caller metadata are left out so they
+        // do not split one image across several cache entries.
+        c.set(
+            "generationCacheBody",
+            normalizedJsonBody(
+                JSON.stringify({
+                    prompt: safePrompt,
+                    model: c.var.model.resolved,
+                    ...resolved,
+                    ...collectPassthrough(body, ...CACHE_PARAMS),
+                }),
+            ),
+        );
+
+        await next();
+    },
+);
+
+/** Convert the cached binary media response to the OpenAI Images shape. */
+export const formatOpenAIImageResponse = createMiddleware<Env>(
+    async (c, next) => {
+        await next();
+        const response = c.res;
+        if (!response.ok) return;
+
+        const mediaType = response.headers.get("content-type") || undefined;
+        if (
+            !mediaType?.startsWith("image/") &&
+            !mediaType?.startsWith("video/")
+        ) {
+            return;
         }
-        const safeValue = normalizeSafeValue(body.safe as SafeValue);
-        if (safeValue) {
-            imageUrl.searchParams.set("safe", safeValue);
+
+        const body = c.req.valid("json" as never) as CreateImageRequest;
+        const mediaLink = response.headers.get("Link");
+        if (mediaLink) c.header("Link", mediaLink);
+        const usage = responseImageUsage(c, response);
+        const mediaData =
+            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
+                ? { media_type: mediaType }
+                : {};
+
+        if (body.response_format === "url") {
+            // Media emits one enclosure link for the stored file.
+            const url = mediaLink?.match(/^<([^>]+)>; rel="enclosure"$/)?.[1];
+            if (!url) throw new Error("Generated media was not stored");
+            await response.body?.pipeTo(new WritableStream());
+            c.res = withSafetyHeaders(
+                c,
+                c.json(
+                    imageResponse(
+                        {
+                            url,
+                            media_type: mediaType,
+                        },
+                        body.prompt,
+                        usage,
+                    ),
+                ),
+            );
+            return;
         }
-        await response.arrayBuffer();
-        return withSafetyHeaders(
+
+        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        c.res = withSafetyHeaders(
             c,
             c.json(
                 imageResponse(
-                    { url: imageUrl.toString(), ...mediaData },
-                    safePrompt,
+                    { b64_json: base64, ...mediaData },
+                    body.prompt,
                     usage,
                 ),
             ),
         );
-    }
+    },
+);
 
-    const base64 = arrayBufferToBase64(await response.arrayBuffer());
-    return withSafetyHeaders(
-        c,
-        c.json(
-            imageResponse(
-                { b64_json: base64, ...mediaData },
-                safePrompt,
-                usage,
-            ),
-        ),
-    );
-}
+export async function handleImageGeneration(c: Context<Env>) {
+    const body = c.req.valid("json" as never) as CreateImageRequest &
+        Record<string, unknown>;
+    const model = c.var.model.resolved;
 
-export async function handleImageEdit(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
-
-    const { prompt, imageUrls, size, quality, seed, safe, extra } =
-        await parseEditInput(c);
-    const safePrompt = await applySafety(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
-
-    const response = await generateImageOrVideoResponse(c, safePrompt, {
-        prompt: safePrompt,
-        image: imageUrls,
-        ...extra,
-        ...resolved,
-        model: c.var.model.resolved,
+    const response = await generateImageOrVideoResponse(c, body.prompt, {
+        ...body,
+        ...resolveParams(body),
+        ...collectPassthrough(body, "image"),
+        model,
     });
     c.var.track.overrideResponseTracking(response.clone());
-    const usage = responseImageUsage(c, response);
-    const mediaType = response.headers.get("content-type") || undefined;
-
-    const base64 = arrayBufferToBase64(await response.arrayBuffer());
-    return withSafetyHeaders(
-        c,
-        c.json(
-            imageResponse(
-                {
-                    b64_json: base64,
-                    ...(mediaType === "image/svg+xml"
-                        ? { media_type: mediaType }
-                        : {}),
-                },
-                safePrompt,
-                usage,
-            ),
-        ),
-    );
+    return withSafetyHeaders(c, response);
 }

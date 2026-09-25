@@ -113,38 +113,25 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                     {isSelected && (
                                         <span
                                             className={cn(
-                                                "absolute top-full mt-1 inline-flex items-center whitespace-nowrap",
+                                                "absolute top-full mt-1 inline-flex flex-col whitespace-nowrap",
                                                 isFirst
-                                                    ? "left-0"
+                                                    ? "left-0 items-start text-left"
                                                     : isLast
-                                                      ? "right-0"
-                                                      : "left-1/2 -translate-x-1/2",
+                                                      ? "right-0 items-end text-right"
+                                                      : "left-1/2 -translate-x-1/2 items-center text-center",
                                             )}
                                         >
                                             <Chip size="sm">
-                                                <span
-                                                    className={cn(
-                                                        "inline-flex flex-col leading-tight",
-                                                        isFirst
-                                                            ? "text-left"
-                                                            : isLast
-                                                              ? "text-right"
-                                                              : "text-center",
-                                                    )}
-                                                >
-                                                    <span className="text-sm">
-                                                        {selectedBadgeLabel ??
-                                                            `$${pack.amountUsd}`}
-                                                    </span>
-                                                    {selectedBadgeDetail && (
-                                                        <span className="text-xs font-normal leading-none text-theme-text-muted">
-                                                            {
-                                                                selectedBadgeDetail
-                                                            }
-                                                        </span>
-                                                    )}
+                                                <span className="text-sm">
+                                                    {selectedBadgeLabel ??
+                                                        `$${pack.amountUsd}`}
                                                 </span>
                                             </Chip>
+                                            {selectedBadgeDetail && (
+                                                <span className="mt-0.5 text-xs font-normal leading-none text-theme-text-muted">
+                                                    {selectedBadgeDetail}
+                                                </span>
+                                            )}
                                         </span>
                                     )}
                                 </span>

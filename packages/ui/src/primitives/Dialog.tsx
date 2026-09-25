@@ -1,13 +1,16 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { Portal } from "@ark-ui/react/portal";
-import type { FC, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
+import { headingClassName } from "./Typography.tsx";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
     md: "polli:max-w-xl",
-    lg: "polli:max-w-2xl",
+    lg: "polli:max-w-[800px]",
+    xl: "polli:max-w-6xl",
 } as const;
 
 export type DialogProps = {
@@ -20,7 +23,10 @@ export type DialogProps = {
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
+    /** Fill narrow viewports; disable for compact confirmations. */
+    fullscreenOnMobile?: boolean;
     showBackdrop?: boolean;
+    backdropBlur?: boolean;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -36,7 +42,9 @@ export const Dialog: FC<DialogProps> = ({
     ariaLabel,
     labelledBy,
     size = "md",
+    fullscreenOnMobile = true,
     showBackdrop = true,
+    backdropBlur = true,
     positionerClassName,
     contentClassName,
     children,
@@ -63,12 +71,18 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
-                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
+                        className={cn(
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
+                            backdropBlur && "polli:backdrop-blur-sm",
+                        )}
                     />
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
+                        fullscreenOnMobile
+                            ? "polli:p-0 polli:sm:p-4"
+                            : "polli:p-4",
                         positionerClassName,
                     )}
                 >
@@ -77,16 +91,15 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            fullscreenOnMobile
+                                ? "polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container"
+                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-2xl polli:shadow-container",
                             sizeClasses[size],
                             contentClassName,
                         )}
                     >
-                        {title && (
-                            <DialogTitle className="polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                                {title}
-                            </DialogTitle>
-                        )}
+                        {title && <DialogHeader title={title} />}
                         {children}
                     </ArkDialog.Content>
                 </ArkDialog.Positioner>
@@ -96,3 +109,126 @@ export const Dialog: FC<DialogProps> = ({
 };
 
 export const DialogTitle = ArkDialog.Title;
+export const DialogDescription = ArkDialog.Description;
+
+export type DialogHeaderProps = Omit<
+    ComponentPropsWithoutRef<"div">,
+    "title"
+> & {
+    title?: ReactNode;
+    description?: ReactNode;
+    inBody?: boolean;
+    titleClassName?: string;
+    descriptionClassName?: string;
+};
+
+export const DialogHeader: FC<DialogHeaderProps> = ({
+    title,
+    description,
+    children,
+    inBody = false,
+    className,
+    titleClassName,
+    descriptionClassName,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn(
+                inBody
+                    ? "polli:shrink-0 polli:pt-2 polli:pb-4"
+                    : "polli:shrink-0 polli:p-6 polli:pb-4",
+                className,
+            )}
+            {...props}
+        >
+            {title && (
+                <DialogTitle
+                    className={cn(headingClassName("section"), titleClassName)}
+                >
+                    {title}
+                </DialogTitle>
+            )}
+            {description && (
+                <DialogDescription
+                    className={cn(
+                        "polli:mt-1 polli:font-body polli:text-sm polli:font-normal polli:leading-5 polli:text-theme-text-base",
+                        descriptionClassName,
+                    )}
+                >
+                    {description}
+                </DialogDescription>
+            )}
+            {children}
+        </div>
+    );
+};
+
+export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
+
+export type DialogBodyProps = ScrollAreaProps & {
+    actions?: ReactNode;
+    footnote?: ReactNode;
+    bodyClassName?: string;
+};
+
+/** Full-height scroll area with floating actions and an optional bottom link. */
+export function DialogBody({
+    children,
+    actions,
+    footnote,
+    bodyClassName,
+    className,
+    ...props
+}: DialogBodyProps) {
+    return (
+        <ScrollArea
+            {...props}
+            className={cn(
+                "polli:flex polli:min-h-0 polli:flex-1 polli:flex-col polli:overscroll-contain",
+                className,
+            )}
+        >
+            <div
+                className={cn(
+                    "polli:grow polli:space-y-4 polli:px-6 polli:py-4",
+                    bodyClassName,
+                )}
+            >
+                {children}
+            </div>
+            {(actions || footnote) && (
+                <div className="polli-dialog-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                    {actions && (
+                        <DialogFooter className="polli:pointer-events-auto">
+                            {actions}
+                        </DialogFooter>
+                    )}
+                    {footnote && (
+                        <div className="polli:pointer-events-auto">
+                            {footnote}
+                        </div>
+                    )}
+                </div>
+            )}
+        </ScrollArea>
+    );
+}
+
+export const DialogFooter: FC<DialogFooterProps> = ({
+    children,
+    className,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn(
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </div>
+    );
+};

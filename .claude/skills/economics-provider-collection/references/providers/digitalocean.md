@@ -1,0 +1,49 @@
+# DigitalOcean Connector Guide
+
+Canonical vendor: `digitalocean`
+
+## Verified — 2026-08-20
+
+- Status: blocked by the stored token's scope, not by API availability.
+- `GET /v2/account` succeeded and reported an active account.
+- Both `/v2/customers/my/balance` and `/billing_history` returned HTTP 403.
+- The same 403 scope block was reconfirmed on 2026-08-20.
+- Use the Myceli mailbox or dashboard for invoices when billing access is
+  blocked. Preserve resource usage and grant application separately.
+- Billing requires `billing:read`. Use existing access or dashboard evidence;
+  changing `DIGITALOCEAN_TOKEN` requires separate secret approval. A 403 is not zero.
+
+Collection steps:
+
+1. Query the current balance:
+
+   ```bash
+   curl --fail-with-body --silent --show-error \
+     "https://api.digitalocean.com/v2/customers/my/balance" \
+     -H "Authorization: Bearer $DIGITALOCEAN_TOKEN"
+   ```
+
+2. Query billing history and follow `links.pages.next` only as far as needed:
+
+   ```bash
+   curl --fail-with-body --silent --show-error \
+     "https://api.digitalocean.com/v2/customers/my/billing_history?per_page=100" \
+     -H "Authorization: Bearer $DIGITALOCEAN_TOKEN"
+   ```
+
+3. Use invoices or Billing Insights when a closed-month or resource breakdown
+   is required. Save raw evidence to `<collection-dir>/evidence/`.
+4. Use this skill to extract or reconcile it.
+
+Known traps:
+
+- Monetary fields are strings.
+- `month_to_date_usage` is partial and gross before credit application.
+- Balance is a current snapshot; it does not prove a historical month.
+- Billing history can show credit grants and expirations, but a future expiry
+  may still require dashboard or grant-document evidence.
+- Do not forecast from partial current-month usage.
+
+Official reference:
+
+- https://docs.digitalocean.com/platform/billing/reference/api/

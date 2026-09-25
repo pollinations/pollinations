@@ -1,41 +1,24 @@
+import { isUserBanned } from "@shared/auth/ban.ts";
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointModality,
+    effectiveCommunityEndpointVisibility,
+    parseListingPayload,
+    resolveEffectiveProxyListing,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
+import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
 export type CommunityModelRegistryEntry = {
     id: string;
@@ -43,46 +26,68 @@ export type CommunityModelRegistryEntry = {
     info: ModelInfo;
     definition: ModelDefinition;
     communityEndpoint: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
 };
 
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
+
+// One shared copy of the catalog for every gen isolate: each isolate running
+// the full-table query on its own 60s expiry was most of the D1 load. Bump
+// the version when the entry shape changes, or Workers mid-deploy serve each
+// other's entries.
+const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v1";
+const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
+
 export async function getCommunityModelRegistryEntries(
-    dbBinding: CloudflareBindings["DB"] | undefined,
+    env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
-    if (!dbBinding) return [];
+    const cached = await env.KV.get<CommunityModelRegistryEntry[]>(
+        COMMUNITY_CATALOG_CACHE_KEY,
+        "json",
+    ).catch(() => null);
+    if (cached) return cached;
+    const entries = await queryCommunityModelRegistryEntries(env.DB);
+    await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
+        expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
+    }).catch(() => {});
+    return entries;
+}
+
+export async function resetCommunityModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
+    await env.KV.delete(COMMUNITY_CATALOG_CACHE_KEY);
+}
+
+async function queryCommunityModelRegistryEntries(
+    dbBinding: CloudflareBindings["DB"],
+): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
     const rows = await db
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            banned: schema.user.banned,
+            banExpires: schema.user.banExpires,
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
+            providerIconUrl: schema.user.communityProviderIconUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
-            modality: schema.communityEndpoint.modality,
-            imagePricing: schema.communityEndpoint.imagePricing,
-            inputModalities: schema.communityEndpoint.inputModalities,
+            type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
-            bearerTokenCiphertext:
-                schema.communityEndpoint.bearerTokenCiphertext,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
+            payload: schema.communityEndpoint.payload,
+            pendingPayload: schema.communityEndpoint.pendingPayload,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
-            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
-            promptTextPrice: schema.communityEndpoint.promptTextPrice,
-            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
-            promptCacheWritePrice:
-                schema.communityEndpoint.promptCacheWritePrice,
-            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
-            promptImagePrice: schema.communityEndpoint.promptImagePrice,
-            completionTextPrice: schema.communityEndpoint.completionTextPrice,
-            completionReasoningPrice:
-                schema.communityEndpoint.completionReasoningPrice,
-            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-            completionImagePrice: schema.communityEndpoint.completionImagePrice,
-            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
-            disabledAt: schema.communityEndpoint.disabledAt,
-            disabledReason: schema.communityEndpoint.disabledReason,
+            hiddenAt: schema.communityEndpoint.hiddenAt,
+            hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
@@ -91,11 +96,35 @@ export async function getCommunityModelRegistryEntries(
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
         .where(isNotNull(schema.user.githubUsername));
-
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
-        if (!row.ownerGithubUsername) return [];
+        if (!row.ownerGithubUsername || isUserBanned(row)) return [];
+        const baseUrl = row.baseUrl;
+        if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        const communityEndpoint: CommunityEndpointRuntime = {
+        let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
+            null;
+        if (row.type === "proxy") {
+            const currentPayload = parseListingPayload("proxy", row.payload);
+            if (!currentPayload) return [];
+            proxyState = resolveEffectiveProxyListing({
+                visibility: row.visibility,
+                payload: currentPayload,
+                pendingVisibility: row.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                ),
+                pendingAt: row.pendingAt,
+            });
+        }
+        const effectiveVisibility =
+            proxyState?.visibility ??
+            effectiveCommunityEndpointVisibility(
+                row.visibility,
+                row.pendingVisibility,
+                row.pendingAt,
+            );
+        const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
             modelId,
@@ -104,34 +133,140 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
-            modality: normalizeCommunityEndpointModality(row.modality),
-            imagePricing: normalizeCommunityEndpointImagePricing(
-                row.imagePricing,
-            ),
-            inputModalities: row.inputModalities,
-            baseUrl: row.baseUrl,
+            providerIconUrl: row.providerIconUrl,
+            baseUrl,
             upstreamModel: row.upstreamModel,
-            bearerTokenCiphertext: row.bearerTokenCiphertext,
-            visibility: row.visibility,
-            delegatesGeneration: row.delegatesGeneration,
-            fallbackModelIds: row.fallbackModelIds ?? [],
-            disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
-            disabledReason: row.disabledReason,
-            ...communityEndpointPrices(row),
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
+            visibility: effectiveVisibility,
+            hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
+            hiddenReason: row.hiddenReason,
         };
+        // An agent charges nothing of its own and fans out to nothing: the
+        // caller pays for whatever it consumes downstream. All agent kinds
+        // share empty purchase fields; endpoint agents declare their modalities
+        // and gateway per-user rate limit in their payload.
+        const agentDefaults = {
+            modality: "text" as const,
+            imagePricing: "request" as const,
+            inputModalities: null,
+            paidOnly: false,
+            perUserRpm: null,
+            fallbacks: [],
+            ...communityEndpointPrices({}),
+        };
+        // Each arm parses its own payload, so the shape is narrowed to the one
+        // its type declares. A payload that cannot be read leaves the listing
+        // out of the catalog rather than in it half-populated: an entry
+        // missing its target would fail at call time, not registration time.
+        let communityEndpoint: CommunityEndpointRuntime;
+        let agentConfig: AgentCatalogConfig | undefined;
+        switch (row.type) {
+            case "prompt_agent": {
+                const payload = parseListingPayload(
+                    "prompt_agent",
+                    row.payload,
+                );
+                if (!payload) return [];
+                agentConfig = {
+                    baseModel: payload.baseModel,
+                    mcpServers: payload.mcpServers,
+                };
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    type: "prompt_agent",
+                    baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
+                };
+                break;
+            }
+            case "code_agent": {
+                const payload = parseListingPayload("code_agent", row.payload);
+                if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
+                    type: "code_agent",
+                    api: "responses",
+                };
+                break;
+            }
+            case "endpoint_agent": {
+                const payload = parseListingPayload(
+                    "endpoint_agent",
+                    row.payload,
+                );
+                if (!payload) return [];
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    perUserRpm: payload.perUserRpm,
+                    type: "endpoint_agent",
+                    api: payload.api,
+                    inputModalities: payload.inputModalities ?? null,
+                    outputModalities: payload.outputModalities,
+                };
+                break;
+            }
+            case "proxy": {
+                if (!proxyState) return [];
+                const payload = proxyState.payload;
+                communityEndpoint = {
+                    ...identity,
+                    type: "proxy",
+                    bearerTokenCiphertext: payload.bearerTokenCiphertext,
+                    paidOnly: payload.paidOnly,
+                    modality: payload.modality,
+                    imagePricing: payload.imagePricing,
+                    inputModalities: payload.inputModalities,
+                    perUserRpm: payload.perUserRpm,
+                    fallbacks: payload.fallbacks,
+                    advertised: payload.advertised,
+                    api: payload.api,
+                    ...payload.prices,
+                };
+            }
+        }
         const definition = communityModelDefinition({
             ...communityEndpoint,
             addedDate: row.createdAt.getTime(),
+            hidden: communityEndpoint.hiddenAt !== null,
         });
+        const info = modelInfoFromDefinition(modelId, definition, {
+            community: true,
+            agent: usesAgentRunToken(communityEndpoint),
+        });
+        const pendingPayload = proxyState?.pending?.payload ?? null;
+        if (
+            proxyState?.pending &&
+            row.visibility === "public" &&
+            pendingPayload
+        ) {
+            const pendingDefinition = communityModelDefinition({
+                ...communityEndpoint,
+                paidOnly: pendingPayload.paidOnly,
+                imagePricing: pendingPayload.imagePricing,
+                ...pendingPayload.prices,
+            });
+            info.pending_change = {
+                effective_at: proxyState.pending.effectiveAt.toISOString(),
+                paid_only: pendingPayload.paidOnly,
+                pricing: modelInfoFromDefinition(modelId, pendingDefinition)
+                    .pricing,
+            };
+        }
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
-                info: modelInfoFromDefinition(modelId, definition, {
-                    community: true,
-                }),
+                info,
                 definition,
                 communityEndpoint,
+                agentConfig,
             },
         ];
     });

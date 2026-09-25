@@ -20,6 +20,7 @@ export interface ChatMessage {
 /** Options bag threaded through transforms and generation functions. */
 export interface TransformOptions {
     model?: string;
+    metadata?: Record<string, string> | null;
     modelDef?: unknown;
     modelConfig?: Record<string, unknown>;
     requestedModel?: string;
@@ -35,9 +36,12 @@ export interface TransformOptions {
     response_format?: { type: string; [key: string]: unknown };
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
+    /** Internal transport for managed prompt-agent Responses execution. */
+    responsesFetcher?: typeof fetch;
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
@@ -81,11 +85,18 @@ export interface ChatCompletion {
     choices?: CompletionChoice[];
     usage?: Record<string, unknown>;
     citations?: string[];
-    error?: string | { message?: string; status?: number; details?: unknown };
+    error?:
+        | string
+        | {
+              message?: string;
+              status?: number;
+              code?: number;
+              details?: unknown;
+          };
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
-    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    /** Worker fallback candidate that served the call. */
     fallbackTarget?: string;
     /** Internal URL of the gateway request that produced this completion. */
     upstreamRequestUrl?: URL;
@@ -104,6 +115,8 @@ export interface ServiceError extends Error {
      */
     errorCode?: string;
     details?: unknown;
+    /** Original provider response, retained independently of parsed routing details. */
+    responseBody?: string;
     model?: string;
     provider?: string;
     response?: { data?: unknown };
@@ -129,6 +142,7 @@ export interface RequestData {
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
@@ -150,7 +164,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
     fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

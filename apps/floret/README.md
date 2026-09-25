@@ -8,9 +8,11 @@ Given a prompt like *"make a 20-second continuous video of a paper boat drifting
 
 ## How it works
 
-- **Brain**: an OpenAI-compatible tool-calling model (default `glm`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
+- **Brain**: an OpenAI-compatible tool-calling model (default `z-ai/glm-5.3-flash`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
 - **Tools** (`tools/`): `generate_image`, `edit_image` (real img2img), `generate_video` (text-to-video, image-to-video, start+end-frame interpolation), `text_to_speech` (verbatim narration), `transcribe`, `web_search`, `bash` (sandboxed shell with ffmpeg), `upload_media`/`fetch_media` (Pollinations media hosting — the plumbing that lets edited images and extracted frames flow back into video generation as public URLs).
 - **API** (`api.py`): FastAPI app exposing `/v1/chat/completions` (OpenAI-compatible request/response, SSE streaming with keepalives for long multi-clip runs), `/v1/models`, `/health`.
+- **Hosted shell**: each Bash call uses a fresh container. Workspace files return to the agent after execution; background processes do not persist between calls. The shell receives no caller credentials.
+- **Catalog**: a shared Durable Object refreshes public model metadata. The agent reads its latest snapshot before each request. Automated advisory reviews are not triggered by caller requests; enabling them requires a separately approved funding model.
 
 ## Running
 
@@ -28,6 +30,39 @@ docker run -p 8000:8000 --env-file .env floret
 ```
 
 The container needs no baked-in secrets. Hosted calls pass a short-lived agent run token via `Authorization: Bearer ag_…`; `OPENAI_API_KEY` is available only for local/dev use when `POLLI_ALLOW_OPERATOR_KEY=true`.
+
+## API
+
+```bash
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "pollinations-router/floret",
+    "messages": [{"role": "user", "content": "Create a narrated launch concept"}],
+    "stream": true,
+    "routing": {
+      "text": "auto",
+      "web_search": "gemini-search",
+      "image_generation": "flux",
+      "image_editing": "nanobanana",
+      "video": "wan-fast",
+      "audio": "openai-audio"
+    }
+  }'
+```
+
+Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token; Floret's direct endpoint rejects user keys.
+
+Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
+
+For the `routing` object:
+
+- Every field is optional.
+- Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.
+- Explicit selections override any tool model proposed by the brain.
+- `audio` is TTS/audio generation, not transcription.
+- Invalid/incompatible IDs return 422 before work begins.
 
 ## Configuration
 

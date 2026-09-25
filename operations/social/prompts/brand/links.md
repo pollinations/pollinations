@@ -19,8 +19,8 @@
 - **API Docs (Swagger):** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK & UI:** https://react.pollinations.ai
-- **BYOP (Bring Your Own Pollen):** https://gen.pollinations.ai/docs#tag/byop
-- **MCP Server Docs:** https://gen.pollinations.ai/docs#tag/mcp-server
+- **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
+- **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 
 ## Apps & Community
@@ -36,7 +36,6 @@
 ## Packages
 - **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
 - **NPM UI (@pollinations/ui):** https://www.npmjs.com/package/@pollinations/ui
-- **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials

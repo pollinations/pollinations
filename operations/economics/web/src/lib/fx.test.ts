@@ -1,23 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { eurUsdRate, fxEstimatedMonths, toUsd } from "./fx";
-
-describe("eurUsdRate", () => {
-    it("returns the table rate for a known month", () => {
-        expect(eurUsdRate("2026-06")).toBeCloseTo(1.1518, 4);
-    });
-
-    it("converts future months at the latest known rate", () => {
-        expect(eurUsdRate("2031-01")).toBeCloseTo(1.1411, 4);
-    });
-
-    it("throws on a past month missing from the table", () => {
-        expect(() => eurUsdRate("2024-11")).toThrow(/2024-11/);
-    });
-});
+import { fxEstimatedMonths, toUsd } from "./fx";
 
 describe("toUsd", () => {
     it("converts EUR at the month rate, accepting full dates", () => {
         expect(toUsd(100, "EUR", "2026-06-20")).toBeCloseTo(115.18, 2);
+        expect(toUsd(100, "EUR", "2026-07-31")).toBeCloseTo(114.17, 2);
+        expect(toUsd(100, "EUR", "2026-08-31")).toBeCloseTo(115.93, 2);
     });
 
     it("passes USD and POLLEN through 1:1", () => {
@@ -27,6 +15,7 @@ describe("toUsd", () => {
 
     it("converts CAD at the month rate", () => {
         expect(toUsd(100, "CAD", "2025-05-08")).toBeCloseTo(72.08, 2);
+        expect(toUsd(100, "CAD", "2025-06-08")).toBeCloseTo(73.1, 2);
     });
 
     it("throws on a past CAD month missing from the table", () => {
@@ -35,6 +24,7 @@ describe("toUsd", () => {
 
     it("treats a blank currency as USD (rows without that leg carry 0)", () => {
         expect(toUsd(0, "", "2026-06")).toBe(0);
+        expect(() => toUsd(1, "", "2026-06")).toThrow(/Missing currency/);
     });
 
     it("throws on an unknown currency instead of guessing", () => {
@@ -45,6 +35,7 @@ describe("toUsd", () => {
 describe("fxEstimatedMonths", () => {
     const eurTxn = (date: string) => ({
         entry_id: `wise-${date}`,
+        kind: "transaction" as const,
         source: "wise",
         date,
         vendor: "google",
@@ -58,7 +49,9 @@ describe("fxEstimatedMonths", () => {
 
     it("stays empty while every EUR month has a table rate", () => {
         expect(
-            fxEstimatedMonths({ opTransactions: [eurTxn("2026-06-20")] }),
+            fxEstimatedMonths({
+                opTransactions: [eurTxn("2026-06-20"), eurTxn("2026-08-31")],
+            }),
         ).toEqual([]);
     });
 

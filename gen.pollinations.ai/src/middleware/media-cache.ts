@@ -1,125 +1,113 @@
-/**
- * Generic media cache middleware for gen.pollinations.ai
- * Checks cache before auth/balance checks so cache hits can remain public.
- * Used for image, video, and audio GET endpoints.
- *
- * Currently uses IMAGE_BUCKET (R2) for all media types.
- * Cache keys are namespaced by URL path so there are no collisions.
- * TODO: Rename to MEDIA_BUCKET when ready to consolidate.
- */
+/** Generation request identity and cache policy; Media owns file storage. */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
-import { createMiddleware } from "hono/factory";
-import type { RequestIdVariables } from "hono/request-id";
-import type { LoggerVariables } from "@/middleware/logger.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
 import {
-    cacheMediaResponse,
-    generateCacheKey,
-    setHttpMetadataHeaders,
-} from "@/utils/media-cache.ts";
-
-type MediaCacheEnv = {
-    Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
-};
+    createGenerationCache,
+    createGenerationExecutionCache,
+    type GenerationCacheAdapter,
+    hashGenerationCacheIdentity,
+} from "./generation-cache.ts";
+import { getRequiredSafetyFeatures, type ModelVariables } from "./model.ts";
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
     mediaTypes: string[];
-    /** Fallback content type when R2 metadata is missing */
-    defaultContentType: string;
     /** Label for log messages */
     label: string;
 };
 
-export function createMediaCache(config: MediaCacheConfig) {
-    return createMiddleware<MediaCacheEnv>(async (c, next) => {
-        const log = c.get("log").getChild(config.label);
+// Preserve file/generation metadata, not headers tied to an individual request.
+const CACHED_HEADERS = new Set([
+    "content-type",
+    "content-disposition",
+    "content-security-policy",
+    "x-content-type-options",
+    "song-id",
+    "x-elevenlabs-reference-song-id",
+    "x-elevenlabs-song-id",
+    "x-generation-id",
+    "x-fallback-target",
+    "x-model-used",
+    "x-tts-voice",
+    "x-voice-changer-voice",
+]);
 
-        const seedParam = new URL(c.req.url).searchParams.get("seed");
-        if (seedParam === "-1") {
-            log.debug("seed=-1 detected, skipping cache");
-            return next();
-        }
-
-        const cacheKey = generateCacheKey(
-            new URL(c.req.url),
-            c.req.header(SAFETY_HEADER_NAME),
-        );
-        log.debug("Cache key: {key}", { key: cacheKey });
-
-        try {
-            const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
-            if (cached) {
-                log.info("Cache HIT");
-                setHttpMetadataHeaders(
-                    c,
-                    cached.httpMetadata,
-                    config.defaultContentType,
-                    cached.customMetadata,
-                );
-                c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-                c.header("X-Cache", "HIT");
-                c.header("X-Cache-Type", "EXACT");
-                return c.body(
-                    refreshR2ObjectTtl(
-                        c.env.IMAGE_BUCKET,
-                        cacheKey,
-                        cached,
-                        (promise) => c.executionCtx.waitUntil(promise),
-                        (error) => {
-                            log.error(
-                                "Error refreshing media cache TTL: {error}",
-                                { error },
-                            );
-                        },
+function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
+    return {
+        storage: "media",
+        label: config.label,
+        async getKey(c) {
+            const variables = c.var as typeof c.var & Partial<ModelVariables>;
+            const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
+            if (c.var.generationCacheBody) {
+                cacheUrl.searchParams.set(
+                    "__request_body",
+                    await hashGenerationCacheIdentity(
+                        "media",
+                        c.var.generationCacheBody,
                     ),
                 );
             }
-
-            log.debug("Cache MISS");
-            c.header("X-Cache", "MISS");
-        } catch (error) {
-            log.error("Error retrieving cached response: {error}", { error });
-        }
-
-        await next();
-
-        const contentType = c.res?.headers.get("content-type");
-        const xCache = c.res?.headers.get("x-cache");
-
-        const isMatchingContent = config.mediaTypes.some((type) =>
-            contentType?.includes(type),
-        );
-        if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
-            log.debug("Caching response");
-            cacheMediaResponse(
-                c.env.IMAGE_BUCKET,
-                cacheKey,
-                c,
-                config.defaultContentType,
-                c.res,
+            return generateCacheKey(
+                cacheUrl,
+                c.req.header(SAFETY_HEADER_NAME),
+                getRequiredSafetyFeatures(variables.model),
             );
-        }
-    });
+        },
+        async get(c, cacheKey) {
+            const response = await c.env.MEDIA.get(cacheKey);
+            if (!response) return null;
+            response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+            response.headers.set("X-Cache", "HIT");
+            return response;
+        },
+        shouldCache(response) {
+            const contentType = response.headers.get("content-type");
+            return (
+                response.ok &&
+                response.headers.get("x-cache") !== "HIT" &&
+                config.mediaTypes.some((type) => contentType?.includes(type))
+            );
+        },
+        capture(c, cacheKey, response) {
+            const stored = new Response(response.clone().body, response);
+            for (const name of [...stored.headers.keys()]) {
+                if (
+                    !CACHED_HEADERS.has(name) &&
+                    !name.startsWith("x-safety-") &&
+                    !name.startsWith("x-usage-")
+                ) {
+                    stored.headers.delete(name);
+                }
+            }
+            return {
+                response,
+                write: c.env.MEDIA.put(cacheKey, stored),
+            };
+        },
+    };
 }
 
-export const imageCache = createMediaCache({
+const imageAdapter = mediaCacheAdapter({
     mediaTypes: ["image/", "video/"],
-    defaultContentType: "image/jpeg",
     label: "image-cache",
 });
+export const imageCache = createGenerationCache(imageAdapter);
+export const imageExecutionCache = createGenerationExecutionCache(imageAdapter);
 
-export const audioCache = createMediaCache({
+const audioAdapter = mediaCacheAdapter({
     mediaTypes: ["audio/"],
-    defaultContentType: "audio/mpeg",
     label: "audio-cache",
 });
+export const audioCache = createGenerationCache(audioAdapter);
+export const audioExecutionCache = createGenerationExecutionCache(audioAdapter);
 
-export const model3dCache = createMediaCache({
+const model3dAdapter = mediaCacheAdapter({
     mediaTypes: ["model/"],
-    defaultContentType: "model/gltf-binary",
     label: "3d-cache",
 });
+export const model3dCache = createGenerationCache(model3dAdapter);
+export const model3dExecutionCache =
+    createGenerationExecutionCache(model3dAdapter);

@@ -8,8 +8,11 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
+import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -21,7 +24,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
 };
 
 type MediaCache = typeof imageCache;
@@ -64,8 +67,13 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
 function createMediaCacheEnv(
     bucket = createTestR2Bucket(),
 ): CloudflareBindings {
+    const mediaCtx = createExecutionContext();
     return {
-        IMAGE_BUCKET: bucket,
+        MEDIA: new MediaUpload(mediaCtx, {
+            MEDIA_BUCKET: bucket,
+            MAX_FILE_SIZE: "104857600",
+        }),
+        mediaCtx,
     } as unknown as CloudflareBindings;
 }
 
@@ -84,7 +92,14 @@ async function dispatch(
 
     return {
         response,
-        wait: () => waitOnExecutionContext(ctx),
+        wait: () =>
+            Promise.all([
+                waitOnExecutionContext(ctx),
+                waitOnExecutionContext(
+                    (env as CloudflareBindings & { mediaCtx: ExecutionContext })
+                        .mediaCtx,
+                ),
+            ]),
     };
 }
 
@@ -95,6 +110,53 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
+    it("uses an opaque full-request hash, including long prompt suffixes", async () => {
+        const prefix = "x".repeat(2000);
+        const first = await generateCacheKey(
+            new URL(
+                `https://gen.pollinations.ai/image/${prefix}first?model=flux&key=secret`,
+            ),
+        );
+        const second = await generateCacheKey(
+            new URL(
+                `https://gen.pollinations.ai/image/${prefix}second?model=flux`,
+            ),
+        );
+        expect(first).toMatch(/^[a-f0-9]{64}$/);
+        expect(second).not.toBe(first);
+        expect(first).toBe(
+            await generateCacheKey(
+                new URL(
+                    `https://gen.pollinations.ai/image/${prefix}first?key=different&model=flux`,
+                ),
+            ),
+        );
+    });
+    it("coordinates audio cache misses like other finite media", async () => {
+        let coordinated = false;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/audio/:text", audioCache, (c) => {
+                coordinated = c.var.generationCache !== undefined;
+                return new Response("audio", {
+                    headers: { "Content-Type": "audio/mpeg" },
+                });
+            });
+
+        const result = await dispatch(
+            app,
+            "/audio/hello",
+            undefined,
+            createMediaCacheEnv(),
+        );
+        expect(await consumeAndWait(result)).toBe("audio");
+        expect(coordinated).toBe(true);
+    });
+
     it.each([
         { label: "image", cache: imageCache, contentType: "image/png" },
         {
@@ -147,6 +209,29 @@ describe("media cache", () => {
         expect(media.originHits).toBe(1);
     });
 
+    it("excludes cache-control query parameters case-insensitively", async () => {
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const env = createMediaCacheEnv();
+
+        const warm = await dispatch(
+            media.app,
+            "/media/case-insensitive?Key=secret&NoFeed=true",
+            { headers: { Authorization: "Bearer test-key" } },
+            env,
+        );
+        expect(await consumeAndWait(warm)).toBe("origin:1");
+
+        const cached = await dispatch(
+            media.app,
+            "/media/case-insensitive",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(cached)).toBe("origin:1");
+        expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+        expect(media.originHits).toBe(1);
+    });
+
     it("preserves SVG content and browser safety headers on cache hits", async () => {
         const svgHeaders = {
             "Content-Type": "image/svg+xml",
@@ -154,6 +239,7 @@ describe("media cache", () => {
             "Content-Security-Policy":
                 "default-src 'none'; style-src 'unsafe-inline'; sandbox",
             "X-Content-Type-Options": "nosniff",
+            "X-Fallback-Target": "fallback-model",
         };
         let originHits = 0;
         const app = new Hono<TestEnv>()
@@ -184,7 +270,82 @@ describe("media cache", () => {
         expect(hit.response.headers.get("X-Content-Type-Options")).toBe(
             "nosniff",
         );
+        expect(hit.response.headers.get("X-Fallback-Target")).toBe(
+            "fallback-model",
+        );
         expect(originHits).toBe(1);
+    });
+
+    it("preserves generation metadata on media cache hits", async () => {
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get(
+                "/media/:prompt",
+                audioCache,
+                () =>
+                    new Response("audio", {
+                        headers: {
+                            "Content-Type": "audio/wav",
+                            "X-Model-Used": "qwen-tts",
+                            "X-TTS-Voice": "Serena",
+                            "X-Usage-Completion-Audio-Tokens": "10",
+                            "X-Generation-Id": "gen-fish-test",
+                            "Song-Id": "song-test",
+                            "X-ElevenLabs-Song-Id": "song-test",
+                            "X-Safety-Applied": "prompt",
+                            "Authorization": "Bearer must-not-be-stored",
+                            "Set-Cookie": "session=must-not-be-stored",
+                            "X-Request-Id": "original-request",
+                            "Access-Control-Allow-Origin":
+                                "https://caller.test",
+                            "Cache-Control": "private, no-store",
+                        },
+                    }),
+            );
+        const env = createMediaCacheEnv();
+
+        const warm = await dispatch(app, "/media/metadata", undefined, env);
+        await consumeAndWait(warm);
+        const hit = await dispatch(app, "/media/metadata", undefined, env);
+        await consumeAndWait(hit);
+
+        expect(hit.response.headers.get("X-Model-Used")).toBe("qwen-tts");
+        expect(hit.response.headers.get("X-TTS-Voice")).toBe("Serena");
+        expect(
+            hit.response.headers.get("X-Usage-Completion-Audio-Tokens"),
+        ).toBe("10");
+        for (const [name, value] of Object.entries({
+            "X-Generation-Id": "gen-fish-test",
+            "Song-Id": "song-test",
+            "X-ElevenLabs-Song-Id": "song-test",
+            "X-Safety-Applied": "prompt",
+        })) {
+            expect(hit.response.headers.get(name)).toBe(value);
+        }
+        const stored = await env.MEDIA.get(
+            await generateCacheKey(
+                new URL("https://gen.pollinations.ai/media/metadata"),
+            ),
+        );
+        expect(stored).not.toBeNull();
+        for (const name of [
+            "Authorization",
+            "Set-Cookie",
+            "X-Request-Id",
+            "Access-Control-Allow-Origin",
+        ]) {
+            expect(warm.response.headers.has(name)).toBe(true);
+            expect(hit.response.headers.has(name)).toBe(false);
+            expect(stored?.headers.has(name)).toBe(false);
+        }
+        expect(stored?.headers.get("Cache-Control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
+        await stored?.arrayBuffer();
     });
 
     it("refreshes cached media TTL on aged cache hits", async () => {

@@ -1,96 +1,56 @@
-# pollinations.ai KPI Dashboard
+# KPI Dashboard
 
-Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
+Weekly KPIs for pollinations.ai — `kpi.pollinations.ai` (origin
+`kpi.myceli.ai`), Worker `myceli-kpi` on the Myceli Cloudflare account.
 
-## KPIs Tracked
+The public app shell shows “Sign in with Pollinations.” The app uses OAuth
+with PKCE to check identity and admin access, then creates its own signed,
+HttpOnly session cookie. All Tinybird and GitHub reads require that app session;
+no provider token reaches the browser. This identity login does not grant
+access to Pollen balances or generation keys.
 
-### 1. Acquisition
+“Sign out” clears only KPI's session. Enter and other apps stay signed in.
+Sessions expire after 12 hours. Protected requests recheck current admin
+status with Enter at most once per 60-second cookie window. Demotion, bans and
+token revocation take effect at the next check. Temporary Enter failures return
+503 without clearing the app session or an already open dashboard.
+The identity token is encrypted inside the HttpOnly session cookie.
 
-- New customer registrations
-- Activated customers (D7)
-- GitHub stars
+## Data
 
-### 2. Activation & Usage
+| Source   | Metrics                                            |
+| -------- | -------------------------------------------------- |
+| Tinybird | WAU, usage, retention, segments, health      |
+| D1       | Registrations and D7 activations (via Tinybird)     |
+| Stripe   | Pack purchases and revenue (via Tinybird)           |
+| GitHub   | Stars, app submissions                              |
 
-- Weekly Active Users (WAU)
-- Token usage
-- Usage per active customer
+North star: weekly active paying customers.
 
-### 3. Revenue
-
-- Pack purchases
-- Gross revenue (USD)
-- ARPA (weekly)
-
-### 4. Retention
-
-- D7 retention
-- W4 retention (cohort-based)
-
-### 5. North Star
-
-- **Weekly Active Paying Customers (WAPC)**
-
-## Data Sources
-
-| Source          | Data                            |
-| --------------- | ------------------------------- |
-| Tinybird        | Usage, Stripe revenue, tokens, WAU |
-| D1 (Cloudflare) | User registrations, activations |
-| GitHub API      | Stars, forks                    |
-
-## Setup
+## Run
 
 ```bash
-cd operations/kpi
-npm install
-
-# Load secrets (requires SOPS + age key)
-./scripts/load-secrets.sh
-
-# Run locally
-npm run dev
+npm ci --prefix ../.. && npm ci
+npm run dev  # http://localhost:3457
 ```
 
-## Deployment
+Run Enter locally on port 3000. Set `POLLINATIONS_AUTH_BASE_URL` to
+`http://localhost:3000` in the ignored `.dev.vars` file and register
+`http://localhost:3457/auth/callback` on the local KPI OAuth client.
+The production callback registration stays HTTPS-only.
 
-**Cloudflare account:** Myceli (`b6ec751c0862027ba269faf7029b2501` / Elliot@myceli.ai)
+The Worker needs its own `POLLINATIONS_AUTH_SESSION_SECRET` (at least 32
+characters), a staging-only `TINYBIRD_READ_TOKEN`, and optionally `GITHUB_TOKEN`
+for authenticated GitHub metrics (public reads also work without it). Adding or copying credentials requires separate approval
+under the repository's secret rules. Never reuse Enter's session signing secret.
+Private reads use same-origin `/api/kpi/*`; cookies are separated by port locally.
 
-This is NOT on the Pollinations account. You must be logged into the myceli Cloudflare account.
+## Deploy
 
-```bash
-cd operations/kpi
-
-# 1. Login to the myceli account (opens browser)
-npx wrangler login
-# Verify: npx wrangler whoami → should show "Elliot@myceli.ai's Account"
-
-# 2. Build frontend
-npm run build
-
-# 3. Deploy
-CLOUDFLARE_ACCOUNT_ID=b6ec751c0862027ba269faf7029b2501 npx wrangler deploy
-```
-
-**Public URL:** https://kpi.pollinations.ai
-
-**Myceli origin:** https://kpi.myceli.ai
-
-**Worker name:** `myceli-kpi`
-
-## Secrets Management
-
-Secrets are SOPS-encrypted in `secrets/env.json`. To update:
-
-```bash
-sops secrets/env.json  # Edit encrypted file
-./scripts/load-secrets.sh  # Decrypt to .dev.vars for local dev
-```
-
-## TODO
-
-- [x] Create Tinybird pipes for weekly aggregations
-- [x] Add D1 API endpoints for registration/activation metrics
-- [x] Track Stripe revenue through Tinybird
-- [ ] Track GitHub star history over time
-- [ ] Real activation tracking (D1 + Tinybird cross-reference)
+Through GitHub Actions only: `Deploy / Applications` runs on pushes to
+`production` that touch `operations/**`, discovers this folder via `deploy.json`
+and runs `npm run deploy`. The Cloudflare Vite plugin builds both the app and
+its Worker. Deploy Enter's KPI OAuth client registration before the KPI Worker.
+Provision the app's signing secret and data-reader credentials separately,
+with explicit approval, before rollout. The deployment does not synchronize them.
+Use `workflow_dispatch` with `operations/kpi` to force a deploy.

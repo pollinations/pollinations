@@ -1,7 +1,6 @@
 import {
     Chip,
     Input,
-    Surface,
     Table,
     TableBody,
     TableCell,
@@ -16,6 +15,8 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -66,7 +67,7 @@ export function PriceGroups({
     if (rows.length === 0) return null;
 
     return (
-        <Surface className="overflow-hidden p-0">
+        <div className="overflow-hidden">
             <div className="overflow-x-auto">
                 <Table className="min-w-[32rem]">
                     <TableHead>
@@ -101,7 +102,7 @@ export function PriceGroups({
                     </TableBody>
                 </Table>
             </div>
-        </Surface>
+        </div>
     );
 }
 
@@ -182,11 +183,20 @@ function PriceInputCell({
 
     const inputId = `community-${field.key}`;
     const hasError = state.invalid;
-    const unitLabel = field.priceUnit === "image" ? "/image" : "/1M";
+    const unitLabel =
+        field.priceUnit === "image"
+            ? "/image"
+            : field.priceUnit === "second" || field.priceUnit === "video_second"
+              ? "/sec"
+              : "/1M";
     const maximum =
         field.priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : field.priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : field.priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -217,7 +227,9 @@ function PriceInputCell({
                 </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        {field.priceUnit === "image"
+                        {field.priceUnit === "image" ||
+                        field.priceUnit === "second" ||
+                        field.priceUnit === "video_second"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
@@ -288,6 +300,7 @@ function priceKind(field: PriceField): PriceKind {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
     if (field.usageType.includes("Image")) return "image";
+    if (field.usageType.includes("Video")) return "video";
     return "text";
 }
 
@@ -298,13 +311,17 @@ function shortPriceLabel(label: string): string {
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
+    const pending = endpoint?.pending;
     return new Set(
-        endpoint
+        endpoint?.type === "proxy"
             ? communityEndpointPriceFieldsForModality(
                   endpoint.modality,
-                  endpoint.imagePricing,
+                  pending?.imagePricing ?? endpoint.imagePricing,
               )
-                  .filter((field) => endpoint[field.key] > 0)
+                  .filter(
+                      (field) =>
+                          (pending?.[field.key] ?? endpoint[field.key]) > 0,
+                  )
                   .map((field) => field.key)
             : [],
     );
@@ -316,6 +333,36 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "promptTextPrice",
     "completionTextPrice",
 ];
+
+const BASE_EMBEDDING_PRICE_KEYS: PriceFieldKey[] = ["promptTextPrice"];
+
+// Transcription models bill per audio second, so their single price field is
+// revealed alongside the text fields once the model is public.
+export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
+    "promptAudioPrice",
+];
+
+export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
+
+// Speech (TTS) models bill the input text per character against the
+// completion-audio price.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
+
+export function basePriceKeysForModality(
+    modality: CommunityEndpointModality,
+): PriceFieldKey[] {
+    return modality === "image"
+        ? ["completionImagePrice"]
+        : modality === "video"
+          ? BASE_VIDEO_PRICE_KEYS
+          : modality === "transcription"
+            ? BASE_TRANSCRIPTION_PRICE_KEYS
+            : modality === "speech"
+              ? BASE_SPEECH_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
+}
 
 export function returnedPriceFields(
     testState: ActionState,

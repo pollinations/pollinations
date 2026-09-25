@@ -2,9 +2,11 @@ import debug from "debug";
 import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import { callChatViaResponses } from "./responses/chatClient.js";
+import { callSystemOne } from "./systemOneClient.js";
+import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
-import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
@@ -16,13 +18,6 @@ import type {
 import { resolveModelConfig } from "./utils/modelResolver.js";
 
 export const log = debug("pollinations:portkey");
-
-const clientConfig = {
-    defaultOptions: {
-        model: "openai-fast",
-        jsonMode: false,
-    },
-};
 
 // Portkey applies this millisecond deadline per attempt until provider response
 // headers arrive. Keep retries disabled unless the total deadline is reconsidered.
@@ -39,9 +34,12 @@ function buildEndpoint(gatewayUrl: unknown): string {
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
-    fetcher?: OpenAIClientConfig["fetcher"],
+    portkeyFetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
-    let state: TransformResult = { messages, options: { ...options } };
+    let state: TransformResult = {
+        messages,
+        options: normalizeOptions(options),
+    };
     const modelDef = state.options.model
         ? findModelByName(state.options.model)
         : null;
@@ -57,35 +55,65 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        // TypeSafe has its own wire format and does not use Portkey transforms.
+        if (modelDef?.useSystemOneApi) {
+            return callSystemOne(state.messages, state.options);
+        }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
-        state = await sanitizeMessages(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 
+    const directEndpoint = state.options.modelConfig?.directEndpoint;
+    // Read before the delete below: the endpoint thunk runs after it.
     const portkeyGatewayUrl = state.options.portkeyGatewayUrl;
-    const requestConfig = {
-        ...clientConfig,
-        endpoint: () => buildEndpoint(portkeyGatewayUrl),
-        additionalHeaders: {
-            "x-portkey-request-timeout": String(PORTKEY_REQUEST_TIMEOUT_MS),
-            ...((state.options.additionalHeaders || {}) as Record<
-                string,
-                string
-            >),
-        },
-        fetcher,
-    };
+    const additionalHeaders = (state.options.additionalHeaders || {}) as Record<
+        string,
+        string
+    >;
+    const responsesFetcher = state.options.responsesFetcher;
+    const requestConfig =
+        typeof directEndpoint === "string"
+            ? {
+                  endpoint: directEndpoint,
+                  additionalHeaders,
+              }
+            : {
+                  endpoint: () => buildEndpoint(portkeyGatewayUrl),
+                  additionalHeaders: {
+                      "x-portkey-request-timeout": String(
+                          PORTKEY_REQUEST_TIMEOUT_MS,
+                      ),
+                      ...additionalHeaders,
+                  },
+                  fetcher: portkeyFetcher,
+              };
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
+
+    // Models marked for Responses use their declared direct Responses target;
+    // the adapter keeps the public Chat Completions contract stateless.
+    const communityResponsesEndpoint =
+        !modelDef &&
+        typeof state.options.modelConfig?.responsesEndpoint === "string";
+    if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
+        return await callChatViaResponses(
+            state.messages,
+            state.options,
+            responsesFetcher,
+        );
+    }
+
+    // This internal transport belongs only to the Responses adapter.
+    delete state.options.responsesFetcher;
 
     const completion = await genericOpenAIClient(
         state.messages,
         state.options,
         requestConfig,
     );
-    return modelDef?.name === "command-a-plus"
+    return modelDef?.name === "cohere/command-a-plus"
         ? sanitizeCohereResponse(completion)
         : completion;
 }

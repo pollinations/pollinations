@@ -1,4 +1,4 @@
-import { cn, Surface } from "@pollinations/ui";
+import { InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -25,28 +25,63 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-07-15",
-        dateLabel: "Limited time",
-        emoji: "☀️",
-        title: "GPT-5.6 launch promotion",
+        date: "2026-09-24",
+        emoji: "🔄",
+        title: "Model provider changes",
         description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
+            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
         details: [
-            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
-            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
+            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
+            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
+            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
+            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
         ],
     },
     {
-        date: "2026-06-30",
-        dateLabel: "Now live",
-        emoji: "🎯",
-        title: "Quests are live",
-        description: "Earn Quest Pollen by completing dashboard quests.",
+        date: "2026-09-11",
+        dateLabel: "Alpha",
+        emoji: "🧑‍💻",
+        title: "Code agents: run your own agent.ts",
+        description:
+            "Point a code agent at a public GitHub repository and Pollinations deploys and runs it as a model.",
         details: [
-            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
-            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
+            "Write one agent.ts using the bundled Vercel AI SDK, Pollinations models, and MCP tools.",
+            "Calls are billed to whoever uses the agent, never to you.",
+            "Fork an [example repository](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example), then add it from [My Models](/my-models). [Read the guide](https://gen.pollinations.ai/docs#tag/publish-an-agent).",
         ],
+    },
+    {
+        date: "2026-09-11",
+        dateLabel: "Now live",
+        emoji: "🧩",
+        title: "Community model IDs get a clearer prefix",
+        description:
+            "Community models and agents are listed as community/username/model instead of username/model.",
+        details: [
+            "Both IDs keep working in generation requests. No changes to models, prices or providers.",
+            "Key permissions use the canonical IDs. Existing permissions were migrated automatically.",
+            "If your app matches saved IDs against the catalog, check aliases too.",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
+            "Create an agent from [My Models](/my-models).",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways to earn Pollen",
+        description:
+            "Earn 15 Pollen for your first external Paid Pollen request, 3 for reaching ten external app users, and 5 when other users spend 3 Paid Pollen through your apps. [View quests](/quests).",
     },
     {
         date: "2026-06-30",
@@ -71,20 +106,13 @@ function renderWithLinks(text: string): ReactNode[] {
     for (const match of matches) {
         const idx = match.index ?? 0;
         const href = match[2];
-        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
-            <a
-                key={idx}
-                href={href}
-                target={isExternal ? "_blank" : undefined}
-                rel={isExternal ? "noopener noreferrer" : undefined}
-                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
-            >
+            <InlineLink key={idx} href={href}>
                 {match[1]}
-            </a>,
+            </InlineLink>,
         );
         lastIndex = idx + match[0].length;
     }
@@ -125,17 +153,44 @@ function formatNewsDate(date: string): string {
     });
 }
 
-/** Hand-curated, pinned announcements — stacked white cards. */
+/** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
-    if (PINNED_NEWS.length === 0) return null;
     return (
         <div className="flex flex-col gap-3">
+            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
+
+const CanonicalModelSlugAnnouncement: FC = () => (
+    <Surface
+        id="canonical-model-slugs"
+        variant="card"
+        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
+    >
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+            API update
+        </div>
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+            <span aria-hidden="true" className="shrink-0">
+                🧪
+            </span>
+            <span>Model IDs are now standardized</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-700">
+            Model IDs now follow <code>publisher/model</code>—for example,{" "}
+            <code>flux</code> → <code>black-forest-labs/flux.1-schnell</code>.
+            The model catalog uses the new IDs. Existing IDs remain supported as
+            aliases in API requests.
+        </p>
+        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
+            Browse models and their aliases
+        </InlineLink>
+    </Surface>
+);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -192,23 +247,23 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface
-        variant="card"
-        className={cn("flex min-h-48 text-sm leading-relaxed")}
-    >
-        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
-            <div className="min-w-0">
-                <div className="font-semibold text-ink-900">{item.title}</div>
-                {item.date && (
-                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
-                        {formatNewsDate(item.date)}
-                    </div>
-                )}
-                <p className="mt-1 text-ink-700">
-                    {renderWithLinks(item.description)}
-                </p>
-            </div>
+    <Surface variant="card" className="text-sm leading-relaxed">
+        {item.date && (
+            <time
+                dateTime={item.date}
+                className="mb-1 block text-xs font-medium text-theme-text-muted"
+            >
+                {formatNewsDate(item.date)}
+            </time>
+        )}
+        <div className="flex items-start gap-2 font-semibold text-ink-900">
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0 text-base">
+                    {item.emoji}
+                </span>
+            )}
+            <div className="min-w-0">{item.title}</div>
         </div>
+        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
     </Surface>
 );

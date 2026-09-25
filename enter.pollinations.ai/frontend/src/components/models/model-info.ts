@@ -8,14 +8,16 @@ const BRAND_LOGOS: Record<string, string> = {
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
     Cohere: "cohere",
-    Community: "community",
     Deemos: "deemos",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
+    "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
+    Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
+    inclusionAI: "inclusionai",
     Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",
@@ -35,10 +37,22 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
+};
+
+export const getFixedResolution = (
+    model: Pick<ModelPrice, "pricingDimensions">,
+): string | undefined => {
+    const resolution = model.pricingDimensions?.find(
+        ({ key }) => key === "resolution",
+    );
+    const values = new Set(Object.values(resolution?.values ?? {}));
+    return values.size === 1 ? [...values][0] : undefined;
 };
 
 const getInputModalities = (model: ModelPrice): string[] =>
@@ -58,8 +72,10 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return "/brand-logos/community.svg";
-    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
+    if (model.community) {
+        return model.brandIconUrl;
+    }
+    const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
@@ -82,16 +98,25 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
     return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
 };
 
-export type DisplayCapability = "reasoning" | "web_search" | "code_execution";
+export type DisplayCapability =
+    | "agent"
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution"
+    | "pollinations_models";
 
 export const getModelCapabilities = (
     model: ModelPrice,
 ): DisplayCapability[] => {
     const keys: DisplayCapability[] = [];
 
+    if (model.agent) keys.push("agent");
+    if (hasToolCalling(model)) keys.push("tool_calling");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
+    if (hasPollinationsTools(model)) keys.push("pollinations_models");
 
     return keys;
 };
@@ -99,9 +124,12 @@ export const getModelCapabilities = (
 export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
+    if (model.agent) labels.push("Agent");
+    if (hasToolCalling(model)) labels.push("Tool calling");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };
@@ -111,6 +139,9 @@ const hasCapability = (
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
 
+const hasToolCalling = (model: ModelPrice): boolean =>
+    hasCapability(model, "tool_calling");
+
 const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");
 
@@ -119,6 +150,9 @@ const hasSearch = (model: ModelPrice): boolean =>
 
 const hasCodeExecution = (model: ModelPrice): boolean =>
     hasCapability(model, "code_execution");
+
+export const hasPollinationsTools = (model: ModelPrice): boolean =>
+    hasCapability(model, "pollinations_models");
 
 /**
  * Check if a model is "new" (added within the last 7 days).

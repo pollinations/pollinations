@@ -4,13 +4,13 @@ import {
 } from "./realtime-billing";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1" as const;
+export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 
 const OPENAI_REALTIME_BASE = {
     aliases: [],
     provider: "azure",
-    brand: "OpenAI",
+    publisher: "OpenAI",
     category: "realtime",
     priceMultiplier: 0.75,
     inputModalities: ["text", "audio", "image"],
@@ -31,7 +31,10 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
+        // Azure retirement schedule; the model catalog says 2027-07-31.
+        retirementDate: new Date("2027-06-25").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
         title: "GPT Realtime 2.1",
@@ -39,9 +42,12 @@ export const REALTIME_SERVICES = {
             "Live voice conversations with instant replies and solid noise handling",
         contextLength: 32000,
     },
-    "gpt-realtime-2.1-mini": {
+    "openai/gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
+        // Azure retirement schedule; the model catalog says 2027-07-31.
+        retirementDate: new Date("2027-06-25").getTime(),
         paidOnly: false,
         cost: {
             promptTextTokens: 0.0000006,
@@ -69,14 +75,45 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
-    "gpt-realtime-2": {
-        ...OPENAI_REALTIME_BASE,
-        addedDate: new Date("2026-05-23").getTime(),
-        cost: OPENAI_REALTIME_COST,
-        billing: OPENAI_REALTIME_CACHE_BILLING,
-        title: "GPT Realtime 2",
-        description: "Live voice conversations with instant, reasoned replies",
-        contextLength: 128000,
+    "elevenlabs/scribe-v2-realtime": {
+        aliases: ["scribe-realtime"],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "realtime",
+        addedDate: new Date("2026-08-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Scribe v2 Realtime: $0.39 per streamed audio hour.
+            promptAudioSeconds: 0.39 / 3600,
+        },
+        title: "Scribe v2 Realtime",
+        description:
+            "Live transcription in 90+ languages with incremental and final results",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
+    "openai/gpt-live-transcribe": {
+        aliases: ["gpt-live-transcribe"],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "realtime",
+        addedDate: new Date("2026-08-19").getTime(),
+        retirementDate: new Date("2028-02-01").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.017 per streamed input minute.
+            // Azure's exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.017 / 60,
+        },
+        title: "GPT Live Transcribe",
+        description:
+            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
 } satisfies Record<string, ModelDefinition>;
 

@@ -34,10 +34,11 @@ LINKEDIN_MAX_CHARS = 1248
 OWNER = "pollinations"
 REPO = "pollinations"
 GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
+NEWS_REL_DIR = "operations/social/news"
 
 
 # Models-weekly staging
-MODELS_NEWS_DIR = "operations/social/news/models"
+MODELS_NEWS_DIR = f"{NEWS_REL_DIR}/models"
 
 
 def models_news_staging_dir(date_str: str) -> str:
@@ -118,6 +119,33 @@ def github_api_request(
     if last_exc:
         raise last_exc
     print(f"  WARNING: GitHub API returned {resp.status_code} after {max_retries} retries: {url}")
+    return resp
+
+
+def post_discord_webhook(
+    webhook_url: str,
+    *,
+    json_body: Optional[Dict] = None,
+    files: Optional[Dict] = None,
+) -> requests.Response:
+    """Retry explicit Discord server failures without replaying timed-out posts."""
+    url = webhook_url
+    if "wait=" not in url:
+        url += ("&" if "?" in url else "?") + "wait=true"
+
+    for attempt in range(MAX_RETRIES):
+        if files is not None:
+            resp = requests.post(url, files=files, timeout=30)
+        else:
+            resp = requests.post(url, json=json_body or {}, timeout=30)
+        if resp.status_code < 500:
+            return resp
+        print(
+            f"  Discord webhook {resp.status_code} on attempt "
+            f"{attempt + 1}/{MAX_RETRIES}"
+        )
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
     return resp
 
 
@@ -286,6 +314,7 @@ def call_pollinations_api(
     user_prompt: str,
     token: str,
     temperature: float = 0.7,
+    response_format: Optional[Dict] = None,
 ) -> Optional[str]:
     """Call pollinations.ai API with retry logic and exponential backoff
 
@@ -294,6 +323,7 @@ def call_pollinations_api(
         user_prompt: User prompt for the AI
         token: pollinations.ai API token
         temperature: Temperature for generation (default 0.7)
+        response_format: Optional OpenAI-compatible response format
 
     Returns:
         Response content or None if failed
@@ -306,21 +336,20 @@ def call_pollinations_api(
     last_error = None
 
     for attempt in range(MAX_RETRIES):
-        seed = random.randint(0, MAX_SEED)
-
         payload = {
             "model": MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "temperature": temperature,
-            "seed": seed
+            "temperature": temperature
         }
+        if response_format is not None:
+            payload["response_format"] = response_format
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -335,6 +364,10 @@ def call_pollinations_api(
                 try:
                     result = response.json()
                     content = result['choices'][0]['message']['content']
+                    print(
+                        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
+                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content)}"
+                    )
                     return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
@@ -514,7 +547,7 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
 # ── Gist I/O helpers ─────────────────────────────────────────────────
 
 # Directory where gist JSONs live, relative to repo root
-GISTS_REL_DIR = "operations/social/news/gists"
+GISTS_REL_DIR = f"{NEWS_REL_DIR}/gists"
 
 # Required top-level keys for a valid gist
 _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}

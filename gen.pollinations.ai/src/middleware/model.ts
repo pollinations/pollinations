@@ -1,11 +1,16 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
@@ -31,17 +36,31 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
-    /**
-     * Set by the generation handlers when the fallback target actually served
-     * the request. Cost and the community owner reward follow it; the price the
-     * caller pays does not — that stays the listing they asked for.
-     */
-    servedModelEntry?: GenerationModelEntry;
     formData?: FormData;
 };
+
+/** Required checks for every provider this request may reach. */
+export function getRequiredSafetyFeatures(
+    model: ModelVariables["model"] | undefined,
+): SafetyFeature[] {
+    const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
+    for (const fallback of model?.fallbackEntries ?? []) {
+        for (const feature of fallback.definition.requiredSafetyFeatures ??
+            []) {
+            features.add(feature);
+        }
+    }
+    return [...features].sort();
+}
 
 type ResolveModelOptions = {
     defaultModel?: string;
@@ -72,6 +91,14 @@ export async function resolveModelDefinition(
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // Provider routes are registry entries so fallback linking and billing can
+    // use them, but callers must select the public model they belong to.
+    if (entry.definition.fallbackOnly === true) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -118,6 +145,12 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,
         }),
@@ -192,7 +225,7 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Hidden registry fallbacks are provider implementations of the public
+        // Fallback-only entries are provider implementations of the public
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
@@ -200,12 +233,13 @@ export function resolveModel(
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.hidden === true &&
+                    (entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
                     allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);
+        c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });
 }

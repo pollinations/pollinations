@@ -14,6 +14,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 type ProviderBody = Record<string, unknown>;
 
@@ -105,11 +106,12 @@ afterEach(async () => {
 async function fetch3d(
     path: string,
     init: RequestInit = {},
+    bindings = withInlineGenerationCoordinator(env),
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        bindings,
         ctx,
     );
     await response.clone().arrayBuffer();
@@ -117,7 +119,7 @@ async function fetch3d(
     return response;
 }
 
-test("POST /3d sends JSON Trellis parameters through billing without URL-only caching", async () => {
+test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     syncModel3dEnvironment({
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
@@ -147,7 +149,7 @@ test("POST /3d sends JSON Trellis parameters through billing without URL-only ca
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("X-Cache")).toBeNull();
+        expect(response.headers.get("X-Cache")).toBe("HIT");
         expect(await response.text()).toBe("glTF");
     }
 
@@ -167,13 +169,13 @@ test("POST /3d sends JSON Trellis parameters through billing without URL-only ca
     expect(mocks.tinybird.state.events).toEqual([
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             tokenPriceCompletionImage: 0.24,
             totalPrice: 0.24,
         }),
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             costVariant: "high",
             tokenPriceCompletionImage: 0.35,
             totalPrice: 0.35,
@@ -216,10 +218,48 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     ]);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "hyper3d-rodin",
-        modelUsed: "hyper3d-rodin",
+        modelUsed: "hyper3d/rodin-2.5",
         tokenPriceCompletionImage: 0.1,
         totalPrice: 0.1,
     });
+}, 10_000);
+
+test("media Responses and Chat reuse native text-to-3D generation", async () => {
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        FAL_KEY: "fal_test_key",
+    });
+    await mocks.enable("tinybird", "fal");
+    const { key } = await createTestApiKey({ user: { packBalance: 1 } });
+    const prompt = `a model with literal %2F ${crypto.randomUUID()}`;
+    let link: string | null = null;
+    for (const protocol of ["responses", "chat/completions"]) {
+        const response = await fetch3d(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "hyper3d/rodin-2.5",
+                    ...(protocol === "responses"
+                        ? { input: prompt }
+                        : { messages: [{ role: "user", content: prompt }] }),
+                }),
+            },
+            bindings,
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.text()).toContain("[3D model](https://media.");
+        if (link) expect(response.headers.get("Link")).toBe(link);
+        link = response.headers.get("Link");
+    }
+    expect(mocks.fal.state.bodies).toEqual([{ prompt }]);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
 }, 10_000);
 
 test("POST /3d preserves authentication and rejects ignored parameters", async ({
@@ -307,7 +347,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("MISS");
+    expect(response.headers.get("X-Cache")).toBe("HIT");
     expect(mocks.inferenceport.state.bodies[0]).toMatchObject({
         resolution: "medium",
     });

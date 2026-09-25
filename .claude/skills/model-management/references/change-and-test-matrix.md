@@ -6,11 +6,12 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 
 | Change | Required verification |
 |---|---|
+| Any model addition or modification | Research viable fallback routes; document the best exact candidate and use/decline decision. If configured, directly probe it and run forced-fallback E2E for every applicable capability, parameter, permission, billing field, cache path, error path, and expected burst |
 | Add model | Full declared-modality matrix, aliases, permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
-| Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, provider-managed fallback |
+| Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, and provider-managed fallback behavior |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
-| Canonical name or alias | Canonical and every alias resolve correctly; removed ID returns model-not-found when no compatibility alias was approved; search all consumers |
-| Description or brand | Catalog returns developer-facing copy without the title; brand mapping resolves to a real SVG; `addedDate` unchanged |
+| Canonical name or alias | Audit registries and stored aliases; deploy and verify alias-aware permission readers with future IDs recognized before any rename migration. Test old/new IDs, empty scopes, community IDs, catalogs, realtime and fallback filtering. Keep canonical writes and the migration; repeat bounded cleanup after both workers deploy to catch old-writer races and verify zero old IDs. Removed IDs return model-not-found when no alias was approved |
+| Description or publisher | Catalog returns developer-facing copy without the title; publisher mapping resolves to a real SVG; `addedDate` unchanged |
 | Input/output modality | Real sample proves the modality; unsupported inputs fail clearly; matching usage field is billed |
 | Image size/aspect/format | Every supported value returns the claimed dimensions/format; unsupported values are 4xx |
 | Video duration/resolution/fps/audio | Every supported combination needed by the public contract is verified with media inspection and exact billing |
@@ -52,6 +53,16 @@ Do not advertise a capability because the base model supports it if the selected
 - Run repeated generations to measure typical and slow-tail latency; require completion within the supported synchronous budget.
 - Verify resolution/duration-specific billing rather than assuming one flat media price.
 
+## Durable long-running media
+
+For any media route that may exceed 120 seconds:
+
+- Disconnect the original client and retry the byte-identical request. The retry must join the running job rather than start a second upstream execution.
+- After completion, retry again and verify retrieval from the completed R2 cache with an intact response.
+- Verify exactly one wallet debit and one billed Tinybird event across the original request, running-job join, and completed-cache retrieval.
+- Exercise durations just below, at, and above 300 seconds. Requests within the boundary must complete; requests beyond it must terminate clearly unless a separately approved asynchronous public contract exists.
+- Keep provider polling internal. Do not expose provider job IDs or require user polling under the synchronous public contract.
+
 ## Audio, speech, and music
 
 - TTS through every advertised public endpoint, with every declared voice and format.
@@ -76,7 +87,7 @@ Do not advertise a capability because the base model supports it if the selected
 - For OCR, test PDF and image inputs, page selection, structured blocks, and large-payload behavior when exposed.
 - For SVG/vector output, validate parseability and render the result.
 - For 3D, inspect the actual asset type and any preview; do not label PLY, splats, or point clouds as GLB meshes.
-- Run multiple timed media jobs; do not add a specialist model that routinely exceeds the synchronous budget.
+- Run multiple timed media jobs; do not add a specialist model that routinely exceeds the supported request-lifetime budget.
 
 ## Errors, permissions, cache, and capacity
 

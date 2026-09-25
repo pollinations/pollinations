@@ -1,21 +1,23 @@
 name = "myceli-kpi"
+main = "worker/index.ts"
 # account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
-main = "src/worker/index.ts"
-compatibility_date = "2024-01-01"
-workers_dev = true
+compatibility_date = "2026-07-15"
+workers_dev = false
 
 routes = [
     { pattern = "kpi.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
     { pattern = "kpi.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
 ]
 
-[site]
-bucket = "./dist"
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/auth/*", "/api/*"]
 
 [vars]
-TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
-GITHUB_REPO = "pollinations/pollinations"
+POLLINATIONS_OAUTH_CLIENT_ID = "pk_Bxny9FSNDpousKqW"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co"
 
-# Secrets (set via: wrangler secret put <NAME>)
-# - TINYBIRD_READ_TOKEN (read-only)
-# - GITHUB_TOKEN (optional, for higher rate limits)
+# Secret required by the app's independent session:
+# POLLINATIONS_AUTH_SESSION_SECRET

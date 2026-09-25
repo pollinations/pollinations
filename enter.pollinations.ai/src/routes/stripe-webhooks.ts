@@ -1,3 +1,4 @@
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
@@ -9,7 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
-} from "../utils/stripe-billing.ts";
+} from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {
@@ -99,7 +100,7 @@ function readUserIdFromMetadata(
     return metadata?.userId || metadata?.pollinations_user_id || "";
 }
 
-async function recordFailedCardFingerprintFromCharge({
+async function recordCardFingerprintFromCharge({
     env,
     event,
     charge,
@@ -124,7 +125,7 @@ async function recordFailedCardFingerprintFromCharge({
         });
     } catch (err) {
         console.error(
-            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
+            `Failed to record Stripe card fingerprint for event ${event.id}:`,
             err,
         );
     }
@@ -236,7 +237,10 @@ async function creditCheckoutSessionOnce({
             ),
             env.DB.prepare(
                 `UPDATE user
-                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
                 WHERE id = ?`,
             ).bind(creditsToAdd, userId),
         ]);
@@ -315,6 +319,34 @@ async function sendStripeEventToTinybird(
     }
 }
 
+function checkoutSessionEventData(
+    event: Stripe.Event,
+    session: Stripe.Checkout.Session,
+    paymentStatus: string,
+    paymentMethodsOffered?: string,
+    presentment?: {
+        currency: string;
+        amount: number;
+    },
+): StripeEventData {
+    return {
+        eventType: event.type,
+        eventId: event.id,
+        sessionId: session.id,
+        userId: session.metadata?.userId || "",
+        amountCents: session.amount_total || 0,
+        currency: session.currency || "usd",
+        paymentStatus,
+        paymentMethod: "unknown",
+        paymentMethodsOffered,
+        presentmentCurrency: presentment?.currency ?? "",
+        presentmentAmount: presentment?.amount ?? 0,
+        customerEmail: session.customer_email || "",
+        livemode: event.livemode,
+        payload: event,
+    };
+}
+
 /**
  * Emit a checkout-session success to Tinybird (shared by
  * checkout.session.completed and async_payment_succeeded). On a failed
@@ -332,25 +364,20 @@ function emitCheckoutSessionAnalytics(
     failureLabel: string,
 ): void {
     if (result.success && session.metadata) {
-        const methodsOffered = (session.payment_method_types ?? []).join(",");
-
         c.executionCtx.waitUntil(
-            sendStripeEventToTinybird(c.env, {
-                eventType: event.type,
-                eventId: event.id,
-                sessionId: session.id,
-                userId: session.metadata.userId || "",
-                amountCents: session.amount_total || 0,
-                currency: session.currency || "usd",
-                paymentStatus: session.payment_status || "unknown",
-                paymentMethod: "unknown",
-                paymentMethodsOffered: methodsOffered,
-                presentmentCurrency: result.presentmentCurrency ?? "",
-                presentmentAmount: result.presentmentAmount ?? 0,
-                customerEmail: session.customer_email || "",
-                livemode: event.livemode,
-                payload: event,
-            }).catch((err) =>
+            sendStripeEventToTinybird(
+                c.env,
+                checkoutSessionEventData(
+                    event,
+                    session,
+                    session.payment_status || "unknown",
+                    (session.payment_method_types ?? []).join(","),
+                    {
+                        currency: result.presentmentCurrency ?? "",
+                        amount: result.presentmentAmount ?? 0,
+                    },
+                ),
+            ).catch((err) =>
                 console.error("TinyBird Stripe send failed:", err),
             ),
         );
@@ -393,7 +420,7 @@ function emitPaymentIntentAnalytics(
             );
             const snapshot = snapshotFromCharge(charge);
             if (recordFailedCardFingerprint) {
-                await recordFailedCardFingerprintFromCharge({
+                await recordCardFingerprintFromCharge({
                     env: c.env,
                     event,
                     charge,
@@ -577,10 +604,17 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
                 // without an additional Stripe API call. Pack credit still
-                // happens via checkout.session.completed; successful cards
-                // don't feed the failed-card gate ledger.
+                // happens via checkout.session.completed. The card fingerprint
+                // feeds the new-card gate ledger so a tester rotating stolen
+                // cards that happen to work locks the gate like failed ones.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
+                await recordCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,
@@ -666,24 +700,16 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_failed": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Async payment failed for session ${session.id}`);
-                const methodsOffered = (
-                    session.payment_method_types ?? []
-                ).join(",");
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: session.id,
-                        userId: session.metadata?.userId || "",
-                        amountCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
-                        paymentStatus: session.payment_status || "unpaid",
-                        paymentMethod: "unknown",
-                        paymentMethodsOffered: methodsOffered,
-                        customerEmail: session.customer_email || "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    sendStripeEventToTinybird(
+                        c.env,
+                        checkoutSessionEventData(
+                            event,
+                            session,
+                            session.payment_status || "unpaid",
+                            (session.payment_method_types ?? []).join(","),
+                        ),
+                    ).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
@@ -694,19 +720,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Checkout session expired: ${session.id}`);
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: session.id,
-                        userId: session.metadata?.userId || "",
-                        amountCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
-                        paymentStatus: "expired",
-                        paymentMethod: "unknown",
-                        customerEmail: session.customer_email || "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    sendStripeEventToTinybird(
+                        c.env,
+                        checkoutSessionEventData(event, session, "expired"),
+                    ).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );

@@ -61,13 +61,13 @@ Requires a **named** Cloudflare tunnel, not a quick tunnel (quick tunnels caused
 outage #12254). Point the public hostname at `http://localhost:8766` and pass
 the hostname so heartbeats advertise the stable URL rather than a raw IP:
 
-Provision a Vast SSH instance with at least 60 GB of disk and configure the
+Provision a Vast SSH instance with at least 30 GB of disk and configure the
 startup hook at rent time:
 
 ```bash
 vastai create instance <OFFER> \
-  --image vastai/base-image:cuda-12.8.1-cudnn-devel-ubuntu24.04-py312 \
-  --disk 60 --ssh --label dreamshaper-vast-NN \
+  --image nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 \
+  --disk 30 --ssh --label dreamshaper-vast-NN \
   --onstart-cmd 'if [ -x /root/onstart.sh ]; then /root/onstart.sh; fi'
 vastai attach ssh <INSTANCE> ~/.ssh/id_ed25519.pub
 
@@ -86,15 +86,24 @@ PLN_GPU_TOKEN=... CLOUDFLARED_TUNNEL_TOKEN=... \
   HEARTBEAT_ENABLED=true GIT_BRANCH=main bash setup-vast.sh
 ```
 
+Use the NVIDIA runtime image above. DreamShaper installs the pinned PyTorch
+CUDA wheel and does not compile CUDA extensions, so the larger development
+image is unnecessary. During the 2026-08-19 replacement, the previous Vast
+development image repeatedly stalled before container creation while this
+runtime image booted successfully. `setup-vast.sh` creates `/workspace` when
+the image does not provide it.
+
 Env: `MODEL_ID`, `LCM_LORA`, `TINY_VAE`, `NUM_INFERENCE_STEPS`,
 `GUIDANCE_SCALE`, `MAX_DIM` (768), `MAX_PIXELS` (512²), `PORT` (8766),
 `REGISTER_URL`, `SERVICE_TYPE` (`sana`), `HEARTBEAT_ENABLED`,
 `TUNNEL_ENABLED`, `WORKERS` (3), and `QUEUE_LIMIT` (2 per worker process).
 
 Vast executes `/root/onstart.sh`, not `/workspace/onstart.sh`, after a container
-restart. The startup script terminates any listener still holding port 8766
-before relaunching Uvicorn; quitting the parent `screen` session alone can
-leave worker children alive and cause an `Address already in use` loop.
+restart. The startup script terminates the detached supervisor and every
+Python process in the dedicated DreamShaper venv before clearing port 8766 and
+relaunching Uvicorn. Killing only the listener is insufficient: spawned
+workers and the resource tracker can survive their parent and cause an
+`Address already in use` loop.
 
 **Ordering matters when replacing sana.** Before this change `sana` was reached
 through a hardcoded backend URL that bypassed the registry pool. Deploy and

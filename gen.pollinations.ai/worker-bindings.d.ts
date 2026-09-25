@@ -1,5 +1,11 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    POLLINATIONS_MCP: Fetcher;
+    ASK_JEV_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
+    EXA_MCP: Fetcher;
+    COMPOSIO_MCP: Fetcher;
+    COMPUTER_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -15,8 +21,11 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
-    IMAGE_BUCKET: R2Bucket;
+    MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
+    GENERATION_COORDINATOR: DurableObjectNamespace<
+        import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
+    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"
@@ -47,6 +56,8 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY: string;
     AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: string;
@@ -62,6 +73,7 @@ interface CloudflareBindings {
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
+    MISTRAL_API_KEY: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;
@@ -70,6 +82,7 @@ interface CloudflareBindings {
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

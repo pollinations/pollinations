@@ -2,34 +2,31 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
-import { authCommand } from "./commands/auth.js";
+import { agentsCommand } from "./commands/agents.js";
+import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
+import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
+import { harnessCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
+import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
+import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
-import { setOutputMode } from "./lib/output.js";
+import { configureHelp, setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
+import { notifyUpdate } from "./lib/update-notice.js";
 
 const pkg = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
-) as { version: string };
+) as { name: string; version: string };
 
 const program = new Command();
-
-program.configureHelp({
-    styleTitle: (s) => chalk.hex("#a78bfa").bold(s),
-    styleCommandText: (s) => chalk.bold(s),
-    styleSubcommandText: (s) => chalk.bold(s),
-    styleOptionText: (s) => chalk.cyan(s),
-    styleArgumentText: (s) => chalk.yellow(s),
-    styleDescriptionText: (s) => chalk.dim(s),
-});
 
 program
     .name("polli")
@@ -56,14 +53,23 @@ program
         if (opts.key) {
             setKeyOverride(opts.key);
         }
+    })
+    .hook("postAction", (_command, action) => {
+        if (action.name() !== "update") return notifyUpdate(pkg);
     });
 
 // Auth & account
 program.addCommand(authCommand);
+program.addCommand(whoamiCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
+program.addCommand(earningsCommand);
 program.addCommand(questsCommand);
+program.addCommand(agentsCommand);
 program.addCommand(myModelsCommand);
+
+// Coding harness integrations
+program.addCommand(harnessCommand);
 
 // Generation
 program.addCommand(createGenCommand());
@@ -71,7 +77,13 @@ program.addCommand(uploadCommand);
 
 // Discovery
 program.addCommand(modelsCommand);
+program.addCommand(mcpCommand);
 program.addCommand(docsCommand);
+
+// Self-update
+program.addCommand(updateCommand);
+
+configureHelp(program);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {

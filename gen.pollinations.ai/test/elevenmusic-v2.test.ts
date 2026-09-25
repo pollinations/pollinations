@@ -6,12 +6,15 @@ const log = {
     warn: vi.fn(),
 } as never;
 
-describe("ElevenLabs music_v2", () => {
+describe("ElevenLabs Music", () => {
     afterEach(() => {
         vi.restoreAllMocks();
     });
 
-    it("generates music_v2 audio from a text prompt", async () => {
+    it.each([
+        ["elevenlabs/music-v2", "music_v2"],
+        ["elevenlabs/music-v2.5", "music_v2_5"],
+    ] as const)("routes %s to %s", async (modelName, modelId) => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3, 4]), {
                 headers: {
@@ -22,6 +25,7 @@ describe("ElevenLabs music_v2", () => {
         );
 
         const response = await generateMusic({
+            modelName,
             prompt: "upbeat synth pop",
             durationSeconds: 12,
             apiKey: "test-eleven-key",
@@ -37,13 +41,16 @@ describe("ElevenLabs music_v2", () => {
         );
         expect(request.url).toBe("https://api.elevenlabs.io/v1/music");
         await expect(request.json()).resolves.toMatchObject({
-            model_id: "music_v2",
+            model_id: modelId,
             prompt: "upbeat synth pop",
             music_length_ms: 12000,
         });
     });
 
-    it("uploads reference audio and conditions the generated chunk on it", async () => {
+    it.each([
+        ["elevenlabs/music-v2", "music_v2"],
+        ["elevenlabs/music-v2.5", "music_v2_5"],
+    ] as const)("uploads reference audio and conditions %s with a %s plan", async (modelName, modelId) => {
         const fetchMock = vi
             .spyOn(globalThis, "fetch")
             .mockImplementation(async (input, init) => {
@@ -51,6 +58,9 @@ describe("ElevenLabs music_v2", () => {
                 if (request.url.endsWith("/v1/music/upload")) {
                     return Response.json({
                         song_id: "reference-song",
+                        composition_plan: {
+                            chunks: [{ duration_ms: 10_000 }],
+                        },
                     });
                 }
                 return new Response(new Uint8Array([1, 2, 3, 4]), {
@@ -58,7 +68,8 @@ describe("ElevenLabs music_v2", () => {
                 });
             });
 
-        await generateMusic({
+        const response = await generateMusic({
+            modelName,
             prompt: "[Verse]\nPlay this as warm indie disco",
             durationSeconds: 45,
             referenceAudio: new File(["reference"], "reference.mp3", {
@@ -76,9 +87,10 @@ describe("ElevenLabs music_v2", () => {
         expect(uploadRequest.url).toBe(
             "https://api.elevenlabs.io/v1/music/upload",
         );
-        expect((await uploadRequest.formData()).get("file")).toBeInstanceOf(
-            File,
-        );
+        const uploadForm = await uploadRequest.formData();
+        expect(uploadForm.get("file")).toBeInstanceOf(File);
+        expect(uploadForm.get("extract_composition_plan")).toBe(modelId);
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
 
         const composeRequest = new Request(
             fetchMock.mock.calls[1][0],
@@ -95,7 +107,7 @@ describe("ElevenLabs music_v2", () => {
             };
         };
         expect(composeBody).toMatchObject({
-            model_id: "music_v2",
+            model_id: modelId,
             composition_plan: {
                 chunks: [
                     {
@@ -112,7 +124,10 @@ describe("ElevenLabs music_v2", () => {
         });
     });
 
-    it("forwards composition_plan for inpainting without a prompt body", async () => {
+    it.each([
+        ["elevenlabs/music-v2", "music_v2"],
+        ["elevenlabs/music-v2.5", "music_v2_5"],
+    ] as const)("forwards a %s composition plan for inpainting without a prompt body", async (modelName, modelId) => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3, 4]), {
                 headers: { "content-type": "audio/mpeg" },
@@ -141,6 +156,7 @@ describe("ElevenLabs music_v2", () => {
         };
 
         await generateMusic({
+            modelName,
             prompt: "unused when composition_plan is provided",
             compositionPlan,
             storeForInpainting: true,
@@ -154,7 +170,7 @@ describe("ElevenLabs music_v2", () => {
         );
         const body = (await request.json()) as Record<string, unknown>;
         expect(body).toEqual({
-            model_id: "music_v2",
+            model_id: modelId,
             composition_plan: compositionPlan,
             store_for_inpainting: true,
         });

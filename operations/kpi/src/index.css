@@ -1,22 +1,19 @@
-@import "tailwindcss";
-@config "../tailwind.config.js";
+@import "@pollinations/ui/app.css";
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+/* Chart series slots — assigned in fixed order, never cycled. The package
+   reserves its multi-hue palette for modality/wallet/intent roles, so charts
+   carry their own three, built with the same oklch recipe. Both modes are
+   stepped independently and validated for CVD separation and >=3:1 contrast
+   against the card surface; a fourth series is not a new hue, it folds into
+   its own chart. */
+:root {
+    --kpi-series-1: oklch(0.52 0.17 258);
+    --kpi-series-2: oklch(0.63 0.16 80);
+    --kpi-series-3: oklch(0.55 0.19 15);
 }
 
-.card {
-  @apply bg-gray-900 border border-gray-800 rounded-xl p-6;
-}
-
-.stat-card {
-  @apply bg-gray-900/50 border border-gray-800 rounded-lg p-4;
-}
-
-.trend-up {
-  @apply text-green-400;
-}
-
-.trend-down {
-  @apply text-red-400;
+.dark {
+    --kpi-series-1: oklch(0.6 0.17 258);
+    --kpi-series-2: oklch(0.66 0.16 80);
+    --kpi-series-3: oklch(0.58 0.18 15);
 }

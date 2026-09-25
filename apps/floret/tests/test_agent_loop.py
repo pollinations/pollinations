@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
 
 from floret import agent as agent_mod
+from floret.routing import RoutingPreferences
 
 
 def _tool_call(call_id: str, name: str, args: str):
@@ -29,10 +31,12 @@ class _FakeBrain:
         self._sequence = list(sequence)
         self._final = final
         self.calls: list[list[dict]] = []
+        self.kwargs_calls: list[dict] = []
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
 
     async def _create(self, **kwargs):
         self.calls.append(kwargs["messages"])
+        self.kwargs_calls.append(kwargs)
         # The post-cap wrap-up call is made WITHOUT tools; serve the final message.
         if "tools" not in kwargs and self._final is not None:
             return self._final
@@ -44,11 +48,24 @@ def _stub_env(monkeypatch):
     monkeypatch.setattr(agent_mod, "build_system_prompt", lambda: "SYSTEM")
 
 
+async def test_brain_receives_floret_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    from floret.knowledge import build_system_prompt
+
+    brain = _FakeBrain([_assistant("Hello!")])
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+    monkeypatch.setattr(agent_mod, "build_system_prompt", build_system_prompt)
+
+    await agent_mod.run_agent([{"role": "user", "content": "hey"}])
+
+    assert brain.calls[0][0]["role"] == "system"
+    assert brain.calls[0][0]["content"].startswith("You are Floret,")
+
+
 async def test_two_parallel_tool_calls_both_execute(monkeypatch):
     """A single assistant turn with two tool_calls must run BOTH, not just the first."""
     seen: list[dict] = []
 
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         seen.append({"name": name, "args": args})
@@ -86,7 +103,7 @@ async def test_two_parallel_tool_calls_both_execute(monkeypatch):
 
 
 async def test_tool_error_is_fed_back_to_brain(monkeypatch):
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(brain="ERROR from generate_image: boom", artifacts=[])
@@ -110,7 +127,7 @@ async def test_tool_error_is_fed_back_to_brain(monkeypatch):
 async def test_run_agent_events_yields_tool_starts_then_final(monkeypatch):
     """The event stream must announce each tool call and end with the final result."""
 
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(
@@ -153,7 +170,7 @@ async def test_run_agent_events_yields_tool_starts_then_final(monkeypatch):
 async def test_repeated_identical_calls_inject_guidance(monkeypatch):
     """Identical repeated tool calls must trigger corrective guidance, not a kill."""
 
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(brain="a video url", artifacts=[])
@@ -184,7 +201,7 @@ async def test_repeated_identical_calls_inject_guidance(monkeypatch):
 
 
 async def test_consecutive_error_turns_inject_guidance(monkeypatch):
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(brain="ERROR from generate_video: boom", artifacts=[])
@@ -214,7 +231,7 @@ async def test_consecutive_error_turns_inject_guidance(monkeypatch):
 async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeypatch):
     """A final answer referencing final.mp4 without a hosted URL is not done."""
 
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(
@@ -245,7 +262,7 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
     nudges = [
         m
         for m in second_call_msgs
-        if m["role"] == "system" and "upload_media" in m["content"]
+        if m["role"] == "system" and "assets publish" in m["content"]
     ]
     assert nudges, "expected publish nudge to be injected"
 
@@ -263,7 +280,7 @@ async def test_final_answer_with_hosted_url_is_not_nudged(monkeypatch):
 async def test_no_nudge_when_deliverable_already_attached(monkeypatch):
     """If a hosted av artifact exists, the deliverable reaches the user anyway."""
 
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(
@@ -304,7 +321,7 @@ async def test_nudge_emits_visible_stream_event(monkeypatch):
 
 
 async def test_iteration_cap_forces_final_answer(monkeypatch):
-    async def dispatch(name, args):
+    async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
         return ToolResult(brain="ok", artifacts=[])
@@ -324,3 +341,117 @@ async def test_iteration_cap_forces_final_answer(monkeypatch):
     )
     assert result["iterations"] == 3
     assert result["text"] == "forced final"
+
+
+async def test_routing_object_reaches_dispatch(monkeypatch):
+    seen = []
+
+    async def dispatch(name, args, routing=None):
+        from floret.toolset import ToolResult
+
+        seen.append(routing)
+        return ToolResult(brain="image", artifacts=[])
+
+    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
+    brain = _FakeBrain(
+        [
+            _assistant(
+                "making image",
+                [_tool_call("c1", "generate_image", '{"prompt":"x"}')],
+            ),
+            _assistant("done", None),
+        ]
+    )
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+    routing = RoutingPreferences(image_generation="flux")
+
+    await agent_mod.run_agent([{"role": "user", "content": "image"}], routing=routing)
+
+    assert seen == [routing]
+    assert seen[0] is routing
+
+
+async def test_concurrent_runs_keep_routing_preferences_isolated(monkeypatch):
+    seen = []
+
+    async def dispatch(name, args, routing=None):
+        from floret.toolset import ToolResult
+
+        seen.append((args["prompt"], routing))
+        return ToolResult(brain="image", artifacts=[])
+
+    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
+    brains = iter(
+        [
+            _FakeBrain(
+                [
+                    _assistant(
+                        "first",
+                        [_tool_call("c1", "generate_image", '{"prompt":"first"}')],
+                    ),
+                    _assistant("done", None),
+                ]
+            ),
+            _FakeBrain(
+                [
+                    _assistant(
+                        "second",
+                        [_tool_call("c2", "generate_image", '{"prompt":"second"}')],
+                    ),
+                    _assistant("done", None),
+                ]
+            ),
+        ]
+    )
+    monkeypatch.setattr(agent_mod, "_client", lambda: next(brains))
+    first = RoutingPreferences(image_generation="flux")
+    second = RoutingPreferences(image_generation="nanobanana")
+
+    await asyncio.gather(
+        agent_mod.run_agent([{"role": "user", "content": "first"}], routing=first),
+        agent_mod.run_agent([{"role": "user", "content": "second"}], routing=second),
+    )
+
+    assert set(seen) == {("first", first), ("second", second)}
+
+
+async def test_routing_prompt_lists_only_explicit_preferences(monkeypatch):
+    brain = _FakeBrain([_assistant("done", None)])
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+
+    await agent_mod.run_agent(
+        [{"role": "user", "content": "image"}],
+        routing=RoutingPreferences(image_generation="flux"),
+    )
+
+    system_prompt = brain.calls[0][0]["content"]
+    assert "image generation=flux" in system_prompt
+    assert "video generation=" not in system_prompt
+
+
+async def test_text_routing_model_reaches_every_brain_call(monkeypatch):
+    async def dispatch(name, args, routing=None):
+        from floret.toolset import ToolResult
+
+        return ToolResult(brain="ok", artifacts=[])
+
+    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
+    brain = _FakeBrain(
+        [
+            _assistant("again", [_tool_call("c1", "bash", '{"command":"true"}')]),
+            _assistant("again", [_tool_call("c2", "bash", '{"command":"true"}')]),
+        ],
+        final=_assistant("forced final", None),
+    )
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+    routing = RoutingPreferences(text="openai-large")
+
+    await agent_mod.run_agent(
+        [{"role": "user", "content": "loop"}], max_iters=2, routing=routing
+    )
+
+    assert [call["model"] for call in brain.kwargs_calls] == [
+        "openai-large",
+        "openai-large",
+        "openai-large",
+    ]

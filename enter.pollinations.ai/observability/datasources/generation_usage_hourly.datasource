@@ -8,6 +8,7 @@ TOKEN "tinybird_read" READ
 SCHEMA >
     `hour` DateTime,
     `environment` LowCardinality(String),
+    `traffic_group` LowCardinality(String),
     `model` LowCardinality(String),
     `workload` LowCardinality(String),
     `funding_source` LowCardinality(String),
@@ -36,4 +37,4 @@ SCHEMA >
 
 ENGINE AggregatingMergeTree
 ENGINE_PARTITION_KEY toYYYYMM(hour)
-ENGINE_SORTING_KEY hour, environment, business_stream, workload, model, funding_source, is_byop, is_community
+ENGINE_SORTING_KEY hour, environment, traffic_group, business_stream, workload, model, funding_source, is_byop, is_community

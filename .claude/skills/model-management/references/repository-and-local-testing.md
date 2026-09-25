@@ -10,10 +10,11 @@ Read live code before relying on this map; paths evolve.
 | Registry conversion and prices | `shared/registry/registry.ts`, `shared/registry/price-helpers.ts`, `shared/registry/usage-headers.ts` |
 | Text routing | `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, `providerConfigs.ts`, `availableModels.ts` |
 | Image and video | `gen.pollinations.ai/src/image/`, especially dispatch, params, models, and provider handlers |
+| Durable media coordination | `gen.pollinations.ai/src/durable-objects/GenerationCoordinator.ts`, `gen.pollinations.ai/src/middleware/generation-deduplication.ts`, `gen.pollinations.ai/src/routes/generation-executor.ts`, `gen.pollinations.ai/src/utils/execute-generation.ts` |
 | Audio and speech | `gen.pollinations.ai/src/routes/audio.ts` and transcription/realtime routes |
 | Embeddings | `gen.pollinations.ai/src/embeddings/` |
 | Billing and observability | `gen.pollinations.ai/src/middleware/track.ts`, `enter.pollinations.ai/observability/` |
-| Catalog logo | model-info/brand mapping under the Enter frontend and `frontend/public/brand-logos/` |
+| Catalog logo | model-info/publisher mapping under the Enter frontend and `frontend/public/brand-logos/` |
 | Provider secrets | encrypted files under `gen.pollinations.ai/secrets/`; mutations follow `AGENTS.md` |
 
 Search for the canonical slug, aliases, provider model ID, registry key, and handler before adding code. Reuse existing provider clients, request transforms, polling, upload, response, error, billing, and fallback utilities.
@@ -39,6 +40,8 @@ Use `npm run dev`, not a bare Worker command, so the current bundle and persiste
 | Production Gen | `POLLINATIONS_TOKEN_PROD` | production |
 
 Test tokens are references in `_local/.env`; provider credentials are not. Never print secret values. Any provider-secret mutation requires the separate approval and PR process in `AGENTS.md`.
+
+In an isolated worktree, locate the primary checkout with `git worktree list` and use its existing `POLLINATIONS_TOKEN_LOCAL` directly at execution time without copying it into the worktree or printing it. This is read-only use of an already-authorized credential, so it does not require secret-mutation approval. If the token is absent or invalid, do not create, replace, or deploy one without the separate approval required by `AGENTS.md`.
 
 ## Minimum smoke
 

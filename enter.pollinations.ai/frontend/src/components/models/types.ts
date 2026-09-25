@@ -1,3 +1,9 @@
+import type { ModelHealth } from "@shared/registry/model-info.ts";
+import type {
+    PricingDimension,
+    PublicPriceInfo,
+} from "@shared/registry/public-pricing.ts";
+
 export type ModelCategory =
     | "text"
     | "image"
@@ -10,13 +16,15 @@ export type ModelCategory =
 export type ModelDisplayCategory =
     | ModelCategory
     | "community-text"
-    | "community-image";
+    | "community-image"
+    | "community-agent";
 
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export type PriceKind =
     | "text"
@@ -47,32 +55,25 @@ export type ModelPriceVariant = {
     prices: ModelPriceLine[];
 };
 
-export type ModelPriceAdjustment = {
-    name: string;
-    label: string;
-    kind: string;
-    price: string;
-    quantity: number;
-    unit: string;
-    suffix?: string;
-    option?: {
-        group: string;
-        value: string;
-        label: string;
-        default?: boolean;
-    };
-};
+export type ModelPriceAdjustment = PublicPriceInfo;
 
 export type ModelPrice = {
     name: string;
+    aliases?: string[];
     type: ModelCategory;
     community?: boolean;
+    health?: ModelHealth;
+    agent?: boolean;
+    baseModel?: string;
+    perUserRpm?: number | null;
     displayName?: string;
     description?: string;
-    brand?: string;
+    publisher?: string;
     brandUrl?: string;
+    brandIconUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
     free?: boolean;
@@ -83,7 +84,13 @@ export type ModelPrice = {
     prices: ModelPriceLine[];
     priceVariants?: ModelPriceVariant[];
     priceDefaultLabel?: string;
+    pricingDimensions?: PricingDimension[];
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
+    users7d?: number;
+    contextLength?: number;
+    minDuration?: number;
+    maxDuration?: number;
+    allowedDurations?: number[];
 };

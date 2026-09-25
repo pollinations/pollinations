@@ -18,9 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v23: use_app and app_active (7 Pollen) are now available;
-// app_paid_request reward set to 15 while still coming_soon.
-const CACHE_KEY = "quests:catalog:v23";
+// Bumped to v30: the app-spend quest is worth 10 Pollen.
+const CACHE_KEY = "quests:catalog:v30";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
@@ -36,6 +35,12 @@ const questCatalogItemSchema = z.object({
     state: z.enum(["available", "completed", "coming_soon"]),
     rewardAmount: z.number(),
     balanceBucket: z.enum(["tier", "pack"]),
+    goal: z
+        .object({
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        })
+        .optional(),
     url: z.string().nullable(),
 });
 
@@ -51,6 +56,7 @@ const rewardSchema = z.object({
     balanceBucket: z.string(),
     earnedAt: z.string(),
     claimedAt: z.string().nullable(),
+    url: z.string().nullable().optional(),
 });
 
 const questRewardsResponseSchema = z.object({
@@ -61,6 +67,14 @@ const questCheckResponseSchema = z.object({
     success: z.boolean(),
     recorded: z.number(),
     rewardIds: z.array(z.string()),
+    progress: z.array(
+        z.object({
+            questId: z.string(),
+            current: z.number(),
+            target: z.number(),
+            unit: z.enum(["pollen", "users", "days"]),
+        }),
+    ),
 });
 
 const claimRewardResponseSchema = z.object({
@@ -202,6 +216,7 @@ export const questsRoutes = new Hono<Env>()
                     balanceBucket: rewardsTable.balanceBucket,
                     earnedAt: rewardsTable.earnedAt,
                     claimedAt: rewardsTable.claimedAt,
+                    url: rewardsTable.url,
                 })
                 .from(rewardsTable)
                 .where(eq(rewardsTable.userId, user.id))
@@ -217,6 +232,7 @@ export const questsRoutes = new Hono<Env>()
                 claimedAt: row.claimedAt
                     ? formatRewardTimestamp(row.claimedAt)
                     : null,
+                url: row.url,
             }));
 
             return c.json({ rewards });

@@ -40,6 +40,9 @@ test(
         expect(response.status).toBe(200);
 
         const data = await response.json();
+        expect(typeof data.id).toBe("string");
+        expect(data.id.length).toBeGreaterThan(0);
+        expect(data.id).not.toBe(apiKey);
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();
@@ -67,7 +70,7 @@ test(
         const runToken = await signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: parent?.apiKey.id as string,
-            runId: crypto.randomUUID(),
+            parentRequestId: crypto.randomUUID(),
         });
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: { Authorization: `Bearer ${runToken}` },
@@ -79,7 +82,7 @@ test(
             valid: true,
             type: "secret",
             userId: parent?.user?.id,
-            byopClientKeyId: parent?.apiKey.byopClientKeyId ?? null,
+            byopApp: null,
         });
         // A run token never carries account scope, only generation access.
         expect(data.permissions.account).toBeNull();
@@ -121,7 +124,10 @@ test(
 
         const data = await response.json();
         expect(data.permissions).toBeDefined();
-        expect(data.permissions.models).toEqual(["openai-fast", "flux"]);
+        expect(data.permissions.models).toEqual([
+            "openai/gpt-5-nano",
+            "black-forest-labs/flux.1-schnell",
+        ]);
     },
 );
 
@@ -132,8 +138,16 @@ test(
         await mocks.enable("tinybird");
         const created = await createApiKeyViaApi(sessionToken, {
             name: "current-key-with-retired-model",
-            allowedModels: ["openai-fast", "retired-model"],
+            allowedModels: ["openai/gpt-5-nano"],
         });
+        await env.DB.prepare("UPDATE apikey SET permissions = ? WHERE id = ?")
+            .bind(
+                JSON.stringify({
+                    models: ["openai/gpt-5-nano", "retired-model"],
+                }),
+                created.id,
+            )
+            .run();
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {
@@ -143,7 +157,7 @@ test(
 
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data.permissions.models).toEqual(["openai-fast"]);
+        expect(data.permissions.models).toEqual(["openai/gpt-5-nano"]);
     },
 );
 
@@ -164,6 +178,24 @@ test(
         expect(data.pollenBudget).toBeDefined();
         expect(typeof data.pollenBudget).toBe("number");
         expect(data.pollenBudget).toBe(100); // Initial budget from fixture
+    },
+);
+
+test(
+    "GET /api/account/key - returns byopApp null for non-BYOP key",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("tinybird");
+
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+        });
+        expect(response.status).toBe(200);
+
+        const data = await response.json();
+        expect(data.byopApp).toBeNull();
     },
 );
 

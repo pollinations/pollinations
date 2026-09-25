@@ -1,12 +1,23 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { apiClient } from "../api.ts";
+import { Section } from "@pollinations/ui";
+import {
+    Await,
+    createFileRoute,
+    redirect,
+    useRouter,
+} from "@tanstack/react-router";
+import { useDeferredValue, useState } from "react";
 import { authClient } from "../auth.ts";
 import {
+    type ApiKey,
     ApiKeyList,
+    type ApiKeyManagerProps,
+    type ApiKeyUpdateParams,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
@@ -23,7 +34,18 @@ export const Route = createFileRoute("/_dashboard/keys")({
 
 function KeysPage() {
     const router = useRouter();
-    const { apiKeys } = DashboardRoute.useLoaderData();
+    const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
+
+    async function refreshKeys(): Promise<void> {
+        await router.invalidate({
+            filter: (match) => match.routeId === DashboardRoute.id,
+            sync: true,
+        });
+        // The dashboard returns this promise without awaiting it.
+        await router.state.matches.find(
+            (match) => match.routeId === DashboardRoute.id,
+        )?.loaderData?.apiKeys;
+    }
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -53,7 +75,7 @@ function KeysPage() {
             },
         });
 
-        await router.invalidate();
+        await refreshKeys();
         return {
             id: created.id,
             key: created.key,
@@ -63,45 +85,70 @@ function KeysPage() {
 
     async function handleDeleteApiKey(id: string): Promise<void> {
         const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error) console.error(result.error);
-        await router.invalidate();
+        if (result.error)
+            throw new Error(result.error.message || "Request failed");
+        await refreshKeys();
     }
 
     async function handleUpdateApiKey(
         id: string,
-        updates: {
-            name?: string;
-            allowedModels?: string[] | null;
-            pollenBudget?: number | null;
-            accountPermissions?: string[] | null;
-            expiresAt?: Date | null;
-        },
+        updates: ApiKeyUpdateParams,
     ): Promise<void> {
-        const response = await apiClient["api-keys"][":id"].update.$post({
-            param: { id },
-            json: {
-                ...updates,
-                expiresAt:
-                    updates.expiresAt instanceof Date
-                        ? updates.expiresAt.toISOString()
-                        : updates.expiresAt,
-            },
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-                (error as { message?: string }).message || "Update failed",
-            );
-        }
-        await router.invalidate();
+        await updateApiKey(id, updates);
+        await refreshKeys();
     }
 
     return (
-        <ApiKeyList
-            apiKeys={apiKeys}
-            onCreate={handleCreateApiKey}
-            onUpdate={handleUpdateApiKey}
-            onDelete={handleDeleteApiKey}
-        />
+        <Await promise={apiKeys} fallback={null}>
+            {(keys) => (
+                <KeysContent
+                    key={user?.id}
+                    apiKeys={keys}
+                    onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
+                    onDelete={handleDeleteApiKey}
+                    onRetry={refreshKeys}
+                />
+            )}
+        </Await>
+    );
+}
+
+function KeysContent({
+    apiKeys,
+    onRetry,
+    ...actions
+}: Omit<ApiKeyManagerProps, "apiKeys"> & {
+    apiKeys: ApiKey[] | null;
+    onRetry: () => Promise<void>;
+}) {
+    const [lastKeys, setLastKeys] = useState(apiKeys);
+    // A failed refresh must not unmount the dialog holding a newly created secret.
+    if (apiKeys !== null && apiKeys !== lastKeys) setLastKeys(apiKeys);
+    const keys = apiKeys ?? lastKeys;
+
+    if (keys === null) {
+        return (
+            <div className="flex flex-col gap-6">
+                {["Secrets", "Apps"].map((title) => (
+                    <Section key={title} title={title}>
+                        <LoadError onRetry={onRetry}>
+                            Couldn’t load keys.
+                        </LoadError>
+                    </Section>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-6">
+            {apiKeys === null && (
+                <LoadError onRetry={onRetry}>
+                    Couldn’t refresh keys. Showing the last loaded list.
+                </LoadError>
+            )}
+            <ApiKeyList apiKeys={keys} {...actions} />
+        </div>
     );
 }

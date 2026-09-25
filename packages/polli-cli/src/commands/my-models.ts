@@ -21,6 +21,11 @@ const PRICE_FLAGS = [
         "Completion reasoning token price",
     ],
     ["--completion-audio-price <number>", "Completion audio token price"],
+    [
+        "--completion-image-price <number>",
+        "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
+    ],
+    ["--completion-video-price <number>", "Generated-video price per second"],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -32,24 +37,59 @@ const PRICE_OPTION_KEYS = [
     "completionTextPrice",
     "completionReasoningPrice",
     "completionAudioPrice",
+    "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
-interface MyModel {
+interface MyModelBase {
     id: string;
     modelId: string;
     name: string;
     title: string;
     description: string | null;
-    baseUrl: string;
-    upstreamModel: string;
+    api?: "chat_completions" | "responses";
+    url?: string;
+    baseUrl?: string;
+    upstreamModel?: string;
     visibility: "private" | "public";
-    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
 }
+
+interface ProxyMyModel extends MyModelBase {
+    type: "proxy";
+    paidOnly: boolean;
+    modality: "text" | "image" | "video" | "transcription" | "embedding";
+    imagePricing: "request" | "tokens";
+    completionImagePrice: number;
+    completionVideoPrice: number;
+    // /account/my-models/test detects edit support from endpoint probes.
+    inputModalities: string[];
+    requiredSafetyFeatures: string[];
+    fallbacks: string[];
+}
+
+interface PromptAgentMyModel extends MyModelBase {
+    type: "prompt_agent";
+}
+
+interface CodeAgentMyModel extends MyModelBase {
+    type: "code_agent";
+}
+
+interface EndpointAgentMyModel extends MyModelBase {
+    type: "endpoint_agent";
+    perUserRpm: number | null;
+}
+
+type MyModel =
+    | ProxyMyModel
+    | PromptAgentMyModel
+    | CodeAgentMyModel
+    | EndpointAgentMyModel;
 
 function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
@@ -73,17 +113,50 @@ function readPriceOptions(opts: Record<string, unknown>) {
     return prices;
 }
 
-function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
+function commaSeparatedList(value: unknown): string[] {
+    return String(value)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function endpointTarget(opts: Record<string, unknown>, required: boolean) {
+    if (
+        opts.api !== undefined ||
+        opts.url !== undefined ||
+        (required && (opts.modality ?? "text") === "text")
+    ) {
+        if (opts.baseUrl !== undefined) {
+            fail("Text endpoints use --api and --url; omit --base-url");
+        }
+        if (opts.modality !== undefined && opts.modality !== "text") {
+            fail("--api and --url are only supported for text endpoints");
+        }
+        if (opts.api !== "chat_completions" && opts.api !== "responses") {
+            fail("--api must be 'chat_completions' or 'responses'");
+        }
+        if (!opts.url) fail("--api and --url must be provided together");
+        return { api: opts.api, url: opts.url };
+    }
+    if (required && !opts.baseUrl) fail("--base-url is required for media");
+    return opts.baseUrl !== undefined ? { baseUrl: opts.baseUrl } : {};
+}
+
+export function modelBody(
+    opts: Record<string, unknown>,
+    includeRequired: boolean,
+) {
     const body: Record<string, unknown> = {
         ...readPriceOptions(opts),
+        ...endpointTarget(opts, includeRequired),
     };
     const fields = [
         ["name", "name"],
         ["title", "title"],
         ["description", "description"],
-        ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
+        ["paidOnly", "paidOnly"],
     ] as const;
 
     for (const [optionKey, bodyKey] of fields) {
@@ -97,30 +170,57 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         body.visibility = opts.visibility;
     }
 
+    // Create only. UpdateEndpointSchema has no modality — a model's family
+    // is fixed at registration, so update must not send this field.
+    if (includeRequired && opts.modality !== undefined) {
+        if (
+            opts.modality !== "text" &&
+            opts.modality !== "image" &&
+            opts.modality !== "video" &&
+            opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
+            opts.modality !== "embedding"
+        ) {
+            fail(
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
+            );
+        }
+        body.modality = opts.modality;
+    }
+
+    if (opts.imagePricing !== undefined) {
+        if (opts.imagePricing !== "request" && opts.imagePricing !== "tokens") {
+            fail("--image-pricing must be 'request' or 'tokens'");
+        }
+        body.imagePricing = opts.imagePricing;
+    }
+
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
-    if (opts.fallbackModels !== undefined) {
-        body.fallbackModelIds = String(opts.fallbackModels)
-            .split(",")
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0);
+    if (opts.fallbacks !== undefined) {
+        body.fallbacks = commaSeparatedList(opts.fallbacks);
     }
 
     if (opts.inputModalities !== undefined) {
-        body.inputModalities = String(opts.inputModalities)
-            .split(",")
-            .map((modality) => modality.trim())
-            .filter((modality) => modality.length > 0);
+        body.inputModalities = commaSeparatedList(opts.inputModalities);
+    }
+
+    if (opts.requiredSafety !== undefined) {
+        body.requiredSafetyFeatures =
+            String(opts.requiredSafety).trim() === "none"
+                ? []
+                : commaSeparatedList(opts.requiredSafety);
     }
 
     if (includeRequired) {
-        for (const required of ["name", "title", "baseUrl", "bearerToken"]) {
+        for (const required of ["name", "title"]) {
             if (!body[required]) {
                 fail(
                     `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
                 );
             }
         }
+        if (!body.bearerToken) fail("--bearer-token is required");
     }
 
     return body;
@@ -136,19 +236,54 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
-            visibility: model.visibility,
-            upstream: model.upstreamModel,
-            base_url: model.baseUrl,
-            fallbacks: model.fallbackModelIds?.join(", ") || "-",
+            type: model.type,
+            modality: model.type === "proxy" ? model.modality : "text",
+            // Price and billing mode read as one unit, so they share a cell
+            // rather than widening an already wide table by two columns.
+            image_price:
+                model.type === "proxy" && model.modality === "image"
+                    ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
+                    : "-",
+            video_price:
+                model.type === "proxy" && model.modality === "video"
+                    ? `${model.completionVideoPrice}/sec`
+                    : "-",
+            inputs:
+                model.type === "proxy"
+                    ? model.inputModalities?.join(", ") || "-"
+                    : "-",
+            visibility:
+                model.type === "proxy" && model.paidOnly
+                    ? `${model.visibility} (paid only)`
+                    : model.visibility,
+            upstream:
+                model.type === "proxy" && model.modality === "video"
+                    ? "-"
+                    : (model.upstreamModel ?? "-"),
+            api:
+                model.type === "prompt_agent" || model.type === "code_agent"
+                    ? "responses"
+                    : (model.api ?? "-"),
+            endpoint: model.url ?? model.baseUrl ?? "-",
+            fallbacks:
+                model.type === "proxy"
+                    ? model.fallbacks?.join(", ") || "-"
+                    : "-",
             description: model.description ?? "-",
         })),
         [
             "id",
             "model",
             "title",
+            "type",
+            "modality",
+            "image_price",
+            "video_price",
+            "inputs",
             "visibility",
             "upstream",
-            "base_url",
+            "api",
+            "endpoint",
             "fallbacks",
             "description",
         ],
@@ -171,24 +306,52 @@ const list = new Command("list")
 
 const create = addPriceOptions(
     new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
+        .description("Register a community model endpoint")
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token")
+        .option(
+            "--base-url <url>",
+            "Media API base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--api <api>",
+            "Text upstream API: chat_completions or responses",
+        )
+        .option("--url <url>", "Exact text endpoint URL for the selected API")
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
+        .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
         )
         .option(
-            "--fallback-models <ids>",
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen (default)")
+        .option(
+            "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
+        )
+        .option(
+            "--modality <modality>",
+            "Model family: text (default), image, video, transcription, or embedding",
+        )
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image, default) or tokens",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -215,20 +378,46 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "Media API base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--api <api>",
+            "Text upstream API: chat_completions or responses (requires --url)",
+        )
+        .option("--url <url>", "Exact text endpoint URL (requires --api)")
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
         )
         .option(
-            "--fallback-models <ids>",
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen")
+        .option(
+            "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
+        )
+        // No --modality here on purpose: UpdateEndpointSchema has no modality
+        // field, so a registered model's family is fixed at creation.
+        .option(
+            "--image-pricing <mode>",
+            "Image billing: request (per image) or tokens",
         ),
 ).action(async (id, opts) => {
     const key = requireKey();
@@ -303,11 +492,38 @@ const models = new Command("models")
 
 const test = new Command("test")
     .description("Test an endpoint/model before registering it")
-    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+    .option(
+        "--base-url <url>",
+        "Media API base URL, or exact video endpoint URL",
+    )
+    .option("--api <api>", "Text upstream API: chat_completions or responses")
+    .option("--url <url>", "Exact text endpoint URL for the selected API")
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
-    .requiredOption("--model <model>", "Upstream model id")
+    .option("--model <model>", "Upstream model id (not used for video)")
+    .option(
+        "--modality <modality>",
+        "Model family: text (default), image, video, transcription, or embedding",
+    )
     .action(async (opts) => {
         const key = requireKey();
+        if (
+            opts.modality !== undefined &&
+            opts.modality !== "text" &&
+            opts.modality !== "image" &&
+            opts.modality !== "video" &&
+            opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
+            opts.modality !== "embedding"
+        ) {
+            fail(
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
+            );
+        }
+        const modality = opts.modality ?? "text";
+        const target = endpointTarget(opts, true);
+        if (modality !== "video" && !opts.model) {
+            fail("--model is required unless --modality is video");
+        }
         try {
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
@@ -315,9 +531,10 @@ const test = new Command("test")
                     apiKey: key,
                     method: "POST",
                     body: {
-                        baseUrl: opts.baseUrl,
+                        ...target,
                         bearerToken: opts.bearerToken,
-                        model: opts.model,
+                        ...(opts.model && { model: opts.model }),
+                        modality,
                     },
                 },
             );
@@ -328,7 +545,9 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community text models")
+    .description(
+        "Manage private and published community text, image, video, transcription, and embedding models",
+    )
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

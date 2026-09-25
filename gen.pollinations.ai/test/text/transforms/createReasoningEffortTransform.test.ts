@@ -82,14 +82,19 @@ describe("reasoning_effort model wiring", () => {
     it.each([
         "glm",
         "kimi",
-        "kimi-code",
         "kimi-k3",
         "deepseek",
         "qwen-large",
         "qwen3.7-flash",
+        "qwen/qwen3.8-flash",
+        "qwen3.8-27b",
+        "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
+        "nemotron-3.5-lightning",
         "minimax",
+        "muse-glimmer",
+        "inception/mercury-2.5-preview",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -100,10 +105,15 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
+        "glm-5.3",
+        "z-ai/glm-5.3-flash",
+        "z-ai/glm-5.3-flashx",
         "minimax-m2.7",
         "step-3.5-flash",
         "step-flash",
         "qwen-vision-pro",
+        "thinkingmachines/inkling",
+        "kimi-code",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

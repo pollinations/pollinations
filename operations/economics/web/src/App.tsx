@@ -1,83 +1,116 @@
 import {
     Alert,
     Button,
+    ChevronIcon,
     Chip,
-    ClockIcon,
     ColorModeToggle,
     cn,
     DatabaseIcon,
+    Drawer,
     EyeIcon,
-    GenApiIcon,
     GlobeIcon,
     Heading,
-    InfoTip,
-    Input,
+    IconButton,
     MenuIcon,
     NavItem,
     RocketIcon,
     ScrollArea,
-    Section,
+    SproutIcon,
     Text,
-    TrendUpIcon,
-    useScrollLock,
+    Tooltip,
+    UsageIcon,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
+import { DashboardAccountMenu } from "@pollinations/ui/auth";
 import logoUrl from "@pollinations/ui/brand/mark.svg";
 import {
     type ComponentType,
     type CSSProperties,
     type ReactNode,
     type RefObject,
-    useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
 } from "react";
+import { signOut } from "./auth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
     FilterBar,
     FilterMultiSelect,
     MonthFilter,
+    YearFilter,
 } from "./components/Filters";
-import type { ProvenanceCode } from "./components/Provenance";
-import { insightVendorOptions, vendorPlanes } from "./lib/insights";
 import {
-    collectMonths,
+    type FacetOption,
+    type LedgerTab,
+    ledgerFacets,
+} from "./lib/filterFacets";
+import {
+    isMonthKey,
     latestClosedMonth,
-    type MonthFilterValue,
+    reportingMonths,
+    WINDOW_START,
+    yearsOf,
 } from "./lib/months";
-import { fixturesMode, loadAll, TbError } from "./lib/tb";
+import type { ProvenanceCode } from "./lib/provenance";
+import { providerAccountBalanceRows } from "./lib/providerBalances";
+import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
-import { CreditsTab } from "./views/CreditsTab";
-import { DataQualityTab } from "./views/DataQualityTab";
-import { EconTab } from "./views/EconTab";
+import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
-import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
-import { PnlTab } from "./views/PnlTab";
+import { ProviderCloseTab } from "./views/ProviderCloseTab";
+import { RevenueShareLedgerTab } from "./views/RevenueShareLedgerTab";
+import { RevenueShareTab } from "./views/RevenueShareTab";
 import { RunwayTab } from "./views/RunwayTab";
+import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
+import { VendorLedgerTab } from "./views/VendorLedgerTab";
 
-type Tab = "data-quality" | "op-transactions" | "op-pollen" | "op-cloud";
-type EconomicsSection = "insights" | "raw";
-type InsightTab = "pnl" | "runway" | "vendors" | "models" | "credits" | "gpu";
+type AccountUser = {
+    email: string;
+    name?: string;
+    picture?: string | null;
+    preferred_username?: string;
+};
 
-function isCompactInsightView(
-    section: EconomicsSection,
-    insightTab: InsightTab,
-) {
-    return (
-        section === "raw" ||
-        (section === "insights" &&
-            (insightTab === "pnl" ||
-                insightTab === "runway" ||
-                insightTab === "credits" ||
-                insightTab === "vendors" ||
-                insightTab === "models" ||
-                insightTab === "gpu"))
-    );
+type InsightTab =
+    | "close"
+    | "runway"
+    | "vendors"
+    | "inference"
+    | "revenue-share"
+    | "balances"
+    | "gpu";
+type ActiveView = InsightTab | LedgerTab;
+
+const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
+    "op-transactions": ["opTransactions"],
+    "vendor-ledger": ["vendorLedger"],
+    "op-pollen": ["opPollen"],
+    "revenue-share-ledger": ["revenueShare"],
+    "revenue-share": ["revenueShare", "opTransactions"],
+    balances: ["vendorLedger", "opTransactions"],
+    runway: [
+        "opTransactions",
+        "vendorLedger",
+        "stripeSales",
+        "userBalances",
+        "privateConfig",
+    ],
+    close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+};
+
+function initialView(): ActiveView {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    return requested && Object.hasOwn(VIEW_SOURCES, requested)
+        ? (requested as ActiveView)
+        : "runway";
 }
 
 const logoMask: CSSProperties = {
@@ -90,135 +123,187 @@ type DrawerItem<Id extends string> = {
     label: string;
     note: string;
     icon: ComponentType<{ className?: string }>;
+    // Ledger-like insight views show their row count once `source` is loaded.
+    source?: DataSource;
+    rows?: (data: Data) => number;
 };
 
-const INSIGHT_TABS: {
-    id: InsightTab;
-    label: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
-}[] = [
-    {
-        id: "pnl",
-        label: "P&L",
-        note: "Strict cash P&L from the signed Wise ledger: revenue inflows minus non-revenue outflows by category.",
-        icon: TrendUpIcon,
-    },
+const INSIGHT_TABS = [
     {
         id: "runway",
         label: "Runway",
-        note: "Cash runway from the signed Wise ledger plus explicit agent- or manually-authored forecast facts.",
+        note: "Stripe sales, Wise bank cash, and forecasts derived from reviewed rules, provider usage, and checked funding.",
         icon: WalletIcon,
     },
     {
-        id: "credits",
-        label: "Credit",
-        note: "Credit burn rate and runway per vendor: credit pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
-        icon: ClockIcon,
-    },
-] satisfies readonly DrawerItem<InsightTab>[];
-
-const UNIT_ECONOMICS_TABS: {
-    id: InsightTab;
-    label: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
-}[] = [
-    {
         id: "vendors",
         label: "Providers",
-        note: "Per-provider unit economics: the Models table rolled up one grain - retained pollen vs provider cash, with credit shown separately.",
+        note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
         icon: GlobeIcon,
     },
     {
-        id: "models",
-        label: "Models",
-        note: "Per-model economics: retained pollen (gross minus byop/model shares) vs provider cash, with credit shown separately.",
-        icon: GenApiIcon,
+        id: "inference",
+        label: "Inference",
+        note: "Managed inference model economics: Paid vs Quest, cash vs credits, cash and after-credit contribution, and vendor-month cost checks.",
+        icon: UsageIcon,
     },
     {
         id: "gpu",
         label: "GPUs",
-        note: "GPU unit economics from OP Cloud GPU burn and OP Pollen demand: rent, paid and quest, margin, efficiency, and break-even.",
+        note: "GPU capacity economics with vendor-pool results above and one direct-cost row per GPU resource below.",
         icon: RocketIcon,
+    },
+    {
+        id: "revenue-share",
+        label: "Rev share",
+        note: "Community-model and BYOP economics by creator, with Paid and Quest rewards kept separate.",
+        icon: SproutIcon,
+    },
+] satisfies readonly DrawerItem<InsightTab>[];
+
+const LEDGER_INSIGHT_TABS = [
+    {
+        id: "close",
+        label: "Close",
+        note: "Monthly close readiness from vendor sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
+        icon: EyeIcon,
+    },
+    {
+        id: "balances",
+        label: "Balances",
+        note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
+        icon: DatabaseIcon,
+        source: "vendorLedger",
+        rows: (data) => providerAccountBalanceRows(data, new Date()).length,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
 const ALL_INSIGHT_TABS = [
     ...INSIGHT_TABS,
-    ...UNIT_ECONOMICS_TABS,
+    ...LEDGER_INSIGHT_TABS,
 ] satisfies readonly DrawerItem<InsightTab>[];
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
-const TABS: {
-    id: Tab;
-    label: string;
+type LedgerDrawerItem = DrawerItem<LedgerTab> & {
+    source: DataSource;
     codes: ProvenanceCode[];
     pipe: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
     rows: (data: Data) => number;
-}[] = [
-    {
-        id: "data-quality",
-        label: "Data Quality",
-        codes: ["WISE", "API", "CLI", "BQ", "HC", "TB"],
-        pipe: "op_transactions_api + op_cloud_api + op_pollen_api",
-        note: "OP row quality by vendor and month: OP Transactions, OP Cloud burn, and OP Pollen metering - missing witnesses and calibration drift sort first.",
-        icon: EyeIcon,
-        rows: (data) => vendorPlanes(data).length,
-    },
+};
+
+const TABS = [
     {
         id: "op-transactions",
-        label: "Transactions",
+        source: "opTransactions",
+        label: "Bank",
         codes: ["WISE"],
-        pipe: "op_transactions_api",
-        note: "New signed Wise cash ledger: money in is positive, money out is negative. Construction comments mark unmatched vendors.",
+        pipe: "economics_bank_ledger_api",
+        note: "Wise-derived bank ledger in native currency: signed cash movements plus one statement-backed opening-balance anchor. Drive evidence links to transaction documents.",
         icon: DatabaseIcon,
-        rows: (data) => data.opTransactions?.length ?? 0,
+        rows: (data) =>
+            (data.opTransactions ?? []).filter(
+                (row) => row.date.slice(0, 7) >= WINDOW_START,
+            ).length,
+    },
+    {
+        id: "vendor-ledger",
+        source: "vendorLedger",
+        label: "Vendor",
+        codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
+        pipe: "economics_vendor_ledger_api",
+        note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
+        icon: DatabaseIcon,
+        rows: (data) =>
+            (data.vendorLedger ?? []).filter(
+                (row) => row.start.slice(0, 7) >= WINDOW_START,
+            ).length,
     },
     {
         id: "op-pollen",
+        source: "opPollen",
         label: "Pollen",
         codes: ["TB"],
-        pipe: "op_pollen_api",
-        note: "New Pollen usage table with paid/quest money splits and paid/quest request counts.",
+        pipe: "economics_pollen_usage_api",
+        note: "Monthly canonical vendor and internal-model usage with Paid/Quest customer price, metered cost, ecosystem shares, and request counts.",
         icon: DatabaseIcon,
-        rows: (data) => data.opPollen?.length ?? 0,
+        rows: (data) =>
+            (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
+                .length,
     },
     {
-        id: "op-cloud",
-        label: "Cloud",
-        codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
-        pipe: "op_cloud_api",
-        note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and credit as signed cloud facts.",
+        id: "revenue-share-ledger",
+        source: "revenueShare",
+        label: "Rev share",
+        codes: ["TB"],
+        pipe: "economics_revenue_share_api",
+        note: "Monthly creator-earning ledger by creator and App or Community Model. Paid and Quest earnings remain separate; associated usage can overlap when one request has both source types.",
         icon: DatabaseIcon,
-        rows: (data) => data.opCloud?.length ?? 0,
+        rows: (data) =>
+            (data.revenueShare ?? []).filter(
+                (row) => row.row_type === "source" && row.month >= WINDOW_START,
+            ).length,
     },
-];
+] satisfies readonly LedgerDrawerItem[];
 
-function codesLabel(codes: readonly ProvenanceCode[]) {
-    return codes.length ? `${codes.join(", ")} · ` : "";
+const LEDGER_SOURCES = TABS.map((item) => item.source);
+
+// Fill the ledger sources missing from `target` with the ones `donor` holds.
+function withLedgerSources(target: Data, donor: Data | null): Data {
+    if (!donor) return target;
+    const filled = { ...target };
+    for (const source of LEDGER_SOURCES) {
+        if (filled[source] == null && donor[source] != null) {
+            (filled as Record<DataSource, unknown>)[source] = donor[source];
+        }
+    }
+    return filled;
 }
 
-function MobileMenuButton({
+function isLedgerTab(value: ActiveView): value is LedgerTab {
+    return TABS.some((item) => item.id === value);
+}
+
+const NAV_COLLAPSED_KEY = "economics.nav.collapsed";
+
+function readNavCollapsed() {
+    try {
+        return window.localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function writeNavCollapsed(collapsed: boolean) {
+    try {
+        window.localStorage.setItem(NAV_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+        // Storage can be unavailable; the fold then lasts for the session.
+    }
+}
+
+function NavMenuButton({
     buttonRef,
+    desktopVisible,
     onOpen,
 }: {
     buttonRef: RefObject<HTMLButtonElement | null>;
+    desktopVisible: boolean;
     onOpen: () => void;
 }) {
     return (
-        <button
+        <IconButton
             ref={buttonRef}
-            type="button"
-            className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+            size="md"
+            className={cn(
+                "fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque",
+                !desktopVisible && "md:hidden",
+            )}
             onClick={onOpen}
-            aria-label="Open navigation"
         >
             <MenuIcon className="h-5 w-5" />
-        </button>
+            <span className="sr-only">Open navigation</span>
+        </IconButton>
     );
 }
 
@@ -245,23 +330,44 @@ function DrawerGroup({
 }
 
 function EconomicsNav({
+    activeView,
     data,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     data: Data | null;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
+    const insightItem = (item: DrawerItem<InsightTab>) => {
+        const count =
+            item.rows && item.source && data?.[item.source] != null
+                ? item.rows(data)
+                : null;
+        return (
+            <NavItem
+                key={item.id}
+                type="button"
+                data-theme="accent"
+                icon={item.icon}
+                active={activeView === item.id}
+                onClick={() => onViewChange(item.id)}
+            >
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {count == null ? null : (
+                    <Chip
+                        data-theme="neutral"
+                        intent="neutral"
+                        size="sm"
+                        className="ml-auto bg-transparent text-theme-text-soft"
+                    >
+                        {count}
+                    </Chip>
+                )}
+            </NavItem>
+        );
+    };
     const rawItem = (item: (typeof TABS)[number]) => {
-        const count = data ? item.rows(data) : null;
-        const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
+        const count = data?.[item.source] != null ? item.rows(data) : null;
 
         return (
             <NavItem
@@ -269,9 +375,8 @@ function EconomicsNav({
                 type="button"
                 data-theme="accent"
                 icon={item.icon}
-                active={section === "raw" && tab === item.id}
-                title={title}
-                onClick={() => onRawTabChange(item.id)}
+                active={activeView === item.id}
+                onClick={() => onViewChange(item.id)}
             >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {count == null ? null : (
@@ -291,60 +396,28 @@ function EconomicsNav({
     return (
         <nav className="flex flex-col gap-5 pr-2" aria-label="Economics views">
             <DrawerGroup label="Insights">
-                {INSIGHT_TABS.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={
-                            section === "insights" && insightTab === item.id
-                        }
-                        title={item.note}
-                        onClick={() => onInsightTabChange(item.id)}
-                    >
-                        {item.label}
-                    </NavItem>
-                ))}
+                {INSIGHT_TABS.map(insightItem)}
             </DrawerGroup>
-            <DrawerGroup label="Unit Economics">
-                {UNIT_ECONOMICS_TABS.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={
-                            section === "insights" && insightTab === item.id
-                        }
-                        title={item.note}
-                        onClick={() => onInsightTabChange(item.id)}
-                    >
-                        {item.label}
-                    </NavItem>
-                ))}
+            <DrawerGroup label="Ledgers">
+                {LEDGER_INSIGHT_TABS.map(insightItem)}
+                {TABS.map(rawItem)}
             </DrawerGroup>
-            <DrawerGroup label="Raw">{TABS.map(rawItem)}</DrawerGroup>
         </nav>
     );
 }
 
 function EconomicsDrawer({
+    activeView,
     data,
     footer,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onCollapse,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     data: Data | null;
     footer: ReactNode;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onCollapse?: () => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
     return (
         <aside
@@ -352,17 +425,24 @@ function EconomicsDrawer({
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
             aria-label="Economics navigation"
         >
-            <div className="hidden shrink-0 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:block">
+            <div className="hidden shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:flex">
                 <EconomicsBrand size="desktop" />
+                {onCollapse && (
+                    <IconButton
+                        size="sm"
+                        className="shrink-0 text-theme-text-soft hover:text-theme-text-strong"
+                        onClick={onCollapse}
+                    >
+                        <ChevronIcon className="h-4 w-4 rotate-90" />
+                        <span className="sr-only">Hide navigation</span>
+                    </IconButton>
+                )}
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <EconomicsNav
+                    activeView={activeView}
                     data={data}
-                    section={section}
-                    tab={tab}
-                    insightTab={insightTab}
-                    onRawTabChange={onRawTabChange}
-                    onInsightTabChange={onInsightTabChange}
+                    onViewChange={onViewChange}
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
@@ -373,124 +453,109 @@ function EconomicsDrawer({
 }
 
 function EconomicsShell({
+    activeView,
     children,
     data,
     footer,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     children: ReactNode;
     data: Data | null;
     footer: ReactNode;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const drawerRef = useRef<HTMLDivElement>(null);
+    const [collapsed, setCollapsed] = useState(readNavCollapsed);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-    useScrollLock(isDrawerOpen);
-
-    const closeDrawer = useCallback(() => {
-        const activeElement = document.activeElement;
-        if (
-            activeElement instanceof HTMLElement &&
-            drawerRef.current?.contains(activeElement)
-        ) {
-            menuButtonRef.current?.focus({ preventScroll: true });
-        }
-        setIsDrawerOpen(false);
-    }, []);
-
-    useEffect(() => {
-        if (!isDrawerOpen) return;
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") closeDrawer();
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [closeDrawer, isDrawerOpen]);
-
-    const handleInsightTabChange = (value: InsightTab) => {
-        onInsightTabChange(value);
-        closeDrawer();
+    const setNavCollapsed = (value: boolean) => {
+        setCollapsed(value);
+        writeNavCollapsed(value);
     };
-    const handleRawTabChange = (value: Tab) => {
-        onRawTabChange(value);
+
+    const openNav = () => {
+        // On desktop the floating button unfolds the sidebar; on mobile it
+        // opens the overlay drawer.
+        if (collapsed && window.matchMedia("(min-width: 768px)").matches) {
+            setNavCollapsed(false);
+            return;
+        }
+        setIsDrawerOpen(true);
+    };
+
+    const closeDrawer = () => {
+        setIsDrawerOpen(false);
+        menuButtonRef.current?.focus({ preventScroll: true });
+    };
+
+    const handleViewChange = (value: ActiveView) => {
+        onViewChange(value);
         closeDrawer();
     };
 
     const drawer = (
         <EconomicsDrawer
+            activeView={activeView}
             data={data}
             footer={footer}
-            section={section}
-            tab={tab}
-            insightTab={insightTab}
-            onRawTabChange={handleRawTabChange}
-            onInsightTabChange={handleInsightTabChange}
+            onViewChange={handleViewChange}
         />
     );
 
     return (
         <div
             data-theme="amber"
-            className="flex h-dvh min-h-0 overflow-hidden bg-app-bg text-theme-text-strong"
+            className="flex h-dvh min-h-0 overflow-hidden bg-app-bg font-body text-theme-text-strong"
         >
-            <div className="hidden md:block">{drawer}</div>
-            <div
-                ref={drawerRef}
-                className={`fixed inset-0 z-40 transition-[visibility] md:hidden ${
-                    isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]"
-                }`}
-                aria-hidden={!isDrawerOpen}
-                inert={!isDrawerOpen}
-            >
-                <button
-                    type="button"
-                    className={`absolute inset-0 bg-black/40 transition-opacity duration-[420ms] ease-out ${
-                        isDrawerOpen ? "opacity-100" : "opacity-0"
-                    }`}
-                    onClick={closeDrawer}
-                    aria-label="Close navigation"
+            <div className={collapsed ? "hidden" : "hidden md:block"}>
+                <EconomicsDrawer
+                    activeView={activeView}
+                    data={data}
+                    footer={footer}
+                    onCollapse={() => setNavCollapsed(true)}
+                    onViewChange={handleViewChange}
                 />
-                <div
-                    className={`absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
-                        isDrawerOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
-                >
-                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
-                        <EconomicsBrand size="drawer" />
-                        <button
-                            type="button"
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                            onClick={closeDrawer}
-                            aria-label="Close navigation"
-                        >
-                            <XIcon className="h-5 w-5" />
-                        </button>
-                    </div>
-                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {drawer}
-                    </div>
-                </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-                <MobileMenuButton
+            <Drawer
+                open={isDrawerOpen}
+                onOpenChange={(open) => {
+                    if (open) setIsDrawerOpen(true);
+                    else closeDrawer();
+                }}
+                ariaLabel="Economics navigation"
+                contentClassName="md:hidden"
+            >
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
+                    <EconomicsBrand size="drawer" />
+                    <IconButton
+                        size="md"
+                        className="shrink-0 bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                        onClick={closeDrawer}
+                    >
+                        <XIcon className="h-5 w-5" />
+                        <span className="sr-only">Close navigation</span>
+                    </IconButton>
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    {drawer}
+                </div>
+            </Drawer>
+            <div
+                className={cn(
+                    "flex min-w-0 flex-1 flex-col",
+                    !collapsed && "md:ml-60",
+                )}
+            >
+                <NavMenuButton
                     buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
+                    desktopVisible={collapsed}
+                    onOpen={openNav}
                 />
-                <ScrollArea axis="y" className="min-h-0 flex-1">
+                <ScrollArea
+                    axis="y"
+                    className={cn("min-h-0 flex-1", collapsed && "md:pt-10")}
+                >
                     {children}
                 </ScrollArea>
             </div>
@@ -528,304 +593,281 @@ function EconomicsBrand({ size }: { size: "desktop" | "drawer" }) {
     );
 }
 
-function activeViewTitle(
-    section: EconomicsSection,
-    tab: Tab,
-    insightTab: InsightTab,
-) {
-    if (section === "insights") {
-        if (insightTab === "vendors") return "Providers";
-        if (insightTab === "models") return "Models";
-        return (
-            ALL_INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? ""
-        );
+function activeViewTitle(activeView: ActiveView) {
+    if (isLedgerTab(activeView)) {
+        return TABS.find((item) => item.id === activeView)?.label ?? "";
     }
-    return TABS.find((item) => item.id === tab)?.label ?? "";
+    return ALL_INSIGHT_TABS.find((item) => item.id === activeView)?.label ?? "";
 }
 
-function InfoLine({ children }: { children: ReactNode }) {
-    return <span className="block">• {children}</span>;
+function InfoItem({ lead, children }: { lead: string; children: ReactNode }) {
+    return (
+        <span className="block leading-snug">
+            <strong className="font-semibold">{lead}.</strong> {children}
+        </span>
+    );
 }
 
-function viewInfoContent(
-    section: EconomicsSection,
-    tab: Tab,
-    insightTab: InsightTab,
-) {
-    if (section === "raw") {
-        if (tab === "data-quality") {
-            return (
-                <span className="block max-w-72">
-                    <strong>Data Quality</strong>
-                    <InfoLine>One row per vendor-month.</InfoLine>
-                    <InfoLine>
-                        Compares OP Transactions payment witnesses, OP Cloud
-                        burn, and OP Pollen metering directly.
-                    </InfoLine>
-                    <InfoLine>
-                        Missing witnesses and calibration drift sort first.
-                    </InfoLine>
-                </span>
-            );
-        }
-        const active = TABS.find((item) => item.id === tab);
+function ViewInfo({ children }: { children: ReactNode }) {
+    return (
+        <span className="block max-w-full space-y-2.5 text-left">
+            {children}
+        </span>
+    );
+}
+
+// The one explanatory hover per page: the "i" next to the title. Wider than
+// the default tooltip and clamped to the viewport, since it sits at the
+// right edge of the page.
+function PageTip({ content, label }: { content: ReactNode; label: string }) {
+    return (
+        <Tooltip content={content} ariaLabel={label} maxWidth={380}>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-theme-border bg-theme-bg-active font-bold text-[10px] text-theme-text-strong leading-none transition-colors hover:bg-theme-bg-hover">
+                i
+            </span>
+        </Tooltip>
+    );
+}
+
+function viewInfoContent(activeView: ActiveView) {
+    if (isLedgerTab(activeView)) {
+        const active = TABS.find((item) => item.id === activeView);
         if (!active) return null;
         return (
-            <span className="block max-w-72">
-                <strong>{active.label}</strong>
-                <InfoLine>{active.note}</InfoLine>
-                <InfoLine>
-                    Source: <strong>{active.pipe}</strong>
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">{active.note}</InfoItem>
+                <InfoItem lead="Source">{active.pipe}</InfoItem>
+            </ViewInfo>
         );
     }
-
-    if (insightTab === "vendors") {
+    if (activeView === "vendors") {
         return (
-            <span className="block max-w-72">
-                <strong>Providers</strong>
-                <InfoLine>Models rolled up by provider.</InfoLine>
-                <InfoLine>
-                    Compare retained paid pollen against provider cash.
-                </InfoLine>
-                <InfoLine>
-                    Open <strong>Models</strong> to inspect each model per
-                    provider.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    One vendor-month across managed inference and GPU capacity.
+                    Shared infrastructure is excluded.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Mixed modes">
+                    Vendor totals hold when a vendor serves both modes; the
+                    split stays unallocated until Pollen records delivery mode
+                    per request.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Result and Performance use full vendor cost, consumed
+                    credits included.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (insightTab === "models") {
+    if (activeView === "inference") {
         return (
-            <span className="block max-w-72">
-                <strong>Models</strong>
-                <InfoLine>One row per model per provider.</InfoLine>
-                <InfoLine>
-                    Provider calibration gives usage; credit is shown separately
-                    from provider cash.
-                </InfoLine>
-                <InfoLine>
-                    Quest burn is shown separately from paid margin.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Managed-inference vendor-months only. The current month is
+                    partial; mixed inference and GPU months stay unallocated.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Model costs">
+                    Vendor-month totals are authoritative. Models use exact
+                    matched provider evidence; unmatched cost stays unallocated.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus cash and consumed credits. Performance
+                    divides that by retained Paid; cost checks stay at vendor
+                    level.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (insightTab === "credits") {
+    if (activeView === "revenue-share") {
         return (
-            <span className="block max-w-72">
-                <strong>Credit</strong>
-                <InfoLine>Current credit runway, not a period view.</InfoLine>
-                <InfoLine>
-                    Remaining is credited amount minus witnessed credit burn.
-                </InfoLine>
-                <InfoLine>
-                    Depletion is the earlier of burn-out or expiry.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">
+                    One per creator, combining their BYOP apps and Community
+                    models. A request counts for every creator whose app or
+                    model took part.
+                </InfoItem>
+                <InfoItem lead="Profit">
+                    Paid usage minus every creator earning and the external
+                    model cost. The cards count each request once even when two
+                    creators took part.
+                </InfoItem>
+                <InfoItem lead="Quest and settlements">
+                    Quest earnings are not cashable. Settlements appear only
+                    after a Bank movement is classified as a creator payout.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (insightTab === "pnl") {
+    if (activeView === "close") {
         return (
-            <span className="block max-w-72">
-                <strong>P&amp;L</strong>
-                <InfoLine>
-                    OP Transaction revenue minus non-revenue cash spend.
-                </InfoLine>
-                <InfoLine>
-                    Revenue is category=revenue; spend is the operational
-                    category set.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Vendor rows">
+                    Archived source coverage, active accounts, and whether usage
+                    was cash- or credit-funded.
+                </InfoItem>
+                <InfoItem lead="Month result">
+                    Adds the transaction-document, vendor-mapping,
+                    row-integrity, duplicate and FX checks shown in the
+                    integrity history below.
+                </InfoItem>
+                <InfoItem lead="Ready">
+                    Means the books are ready to file, not legally filed; e-MTA
+                    confirmation is not tracked. Invoices and bank entries stay
+                    in Bank.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (insightTab === "runway") {
+    if (activeView === "balances") {
         return (
-            <span className="block max-w-72">
-                <strong>Runway</strong>
-                <InfoLine>
-                    Actual cash comes from OP Transactions; future cash comes
-                    from explicit OP Runway facts.
-                </InfoLine>
-                <InfoLine>
-                    The current month keeps Current Wise actuals and the
-                    authored full-month Forecast in separate columns.
-                </InfoLine>
-                <InfoLine>
-                    Cloud consumption can inform the forecast, but running cash
-                    remains cash-based.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Current vendor balances; the selected period does not limit
+                    this page. Open a vendor for its monthly history.
+                </InfoItem>
+                <InfoItem lead="Cash prepaid">
+                    Payments minus cash-funded usage: a ledger estimate, not a
+                    live vendor wallet. Payments and documents stay in Bank.
+                </InfoItem>
+                <InfoItem lead="Free credit">
+                    Recorded grants minus credit-funded usage and expired
+                    capacity.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (insightTab === "gpu") {
+    if (activeView === "runway") {
         return (
-            <span className="block max-w-72">
-                <strong>GPU Economics</strong>
-                <InfoLine>
-                    One row per GPU, provider, and model from OP Cloud GPU burn.
-                </InfoLine>
-                <InfoLine>
-                    OP Pollen adds requests, paid, and quest by vendor and
-                    model.
-                </InfoLine>
-                <InfoLine>
-                    Flags mark missing model, unknown GPU, or no matching
-                    Pollen.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Cash">
+                    Cash change and Cash balance are the Wise bank ledger. The
+                    forecast columns and running cash stay cash-based.
+                </InfoItem>
+                <InfoItem lead="Revenue">
+                    What entered Stripe in the month, net of Stripe fees, with
+                    refunds and reversals on one line. Wise payouts are cash
+                    only and are not reconciled against it.
+                </InfoItem>
+                <InfoItem lead="Expenses">
+                    Compute and Infrastructure come from the vendor ledger by
+                    service month; every other category is bank cash. Expand a
+                    category for its vendors.
+                </InfoItem>
+                <InfoItem lead="Gray figures">
+                    Usage paid with provider credits, shown in parentheses
+                    beside the cash figure. Not cash, never in the sums.
+                </InfoItem>
+                <InfoItem lead="Not reconciled">
+                    Unpaid bills, prepaid balances and the Stripe float stay out
+                    of the table, so the lines do not add up to Cash change. A
+                    paid vendor without ledger rows is a warning, never a cash
+                    fallback.
+                </InfoItem>
+                <InfoItem lead="Current month">
+                    Bank movements to date and the full-month plan sit in
+                    separate columns.
+                </InfoItem>
+            </ViewInfo>
+        );
+    }
+    if (activeView === "gpu") {
+        return (
+            <ViewInfo>
+                <InfoItem lead="Cards">
+                    The selected month at vendor-pool level: retained Paid,
+                    Quest usage, cash, consumed credits, full-cost result.
+                </InfoItem>
+                <InfoItem lead="Table">
+                    One row per verified workload. Expand one for every billed
+                    GPU resource with its usage and cost.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus the full mapped workload cost.
+                    Efficiency is that result divided by retained Paid.
+                </InfoItem>
+                <InfoItem lead="Limits">
+                    Pollen does not identify the serving replica, so efficiency
+                    stays at workload level. Unknown short-lived resources and
+                    shared overhead stay visible instead of being guessed.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     return null;
 }
 
-function vendorOptionsForTab(data: Data | null, tab: Tab) {
-    if (!data) return ["all"];
-
-    const vendors = new Set<string>();
-    const add = (value: string) => {
-        const vendor = value.trim();
-        if (vendor) vendors.add(vendor);
-    };
-
-    if (tab === "data-quality") {
-        return insightVendorOptions(data);
-    }
-    if (tab === "op-transactions") {
-        for (const row of data.opTransactions ?? []) add(row.vendor);
-    } else if (tab === "op-pollen") {
-        for (const row of data.opPollen ?? []) add(row.vendor);
-    } else if (tab === "op-cloud") {
-        for (const row of data.opCloud ?? []) add(row.vendor);
-    }
-
-    return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
+export default function App({ accountUser }: { accountUser: AccountUser }) {
+    return <Dashboard accountUser={accountUser} />;
 }
 
-async function checkSession() {
-    const res = await fetch("/api/auth/session");
-    if (!res.ok) return false;
-    const body = (await res.json()) as { authenticated?: boolean };
-    return body.authenticated === true;
-}
-
-async function login(password: string) {
-    const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-    });
-    if (!res.ok) {
-        throw new Error(res.status === 401 ? "Wrong password" : "Login failed");
-    }
-}
-
-function activeMonthFilter(selected: readonly string[]): MonthFilterValue {
-    if (selected.length === 0) return "";
-    return selected.length === 1 ? selected[0] : selected;
-}
-
-function PasswordGate({
-    error,
-    onSubmit,
-}: {
-    error: string | null;
-    onSubmit: (password: string) => void;
-}) {
-    const [value, setValue] = useState("");
-
-    return (
-        <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 px-4">
-            <Heading as="h1">Economics</Heading>
-            <Text tone="soft">
-                Enter the economics password. Tinybird tokens stay on the
-                server.
-            </Text>
-            {error && <Alert intent="warning">{error}</Alert>}
-            <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    if (value) onSubmit(value);
-                }}
-            >
-                <Input
-                    type="password"
-                    autoFocus
-                    placeholder="Password"
-                    value={value}
-                    onChange={(event) => setValue(event.target.value)}
-                    className="flex-1"
-                />
-                <Button type="submit" className="self-start">
-                    Connect
-                </Button>
-            </form>
-        </div>
-    );
-}
-
-export default function App() {
+function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const fixtures = fixturesMode();
-    const [authenticated, setAuthenticated] = useState(fixtures);
-    const [sessionChecked, setSessionChecked] = useState(fixtures);
-    const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [tab, setTab] = useState<Tab>("op-transactions");
-    const [section, setSection] = useState<EconomicsSection>("insights");
-    const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
-    const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+    const [activeView, setActiveView] = useState<ActiveView>(initialView);
+    const [loadedView, setLoadedView] = useState<ActiveView | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const month =
+            new URLSearchParams(window.location.search).get("month") ?? "";
+        return isMonthKey(month) ? month : "";
+    });
+    const [runwayYear, setRunwayYear] = useState("2026");
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
-    const monthFilterInitialized = useRef(false);
-    const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
-        if (fixtures) return;
-
-        let cancelled = false;
-        checkSession()
-            .then((ok) => {
-                if (!cancelled) {
-                    setAuthenticated(ok);
-                    setSessionChecked(true);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                }
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [fixtures]);
-
-    useEffect(() => {
-        if (!ready) return;
-
         const retryKey = attempt;
         let cancelled = false;
+        const controller = new AbortController();
         setError(null);
-        loadAll()
+        setLoading(true);
+        setLoadedView(null);
+        loadAll(VIEW_SOURCES[activeView], controller.signal)
             .then((loaded) => {
-                if (!cancelled && retryKey === attempt) setData(loaded);
+                if (cancelled || retryKey !== attempt) return;
+                // Keep the ledger sources already in memory so the row-count
+                // chips stay populated across view switches.
+                let merged = loaded;
+                setData((current) => {
+                    merged = withLedgerSources(loaded, current);
+                    return merged;
+                });
+                setLoadedView(activeView);
+                setLoading(false);
+                const missing = LEDGER_SOURCES.filter(
+                    (source) => merged[source] == null,
+                );
+                if (missing.length === 0) return;
+                loadAll(missing, controller.signal)
+                    .then((extra) => {
+                        if (cancelled || retryKey !== attempt) return;
+                        setData((current) =>
+                            current
+                                ? withLedgerSources(current, extra)
+                                : current,
+                        );
+                    })
+                    .catch(() => {
+                        // Counts stay hidden for the sources that failed; the
+                        // active view is unaffected.
+                    });
             })
             .catch((caught: unknown) => {
                 if (cancelled || retryKey !== attempt) return;
+                setLoading(false);
 
-                if (
-                    caught instanceof TbError &&
-                    (caught.status === 401 || caught.status === 403)
-                ) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                    setAuthError(
-                        `Session rejected (${caught.message}) - enter the password again.`,
-                    );
+                if (caught instanceof TbError && caught.status === 401) {
+                    window.location.reload();
                 } else {
                     setError(
                         caught instanceof Error
@@ -837,182 +879,131 @@ export default function App() {
 
         return () => {
             cancelled = true;
+            controller.abort();
         };
-    }, [ready, attempt]);
+    }, [attempt, activeView]);
 
-    const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
-    const monthFilter = useMemo(
-        () => activeMonthFilter(selectedMonths),
-        [selectedMonths],
-    );
-    const vendorOptions = useMemo(
-        () => vendorOptionsForTab(data, tab),
-        [data, tab],
-    );
-    const insightVendors = useMemo(
-        () => (data ? insightVendorOptions(data) : ["all"]),
-        [data],
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", activeView);
+        if (selectedMonth) url.searchParams.set("month", selectedMonth);
+        window.history.replaceState(null, "", url);
+    }, [activeView, selectedMonth]);
+
+    const viewData =
+        !error && loadedView === activeView && !loading ? data : null;
+
+    const months = reportingMonths();
+    const reportingYears = useMemo(() => yearsOf(months), [months]);
+    const monthFilter = months.includes(selectedMonth)
+        ? selectedMonth
+        : (latestClosedMonth(months) ?? "");
+    const selectedYear = monthFilter.slice(0, 4) || reportingYears.at(-1) || "";
+    const activeLedgerTab = isLedgerTab(activeView)
+        ? activeView
+        : "op-transactions";
+    const rawFacets = useMemo(
+        () =>
+            data
+                ? ledgerFacets(data, activeLedgerTab, {
+                      month: monthFilter,
+                      vendors: selectedVendors,
+                      categories: selectedCategories,
+                  })
+                : {
+                      vendors: [] as FacetOption[],
+                      categories: [] as FacetOption[],
+                  },
+        [
+            activeLedgerTab,
+            data,
+            monthFilter,
+            selectedCategories,
+            selectedVendors,
+        ],
     );
     const showVendorFilter =
-        section === "insights"
-            ? insightTab !== "pnl" &&
-              insightTab !== "runway" &&
-              insightTab !== "credits" &&
-              insightVendors.length > 1
-            : vendorOptions.length > 1;
-    const activeVendorOptions =
-        section === "insights" ? insightVendors : vendorOptions;
-    const selectableVendorOptions = useMemo(
-        () => activeVendorOptions.filter((option) => option !== "all"),
-        [activeVendorOptions],
-    );
+        isLedgerTab(activeView) && rawFacets.vendors.length > 0;
     const showPeriodFilter =
-        (section === "insights" &&
-            insightTab !== "credits" &&
-            insightTab !== "runway") ||
-        section === "raw";
-    const showCategoryFilter = section === "raw" && tab === "op-transactions";
-    const showTypeFilter = section === "raw" && tab === "op-cloud";
+        activeView !== "balances" && activeView !== "runway";
+    const showRunwayYearFilter = activeView === "runway";
+    const showTopMonthFilter = showPeriodFilter && activeView !== "close";
+    const showCategoryFilter = activeView === "op-transactions";
     const hasFilters =
         showPeriodFilter ||
+        showRunwayYearFilter ||
         showVendorFilter ||
-        showCategoryFilter ||
-        showTypeFilter;
-    const categoryOptions = useMemo(() => {
-        const categories = new Set<string>();
-        for (const row of data?.opTransactions ?? []) {
-            if (row.category) categories.add(row.category);
-        }
-        return [...categories].sort((a, b) => a.localeCompare(b));
-    }, [data]);
-    const typeOptions = useMemo(() => {
-        const types = new Set<string>();
-        for (const row of data?.opCloud ?? []) {
-            if (row.type) types.add(row.type);
-        }
-        return [...types].sort((a, b) => a.localeCompare(b));
-    }, [data]);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-
-    useEffect(() => {
-        if (!monthFilterInitialized.current && months.length > 0) {
-            monthFilterInitialized.current = true;
-            const initialMonth = latestClosedMonth(months);
-            setSelectedMonths(initialMonth ? [initialMonth] : []);
-            return;
-        }
-        setSelectedMonths((current) =>
-            current.filter((month) => months.includes(month)),
-        );
-    }, [months]);
-    useEffect(() => {
-        setSelectedVendors((current) =>
-            current.filter((vendor) =>
-                selectableVendorOptions.includes(vendor),
-            ),
-        );
-    }, [selectableVendorOptions]);
-    useEffect(() => {
-        setSelectedCategories((current) =>
-            current.filter((category) => categoryOptions.includes(category)),
-        );
-    }, [categoryOptions]);
-    useEffect(() => {
-        setSelectedTypes((current) =>
-            current.filter((type) => typeOptions.includes(type)),
-        );
-    }, [typeOptions]);
-
-    if (!sessionChecked) {
-        return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
-                <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <div className="mx-auto mt-24 max-w-md px-4">
-                        <Text tone="soft">Checking session...</Text>
-                    </div>
-                </ScrollArea>
-            </div>
-        );
-    }
-
-    if (!ready) {
-        return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
-                <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <PasswordGate
-                        error={authError}
-                        onSubmit={(password) => {
-                            login(password)
-                                .then(() => {
-                                    setAuthError(null);
-                                    setAuthenticated(true);
-                                    setSessionChecked(true);
-                                    setAttempt((current) => current + 1);
-                                })
-                                .catch((caught: unknown) => {
-                                    setAuthError(
-                                        caught instanceof Error
-                                            ? caught.message
-                                            : String(caught),
-                                    );
-                                });
-                        }}
-                    />
-                </ScrollArea>
-            </div>
-        );
-    }
+        showCategoryFilter;
 
     const drawerFooter = (
         <>
+            {accountUser && (
+                <DashboardAccountMenu
+                    user={accountUser}
+                    onSignOut={signOut}
+                    className="polli:w-full"
+                    side="top"
+                />
+            )}
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
             </div>
-            <div className="flex items-center justify-between gap-2">
-                <span />
+            <div className="flex items-center justify-end gap-2">
                 <ColorModeToggle />
             </div>
         </>
     );
-    const viewTitle = activeViewTitle(section, tab, insightTab);
-    const viewInfo = viewInfoContent(section, tab, insightTab);
-    const isCompactInsight = isCompactInsightView(section, insightTab);
+    const viewTitle = activeViewTitle(activeView);
+    const viewInfo = viewInfoContent(activeView);
     const filters = hasFilters ? (
         <FilterBar>
-            {showPeriodFilter && (
+            {(showPeriodFilter || showRunwayYearFilter) && (
+                <YearFilter
+                    years={
+                        showRunwayYearFilter ? ["2026", "2027"] : reportingYears
+                    }
+                    value={showRunwayYearFilter ? runwayYear : selectedYear}
+                    onChange={(year) => {
+                        if (showRunwayYearFilter) {
+                            setRunwayYear(year);
+                            return;
+                        }
+                        const yearMonths = months.filter((month) =>
+                            month.startsWith(year),
+                        );
+                        if (!monthFilter.startsWith(year)) {
+                            setSelectedMonth(
+                                latestClosedMonth(yearMonths) ??
+                                    yearMonths.at(-1) ??
+                                    "",
+                            );
+                        }
+                    }}
+                />
+            )}
+            {showTopMonthFilter && (
                 <MonthFilter
                     months={months}
-                    value={selectedMonths}
-                    onChange={setSelectedMonths}
+                    year={selectedYear}
+                    value={monthFilter}
+                    onChange={setSelectedMonth}
                 />
             )}
             <div className="flex flex-wrap items-center gap-3">
                 {showVendorFilter && (
                     <FilterMultiSelect
-                        label="vendor"
                         value={selectedVendors}
                         onChange={setSelectedVendors}
-                        options={selectableVendorOptions}
+                        options={rawFacets.vendors}
                         placeholder="All vendors"
                     />
                 )}
                 {showCategoryFilter && (
                     <FilterMultiSelect
-                        label="category"
                         value={selectedCategories}
                         onChange={setSelectedCategories}
-                        options={categoryOptions}
+                        options={rawFacets.categories}
                         placeholder="All categories"
-                    />
-                )}
-                {showTypeFilter && (
-                    <FilterMultiSelect
-                        label="type"
-                        value={selectedTypes}
-                        onChange={setSelectedTypes}
-                        options={typeOptions}
-                        placeholder="All types"
                     />
                 )}
             </div>
@@ -1033,71 +1024,64 @@ export default function App() {
                     </div>
                 </Alert>
             )}
-            {!error && !data && <Text tone="soft">Loading pipes...</Text>}
+            {!error && !viewData && <Text tone="soft">Loading this view…</Text>}
             <ErrorBoundary
-                resetKey={`${section}:${tab}:${insightTab}:${selectedMonths.join(",")}:${selectedVendors.join(",")}:${selectedCategories.join(",")}:${selectedTypes.join(",")}`}
+                resetKey={`${activeView}:${selectedYear}:${monthFilter}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
-                {data && section === "raw" && tab === "data-quality" && (
-                    <DataQualityTab
-                        data={data}
-                        month={monthFilter}
-                        vendor={selectedVendors}
-                    />
-                )}
-                {data && section === "raw" && tab === "op-transactions" && (
+                {viewData && activeView === "op-transactions" && (
                     <OpTransactionsTab
                         category={selectedCategories}
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "raw" && tab === "op-pollen" && (
+                {viewData && activeView === "op-pollen" && (
                     <OpPollenTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "raw" && tab === "op-cloud" && (
-                    <OpCloudTab
-                        data={data}
-                        month={monthFilter}
-                        type={selectedTypes}
-                        vendor={selectedVendors}
-                    />
-                )}
-                {data && section === "insights" && insightTab === "pnl" && (
-                    <PnlTab data={data} month={monthFilter} />
-                )}
-                {data && section === "insights" && insightTab === "runway" && (
-                    <RunwayTab data={data} />
-                )}
-                {data && section === "insights" && insightTab === "vendors" && (
-                    <EconTab
-                        data={data}
-                        grain="vendor"
+                {viewData && activeView === "vendor-ledger" && (
+                    <VendorLedgerTab
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "insights" && insightTab === "models" && (
-                    <EconTab
-                        data={data}
-                        grain="model"
+                {viewData && activeView === "revenue-share-ledger" && (
+                    <RevenueShareLedgerTab
+                        data={viewData}
                         month={monthFilter}
-                        vendor={selectedVendors}
                     />
                 )}
-                {data && section === "insights" && insightTab === "credits" && (
-                    <CreditsTab data={data} />
-                )}
-                {data && section === "insights" && insightTab === "gpu" && (
-                    <GpuTab
-                        data={data}
+                {viewData && activeView === "close" && (
+                    <ProviderCloseTab
+                        data={viewData}
                         month={monthFilter}
-                        vendor={selectedVendors}
+                        months={months}
+                        year={selectedYear}
+                        onMonthChange={setSelectedMonth}
                     />
+                )}
+                {viewData && activeView === "runway" && (
+                    <RunwayTab data={viewData} year={runwayYear} />
+                )}
+                {viewData && activeView === "vendors" && (
+                    <VendorsTab data={viewData} month={monthFilter} />
+                )}
+                {viewData && activeView === "inference" && (
+                    <ManagedInferenceTab data={viewData} month={monthFilter} />
+                )}
+                {viewData && activeView === "balances" && (
+                    <BalancesTab data={viewData} />
+                )}
+                {viewData && activeView === "revenue-share" && (
+                    <RevenueShareTab data={viewData} month={monthFilter} />
+                )}
+                {viewData && activeView === "gpu" && (
+                    <GpuTab data={viewData} month={monthFilter} />
                 )}
             </ErrorBoundary>
         </>
@@ -1108,66 +1092,37 @@ export default function App() {
     return (
         <ErrorBoundary resetKey={String(attempt)}>
             <EconomicsShell
+                activeView={activeView}
                 data={data}
                 footer={drawerFooter}
-                section={section}
-                tab={tab}
-                insightTab={insightTab}
-                onRawTabChange={(value) => {
-                    setSection("raw");
-                    setTab(value);
-                }}
-                onInsightTabChange={(value) => {
-                    setSection("insights");
-                    setInsightTab(value);
+                onViewChange={(value) => {
+                    setSelectedVendors([]);
+                    setSelectedCategories([]);
+                    setActiveView(value);
                 }}
             >
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
-                    {isCompactInsight ? (
-                        <section className="flex flex-col gap-5">
-                            <header className="shrink-0 px-1">
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                                    <div className="min-w-0 flex-1">
-                                        {filters}
-                                    </div>
-                                    <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
-                                        <Heading
-                                            as="h2"
-                                            size="section"
-                                            className="truncate text-left"
-                                        >
-                                            {viewTitle}
-                                        </Heading>
-                                        {viewInfo && (
-                                            <InfoTip
-                                                content={viewInfo}
-                                                label={`${viewTitle} info`}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            </header>
-                            <div className="flex flex-col gap-5">{content}</div>
-                        </section>
-                    ) : (
-                        <Section
-                            title={viewTitle}
-                            action={
-                                viewInfo ? (
-                                    <InfoTip
+                    <section className="flex flex-col gap-5">
+                        <header className="flex shrink-0 justify-end px-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <Heading
+                                    as="h2"
+                                    size="section"
+                                    className="truncate text-right"
+                                >
+                                    {viewTitle}
+                                </Heading>
+                                {viewInfo && (
+                                    <PageTip
                                         content={viewInfo}
                                         label={`${viewTitle} info`}
                                     />
-                                ) : null
-                            }
-                            actionClassName="mr-auto"
-                            framed
-                            panelClassName="gap-5"
-                        >
-                            {filters}
-                            {content}
-                        </Section>
-                    )}
+                                )}
+                            </div>
+                        </header>
+                        {filters}
+                        <div className="flex flex-col gap-5">{content}</div>
+                    </section>
                 </main>
             </EconomicsShell>
         </ErrorBoundary>

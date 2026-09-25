@@ -1,14 +1,21 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
+import {
+    imageProbeRequest,
+    imageProbeResult,
+    nextImageOperation,
+} from "./image-probe.mjs";
+import { nextProbeAt, recordProbe } from "./probe-schedule.mjs";
 
-// One probe sweep across active community text and image models via
-// gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
-// image probes run once per model every four hours and are always capped at
-// one generation. This keeps coverage current without spending or generating
-// media every 15 minutes.
-// Actual spend is reconciled from real `usage` tokens and fed back into
-// state.json so next cycle's budget self-corrects (overspend -> undershoot).
+// Probe selected community text/image models, at most once every four hours.
+// Repeated failures back off to weekly; --model is a one-off diagnostic check.
+// Actual spend is reconciled from real `usage` tokens and recorded in state.
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
 
 const TOKEN = process.env.POLLI_TOKEN;
@@ -20,46 +27,98 @@ const GEN = process.env.POLLINATIONS_GEN_URL ?? "https://gen.pollinations.ai";
 const CONCURRENCY = 4;
 const TEXT_TIMEOUT_MS = 45_000;
 const IMAGE_TIMEOUT_MS = 150_000;
-const IMAGE_PROBE_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const STATE_PATH =
     process.env.MONITOR_STATE_PATH ?? "/home/ubuntu/monitor/state.json";
 const RESULTS_PATH =
     process.env.MONITOR_RESULTS_PATH ??
     "/home/ubuntu/monitor/probe-results.json";
-const TARGET_POLLEN = 0.5;
-// Keep next cycle's budget within a sane band around the target so one wild
-// cycle (e.g. a model timing out after burning tokens) can't spiral.
-const MIN_BUDGET = TARGET_POLLEN * 0.4;
-const MAX_BUDGET = TARGET_POLLEN * 1.6;
-const MAX_TOKENS = 10;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
 const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
 const EST_IMAGE_OUTPUT_TOKENS = 1120;
 
+// Keep persisted cadence keys stable across aliases.
+const stateModelId = (id) => id.replace(/^community\//, "");
+
 const modelArgIndex = process.argv.indexOf("--model");
-const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
-    console.error("--model requires an owner/model id");
+    console.error("--model requires a community/owner/model id");
+    process.exit(1);
+}
+// --models-file <path>: selected routine checks, including hidden exact IDs.
+// JSON array of { name, category, operation? }; [] does not sweep the catalog.
+const modelsFileArgIndex = process.argv.indexOf("--models-file");
+const fileModels =
+    modelsFileArgIndex === -1
+        ? []
+        : JSON.parse(
+              fs.readFileSync(process.argv[modelsFileArgIndex + 1], "utf8"),
+          );
+if (
+    (modelsFileArgIndex !== -1 && onlyModel) ||
+    !Array.isArray(fileModels) ||
+    fileModels.some(
+        (m) =>
+            typeof m?.name !== "string" ||
+            !["text", "image"].includes(m.category) ||
+            (m.operation !== undefined &&
+                !["generate", "edit"].includes(m.operation)),
+    )
+) {
+    console.error(
+        "--models-file needs a JSON array of { name, category: text|image, operation?: generate|edit } and excludes --model",
+    );
+    process.exit(1);
+}
+const categoryArgIndex = process.argv.indexOf("--category");
+const onlyCategory =
+    categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
+if (
+    categoryArgIndex !== -1 &&
+    onlyCategory !== "text" &&
+    onlyCategory !== "image"
+) {
+    console.error("--category must be text or image");
     process.exit(1);
 }
 
 function readState() {
     try {
         return JSON.parse(fs.readFileSync(STATE_PATH, "utf8"));
-    } catch {
-        return {};
+    } catch (error) {
+        if (error.code === "ENOENT") return {};
+        throw error;
     }
 }
 
-// Pricing is public, no auth needed: https://gen.pollinations.ai/models
-async function fetchCommunityModels() {
-    const list = await fetch(`${GEN}/models`).then((r) => r.json());
-    const models = Array.isArray(list) ? list : (list.data ?? list);
-    return models.filter(
-        (m) => m.community && (m.category === "text" || m.category === "image"),
+const operationArgIndex = process.argv.indexOf("--operation");
+const onlyOperation =
+    operationArgIndex === -1 ? null : process.argv[operationArgIndex + 1];
+if (
+    operationArgIndex !== -1 &&
+    (!onlyModel || !["generate", "edit"].includes(onlyOperation))
+) {
+    console.error("--operation requires --model and must be generate or edit");
+    process.exit(1);
+}
+if (!onlyModel && modelsFileArgIndex === -1) {
+    console.error(
+        "Select routine probes with --models-file, or diagnose one --model",
     );
+    process.exit(1);
+}
+
+// Pricing is public, no auth needed: https://gen.pollinations.ai/models
+async function fetchCatalog() {
+    const response = await fetch(`${GEN}/models?reliability=all`, {
+        signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok)
+        throw new Error(`model catalog returned ${response.status}`);
+    const list = await response.json();
+    return Array.isArray(list) ? list : list.data;
 }
 
 function estimateCost(model) {
@@ -74,105 +133,9 @@ function estimateCost(model) {
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
 }
 
-// Baseline rank-based targets, cheapest quartile first. Ranking (not raw
-// cost) drives this, so "test expensive models less" holds even if the whole
-// catalog happens to be cheap or expensive that week -- it's always relative.
-// Keep synthetic traffic light: production data showed that larger sweeps can
-// consume a meaningful share of low-capacity community-provider quotas.
-const TIER_TARGETS = [4, 3, 2, 1];
-// Hard per-model ceiling, regardless of price or budget -- this is a health
-// probe, not a load test, and upstream owners may have their own rate limits.
-// Free models in particular must never be used to "soak up" leftover budget.
-const MAX_REQUESTS_PER_MODEL = 4;
-
-// Every model gets a rank-based baseline (cheapest quartile: most requests,
-// priciest quartile: floor of 1). If that overshoots budget, trim extras from
-// the most expensive models first (never below 1). If it undershoots -- the
-// common case, since most models are fractions of a cent per request -- top
-// up extra requests on the MOST EXPENSIVE models first (not cheap ones) up to
-// MAX_REQUESTS_PER_MODEL, since those are what actually moves total spend
-// toward the target; cheap models are already capped and can't absorb more
-// budget usefully. Every model's count is capped at MAX_REQUESTS_PER_MODEL in
-// all cases, so no single model -- expensive or free -- ever gets hammered.
-function planRequestCounts(models, budget) {
-    const perModelCost = new Map(models.map((m) => [m.name, estimateCost(m)]));
-    const textByCostAsc = models
-        .filter((m) => m.category === "text")
-        .sort((a, b) => perModelCost.get(a.name) - perModelCost.get(b.name));
-
-    const counts = new Map();
-    const tierSize = Math.max(
-        1,
-        Math.ceil(textByCostAsc.length / TIER_TARGETS.length),
-    );
-    textByCostAsc.forEach((m, i) => {
-        const tier = Math.min(
-            Math.floor(i / tierSize),
-            TIER_TARGETS.length - 1,
-        );
-        counts.set(
-            m.name,
-            Math.min(TIER_TARGETS[tier], MAX_REQUESTS_PER_MODEL),
-        );
-    });
-    for (const model of models) {
-        if (model.category === "image") counts.set(model.name, 1);
-    }
-
-    let spent = models.reduce(
-        (sum, m) => sum + perModelCost.get(m.name) * counts.get(m.name),
-        0,
-    );
-
-    const textByCostDesc = [...textByCostAsc].reverse();
-
-    if (spent > budget) {
-        // Trim extras (never below 1) from the most expensive models first,
-        // since those are the ones we most want to under-test vs. cheap ones.
-        let i = 0;
-        while (spent > budget && i < textByCostDesc.length) {
-            const m = textByCostDesc[i];
-            const n = counts.get(m.name);
-            const cost = perModelCost.get(m.name);
-            if (n > 1) {
-                counts.set(m.name, n - 1);
-                spent -= cost;
-            } else {
-                i++;
-            }
-        }
-    } else {
-        // Top up toward budget using the MOST expensive payable models first
-        // -- each request there moves spend further per request than another
-        // cheap-model request would, and every model is still capped.
-        const payable = textByCostDesc.filter(
-            (m) => perModelCost.get(m.name) > 0,
-        );
-        let progressed = payable.length > 0;
-        while (spent < budget && progressed) {
-            progressed = false;
-            for (const m of payable) {
-                if (counts.get(m.name) >= MAX_REQUESTS_PER_MODEL) continue;
-                const cost = perModelCost.get(m.name);
-                if (spent + cost > budget) continue;
-                counts.set(m.name, counts.get(m.name) + 1);
-                spent += cost;
-                progressed = true;
-            }
-        }
-    }
-
-    return { counts, estimatedSpend: spent };
-}
-
-// Basic billing-integrity sanity checks on a single probe response. These are
-// NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
-// they flag "the numbers we're about to pay this owner on look implausible
-// for a short, cache-busted prompt", for a human to investigate. Thresholds are
-// deliberately loose (calibrated against real tokenizer variance seen across
-// the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
-// ~35 tokens depending on the model's tokenizer) -- the goal is to catch
-// clear anomalies (0, or 10x+ too many), not to nitpick normal variance.
+// Check usage fields for missing or internally inconsistent values. A short
+// probe can still have many prompt or cached tokens if an upstream adds or
+// reuses its own prefix; neither is evidence of incorrect billing.
 function billingSanityFlags(usage, content) {
     const flags = [];
     if (!usage) {
@@ -190,8 +153,6 @@ function billingSanityFlags(usage, content) {
         usage.cache_read_input_tokens ??
         0;
     if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    if (cached > 0)
-        flags.push("cached tokens on a cache-busted single-message prompt");
     if (p != null && cached > p)
         flags.push("cached_tokens exceeds prompt_tokens");
     const reasoning =
@@ -204,9 +165,6 @@ function billingSanityFlags(usage, content) {
         flags.push(
             "total_tokens differs from prompt_tokens + completion_tokens",
         );
-    const uncached = p != null && cached <= p ? p - cached : undefined;
-    if (uncached != null && uncached > 100)
-        flags.push("implausible uncached prompt token count");
     if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
     if (!content?.trim()) flags.push("empty completion content");
     return flags;
@@ -247,6 +205,7 @@ function imageBillingSanityFlags(usage) {
 
 async function probeText(model) {
     const started = Date.now();
+    const requestPath = "/v1/chat/completions";
     const marker = `ok-${randomUUID().slice(0, 8)}`;
     const prompt = `Reply with exactly: ${marker}`;
     // The abort timer must stay armed through the BODY read, not just until
@@ -256,7 +215,7 @@ async function probeText(model) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), TEXT_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/chat/completions`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
@@ -265,45 +224,86 @@ async function probeText(model) {
             body: JSON.stringify({
                 model: model.name,
                 messages: [{ role: "user", content: prompt }],
-                max_tokens: MAX_TOKENS,
+                stream: true,
+                stream_options: { include_usage: true },
             }),
             signal: ctrl.signal,
         });
         const body = await res.text();
         let usage;
         let content;
+        let servedModel;
+        let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
         if (res.ok) {
+            ({
+                usage,
+                content,
+                servedModel,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
             try {
-                const parsed = JSON.parse(body);
-                usage = parsed.usage;
-                content = parsed.choices?.[0]?.message?.content;
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
             } catch {
-                // leave usage/content undefined -- reconciliation/checks just skip this request
+                // Do not persist raw non-JSON error bodies.
             }
         }
-        const hasCompletion =
-            typeof content === "string" && content.trim().length > 0;
-        const ok = res.ok && hasCompletion;
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
+        const contentPreview =
+            typeof content === "string" && content.trim()
+                ? JSON.stringify(content.trim().slice(0, 200))
+                : "<empty>";
+        const ok = res.ok && !protocolError && hasProbeMarker;
+        const modelUsed = res.headers.get("x-model-used");
         const result = {
             model: model.name,
+            modelUsed,
+            fallbackUsed: modelUsed ? modelUsed !== model.name : null,
+            servedModel: servedModel ?? null,
             category: model.category,
+            requestPath,
+            requestId: res.headers.get("x-request-id"),
+            httpStatus: res.status,
+            timestamp: new Date(started).toISOString(),
             ok,
-            status: res.ok && !hasCompletion ? "INVALID" : res.status,
+            status: protocolError
+                ? "PROTOCOL"
+                : res.ok && !hasProbeMarker
+                  ? "INVALID"
+                  : res.status,
             ms: Date.now() - started,
             usage,
             probeMarker: marker,
+            protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
             detail: res.ok
-                ? hasCompletion
-                    ? undefined
-                    : "successful response did not contain a non-empty completion"
-                : body.slice(0, 300),
+                ? protocolError
+                    ? (errorMessage ?? protocolError)
+                    : hasProbeMarker
+                      ? undefined
+                      : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
         };
-        if (res.ok) result.billingFlags = billingSanityFlags(usage, content);
+        if (res.ok && !protocolError) {
+            result.billingFlags = billingSanityFlags(usage, content);
+        }
         return result;
     } catch (err) {
         return {
             model: model.name,
             category: model.category,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -314,60 +314,48 @@ async function probeText(model) {
     }
 }
 
-async function probeImage(model) {
+async function probeImage(model, operation) {
     const started = Date.now();
     const marker = `image-${randomUUID().slice(0, 8)}`;
+    const { requestPath, body: requestBody } = imageProbeRequest(
+        model,
+        marker,
+        operation,
+    );
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), IMAGE_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/images/generations`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                model: model.name,
-                prompt: `A plain test card labeled ${marker}`,
-                n: 1,
-                response_format: "b64_json",
-            }),
+            body: JSON.stringify(requestBody),
             signal: ctrl.signal,
         });
         const body = await res.text();
-        let parsed;
-        try {
-            parsed = JSON.parse(body);
-        } catch {
-            // handled below as an invalid successful response
-        }
-        const imageBase64 = parsed?.data?.[0]?.b64_json;
-        const hasImage =
-            typeof imageBase64 === "string" &&
-            Buffer.from(imageBase64, "base64").byteLength > 100;
-        const ok = res.ok && hasImage;
         const result = {
             model: model.name,
             category: model.category,
-            ok,
-            status: res.ok && !hasImage ? "INVALID" : res.status,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ms: Date.now() - started,
-            usage: parsed?.usage,
             probeMarker: marker,
-            detail: res.ok
-                ? hasImage
-                    ? undefined
-                    : "successful response did not contain a valid b64_json image"
-                : body.slice(0, 300),
+            ...imageProbeResult(res, body, model.name),
         };
         if (res.ok) {
-            result.billingFlags = imageBillingSanityFlags(parsed?.usage);
+            result.billingFlags = imageBillingSanityFlags(result.usage);
         }
         return result;
     } catch (err) {
         return {
             model: model.name,
             category: model.category,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -379,7 +367,20 @@ async function probeImage(model) {
 }
 
 function probe(model) {
-    return model.category === "image" ? probeImage(model) : probeText(model);
+    return model.category === "image"
+        ? probeImage(
+              model,
+              onlyOperation ??
+                  fileOperation.get(model.name) ??
+                  (targeted
+                      ? "generate"
+                      : nextImageOperation(
+                            model,
+                            state.spend?.probes?.[stateModelId(model.name)]
+                                ?.operation,
+                        )),
+          )
+        : probeText(model);
 }
 
 function actualCost(result, priceByModel) {
@@ -404,11 +405,75 @@ function actualCost(result, priceByModel) {
     );
 }
 
-const models = await fetchCommunityModels();
-if (onlyModel && !models.some((model) => model.name === onlyModel)) {
-    console.error(`active community model not found: ${onlyModel}`);
+const catalog = await fetchCatalog();
+// Agents can perform real work on the probe account; never select them.
+const models = catalog.filter(
+    (model) =>
+        model.community &&
+        !model.agent &&
+        ["text", "image"].includes(model.category),
+);
+const listedTarget = catalog.find(
+    (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
+);
+if (listedTarget) {
+    if (!models.includes(listedTarget))
+        throw new Error("Only community text/image proxy models can be probed");
+    onlyModel = listedTarget.name;
+}
+if (
+    onlyOperation &&
+    ((listedTarget?.category ?? onlyCategory) !== "image" ||
+        (onlyOperation === "edit" &&
+            listedTarget &&
+            !listedTarget.input_modalities?.includes("image")))
+) {
+    console.error(
+        "--operation requires an image model; listed edit targets must advertise image input",
+    );
     process.exit(1);
 }
+if (onlyModel && !models.some((model) => model.name === onlyModel)) {
+    if (!onlyCategory) {
+        console.error(
+            `listed community model not found: ${onlyModel}; pass --category to probe a hidden exact ID`,
+        );
+        process.exit(1);
+    }
+    models.push({
+        name: onlyModel,
+        category: onlyCategory,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+for (const entry of fileModels) {
+    const listed = catalog.find(
+        (model) =>
+            model.name === entry.name || model.aliases?.includes(entry.name),
+    );
+    if (listed) {
+        if (!models.includes(listed))
+            throw new Error(
+                "Only community text/image proxy models can be probed",
+            );
+        entry.name = listed.name;
+    }
+    if (models.some((model) => model.name === entry.name)) continue;
+    models.push({
+        name: entry.name,
+        category: entry.category,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+const fileOperation = new Map(
+    fileModels.map((model) => [model.name, model.operation]),
+);
+const targetNames = new Set(
+    onlyModel ? [onlyModel] : fileModels.map((m) => m.name),
+);
+const targeted = Boolean(onlyModel);
 const priceByModel = new Map(
     models.map((m) => [
         m.name,
@@ -425,48 +490,22 @@ const priceByModel = new Map(
 
 const state = readState();
 const now = Date.now();
-const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
-const imageProbeDue = (model) => {
-    const previous = Date.parse(lastImageProbeAt[model.name] ?? "");
-    return (
-        !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
-    );
-};
-const modelsToProbe = onlyModel
-    ? models.filter((model) => model.name === onlyModel)
-    : models.filter(
-          (model) => model.category === "text" || imageProbeDue(model),
-      );
-const skippedImageModels = onlyModel
+const selectedModels = models.filter((model) => targetNames.has(model.name));
+const probeDue = (model) =>
+    now >= nextProbeAt(state.spend?.probes?.[stateModelId(model.name)]);
+const modelsToProbe = targeted
+    ? selectedModels
+    : selectedModels.filter(probeDue);
+const skippedModels = targeted
     ? []
-    : models
-          .filter(
-              (model) => model.category === "image" && !imageProbeDue(model),
-          )
+    : selectedModels
+          .filter((model) => !probeDue(model))
           .map((model) => model.name);
-const lastSpend = state.spend?.lastActualPollen;
-// Mean-reversion: if we overspent last cycle, aim lower this cycle, and vice
-// versa. First run (no history) just uses the flat target.
-const budget =
-    typeof lastSpend === "number"
-        ? Math.min(
-              MAX_BUDGET,
-              Math.max(MIN_BUDGET, TARGET_POLLEN * 2 - lastSpend),
-          )
-        : TARGET_POLLEN;
-
-const { counts, estimatedSpend } = onlyModel
-    ? {
-          counts: new Map([[onlyModel, 1]]),
-          estimatedSpend: estimateCost(modelsToProbe[0]),
-      }
-    : planRequestCounts(modelsToProbe, budget);
-
-const jobs = [];
-for (const model of modelsToProbe) {
-    const n = counts.get(model.name) ?? 1;
-    for (let i = 0; i < n; i++) jobs.push(model);
-}
+const estimatedSpend = modelsToProbe.reduce(
+    (sum, model) => sum + estimateCost(model),
+    0,
+);
+const jobs = modelsToProbe;
 
 // Worker pool, not batched Promise.all: one slow request must not
 // head-of-line-block the other CONCURRENCY-1 slots for up to its timeout.
@@ -486,8 +525,8 @@ const actualSpend = results.reduce(
     0,
 );
 
-// Persist spend history for next cycle's adaptive budget. probe.mjs owns only
-// the `spend` key in state.json -- CYCLE.md/the agent owns everything else and
+// Persist spend history. probe.mjs owns only the `spend` key in state.json --
+// CYCLE.md/the agent owns everything else and
 // read-modify-writes this file, so merge rather than clobber. Re-read the
 // file NOW rather than reusing the startup snapshot: the sweep takes minutes
 // and the agent rewrites state.json in the meantime -- merging into the old
@@ -497,24 +536,30 @@ const nextState = {
     ...currentState,
     spend: {
         ...currentState.spend,
-        lastCycleBudget: budget,
-        lastEstimatedPollen: estimatedSpend,
-        lastActualPollen: actualSpend,
-        lastRequestCount: jobs.length,
-        lastRunAt: new Date().toISOString(),
-        lastImageProbeAt: {
-            ...currentState.spend?.lastImageProbeAt,
+        ...(!targeted && {
+            lastCycleBudget: undefined,
+            lastEstimatedPollen: estimatedSpend,
+            lastActualPollen: actualSpend,
+            lastRequestCount: jobs.length,
+            lastRunAt: new Date().toISOString(),
+        }),
+        probes: {
+            ...currentState.spend?.probes,
             ...Object.fromEntries(
-                modelsToProbe
-                    .filter((model) => model.category === "image")
-                    .map((model) => [model.name, new Date(now).toISOString()]),
+                results.map((result) => [
+                    stateModelId(result.model),
+                    recordProbe(
+                        currentState.spend?.probes?.[
+                            stateModelId(result.model)
+                        ],
+                        result,
+                    ),
+                ]),
             ),
         },
     },
 };
-if (!onlyModel) {
-    fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
-}
+fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 
 // Aggregate billing-sanity flags per model (union across its probes this
 // cycle) -- surfaced separately from health status since a model can be
@@ -529,16 +574,13 @@ for (const r of results) {
 
 const out = {
     ts: new Date().toISOString(),
-    budget,
     actualSpend,
-    imageProbeIntervalHours: IMAGE_PROBE_INTERVAL_MS / 3_600_000,
-    skippedImageModels,
+    skippedModels,
     results,
     billingFlagsByModel,
 };
-if (onlyModel) {
-    // Targeted freshness checks return their result without replacing the
-    // latest complete sweep or influencing the next sweep's budget/cadence.
+if (targeted) {
+    // One-off diagnostics update the cadence but not the routine result file.
     console.log(JSON.stringify(out));
     process.exit(0);
 }
@@ -558,19 +600,19 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}${r.servedModel ? ` upstream=${r.servedModel}` : ""}`,
     );
 }
 console.log(
     `${results.filter((r) => r.ok).length}/${results.length} requests healthy across ${byModel.size} models`,
 );
-if (skippedImageModels.length) {
+if (skippedModels.length) {
     console.log(
-        `${skippedImageModels.length} image models not due (4h cadence)`,
+        `${skippedModels.length} models not due (4h base interval, failure backoff up to 6d)`,
     );
 }
 console.log(
-    `budget ${budget.toFixed(4)} pollen -> estimated ${estimatedSpend.toFixed(4)}, actual ${actualSpend.toFixed(4)}`,
+    `estimated ${estimatedSpend.toFixed(4)} pollen, actual ${actualSpend.toFixed(4)}`,
 );
 const flaggedModels = Object.keys(billingFlagsByModel);
 if (flaggedModels.length) {

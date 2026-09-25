@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityEndpointSupportedEndpoints,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -12,19 +15,29 @@ import {
     type Category,
     getModels,
     getRegistryModelDefinition,
+    isVisibleModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
+    type AgentCatalogConfig,
+    applyAgentMetadata,
+} from "./agent-catalog.ts";
+import {
+    type CommunityModelEnv,
     type CommunityModelRegistryEntry,
-    communityImageSupportedEndpoints,
-    communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
+    resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { mediaPromptRoute } from "./media/prompt-route.ts";
+import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
+// A static-only registry is cached briefly so the community models come back
+// seconds after D1 recovers, instead of being missing for a full TTL.
+const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
     "/text",
@@ -61,6 +74,7 @@ export type GenerationModelEntry = {
     definition: ModelDefinition;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
+    agentConfig?: AgentCatalogConfig;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.
@@ -94,23 +108,31 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
         return ["/audio/{text}", "/v1/audio/speech"];
     }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
-    if (eventType === "generate.realtime") return ["/v1/realtime"];
+    if (eventType === "generate.realtime") {
+        return ["/realtime", "/v1/realtime"];
+    }
     return IMAGE_MODEL_ENDPOINTS;
 }
 
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
+    const baseEndpoints =
+        definition.supportedEndpoints ??
+        supportedEndpointsForEventType(eventType);
+    const supportedEndpoints =
+        eventType === "generate.text" && supportsDirectResponses(modelName)
+            ? [...baseEndpoints, "/v1/responses"]
+            : baseEndpoints;
+    const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints:
-            definition.supportedEndpoints ??
-            supportedEndpointsForEventType(eventType),
+        supportedEndpoints,
         definition,
-        info: modelInfoFromDefinition(modelName, definition),
-        visible: definition.hidden !== true,
+        info: { ...info, supported_endpoints: supportedEndpoints },
+        visible: isVisibleModelDefinition(definition),
     };
 });
 
@@ -118,23 +140,29 @@ function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
     const eventType = eventTypeForCategory(entry.definition.category);
+    const supportedEndpoints = communityEndpointSupportedEndpoints(
+        entry.communityEndpoint.modality,
+        entry.definition.inputModalities ?? [],
+    );
+    if (
+        entry.communityEndpoint.modality === "text" &&
+        entry.communityEndpoint.api === "responses"
+    ) {
+        supportedEndpoints.push("/v1/responses");
+    }
     return {
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints:
-            eventType === "generate.image"
-                ? communityImageSupportedEndpoints(
-                      entry.definition.inputModalities,
-                  )
-                : communityTextSupportedEndpoints(),
+        supportedEndpoints,
         definition: entry.definition,
-        info: entry.info,
+        info: { ...entry.info, supported_endpoints: supportedEndpoints },
         communityEndpoint: entry.communityEndpoint,
+        agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.communityEndpoint.disabledAt === null &&
+            isVisibleModelDefinition(entry.definition) &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -177,7 +205,22 @@ function buildRegistry(
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
-    const entries = sourceEntries.map((entry) => ({ ...entry }));
+    const entries = sourceEntries.map((entry) => {
+        const supportedEndpoints = mediaPromptRoute(entry)
+            ? [
+                  ...new Set([
+                      ...entry.supportedEndpoints,
+                      "/v1/responses",
+                      "/v1/chat/completions",
+                  ]),
+              ]
+            : entry.supportedEndpoints;
+        return {
+            ...entry,
+            supportedEndpoints,
+            info: { ...entry.info, supported_endpoints: supportedEndpoints },
+        };
+    });
     // Build lookup keys before presentation sorting so duplicate aliases keep
     // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();
@@ -193,25 +236,19 @@ function buildRegistry(
             }
         }
     }
+    applyAgentMetadata(entries, byIdOrAlias);
     linkFallbackEntries(entries, byIdOrAlias);
     entries.sort(compareModelEntries);
 
     return {
-        resolve: (model) => {
-            const entry = byIdOrAlias.get(model) ?? null;
-            // Deactivated community models don't exist as far as callers are
-            // concerned — unlike static `hidden` models (intentionally
-            // unlisted but still callable), a disabled community endpoint is
-            // broken and must be unreachable everywhere, not just unlisted.
-            if (entry?.communityEndpoint?.disabledAt) return null;
-            return entry;
-        },
+        resolve: (model) => byIdOrAlias.get(model) ?? null,
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    endpoint?.disabledAt === null &&
+                    isVisibleModelDefinition(entry.definition) &&
+                    endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId
                 );
@@ -220,16 +257,32 @@ function buildRegistry(
 }
 
 async function loadGenerationModelRegistry(
-    dbBinding: CloudflareBindings["DB"] | undefined,
-): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
-    ).map(communityEntryToGenerationEntry);
-    return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
+    env: CommunityModelEnv,
+): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
+    let communityEntries: GenerationModelEntry[] = [];
+    let degraded = false;
+    try {
+        communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+            communityEntryToGenerationEntry,
+        );
+    } catch (error) {
+        // Community models are additive: every request that resolves a model
+        // goes through this registry, so letting a D1 failure escape turns a
+        // community-catalog problem into a total gen outage. The realistic
+        // trigger is schema skew — a migration lands before the Worker that
+        // understands it — which is exactly when the static models are still
+        // perfectly servable.
+        degraded = true;
+        console.error("Community model registry unavailable", error);
+    }
+    return {
+        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
+        degraded,
+    };
 }
 
 export async function getGenerationModelRegistry(
-    env: Pick<CloudflareBindings, "DB">,
+    env: CommunityModelEnv,
 ): Promise<GenerationModelRegistry> {
     if (
         cachedRegistry &&
@@ -244,15 +297,20 @@ export async function getGenerationModelRegistry(
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const registry = await loadGenerationModelRegistry(dbBinding);
+    const { registry, degraded } = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
-        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        expiresAt:
+            Date.now() +
+            (degraded ? DEGRADED_REGISTRY_TTL_MS : REGISTRY_TTL_MS),
         registry,
     };
     return registry;
 }
 
-export function resetGenerationModelRegistryCache(): void {
+export async function resetGenerationModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
     cachedRegistry = null;
+    await resetCommunityModelRegistryCache(env);
 }

@@ -1,0 +1,38 @@
+{
+  "pr_number": 15362,
+  "title": "fix: move sonar to perplexity's agent api before the sep 27 shutdown",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15362",
+  "merged_at": "2026-09-25T13:39:17Z",
+  "labels": [
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Perplexity shuts down the Sonar Chat Completions API on Sep 27. Sonar moves to the Agent API (`/v1/agent`). The Agent API serves only `perplexity/sonar`, so Sonar Pro and Sonar Reasoning Pro become aliases of Sonar.\n\n- **Route.** Sonar goes through our Chat-to-Responses adapter, so `/v1/chat/completions`, the text endpoint and `/v1/responses` all work.\n  - The `web_search` tool is always sent, with `tool_choice: \"required\"`. Without it, the Agent API answered simple questions without searching; legacy Sonar always searched.\n  - A default instruction asks for inline `[n]` markers.\n  - `frequency_penalty` and `presence_penalty` are stripped, because Perplexity rejects them.\n  - `web_search_options.search_context_size`, `search_domain_filter` and `search_recency_filter` map onto the tool.\n- **Response.** Search results come back as `citations` and `search_results` in the legacy shape, sorted by result ID, so `[n]` is `citations[n-1]`. Streaming sends them on the finish chunk. The text endpoint's Sources footer is unchanged.\n- **Billing.** $0.25/$2.50 per M tokens plus $2.50 per 1K searches, counted from Perplexity's usage. Cache writes and reads are priced too.\n  - Search results now count as input, so `prompt_tokens` goes from ~20 to ~4–5K.\n  - A typical request costs $0.0034–0.0047, against a flat $0.005 request fee before.\n- **Access.** Sonar becomes paid-only, as it no longer runs on Azure. The OpenRouter fallbacks are removed: they only reach the retired API.\n- **Retired models.** `sonar-pro`, `sonar-reasoning-pro` and their aliases (including the bare `perplexity`) resolve to Sonar.\n  - Key permissions resolve aliases per request, so keys limited to those models keep working.\n  - Reasoning Pro callers get Sonar, which still honours `reasoning_effort`.\n\nJSON mode: Perplexity answers `response_format: json_object` (and `json=true`) with an empty `{}`, so Sonar now rejects it with a 400 before generation, the way the old API did. `json_schema` works and stays allowe",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sonar found a new hive",
+    "blurb": "Perplexity is retiring Sonar’s old doorway, so Sonar has moved into the Agent API instead. Searches, citations, streaming, and the familiar endpoints made the trip without dropping the map.",
+    "summary": "Migrated `perplexity/sonar` from Perplexity’s retiring Chat Completions API to `/v1/agent`, preserving `/v1/chat/completions`, the text endpoint, `/v1/responses`, web search, citations, streaming, and alias resolution for retired Sonar Pro models.",
+    "impact": "Sonar callers keep working through the existing endpoints and model aliases, with always-on web search, ordered inline citation mappings, and usage-based billing from Perplexity’s Agent API.",
+    "keywords": [
+      "perplexity",
+      "sonar",
+      "agent-api",
+      "web-search",
+      "citations",
+      "billing",
+      "model-aliases"
+    ],
+    "visual_concept": "Polli guides a cozy glowing Sonar search orb from an old, closing API doorway into a new Agent API garden gate. A CRT monitor robot displays neatly numbered search citations while code-vines and small flowers connect the familiar chat, text, and responses paths, representing compatibility through the provider migration.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, bright pink rectangular blush marks, light blue rounded wings, and a tiny explorer scarf, guiding a glowing search orb through a lime green (#ecf874) garden gate labeled “AGENT API” as an old doorway gently closes behind her; a chunky CRT monitor robot holds a scroll of numbered “[1] [2] [3]” citations beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream background, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15362.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, bright pink rectangular blush marks, light blue rounded wings, and a tiny explorer scarf, guiding a glowing search orb through a lime green (#ecf874) garden gate labeled “AGENT API” as an old doorway gently closes behind her; a chunky CRT monitor robot holds a scroll of numbered “[1] [2] [3]” citations beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream background, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T13:40:21.543650+00:00"
+}

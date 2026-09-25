@@ -22,6 +22,7 @@ const FAL_QWEN_MODELS = {
         endpoint: "alibaba/qwen-image-3",
         maxImages: 3,
         promptExpansion: { enable_prompt_expansion: false },
+        editOptions: {},
         resolveSize: resolveQwenImage3Size,
         usage: (_size: FalImageSize, references: number) => ({
             promptImageTokens: references,
@@ -33,6 +34,9 @@ const FAL_QWEN_MODELS = {
         endpoint: "alibaba/qwen-image-2.1",
         maxImages: 10,
         promptExpansion: { prompt_expander: "none" },
+        // Fal defaults to no guidance, which leaves edits noisy and
+        // oversharpened. Guidance doubles the edit price (measured 2026-09-25).
+        editOptions: { guidance_scale: 4 },
         resolveSize: resolveQwenImageSize,
         usage: (size: FalImageSize, references: number) => ({
             promptImageTokens: references * 500_000,
@@ -110,7 +114,7 @@ export async function callFalQwenImageAPI(
     const upstreamUrl = `https://fal.run/${config.endpoint}/${isEdit ? "edit" : "text-to-image"}`;
     const requestBody = {
         prompt,
-        ...(isEdit ? { image_urls: references } : {}),
+        ...(isEdit ? { image_urls: references, ...config.editOptions } : {}),
         image_size: size,
         ...config.promptExpansion,
         // Pollinations runs its own moderation.

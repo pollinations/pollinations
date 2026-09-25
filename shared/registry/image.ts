@@ -1199,8 +1199,9 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         // Fal pricing: $0.02 per output megapixel for text-to-image; edits
-        // bill $0.11/3 per megapixel. Fal rounds output up to whole
-        // megapixels of 2^20 px and bills each reference as half a megapixel
+        // bill $0.11/3 per megapixel, doubled because gen sends
+        // guidance_scale 4. Fal rounds output up to whole megapixels of
+        // 2^20 px and bills each reference as half a megapixel
         // (measured 2026-09-25). gen reports usage in millionths of a billed
         // megapixel (UInt32 usage columns), so perMillion(x) = $x per megapixel.
         cost: {
@@ -1210,8 +1211,8 @@ const IMAGE_BASE_SERVICES = {
         ...defineCostVariants(
             {
                 edit: {
-                    promptImageTokens: perMillion(0.11 / 3),
-                    completionImageTokens: perMillion(0.11 / 3),
+                    promptImageTokens: perMillion((2 * 0.11) / 3),
+                    completionImageTokens: perMillion((2 * 0.11) / 3),
                 },
             },
             ({ input }) => (input?.hasImage ? "edit" : undefined),

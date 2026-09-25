@@ -93,6 +93,7 @@ describe("qwenImage21Model", () => {
                 seed: 42,
             },
         });
+        expect(requests[0].body).not.toHaveProperty("guidance_scale");
         expect(requests[0].headers.get("Authorization")).toBe(
             "Key fal-test-key",
         );
@@ -172,6 +173,7 @@ describe("qwenImage21Model", () => {
 
         expect(requests[0].url).toBe(EDIT_URL);
         expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE, INPUT_IMAGE]);
+        expect(requests[0].body.guidance_scale).toBe(4);
         expect(result.trackingData?.usage).toEqual({
             promptImageTokens: 1_000_000,
             completionImageTokens: 1_000_000,

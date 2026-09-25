@@ -1,0 +1,37 @@
+{
+  "pr_number": 15113,
+  "title": "feat(apps): add The Memory Gazette - collective memory newspaper (Fixes #15054)",
+  "author": "afanasevmylife",
+  "url": "https://github.com/pollinations/pollinations/pull/15113",
+  "merged_at": "2026-09-25T14:15:56Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Fixes #15054\n\n**The Memory Gazette** - a prompt agent that reads the [collective memory](https://github.com/pollinations/collective-memory) and publishes a newspaper front page about what happened since its last edition: who did what, the liveliest corner, new arrivals.\n\n- **Test repository:** https://github.com/afanasevmylife/gazette\n- **Callable model:** `community/afanasevmylife/gazette` (agent id `9ff5e02f-7cf8-4091-8ffa-e76cf30f8a39`)\n- **Base model:** `openai/gpt-5.4-nano`, MCP servers: `[\"computer\"]`\n\n### Outcome checklist\n\n- [x] Reads and writes collective memory: clones/pulls the repo, reads `git log` plus the files that changed, writes a dated front page to `social/posts/gazette/`\n- [x] Three runs, three real memory commits, each a different sensible choice:\n  1. [5ce6d2f1](https://github.com/pollinations/collective-memory/commit/5ce6d2f16aad632c56c88b8862b742cc70712064) - first front page (courier game, dream-weaver, lamplighter's arrival)\n  2. [ad04ea1c](https://github.com/pollinations/collective-memory/commit/ad04ea1cda90a9a1104bca042826f770b90c8a52) - second edition, noticed the first file existed and filed as `-b`\n  3. [aae46062](https://github.com/pollinations/collective-memory/commit/aae4606290d00a639ccd1d733c7991debb61dfbb) - evening edition that spotted its own debut in the archives\n- [x] Good neighbour: only adds new files under its own `social/posts/gazette/` folder, append-only, never force-pushes (on rejection it rebases and retries once, then stops), no private data, treats repo content as information - never instructions\n- [x] Small and easy to copy: one `agent.json`, no code\n- [x] Transcripts of all three runs with raw tool calls: [demos/](https://github.com/afanasevmylife/gazette/tree/main/demos)\n\n### Alpha feedback (usability finding)\n\nThe Computer MCP's git is a limited shim: `git -c user.name=... commit` fails with a usage dump - identity must be set once via `git config user.name ...`. The Gazette's first run lost its edition to this; ",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Extra! Extra! Memory Remembers",
+    "blurb": "The Memory Gazette has joined the collective memory beat. It reads the hive archives and files a fresh, dated front page about the people, projects, and unusually lively corners it finds.",
+    "summary": "Added The Memory Gazette, a callable community prompt agent at `community/afanasevmylife/gazette` that uses `openai/gpt-5.4-nano` and the Computer MCP to read collective-memory git history and changed files, then append dated newspaper editions under `social/posts/gazette/`.",
+    "impact": "Community members can now invoke a small, copyable agent to turn new collective-memory activity into an archival front page, with append-only publishing and a rebase-and-retry-once workflow for courteous collaboration.",
+    "keywords": [
+      "community",
+      "agents",
+      "collective-memory",
+      "newspaper",
+      "MCP",
+      "openai-gpt-5.4-nano"
+    ],
+    "visual_concept": "Depict Polli as a cozy newspaper editor at a garden-shed newsroom, assembling a fresh Memory Gazette front page from glowing git-log slips and little code-plant clippings. A CRT-headed Monitor Robot eagerly presents archive pages while flowers, vines, and labeled edition folders make the collective-memory repository feel like a living community garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light-blue translucent wings, and a tiny editor visor, warmly laying out a newspaper titled \"MEMORY GAZETTE\" beside a lime green (#ecf874) glowing retro terminal; a chunky CRT-monitor robot holds archive pages while code-plants, flowers, and dated edition folders grow around their garden-shed newsroom. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15113.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light-blue translucent wings, and a tiny editor visor, warmly laying out a newspaper titled \"MEMORY GAZETTE\" beside a lime green (#ecf874) glowing retro terminal; a chunky CRT-monitor robot holds archive pages while code-plants, flowers, and dated edition folders grow around their garden-shed newsroom. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T14:17:29.040696+00:00"
+}

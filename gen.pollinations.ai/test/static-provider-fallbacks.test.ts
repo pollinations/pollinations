@@ -70,9 +70,19 @@ const OPENROUTER_ROUTES = [
         "anthropic",
     ],
     [
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
+        "meta/muse-glimmer-30b:openrouter:together",
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
+    ],
+    [
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "moonshotai/kimi-k2.7-code",
+        "streamlake",
+    ],
+    [
+        "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
     ],
     [
         "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
@@ -583,6 +593,7 @@ describe("static provider fallbacks", () => {
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
+            "x-ai/grok-4.6:xai",
         ]);
         expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
             TEXT_SERVICES["x-ai/grok-4.6"].cost,
@@ -655,9 +666,10 @@ describe("static provider fallbacks", () => {
             promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:openrouter:streamlake"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 0.85 / 1_000_000,
+            promptCacheWriteTokens: (0.7125 / 1_000_000) * 1.055,
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
@@ -865,6 +877,11 @@ describe("static provider fallbacks", () => {
             responsesEndpoint:
                 "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
             responsesAuthHeader: "api-key",
+        });
+        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            model: "grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

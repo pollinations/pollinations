@@ -3,18 +3,13 @@ import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
+import { falBillableUnits } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:fal-qwen-image:ops");
 
 // Fal serves both Qwen generations with the same request and response shape.
-// Qwen Image 3 bills per image and per reference image.
-// Qwen Image 2.1 bills megapixels of 2^20 px: output rounded up to whole
-// megapixels, each reference as half a megapixel whatever its size (measured
-// against fal's usage API, 2026-09-25). Usage counts millionths of a billed
-// megapixel, so the registry's perMillion(x) rates equal fal's $x per megapixel.
-const MEGAPIXEL = 1024 * 1024;
 
 const FAL_QWEN_MODELS = {
     "qwen/qwen-image-3:fal": {
@@ -24,8 +19,9 @@ const FAL_QWEN_MODELS = {
         promptExpansion: { enable_prompt_expansion: false },
         editOptions: {},
         resolveSize: resolveQwenImage3Size,
-        usage: (_size: FalImageSize, references: number) => ({
-            promptImageTokens: references,
+        // Fal bills Qwen Image 3 per image and per reference image.
+        usage: (_response: Response, references: number) => ({
+            ...(references ? { promptImageTokens: references } : {}),
             completionImageTokens: 1,
         }),
     },
@@ -38,10 +34,12 @@ const FAL_QWEN_MODELS = {
         // oversharpened. Guidance doubles the edit price (measured 2026-09-25).
         editOptions: { guidance_scale: 4 },
         resolveSize: resolveQwenImageSize,
-        usage: (size: FalImageSize, references: number) => ({
-            promptImageTokens: references * 500_000,
-            completionImageTokens:
-                Math.ceil((size.width * size.height) / MEGAPIXEL) * 1_000_000,
+        // Fal reports the megapixels it billed. Usage counts millionths of
+        // them because the usage columns hold whole numbers.
+        usage: (response: Response) => ({
+            completionImageTokens: Math.round(
+                falBillableUnits(response) * 1_000_000,
+            ),
         }),
     },
 } as const;
@@ -50,7 +48,7 @@ type FalImageSize = { width: number; height: number };
 
 export type FalQwenModel = keyof typeof FAL_QWEN_MODELS;
 
-// Fal rounds sizes to multiples of 32 and bills the rounded output.
+// Fal rounds sizes to multiples of 32.
 const roundTo32 = (value: number) => Math.max(32, Math.round(value / 32) * 32);
 
 /**
@@ -148,23 +146,14 @@ export async function callFalQwenImageAPI(
             requestUrl: new URL(upstreamUrl),
         });
     }
+    const usage = config.usage(response, references.length);
 
     const imageResponse = await fetchUpstream(imageUrl, {
         errorLabel: `Failed to download ${config.label} result`,
     });
 
-    const { promptImageTokens, completionImageTokens } = config.usage(
-        size,
-        references.length,
-    );
     return {
         buffer: Buffer.from(await imageResponse.arrayBuffer()),
-        trackingData: {
-            actualModel: safeParams.model,
-            usage: {
-                ...(isEdit ? { promptImageTokens } : {}),
-                completionImageTokens,
-            },
-        },
+        trackingData: { actualModel: safeParams.model, usage },
     };
 }

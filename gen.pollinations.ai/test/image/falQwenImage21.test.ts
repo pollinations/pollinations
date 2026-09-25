@@ -34,7 +34,13 @@ interface FalRequest {
     body: Record<string, unknown>;
 }
 
-function mockFal(requests: FalRequest[], responseBody: unknown = undefined) {
+function mockFal(
+    requests: FalRequest[],
+    {
+        body,
+        billableUnits = "1",
+    }: { body?: unknown; billableUnits?: string | null } = {},
+) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (input, init) => {
@@ -49,7 +55,12 @@ function mockFal(requests: FalRequest[], responseBody: unknown = undefined) {
                     >,
                 });
                 return Response.json(
-                    responseBody ?? { images: [{ url: OUTPUT_URL }], seed: 42 },
+                    body ?? { images: [{ url: OUTPUT_URL }], seed: 42 },
+                    {
+                        headers: billableUnits
+                            ? { "x-fal-billable-units": billableUnits }
+                            : {},
+                    },
                 );
             }
             if (url === OUTPUT_URL) {
@@ -75,7 +86,7 @@ afterEach(() => {
 });
 
 describe("qwenImage21Model", () => {
-    it("generates one seeded PNG and meters output pixels", async () => {
+    it("generates one seeded PNG and bills fal's reported megapixels", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -104,11 +115,11 @@ describe("qwenImage21Model", () => {
         });
     });
 
-    it("rounds the size to multiples of 32 and bills whole megapixels", async () => {
+    it("rounds the size to multiples of 32", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwen21("wide", {
+        await callQwen21("wide", {
             ...baseParams,
             width: 1280,
             height: 720,
@@ -119,29 +130,22 @@ describe("qwenImage21Model", () => {
             width: 1280,
             height: 736,
         });
-        expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: 1_000_000,
-        });
     });
 
-    // Fal bills 1376×768 (just over 2^20 px) as 2 megapixels: measured 2026-09-25.
     it.each([
-        ["16:9", 1376, 768, 2],
-        ["9:16", 768, 1376, 2],
-        ["1:1", 1024, 1024, 1],
-    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height, megapixels) => {
+        ["16:9", 1376, 768],
+        ["9:16", 768, 1376],
+        ["1:1", 1024, 1024],
+    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height) => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwen21("aspect ratio", {
+        await callQwen21("aspect ratio", {
             ...baseParams,
             aspectRatio,
         });
 
         expect(requests[0].body.image_size).toEqual({ width, height });
-        expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: megapixels * 1_000_000,
-        });
     });
 
     it("ignores aspectRatio once dimensions are explicit", async () => {
@@ -162,9 +166,10 @@ describe("qwenImage21Model", () => {
         });
     });
 
-    it("routes edits to the edit endpoint and bills each reference as half a megapixel", async () => {
+    it("routes edits to the edit endpoint with guidance and bills fal's reported megapixels", async () => {
         const requests: FalRequest[] = [];
-        mockFal(requests);
+        // 1 MP output plus two half-megapixel references, doubled for guidance.
+        mockFal(requests, { billableUnits: "4" });
 
         const result = await callQwen21("edit the references", {
             ...baseParams,
@@ -175,12 +180,8 @@ describe("qwenImage21Model", () => {
         expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE, INPUT_IMAGE]);
         expect(requests[0].body.guidance_scale).toBe(4);
         expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 1_000_000,
-            completionImageTokens: 1_000_000,
+            completionImageTokens: 4_000_000,
         });
-        for (const tokens of Object.values(result.trackingData?.usage ?? {})) {
-            expect(Number.isInteger(tokens)).toBe(true);
-        }
     });
 
     it("rejects more than ten reference images before calling Fal", async () => {
@@ -196,13 +197,22 @@ describe("qwenImage21Model", () => {
     });
 
     it("rejects a successful Fal response without an output image", async () => {
-        mockFal([], { images: [] });
+        mockFal([], { body: { images: [] } });
 
         await expect(
             callQwen21("missing output", baseParams),
         ).rejects.toMatchObject({
             status: 502,
             requestUrl: new URL(GENERATE_URL),
+        });
+    });
+
+    it("rejects a Fal response without billable units", async () => {
+        mockFal([], { billableUnits: null });
+
+        await expect(callQwen21("unbilled", baseParams)).rejects.toMatchObject({
+            status: 502,
+            message: "Fal response has no billable units",
         });
     });
 });

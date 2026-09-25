@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 import {
     currentDashboards,
@@ -50,4 +51,25 @@ test("defaults to everything except legacy and rejects unknown values", () => {
     assert.equal(readTraffic(""), "everything_else");
     assert.equal(readTraffic("?traffic=all"), "all");
     assert.equal(readTraffic("?traffic=internal"), "everything_else");
+});
+
+test("starts every linear time-series y-axis at zero", () => {
+    const dir = new URL("../provisioning/dashboards/", import.meta.url);
+    const missing = readdirSync(dir)
+        .filter((file) => file.endsWith(".json"))
+        .flatMap((file) =>
+            JSON.parse(readFileSync(new URL(file, dir), "utf8"))
+                .panels.filter((panel) => {
+                    if (panel.type !== "timeseries") return false;
+                    const { min, custom = {} } = panel.fieldConfig.defaults;
+                    // Log axes cannot include zero; balances may go negative.
+                    return (
+                        custom.scaleDistribution?.type !== "log" &&
+                        min !== 0 &&
+                        custom.axisSoftMin !== 0
+                    );
+                })
+                .map((panel) => `${file}: ${panel.title}`),
+        );
+    assert.deepEqual(missing, []);
 });

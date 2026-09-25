@@ -26,19 +26,15 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-09-24",
-        dateLabel: "Starting Sep 25",
         emoji: "🔄",
-        title: "Model changes as providers retire models",
+        title: "Model provider changes",
         description:
-            "Moved models keep their IDs. Retired IDs redirect to a successor, so existing requests keep working. [Browse models](/models).",
+            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
         details: [
-            "Becoming paid-only: DeepSeek V4 Flash Vision, DeepSeek V4 Pro, Kimi K2.7 Code, GLM 5.2 and Muse Glimmer 30B (Sep 25); Perplexity Sonar (Sep 27); Qwen3 Coder 30B (Oct 1); Command A+ (Oct 13).",
-            "Price changes: DeepSeek V4 Flash rises to $0.33/$0.99 per million tokens, while DeepSeek V4 Pro and Muse Glimmer 30B get cheaper (Sep 25). Perplexity Sonar input gets cheaper, output costs more, and each web search is billed (Sep 27). Qwen3 VL 235B Thinking rises to $1.03/$4.17 (Oct 9).",
-            "Redirects to a cheaper model: Sonar Pro and Sonar Reasoning Pro → Sonar, which reasons much less (Sep 27). Nova Canvas → GPT Image 1 Mini, which ignores seeds (Sep 30). Qwen3 TTS Instruct → Qwen3 TTS Flash, without the instructions parameter (Oct 9).",
-            "Redirects at the same price: MAI Image 2.5 Flash → MAI Image 2.6 Flash (Oct 1).",
-            "Redirects to a pricier model: Gemini 2.5 Flash Lite → Gemini 3.5 Flash Lite, at 3× the input and about 6× the output price (Oct 20). Grok Imagine Pro → Grok Imagine Image 2.0, about 20% more (Nov 2).",
-            "Removed: Nova Reel (Sep 30) and Gemini 2.5 Flash Lite Search (Oct 20).",
-            "Kimi K2.7 Code now always reasons, so requests that force a tool call return an error (Sep 25).",
+            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
+            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
+            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
+            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
         ],
     },
     {

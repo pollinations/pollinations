@@ -1,0 +1,35 @@
+{
+  "pr_number": 14865,
+  "title": "docs: update Flux pricing",
+  "author": "AbarnaaSree",
+  "url": "https://github.com/pollinations/pollinations/pull/14865",
+  "merged_at": "2026-09-25T13:31:55Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "## Summary\r\n\r\n* Update the outdated Flux pricing information in `enter.pollinations.ai/AGENTS.md`\r\n* Change the documentation from describing Flux as free to the current price of 0.002 Pollen per image\r\n\r\n## Issue Number\r\n\r\nFixes #14723\r\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Flux gets a price tag",
+    "blurb": "The Flux sign in the garden has been corrected: each image costs 0.002 Pollen. Tiny labels, fewer surprises.",
+    "summary": "Updated enter.pollinations.ai/AGENTS.md to replace the outdated claim that Flux images are free with the current price of 0.002 Pollen per image.",
+    "impact": "Developers reading the Flux documentation now get the current 0.002-Pollen-per-image cost when planning image generation.",
+    "keywords": [
+      "documentation",
+      "Flux",
+      "pricing",
+      "Pollen",
+      "images"
+    ],
+    "visual_concept": "A cozy documentation update represented by Polli carefully replacing an old \"FREE\" placard with a small, clear \"0.002 POLLEN / IMAGE\" sign beside a flourishing Flux image plant. A nearby retro terminal and soft garden flowers make the pricing information feel like useful upkeep rather than a warning.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she updates a garden sign from \"FREE\" to \"0.002 POLLEN / IMAGE\" beside a blooming Flux code-plant and retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle flowers and vines, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-14865.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she updates a garden sign from \"FREE\" to \"0.002 POLLEN / IMAGE\" beside a blooming Flux code-plant and retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle flowers and vines, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-25T13:32:55.439092+00:00"
+}

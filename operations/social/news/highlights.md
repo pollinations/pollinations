@@ -1,3 +1,7 @@
+- **2026-09-24** – **🎯 Video input for Ling 3.0 Flash VL** Send `video_url` alongside text and images to `inclusionai/ling-3.0-flash-vl`. The hive watches clips now. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-24** – **✨ `polli whoami`** Check which Polli identity your CLI is using with one small, script-friendly command: `polli whoami`.
+- **2026-09-24** – **🚀 Seven models, same IDs** Fireworks-backed models moved before the shutdown, keeping existing calls alive; Kimi K2.6 can now accept up to 30 images per request.
+- **2026-09-24** – **🎮 GATEKEEPER** A 60-second arcade arena where an AI writes each run’s survival rules. Fixed rulebooks were apparently too stable. [Try it](https://khuzaima3232.github.io/gatekeeper) <!-- app -->
 - **2026-09-23** – **🤖 GPT-5.3 Codex** `openai/gpt-5.3-codex` is now available with a 400K-token context window, tool use, structured output, images, files, reasoning, streaming, and terminal workflows. [Try the API](https://gen.pollinations.ai/docs)
 - **2026-09-23** – **🚀 MiMo V2.6 Flash and Pro** Two Xiaomi models join the text API with image input, tools, streaming, JSON schema, reasoning controls, and a frankly excessive 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-23** – **🎨 New Azure image models** Generate and edit with `microsoft/mai-image-2.6`, its faster Flash sibling, and `black-forest-labs/flux.1.1-pro` through the existing image API. [Try image generation](https://pollinations.ai/play)

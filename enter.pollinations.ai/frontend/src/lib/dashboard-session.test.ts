@@ -36,10 +36,7 @@ describe("createDashboardSessionResolver", () => {
 
     it("returns the resolved user on a normal refresh", async () => {
         const getSession = vi.fn().mockResolvedValue(OK({ id: "u1" }));
-        const resolver = createDashboardSessionResolver(
-            getSession,
-            STALE_TIME,
-        );
+        const resolver = createDashboardSessionResolver(getSession, STALE_TIME);
 
         await expect(resolver.resolve()).resolves.toEqual({
             user: { id: "u1" },
@@ -109,10 +106,7 @@ describe("createDashboardSessionResolver", () => {
 
     it("does not swallow a transient failure on the very first load (no cached session to fall back to)", async () => {
         const getSession = vi.fn().mockRejectedValue(new Error("offline"));
-        const resolver = createDashboardSessionResolver(
-            getSession,
-            STALE_TIME,
-        );
+        const resolver = createDashboardSessionResolver(getSession, STALE_TIME);
 
         // This is not a blanket "always trust the cache" fallback: with
         // nothing yet confirmed, the failure must still surface.
@@ -124,10 +118,7 @@ describe("createDashboardSessionResolver", () => {
             .fn()
             .mockResolvedValueOnce(OK({ id: "u1" }))
             .mockResolvedValueOnce(UNAUTHENTICATED(401));
-        const resolver = createDashboardSessionResolver(
-            getSession,
-            STALE_TIME,
-        );
+        const resolver = createDashboardSessionResolver(getSession, STALE_TIME);
 
         await resolver.resolve();
         vi.advanceTimersByTime(STALE_TIME + 1);
@@ -146,10 +137,7 @@ describe("createDashboardSessionResolver", () => {
 
     it("expired/revoked session: a 403 is treated the same as a 401", async () => {
         const getSession = vi.fn().mockResolvedValue(UNAUTHENTICATED(403));
-        const resolver = createDashboardSessionResolver(
-            getSession,
-            STALE_TIME,
-        );
+        const resolver = createDashboardSessionResolver(getSession, STALE_TIME);
 
         await expect(resolver.resolve()).rejects.toThrow(
             "Authentication failed.",
@@ -158,10 +146,7 @@ describe("createDashboardSessionResolver", () => {
 
     it("caches the in-flight session request within the stale window", async () => {
         const getSession = vi.fn().mockResolvedValue(OK({ id: "u1" }));
-        const resolver = createDashboardSessionResolver(
-            getSession,
-            STALE_TIME,
-        );
+        const resolver = createDashboardSessionResolver(getSession, STALE_TIME);
 
         await resolver.resolve();
         await resolver.resolve();

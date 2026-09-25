@@ -47,6 +47,6 @@ curl -X POST https://gen.pollinations.ai/machines/my-agent/stop \
   -H "Authorization: Bearer YOUR_SECRET_KEY"
 ```
 
-Machines are private: every route accepts only the owner's secret keys. A
+Machines are private: every route accepts only the owner's keys. A
 machine can call out to the internet, but nothing can call in yet, so agents
 that poll or hold an outbound connection fit best.

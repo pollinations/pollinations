@@ -333,11 +333,5 @@ async function requireMachineAccess(
         });
     }
     c.var.auth.requireUser();
-    // A publishable key ships in frontends; it must never reach a shell.
-    if (c.var.auth.apiKey?.metadata?.keyType === "publishable") {
-        throw new HTTPException(403, {
-            message: "Machines require a secret key",
-        });
-    }
     await next();
 }

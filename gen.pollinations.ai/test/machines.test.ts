@@ -121,15 +121,9 @@ test("creates, lists, execs and deletes a machine for its owner only", async () 
     expect(smol.machines).toHaveLength(0);
 });
 
-test("rejects publishable keys and the fourth machine", async () => {
+test("rejects the fourth machine and invalid names", async () => {
     stubSmol();
     const owner = await createTestApiKey();
-    const publishable = await createTestApiKey({
-        userId: owner.userId,
-        type: "publishable",
-    });
-    expect((await call(publishable.key, "/machines")).status).toBe(403);
-
     const create = (name: string) =>
         call(owner.key, "/machines", {
             method: "POST",

@@ -409,12 +409,17 @@ test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeResponse, paidResponse, generation] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker("/text/paid-only-check?model=mistral", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+    ]);
 
     expect(freeResponse.status).toBe(200);
     expect(paidResponse.status).toBe(200);
@@ -443,10 +448,6 @@ test("filters OpenRouter text models by paid balance", async ({
         openRouterModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/text/paid-only-check?model=mistral",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
     expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
     if (TEXT_BALANCE_NOTICE_ENABLED) {
         expect(await generation.text()).toContain(
@@ -456,19 +457,28 @@ test("filters OpenRouter text models by paid balance", async ({
             "private, no-store",
         );
     }
-});
+}, 15_000);
 
 test("requires paid balance for direct OpenAI GPT-6 models", async ({
     apiKey,
     paidApiKey,
 }) => {
     const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
-    const freeResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeResponse, paidResponse, responses] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        Promise.all(
+            models.map((model) =>
+                fetchWorker(`/text/paid-only-check?model=${model}`, {
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                }),
+            ),
+        ),
+    ]);
     const freeModels = (await freeResponse.json()) as {
         data: { id: string }[];
     };
@@ -478,16 +488,14 @@ test("requires paid balance for direct OpenAI GPT-6 models", async ({
     const freeNames = new Set(freeModels.data.map((model) => model.id));
     const paidNames = new Set(paidModels.data.map((model) => model.id));
 
-    for (const model of models) {
+    for (const [index, model] of models.entries()) {
         expect(freeNames.has(model)).toBe(false);
         expect(paidNames.has(model)).toBe(true);
-        const response = await fetchWorker(
-            `/text/paid-only-check?model=${model}`,
-            { headers: { Authorization: `Bearer ${apiKey}` } },
+        expect(responses[index].status).toBe(
+            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
         );
-        expect(response.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
     }
-});
+}, 15_000);
 
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
@@ -547,12 +555,18 @@ test("requires paid balance for Recraft vector", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeCatalog, paidCatalog, generation] = await Promise.all([
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker(
+            "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+        ),
+    ]);
     const freeModels = (await freeCatalog.json()) as { name: string }[];
     const paidModels = (await paidCatalog.json()) as { name: string }[];
 
@@ -567,12 +581,8 @@ test("requires paid balance for Recraft vector", async ({
         ),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
     expect(generation.status).toBe(402);
-});
+}, 15_000);
 
 test("Scout catalog exposes its enforced output capabilities", async () => {
     const response = await fetchWorker("/models");

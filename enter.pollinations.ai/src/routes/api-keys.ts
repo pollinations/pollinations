@@ -134,6 +134,20 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    pollenBudgetTier: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Quest/tier budget cap for this key. null = no separate tier cap"),
+    pollenBudgetPaid: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Paid/pack budget cap for this key. null = no separate paid cap"),
+    allowPaidOnly: z
+        .boolean()
+        .optional()
+        .describe("Allow paid-only models on this key"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -178,6 +192,24 @@ const CreateApiKeySchema = z.object({
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
+    pollenBudgetTier: z
+        .number()
+        .nullable()
+        .optional()
+        .describe(
+            "Quest/tier budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for no separate tier cap",
+        ),
+    pollenBudgetPaid: z
+        .number()
+        .nullable()
+        .optional()
+        .describe(
+            "Paid/pack budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for no separate paid cap",
+        ),
+    allowPaidOnly: z
+        .boolean()
+        .optional()
+        .describe("Allow paid-only models on this key"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -239,6 +271,9 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                pollenBudgetTier: input.pollenBudgetTier,
+                pollenBudgetPaid: input.pollenBudgetPaid,
+                allowPaidOnly: input.allowPaidOnly,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 defaultCreatedVia: createdVia,
@@ -329,6 +364,9 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                pollenBudgetTier,
+                pollenBudgetPaid,
+                allowPaidOnly,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -369,6 +407,26 @@ export const apiKeysRoutes = new Hono<Env>()
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
+            if (
+                pollenBudgetTier !== undefined ||
+                pollenBudgetPaid !== undefined ||
+                allowPaidOnly !== undefined
+            ) {
+                const existingMetadata = parseMetadata(existingKey.metadata);
+                if (pollenBudgetTier !== undefined) {
+                    if (pollenBudgetTier === null)
+                        delete existingMetadata.pollenBudgetTier;
+                    else existingMetadata.pollenBudgetTier = pollenBudgetTier;
+                }
+                if (pollenBudgetPaid !== undefined) {
+                    if (pollenBudgetPaid === null)
+                        delete existingMetadata.pollenBudgetPaid;
+                    else existingMetadata.pollenBudgetPaid = pollenBudgetPaid;
+                }
+                if (allowPaidOnly !== undefined)
+                    existingMetadata.allowPaidOnly = allowPaidOnly;
+                d1Updates.metadata = JSON.stringify(existingMetadata);
+            }
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -401,6 +459,20 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: updated?.name,
                 permissions: responsePermissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                pollenBudgetTier:
+                    (parseMetadata(updated?.metadata).pollenBudgetTier as
+                        | number
+                        | null
+                        | undefined) ?? null,
+                pollenBudgetPaid:
+                    (parseMetadata(updated?.metadata).pollenBudgetPaid as
+                        | number
+                        | null
+                        | undefined) ?? null,
+                allowPaidOnly:
+                    (parseMetadata(updated?.metadata).allowPaidOnly as
+                        | boolean
+                        | undefined) ?? true,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

@@ -12,6 +12,9 @@ import { normalizeAllowedModelSelection } from "./model-selection.ts";
 export interface KeyPermissions {
     allowedModels: string[] | null;
     pollenBudget: number | null;
+    pollenBudgetTier: number | null;
+    pollenBudgetPaid: number | null;
+    allowPaidOnly: boolean;
     expiryDays: number | null;
     accountPermissions: string[] | null;
 }
@@ -23,6 +26,15 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [pollenBudget, setPollenBudget] = useState(
         initial.pollenBudget ?? null,
     );
+    const [pollenBudgetTier, setPollenBudgetTier] = useState(
+        initial.pollenBudgetTier ?? null,
+    );
+    const [pollenBudgetPaid, setPollenBudgetPaid] = useState(
+        initial.pollenBudgetPaid ?? null,
+    );
+    const [allowPaidOnly, setAllowPaidOnly] = useState(
+        initial.allowPaidOnly ?? true,
+    );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
@@ -32,11 +44,17 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
         permissions: {
             allowedModels,
             pollenBudget,
+            pollenBudgetTier,
+            pollenBudgetPaid,
+            allowPaidOnly,
             expiryDays,
             accountPermissions,
         },
         setAllowedModels,
         setPollenBudget,
+        setPollenBudgetTier,
+        setPollenBudgetPaid,
+        setAllowPaidOnly,
         setExpiryDays,
         setAccountPermissions,
     };
@@ -70,6 +88,9 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         permissions,
         setAllowedModels,
         setPollenBudget,
+        setPollenBudgetTier,
+        setPollenBudgetPaid,
+        setAllowPaidOnly,
         setExpiryDays,
         setAccountPermissions,
     } = value;
@@ -115,6 +136,27 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 onChange={setPollenBudget}
                 disabled={disabled}
             />
+            <KeyLimitInput
+                kind="budgetTier"
+                accessContext={accessContext}
+                value={permissions.pollenBudgetTier}
+                onChange={setPollenBudgetTier}
+                disabled={disabled}
+            />
+            <KeyLimitInput
+                kind="budgetPaid"
+                accessContext={accessContext}
+                value={permissions.pollenBudgetPaid}
+                onChange={setPollenBudgetPaid}
+                disabled={disabled}
+            />
+            <AuthAccessItem
+                checked={permissions.allowPaidOnly}
+                disabled={disabled}
+                onChange={(checked) => setAllowPaidOnly(checked)}
+            >
+                Allow paid-only models
+            </AuthAccessItem>
             <KeyLimitInput
                 kind="expiry"
                 accessContext={accessContext}

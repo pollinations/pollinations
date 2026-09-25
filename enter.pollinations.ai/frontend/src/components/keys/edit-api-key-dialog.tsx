@@ -64,6 +64,18 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
+        pollenBudgetTier:
+            (apiKey.pollenBudgetTier as number | null | undefined) ??
+            (apiKey.metadata?.pollenBudgetTier as number | null | undefined) ??
+            null,
+        pollenBudgetPaid:
+            (apiKey.pollenBudgetPaid as number | null | undefined) ??
+            (apiKey.metadata?.pollenBudgetPaid as number | null | undefined) ??
+            null,
+        allowPaidOnly:
+            (apiKey.allowPaidOnly as boolean | undefined) ??
+            (apiKey.metadata?.allowPaidOnly as boolean | undefined) ??
+            true,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
     });

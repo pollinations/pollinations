@@ -29,7 +29,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🔄",
         title: "Model provider changes",
         description:
-            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
+            "Moved models keep their IDs. Retired IDs redirect to a successor, so existing requests keep working. [Browse models](/models).",
         details: [
             "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B, Qwen3 Coder 30B.",
             "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",

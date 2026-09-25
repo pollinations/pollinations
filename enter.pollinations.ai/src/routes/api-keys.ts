@@ -241,7 +241,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBudget: input.pollenBudget,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
-                allowAccountKeysPermission: true,
                 defaultCreatedVia: createdVia,
             });
 

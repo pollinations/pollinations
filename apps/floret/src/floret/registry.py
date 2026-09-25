@@ -132,6 +132,8 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("image")
     if category == "video" and "video" in declared_outputs:
         modalities.append("video")
+    if category == "3d" and "3d" in declared_outputs:
+        modalities.append("3d")
     if (
         category in {"text", "audio"}
         and "text" in declared_inputs

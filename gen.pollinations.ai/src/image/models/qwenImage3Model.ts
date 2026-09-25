@@ -33,7 +33,7 @@ interface FalQwenImage3Response {
     images?: Array<{ url?: string }>;
 }
 
-function resolveImageSize(safeParams: ImageParams): FalImageSize {
+export function resolveQwenImageSize(safeParams: ImageParams): FalImageSize {
     if (safeParams.dimensionsExplicit || !safeParams.aspectRatio) {
         return { width: safeParams.width, height: safeParams.height };
     }
@@ -86,7 +86,7 @@ export async function callQwenImage3API(
     const requestBody = {
         prompt,
         ...(isEdit ? { image_urls: imageUrls } : {}),
-        image_size: resolveImageSize(safeParams),
+        image_size: resolveQwenImageSize(safeParams),
         enable_prompt_expansion: false,
         enable_safety_checker: true,
         num_images: 1,
@@ -124,10 +124,8 @@ export async function callQwenImage3API(
 
     return {
         buffer: Buffer.from(await imageResponse.arrayBuffer()),
-        isMature: false,
-        isChild: false,
         trackingData: {
-            actualModel: "qwen/qwen-image-3",
+            actualModel: safeParams.model,
             usage: {
                 ...(isEdit ? { promptImageTokens: imageUrls.length } : {}),
                 completionImageTokens: 1,

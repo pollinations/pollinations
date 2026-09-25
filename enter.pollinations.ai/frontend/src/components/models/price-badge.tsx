@@ -1,21 +1,30 @@
 import {
     BookIcon,
     Button,
+    ChatIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
     ClockIcon,
     cn,
+    DatabaseIcon,
     Dropdown,
     DropdownItem,
+    ExpandIcon,
+    ImageIcon,
     McpIcon,
+    MicIcon,
     SearchIcon,
+    SparklesIcon,
     TokensIcon,
     Tooltip,
+    VideoIcon,
+    WalletIcon,
 } from "@pollinations/ui";
 import { type FC, type ReactNode, useState } from "react";
 import { formatDisplayPrice } from "./formatters.ts";
-import { PRICE_ICON } from "./model-icons.tsx";
+import { ContextIcon, PRICE_ICON } from "./model-icons.tsx";
+import { getFixedResolution } from "./model-info.ts";
 import type {
     ModelPrice,
     ModelPriceAdjustment,
@@ -56,14 +65,6 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
-const PRICE_LEDGER_UNIT: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-};
-
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
 
 const formatAdjustmentUnit = ({
@@ -77,6 +78,7 @@ const formatAdjustmentUnit = ({
     if (kind === "search_request") {
         return quantity === 1 ? "req" : `${quantityLabel} req`;
     }
+    if (kind === "search_query") return `${quantityLabel} queries`;
     if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
     if (kind === "cache_storage") {
         return `${quantityLabel} tokens`;
@@ -92,57 +94,6 @@ const formatAdjustmentUnit = ({
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
     subKinds: PriceKind[];
 };
-
-const groupPriceBadges = (prices: ModelPriceLine[]): PriceBadgeConfig[] => {
-    const grouped = new Map<string, PriceBadgeConfig>();
-
-    for (const price of prices) {
-        const key = [price.price, price.unit].join("|");
-        const existing = grouped.get(key);
-        if (existing) {
-            existing.subKinds = [
-                ...new Set([...existing.subKinds, price.kind]),
-            ];
-            continue;
-        }
-
-        grouped.set(key, {
-            price: price.price,
-            kind: price.kind,
-            unit: price.unit,
-            subKinds: [price.kind],
-        });
-    }
-
-    return [...grouped.values()];
-};
-
-export const getModelPriceBadges = (
-    model: ModelPrice,
-    direction: PriceDirection,
-): PriceBadgeConfig[] =>
-    groupPriceBadges(
-        model.prices.filter((price) => price.direction === direction),
-    );
-
-const getPriceBadgeKey = (badge: PriceBadgeConfig): string =>
-    [badge.subKinds.join(""), badge.price, badge.unit].join("-");
-
-type PriceBadgeListProps = {
-    badges: PriceBadgeConfig[];
-    className?: string;
-};
-
-export const PriceBadgeList: FC<PriceBadgeListProps> = ({
-    badges,
-    className,
-}) => (
-    <div className={className}>
-        {badges.map((badge) => (
-            <PriceBadge key={getPriceBadgeKey(badge)} {...badge} />
-        ))}
-    </div>
-);
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const displayedPrice = formatDisplayPrice(price, unit === "token");
@@ -187,11 +138,85 @@ type ModelPricingSelection = {
     adjustments: ModelPriceAdjustment[];
     dropdowns: Array<{
         key: string;
+        label: string;
+        unit?: string;
         value: string;
         options: Array<{ value: string; label: string }>;
         onSelect: (value: string) => void;
     }>;
 };
+
+/** Each option targets an existing rate sheet, preserving later choices when possible. */
+export function getPricingVariantControls(
+    model: ModelPrice,
+    variantName: string,
+) {
+    if (!model.priceVariants?.length) return [];
+    const dimensions = model.pricingDimensions;
+    if (!dimensions?.length) {
+        return [
+            {
+                key: "pricing",
+                label: "Pricing",
+                unit: undefined,
+                value: variantName,
+                options: [
+                    {
+                        value: "",
+                        label: model.priceDefaultLabel ?? "Base rate",
+                    },
+                    ...model.priceVariants.map(({ name, label }) => ({
+                        value: name,
+                        label,
+                    })),
+                ],
+            },
+        ];
+    }
+    const variants = ["", ...model.priceVariants.map(({ name }) => name)];
+    const fixedResolution = getFixedResolution(model);
+    return dimensions
+        .map((dimension, index) => {
+            const candidates = variants.filter((variant) =>
+                dimensions
+                    .slice(0, index)
+                    .every(
+                        ({ values }) => values[variant] === values[variantName],
+                    ),
+            );
+            const score = (variant: string) =>
+                dimensions
+                    .slice(index + 1)
+                    .filter(
+                        ({ values }) => values[variant] === values[variantName],
+                    ).length;
+            const options = [
+                ...new Set(
+                    candidates.map((variant) => dimension.values[variant]),
+                ),
+            ].map((label) => {
+                const matches = candidates.filter(
+                    (variant) => dimension.values[variant] === label,
+                );
+                const value = matches.includes(variantName)
+                    ? variantName
+                    : matches.reduce((best, variant) =>
+                          score(variant) > score(best) ? variant : best,
+                      );
+                return { value, label };
+            });
+            return {
+                key: dimension.key,
+                label: dimension.label,
+                unit: dimension.unit,
+                value: variantName,
+                options,
+            };
+        })
+        .filter(
+            ({ key }) => key !== "resolution" || fixedResolution === undefined,
+        );
+}
 
 export const useModelPricingSelection = (
     model: ModelPrice,
@@ -199,7 +224,7 @@ export const useModelPricingSelection = (
     const [variantName, setVariantName] = useState("");
     const adjustmentOptionGroups = new Map<
         string,
-        Array<{ value: string; label: string; default?: boolean }>
+        Array<NonNullable<ModelPriceAdjustment["option"]>>
     >();
 
     for (const adjustment of model.priceAdjustments ?? []) {
@@ -232,29 +257,19 @@ export const useModelPricingSelection = (
             !option || adjustmentOptions[option.group] === option.value,
     );
     const dropdowns = [
-        ...(model.priceVariants?.length
-            ? [
-                  {
-                      key: "pricing",
-                      value: variantName,
-                      options: [
-                          {
-                              value: "",
-                              label: model.priceDefaultLabel ?? "Base rate",
-                          },
-                          ...model.priceVariants.map(({ name, label }) => ({
-                              value: name,
-                              label,
-                          })),
-                      ],
-                      onSelect: setVariantName,
-                  },
-              ]
-            : []),
+        ...getPricingVariantControls(model, variantName).map((dropdown) => ({
+            ...dropdown,
+            onSelect: setVariantName,
+        })),
         ...[...adjustmentOptionGroups].map(([group, options]) => ({
             key: group,
+            label: options[0].groupLabel ?? "Pricing",
+            unit: options[0].unit,
             value: adjustmentOptions[group],
-            options,
+            options: options.map((option) => ({
+                value: option.value,
+                label: option.valueLabel ?? option.label,
+            })),
             onSelect: (value: string) =>
                 setAdjustmentOptions((current) => ({
                     ...current,
@@ -266,103 +281,123 @@ export const useModelPricingSelection = (
     return { prices, adjustments, dropdowns };
 };
 
-export const ModelPricingControls: FC<{
-    model: ModelPrice;
+const PRICING_OPTION_ICONS: Record<string, typeof TokensIcon> = {
+    resolution: ExpandIcon,
+    quality: SparklesIcon,
+    operation: ImageIcon,
+    reference_video: VideoIcon,
+    input: ImageIcon,
+    image_size: ExpandIcon,
+    context: ContextIcon,
+    cache: DatabaseIcon,
+    prompting: ChatIcon,
+    diarization: MicIcon,
+    search_context: SearchIcon,
+};
+
+const ModelPricingControls: FC<{
+    modelName?: string;
     pricing: ModelPricingSelection;
-    className?: string;
-}> = ({ model, pricing, className }) => {
-    if (!pricing.dropdowns.length) return null;
-
-    return (
-        <div className={cn("flex min-w-0 flex-wrap gap-1", className)}>
-            {pricing.dropdowns.map((dropdown) => {
-                const selected = dropdown.options.find(
-                    ({ value }) => value === dropdown.value,
-                );
-                return (
-                    <Dropdown
-                        key={dropdown.key}
-                        align="start"
-                        className="w-max min-w-40 p-1"
-                        trigger={(open) => (
-                            <Button
-                                type="button"
-                                size="xs"
-                                aria-label={`Pricing option for ${model.displayName ?? model.name}`}
-                                className="max-w-44 justify-between gap-1 tabular-nums"
+    align: "left" | "right";
+}> = ({ modelName, pricing, align }) => (
+    <>
+        {pricing.dropdowns.map((dropdown) => {
+            const selected = dropdown.options.find(
+                ({ value }) => value === dropdown.value,
+            );
+            return (
+                <div
+                    key={dropdown.key}
+                    className="grid col-span-full grid-cols-subgrid items-center py-0.5"
+                >
+                    {align === "right" && <span aria-hidden="true" />}
+                    <LedgerLabel
+                        Icon={PRICING_OPTION_ICONS[dropdown.key] ?? TokensIcon}
+                        label={dropdown.label}
+                    />
+                    <div className="min-w-0 pr-2">
+                        {dropdown.options.length === 1 ? (
+                            <span className="block text-right text-xs text-theme-text-strong">
+                                {selected?.label}
+                            </span>
+                        ) : (
+                            <Dropdown
+                                align="end"
+                                className="w-max min-w-32 p-1"
+                                trigger={(open) => (
+                                    <Button
+                                        type="button"
+                                        size="xs"
+                                        intent="neutral"
+                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` — ${modelName}` : ""}`}
+                                        className="polli:w-full polli:min-w-0 polli:justify-between polli:gap-1 polli:px-1 polli:py-0 polli:text-xs polli:tabular-nums"
+                                    >
+                                        <span className="truncate">
+                                            {selected?.label}
+                                        </span>
+                                        <ChevronIcon
+                                            expanded={open}
+                                            className="h-2.5 w-2.5 shrink-0"
+                                        />
+                                    </Button>
+                                )}
                             >
-                                <span className="truncate">
-                                    {selected?.label}
-                                </span>
-                                <ChevronIcon
-                                    expanded={open}
-                                    className="h-2.5 w-2.5"
-                                />
-                            </Button>
+                                {(close) => (
+                                    <div
+                                        role="menu"
+                                        aria-label={dropdown.label}
+                                    >
+                                        {dropdown.options.map((option) => {
+                                            const isSelected =
+                                                option.value === dropdown.value;
+                                            return (
+                                                <DropdownItem
+                                                    key={option.value}
+                                                    role="menuitemradio"
+                                                    aria-checked={isSelected}
+                                                    className="polli:hover:bg-theme-text-muted/15 polli:hover:text-theme-text-strong polli:focus-visible:bg-theme-text-muted/15"
+                                                    onClick={() => {
+                                                        dropdown.onSelect(
+                                                            option.value,
+                                                        );
+                                                        close();
+                                                    }}
+                                                >
+                                                    <span className="flex-1">
+                                                        {option.label}
+                                                    </span>
+                                                    {isSelected && (
+                                                        <CheckIcon className="h-3.5 w-3.5" />
+                                                    )}
+                                                </DropdownItem>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Dropdown>
                         )}
-                    >
-                        {(close) => (
-                            <div role="menu">
-                                {dropdown.options.map((option) => {
-                                    const isSelected =
-                                        option.value === dropdown.value;
-                                    return (
-                                        <DropdownItem
-                                            key={option.value}
-                                            role="menuitemradio"
-                                            aria-checked={isSelected}
-                                            onClick={() => {
-                                                dropdown.onSelect(option.value);
-                                                close();
-                                            }}
-                                        >
-                                            <span className="flex-1">
-                                                {option.label}
-                                            </span>
-                                            {isSelected && (
-                                                <CheckIcon className="h-3.5 w-3.5" />
-                                            )}
-                                        </DropdownItem>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </Dropdown>
-                );
-            })}
-        </div>
-    );
-};
+                    </div>
+                    <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                        {dropdown.unit}
+                    </span>
+                </div>
+            );
+        })}
+    </>
+);
 
-const LedgerPriceValue: FC<{
+export const LedgerPriceValue: FC<{
     value: string;
-    fractionDigits?: number;
-}> = ({ value, fractionDigits = 5 }) => {
-    const [whole, fraction] = value.split(".", 2);
+    prefix?: string;
+}> = ({ value, prefix }) => (
+    <span className="block w-full whitespace-nowrap pr-2 text-right text-sm font-semibold tabular-nums text-theme-text-strong">
+        {prefix ? `${prefix} ${value}` : value}
+    </span>
+);
 
-    return (
-        <span
-            className="grid w-full text-sm font-semibold tabular-nums text-theme-text-strong"
-            style={{
-                gridTemplateColumns: `minmax(2ch, 1fr) auto ${fractionDigits}ch`,
-            }}
-        >
-            <span className="sr-only">{value}</span>
-            <span aria-hidden="true" className="text-right">
-                {whole}
-            </span>
-            <span aria-hidden="true" className={cn(!fraction && "invisible")}>
-                .
-            </span>
-            <span aria-hidden="true" className="text-left">
-                {fraction}
-            </span>
-        </span>
-    );
-};
-
-const RequestBasedAdjustmentKinds = new Set([
+const SearchAdjustmentKinds = new Set([
     "search_request",
+    "search_query",
     "grounded_prompt",
 ]);
 
@@ -383,7 +418,10 @@ const LedgerLabel: FC<{
         )}
         {displayLabel !== label && <span className="sr-only">{label}</span>}
         <span
-            className="truncate whitespace-nowrap"
+            className={cn(
+                "truncate whitespace-nowrap",
+                displayLabel !== label && "cursor-help",
+            )}
             aria-hidden={displayLabel === label ? undefined : true}
             title={displayLabel === label ? undefined : label}
         >
@@ -395,10 +433,9 @@ const LedgerLabel: FC<{
 export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
-    fractionDigits?: number;
-}> = ({ adjustments, align, fractionDigits }) =>
+}> = ({ adjustments, align }) =>
     adjustments.map((adjustment) => {
-        const isSearch = RequestBasedAdjustmentKinds.has(adjustment.kind);
+        const isSearch = SearchAdjustmentKinds.has(adjustment.kind);
         const PriceIcon = isSearch
             ? SearchIcon
             : adjustment.kind === "compute"
@@ -415,7 +452,10 @@ export const UsagePriceRows: FC<{
             ? `${unit} · ${adjustment.suffix}`
             : unit;
         const unitContent = (
-            <span className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted">
+            <span
+                className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                title={unitLabel}
+            >
                 {unit}
             </span>
         );
@@ -435,7 +475,6 @@ export const UsagePriceRows: FC<{
                 />
                 <LedgerPriceValue
                     value={formatDisplayPrice(adjustment.price).value}
-                    fractionDigits={fractionDigits}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -487,19 +526,24 @@ const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
 );
 
 export const ModelPricingLedger: FC<{
+    modelName?: string;
     pricing: ModelPricingSelection;
     className?: string;
     align?: "left" | "right";
     hasTools?: boolean;
     requestEstimate?: ReactNode;
+    requestBadge?: ReactNode;
 }> = ({
+    modelName,
     pricing,
     className,
     align = "right",
     hasTools = false,
     requestEstimate,
+    requestBadge,
 }) => {
     if (
+        !pricing.dropdowns.length &&
         !pricing.prices.length &&
         !pricing.adjustments.length &&
         !hasTools &&
@@ -566,11 +610,11 @@ export const ModelPricingLedger: FC<{
     const remainingAdjustments = pricing.adjustments.filter(
         ({ name }) => !combinedAdjustmentNames.has(name),
     );
-    const requestBasedAdjustments = remainingAdjustments.filter(({ kind }) =>
-        RequestBasedAdjustmentKinds.has(kind),
+    const extraFees = remainingAdjustments.filter(
+        ({ unit }) => !unit.includes("token"),
     );
-    const tokenBasedAdjustments = remainingAdjustments.filter(
-        ({ kind }) => !RequestBasedAdjustmentKinds.has(kind),
+    const tokenBasedAdjustments = remainingAdjustments.filter(({ unit }) =>
+        unit.includes("token"),
     );
     const cacheStorageAdjustment = tokenBasedAdjustments.find(
         ({ kind }) => kind === "cache_storage",
@@ -616,7 +660,7 @@ export const ModelPricingLedger: FC<{
                 unit:
                     price.unit === "token"
                         ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_LEDGER_UNIT[price.unit],
+                        : PRICE_UNIT_SUFFIX[price.unit],
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:
@@ -665,7 +709,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
                     <LedgerPriceValue value={row.value} />
                     <span
-                        className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                        className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
                     >
                         {row.unit}
@@ -677,27 +721,73 @@ export const ModelPricingLedger: FC<{
     return (
         <div
             className={cn(
-                "grid w-full min-w-0 max-w-full gap-x-2",
+                "grid w-full min-w-0 max-w-full gap-x-1",
                 align === "left"
-                    ? "grid-cols-[6.5rem_9ch_minmax(0,1fr)] min-[480px]:grid-cols-[8rem_9ch_5.5rem]"
-                    : "grid-cols-[1fr_8rem_9ch_5.5rem]",
+                    ? "grid-cols-[6.5rem_10ch_minmax(0,1fr)] min-[480px]:grid-cols-[8rem_10ch_4rem]"
+                    : "grid-cols-[1fr_8rem_10ch_4rem]",
                 className,
             )}
         >
+            {requestBadge && (
+                <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
+                    {align === "right" && <span aria-hidden="true" />}
+                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <div className="flex justify-end pr-2">{requestBadge}</div>
+                    <span aria-hidden="true" />
+                </div>
+            )}
             {requestEstimate && (
-                <div
-                    className={cn(
-                        "mb-1 grid grid-cols-subgrid items-baseline border-b border-divider pb-1",
-                        align === "right"
-                            ? "col-start-2 col-end-[-1]"
-                            : "col-span-full",
-                    )}
-                >
+                <div className="grid col-span-full grid-cols-subgrid items-center pt-0.5">
+                    {align === "right" && <span aria-hidden="true" />}
                     <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
                     <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
                         /pollen
                     </span>
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            "col-end-[-1] my-1 border-t border-divider",
+                            align === "right" ? "col-start-2" : "col-start-1",
+                        )}
+                    />
+                </div>
+            )}
+            {(pricing.dropdowns.length > 0 ||
+                extraFees.length > 0 ||
+                hasTools) && (
+                <div className="grid col-span-full grid-cols-subgrid">
+                    <ModelPricingControls
+                        modelName={modelName}
+                        pricing={pricing}
+                        align={align}
+                    />
+                    {pricing.dropdowns.length > 0 &&
+                        (extraFees.length > 0 || hasTools) && (
+                            <span
+                                aria-hidden="true"
+                                className={cn(
+                                    "col-end-[-1] my-1 border-t border-dotted border-divider opacity-70",
+                                    align === "right"
+                                        ? "col-start-2"
+                                        : "col-start-1",
+                                )}
+                            />
+                        )}
+                    <UsagePriceRows adjustments={extraFees} align={align} />
+                    {hasTools && <ToolsPricingRow align={align} />}
+                    {(rateRows.length > 0 ||
+                        standaloneTokenAdjustments.length > 0) && (
+                        <span
+                            aria-hidden="true"
+                            className={cn(
+                                "col-end-[-1] my-1 border-t border-dotted border-divider opacity-70",
+                                align === "right"
+                                    ? "col-start-2"
+                                    : "col-start-1",
+                            )}
+                        />
+                    )}
                 </div>
             )}
             {inputRateRows.length > 0 && (
@@ -718,22 +808,6 @@ export const ModelPricingLedger: FC<{
             {outputRateRows.length > 0 && (
                 <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(outputRateRows)}
-                </div>
-            )}
-            {(hasTools || requestBasedAdjustments.length > 0) && (
-                <div className="mt-1 grid col-span-full grid-cols-subgrid">
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            "col-end-[-1] mb-1 border-t border-dashed border-divider",
-                            align === "right" ? "col-start-2" : "col-start-1",
-                        )}
-                    />
-                    <UsagePriceRows
-                        adjustments={requestBasedAdjustments}
-                        align={align}
-                    />
-                    {hasTools && <ToolsPricingRow align={align} />}
                 </div>
             )}
         </div>

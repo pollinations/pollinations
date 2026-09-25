@@ -401,6 +401,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
+        retirementDate: new Date("2028-02-01").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -498,6 +499,16 @@ const AUDIO_BASE_SERVICES = {
                 },
             },
             "Standard transcription",
+            [
+                {
+                    "key": "diarization",
+                    "label": "Speakers",
+                    "values": {
+                        "": "Standard",
+                        "diarization": "Identify",
+                    },
+                },
+            ],
         ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
@@ -563,6 +574,28 @@ const AUDIO_BASE_SERVICES = {
                 },
             },
             "Standard transcription",
+            [
+                {
+                    "key": "prompting",
+                    "label": "Prompting",
+                    "values": {
+                        "": "Off",
+                        "prompting": "On",
+                        "diarization": "Off",
+                        "prompting_diarization": "On",
+                    },
+                },
+                {
+                    "key": "diarization",
+                    "label": "Speakers",
+                    "values": {
+                        "": "Standard",
+                        "prompting": "Standard",
+                        "diarization": "Identify",
+                        "prompting_diarization": "Identify",
+                    },
+                },
+            ],
         ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:
@@ -675,6 +708,8 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
+        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
+        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {

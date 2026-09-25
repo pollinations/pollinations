@@ -929,109 +929,78 @@ test("public model catalog exposes Gemini billing prices without internals", () 
     );
 });
 
-test("Perplexity request search fees are added by declarative billing rules", () => {
+test("Perplexity bills each web search it reports", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const cases = [
-        ["perplexity/sonar", 2.005, undefined],
-        ["perplexity/sonar", 2.008, { searchContextSize: "medium" as const }],
-        ["perplexity/sonar", 2.012, { searchContextSize: "high" as const }],
-        ["perplexity/sonar-pro", 18.006, undefined],
+    // $0.25 input and $2.50 output per 1M tokens, plus $2.50 per 1K searches.
+    const tokenCost = 2.75;
+    const cases: Array<[unknown, number]> = [
+        [undefined, 0],
+        [{}, 0],
+        // A native Responses reply, and its streamed completion event.
         [
-            "perplexity/sonar-pro",
-            18.014,
-            { searchContextSize: "high" as const },
-        ],
-        ["perplexity/sonar-reasoning-pro", 10.006, undefined],
-    ] as const;
-
-    for (const [model, total, input] of cases) {
-        const cost = calculateCost(model, usage, undefined, input);
-        const price = calculatePrice(model, usage, undefined, input);
-
-        expect(cost.totalCost).toBeCloseTo(total, 8);
-        expect(price.totalPrice).toBeCloseTo(total, 8);
-    }
-});
-
-test("Perplexity request search fee prefers provider-reported request cost", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const responseOutput = {
-        usage: {
-            cost: {
-                request_cost: 0.006,
-                total_cost: 0.0061,
-            },
-            search_context_size: "low",
-        },
-    };
-    const streamOutput = {
-        streamEvents: [
-            { choices: [{ delta: { content: "ok" } }] },
             {
                 usage: {
-                    cost: {
-                        request_cost: 0.012,
-                    },
+                    tool_calls_details: { search_web: { invocation: 3 } },
                 },
-                choices: [{ finish_reason: "stop" }],
             },
+            3,
         ],
-    };
+        [
+            {
+                streamEvents: [
+                    { type: "response.created" },
+                    {
+                        type: "response.completed",
+                        response: {
+                            usage: {
+                                tool_calls_details: {
+                                    search_web: { invocation: 2 },
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+            2,
+        ],
+        // Chat replies carry the count in OpenRouter's usage field.
+        [{ usage: { server_tool_use_details: { web_search_requests: 1 } } }, 1],
+        [
+            {
+                streamEvents: [
+                    { choices: [] },
+                    {
+                        usage: {
+                            server_tool_use_details: { web_search_requests: 4 },
+                        },
+                    },
+                ],
+            },
+            4,
+        ],
+        // A malformed count bills no search.
+        [
+            {
+                usage: {
+                    tool_calls_details: { search_web: { invocation: "2" } },
+                },
+            },
+            0,
+        ],
+    ];
 
-    expect(
-        calculateCost("perplexity/sonar", usage, responseOutput).totalCost,
-    ).toBeCloseTo(2.006, 8);
-    expect(
-        calculatePrice("perplexity/sonar", usage, responseOutput).totalPrice,
-    ).toBeCloseTo(2.006, 8);
-    expect(
-        calculateCost("perplexity/sonar", usage, streamOutput).totalCost,
-    ).toBeCloseTo(2.012, 8);
-});
-
-test("Perplexity provider-reported request cost clamps-and-alerts, never throws", () => {
-    const usage = {
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    // perplexity/sonar token cost = 2.0; static request fee = 0.005 → total 2.005.
-
-    // Malformed cost data is NOT a request-failing fault: fall back to the
-    // static registry fee (no throw) and alert.
-    const malformed = [-0.5, Number.NaN, "0.005", null, { nested: true }];
-    for (const requestCost of malformed) {
-        const output = { usage: { cost: { request_cost: requestCost } } };
+    for (const [output, searches] of cases) {
+        const expected = tokenCost + searches * 0.0025;
         expect(
             calculateCost("perplexity/sonar", usage, output).totalCost,
-        ).toBeCloseTo(2.005, 8);
+        ).toBeCloseTo(expected, 8);
         expect(
             calculatePrice("perplexity/sonar", usage, output).totalPrice,
-        ).toBeCloseTo(2.005, 8);
+        ).toBeCloseTo(expected, 8);
     }
-
-    // A finite non-negative value within 10× the static fee is billed verbatim.
-    const reasonable = { usage: { cost: { request_cost: 0.04 } } };
-    expect(
-        calculateCost("perplexity/sonar", usage, reasonable).totalCost,
-    ).toBeCloseTo(2.04, 8);
-
-    // A value above 10× the static fee is clamped down to the static fee.
-    const runaway = { usage: { cost: { request_cost: 9.99 } } };
-    expect(
-        calculateCost("perplexity/sonar", usage, runaway).totalCost,
-    ).toBeCloseTo(2.005, 8);
-
-    // Absent cost data falls back to the static registry fee.
-    expect(calculateCost("perplexity/sonar", usage, {}).totalCost).toBeCloseTo(
-        2.005,
-        8,
-    );
 });
 
 test("dedicated Vertex Gemini Search detects streamed grounding", () => {
@@ -1074,47 +1043,16 @@ test("dedicated Vertex Gemini Search detects streamed grounding", () => {
 // Executable billing stays private; the public catalog receives only the
 // display-safe price metadata asserted below.
 test("Perplexity billing keeps executable rules private", () => {
-    const perplexityFees = [
-        ["perplexity/sonar", "sonar", [5, 8, 12]],
-        ["perplexity/sonar-pro", "sonar_pro", [6, 10, 14]],
-        ["perplexity/sonar-reasoning-pro", "sonar_reasoning", [6, 10, 14]],
-    ] as const;
-    for (const [model, family, fees] of perplexityFees) {
-        expect(
-            getRegistryModelDefinition(model as ModelName).billing?.adjustments,
-        ).toMatchObject(
-            ["low", "medium", "high"].map((size, index) => ({
-                id: `perplexity.${family}_${size}.search_request.v1`,
-                kind: "search_request",
-                unit: "request",
-                unitCost: fees[index] / 1000,
-            })),
-        );
-    }
-
-    // Exactly one tier bills per request: the one the response reports, else
-    // the one the caller asked for, else Perplexity's default (low).
-    const [low, medium, high] =
-        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments ??
-        [];
-    const units = (output: unknown, input?: { searchContextSize: "high" }) =>
-        [low, medium, high].map((rule) => rule?.countUnits(output, input));
-    expect(units({})).toEqual([1, 0, 0]);
-    expect(units({}, { searchContextSize: "high" })).toEqual([0, 0, 1]);
-    expect(units({ usage: { search_context_size: "medium" } })).toEqual([
-        0, 1, 0,
+    expect(
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments,
+    ).toMatchObject([
+        {
+            id: "perplexity.web_search.v1",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 0.0025,
+        },
     ]);
-    expect(
-        units(
-            { usage: { search_context_size: "low" } },
-            { searchContextSize: "high" },
-        ),
-    ).toEqual([1, 0, 0]);
-    expect(
-        units({
-            streamEvents: [{ usage: { search_context_size: "high" } }, {}],
-        }),
-    ).toEqual([0, 0, 1]);
 
     // Public catalog exposes display-safe pricing, never executable billing.
     for (const model of getTextModelsInfo()) {
@@ -1574,21 +1512,21 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
-    // Perplexity: request fee prefers provider-reported cost when present.
+    // Perplexity: one fee per web search the provider reports.
     const perplexity = calculateBillingAdjustments(
         getRegistryModelDefinition("perplexity/sonar"),
-        { usage: { cost: { request_cost: 0.006 } } },
+        { usage: { tool_calls_details: { search_web: { invocation: 2 } } } },
         "perplexity/sonar",
     );
     expect(perplexity).toEqual([
         {
-            ruleId: "perplexity.sonar_low.search_request.v1",
+            ruleId: "perplexity.web_search.v1",
             kind: "search_request",
             unit: "request",
-            units: 1,
-            unitCost: 0.006,
-            cost: 0.006,
-            price: 0.006,
+            units: 2,
+            unitCost: 0.0025,
+            cost: 0.005,
+            price: 0.005,
         },
     ]);
 

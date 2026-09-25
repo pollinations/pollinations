@@ -112,7 +112,9 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             // link failure is swallowed here (already logged internally by
             // linkCurrentUserToMedia) so it never affects `write`'s own
             // resolution, which the caller uses to report caching errors.
-            write.then(() => linkCurrentUserToMedia(c, cacheKey)).catch(() => {});
+            write
+                .then(() => linkCurrentUserToMedia(c, cacheKey))
+                .catch(() => {});
             return {
                 response,
                 write,

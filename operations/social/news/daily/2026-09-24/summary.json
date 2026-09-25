@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-24",
+  "period_start": "2026-09-24",
+  "period_end": "2026-09-24",
+  "title": "A calmer Enter dashboard and model catalog",
+  "summary": "A busy day for the dashboard, model reliability, annual earnings reporting, and one AI-authored arcade survival test.\n\nEnter got a broad usability pass: clearer account cards, sturdier API-key flows, compact mobile dialogs, and less sign-in flicker. The model list now makes access, usage details, health, selectors, copyable IDs, and direct Open WebUI or Play links easier to scan, while the model-changes card now reflects the live catalog.\n\nApps can keep using the same model IDs through the Fireworks Serverless transition, with Azure and DeepInfra routes carrying the load behind the scenes. Grok 4.6 gained a direct xAI recovery path for Azure-wide trouble, and Ling 3.0 Flash VL can now accept video URLs alongside text and images. Multimodal systems: still mostly plumbing, occasionally useful.\n\nAccount earnings endpoints now return up to 365 days of history, matching event retention so creators can pull annual reporting in one request instead of assembling it from smaller windows.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 15086,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15095,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15273,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15327,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15361,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15369,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15385,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15397,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15398,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15402,
+      "date": "2026-09-24"
+    },
+    {
+      "number": 15404,
+      "date": "2026-09-24"
+    }
+  ],
+  "generated_at": "2026-09-25T06:30:38.794899+00:00"
+}

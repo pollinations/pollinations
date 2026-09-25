@@ -1,0 +1,36 @@
+{
+  "pr_number": 14690,
+  "title": "feat: add tgpt Pollinations harness",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14690",
+  "merged_at": "2026-09-25T01:39:38Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "- Adds `polli harness tgpt on|status|off`, using tgpt's existing authenticated Pollinations text provider.\n- Clears a conflicting generic `AI_API_KEY` from tgpt's config so the dedicated provider-specific key takes effect; defaults to `openai/gpt-5.4-nano`.\n- Restores the previous configuration on `off`, preserves a subsequently selected provider, and documents config overrides.\n- Bumps Polli CLI to `0.1.17` so the integration can publish on merge.\n\nValidation: 116 CLI tests, package build, Biome, and missing-install/option-parsing checks passed. The original implementation was tested through real `on → tgpt request → status → off`; the key-precedence follow-up is covered by the configuration regression test and upstream source inspection.\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli meets tgpt",
+    "blurb": "The hive now knows its way around tgpt. One command wires up tgpt’s authenticated Pollinations provider, and another puts everything back exactly where it found it.",
+    "summary": "Polli CLI 0.1.17 adds `polli harness tgpt on|status|off`, configuring tgpt’s authenticated Pollinations text provider with `openai/gpt-5.4-nano` as the default while handling the conflicting generic `AI_API_KEY` and restoring prior settings on exit.",
+    "impact": "Developers can connect tgpt to Pollinations with a single harness command, inspect the setup, and turn it off later without overwriting a provider they selected afterward.",
+    "keywords": [
+      "polli-cli",
+      "tgpt",
+      "harness",
+      "text-api",
+      "gpt-5.4-nano",
+      "configuration"
+    ],
+    "visual_concept": "Depict Polli as a cozy command-line mechanic linking a retro tgpt terminal to a Pollinations code-flower through a neat provider-specific key cable. The CRT Monitor Robot can display `tgpt: ON` while Polli, wearing a tiny tool belt, carefully stores an old configuration scroll in a garden toolbox; lime-green terminal glow and code-plants make the connection feel reversible and well-tended.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute Polli bee mascot with her yellow body, dark brown stripes, pink blush, light blue wings, and a tiny tool belt plugs a lime green (#ecf874) provider-key cable into a retro terminal labeled `tgpt: ON`, while a cheerful CRT Monitor Robot holds a neatly rolled backup config scroll beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-14690.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute Polli bee mascot with her yellow body, dark brown stripes, pink blush, light blue wings, and a tiny tool belt plugs a lime green (#ecf874) provider-key cable into a retro terminal labeled `tgpt: ON`, while a cheerful CRT Monitor Robot holds a neatly rolled backup config scroll beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-25T01:40:36.205676+00:00"
+}

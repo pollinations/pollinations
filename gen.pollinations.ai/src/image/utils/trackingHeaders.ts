@@ -2,12 +2,14 @@
  * Utility for building tracking headers for the enter service
  */
 
-import type { Usage } from "@shared/registry/registry.ts";
+import type { PricingInput, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 export interface TrackingData {
     actualModel?: string;
     usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
+    /** Provider-reported pricing facts that replace the request's estimate. */
+    pricingInput?: PricingInput;
 }
 
 /**

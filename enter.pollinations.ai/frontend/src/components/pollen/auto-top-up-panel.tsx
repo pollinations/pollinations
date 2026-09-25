@@ -317,10 +317,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     if (billingState === null) {
         return (
-            <SectionContent
-                loading={isReloading}
-                label="Loading billing settings…"
-            >
+            <SectionContent loading={isReloading}>
                 <LoadError onRetry={reloadBilling}>
                     Couldn’t load billing settings.
                 </LoadError>

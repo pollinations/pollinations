@@ -1,37 +1,15 @@
-import {
-    Alert,
-    Button,
-    LoadingStatus,
-    RefreshIcon,
-    Section,
-} from "@pollinations/ui";
+import { Alert, Button, RefreshIcon } from "@pollinations/ui";
 import { type ReactNode, useState } from "react";
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
     loading,
-    label,
     children,
 }: {
     loading: boolean;
-    label: string;
     children?: ReactNode;
 }) {
-    return loading ? <LoadingStatus>{label}</LoadingStatus> : children;
-}
-
-export function DashboardLoading({
-    title,
-    label,
-}: {
-    title: string;
-    label: string;
-}) {
-    return (
-        <Section title={title}>
-            <SectionContent loading label={label} />
-        </Section>
-    );
+    return loading ? null : children;
 }
 
 export function LoadError({

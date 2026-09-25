@@ -11,7 +11,6 @@ import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
-import { SectionContent } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
@@ -175,9 +174,7 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            {billing === undefined ? (
-                <SectionContent loading label="Loading billing details…" />
-            ) : (
+            {billing === undefined ? null : (
                 <BuyPollenPanel
                     initialBillingState={billing}
                     selectedPackAmount={selectedPack?.amountUsd ?? 5}

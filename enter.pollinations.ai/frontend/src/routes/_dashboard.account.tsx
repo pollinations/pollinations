@@ -12,7 +12,6 @@ import {
     Heading,
     InlineLink,
     Input,
-    LoadingStatus,
     MailIcon,
     Section,
     SignOutIcon,
@@ -23,10 +22,7 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
-import {
-    DashboardLoading,
-    LoadError,
-} from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -125,15 +121,7 @@ function AccountPage() {
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
 
-            <Await
-                promise={profile}
-                fallback={
-                    <DashboardLoading
-                        title="Community"
-                        label="Loading connection settings…"
-                    />
-                }
-            >
+            <Await promise={profile} fallback={null}>
                 {(details) =>
                     details ? (
                         <CommunityConnections
@@ -484,11 +472,7 @@ function CommunityConnections({
                         <Text tone="strong" weight="semibold">
                             Discord
                         </Text>
-                        {checkingDiscord ? (
-                            <LoadingStatus>
-                                Loading Discord connection…
-                            </LoadingStatus>
-                        ) : (
+                        {!checkingDiscord && (
                             <Text size="sm" tone="muted">
                                 {!discordAvailable
                                     ? "Discord linking isn't available in this environment."

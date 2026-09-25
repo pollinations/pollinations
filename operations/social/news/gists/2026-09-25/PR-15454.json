@@ -1,0 +1,38 @@
+{
+  "pr_number": 15454,
+  "title": "fix: bill the z-image fal fallback from fal's billed megapixels",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15454",
+  "merged_at": "2026-09-25T15:37:44Z",
+  "labels": [
+    "BUG",
+    "BILLING",
+    "ECONOMICS"
+  ],
+  "pr_body_excerpt": "- Reads `x-fal-billable-units` from fal and records our fal cost from it. Fal rounds each image up to whole megapixels (512² → 1, 1024×1536 → 2), so the request-size estimate undercounted fal cost by ~14% (Sep 18–24: fal $11.91, recorded $10.19).\n- Adds `TrackingData.pricingInput` so image/video handlers can refine pricing input from the provider's response.\n- User price is unchanged: callers keep zimage's flat price.\n- Adds the rule \"bill from provider-reported usage\" to AGENTS.md, `model-management` and `quest-solution-review`.\n\n| Check | Result |\n|---|---|\n| Staging `aae96d59…`, 1024×1536 | served by `z-image-turbo:fal` |\n| Tinybird `total_cost` | 0.01 (the old estimate would record 0.00786) |\n| fal usage API, 15:29 UTC | 2 MP, $0.01 |\n| Tests | gen image/video/fallback: 663 of 663 pass; `tsc` clean |\n\nOther fal integrations were audited and need no change. Krea, MiniMax, Wan 3, the 3D models and stable-audio are billed on a flat or request-echoed quantity that matches fal exactly. The Qwen models switch over in #15236.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Megapixels Counted Properly",
+    "blurb": "Polli found a few fractional megapixels hiding between the petals. z-image’s fal fallback now records the whole-megapixel usage fal actually reports, while the price at the hive stays exactly the same.",
+    "summary": "The z-image-turbo:fal fallback now reads fal’s x-fal-billable-units response header and records provider-reported whole-megapixel cost—such as 2 MP for a 1024×1536 image—instead of an undercounting request-size estimate.",
+    "impact": "Callers keep z-image’s existing flat price, while internal usage tracking now matches fal’s billed quantities for each generated image.",
+    "keywords": [
+      "billing",
+      "fal",
+      "z-image",
+      "image-generation",
+      "usage-tracking",
+      "megapixels"
+    ],
+    "visual_concept": "A cozy accounting-garden scene: Polli, wearing tiny librarian glasses, compares a small image tile labeled 1024×1536 with two glowing whole-megapixel pollen jars beside a friendly retro terminal showing a neat usage receipt. Code-plants and flowers make the provider-usage reconciliation feel like careful garden tending.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with blue wings, pink cheek blush, and tiny librarian glasses, carefully counting two glowing pollen jars beside a retro terminal receipt reading “2 MP”; a 1024×1536 pixel image tile and small code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15454.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with blue wings, pink cheek blush, and tiny librarian glasses, carefully counting two glowing pollen jars beside a retro terminal receipt reading “2 MP”; a 1024×1536 pixel image tile and small code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T15:39:06.905550+00:00"
+}

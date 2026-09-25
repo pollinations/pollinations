@@ -82,8 +82,6 @@ export async function callAlibabaImage(
     return {
         buffer: Buffer.from(await image.arrayBuffer()),
         mimeType: image.headers.get("content-type") || "image/png",
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: params.model,
             // Wan text-token counts are included in its flat per-image charge.

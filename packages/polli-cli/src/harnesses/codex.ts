@@ -210,7 +210,8 @@ const selectedModels = (ctx: HarnessContext): string[] => {
 };
 
 const addProvider = (ctx: HarnessContext) =>
-    generic(ctx,
+    generic(
+        ctx,
         "add",
         PROVIDER,
         "--name",

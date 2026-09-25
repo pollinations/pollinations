@@ -60,6 +60,36 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-09-06").getTime(),
             retirementDate: new Date("2027-08-24").getTime(),
         },
+        "x-ai/grok-4.6:xai": {
+            provider: "xai",
+            addedDate: new Date("2026-09-24").getTime(),
+            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
+            // bill at the text input rate; reasoning bills as output.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4),
+                        promptCachedTokens: perMillion(1),
+                        completionTextTokens: perMillion(12),
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
+        },
     },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {

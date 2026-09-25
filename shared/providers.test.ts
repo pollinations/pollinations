@@ -85,6 +85,7 @@ const HOST_VENDORS: Record<string, string> = {
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",
+    "api.x.ai": "xai",
     "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
         "ovhcloud",
     "oai.endpoints.kepler.ai.cloud.ovh.net": "ovhcloud",

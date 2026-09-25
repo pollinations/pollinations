@@ -22,7 +22,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -254,11 +254,13 @@ export const Models: FC = () => {
     );
     const searchOptions = useMemo(() => {
         let options = getModelQuerySuggestions(
-            draftFilter ? search : visibleSearch,
+            draftFilter
+                ? `${draftFilter.key}:${draftFilter.value}`
+                : visibleSearch,
             activeTabModels,
             supportedFilterKeys,
         );
-        if (explicitModelSource) {
+        if (explicitModelSource && draftFilter?.key !== "source") {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
@@ -268,7 +270,6 @@ export const Models: FC = () => {
         activeTabModels,
         draftFilter,
         explicitModelSource,
-        search,
         supportedFilterKeys,
         visibleSearch,
     ]);
@@ -480,18 +481,6 @@ export const Models: FC = () => {
         });
     };
 
-    if (catalogLoading && activePrimaryTab !== "mcp") {
-        return (
-            <DashboardLoading
-                label={
-                    activePrimaryTab === "agent"
-                        ? "Loading agents…"
-                        : "Loading models…"
-                }
-            />
-        );
-    }
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -657,35 +646,45 @@ export const Models: FC = () => {
                         </span>
                     </Alert>
                 )}
-                {catalogError && activeTab !== "mcp" && (
-                    <Alert intent="danger">{catalogError}</Alert>
-                )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
-                ) : query && sectionModels[activeTab].length === 0 ? (
-                    <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match{" "}
-                        {visibleSearch.trim()
-                            ? `“${visibleSearch.trim()}”`
-                            : "the selected filters"}
-                        .
-                    </p>
                 ) : (
-                    <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <UnifiedModelTable
-                            listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
-                            allModels={sectionModels.all}
-                            imageModels={sectionModels.image}
-                            videoModels={sectionModels.video}
-                            model3dModels={sectionModels["3d"]}
-                            audioModels={sectionModels.audio}
-                            realtimeModels={sectionModels.realtime}
-                            textModels={sectionModels.text}
-                            embeddingModels={sectionModels.embedding}
-                            agentModels={sectionModels.agent}
-                            activeTab={activeTab}
-                        />
-                    </div>
+                    <SectionContent loading={catalogLoading}>
+                        {catalogError ? (
+                            <LoadError
+                                onRetry={() => {
+                                    setCatalogLoading(true);
+                                    void loadModelCatalog();
+                                }}
+                            >
+                                {catalogError}
+                            </LoadError>
+                        ) : query && sectionModels[activeTab].length === 0 ? (
+                            <p className="py-8 text-center text-sm text-theme-text-muted">
+                                No {searchTarget.toLowerCase()} match{" "}
+                                {visibleSearch.trim()
+                                    ? `“${visibleSearch.trim()}”`
+                                    : "the selected filters"}
+                                .
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <UnifiedModelTable
+                                    listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
+                                    allModels={sectionModels.all}
+                                    imageModels={sectionModels.image}
+                                    videoModels={sectionModels.video}
+                                    model3dModels={sectionModels["3d"]}
+                                    audioModels={sectionModels.audio}
+                                    realtimeModels={sectionModels.realtime}
+                                    textModels={sectionModels.text}
+                                    embeddingModels={sectionModels.embedding}
+                                    agentModels={sectionModels.agent}
+                                    activeTab={activeTab}
+                                />
+                            </div>
+                        )}
+                    </SectionContent>
                 )}
                 {activeTab !== "mcp" && (
                     <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">

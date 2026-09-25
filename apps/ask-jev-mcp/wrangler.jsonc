@@ -20,8 +20,7 @@
   "env": {
     "staging": {
       "name": "ask-jev-mcp-staging",
-      // Reachable on workers.dev: unlike the gen-proxied MCP workers, this one
-      // is called directly by external clients with their own bearer token.
+      // Keep direct staging access alongside the Gen service binding.
       "workers_dev": true,
       "routes": [],
       "vars": { "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai" },

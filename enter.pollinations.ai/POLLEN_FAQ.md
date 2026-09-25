@@ -57,6 +57,8 @@ Developer rewards are credited to the matching balance type used by the paying u
 
 Prices depend on the model and may use tokens, images, seconds, or another model-specific unit. Check the live [model catalog](https://enter.pollinations.ai/models) or [`GET /v1/models`](https://gen.pollinations.ai/v1/models) instead of relying on a hardcoded model list or price.
 
+For example, the default image model `flux` (`black-forest-labs/flux.1-schnell`) costs **0.002 Pollen per image** — it is not free. Older docs that called flux "always free" are outdated.
+
 ## 🎨 What can I create with Pollen?
 
 Pollinations supports text, images and image edits, video, speech and audio, transcription, realtime conversations, embeddings, and 3D generation. Availability and capabilities differ by model; use the live model catalog to choose one for your task.

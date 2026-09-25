@@ -5,7 +5,7 @@ import {
     rewardKey,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
@@ -352,7 +352,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -451,7 +451,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
-        state: "available",
+        state: "completed",
         rewardAmount: 15,
         balanceBucket: "tier",
     });
@@ -466,7 +466,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_pollen_10", {
         state: "available",
-        rewardAmount: 5,
+        rewardAmount: 10,
         balanceBucket: "tier",
     });
     expect(byId.get("app_pollen_10")?.goal).toEqual({
@@ -480,7 +480,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -511,6 +511,15 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
         url: null,
     });
     expect(placeholder?.description).toEqual(expect.any(String));
+    expect(
+        payload.quests.find((quest) => quest.id === "reported_merged_issue"),
+    ).toMatchObject({
+        category: "contribute",
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+        url: "https://github.com/pollinations/pollinations/issues/new/choose",
+    });
 });
 
 test("catalog hides assigned and closed GitHub quest issues", async ({
@@ -518,7 +527,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -573,7 +582,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v30");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -1167,12 +1176,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
             .map((reward) => reward.questId),
     );
     expect(ownerQuestIds).toEqual(
-        new Set([
-            "app_pollen_10",
-            "app_paid_request",
-            "app_users_10",
-            "app_listed",
-        ]),
+        new Set(["app_pollen_10", "app_users_10", "app_listed"]),
     );
     // use_app is live, but the owner has no BYOP-attributed key of their own.
     expect(
@@ -1237,13 +1241,12 @@ test("app milestones award their rewards at inclusive thresholds", async ({
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("app_users_10")).toBe(true);
     expect(questIds.has("app_pollen_10")).toBe(true);
-    expect(questIds.has("app_paid_request")).toBe(true);
+    expect(questIds.has("app_paid_request")).toBe(false);
     expect(questIds.has("app_active")).toBe(false);
     expect(rewards).toEqual(
         expect.arrayContaining([
             { questId: "app_users_10", pollenAmount: 3 },
-            { questId: "app_pollen_10", pollenAmount: 5 },
-            { questId: "app_paid_request", pollenAmount: 15 },
+            { questId: "app_pollen_10", pollenAmount: 10 },
         ]),
     );
 });
@@ -1260,7 +1263,7 @@ test("app milestones do not record below their thresholds, even with Quest Polle
             userId: user.id,
             pollenUsed: 100,
             paidPollenUsed: 2.99,
-            paidRequests: 0,
+            paidRequests: 100,
         },
     ];
 
@@ -1290,7 +1293,7 @@ test("app milestones do not record below their thresholds, even with Quest Polle
     expect(questIds.has("app_pollen_10")).toBe(false);
 });
 
-test("app spending quest does not use gross Pollen when Paid usage is missing", async ({
+test("app spending quests do not use gross Pollen when Paid usage is missing", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1306,7 +1309,12 @@ test("app spending quest does not use gross Pollen when Paid usage is missing", 
     const rewards = await db
         .select()
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "app_pollen_10"));
+        .where(
+            inArray(schema.rewards.questId, [
+                "app_pollen_10",
+                "app_paid_request",
+            ]),
+        );
     expect(rewards).toHaveLength(0);
 });
 
@@ -1321,6 +1329,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         { questId: "app_active", amount: 7 },
         { questId: "app_users_10", amount: 15 },
         { questId: "app_pollen_10", amount: 3 },
+        { questId: "app_paid_request", amount: 15 },
     ];
     mocks.tinybird.state.appUsageResponse = [
         { userId: user.id, pollenUsed: 3, paidPollenUsed: 3, paidRequests: 0 },
@@ -1350,7 +1359,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select()
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
-    expect(rewards).toHaveLength(3);
+    expect(rewards).toHaveLength(4);
     for (const reward of rewards) {
         const claim = { rewardId: reward.id, userId: user.id };
         const claimed = await claimReward(db, claim);
@@ -1366,7 +1375,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select({ value: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 25);
+    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 40);
 });
 
 test("quest check records model-usage rewards per modality", async ({
@@ -1929,6 +1938,109 @@ test("two lazy GitHub issue bounties each record independently", async ({
         issueRewards.find((g) => g.userId === "community-issue-second-user")
             ?.pollenAmount,
     ).toBeCloseTo(13);
+});
+
+test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    const afterLaunch = "2026-09-24T12:00:00Z";
+    const excludedTitles: Record<number, string> = {
+        9107: "[Community Publisher Access]: Example",
+        9109: "[App Submission]: Example",
+        9110: "[Project Submission]: Example",
+        9111: "[QUEST]: Example",
+    };
+    const issues = [
+        { number: 9101, labels: [], mergedAt: afterLaunch },
+        { number: 9102, labels: [{ name: "BUG" }], mergedAt: afterLaunch },
+        { number: 9103, labels: [], mergedAt: "2026-06-25T19:45:45Z" },
+        {
+            number: 9104,
+            labels: [{ name: "APP-SUBMISSION" }],
+            mergedAt: afterLaunch,
+        },
+        {
+            number: 9105,
+            labels: [{ name: "POLLEN-QUEST" }],
+            mergedAt: afterLaunch,
+        },
+        { number: 9106, labels: [], mergedAt: null },
+        { number: 9107, labels: [], mergedAt: afterLaunch },
+        { number: 9108, labels: [], mergedAt: "2026-06-25T19:45:46Z" },
+        { number: 9109, labels: [], mergedAt: afterLaunch },
+        { number: 9110, labels: [], mergedAt: afterLaunch },
+        { number: 9111, labels: [], mergedAt: afterLaunch },
+    ];
+    for (const issue of issues) {
+        mocks.github.state.questIssues.push({
+            number: issue.number,
+            state: "closed",
+            title: excludedTitles[issue.number] ?? `Issue ${issue.number}`,
+            html_url: `https://github.com/pollinations/pollinations/issues/${issue.number}`,
+            body: "A useful issue report",
+            created_at: "2026-09-22T00:00:00Z",
+            updated_at: afterLaunch,
+            closed_at: afterLaunch,
+            user: {
+                login: user.githubUsername ?? "",
+                databaseId: user.githubId,
+            },
+            labels: issue.labels,
+            closedByPullRequestsReferences: [
+                {
+                    number: issue.number + 1000,
+                    mergedAt: issue.mergedAt,
+                    author: { databaseId: 999999 },
+                },
+            ],
+        });
+    }
+
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({
+            id: schema.rewards.id,
+            idempotencyKey: schema.rewards.idempotencyKey,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const reportRewards = rewards.filter((reward) =>
+        reward.idempotencyKey.startsWith("quest:github:reported_issue:"),
+    );
+    expect(reportRewards.map((reward) => reward.idempotencyKey).sort()).toEqual(
+        [
+            `quest:github:reported_issue:9101:github:${user.githubId}`,
+            `quest:github:reported_issue:9102:github:${user.githubId}`,
+            `quest:github:reported_issue:9108:github:${user.githubId}`,
+        ],
+    );
+    expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
+        2, 2, 2,
+    ]);
+    expect(
+        reportRewards.every((reward) => reward.balanceBucket === "tier"),
+    ).toBe(true);
+
+    for (const reward of reportRewards) {
+        expect(
+            (await claimReward(db, { rewardId: reward.id, userId: user.id }))
+                .claimed,
+        ).toBe(true);
+    }
+    const [balance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 6);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

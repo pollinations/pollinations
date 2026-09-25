@@ -124,8 +124,6 @@ export async function callQwenImage3API(
 
     return {
         buffer: Buffer.from(await imageResponse.arrayBuffer()),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {

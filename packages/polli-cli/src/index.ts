@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 
 import { agentsCommand } from "./commands/agents.js";
-import { authCommand } from "./commands/auth.js";
+import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
@@ -60,6 +60,7 @@ program
 
 // Auth & account
 program.addCommand(authCommand);
+program.addCommand(whoamiCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
 program.addCommand(earningsCommand);

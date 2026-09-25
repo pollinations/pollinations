@@ -24,6 +24,7 @@ from buffer_publish import (
     stage_buffer_posts,
 )
 from common import (
+    post_discord_webhook,
     DISCORD_CHUNK_SIZE,
     deploy_reddit_news_post,
     get_env,
@@ -96,12 +97,6 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
         except Exception as e:
             print(f"  Could not download image for Discord: {e}")
 
-    # Ensure webhook waits for message
-    if "?" not in webhook_url:
-        webhook_url += "?wait=true"
-    else:
-        webhook_url += "&wait=true"
-
     chunks = chunk_message(message)
     for i, chunk in enumerate(chunks):
         # Attach image to the first chunk only
@@ -114,9 +109,9 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
                 ),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
-            resp = requests.post(webhook_url, files=files, timeout=30)
+            resp = post_discord_webhook(webhook_url, files=files)
         else:
-            resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
+            resp = post_discord_webhook(webhook_url, json_body={"content": chunk})
 
         if resp.status_code in [200, 201, 204]:
             try:

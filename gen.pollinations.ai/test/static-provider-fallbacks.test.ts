@@ -23,21 +23,6 @@ import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
     [
-        "perplexity/sonar:openrouter:perplexity",
-        "perplexity/sonar",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-pro:openrouter:perplexity",
-        "perplexity/sonar-pro",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-reasoning-pro:openrouter:perplexity",
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ],
-    [
         "qwen/qwen3.8-27b:openrouter:akashml-fp8",
         "qwen/qwen3.8-27b",
         "akashml/fp8",
@@ -65,9 +50,24 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
+        "anthropic/claude-opus-5.5:openrouter:anthropic",
+        "anthropic/claude-opus-5.5",
+        "anthropic",
+    ],
+    [
+        "meta/muse-glimmer-30b:openrouter:together",
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
+    ],
+    [
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        "moonshotai/kimi-k2.7-code",
+        "streamlake",
+    ],
+    [
+        "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
     ],
     [
         "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
@@ -291,61 +291,40 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it.each([
-        "sonar",
-        "sonar-pro",
-        "sonar-reasoning-pro",
-    ] as const)("keeps %s on direct Perplexity with an OpenRouter fallback", (upstream) => {
-        const model = `perplexity/${upstream}` as const;
-        const primary: ModelDefinition = TEXT_SERVICES[model];
+    it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
+        const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
+        const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
         expect(primary).toMatchObject({
-            provider: "perplexity",
-            priceMultiplier: 1,
-            fallbacks: [`${model}:openrouter:perplexity`],
+            provider: "azure",
+            aliases: [],
+            fallbacks: ["openai/gpt-5.3-codex:azure:sweden"],
+            priceMultiplier: 0.75,
+            maxCompletionTokens: 128000,
         });
-        expect(primary.paidOnly).not.toBe(true);
-        expect(findModelByName(model)?.config()).toMatchObject({
-            provider: "perplexity-ai",
-            model: upstream,
+        expect(fallback).toMatchObject({
+            provider: "azure",
+            fallbackOnly: true,
+            hidden: true,
+            aliases: [],
         });
-    });
+        expect(primary).not.toHaveProperty("paidOnly", true);
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(fallback.cost).toEqual(primary.cost);
 
-    it.each([
-        ["perplexity/sonar", "low", 0.005],
-        ["perplexity/sonar", "high", 0.012],
-        ["perplexity/sonar-pro", "high", 0.014],
-        ["perplexity/sonar-reasoning-pro", "high", 0.014],
-    ] as const)("bills %s %s search once when OpenRouter reports a total cost", (model, searchContextSize, searchFee) => {
-        const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:openrouter:perplexity`];
-        const usage = { promptTextTokens: 100, completionTextTokens: 20 };
-        const expected =
-            100 * primary.cost.promptTextTokens +
-            20 * primary.cost.completionTextTokens +
-            searchFee;
-        // OpenRouter's numeric cost already includes token and search costs.
-        const completion = { usage: { cost: expected } };
-        for (const output of [
-            completion,
-            { streamEvents: [{ choices: [] }, completion] },
-        ]) {
-            const billed = calculateUsageBilling({
-                model,
-                usage,
-                servedBy: fallback,
-                quotedBy: primary,
-                output,
-                input: { searchContextSize },
-            });
-            expect(billed.cost.totalCost).toBeCloseTo(expected * 1.055, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
-            expect(billed.adjustments).toHaveLength(1);
-            expect(billed.adjustments[0]).toMatchObject({
-                kind: "search_request",
-                units: 1,
-                cost: searchFee * 1.055,
-            });
-        }
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-5.3-codex",
+            usage: {
+                promptTextTokens: 10,
+                promptCachedTokens: 4,
+                promptCacheWriteTokens: 2,
+                completionTextTokens: 5,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000917, 12);
+        expect(billing.price.totalPrice).toBe(0.00006877);
+        expect(billing.price.totalPrice).toBe(billing.servedPrice);
     });
 
     it("preserves the Astra quote while recording Data Zone costs", () => {
@@ -453,6 +432,32 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
+    it("keeps a retirement date on the route that states it", () => {
+        const parentId = "google/gemini-2.5-flash-lite:search";
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            retirementDate: Date.UTC(2026, 9, 20),
+        };
+        const undatedId = `${parentId}:openrouter:ai-studio`;
+        const datedId = `${parentId}:openrouter:vertex`;
+        const services = mergeFallbacks(
+            { [parentId]: parent },
+            {
+                [parentId]: {
+                    [undatedId]: { provider: "openrouter" },
+                    [datedId]: {
+                        provider: "openrouter",
+                        retirementDate: Date.UTC(2027, 2, 15),
+                    },
+                },
+            },
+        );
+
+        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
+        expect(services[undatedId].retirementDate).toBeUndefined();
+        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),
@@ -516,6 +521,7 @@ describe("static provider fallbacks", () => {
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
+            "x-ai/grok-4.6:xai",
         ]);
         expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
             TEXT_SERVICES["x-ai/grok-4.6"].cost,
@@ -588,9 +594,10 @@ describe("static provider fallbacks", () => {
             promptCacheWriteTokens: (0.3 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:openrouter:streamlake"]
+                .cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 0.85 / 1_000_000,
+            promptCacheWriteTokens: (0.7125 / 1_000_000) * 1.055,
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
@@ -756,6 +763,36 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
+        const sonar = TEXT_SERVICES["perplexity/sonar"];
+        for (const request of [
+            { response_format: { type: "json_object" } },
+            { text: { format: { type: "json_object" } } },
+        ]) {
+            expect(textCapabilityError(sonar, request)).toMatch(
+                /does not support JSON mode/,
+            );
+        }
+        for (const request of [
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "answer",
+                        schema: {
+                            type: "object",
+                            properties: { capital: { type: "string" } },
+                        },
+                    },
+                },
+            },
+            { response_format: { type: "text" } },
+            {},
+        ]) {
+            expect(textCapabilityError(sonar, request)).toBeUndefined();
+        }
+    });
+
     it("uses the same primary and single fallback for both API formats", () => {
         const primary = "meta/llama-4-scout";
         const novita = `${primary}:openrouter:novita-bf16`;
@@ -798,6 +835,11 @@ describe("static provider fallbacks", () => {
             responsesEndpoint:
                 "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
             responsesAuthHeader: "api-key",
+        });
+        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            model: "grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

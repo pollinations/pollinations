@@ -42,6 +42,7 @@ export type McpPricingInfo = {
 
 export type McpBindingName =
     | "POLLINATIONS_MCP"
+    | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -109,6 +110,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Generation tools use each selected model's listed rate. Discovery and account tools are free.",
+            rates: [],
+        },
+    },
+    {
+        id: "ask-jev",
+        name: "Ask Jev",
+        description:
+            "Evaluate state with typed choice, score, and probability questions.",
+        binding: "ASK_JEV_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Decision tools use Jev's listed model rate. No additional MCP fee.",
             rates: [],
         },
     },

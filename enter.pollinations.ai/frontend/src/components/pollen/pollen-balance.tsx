@@ -1,6 +1,5 @@
 import {
     CardIcon,
-    ClockIcon,
     CopyButton,
     GlobeIcon,
     InfoTip,
@@ -31,6 +30,7 @@ type PollenBalanceProps = {
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
+const TERMS_URL = "https://pollinations.ai/terms";
 const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
@@ -154,7 +154,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             {!compact && (
                 <>
                     {/* Total + 7d earnings below */}
-                    <div className="flex items-start justify-between gap-3 pt-3">
+                    <Surface className="flex items-start justify-between gap-3">
                         <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
                             Total
                         </span>
@@ -176,10 +176,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 </span>
                             )}
                         </div>
-                    </div>
+                    </Surface>
 
                     {/* Footer: learn more */}
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <div className="mt-2 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
@@ -284,38 +284,37 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     returnToTopUp={returnToTopUp}
                 />
             </Surface>
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+            <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
-                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <GlobeIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
                     <span>
-                        Credits are instant, never expire, and follow our{" "}
+                        Taxes added at checkout.{" "}
+                        <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                        {" · "}
                         <InlineLink href={REFUND_POLICY_URL}>
                             Refund Policy
                         </InlineLink>
-                        .
                     </span>
                 </p>
                 <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <MailIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
                     <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
+                        Payment help:{" "}
                         <CopyButton
                             value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
+                            className="polli-link"
                         >
                             {(copied) =>
                                 copied ? "Copied!" : "billing@pollinations.ai"
                             }
-                        </CopyButton>{" "}
-                        — we reply same day.
+                        </CopyButton>
                     </span>
                 </p>
             </div>

@@ -33,7 +33,7 @@ jobs:
             changed=$(git diff --name-only "$before" "$GITHUB_SHA")
           fi
           echo "sdk=$(echo "$changed" | grep -Eq '^packages/sdk/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "ui=$(echo "$changed" | grep -q '^packages/ui/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "ui=$(echo "$changed" | grep -Eq '^packages/ui/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "cli=$(echo "$changed" | grep -Eq '^packages/polli-cli/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
           echo "$changed" | grep '^packages/' || true
@@ -88,6 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v5
 
@@ -124,8 +125,6 @@ jobs:
           case "$v" in *-*) tag="${v#*-}"; tag="${tag%%.*}";; esac
           echo "Publishing $v under dist-tag: $tag"
           npm publish --access public --tag "$tag"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-cli:
     needs: detect-changes

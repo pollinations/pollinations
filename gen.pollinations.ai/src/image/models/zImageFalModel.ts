@@ -12,7 +12,6 @@ type FalZImageResponse = {
         url?: string;
         content_type?: string;
     }>;
-    has_nsfw_concepts?: boolean[];
 };
 
 async function readFalResponse(response: Response): Promise<FalZImageResponse> {
@@ -76,8 +75,6 @@ export async function callZImageFalAPI(
             image.content_type ||
             imageResponse.headers.get("content-type") ||
             undefined,
-        isMature: result.has_nsfw_concepts?.[0] ?? false,
-        isChild: false,
         trackingData: {
             actualModel: "tongyi-mai/z-image-turbo:fal",
             usage: { completionImageTokens: 1 },

@@ -1,6 +1,6 @@
 import { cn, Dialog, type DialogProps } from "@pollinations/ui";
 
-/** Contained, scrollable shell for dashboard forms and confirmations. */
+/** Top-aligned, scrollable shell for dashboard forms. */
 export function ResourceDialog({
     contentClassName,
     ...props
@@ -10,7 +10,7 @@ export function ResourceDialog({
             {...props}
             positionerClassName="polli:p-4"
             contentClassName={cn(
-                "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-2xl",
+                "resource-dialog polli:rounded-2xl",
                 contentClassName,
             )}
         />

@@ -337,6 +337,7 @@ function createHeaderApp(
     consumePollen: (amount: number) => Promise<void> = async () => {},
     model: ModelName = "openai/gpt-5.4-nano",
     finalEntry?: GenerationModelEntry,
+    body: unknown = { choices: [{ message: {} }] },
 ) {
     const app = new Hono<Env>();
 
@@ -364,7 +365,7 @@ function createHeaderApp(
     });
     app.post("/v1/chat/completions", track("generate.text"), (c) => {
         recordSettledEntry(c.var.track.attempts, finalEntry);
-        return new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+        return new Response(JSON.stringify(body), {
             status,
             headers: {
                 "content-type": "application/json",
@@ -378,6 +379,19 @@ function createHeaderApp(
 
     return app;
 }
+
+// Gemini 3 bills each grounding search query found in the reply, so this fee
+// is knowable even when the provider omits token usage.
+const GEMINI_SEARCH_MODEL = "google/gemini-3-flash-preview";
+const GEMINI_SEARCH_FEE = 0.014;
+const groundedReply = {
+    choices: [
+        {
+            message: {},
+            groundingMetadata: { webSearchQueries: ["pollinations"] },
+        },
+    ],
+};
 
 function createStaticEntry(model: ModelName): GenerationModelEntry {
     const definition = getRegistryModelDefinition(model);
@@ -1298,13 +1312,15 @@ describe("tracking observability", () => {
             trackingUser,
             200,
             consumePollen,
-            "perplexity/sonar",
+            GEMINI_SEARCH_MODEL,
+            undefined,
+            groundedReply,
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity/sonar",
+                    model: GEMINI_SEARCH_MODEL,
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1330,15 +1346,15 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "perplexity/sonar",
-            totalCost: 0.005,
+            modelUsed: GEMINI_SEARCH_MODEL,
+            totalCost: GEMINI_SEARCH_FEE,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
             adjustmentCosts: {
-                "perplexity.sonar_low.search_request.v1": 0.005,
+                "google.gemini_3.search_query.v1": GEMINI_SEARCH_FEE,
             },
             adjustmentUnits: {
-                "perplexity.sonar_low.search_request.v1": 1,
+                "google.gemini_3.search_query.v1": 1,
             },
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
@@ -1366,14 +1382,15 @@ describe("tracking observability", () => {
             trackingUser,
             200,
             consumePollen,
-            "perplexity/sonar",
+            GEMINI_SEARCH_MODEL,
             createStaticEntry("openai/gpt-5.4-nano"),
+            groundedReply,
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity/sonar",
+                    model: GEMINI_SEARCH_MODEL,
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1402,8 +1419,12 @@ describe("tracking observability", () => {
             modelUsed: "openai/gpt-5.4-nano",
             totalCost: 0,
             totalPrice: 0,
-            devPrice: 0.005,
         });
+        expect(event.devPrice).toBeCloseTo(
+            GEMINI_SEARCH_FEE *
+                getRegistryModelDefinition(GEMINI_SEARCH_MODEL).priceMultiplier,
+            12,
+        );
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -1423,14 +1444,15 @@ describe("tracking observability", () => {
         await createHeaderApp(
             {
                 "x-usage-missing": "true",
-                "x-model-used": "perplexity/sonar",
+                "x-model-used": GEMINI_SEARCH_MODEL,
                 "x-fallback-target": "config.targets[1]",
             },
             trackingUser,
             200,
             consumePollen,
             "openai/gpt-5.4-nano",
-            createStaticEntry("perplexity/sonar"),
+            createStaticEntry(GEMINI_SEARCH_MODEL),
+            groundedReply,
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -1460,8 +1482,8 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             isBilledUsage: false,
             fallbackUsed: true,
-            modelUsed: "perplexity/sonar",
-            totalCost: 0.005,
+            modelUsed: GEMINI_SEARCH_MODEL,
+            totalCost: GEMINI_SEARCH_FEE,
             totalPrice: 0,
             devPrice: 0,
         });
@@ -3167,6 +3189,37 @@ describe("trackResponse modelUsed", () => {
         });
     });
 
+    it("keeps choice.error.message when finish_reason is error", async () => {
+        const error = {
+            message: "tool call aborted: rate limited",
+            code: "agent_error",
+        };
+        const body = `data: ${JSON.stringify({
+            choices: [{ finish_reason: "error", error }],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 0,
+                total_tokens: 10,
+            },
+        })}\n\ndata: [DONE]\n\n`;
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(body, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "agent_error",
+                errorMessage: error.message,
+            },
+        });
+    });
+
     it("keeps the code and message of any terminal stream error", async () => {
         const error = {
             message: "Agent reused a tool call ID",
@@ -3463,9 +3516,12 @@ describe("trackResponse missing usage", () => {
     it("retains a knowable provider fee without billing incomplete text", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(true, "perplexity/sonar"),
-            emptyStream(),
-            candidateFixture("perplexity/sonar"),
+            requestTrackingFixture(true, GEMINI_SEARCH_MODEL),
+            new Response(
+                `data: ${JSON.stringify(groundedReply)}\n\ndata: [DONE]\n\n`,
+                { headers: { "content-type": "text/event-stream" } },
+            ),
+            candidateFixture(GEMINI_SEARCH_MODEL),
         );
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.responseStatus).toBe(502);
@@ -3511,20 +3567,16 @@ describe("reduceAdjustmentsToEventFields", () => {
         expect(
             reduceAdjustmentsToEventFields([
                 makeAdjustment("openrouter.google.web_search.v1", 0.042, 3),
-                makeAdjustment(
-                    "perplexity.sonar_low.search_request.v1",
-                    0.006,
-                    1,
-                ),
+                makeAdjustment("perplexity.web_search.v1", 0.006, 1),
             ]),
         ).toEqual({
             adjustmentCosts: {
                 "openrouter.google.web_search.v1": 0.042,
-                "perplexity.sonar_low.search_request.v1": 0.006,
+                "perplexity.web_search.v1": 0.006,
             },
             adjustmentUnits: {
                 "openrouter.google.web_search.v1": 3,
-                "perplexity.sonar_low.search_request.v1": 1,
+                "perplexity.web_search.v1": 1,
             },
         });
     });

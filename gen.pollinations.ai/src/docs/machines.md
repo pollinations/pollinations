@@ -32,6 +32,20 @@ curl https://gen.pollinations.ai/machines \
   list, and revoke your account's keys.
 - Without `autoStopSeconds` the machine stays on.
 
+### Permission and billing
+
+- The key needs the `machines` account permission. Tick it when you create a
+  key in the dashboard, or pass `"accountPermissions": ["machines"]` to
+  `POST /account/keys`. `polli auth login` asks for it.
+- A running machine costs pollen per hour, by size: see `pricePerHour` in
+  each machine response. Quest Pollen counts.
+- Creating, starting, or running a command pays the current hour if it is
+  not paid yet. Each further hour is charged while the machine runs; a
+  stopped machine costs nothing.
+- If the wallet or the key's budget cannot cover an hour, the request gets
+  a 402, and a running machine stops. Its disk survives, so start it again
+  after you top up.
+
 ### Work with it
 
 ```bash

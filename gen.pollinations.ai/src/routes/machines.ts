@@ -1,28 +1,23 @@
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import {
+    hasMachinesScope,
+    hourlyPrice,
+    type SmolMachine,
+    smol,
+} from "@/durable-objects/MachineMeter.ts";
 import type { Env } from "@/env.ts";
-import { auth } from "@/middleware/auth.ts";
+import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
+import { createAuthSnapshot } from "@/middleware/generation-deduplication.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 
-const SMOL_API = "https://api.smolmachines.com";
 const TAG = "🖥️ Machines";
 const MAX_MACHINES_PER_USER = 3;
-
-type SmolMachine = {
-    id: string;
-    name: string;
-    state: string;
-    ready?: boolean;
-    error?: string | null;
-    source: { reference: string };
-    resources: { cpus: number; memoryMb: number; diskGb: number };
-    autoStopSeconds: number | null;
-    createdAt: string;
-};
 
 const NameSchema = z
     .string()
@@ -75,19 +70,13 @@ async function ownerPrefix(userId: string): Promise<string> {
     return `p-${hex}-`;
 }
 
-function smol(c: MachinesContext, path: string, init?: RequestInit) {
-    const headers = new Headers(init?.headers);
-    headers.set("authorization", `Bearer ${c.env.SMOL_API_KEY}`);
-    return fetch(`${SMOL_API}${path}`, { ...init, headers });
-}
-
 async function smolJson<T>(
     c: MachinesContext,
     path: string,
     method = "GET",
     body?: unknown,
 ): Promise<T> {
-    const response = await smol(c, path, {
+    const response = await smol(c.env, path, {
         method,
         ...(body !== undefined && {
             headers: { "content-type": "application/json" },
@@ -132,6 +121,34 @@ async function findOwned(c: MachinesContext): Promise<SmolMachine> {
     return machine;
 }
 
+// Charges the machine's hour before it runs, unless that hour is paid.
+async function payHour(c: MachinesContext, machine: SmolMachine) {
+    // requireMachineAccess has already checked the key's machines scope.
+    const { apiKey, ...snapshot } = createAuthSnapshot(c.var.auth);
+    if (!apiKey) throw new HTTPException(401);
+    const price = hourlyPrice(machine.resources);
+    const refusal = await c.env.MACHINE_METER.getByName(machine.id).resume(
+        machine.id,
+        price,
+        {
+            ...snapshot,
+            apiKey,
+        },
+    );
+    if (refusal === "KEY_BUDGET_EXHAUSTED") {
+        throw new PaymentRequiredError(
+            refusal,
+            `API key budget too low. This machine costs ${price} pollen per hour. Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up the wallet does not increase this limit.`,
+        );
+    }
+    if (refusal) {
+        throw new PaymentRequiredError(
+            refusal,
+            `Insufficient balance. This machine costs ${price} pollen per hour. Top up at https://enter.pollinations.ai/top-up.`,
+        );
+    }
+}
+
 function publicMachine(machine: SmolMachine, prefix: string) {
     return {
         name: machine.name.slice(prefix.length),
@@ -142,6 +159,7 @@ function publicMachine(machine: SmolMachine, prefix: string) {
         cpus: machine.resources.cpus,
         memoryMb: machine.resources.memoryMb,
         diskGb: machine.resources.diskGb,
+        pricePerHour: hourlyPrice(machine.resources),
         autoStopSeconds: machine.autoStopSeconds,
         createdAt: machine.createdAt,
     };
@@ -155,7 +173,8 @@ async function respond(c: MachinesContext, machine: SmolMachine) {
 const responses = {
     200: { description: "Success" },
     401: { description: "Unauthorized" },
-    403: { description: "Machines are not enabled for this account" },
+    402: { description: "Balance or key budget cannot cover an hour" },
+    403: { description: "The API key lacks the `machines` permission" },
     404: { description: "Machine not found" },
 };
 
@@ -188,7 +207,7 @@ export const machinesRoutes = new Hono<Env>()
             tags: [TAG],
             summary: "Create a Machine",
             description:
-                "Create a persistent Linux machine from an OCI image and start it. The disk survives stops; processes do not, so put the long-running process in `command`.",
+                "Create a persistent Linux machine from an OCI image and start it. The disk survives stops; processes do not, so put the long-running process in `command`. A running machine is billed per started hour at `pricePerHour`.",
             responses: {
                 ...responses,
                 409: { description: "A machine with this name exists" },
@@ -220,6 +239,15 @@ export const machinesRoutes = new Hono<Env>()
                     autoStopSeconds: input.autoStopSeconds,
                 },
             );
+            try {
+                await payHour(c, created);
+            } catch (error) {
+                // Do not leave an unpaid machine behind under the name.
+                await smol(c.env, `/v1/machines/${created.id}`, {
+                    method: "DELETE",
+                });
+                throw error;
+            }
             return respond(
                 c,
                 await smolJson<SmolMachine>(
@@ -255,11 +283,12 @@ export const machinesRoutes = new Hono<Env>()
             tags: [TAG],
             summary: "Start or Stop a Machine",
             description:
-                "`stop` powers the machine off and keeps its disk. `start` boots it and runs `command` again.",
+                "`stop` powers the machine off and keeps its disk. `start` boots it and runs `command` again, paying for an hour unless the current one is paid.",
             responses,
         }),
         async (c) => {
             const machine = await findOwned(c);
+            if (c.req.param("action") === "start") await payHour(c, machine);
             return respond(
                 c,
                 await smolJson<SmolMachine>(
@@ -276,12 +305,13 @@ export const machinesRoutes = new Hono<Env>()
             tags: [TAG],
             summary: "Run a Command",
             description:
-                "Run a command inside the machine and return its output.",
+                "Run a command inside the machine and return its output. A stopped machine starts first and pays for an hour.",
             responses,
         }),
         validator("json", ExecSchema),
         async (c) => {
             const machine = await findOwned(c);
+            await payHour(c, machine);
             const result = await smolJson<{
                 stdout: string;
                 stderr: string;
@@ -311,7 +341,10 @@ export const machinesRoutes = new Hono<Env>()
         }),
         async (c) => {
             const machine = await findOwned(c);
-            const upstream = await smol(c, `/v1/machines/${machine.id}/logs`);
+            const upstream = await smol(
+                c.env,
+                `/v1/machines/${machine.id}/logs`,
+            );
             return new Response(upstream.body, {
                 status: upstream.status,
                 headers: {
@@ -333,5 +366,11 @@ async function requireMachineAccess(
         });
     }
     c.var.auth.requireUser();
+    const apiKey = c.var.auth.apiKey;
+    if (!hasMachinesScope(apiKey)) {
+        throw new HTTPException(403, {
+            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
+        });
+    }
     await next();
 }

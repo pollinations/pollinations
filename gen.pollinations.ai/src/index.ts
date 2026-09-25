@@ -35,6 +35,7 @@ import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
+export { MachineMeter } from "./durable-objects/MachineMeter.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();

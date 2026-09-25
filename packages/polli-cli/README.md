@@ -175,6 +175,11 @@ polli machine logs my-agent
 polli machine stop my-agent       # start | rm
 ```
 
+A running machine costs pollen per hour by size (`polli machine list` shows
+it), and it stops when your balance runs out. Your login key needs the
+`machines` permission: if you logged in before machines existed, run
+`polli auth login` again.
+
 `--mint-key` gives the machine's key `account:keys`, so `polli harness <id> on`
 inside the machine mints its own harness key from `POLLINATIONS_API_KEY`.
 

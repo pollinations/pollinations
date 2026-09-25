@@ -17,6 +17,7 @@ interface Machine {
     cpus: number;
     memoryMb: number;
     diskGb: number;
+    pricePerHour: number;
     autoStopSeconds: number | null;
     createdAt: string;
 }
@@ -122,9 +123,10 @@ const list = new Command("list")
                     state: m.state,
                     image: m.image,
                     size: `${m.cpus} cpu / ${m.memoryMb} MB / ${m.diskGb} GB`,
+                    price: `${m.pricePerHour} pollen/h`,
                     created: m.createdAt.slice(0, 10),
                 })),
-                ["name", "state", "image", "size", "created"],
+                ["name", "state", "image", "size", "price", "created"],
             );
         } catch (err) {
             fail("Failed to list machines", err);

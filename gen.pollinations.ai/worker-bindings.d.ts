@@ -27,6 +27,9 @@ interface CloudflareBindings {
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;
+    MACHINE_METER: DurableObjectNamespace<
+        import("./src/durable-objects/MachineMeter.ts").MachineMeter
+    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"

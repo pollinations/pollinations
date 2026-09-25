@@ -54,6 +54,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[durable_objects.bindings]]
+name = "MACHINE_METER"
+class_name = "MachineMeter"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -65,6 +69,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["MachineMeter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -178,6 +186,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.production.durable_objects.bindings]]
+name = "MACHINE_METER"
+class_name = "MachineMeter"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -189,6 +201,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.production.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.production.migrations]]
+tag = "v4"
+new_sqlite_classes = ["MachineMeter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -287,6 +303,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.staging.durable_objects.bindings]]
+name = "MACHINE_METER"
+class_name = "MachineMeter"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -298,6 +318,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.staging.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.staging.migrations]]
+tag = "v4"
+new_sqlite_classes = ["MachineMeter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -380,6 +404,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.test.durable_objects.bindings]]
+name = "MACHINE_METER"
+class_name = "MachineMeter"
+
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -391,6 +419,10 @@ new_sqlite_classes = ["GenerationCoordinator"]
 [[env.test.migrations]]
 tag = "v3"
 new_classes = ["CommunityModelRateLimiter"]
+
+[[env.test.migrations]]
+tag = "v4"
+new_sqlite_classes = ["MachineMeter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

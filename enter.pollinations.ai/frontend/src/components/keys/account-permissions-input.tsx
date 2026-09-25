@@ -13,6 +13,10 @@ const permissions = [
         id: "keys",
         label: "Manage keys, agents and models.",
     },
+    {
+        id: "machines",
+        label: "Run hosted machines, billed per hour.",
+    },
 ] as const;
 
 /** The same optional grants in dashboard keys and connection consent. */

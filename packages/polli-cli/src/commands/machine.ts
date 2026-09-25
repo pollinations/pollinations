@@ -186,7 +186,7 @@ const simple = (
         });
 
 export const machineCommand = new Command("machine")
-    .description("Host long-running agents on persistent machines (preview)")
+    .description("Host long-running agents on persistent machines")
     .addCommand(create)
     .addCommand(list)
     .addCommand(simple("get", "Show a machine", "GET", ""))

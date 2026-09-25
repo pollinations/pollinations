@@ -161,7 +161,7 @@ their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
-## Machines (preview)
+## Machines
 
 Host a long-running agent on a persistent Linux machine. The disk survives a
 stop; processes do not, so `--command` runs again on every start.

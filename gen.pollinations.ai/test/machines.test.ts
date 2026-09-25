@@ -1,10 +1,8 @@
 import { SELF } from "cloudflare:test";
-import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { afterEach, expect, vi } from "vitest";
 
 const SMOL = "https://api.smolmachines.com";
-const allowedUser = { githubId: COMMUNITY_MODEL_ALLOWED_GITHUB_IDS[0] };
 
 type Machine = Record<string, unknown> & { id: string; name: string };
 
@@ -74,10 +72,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 test("creates, lists, execs and deletes a machine for its owner only", async () => {
     const smol = stubSmol();
-    const owner = await createTestApiKey({ user: allowedUser });
-    const other = await createTestApiKey({
-        user: { githubId: COMMUNITY_MODEL_ALLOWED_GITHUB_IDS[1] },
-    });
+    const owner = await createTestApiKey();
+    const other = await createTestApiKey();
 
     const created = await call(owner.key, "/machines", {
         method: "POST",
@@ -125,12 +121,9 @@ test("creates, lists, execs and deletes a machine for its owner only", async () 
     expect(smol.machines).toHaveLength(0);
 });
 
-test("rejects accounts outside the preview, publishable keys and the fourth machine", async () => {
+test("rejects publishable keys and the fourth machine", async () => {
     stubSmol();
-    const outsider = await createTestApiKey({ user: { githubId: 1 } });
-    expect((await call(outsider.key, "/machines")).status).toBe(403);
-
-    const owner = await createTestApiKey({ user: allowedUser });
+    const owner = await createTestApiKey();
     const publishable = await createTestApiKey({
         userId: owner.userId,
         type: "publishable",

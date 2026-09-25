@@ -1,4 +1,3 @@
-import { isCommunityModelAllowedGithubId } from "@shared/auth/github-id-list.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -333,16 +332,11 @@ async function requireMachineAccess(
             message: "Machines are not configured",
         });
     }
-    const user = c.var.auth.requireUser();
+    c.var.auth.requireUser();
     // A publishable key ships in frontends; it must never reach a shell.
     if (c.var.auth.apiKey?.metadata?.keyType === "publishable") {
         throw new HTTPException(403, {
             message: "Machines require a secret key",
-        });
-    }
-    if (!isCommunityModelAllowedGithubId(user.githubId)) {
-        throw new HTTPException(403, {
-            message: "Machines are in preview and not enabled for this account",
         });
     }
     await next();

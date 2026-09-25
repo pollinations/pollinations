@@ -2,7 +2,7 @@
 
 A machine is a persistent Linux microVM that you own. Use it to host a
 long-running agent or any coding harness: start it once, and it keeps running
-until you stop it. Machines are in preview and enabled per account.
+until you stop it.
 
 A machine differs from the [Computer MCP server](#tag/mcp-servers): the
 Computer is a tool an agent calls, and it sleeps when idle. A machine is where

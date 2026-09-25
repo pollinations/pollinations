@@ -125,7 +125,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:reliable"].filter(
+        ...["source:official", "status:all"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15446,
+  "title": "fix: extend reported-issue quest lookback to 90 days",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15446",
+  "merged_at": "2026-09-25T11:12:33Z",
+  "labels": [
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Extends the fixed pre-launch cutoff from August 24 to June 25, 2026.\n- Keeps the reward at 2 Quest Pollen per qualifying issue.\n- Updates the cutoff boundary test.\n- Current GitHub audit: 42 eligible issues from 15 linked reporters, up to 84 Pollen.\n\nLocal targeted Vitest could not start because this checkout lacks @cloudflare/vitest-pool-workers; PR CI will run the full Enter suite.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More old bugs, more pollen",
+    "blurb": "The reported-issue quest now looks further back through the garden ledger. Qualifying GitHub issues from the extended window can still bloom into 2 Quest Pollen each.",
+    "summary": "Extended the reported-issue Quest’s fixed pre-launch cutoff from August 24 to June 25, 2026, preserving the 2 Quest Pollen reward for each qualifying linked GitHub issue.",
+    "impact": "Linked reporters can now have older qualifying issues recognized in the Quest window; the current GitHub audit finds 42 eligible issues across 15 reporters, worth up to 84 Pollen.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github",
+      "billing",
+      "reported-issues",
+      "rewards"
+    ],
+    "visual_concept": "Depict Polli as a careful quest keeper extending a cozy garden calendar backward to uncover previously overlooked GitHub issue flowers, each tagged with a tiny 2 Pollen reward. A CRT monitor robot can help audit the issue ledger while vines and code-plants make the expanded history feel like a healthy garden rather than paperwork.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she unrolls a long quest calendar through a garden of GitHub issue flowers marked “2 POLLEN”; a cute CRT-monitor robot audits the blooms beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, code-plants and subtle scanlines, retro gaming vibes, nostalgic but emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15446.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she unrolls a long quest calendar through a garden of GitHub issue flowers marked “2 POLLEN”; a cute CRT-monitor robot audits the blooms beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, code-plants and subtle scanlines, retro gaming vibes, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-09-25T11:13:34.015227+00:00"
+}

@@ -175,6 +175,9 @@ polli machine logs my-agent
 polli machine stop my-agent       # start | rm
 ```
 
+`--mint-key` gives the machine's key `account:keys`, so `polli harness <id> on`
+inside the machine mints its own harness key from `POLLINATIONS_API_KEY`.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

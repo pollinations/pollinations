@@ -26,6 +26,10 @@ curl https://gen.pollinations.ai/machines \
   on every start, so put the long-running process there.
 - Give the machine its own API key in `env`, with a budget, instead of your
   account key.
+- To let a harness inside the machine mint its own key, create the machine's
+  key with `"accountPermissions": ["keys"]` on `POST /account/keys`
+  (`polli machine create --mint-key` does this). That key can then create,
+  list, and revoke your account's keys.
 - Without `autoStopSeconds` the machine stays on.
 
 ### Work with it

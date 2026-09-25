@@ -57,7 +57,7 @@ const create = new Command("create")
     )
     .option(
         "--mint-key",
-        "Create a dedicated API key and pass it as POLLINATIONS_API_KEY",
+        "Create a dedicated API key with account:keys and pass it as POLLINATIONS_API_KEY",
     )
     .option("--cpus <n>", "vCPUs (1-4)", Number)
     .option("--memory <mb>", "Memory in MB", Number)
@@ -71,7 +71,13 @@ const create = new Command("create")
                 const minted = await gen<{ key: string }>("/account/keys", {
                     method: "POST",
                     apiKey,
-                    body: { name: `polli-machine-${name}`, type: "secret" },
+                    // account:keys lets a harness inside the machine mint
+                    // its own key (`polli harness <id> on`).
+                    body: {
+                        name: `polli-machine-${name}`,
+                        type: "secret",
+                        accountPermissions: ["keys"],
+                    },
                 });
                 env.POLLINATIONS_API_KEY = minted.key;
                 printSuccess(`Created API key "polli-machine-${name}".`);

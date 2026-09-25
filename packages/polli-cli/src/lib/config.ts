@@ -51,8 +51,12 @@ export const setKeyOverride = (key: string | undefined) => {
     _keyOverride = key;
 };
 
+// Precedence: explicit key > --key > POLLINATIONS_API_KEY > stored login.
+// The env var lets polli run inside a machine minted with `--mint-key`.
 export const resolveApiKey = (flagKey?: string): string | undefined =>
-    flagKey ?? _keyOverride ?? loadCredentials().apiKey;
+    flagKey ??
+    _keyOverride ??
+    (process.env.POLLINATIONS_API_KEY || loadCredentials().apiKey);
 
 export const BASE_URL =
     process.env.POLLINATIONS_BASE_URL ?? "https://gen.pollinations.ai";

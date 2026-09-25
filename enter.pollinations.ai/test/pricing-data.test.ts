@@ -734,7 +734,7 @@ test("Claude Fable 5.1 is paid-only and billed at current standard rates", () =>
     );
 });
 
-test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
+test("Qwen Image 3 uses DashScope's output tier and reference-image rates", () => {
     expect(
         calculatePrice("qwen/qwen-image-3", {
             completionImageTokens: 1,
@@ -745,7 +745,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
             "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
-            { megapixels: (1536 * 1536) / 1_000_000 },
+            { megapixels: (1500 * 1500) / 1_000_000 },
         ).totalPrice,
     ).toBeCloseTo(0.04, 8);
     expect(
@@ -753,7 +753,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
             "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
-            { megapixels: 2.4 },
+            { megapixels: (1536 * 1536) / 1_000_000 },
         ).totalPrice,
     ).toBeCloseTo(0.075, 8);
     expect(

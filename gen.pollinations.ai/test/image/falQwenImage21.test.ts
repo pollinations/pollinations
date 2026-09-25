@@ -7,16 +7,12 @@ const GENERATE_URL = "https://fal.run/alibaba/qwen-image-2.1/text-to-image";
 const EDIT_URL = "https://fal.run/alibaba/qwen-image-2.1/edit";
 const OUTPUT_URL = "https://fal.media/qwen-image-2.1.png";
 
-// PNG header only: enough for dimension parsing (1024x512 = 0.524288 MP).
+// Minimal PNG header used as a reference image (1024x512).
 const INPUT_PNG = Buffer.alloc(24);
 INPUT_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 INPUT_PNG.writeUInt32BE(1024, 16);
 INPUT_PNG.writeUInt32BE(512, 20);
 const INPUT_IMAGE = `data:image/png;base64,${INPUT_PNG.toString("base64")}`;
-// Same bytes under a generic mime type: sniffed and metered as PNG.
-const OCTET_STREAM_PNG = `data:application/octet-stream;base64,${INPUT_PNG.toString("base64")}`;
-// Not an image header: no pixel dimensions to meter.
-const UNMETERABLE_IMAGE = `data:application/octet-stream;base64,${Buffer.alloc(24).toString("base64")}`;
 
 const baseParams: ImageParams = {
     model: "qwen/qwen-image-2.1",
@@ -103,11 +99,11 @@ describe("qwenImage21Model", () => {
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
             actualModel: "qwen/qwen-image-2.1",
-            usage: { completionImageTokens: 1024 * 1024 },
+            usage: { completionImageTokens: 1_000_000 },
         });
     });
 
-    it("rounds the size to multiples of 32 and meters the rounded pixels", async () => {
+    it("rounds the size to multiples of 32 and bills whole megapixels", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -123,15 +119,16 @@ describe("qwenImage21Model", () => {
             height: 736,
         });
         expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: 1280 * 736,
+            completionImageTokens: 1_000_000,
         });
     });
 
+    // Fal bills 1376×768 (just over 2^20 px) as 2 megapixels: measured 2026-09-25.
     it.each([
-        ["16:9", 1376, 768],
-        ["9:16", 768, 1376],
-        ["1:1", 1024, 1024],
-    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height) => {
+        ["16:9", 1376, 768, 2],
+        ["9:16", 768, 1376, 2],
+        ["1:1", 1024, 1024, 1],
+    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height, megapixels) => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -142,7 +139,7 @@ describe("qwenImage21Model", () => {
 
         expect(requests[0].body.image_size).toEqual({ width, height });
         expect(result.trackingData?.usage).toEqual({
-            completionImageTokens: width * height,
+            completionImageTokens: megapixels * 1_000_000,
         });
     });
 
@@ -164,20 +161,7 @@ describe("qwenImage21Model", () => {
         });
     });
 
-    it("rejects a reference image whose dimensions can't be parsed instead of billing it as zero", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen21("unmeterable reference", {
-                ...baseParams,
-                image: [UNMETERABLE_IMAGE],
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        // Rejected before submitting to fal.
-        expect(fetchSpy).not.toHaveBeenCalledWith(EDIT_URL, expect.anything());
-    });
-
-    it("routes edits to the edit endpoint and meters input pixels as whole integers", async () => {
+    it("routes edits to the edit endpoint and bills each reference as half a megapixel", async () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
@@ -189,25 +173,12 @@ describe("qwenImage21Model", () => {
         expect(requests[0].url).toBe(EDIT_URL);
         expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE, INPUT_IMAGE]);
         expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 2 * 1024 * 512,
-            completionImageTokens: 1024 * 1024,
+            promptImageTokens: 1_000_000,
+            completionImageTokens: 1_000_000,
         });
         for (const tokens of Object.values(result.trackingData?.usage ?? {})) {
             expect(Number.isInteger(tokens)).toBe(true);
         }
-    });
-
-    it("sniffs and meters a PNG reference served as application/octet-stream", async () => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
-
-        const result = await callQwen21("edit the reference", {
-            ...baseParams,
-            image: [OCTET_STREAM_PNG],
-        });
-
-        expect(requests[0].body.image_urls).toEqual([INPUT_IMAGE]);
-        expect(result.trackingData?.usage?.promptImageTokens).toBe(1024 * 512);
     });
 
     it("rejects more than ten reference images before calling Fal", async () => {

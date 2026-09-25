@@ -1198,10 +1198,11 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-20").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Fal pricing verified 2026-09-20: $0.02 per output megapixel for
-        // text-to-image; edits bill $0.11/3 per input and output megapixel.
-        // Metered in whole pixels (UInt32 usage columns), so rates are
-        // per pixel: perMillion(x) = $x per megapixel.
+        // Fal pricing: $0.02 per output megapixel for text-to-image; edits
+        // bill $0.11/3 per megapixel. Fal rounds output up to whole
+        // megapixels of 2^20 px and bills each reference as half a megapixel
+        // (measured 2026-09-25). gen reports usage in millionths of a billed
+        // megapixel (UInt32 usage columns), so perMillion(x) = $x per megapixel.
         cost: {
             promptImageTokens: 0, // text-to-image has no input images; edits bill them
             completionImageTokens: perMillion(0.02),

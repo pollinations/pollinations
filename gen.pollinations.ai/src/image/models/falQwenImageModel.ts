@@ -1,38 +1,48 @@
 import { UpstreamError } from "@shared/error.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import {
-    downloadUserImage,
-    readImageDimensions,
-    toDataUri,
-} from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:fal-qwen-image:ops");
 
 // Fal serves both Qwen generations with the same request and response shape.
-// Qwen Image 3 bills per image; Qwen Image 2.1 bills per output and input pixel.
+// Qwen Image 3 bills per image and per reference image.
+// Qwen Image 2.1 bills megapixels of 2^20 px: output rounded up to whole
+// megapixels, each reference as half a megapixel whatever its size (measured
+// against fal's usage API, 2026-09-25). Usage counts millionths of a billed
+// megapixel, so the registry's perMillion(x) rates equal fal's $x per megapixel.
+const MEGAPIXEL = 1024 * 1024;
+
 const FAL_QWEN_MODELS = {
     "qwen/qwen-image-3:fal": {
         label: "Qwen Image 3",
         endpoint: "alibaba/qwen-image-3",
         maxImages: 3,
-        billPixels: false,
         promptExpansion: { enable_prompt_expansion: false },
         resolveSize: resolveQwenImage3Size,
+        usage: (_size: FalImageSize, references: number) => ({
+            promptImageTokens: references,
+            completionImageTokens: 1,
+        }),
     },
     "qwen/qwen-image-2.1": {
         label: "Qwen Image 2.1",
         endpoint: "alibaba/qwen-image-2.1",
         maxImages: 10,
-        billPixels: true,
         promptExpansion: { prompt_expander: "none" },
         resolveSize: resolveQwenImageSize,
+        usage: (size: FalImageSize, references: number) => ({
+            promptImageTokens: references * 500_000,
+            completionImageTokens:
+                Math.ceil((size.width * size.height) / MEGAPIXEL) * 1_000_000,
+        }),
     },
 } as const;
+
+type FalImageSize = { width: number; height: number };
 
 export type FalQwenModel = keyof typeof FAL_QWEN_MODELS;
 
@@ -43,10 +53,7 @@ const roundTo32 = (value: number) => Math.max(32, Math.round(value / 32) * 32);
  * Without explicit dimensions, width × height is the model's default area:
  * keep that area and apply the requested aspect ratio.
  */
-export function resolveQwenImageSize(params: ImageParams): {
-    width: number;
-    height: number;
-} {
+export function resolveQwenImageSize(params: ImageParams): FalImageSize {
     const ratio = params.aspectRatio;
     if (params.dimensionsExplicit || !ratio || ratio === "adaptive") {
         return {
@@ -78,26 +85,6 @@ export function resolveQwenImage3Size(params: ImageParams) {
     return size;
 }
 
-// Pixel-billed edits meter each reference, so an unreadable one is rejected
-// rather than forwarded unbilled.
-async function toMeteredDataUri(image: string) {
-    const download = await downloadUserImage(image);
-    const { buffer } = download;
-    // Hosts often label images application/octet-stream; trust the bytes.
-    const mimeType = detectImageMimeType(buffer) ?? download.mimeType;
-    const dimensions = readImageDimensions(buffer, mimeType);
-    if (!dimensions) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Could not read a reference image's pixel dimensions; provide a JPEG, PNG, GIF, BMP, or WebP with a valid header",
-        });
-    }
-    return {
-        uri: `data:${mimeType};base64,${buffer.toString("base64")}`,
-        pixels: dimensions.width * dimensions.height,
-    };
-}
-
 export async function callFalQwenImageAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -118,18 +105,12 @@ export async function callFalQwenImageAPI(
         });
     }
     const size = config.resolveSize(safeParams);
-    const references = await Promise.all(
-        images.map(async (image) =>
-            config.billPixels
-                ? toMeteredDataUri(image)
-                : { uri: await toDataUri(image), pixels: 1 },
-        ),
-    );
+    const references = await Promise.all(images.map(toDataUri));
     const isEdit = references.length > 0;
     const upstreamUrl = `https://fal.run/${config.endpoint}/${isEdit ? "edit" : "text-to-image"}`;
     const requestBody = {
         prompt,
-        ...(isEdit ? { image_urls: references.map((r) => r.uri) } : {}),
+        ...(isEdit ? { image_urls: references } : {}),
         image_size: size,
         ...config.promptExpansion,
         // Pollinations runs its own moderation.
@@ -168,8 +149,10 @@ export async function callFalQwenImageAPI(
         errorLabel: `Failed to download ${config.label} result`,
     });
 
-    // Per-pixel usage stays whole pixels: usage columns are UInt32.
-    const inputTokens = references.reduce((sum, r) => sum + r.pixels, 0);
+    const { promptImageTokens, completionImageTokens } = config.usage(
+        size,
+        references.length,
+    );
     return {
         buffer: Buffer.from(await imageResponse.arrayBuffer()),
         isMature: false,
@@ -177,10 +160,8 @@ export async function callFalQwenImageAPI(
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                ...(isEdit ? { promptImageTokens: inputTokens } : {}),
-                completionImageTokens: config.billPixels
-                    ? size.width * size.height
-                    : 1,
+                ...(isEdit ? { promptImageTokens } : {}),
+                completionImageTokens,
             },
         },
     };

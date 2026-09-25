@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code (via Claude Code Router), Codex (via Codex Router), DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -29,6 +29,7 @@ Polli configures harnesses; it does not update their installations. Use the harn
 npm install -g @pollinations/cli@latest
 uv tool upgrade bloom-cli
 npx @deepseek-ai/dsh@latest web
+npm install -g @musistudio/claude-code-router@latest
 opencode upgrade
 openclaw update
 pi update self
@@ -42,6 +43,8 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
+| [Claude Code](https://claude.com/claude-code) via [Claude Code Router](https://github.com/musistudio/claude-code-router) | **Available now** — `polli harness claude-code on` | Adds a Pollinations provider and a `Pollinations` profile launched with `ccr "Pollinations"`. Your own Claude login and settings are untouched. Defaults to `openai/gpt-5.4-nano`. |
+| [Codex](https://github.com/openai/codex) via [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now** — `polli harness codex on` | Adds Pollinations as a Codex Router provider and routes the chosen model into Codex's model picker. Your ChatGPT login, native models and profiles are untouched. Defaults to `openai/gpt-5.4-nano`. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
@@ -70,6 +73,37 @@ tgpt "Hello"
 tgpt already includes a Pollinations provider. `on` selects it for text generation and writes a dedicated key and model to `~/.config/tgpt/config.conf`, making tgpt use the authenticated `gen.pollinations.ai` endpoint. Choose another model with `--model <id>`; `off` restores the previous file or removes only the Pollinations values if the file changed later.
 
 The default model is `openai/gpt-5.4-nano`. Polli clears any generic `AI_API_KEY` from this file so it cannot override the dedicated `POLLINATIONS_API_KEY`; the original file is backed up. Exported environment variables, a local `config.conf`, or `--config` can override this user-level setup. `off` does not revoke the account key.
+## Claude Code (Claude Code Router)
+
+```bash
+npm install -g @musistudio/claude-code-router
+ccr start
+polli harness claude-code on --model z-ai/glm-5.3-flash
+ccr "Pollinations"
+polli harness claude-code status
+polli harness claude-code off
+```
+
+`on` needs `ccr` and `claude` installed and the router **already running** (`ccr start`); Polli does not start it, because the router's default profiles take over `~/.claude` and `~/.codex` the first time it runs with a provider. It then creates a dedicated key and uses the router's own management API to add a `pollinations` provider (the current tool-calling catalog, chosen model via `--model`) and an isolated `Pollinations` profile, and sends one word (`pong`) through the router gateway. If that request fails, the router configuration is restored. The profile uses the router's `ccr` scope, so it applies only when you launch `ccr "Pollinations"` — your normal `claude` login, settings and other providers are unchanged. The key is stored only in the router's configuration.
+
+`status` reports whether the router, Claude Code, the running service, the provider and the profile are ready, and what to do next. `off` removes only the `pollinations` provider and the `Pollinations` profile through the same API.
+
+Troubleshooting: `Claude Code Router is not running` means run `ccr start`. A model must be addressed as `openai/<model id>` (the gateway reads the first path segment as the protocol), which the adapter does for you. After a router upgrade, rerun `on`; if `status` disagrees with the router UI, the router's management API changed — check `ccr --help` and the router changelog.
+
+## Codex (Codex Router)
+
+```bash
+polli harness codex on --model z-ai/glm-5.3-flash
+polli harness codex status
+polli harness codex off
+```
+
+`on` needs [Codex Router](https://github.com/duolahypercho/codex-router#install-everything-recommended) and `codex` installed; if either is missing it stops before login or key creation and shows the official install link. It runs the router's own commands: `providers generic add` for a `pollinations` OpenAI-chat provider at `https://gen.pollinations.ai/v1`, `credential set` (the key is handed over standard input, never argv or shell history, and stays in the router's protected credential store), `curate-models pollinations --models <id> --apply`, and finally the router's live compatibility probe (`compatibility-test`) for the chosen model. A failed probe removes what the run added. The model appears as `pollinations/<model id>` in Codex's picker after you fully quit and reopen Codex; your ChatGPT login, native models and profiles are untouched. Run `on` again with another `--model` to add more models.
+
+`status` reports the router, Codex, provider, key and curated models. `off` removes the provider, which also removes its credential and routes, and leaves the router and other providers installed.
+
+Troubleshooting: the adapter drives the router's scripts (`src/providers.mjs`, `src/curate-models.mjs`, `src/compatibility-test.mjs`) from `%LOCALAPPDATA%\codex-router` (Windows) or `~/.local/share/codex-router`; set `CODEX_ROUTER_HOME` if yours lives elsewhere. If a command reports an unknown option after a router update, compare `model-router codex providers generic` and `curate-models` usage with the versions above.
+
 
 ## DeepSeek Harness
 

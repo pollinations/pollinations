@@ -15,7 +15,7 @@ afterAll(() => {
     vi.unstubAllEnvs();
 });
 
-it("shows shared reliable defaults without clearing the saved base model", () => {
+it("shows shared healthy defaults without clearing the saved base model", () => {
     const html = renderToStaticMarkup(
         createElement(BaseModelInput, {
             value: "owner/saved-model",
@@ -23,12 +23,12 @@ it("shows shared reliable defaults without clearing the saved base model", () =>
             onChange: () => {},
         }),
     );
-    expect(html).toContain("Change Status filter: reliable");
+    expect(html).toContain("Change Status filter: healthy");
     expect(html).toContain("Change Source filter: official");
     expect(html).toContain('value="owner/saved-model"');
 });
 
-it("defaults model pickers to reliable without changing their selected value", () => {
+it("defaults model pickers to healthy without changing their selected value", () => {
     const models: ModelPrice[] = [
         {
             name: "healthy-model",
@@ -67,7 +67,7 @@ it("defaults model pickers to reliable without changing their selected value", (
     for (const value of ["", "down-model", "owner/custom-model"]) {
         const html = renderToStaticMarkup(<Picker value={value} />);
         expect(html).toContain("Change Source filter: official");
-        expect(html).toContain("Change Status filter: reliable");
+        expect(html).toContain("Change Status filter: healthy");
     }
     // Consent intentionally shows every requested model, regardless of health.
     const unfiltered = renderToStaticMarkup(<Picker value="" initial="" />);

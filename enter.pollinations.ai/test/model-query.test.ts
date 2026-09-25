@@ -1,3 +1,4 @@
+import { modelHealthLookup } from "@shared/model-health.ts";
 import { describe, expect, it } from "vitest";
 import {
     AGENT_QUERY_FILTER_KEYS,
@@ -90,15 +91,15 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
+    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
         expect(ensureModelQueryDefaults("")).toBe(
-            "source:official status:reliable",
+            "source:official status:healthy",
         );
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:reliable capability:reasoning",
+            "source:official status:healthy capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:reliable source:community",
+            "status:healthy source:community",
         );
         expect(ensureModelQueryDefaults("source: status:")).toBe(
             "source: status:",
@@ -110,14 +111,14 @@ describe("model query defaults", () => {
 
     it("uses only defaults supported by the current list", () => {
         expect(ensureModelQueryDefaults("", AGENT_QUERY_FILTER_KEYS)).toBe(
-            "status:reliable",
+            "status:healthy",
         );
         expect(
             ensureModelQueryDefaults(
                 "publisher:alice",
                 AGENT_QUERY_FILTER_KEYS,
             ),
-        ).toBe("status:reliable publisher:alice");
+        ).toBe("status:healthy publisher:alice");
         for (const query of ["status:all", "STATUS:healthy", "status:"]) {
             expect(
                 ensureModelQueryDefaults(query, AGENT_QUERY_FILTER_KEYS),
@@ -126,6 +127,24 @@ describe("model query defaults", () => {
         expect(ensureModelQueryDefaults("", [])).toBe("");
         expect(ensureModelQueryDefaults("github", [])).toBe("github");
     });
+
+    it("keeps previously shared reliable-filter links working", () => {
+        expect(
+            ensureModelQueryDefaults("SOURCE:community STATUS:reliable"),
+        ).toBe("SOURCE:community status:healthy");
+        expect(
+            ensureModelQueryDefaults(
+                "status:reliable",
+                AGENT_QUERY_FILTER_KEYS,
+            ),
+        ).toBe("status:healthy");
+        expect(ensureModelQueryDefaults("status:reliable", [])).toBe(
+            "status:reliable",
+        );
+        expect(ensureModelQueryDefaults("id:status:reliable")).toBe(
+            "source:official status:healthy id:status:reliable",
+        );
+    });
 });
 
 it.each([
@@ -133,27 +152,45 @@ it.each([
     { community: true, agent: false },
     { community: true, agent: true },
     { community: false, agent: true },
-])("uses the same reliability cutoff for %j", (kind) => {
-    for (const successRate of [0, 70, 80, 80.1, 90, 100, null]) {
+])("uses shared health at the 90% boundary for %j", (kind) => {
+    for (const [successRate, status] of [
+        [0, "down"],
+        [80, "down"],
+        [80.1, "degraded"],
+        [89.9, "degraded"],
+        [90, "healthy"],
+        [95, "healthy"],
+        [100, "healthy"],
+        [null, "unknown"],
+    ] as const) {
+        const health = modelHealthLookup([
+            {
+                model: "example/model",
+                event_type: "generate.text",
+                is_rollup: 1,
+                status_2xx: successRate == null ? 0 : successRate * 10,
+                errors_5xx: successRate == null ? 0 : 1000 - successRate * 10,
+            },
+        ])("example/model", "text");
+        expect(health.status).toBe(status);
         const candidate = model({
             ...kind,
             health: {
-                status: successRate == null ? "unknown" : "degraded",
-                requests: successRate == null ? 0 : 50,
-                success_rate: successRate,
+                status: health.status,
+                requests: health.requests,
+                success_rate: health.successRate,
             },
         });
-        const visible = successRate == null || successRate > 80;
-        expect(matches(candidate, "status:reliable")).toBe(visible);
+        const visible = successRate != null && successRate >= 90;
+        expect(matches(candidate, "status:healthy")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
-        expect(matches(candidate, "status:healthy")).toBe(false);
     }
-    expect(matches(model(kind), "status:reliable")).toBe(true);
+    expect(matches(model(kind), "status:all")).toBe(true);
     expect(matches(model(kind), "status:healthy")).toBe(false);
 });
 
-it("keeps reliable and healthy as distinct status options", () => {
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
+it("offers only healthy and all, defaulting to measured healthy models", () => {
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
     expect(
         matches(
             model({
@@ -166,7 +203,6 @@ it("keeps reliable and healthy as distinct status options", () => {
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",
         "status:healthy ",
-        "status:reliable ",
     ]);
 });
 
@@ -424,7 +460,6 @@ describe("getModelQuerySuggestions", () => {
         expect(getModelQuerySuggestions("status:", models, agentKeys)).toEqual([
             "status:all ",
             "status:healthy ",
-            "status:reliable ",
         ]);
         expect(getModelQuerySuggestions("access:", models, agentKeys)).toEqual(
             [],

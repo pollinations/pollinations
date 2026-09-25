@@ -1,10 +1,9 @@
-import { isModelReliable } from "@shared/model-health.ts";
 import { getModelCapabilities, getModelDisplayName } from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
-export type ModelStatus = "all" | "healthy" | "reliable";
+export type ModelStatus = "all" | "healthy";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
@@ -34,7 +33,7 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const STATUS_VALUES: readonly ModelStatus[] = ["all", "reliable", "healthy"];
+const STATUS_VALUES: readonly ModelStatus[] = ["all", "healthy"];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
@@ -53,7 +52,7 @@ export const AGENT_QUERY_FILTER_KEYS = [
 
 const DEFAULT_MODEL_QUERY_FILTERS: ModelQueryFilter[] = [
     { key: "source", value: "official" },
-    { key: "status", value: "reliable" },
+    { key: "status", value: "healthy" },
 ];
 
 const isModelAccess = (value: string): value is ModelAccess =>
@@ -79,9 +78,7 @@ function parseModelQueryFilter(
         case "source":
             return isModelSource(value) ? { key, value } : undefined;
         case "status":
-            return value === "all" ||
-                value === "healthy" ||
-                value === "reliable"
+            return value === "all" || value === "healthy"
                 ? { key, value }
                 : undefined;
         case "publisher":
@@ -132,7 +129,12 @@ export function ensureModelQueryDefaults(
     query: string,
     supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
 ): string {
-    const normalizedQuery = query.trim();
+    // Existing catalog links use the old filter name; keep them searchable.
+    const normalizedQuery = supportedKeys.includes("status")
+        ? query
+              .trim()
+              .replace(/(^|\s)status:reliable(?=\s|$)/gi, "$1status:healthy")
+        : query.trim();
     const keys = normalizedQuery
         .toLowerCase()
         .split(/\s+/)
@@ -320,10 +322,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
         case "source":
             return Boolean(model.community) === (filter.value === "community");
         case "status":
-            if (filter.value === "all") return true;
-            if (filter.value === "reliable")
-                return isModelReliable(model.health?.success_rate);
-            return model.health?.status === "healthy";
+            return filter.value === "all" || model.health?.status === "healthy";
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15357,
+  "title": "feat: add Recraft V4.1 Flash via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15357",
+  "merged_at": "2026-09-25T01:59:09Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds `recraft/recraft-v4.1-flash`, a text-to-image model, via OpenRouter's `/api/v1/images` endpoint\n- Pinned to the `recraft` provider with `allow_fallbacks: false`; it is the only endpoint OpenRouter lists, so no fallback is declared\n- Fixed `$0.007` per output image (registry cost `0.007 * 1.055`, including the 5.5% OpenRouter credit fee), metered as one `completionImageTokens` like `recraft-v4.1-vector`\n- Text input only. The live endpoint returns WebP (docs say PNG), so both are accepted. Supports `1:1`, `4:3`, `3:4`, `16:9`, `9:16`. An explicit `aspectRatio` is honored (`adaptive` maps to `auto`, unsupported values return 400); otherwise the nearest ratio to width/height is used\n\n## Live verification (2026-09-23, direct OpenRouter, pinned to `recraft`)\n- `16:9` returned 1344x768 and `auto` returned 1024x1024, both HTTP 200 with `media_type: image/webp`\n- Billed `usage.cost` was exactly `$0.007` for 4,175 image tokens per image, matching the registry rate before the 5.5% fee\n- This probe caught the docs-vs-live mismatch: a PNG-only check would have rejected every response\n\n## Test plan\n- [x] Handler tests: pinned provider and fixed fee, aspect-ratio resolution, unsupported ratio rejected before the request, WebP and PNG accepted, other media types rejected, content-policy rejection\n- [x] Effective-price snapshot entry\n- [x] `npx biome check --write` on changed files; no `tsc` errors in the touched files\n- [ ] CI (local Vitest/Miniflare fails to start in this environment for unrelated reasons)\n- [ ] Maintainer gateway run to reconcile wallet debit and the billed Tinybird event\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\n\nFixes #15416",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Flash of Recraft",
+    "blurb": "The image garden picked up Recraft V4.1 Flash through OpenRouter. Polli checked the return package twice: it may arrive as WebP, and that is perfectly welcome here.",
+    "summary": "Added the text-to-image model `recraft/recraft-v4.1-flash` through OpenRouter’s `/api/v1/images` endpoint, pinned to the Recraft provider with no fallbacks, at a fixed $0.007 per generated image before the 5.5% OpenRouter credit fee.",
+    "impact": "Developers can now generate Recraft V4.1 Flash images with text prompts, supported ratios from 1:1 to 9:16, explicit `aspectRatio` handling, and acceptance of both live WebP and documented PNG responses.",
+    "keywords": [
+      "recraft",
+      "recraft-v4.1-flash",
+      "openrouter",
+      "image-generation",
+      "text-to-image",
+      "aspect-ratio",
+      "webp"
+    ],
+    "visual_concept": "Depict Recraft V4.1 Flash as a cozy little image-making workshop: a retro terminal routes a text prompt into a bright framed pixel landscape, with small WebP and PNG picture cards both accepted on a workbench. Polli, wearing a tiny painter’s beret, inspects the two finished formats with warm approval; code-plants and ratio-shaped flower frames (square, landscape, portrait) make the model’s supported output shapes visible.",
+    "image_prompt": "A cozy pixel art scene in a warm garden workshop where Polli, a cute yellow bee with dark brown stripes, black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, light-blue rounded wings, and a tiny painter’s beret, guides a text prompt from a glowing retro terminal into a framed pixel-art landscape; WebP and PNG picture cards rest happily beside square, landscape, and portrait flower frames, while code-plants bloom around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"RECRAFT FLASH\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15357.jpg",
+    "prompt": "A cozy pixel art scene in a warm garden workshop where Polli, a cute yellow bee with dark brown stripes, black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, light-blue rounded wings, and a tiny painter’s beret, guides a text prompt from a glowing retro terminal into a framed pixel-art landscape; WebP and PNG picture cards rest happily beside square, landscape, and portrait flower frames, while code-plants bloom around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"RECRAFT FLASH\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-25T02:00:16.680298+00:00"
+}

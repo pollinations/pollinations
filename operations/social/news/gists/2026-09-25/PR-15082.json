@@ -1,0 +1,37 @@
+{
+  "pr_number": 15082,
+  "title": "fix(dashboard): combobox filter suggestions when editing tokens",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/15082",
+  "merged_at": "2026-09-25T00:02:15Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "fixes combobox filter suggestions when clicking a filter token so options like community are discoverable without having to type\r\n\\- pass the active draft token directly to `getModelQuerySuggestions` instead of reading the tail of the query\r\n\\- keep source suggestions enabled when editing the source filter token\r\n\r\ncloses #15078\r\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Suggestions find their way",
+    "blurb": "Editing a dashboard filter token no longer makes its useful options vanish into the hedgerow. Click a source or community filter and the combobox brings the right choices back into view.",
+    "summary": "Fixed the dashboard model-filter combobox to pass the active draft token into getModelQuerySuggestions, so options such as the community source remain discoverable when editing an existing token.",
+    "impact": "Users can now click and edit source filter tokens while keeping source suggestions visible, without typing first to rediscover options like community.",
+    "keywords": [
+      "dashboard",
+      "combobox",
+      "model-filters",
+      "source-filter",
+      "ui-ux",
+      "bug-fix"
+    ],
+    "visual_concept": "A cozy dashboard garden where Polli, wearing tiny librarian glasses, edits a glowing filter-token label on a retro terminal; a clearly visible \"community\" suggestion sprouts from the active token as a little code-flower. Small source-icon seed packets and gentle vines represent suggestions staying available during editing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, gently editing a glowing filter token on a retro CRT dashboard while a code-flower suggestion labeled \"community\" blooms beside it. Lime green (#ecf874) glows prominently among warm cream, mint, and lavender garden vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15082.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, gently editing a glowing filter token on a retro CRT dashboard while a code-flower suggestion labeled \"community\" blooms beside it. Lime green (#ecf874) glows prominently among warm cream, mint, and lavender garden vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-25T00:03:09.217079+00:00"
+}

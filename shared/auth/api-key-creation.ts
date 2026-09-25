@@ -260,9 +260,15 @@ export async function createApiKeyForUser({
             message: "pollenBudgetPaid must be a non-negative number",
         });
     }
-    const effectivePollenBudgetTier = isPublishable ? 0 : (pollenBudgetTier ?? null);
-    const effectivePollenBudgetPaid = isPublishable ? 0 : (pollenBudgetPaid ?? null);
-    const effectiveAllowPaidOnly = isPublishable ? false : (allowPaidOnly ?? true);
+    const effectivePollenBudgetTier = isPublishable
+        ? 0
+        : (pollenBudgetTier ?? null);
+    const effectivePollenBudgetPaid = isPublishable
+        ? 0
+        : (pollenBudgetPaid ?? null);
+    const effectiveAllowPaidOnly = isPublishable
+        ? false
+        : (allowPaidOnly ?? true);
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {

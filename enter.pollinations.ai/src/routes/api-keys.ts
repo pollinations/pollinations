@@ -138,12 +138,16 @@ const UpdateApiKeySchema = z.object({
         .number()
         .nullable()
         .optional()
-        .describe("Quest/tier budget cap for this key. null = no separate tier cap"),
+        .describe(
+            "Quest/tier budget cap for this key. null = no separate tier cap",
+        ),
     pollenBudgetPaid: z
         .number()
         .nullable()
         .optional()
-        .describe("Paid/pack budget cap for this key. null = no separate paid cap"),
+        .describe(
+            "Paid/pack budget cap for this key. null = no separate paid cap",
+        ),
     allowPaidOnly: z
         .boolean()
         .optional()

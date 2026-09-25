@@ -122,9 +122,24 @@ const CreateKeySchema = z.object({
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
-    pollenBudgetTier: z.number().nullable().optional().describe("Quest/tier budget cap for this key, null = no separate tier cap"),
-    pollenBudgetPaid: z.number().nullable().optional().describe("Paid/pack budget cap for this key, null = no separate paid cap"),
-    allowPaidOnly: z.boolean().optional().describe("Allow paid-only models on this key"),
+    pollenBudgetTier: z
+        .number()
+        .nullable()
+        .optional()
+        .describe(
+            "Quest/tier budget cap for this key, null = no separate tier cap",
+        ),
+    pollenBudgetPaid: z
+        .number()
+        .nullable()
+        .optional()
+        .describe(
+            "Paid/pack budget cap for this key, null = no separate paid cap",
+        ),
+    allowPaidOnly: z
+        .boolean()
+        .optional()
+        .describe("Allow paid-only models on this key"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -1786,13 +1801,18 @@ export const accountRoutes = new Hono<Env>()
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
                 pollenBudgetTier:
-                    (apiKey.metadata?.pollenBudgetTier as number | null | undefined) ??
-                    null,
+                    (apiKey.metadata?.pollenBudgetTier as
+                        | number
+                        | null
+                        | undefined) ?? null,
                 pollenBudgetPaid:
-                    (apiKey.metadata?.pollenBudgetPaid as number | null | undefined) ??
-                    null,
+                    (apiKey.metadata?.pollenBudgetPaid as
+                        | number
+                        | null
+                        | undefined) ?? null,
                 allowPaidOnly:
-                    (apiKey.metadata?.allowPaidOnly as boolean | undefined) ?? true,
+                    (apiKey.metadata?.allowPaidOnly as boolean | undefined) ??
+                    true,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)

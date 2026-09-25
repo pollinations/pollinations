@@ -901,7 +901,7 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
     /**

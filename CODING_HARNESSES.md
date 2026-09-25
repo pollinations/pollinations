@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, Claude Code (via Claude Code Router), Codex (via Codex Router), DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code (via Claude Code Router), Codex (via Codex Router), DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -50,6 +50,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
 ## Bloom CLI
 
@@ -91,6 +92,18 @@ polli harness codex off
 `status` reports the router, Codex, provider, key and curated models. `off` removes the provider, which also removes its credential and routes, and leaves the router and other providers installed.
 
 Troubleshooting: the adapter drives the router's scripts (`src/providers.mjs`, `src/curate-models.mjs`, `src/compatibility-test.mjs`) from `%LOCALAPPDATA%\codex-router` (Windows) or `~/.local/share/codex-router`; set `CODEX_ROUTER_HOME` if yours lives elsewhere. If a command reports an unknown option after a router update, compare `model-router codex providers generic` and `curate-models` usage with the versions above.
+
+## tgpt
+
+```bash
+brew install tgpt # or use another official installation method
+polli harness tgpt on
+tgpt "Hello"
+```
+
+tgpt already includes a Pollinations provider. `on` selects it for text generation and writes a dedicated key and model to `~/.config/tgpt/config.conf`, making tgpt use the authenticated `gen.pollinations.ai` endpoint. Choose another model with `--model <id>`; `off` restores the previous file or removes only the Pollinations values if the file changed later.
+
+The default model is `openai/gpt-5.4-nano`. Polli clears any generic `AI_API_KEY` from this file so it cannot override the dedicated `POLLINATIONS_API_KEY`; the original file is backed up. Exported environment variables, a local `config.conf`, or `--config` can override this user-level setup. `off` does not revoke the account key.
 
 ## DeepSeek Harness
 

@@ -457,33 +457,15 @@ describe("gen worker routing", () => {
         expect(
             models.find((model) => model.name === "perplexity/sonar")
                 ?.pricing_adjustments,
-        ).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    label: "Search",
-                    price: "5",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "low",
-                        label: "Low search context",
-                        default: true,
-                    }),
-                }),
-                expect.objectContaining({
-                    label: "Search",
-                    price: "12",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "high",
-                        label: "High search context",
-                    }),
-                }),
-            ]),
-        );
+        ).toEqual([
+            expect.objectContaining({
+                label: "Search",
+                price: "2.5",
+                currency: "pollen",
+                quantity: 1_000,
+                unit: "searches",
+            }),
+        ]);
     });
 
     it("labels image pricing units without auth", async () => {
@@ -558,7 +540,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("publishes one configurable Perplexity Sonar model", async () => {
+    it("publishes Sonar as the only Perplexity model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -575,23 +557,12 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
         expect(
-            models.find((model) => model.name === "perplexity-high"),
-        ).toBeUndefined();
-        expect(
-            models.find((model) => model.name === "perplexity/sonar-pro"),
-        ).toMatchObject({
-            description:
-                "Advanced web search that synthesizes multiple sources with citations",
-        });
-        expect(
-            models.find(
-                (model) => model.name === "perplexity/sonar-reasoning-pro",
-            ),
-        ).toMatchObject({
-            description:
-                "Thinks step by step while searching the web; slower but more rigorous",
-        });
+            models
+                .filter((model) => model.name.startsWith("perplexity/"))
+                .map((model) => model.name),
+        ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
             false,
         );

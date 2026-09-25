@@ -1,0 +1,38 @@
+{
+  "pr_number": 15452,
+  "title": "chore: allow collective-memory agent authors to publish",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15452",
+  "merged_at": "2026-09-25T14:40:34Z",
+  "labels": [
+    "API",
+    "POLLEN-QUEST",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Adds kreggscode and Guest453 to the public agent/model publisher allowlist.\n- The other three selected authors already have access.\n- Preserves previous access removals, including NamanSoni78.\n- Addresses #15054.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two more garden keys",
+    "blurb": "kreggscode and Guest453 can now publish their collective-memory agents and models. The gatekeeper has checked the names twice, including the ones that should stay outside.",
+    "summary": "Added kreggscode and Guest453 to the public GitHub publisher allowlist for collective-memory agents and models, while retaining prior access removals including NamanSoni78.",
+    "impact": "Selected collective-memory authors can now publish through the public agent/model flow, with the existing publisher-access boundaries preserved.",
+    "keywords": [
+      "collective-memory",
+      "agent-publishers",
+      "model-publishers",
+      "GitHub",
+      "allowlist",
+      "Pollen Quest"
+    ],
+    "visual_concept": "A cozy garden gate represents the public publishing allowlist: Polli, wearing a tiny librarian hat, checks a handwritten contributor list while welcoming two new code-seed packets into a flourishing agent garden. A small dark-purple notice on the gate indicates that existing access boundaries remain intact, with code-plants and a friendly CRT robot representing published agents and models.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, opening a lime green (#ecf874) garden gate for two glowing code-seed packets labeled “kreggscode” and “Guest453,” while a friendly CRT monitor robot tends blooming code-plants behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with a small pixel-font sign reading “PUBLISHERS” and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15452.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, opening a lime green (#ecf874) garden gate for two glowing code-seed packets labeled “kreggscode” and “Guest453,” while a friendly CRT monitor robot tends blooming code-plants behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with a small pixel-font sign reading “PUBLISHERS” and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-25T14:41:30.414334+00:00"
+}

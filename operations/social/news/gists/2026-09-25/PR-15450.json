@@ -1,0 +1,37 @@
+{
+  "pr_number": 15450,
+  "title": "feat: let child keys create keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15450",
+  "merged_at": "2026-09-25T14:05:08Z",
+  "labels": [
+    "API",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Keys created with an API key (`POST /account/keys`) now keep the `keys` account permission when `accountPermissions` requests it; before, it was silently stripped\n- Removes the now-unused `allowAccountKeysPermission` flag\n- Updates the route, CLI, SDK and skill docs that said `keys` is auto-stripped\n- Why: a hosted machine's key (#15251) needs to mint a dedicated `polli harness` key inside the VM; harness keys themselves never request `keys`\n\n| | Before | After |\n|---|---|---|\n| Child created with `accountPermissions: [\"keys\"]` | `keys` stripped | `keys` kept |\n| Child created without `keys` | no `keys` | no `keys` |\n| Key without `account:keys` calling `POST /account/keys` | 403 | 403 |\n\nA key holding `keys` could already create unbudgeted keys, so no key gains more power than its root. `APIDOCS.md` regenerates after the production deploy.\n\nTests: `test/integration/account-keys.test.ts` 15/15; gen typecheck clean.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys can plant keys",
+    "blurb": "Child API keys can now carry the `keys` permission when their parent deliberately grants it. A hosted machine can mint its own dedicated Polli harness key without the permission vanishing into the mulch.",
+    "summary": "`POST /account/keys` now preserves `accountPermissions: [\"keys\"]` for children created by an API key, enabling delegated key creation while keys that do not request `keys` remain unchanged and callers without `account:keys` still receive 403.",
+    "impact": "Hosted machines with an explicitly delegated `keys` permission can create scoped harness keys inside their environment, with no new authority granted beyond what the root key already allowed.",
+    "keywords": [
+      "api-keys",
+      "account-permissions",
+      "key-delegation",
+      "POST /account/keys",
+      "polli-cli",
+      "sdk"
+    ],
+    "visual_concept": "Depict delegated API-key creation as a cozy greenhouse: Polli tends a parent key plant that grows a smaller, clearly labeled harness-key seedling only when it carries the `keys` badge. A friendly CRT monitor robot can carefully stamp the permission onto the seed packet, while a locked gate in the background represents the unchanged 403 boundary for keys without permission.",
+    "image_prompt": "A cozy greenhouse workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt and waters a parent API-key plant that sprouts a smaller seedling labeled `HARNESS KEY` beside a pixel badge reading `keys`; a cute CRT monitor robot carefully holds the seed packet, with flowers, vines, and a small locked garden gate behind them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15450.jpg",
+    "prompt": "A cozy greenhouse workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt and waters a parent API-key plant that sprouts a smaller seedling labeled `HARNESS KEY` beside a pixel badge reading `keys`; a cute CRT monitor robot carefully holds the seed packet, with flowers, vines, and a small locked garden gate behind them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-25T14:06:21.322526+00:00"
+}

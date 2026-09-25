@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callQwenImage21API } from "../../src/image/models/qwenImage21Model.ts";
+import { callFalQwenImageAPI } from "../../src/image/models/falQwenImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const GENERATE_URL = "https://fal.run/alibaba/qwen-image-2.1/text-to-image";
@@ -63,6 +63,9 @@ function mockFal(requests: FalRequest[], responseBody: unknown = undefined) {
         });
 }
 
+const callQwen21 = (prompt: string, params: ImageParams) =>
+    callFalQwenImageAPI(prompt, params, "qwen/qwen-image-2.1");
+
 beforeEach(() => {
     syncImageEnv({ FAL_KEY: "fal-test-key" } as CloudflareBindings, [
         "FAL_KEY",
@@ -78,10 +81,7 @@ describe("qwenImage21Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage21API(
-            "A poster reading BUILD",
-            baseParams,
-        );
+        const result = await callQwen21("A poster reading BUILD", baseParams);
 
         expect(requests).toHaveLength(1);
         expect(requests[0]).toMatchObject({
@@ -89,8 +89,8 @@ describe("qwenImage21Model", () => {
             body: {
                 prompt: "A poster reading BUILD",
                 image_size: { width: 1024, height: 1024 },
-                enable_safety_checker: true,
-                num_images: 1,
+                prompt_expander: "none",
+                enable_safety_checker: false,
                 output_format: "png",
                 seed: 42,
             },
@@ -109,7 +109,7 @@ describe("qwenImage21Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage21API("wide", {
+        const result = await callQwen21("wide", {
             ...baseParams,
             width: 1280,
             height: 720,
@@ -133,7 +133,7 @@ describe("qwenImage21Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage21API("aspect ratio", {
+        const result = await callQwen21("aspect ratio", {
             ...baseParams,
             aspectRatio,
         });
@@ -148,7 +148,7 @@ describe("qwenImage21Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        await callQwenImage21API("explicit wins", {
+        await callQwen21("explicit wins", {
             ...baseParams,
             width: 1280,
             height: 720,
@@ -166,7 +166,7 @@ describe("qwenImage21Model", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
-            callQwenImage21API("unmeterable reference", {
+            callQwen21("unmeterable reference", {
                 ...baseParams,
                 image: [UNMETERABLE_IMAGE],
             }),
@@ -179,7 +179,7 @@ describe("qwenImage21Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage21API("edit the references", {
+        const result = await callQwen21("edit the references", {
             ...baseParams,
             image: [INPUT_IMAGE, INPUT_IMAGE],
         });
@@ -199,7 +199,7 @@ describe("qwenImage21Model", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
-            callQwenImage21API("too many references", {
+            callQwen21("too many references", {
                 ...baseParams,
                 image: Array.from({ length: 11 }, () => INPUT_IMAGE),
             }),
@@ -211,7 +211,7 @@ describe("qwenImage21Model", () => {
         mockFal([], { images: [] });
 
         await expect(
-            callQwenImage21API("missing output", baseParams),
+            callQwen21("missing output", baseParams),
         ).rejects.toMatchObject({
             status: 502,
             requestUrl: new URL(GENERATE_URL),

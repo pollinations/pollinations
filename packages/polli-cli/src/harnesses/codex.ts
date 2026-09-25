@@ -175,13 +175,39 @@ const storedKey = (ctx: HarnessContext) => {
 };
 
 const setCredential = (ctx: HarnessContext, key: string) => {
-    const run = runScript(
-        ctx,
-        "providers.mjs",
-        ["generic", "credential", PROVIDER, "set", "--stdin", "--json"],
-        key,
+    const bridge = [
+        'import { pathToFileURL } from "node:url";',
+        'import { join } from "node:path";',
+        "const src = process.env.POLLI_CODEX_ROUTER_SRC;",
+        'const mod = await import(pathToFileURL(join(src, "providers.mjs")).href);',
+        'let value = "";',
+        "for await (const chunk of process.stdin) value += chunk;",
+        'await mod.runGenericCommand(["credential","pollinations","set","--json"],',
+        "{ prompt: () => value.trim() });",
+    ].join(" ");
+    const run = spawnSync(
+        process.execPath,
+        ["--input-type=module", "-e", bridge],
+        {
+            env: {
+                ...process.env,
+                ...ctx.env,
+                POLLI_CODEX_ROUTER_SRC: join(routerRoot(ctx), "src"),
+            },
+            input: key,
+            encoding: "utf-8",
+            windowsHide: true,
+        },
     );
-    if (!run.ok) throw failRun(run, "Codex Router credential setup");
+    if (run.status !== 0) {
+        throw new Error(
+            `Codex Router rejected the dedicated key: ${(
+                run.stderr || run.stdout
+            )
+                .trim()
+                .slice(0, 500)}`,
+        );
+    }
 };
 
 const userModelsPath = (ctx: HarnessContext) =>

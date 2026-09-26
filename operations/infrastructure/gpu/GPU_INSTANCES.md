@@ -9,7 +9,7 @@ Last updated: 2026-09-26
 | Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.540889/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2× RTX 3060 | Vast.ai | $0.139259/hr all-in | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2× RTX 3060 | Vast.ai | $0.139259/hr all-in | **ACTIVE — burst-capacity regression; follow-up required** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
 At capture time, the five running Vast instances cost **$1.060148/hr** in total
@@ -50,6 +50,28 @@ Production verification counted **945 successful generations and 25 queue-full
 those successes occurred after the old hostname expired. These are worker
 outcomes (including legacy traffic); retryable 503s are not a measured final
 API failure rate. Both registered DreamShaper hostnames remained healthy.
+**Final API verification found a regression after destruction.** An initial
+Tinybird query incorrectly filtered `resolved_model_requested` by public
+slugs and returned no rows; the actual resolved identifier is
+`lykon/dreamshaper-8-lcm`. The corrected query used `model_requested IN
+('dreamshaper', 'sana')`, production `is_final` rows, and UTC windows:
+
+| September 26 window | Final requests | Successes | Final 5xx | Client 4xx | 5xx / non-4xx | Success p95 |
+|---|---:|---:|---:|---:|---:|---:|
+| 13:00–13:08, before | 2,617 | 2,372 | 6 | 239 | 0.25% | 1.268s |
+| 13:08–13:16, transition | 2,719 | 2,333 | 153 | 233 | 6.15% | 1.501s |
+| 13:16–13:23, replacement pair | 2,274 | 2,142 | 109 | 23 | 4.84% | 2.169s |
+
+The transition failures were 502s during the restart/drain period; the 109
+post-cutover failures were terminal 503s, not successfully retried attempts.
+At 13:20, a 484-request minute had 89 final failures. Both workers shed queued
+requests, and the new GPU was observed at 100% utilization. This supports a
+burst-capacity shortfall, although these short windows are not load-matched.
+The old instance was already destroyed before this corrected final-event
+check; there is no retained rollback GPU. **Do not treat the $8.93/month saving
+as an acceptable completed service improvement. Restore capacity with a
+separately approved candidate and verify final API outcomes before retiring
+another worker.** No additional GPU was rented in this follow-up.
 
 Retired instance `47789794` was destroyed and disappeared from the complete
 Vast instance list, leaving five running, production-labeled GPUs and no

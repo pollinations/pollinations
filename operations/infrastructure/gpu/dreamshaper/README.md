@@ -124,6 +124,15 @@ with registration disabled, and wait until its URL disappears from `/register`
 before destruction. The registry excludes heartbeats after 180 seconds; its
 KV entry has a 240-second TTL. Keep the replacement registered throughout.
 
+Before destroying the old GPU, verify final API outcomes as well as backend
+logs. In Tinybird, filter `model_requested IN ('dreamshaper', 'sana')` and
+`is_final`; `resolved_model_requested` currently contains the canonical
+`lykon/dreamshaper-8-lcm`, not those public slugs. An empty query is not evidence
+of zero failures. Compare completed before/after windows, separate client
+4xxs from final 5xxs, and include representative bursts: the September 26
+replacement passed a 210-RPM canary yet later shed user requests during a
+484-request/minute fleet burst. Backend 200s alone are not a retirement gate.
+
 **Ordering matters when replacing sana.** Before this change `sana` was reached
 through a hardcoded backend URL that bypassed the registry pool. Deploy and
 verify workers are registered *first*, then merge the routing change — merging

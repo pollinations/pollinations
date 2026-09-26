@@ -27,6 +27,16 @@ export interface HarnessResult {
     mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
+    routerInstalled?: boolean;
+    routerVersion?: string;
+    routerCompatible?: boolean;
+    routerReady?: boolean;
+    clientInstalled?: boolean;
+    providerReady?: boolean;
+    profileReady?: boolean;
+    keyReady?: boolean;
+    smokeVerified?: boolean;
+    next?: string;
 }
 
 /** One harness integration. Each adapter owns its setup strategy. */

@@ -1,0 +1,50 @@
+name: CI / Flow container
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - operations/flow/**
+      - enter.pollinations.ai/**
+      - gen.pollinations.ai/**
+      - shared/**
+      - packages/auth/**
+      - packages/sdk/**
+      - packages/ui/**
+      - apps/react/**
+      - operations/economics/web/**
+      - package.json
+      - package-lock.json
+      - BRING_YOUR_OWN_MODEL.md
+      - BRING_YOUR_OWN_POLLEN.md
+      - BUILD_YOUR_OWN_AGENT.md
+      - CODING_HARNESSES.md
+      - packages/polli-cli/README.md
+      - .github/workflows/ci-flow.yml
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Build and exercise Flow on Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Build the isolated runtime
+        env:
+          FLOW_MAIN_REVISION: ${{ github.event.pull_request.base.sha }}
+        run: >-
+          docker build --platform linux/amd64
+          --build-arg FLOW_REVISION="$(git rev-parse HEAD)"
+          --build-arg FLOW_MAIN_REVISION="$FLOW_MAIN_REVISION"
+          --build-arg FLOW_DIRTY=false
+          -f operations/flow/Dockerfile -t flow-proof:ci .
+      - name: Run non-credential Flow tests
+        run: docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
+      - name: Verify built pages, captures and container isolation
+        run: node operations/flow/test/container-proof.mjs flow-proof:ci

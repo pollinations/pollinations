@@ -128,7 +128,7 @@ jobs:
               }
 
               if (body.model === "pollinations-router/polli") {
-                body.metadata = { ...body.metadata, model: "openai/gpt-6-astra" };
+                body.metadata = { ...body.metadata, model: "openai/gpt-6-sol" };
               }
               let r;
               try {
@@ -177,11 +177,11 @@ jobs:
               name: "pollinations",
               api_base_url: "http://127.0.0.1:9912/v1/chat/completions",
               api_key: $key,
-              models: ["pollinations-router/polli", "perplexity", "gpt-5.6-luna"]
+              models: ["pollinations-router/polli", "perplexity", "openai/gpt-6-luna"]
             }],
             Router: {
               default: "pollinations,pollinations-router/polli",
-              background: "pollinations,gpt-5.6-luna",
+              background: "pollinations,openai/gpt-6-luna",
               webSearch: "pollinations,perplexity"
             }
           }' > $HOME/.claude-code-router/config.json

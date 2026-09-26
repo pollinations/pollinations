@@ -3,7 +3,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { serializeSignedCookie } from "better-call";
 import { type Conditions, defaultConditions } from "./conditions-data";
 import githubProfile from "./github-profile.json";
-import { ADMIN_ORIGIN } from "./local-origins";
+import { ADMIN_ORIGIN, ENTER_ORIGIN } from "./local-origins";
 
 export type { Conditions } from "./conditions-data";
 
@@ -18,7 +18,7 @@ export const OWNER_ID = "flow-local-developer";
 export const CLIENT_KEY_ID = "flow-local-app";
 export const CLIENT_ID = "pk_flow_local_example_not_a_real_credential";
 export const ADMIN_CLIENT_ID = "pk_admin_preview_only";
-export const CALLBACK_URL = "http://localhost:4180/flow-example.html";
+export const CALLBACK_URL = `${ENTER_ORIGIN}/flow-example.html`;
 const SESSION_TOKEN = "flow-local-session-fixture-not-a-real-credential";
 export const localIdentity = {
     // Public profile imported from https://api.github.com/users/pollinationsagent.
@@ -367,8 +367,8 @@ export async function readState(db: D1Database) {
               }
             : null,
         runtime: {
-            enterOrigin: "http://localhost:4180",
-            genBaseUrl: "http://localhost:4180/gen",
+            enterOrigin: ENTER_ORIGIN,
+            genBaseUrl: `${ENTER_ORIGIN}/gen`,
         },
     };
 }

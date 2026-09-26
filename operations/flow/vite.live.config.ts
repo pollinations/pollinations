@@ -5,6 +5,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { ENTER_ORIGIN, RUNTIME_ORIGIN } from "./local-origins";
 import { buildSourceStyles } from "./source-styles";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -20,7 +21,12 @@ export default defineConfig(({ command }) => ({
             : frontend,
     publicDir: `${frontend}public`,
     envDir: false,
-    define: { "import.meta.env.MODE": JSON.stringify("development") },
+    define: {
+        "import.meta.env.MODE": JSON.stringify("development"),
+        "process.env.FLOW_PORT": JSON.stringify(
+            process.env.FLOW_PORT ?? "4180",
+        ),
+    },
     assetsInclude: ["**/*.md"],
     resolve: {
         alias: {
@@ -98,7 +104,7 @@ export default defineConfig(({ command }) => ({
     },
     server: {
         host: "localhost",
-        port: 4180,
+        port: Number(new URL(ENTER_ORIGIN).port),
         strictPort: true,
         fs: {
             allow: [fileURLToPath(new URL("../../", import.meta.url))],
@@ -115,7 +121,7 @@ export default defineConfig(({ command }) => ({
         },
         proxy: {
             "^/(?:__flow|api|gen|auth)/": {
-                target: "http://localhost:4181",
+                target: RUNTIME_ORIGIN,
             },
         },
     },
@@ -182,7 +188,7 @@ export default defineConfig(({ command }) => ({
                 order: "pre",
                 handler(html) {
                     return html
-                        .replaceAll("%PUBLIC_ORIGIN%", "http://localhost:4180")
+                        .replaceAll("%PUBLIC_ORIGIN%", ENTER_ORIGIN)
                         .replace(
                             'href="/src/style.css"',
                             command === "build"

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { localIdentity } from "./fixtures";
+import { ENTER_ORIGIN as origin } from "./local-origins";
 
-const origin = "http://localhost:4180";
 const callback = `${origin}/api/auth/callback/github`;
 const providerToken = "mock_github_auth_token";
 const clientId = "test_github_client_id";

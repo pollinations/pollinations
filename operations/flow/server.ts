@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { serve } from "@hono/node-server";
 import { createCaptureService, type ReviewCaseModule } from "./captures";
-import { ADMIN_ORIGIN, ENTER_ORIGIN } from "./local-origins";
+import { ADMIN_ORIGIN, ENTER_ORIGIN, RUNTIME_ORIGIN } from "./local-origins";
 import type { LoadReviewErrors } from "./review-requests";
 import { bundleWorkers, startRuntime } from "./runtime.ts";
 import { buildSourceStyles } from "./source-styles";
@@ -43,7 +43,7 @@ export async function startServer(options: {
     const server = serve({
         fetch: fetchRuntime,
         hostname: "127.0.0.1",
-        port: 4181,
+        port: Number(new URL(RUNTIME_ORIGIN).port),
     });
     const admin = serve({
         hostname: "127.0.0.1",
@@ -87,7 +87,7 @@ export async function startServer(options: {
         }
         throw error;
     }
-    console.log("Flow local Workers ready at http://localhost:4181");
+    console.log(`Flow local Workers ready at ${RUNTIME_ORIGIN}`);
     console.log(`Flow Admin example ready at ${ADMIN_ORIGIN}`);
     return {
         waitUntilReady: () => ready,

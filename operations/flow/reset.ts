@@ -1,4 +1,6 @@
-const response = await fetch("http://localhost:4181/__flow/reset", {
+import { RUNTIME_ORIGIN } from "./local-origins";
+
+const response = await fetch(`${RUNTIME_ORIGIN}/__flow/reset`, {
     method: "POST",
 });
 if (!response.ok)
@@ -8,4 +10,3 @@ if (!response.ok)
 console.log(
     "Flow's local account, app and conditions are reset. Reload Flow to continue.",
 );
-export {};

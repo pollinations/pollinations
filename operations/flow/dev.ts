@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import type { ReviewCaseModule } from "./captures";
+import { ENTER_ORIGIN } from "./local-origins";
 import type { LoadReviewErrors } from "./review-requests";
 import { startServer } from "./server";
 
@@ -93,7 +94,7 @@ try {
 vite.watcher.add(sources);
 try {
     await vite.listen();
-    console.log("Flow: http://localhost:4180/flow");
+    console.log(`Flow: ${ENTER_ORIGIN}/flow`);
     console.log(
         "Prepare or reset the local account explicitly with: npm run reset",
     );

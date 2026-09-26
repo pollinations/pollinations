@@ -1,10 +1,20 @@
-// Media catalog: D1-backed metadata for published (tagged) media. Blobs stay
-// in R2 — this module only indexes them. Tags are the publish action: only
-// tagged uploads get catalog rows. Writes are awaited inline on the upload
-// path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
-// dropping catalog data.
+// Media catalog: D1-backed metadata for uploaded and generated media. Blobs
+// stay in R2 — this module only indexes them. Tags remain the *publish*
+// action (only tagged items appear in a public gallery), but every
+// authenticated upload now gets a catalog row so it can appear in its
+// owner's private list even untagged. Generations link into the catalog via
+// MediaUpload.linkToUser (media-upload.ts) instead of a helper here: that
+// entrypoint is imported directly by other services' tests as an in-process
+// double for its RPC binding, and duplicating the writes there in raw SQL
+// avoids pulling this package's drizzle-orm install into that cross-package
+// build. Writes are awaited inline (no waitUntil): a D1 failure surfaces as
+// a 500 rather than silently dropping catalog data.
 
-import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
+import {
+    mediaItem,
+    mediaTag,
+    mediaUserLink,
+} from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -68,39 +78,51 @@ export interface InsertUploadParams {
     appKeyId: string | null;
     contentType: string;
     size: number;
-    // Non-empty: tags are what publish an upload, so an untagged upload
-    // never reaches the catalog at all.
+    // May be empty: tags still control public visibility, but every
+    // user-owned upload gets a catalog row so it shows up in the owner's
+    // private list even untagged.
     tags: string[];
 }
 
 /**
- * Insert a catalog row for a published upload together with its tags. Each
- * upload is its own row (re-uploading the same bytes is a new item, not an
- * upsert). Returns the item id.
+ * Insert a catalog row for a user-owned upload, its tags (if any), and the
+ * owner's personal-list association. Each upload is its own row
+ * (re-uploading the same bytes is a new item, not an upsert).
  */
 export async function insertUploadCatalogItem(
     db: CatalogDb,
     params: InsertUploadParams,
 ): Promise<void> {
-    // One atomic batch: the item row and its tags land together or not at
-    // all — a tagless catalog row would be invisible (galleries are
-    // tag-scoped) yet undeletable by its owner via unpublish.
-    await db.batch([
-        db.insert(mediaItem).values({
-            id: params.id,
-            ownerUserId: params.ownerUserId,
-            appKeyId: params.appKeyId,
-            contentType: params.contentType,
-            size: params.size,
-            createdAt: new Date(),
-        }),
-        db.insert(mediaTag).values(
+    const createdAt = new Date();
+    const itemInsert = db.insert(mediaItem).values({
+        id: params.id,
+        ownerUserId: params.ownerUserId,
+        appKeyId: params.appKeyId,
+        contentType: params.contentType,
+        size: params.size,
+        source: "upload" as const,
+        createdAt,
+    });
+    const linkInsert = db.insert(mediaUserLink).values({
+        itemId: params.id,
+        userId: params.ownerUserId,
+        createdAt,
+    });
+    // One atomic batch: the item, its tags, and the owner's link land
+    // together or not at all. `.batch` requires at least one statement per
+    // call and rejects an empty `.values([])`, so the tag insert is only
+    // included when there are tags to write.
+    if (params.tags.length > 0) {
+        const tagInsert = db.insert(mediaTag).values(
             params.tags.map((tag) => ({
                 itemId: params.id,
                 tag,
             })),
-        ),
-    ]);
+        );
+        await db.batch([itemInsert, linkInsert, tagInsert]);
+    } else {
+        await db.batch([itemInsert, linkInsert]);
+    }
 }
 
 /**
@@ -120,25 +142,51 @@ export async function catalogItemOwner(
 }
 
 /**
- * Delete a catalog item and its tags. Deleting the R2 blob is the caller's
- * responsibility.
+ * Delete a catalog item, its tags, and everyone's personal-list links to
+ * it. This removes the shared item entirely — only appropriate for the
+ * single-owner upload path (see DELETE /media/:id). Deleting the R2 blob is
+ * the caller's responsibility.
  */
 export async function deleteCatalogItem(
     db: CatalogDb,
     itemId: string,
 ): Promise<void> {
-    // Explicit tag delete in the same atomic batch — doesn't depend on the
+    // Explicit deletes in the same atomic batch — doesn't depend on the
     // runtime enforcing ON DELETE CASCADE.
     await db.batch([
         db.delete(mediaTag).where(eq(mediaTag.itemId, itemId)),
+        db.delete(mediaUserLink).where(eq(mediaUserLink.itemId, itemId)),
         db.delete(mediaItem).where(eq(mediaItem.id, itemId)),
     ]);
+}
+
+/**
+ * Remove one user's personal-list association with an item. This is the
+ * *unlink* action, distinct from deleteCatalogItem: it never touches the
+ * item row, its tags, or the R2 blob, so a shared generation (or an item
+ * linked by several users) keeps existing for everyone else. Returns
+ * whether a link existed to remove.
+ */
+export async function unlinkUserMedia(
+    db: CatalogDb,
+    params: { userId: string; itemId: string },
+): Promise<boolean> {
+    const result = await db
+        .delete(mediaUserLink)
+        .where(
+            and(
+                eq(mediaUserLink.userId, params.userId),
+                eq(mediaUserLink.itemId, params.itemId),
+            ),
+        );
+    return (result.meta.changes ?? 0) > 0;
 }
 
 export interface CatalogItem {
     id: string;
     contentType: string;
     size: number | null;
+    source: "upload" | "generation";
     createdAt: Date;
 }
 
@@ -215,6 +263,7 @@ export async function listMedia(
             id: mediaItem.id,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
+            source: mediaItem.source,
             createdAt: mediaItem.createdAt,
         })
         .from(mediaItem)
@@ -224,6 +273,55 @@ export async function listMedia(
         .limit(params.limit + 1);
 
     return paginate(rows, params.limit);
+}
+
+/**
+ * List a user's private media list: every item they uploaded or generated,
+ * tagged or not, newest-linked first. Requires the caller to already be
+ * authenticated as that user — this is not tag-scoped and is never public.
+ * Ordering and pagination mirror listMedia, but over media_user_link.createdAt
+ * (when the item entered *this user's* list) rather than the item's own
+ * createdAt, since a generation can be linked to a user long after it was
+ * first created by someone else's request.
+ */
+export async function listUserMedia(
+    db: CatalogDb,
+    params: {
+        userId: string;
+        limit: number;
+        cursor?: { createdAt: Date; id: string };
+    },
+): Promise<CatalogPage> {
+    const conditions: SQL[] = [eq(mediaUserLink.userId, params.userId)];
+    if (params.cursor) {
+        conditions.push(beforeLinkCursor(params.cursor));
+    }
+
+    const rows = await db
+        .select({
+            id: mediaItem.id,
+            contentType: mediaItem.contentType,
+            size: mediaItem.size,
+            source: mediaItem.source,
+            createdAt: mediaUserLink.createdAt,
+        })
+        .from(mediaUserLink)
+        .innerJoin(mediaItem, eq(mediaItem.id, mediaUserLink.itemId))
+        .where(and(...conditions))
+        .orderBy(desc(mediaUserLink.createdAt), desc(mediaItem.id))
+        .limit(params.limit + 1);
+
+    return paginate(rows, params.limit);
+}
+
+function beforeLinkCursor(cursor: { createdAt: Date; id: string }): SQL {
+    return sql`${or(
+        lt(mediaUserLink.createdAt, cursor.createdAt),
+        and(
+            eq(mediaUserLink.createdAt, cursor.createdAt),
+            lt(mediaItem.id, cursor.id),
+        ),
+    )}`;
 }
 
 // D1 caps bound parameters at 100 per statement. A full page holds up to

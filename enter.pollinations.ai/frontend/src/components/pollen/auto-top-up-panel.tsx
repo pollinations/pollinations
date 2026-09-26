@@ -4,8 +4,8 @@ import {
     CardIcon,
     CheckIcon,
     cn,
-    ExternalLinkButton,
     InfoTip,
+    InlineLink,
     Switch,
     type SwitchStatus,
     Tooltip,
@@ -27,6 +27,7 @@ import {
     useEffect,
     useState,
 } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -127,6 +128,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     returnToTopUp,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
+    const [isReloading, setIsReloading] = useState(false);
     const [packAmountUsd, setPackAmountUsd] = useState(
         normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
     );
@@ -181,6 +183,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         );
         setEnableDraft(false);
     }, [initialBillingState]);
+
+    async function reloadBilling(): Promise<void> {
+        setIsReloading(true);
+        try {
+            const response = await apiClient.stripe.billing.$get();
+            if (!response.ok) return;
+            const next = await response.json();
+            setBillingState(next);
+            if (next.autoTopUp.enabled || !enableDraft) {
+                setPackAmountUsd(
+                    normalizePackAmount(next.autoTopUp.packAmountUsd),
+                );
+            }
+        } catch {
+            // Keep the billing error visible so this section can be retried again.
+        } finally {
+            setIsReloading(false);
+        }
+    }
 
     async function openBillingPortal(): Promise<void> {
         setIsOpeningPortal(true);
@@ -294,6 +315,16 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
+    if (billingState === null) {
+        return (
+            <SectionContent loading={isReloading}>
+                <LoadError onRetry={reloadBilling}>
+                    Couldn’t load billing settings.
+                </LoadError>
+            </SectionContent>
+        );
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -367,7 +398,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             title="Payment method"
                             value={formatPaymentMethod(billingState)}
                         />
-                        <ManageBillingButton
+                        <ManageBillingLink
                             onClick={openBillingPortal}
                             loading={isOpeningPortal}
                         />
@@ -395,14 +426,9 @@ function renderStatusMessage(
         return (
             <>
                 Further steps required in Stripe —{" "}
-                <a
-                    href={issue.invoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-theme-text-soft"
-                >
+                <InlineLink href={issue.invoiceUrl}>
                     complete in Stripe
-                </a>
+                </InlineLink>
             </>
         );
     }
@@ -410,25 +436,29 @@ function renderStatusMessage(
     return "On";
 }
 
-type ManageBillingButtonProps = {
+type ManageBillingLinkProps = {
     onClick: () => void;
     loading: boolean;
 };
 
-const ManageBillingButton: FC<ManageBillingButtonProps> = ({
+const ManageBillingLink: FC<ManageBillingLinkProps> = ({
     onClick,
     loading,
 }) => (
-    <ExternalLinkButton
+    <InlineLink
+        as="button"
+        type="button"
+        external
+        size="sm"
         onClick={onClick}
         disabled={loading}
-        className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
+        className="inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap"
     >
         <span className="inline-flex items-center gap-1.5">
             <CardIcon className="h-4 w-4 shrink-0" />
             <span>{loading ? "Opening..." : "Manage billing"}</span>
         </span>
-    </ExternalLinkButton>
+    </InlineLink>
 );
 
 function mapToggleStatusToSwitchStatus(
@@ -468,6 +498,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 as="button"
                 type="button"
                 onClick={onSave}
+                intent="commit"
                 disabled={saveDisabled}
                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
@@ -492,7 +523,11 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip triggerAs="span" content={content} className={className}>
+        <Tooltip
+            triggerAs="span"
+            content={content}
+            className={cn("polli:cursor-not-allowed", className)}
+        >
             {children}
         </Tooltip>
     );
@@ -540,7 +575,7 @@ type SetupSnippetProps = {
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
     <div className="min-w-0 break-words leading-relaxed text-theme-text-soft">
         <span className="text-sm font-bold">{title}:</span>{" "}
-        <span className="inline-flex rounded-lg bg-surface-opaque px-2 py-0.5 text-sm font-medium">
+        <span className="inline-flex rounded-lg bg-theme-bg-pale px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
     </div>

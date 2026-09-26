@@ -66,8 +66,9 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
-// Alibaba rejects forced tool selection while thinking is enabled.
-const qwenForcedToolTransform: TransformFn = (messages, options) => {
+// Alibaba and DeepInfra Kimi reject (or garble) forced tool selection while
+// thinking is enabled.
+const forcedToolWithoutReasoning: TransformFn = (messages, options) => {
     const toolChoice = options.tool_choice;
     const forcesTool =
         toolChoice === "required" ||
@@ -80,10 +81,48 @@ const qwenForcedToolTransform: TransformFn = (messages, options) => {
     };
 };
 
-const qwenReasoningToggle = createReasoningEffortTransform("toggle");
-const qwenFlashTransform: TransformFn = async (messages, options) => {
-    const toggled = await qwenReasoningToggle(messages, options);
-    return qwenForcedToolTransform(toggled.messages, toggled.options);
+const toggleReasoningExceptForcedTools: TransformFn = async (
+    messages,
+    options,
+) => {
+    const toggled = await fireworksThinking(messages, options);
+    return forcedToolWithoutReasoning(toggled.messages, toggled.options);
+};
+
+// Perplexity's Agent API rejects penalties, and takes Sonar's search options
+// on its web_search tool instead of as request fields.
+const perplexityWebSearch: TransformFn = (messages, options) => {
+    const {
+        frequency_penalty: _frequencyPenalty,
+        presence_penalty: _presencePenalty,
+        web_search_options: webSearchOptions,
+        search_domain_filter: searchDomainFilter,
+        search_recency_filter: searchRecencyFilter,
+        ...rest
+    } = options;
+    const filters = {
+        ...(searchDomainFilter == null
+            ? {}
+            : { search_domain_filter: searchDomainFilter }),
+        ...(searchRecencyFilter == null
+            ? {}
+            : { search_recency_filter: searchRecencyFilter }),
+    };
+    return {
+        messages,
+        options: {
+            ...rest,
+            perplexityWebSearch: {
+                ...(webSearchOptions?.search_context_size
+                    ? {
+                          search_context_size:
+                              webSearchOptions.search_context_size,
+                      }
+                    : {}),
+                ...(Object.keys(filters).length ? { filters } : {}),
+            },
+        },
+    };
 };
 
 const models: ModelDefinition[] = [
@@ -100,6 +139,18 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-4o-mini",
         config: portkeyConfig["openai/gpt-4o-mini"],
+    },
+    {
+        name: "openai/gpt-5.3-codex",
+        config: portkeyConfig["gpt-5.3-codex"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-5.3-codex:azure:sweden",
+        config: portkeyConfig["gpt-5.3-codex-azure-sweden"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
     },
     {
         name: "openai/gpt-oss-20b",
@@ -147,6 +198,30 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra:azure:datazone",
         config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-sol",
+        config: portkeyConfig["gpt-6-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-sol:openai",
+        config: portkeyConfig["gpt-6-sol-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna",
+        config: portkeyConfig["gpt-6-luna"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna:openai",
+        config: portkeyConfig["gpt-6-luna-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -215,7 +290,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen3.8-max-alibaba"],
-        transform: qwenForcedToolTransform,
+        transform: forcedToolWithoutReasoning,
     },
     {
         name: "qwen/qwen3.8-max:openrouter:alibaba",
@@ -224,7 +299,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-max-0902",
         config: portkeyConfig["qwen3.8-max-0902"],
-        transform: qwenForcedToolTransform,
+        transform: forcedToolWithoutReasoning,
     },
     {
         name: "qwen/qwen3.7-flash",
@@ -239,12 +314,12 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-flash",
         config: portkeyConfig["qwen3.8-flash-alibaba"],
-        transform: qwenFlashTransform,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "qwen/qwen3.8-flash:openrouter:alibaba",
         config: portkeyConfig["qwen/qwen3.8-flash"],
-        transform: qwenFlashTransform,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "qwen/qwen3-vl-30b-a3b-instruct",
@@ -294,9 +369,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4-flash",
-        config: portkeyConfig[
-            "accounts/fireworks/models/deepseek-v4-flash-0731"
-        ],
+        config: portkeyConfig["DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
     },
     {
@@ -316,9 +389,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4-flash-vision-exp",
-        config: portkeyConfig[
-            "accounts/fireworks/models/deepseek-v4-flash-vision-exp"
-        ],
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-Vision-Exp"],
         transform: fireworksThinking,
     },
     {
@@ -339,7 +410,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4-pro",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
+        config: portkeyConfig["deepseek-v4-pro-openrouter-alibaba"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4-pro:openrouter:streamlake",
+        config: portkeyConfig["deepseek-v4-pro-openrouter-streamlake"],
         transform: fireworksThinking,
     },
     {
@@ -374,6 +450,10 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6:azure:sweden",
         config: portkeyConfig["grok-4.6-azure-sweden"],
+    },
+    {
+        name: "x-ai/grok-4.6:xai",
+        config: portkeyConfig["grok-4.6-xai"],
     },
     {
         name: "openai/gpt-audio-mini",
@@ -426,6 +506,17 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-opus-5",
         config: portkeyConfig["claude-opus-5"],
         transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5",
+        config: portkeyConfig["anthropic/claude-opus-5.5"],
+        // Bedrock rejects thinking.type=disabled for this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
+        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-fable-5",
@@ -567,47 +658,34 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity/sonar",
-        config: portkeyConfig["sonar"],
-    },
-    {
-        name: "perplexity/sonar:openrouter:perplexity",
         config: portkeyConfig["perplexity/sonar"],
-    },
-    {
-        name: "perplexity/sonar-pro",
-        config: portkeyConfig["sonar-pro"],
-    },
-    {
-        name: "perplexity/sonar-pro:openrouter:perplexity",
-        config: portkeyConfig["perplexity/sonar-pro"],
-    },
-    {
-        name: "perplexity/sonar-reasoning-pro",
-        config: portkeyConfig["sonar-reasoning-pro"],
-    },
-    {
-        name: "perplexity/sonar-reasoning-pro:openrouter:perplexity",
-        config: portkeyConfig["perplexity/sonar-reasoning-pro"],
+        transform: perplexityWebSearch,
+        useResponsesApi: true,
     },
     {
         name: "moonshotai/kimi-k2.6",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+        config: portkeyConfig["Kimi-K2.6"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "moonshotai/kimi-k2.6:azure:sweden",
+        config: portkeyConfig["Kimi-K2.6-azure-sweden"],
         transform: fireworksThinking,
     },
     {
         name: "moonshotai/kimi-k2.6:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K2.6"],
-        transform: fireworksThinking,
+        transform: toggleReasoningExceptForcedTools,
     },
     {
         name: "moonshotai/kimi-k2.7-code",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
-        transform: fireworksThinking,
+        config: portkeyConfig["kimi-code-openrouter-moonshot"],
+        transform: mandatoryReasoning,
     },
     {
-        name: "moonshotai/kimi-k2.7-code:deepinfra",
-        config: portkeyConfig["kimi-code-deepinfra"],
-        transform: fireworksThinking,
+        name: "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+        config: portkeyConfig["kimi-code-openrouter-streamlake"],
+        transform: mandatoryReasoning,
     },
     {
         name: "moonshotai/kimi-k3",
@@ -663,6 +741,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
     },
     {
+        name: "xiaomi/mimo-v2.6-flash",
+        config: portkeyConfig["xiaomi/mimo-v2.6-flash"],
+    },
+    {
+        name: "xiaomi/mimo-v2.6-pro",
+        config: portkeyConfig["xiaomi/mimo-v2.6-pro"],
+    },
+    {
         name: "google/gemini-3.1-pro-preview",
         config: portkeyConfig["google/gemini-3.1-pro-preview"],
         transform: pipe(
@@ -692,7 +778,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "z-ai/glm-5.2",
-        config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
+        config: portkeyConfig["glm-5.2-openrouter-zai"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "z-ai/glm-5.2:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.2"],
         transform: fireworksThinking,
     },
     {
@@ -713,19 +804,31 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "z-ai/glm-5.3-flashx",
+        config: portkeyConfig["z-ai/glm-5.3-flashx"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        // Confirmed live (#15178 review): reasoning.enabled=false and
+        // reasoning_effort="none" 400 without this transform.
+        transform: mandatoryReasoning,
+    },
+    {
         name: "minimax/minimax-m2.7",
         config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
         transform: mandatoryReasoning,
     },
     {
-        name: "minimax/minimax-m2.7:deepinfra",
-        config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
+        name: "minimax/minimax-m2.7:openrouter:minimax",
+        config: portkeyConfig["minimax-m2.7-openrouter-minimax"],
         transform: mandatoryReasoning,
     },
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.0-flash-vl",
+        config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
     {
         name: "tencent/hy3:openrouter:phala",
@@ -738,13 +841,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/muse-glimmer-30b",
-        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,
     },
     {
-        name: "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
-        config: portkeyConfig["muse-glimmer-openrouter-deepinfra"],
-        transform: fireworksThinking,
+        name: "meta/muse-glimmer-30b:openrouter:together",
+        config: portkeyConfig["muse-glimmer-openrouter-together"],
+        transform: mandatoryReasoning,
     },
     {
         name: "meta/muse-spark-1.2",

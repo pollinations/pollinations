@@ -41,7 +41,6 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     85689068, // pegalink
     147928812, // iotserver24
     24752658, // zero2launch
-    170070104, // NamanSoni78
     63298614, // xiaotian1171
     84572851, // immature-yt
     177411725, // Davizigjojo
@@ -52,6 +51,11 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     286385677, // Creatneworld
     156744205, // tsgabrielle
     243879765, // fadyabohamza-netizen
+    128448668, // Saauf
+    319410519, // afanasevmylife
+    133474899, // Marcus-Mok-GH
+    117812547, // kreggscode
+    202215077, // Guest453
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

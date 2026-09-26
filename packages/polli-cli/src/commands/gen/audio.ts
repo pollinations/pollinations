@@ -2,13 +2,13 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    fail,
     getOutputMode,
     printError,
     printInfo,
     printMeta,
-    printWarn,
 } from "../../lib/output.js";
-import { playAudio, playerMissingHint } from "../../lib/play.js";
+import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
 export function createAudioCommand() {
@@ -28,10 +28,11 @@ export function createAudioCommand() {
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--seed <n>", "Seed for deterministic output")
-        .option("--output <path>", "Save to file", "speech.mp3")
+        .option("--output <path>", "Save to file")
         .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {
             const isHuman = getOutputMode() === "human";
+            const output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin());
             if (!inputText) {
                 printError(
@@ -58,17 +59,20 @@ export function createAudioCommand() {
                 const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
-                writeFileSync(opts.output, buffer);
+                writeFileSync(output, buffer);
                 printMeta({
-                    path: opts.output,
+                    path: output,
                     size: buffer.length,
                     voice: opts.voice,
                 });
 
                 if (opts.play) {
                     if (isHuman) printInfo("Playing...");
-                    const ok = await playAudio(opts.output);
-                    if (!ok) printWarn(playerMissingHint());
+                    const ok = await playAudio(output);
+                    if (!ok)
+                        fail(
+                            "Audio playback failed. Check the saved file and player installation.",
+                        );
                 }
             } catch (error) {
                 exitWithError(error);

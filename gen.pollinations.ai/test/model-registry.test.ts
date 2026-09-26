@@ -87,11 +87,6 @@ describe("getGenerationModelRegistry", () => {
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
-            [
-                "perplexity/sonar:openrouter:perplexity",
-                "search_domain_filter",
-                false,
-            ],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

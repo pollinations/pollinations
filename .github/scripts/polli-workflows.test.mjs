@@ -318,7 +318,7 @@ async function invokeShim(source, raw, fetchImpl) {
 }
 
 for (const [name, source, brain] of [
-    ["askpolli", workflow, "openai/gpt-5.6-terra"],
+    ["askpolli", workflow, "openai/gpt-6-sol"],
     ["polli", full, "openai/gpt-6-astra"],
 ]) {
     test(`${name} actual shim forwards its brain while preserving outer identity and JSON/SSE`, async () => {
@@ -397,7 +397,7 @@ for (const [name, source, brain] of [
     });
 
     test(`${name} actual shim leaves background and search models unchanged`, async () => {
-        for (const model of ["gpt-5.6-luna", "perplexity"]) {
+        for (const model of ["openai/gpt-6-luna", "perplexity"]) {
             let forwarded;
             const response = await invokeShim(
                 source,

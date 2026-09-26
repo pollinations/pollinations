@@ -36,7 +36,6 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import {
     CommunityReferenceParamsSchema,
     type ImageParams,
@@ -317,7 +316,7 @@ async function generateMediaWithFallback(
                 return { result: generated, params };
             }
             if (isVideoModel(params.model)) {
-                const generated = await generateVideoResult(c, prompt, params);
+                const generated = await generateVideoResult(prompt, params);
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
@@ -336,15 +335,10 @@ async function generateMediaWithFallback(
 }
 
 async function generateVideoResult(
-    c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(
-        originalPrompt,
-        safeParams as ImageParams,
-        c.get("requestId"),
-    );
+    return createAndReturnVideo(originalPrompt, safeParams as ImageParams);
 }
 
 /**
@@ -400,19 +394,12 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    const pricingDimensions =
-        c.var.model.resolved === "amazon/nova-canvas-v1"
-            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
-            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
         hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(
-            pricingDimensions.width,
-            pricingDimensions.height,
-        ),
+        maxImageDimension: Math.max(safeParams.width, safeParams.height),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 

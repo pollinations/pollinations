@@ -372,8 +372,8 @@ describe("Pollinations seed handling", () => {
 
         await client.image("a cat", { seed: -1, resolution: "2k" });
         await client.video("a long scene", {
-            model: "nova-reel",
-            duration: 120,
+            model: "alibaba/wan-2.6",
+            duration: 15,
             resolution: "1080p",
             seed: -1,
         });
@@ -383,7 +383,7 @@ describe("Pollinations seed handling", () => {
         expect(seedFromUrl(imageUrl.toString())).toBe("-1");
         expect(imageUrl.searchParams.get("resolution")).toBe("2k");
         expect(videoUrl.searchParams.get("seed")).toBe("-1");
-        expect(videoUrl.searchParams.get("duration")).toBe("120");
+        expect(videoUrl.searchParams.get("duration")).toBe("15");
         expect(videoUrl.searchParams.get("resolution")).toBe("1080p");
     });
 

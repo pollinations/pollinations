@@ -215,15 +215,6 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
     expect(definition.priceMultiplier).toBe(1);
 });
 
-test("Amazon Nova media models use the AWS billing provider", () => {
-    for (const model of [
-        "amazon/nova-canvas-v1",
-        "amazon/nova-reel-v1",
-    ] as const) {
-        expect(getRegistryModelDefinition(model).provider).toBe("aws");
-    }
-});
-
 test("DeepSeek V4 models are billed at their route's multiplier", () => {
     const usage = {
         promptTextTokens: 1_000_000,

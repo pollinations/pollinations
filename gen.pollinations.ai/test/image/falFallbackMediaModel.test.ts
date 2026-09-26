@@ -75,20 +75,16 @@ describe("Fal fallback media models", () => {
         [-1, undefined, true, 1024, 1024, 1, "1:1"],
     ] as const)("routes Grok duration %s through Fal with unchanged parameters", async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
         const requests = mockFal({ video: { url: MEDIA_URL } });
-        const resultPromise = createAndReturnVideo(
-            "move",
-            {
-                ...baseParams,
-                model: "x-ai/grok-imagine-video",
-                duration,
-                aspectRatio,
-                dimensionsExplicit,
-                width,
-                height,
-                image: ["https://example.com/start.png"],
-            },
-            "grok-test",
-        );
+        const resultPromise = createAndReturnVideo("move", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video",
+            duration,
+            aspectRatio,
+            dimensionsExplicit,
+            width,
+            height,
+            image: ["https://example.com/start.png"],
+        });
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
         expect(requests[0]).toEqual({
@@ -116,15 +112,11 @@ describe("Fal fallback media models", () => {
     ])("rejects fractional Grok duration %s before Fal submission", async (duration) => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
-            createAndReturnVideo(
-                "move",
-                {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video",
-                    duration,
-                },
-                "grok-test",
-            ),
+            createAndReturnVideo("move", {
+                ...baseParams,
+                model: "x-ai/grok-imagine-video",
+                duration,
+            }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

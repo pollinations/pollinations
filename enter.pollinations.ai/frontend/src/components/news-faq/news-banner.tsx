@@ -16,6 +16,18 @@ export { HIGHLIGHTS_GITHUB_URL } from "./highlights";
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-09-26",
+        emoji: "📅",
+        title: "Upcoming model changes",
+        description:
+            "Nova Canvas and Nova Reel are retiring; MAI Image 2.5 Flash is moving to 2.6 Flash. Check the model IDs used by your apps.",
+        details: [
+            "September 30: amazon/nova-canvas-v1 and amazon/nova-reel-v1 will be removed, including their aliases. Requests will not automatically fall back to another model. Choose another image or video model before then.",
+            "October 1: MAI Image 2.5 Flash will leave the catalog as a separate model. Its existing ID, microsoft/mai-image-2.5-flash, will keep working but use MAI Image 2.6 Flash and 2.6 Flash pricing. Use microsoft/mai-image-2.6-flash for new integrations.",
+            "[Browse models](/models) for available options and current prices.",
+        ],
+    },
+    {
         date: "2026-09-24",
         emoji: "🔄",
         title: "Model provider changes",

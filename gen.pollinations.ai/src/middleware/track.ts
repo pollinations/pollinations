@@ -51,6 +51,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     PROMPT_CACHE_TYPE_HEADER,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -1305,11 +1306,30 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
             "Failed to determine model: x-model-used header was missing",
         );
     }
+    const unitsHeader = response.headers.get(PROVIDER_BILLING_HEADERS.units);
+    const unitCostHeader = response.headers.get(
+        PROVIDER_BILLING_HEADERS.unitCost,
+    );
+    let providerBilling: PricingInput["providerBilling"];
+    if (unitsHeader !== null || unitCostHeader !== null) {
+        const units = Number(unitsHeader);
+        const unitCost = Number(unitCostHeader);
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(unitCost) ||
+            unitCost <= 0
+        ) {
+            throw new Error("Invalid provider billing receipt");
+        }
+        providerBilling = { units, unitCost };
+    }
     const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed,
         usage,
         pricingInput: {
+            providerBilling,
             hasExplicitCacheHit:
                 response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
         },

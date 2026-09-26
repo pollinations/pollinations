@@ -29,6 +29,8 @@ export type PricingInput = {
     hasPrompt?: boolean;
     /** Provider confirmed this response used an explicit prompt-cache entry. */
     hasExplicitCacheHit?: boolean;
+    /** Trusted provider receipt, carried from the generation response. */
+    providerBilling?: { units: number; unitCost: number };
 };
 
 export type CostVariantContext = {

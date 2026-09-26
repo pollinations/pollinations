@@ -1216,6 +1216,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000079125,
     },
   },
+  "google/gemini-3.8-flash-lite-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio": {
+    "cost": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
+  "google/gemini-3.8-flash-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-tts:openrouter:ai-studio": {
+    "cost": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
   "google/gemini-3.8-flash:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.00000395625,
@@ -1318,6 +1358,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionAudioTokens": 0.04,
+    },
+  },
+  "google/lyria-3.5": {
+    "cost": {
+      "completionAudioTokens": 0.08,
+    },
+    "price": {
+      "completionAudioTokens": 0.08,
+    },
+  },
+  "google/lyria-3.5:fal": {
+    "cost": {
+      "completionAudioTokens": 0.1,
+    },
+    "price": {
+      "completionAudioTokens": 0.1,
     },
   },
   "google/veo-3.1-fast": {
@@ -1642,6 +1698,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.05,
+    },
+  },
+  "minimax/minimax-h3-max": {
+    "cost": {
+      "completionVideoSeconds": 0,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0,
+      },
+      "768p": {
+        "completionVideoSeconds": 0,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0,
     },
   },
   "minimax/minimax-h3-max-turbo": {

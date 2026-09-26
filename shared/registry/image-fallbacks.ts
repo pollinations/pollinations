@@ -9,32 +9,6 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
-    "sony/mmaudio-v2": {
-        "sony/mmaudio-v2:fal": {
-            provider: "fal",
-            // Fal billed 8 units for a <5s output in the 2026-09-26 probe.
-            // Keep its reported charge separate from the customer's output length.
-            cost: { completionVideoSeconds: 0 },
-            billing: {
-                adjustments: [
-                    {
-                        id: "fal.mmaudio.audio.v1",
-                        description: "Fal audio generation billing units",
-                        kind: "audio",
-                        unit: "second",
-                        unitCost: 0.001,
-                        publicPricing: {
-                            label: "Audio generation",
-                            quantity: 1,
-                            unit: "second",
-                        },
-                        countUnits: (_output, input) =>
-                            input?.providerAudioSeconds ?? 0,
-                    },
-                ],
-            },
-        },
-    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

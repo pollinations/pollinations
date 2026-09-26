@@ -24,14 +24,13 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         supportedEndpoints: ["/video/audio"],
         videoCapabilities: ["audio_output"],
-        // Replicate has no upper bound; the fal fallback accepts 1-30s.
+        // Replicate sets no upper bound; fal documents 1-30s for this model.
         minDuration: 1,
         maxDuration: 30,
         defaultDuration: 8,
-        // Replicate L40S: https://replicate.com/pricing (verified 2026-09-26).
-        // Output seconds price the customer; GPU time prices the provider.
+        // Billed from Replicate's reported GPU time on L40S:
+        // https://replicate.com/pricing (verified 2026-09-26).
         cost: { completionVideoSeconds: 0 },
-        price: { completionVideoSeconds: 0.001 },
         billing: {
             adjustments: [
                 {

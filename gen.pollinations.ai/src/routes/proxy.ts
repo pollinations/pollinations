@@ -678,7 +678,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🎬 Video"],
             summary: "Add a video soundtrack",
             description:
-                "Adds synchronized audio to a publicly accessible source video. Send JSON with `video_url` and a sound `prompt`; optional `duration` defaults to 8 seconds. The source may be trimmed to that duration. Returns the MP4 with its generated soundtrack when complete. Billing uses the returned video's duration. Identical requests can rejoin a running generation or retrieve its cached result. See `/video/models` for supported models and pricing.",
+                "Adds synchronized audio to a publicly accessible source video. Send JSON with `video_url` and a sound `prompt`; optional `duration` defaults to 8 seconds. The source may be trimmed to that duration. Returns the MP4 with its generated soundtrack when complete. Billing uses the provider's reported GPU execution time. Identical requests can rejoin a running generation or retrieve its cached result. See `/video/models` for supported models and pricing.",
             responses: {
                 200: {
                     description: "Video with generated audio",

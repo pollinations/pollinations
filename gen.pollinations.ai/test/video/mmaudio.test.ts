@@ -46,10 +46,8 @@ const mp4 = Buffer.concat([
 
 let status = 200;
 let computeSeconds = 4.074095673;
-let units = "5";
 let mediaBytes: Uint8Array = mp4;
 let replicateBodies: Record<string, unknown>[];
-let falBodies: Record<string, unknown>[];
 let release: (() => void) | undefined;
 let gate: Promise<void> | undefined;
 let started: (() => void) | undefined;
@@ -88,25 +86,6 @@ function makeMocks() {
                         metrics: { predict_time: computeSeconds },
                     });
                 },
-                "queue.fal.run": async (request: Request) => {
-                    if (request.method === "POST") {
-                        falBodies.push(await request.json());
-                        return Response.json({
-                            status_url: "https://queue.fal.run/status",
-                            response_url: "https://queue.fal.run/result",
-                        });
-                    }
-                    if (request.url.endsWith("/status"))
-                        return Response.json({ status: "COMPLETED" });
-                    return Response.json(
-                        {
-                            video: {
-                                url: "https://media.example.com/result.mp4",
-                            },
-                        },
-                        { headers: { "x-fal-billable-units": units } },
-                    );
-                },
                 "media.example.com": async () =>
                     new Response(new Uint8Array(mediaBytes), {
                         headers: { "content-type": "video/mp4" },
@@ -119,10 +98,8 @@ function makeMocks() {
 beforeEach(async () => {
     status = 200;
     computeSeconds = 4.074095673;
-    units = "5";
     mediaBytes = mp4;
     replicateBodies = [];
-    falBodies = [];
     gate = undefined;
     started = undefined;
     release = undefined;
@@ -131,7 +108,6 @@ beforeEach(async () => {
     bindings = withInlineGenerationCoordinator({
         ...env,
         REPLICATE_API_TOKEN: "replicate-test",
-        FAL_KEY: "fal-test",
     });
 });
 afterEach(async () => {
@@ -170,7 +146,7 @@ const body = () => ({
     seed: 42,
 });
 
-test("Replicate charges actual output length, records compute cost, and rejoins one generation", async () => {
+test("Replicate bills reported GPU time and rejoins one generation", async () => {
     const { key, userId } = await createTestApiKey({
         user: { packBalance: 1 },
         allowedModels: ["sony/mmaudio-v2"],
@@ -212,85 +188,35 @@ test("Replicate charges actual output length, records compute cost, and rejoins 
             },
         },
     ]);
-    expect(falBodies).toHaveLength(0);
     const billed = mocks.tinybird.state.events.filter(
         (event) => event.isBilledUsage,
     );
     expect(billed).toHaveLength(1);
+    // Prices are rounded to 8 decimals; costs keep full precision.
+    expect(billed[0].totalPrice).toBeCloseTo(4.074095673 * 0.000975, 8);
     expect(billed[0]).toMatchObject({
-        totalPrice: 0.005,
         totalCost: 4.074095673 * 0.000975,
         modelProviderUsed: "replicate",
         adjustmentUnits: { "replicate.mmaudio.compute.v1": 4.074095673 },
     });
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.packBalance).toBeCloseTo(0.995, 10);
+    expect(balance.packBalance).toBeCloseTo(1 - 4.074095673 * 0.000975, 8);
 });
 
-test(
-    "fal's billed duration can exceed output length without increasing the customer charge",
-    { timeout: 15000 },
-    async () => {
-        status = 503;
-        units = "6";
-        const { key, userId } = await createTestApiKey({
-            user: { packBalance: 1 },
-            allowedModels: ["sony/mmaudio-v2"],
-        });
-        const input = { ...body(), duration: 5, negative_prompt: "music" };
-        const response = await request(key, input);
-        expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe(
-            "sony/mmaudio-v2:fal",
-        );
-        expect(response.headers.get("x-usage-completion-video-seconds")).toBe(
-            "5",
-        );
-        expect((await request(key, input)).status).toBe(200);
-        expect(replicateBodies).toHaveLength(1);
-        expect(falBodies).toEqual([
-            {
-                video_url: input.video_url,
-                prompt: input.prompt,
-                duration: 5,
-                negative_prompt: "music",
-                seed: 42,
-                num_steps: 25,
-                cfg_strength: 4.5,
-            },
-        ]);
-        const billed = mocks.tinybird.state.events.filter(
-            (event) => event.isBilledUsage,
-        );
-        expect(billed).toHaveLength(1);
-        expect(billed[0]).toMatchObject({
-            totalCost: 0.006,
-            totalPrice: 0.005,
-            modelProviderUsed: "fal",
-            fallbackUsed: true,
-            adjustmentUnits: { "fal.mmaudio.audio.v1": 6 },
-        });
-        expect(
-            (await getUserBalance(drizzle(env.DB), userId)).packBalance,
-        ).toBeCloseTo(0.995, 10);
-    },
-);
-
-test("invalid source and unsupported fields fail before either provider runs", async ({
+test("invalid source and unsupported fields fail before the provider runs", async ({
     paidApiKey,
 }) => {
     for (const invalid of [
         { video_url: "http://127.0.0.1/test.mp4" },
         { duration: 0 },
+        { duration: 31 },
         { num_steps: 50 },
-        { model: "sony/mmaudio-v2:fal" },
     ]) {
         expect(
             (await request(paidApiKey, { ...body(), ...invalid })).status,
         ).toBe(400);
     }
     expect(replicateBodies).toHaveLength(0);
-    expect(falBodies).toHaveLength(0);
 });
 
 test("paid access and model permissions are enforced", async ({
@@ -302,40 +228,28 @@ test("paid access and model permissions are enforced", async ({
     expect(replicateBodies).toHaveLength(0);
 });
 
-test("provider validation errors do not fall back or bill", async ({
-    paidApiKey,
-}) => {
+test("provider validation errors are not billed", async ({ paidApiKey }) => {
     status = 422;
     expect((await request(paidApiKey, body())).status).toBe(422);
-    expect(falBodies).toHaveLength(0);
     expect(
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(0);
 });
 
-test(
-    "missing primary usage and invalid fallback usage cannot produce a free success",
-    { timeout: 15000 },
-    async ({ paidApiKey }) => {
-        computeSeconds = 0;
-        units = "invalid";
-        expect((await request(paidApiKey, body())).status).toBe(502);
-        expect(falBodies).toHaveLength(1);
-        expect(
-            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
-        ).toHaveLength(0);
-    },
-);
+test("missing Replicate usage cannot produce a free success", async ({
+    paidApiKey,
+}) => {
+    computeSeconds = 0;
+    expect((await request(paidApiKey, body())).status).toBe(502);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(0);
+});
 
-test(
-    "malformed media is rejected on both routes",
-    { timeout: 15000 },
-    async ({ paidApiKey }) => {
-        mediaBytes = new TextEncoder().encode('{"error":"broken output"}');
-        expect((await request(paidApiKey, body())).status).toBe(502);
-        expect(falBodies).toHaveLength(1);
-    },
-);
+test("malformed media is rejected", async ({ paidApiKey }) => {
+    mediaBytes = new TextEncoder().encode('{"error":"broken output"}');
+    expect((await request(paidApiKey, body())).status).toBe(502);
+});
 
 test("track parser keeps compute, video and audio durations distinct and rejects truncation", () => {
     expect(mp4TrackDurations(mp4)).toEqual({ video: 5, audio: 5.04 });
@@ -347,10 +261,10 @@ test("track parser keeps compute, video and audio durations distinct and rejects
     ).toThrow();
 });
 
-test("fixed catalog price and multiplier do not expose or charge compute adjustments", () => {
+test("catalog shows GPU pricing and price scales compute cost by the multiplier", () => {
     const definition = IMAGE_SERVICES["sony/mmaudio-v2"];
     const info = modelInfoFromDefinition("sony/mmaudio-v2", definition);
-    expect(info.pricing_adjustments).toBeUndefined();
+    expect(info.pricing_adjustments).toHaveLength(1);
     const billed = calculateUsageBilling({
         model: "sony/mmaudio-v2",
         servedBy: { ...definition, priceMultiplier: 2 },
@@ -358,7 +272,5 @@ test("fixed catalog price and multiplier do not expose or charge compute adjustm
         input: { computeSeconds: 100 },
     });
     expect(billed.cost.totalCost).toBeCloseTo(0.0975);
-    expect(billed.price.totalPrice).toBe(0.01);
-    expect(billed.adjustments[0].price).toBe(0);
-    expect(billed.priceDefinition.completionVideoSeconds).toBe(0.002);
+    expect(billed.price.totalPrice).toBeCloseTo(0.195);
 });

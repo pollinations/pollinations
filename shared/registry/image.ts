@@ -22,8 +22,9 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         inputModalities: ["text", "video"],
         outputModalities: ["video"],
-        supportedEndpoints: ["/video/audio"],
-        videoCapabilities: ["audio_output"],
+        // The single reference video is the source that gets a soundtrack.
+        videoCapabilities: ["audio_output", "reference_videos"],
+        maxReferenceVideos: 1,
         // Replicate sets no upper bound; fal documents 1-30s for this model.
         minDuration: 1,
         maxDuration: 30,

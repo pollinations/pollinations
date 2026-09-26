@@ -106,25 +106,6 @@ describe("/openapi.json", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/v1/responses"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
-        expect(schema.paths["/video/audio"]).toMatchObject({
-            post: {
-                requestBody: {
-                    content: {
-                        "application/json": { schema: expect.any(Object) },
-                    },
-                },
-                responses: {
-                    "200": {
-                        content: {
-                            "video/mp4": {
-                                schema: { type: "string", format: "binary" },
-                            },
-                        },
-                    },
-                },
-            },
-        });
-        expect(schema.paths["/v1/video/audio"]).toBeUndefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
         for (const path of [

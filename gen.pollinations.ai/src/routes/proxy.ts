@@ -104,10 +104,6 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
-import {
-    generateVideoAudio,
-    VideoAudioRequestSchema,
-} from "../video/mmaudio.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
@@ -204,21 +200,6 @@ const imageVideoHandlers = factory.createHandlers(
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateImageVideo,
-);
-
-const videoAudioHandlers = factory.createHandlers(
-    textBodyLimit,
-    validator("json", VideoAudioRequestSchema),
-    resolveModel("generate.image", {
-        defaultModel: "sony/mmaudio-v2",
-        supportedEndpoint: "/video/audio",
-    }),
-    track("generate.image"),
-    prepareGenerationRequest,
-    imageCache,
-    every(generationAccess, deduplicateGeneration),
-    apiKeyBudgetReservation,
-    generateVideoAudio,
 );
 
 // 3D shares the image event type to avoid changing Tinybird consumers.
@@ -672,28 +653,6 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
-    .post(
-        "/video/audio",
-        describeRoute({
-            tags: ["🎬 Video"],
-            summary: "Add a video soundtrack",
-            description:
-                "Adds synchronized audio to a publicly accessible source video. Send JSON with `video_url` and a sound `prompt`; optional `duration` defaults to 8 seconds. The source may be trimmed to that duration. Returns the MP4 with its generated soundtrack when complete. Billing uses the provider's reported GPU execution time. Identical requests can rejoin a running generation or retrieve its cached result. See `/video/models` for supported models and pricing.",
-            responses: {
-                200: {
-                    description: "Video with generated audio",
-                    headers: mediaResponseHeaders,
-                    content: {
-                        "video/mp4": {
-                            schema: { type: "string", format: "binary" },
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
-            },
-        }),
-        ...videoAudioHandlers,
-    )
     .get(
         "/realtime",
         describeRealtimeWebSocket("/realtime"),
@@ -1015,6 +974,8 @@ export const proxyRoutes = new Hono<Env>()
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
                 "Seedance 2.0, Seedance 2.5, Wan 3.0, and MiniMax H3 Max also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
+                "",
+                "`sony/mmaudio-v2` adds sound to an existing video: pass exactly one `reference_videos` URL and describe the sound in the prompt. It returns that video with a generated soundtrack and is billed by the provider's reported GPU time.",
                 "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),

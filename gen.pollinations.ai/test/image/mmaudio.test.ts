@@ -16,9 +16,9 @@ import {
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
+import { MMAUDIO_VERSION } from "../../src/image/models/mmaudioReplicateModel.ts";
+import { mp4TrackDurations } from "../../src/image/utils/mp4.ts";
 import worker from "../../src/index.ts";
-import { MMAUDIO_VERSION } from "../../src/video/mmaudio.ts";
-import { mp4TrackDurations } from "../../src/video/mp4.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 // Minimal ISO BMFF track metadata, with deliberately different video/audio lengths.
@@ -117,21 +117,15 @@ afterEach(async () => {
 
 async function request(
     key: string,
-    body: Record<string, unknown>,
+    { prompt, ...query }: Record<string, string>,
     signal?: AbortSignal,
-    path = "/video/audio",
 ) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
-        new Request(`https://gen.pollinations.ai${path}`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-            signal,
-        }),
+        new Request(
+            `https://gen.pollinations.ai/video/${encodeURIComponent(prompt)}?${new URLSearchParams(query)}`,
+            { headers: { Authorization: `Bearer ${key}` }, signal },
+        ),
         bindings,
         ctx,
     );
@@ -139,11 +133,11 @@ async function request(
     await waitOnExecutionContext(ctx);
     return response;
 }
-const body = () => ({
+const body = (): Record<string, string> => ({
     model: "sony/mmaudio-v2",
-    video_url: "https://example.com/video.mp4",
+    reference_videos: "https://example.com/video.mp4",
     prompt: `Rain falling ${crypto.randomUUID()}`,
-    seed: 42,
+    seed: "42",
 });
 
 test("Replicate bills reported GPU time and rejoins one generation", async () => {
@@ -178,10 +172,9 @@ test("Replicate bills reported GPU time and rejoins one generation", async () =>
         {
             version: MMAUDIO_VERSION,
             input: {
-                video: input.video_url,
+                video: input.reference_videos,
                 prompt: input.prompt,
                 duration: 8,
-                negative_prompt: "",
                 seed: 42,
                 num_steps: 25,
                 cfg_strength: 4.5,
@@ -206,12 +199,18 @@ test("Replicate bills reported GPU time and rejoins one generation", async () =>
 test("invalid source and unsupported fields fail before the provider runs", async ({
     paidApiKey,
 }) => {
-    for (const invalid of [
-        { video_url: "http://127.0.0.1/test.mp4" },
-        { duration: 0 },
-        { duration: 31 },
-        { num_steps: 50 },
-    ]) {
+    const invalidInputs: Record<string, string>[] = [
+        { reference_videos: "http://127.0.0.1/test.mp4" },
+        { reference_videos: "" },
+        {
+            reference_videos:
+                "https://example.com/a.mp4|https://example.com/b.mp4",
+        },
+        { duration: "0" },
+        { duration: "31" },
+        { image: "https://example.com/frame.png" },
+    ];
+    for (const invalid of invalidInputs) {
         expect(
             (await request(paidApiKey, { ...body(), ...invalid })).status,
         ).toBe(400);
@@ -230,7 +229,9 @@ test("paid access and model permissions are enforced", async ({
 
 test("provider validation errors are not billed", async ({ paidApiKey }) => {
     status = 422;
-    expect((await request(paidApiKey, body())).status).toBe(422);
+    // The media route reports provider input validation as 400; 422 is reserved
+    // for content-policy rejections.
+    expect((await request(paidApiKey, body())).status).toBe(400);
     expect(
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(0);
@@ -261,9 +262,11 @@ test("track parser keeps compute, video and audio durations distinct and rejects
     ).toThrow();
 });
 
-test("catalog shows GPU pricing and price scales compute cost by the multiplier", () => {
+test("catalog shows the source-video input and GPU pricing, scaled by the multiplier", () => {
     const definition = IMAGE_SERVICES["sony/mmaudio-v2"];
     const info = modelInfoFromDefinition("sony/mmaudio-v2", definition);
+    expect(info.video_capabilities).toContain("reference_videos");
+    expect(info.max_reference_videos).toBe(1);
     expect(info.pricing_adjustments).toHaveLength(1);
     const billed = calculateUsageBilling({
         model: "sony/mmaudio-v2",

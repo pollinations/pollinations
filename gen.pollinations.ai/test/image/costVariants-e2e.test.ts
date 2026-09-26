@@ -49,7 +49,44 @@ type ReplicateCall = {
 function createBillingVariantMocks() {
     const replicateState: { calls: ReplicateCall[] } = { calls: [] };
     const openRouterState: { calls: Record<string, unknown>[] } = { calls: [] };
+    const falState = { submissions: 0 };
     return createFetchMock({
+        fal: {
+            state: falState,
+            handlerMap: {
+                "api.fal.ai": async (request: Request) =>
+                    Response.json({
+                        prices: [
+                            {
+                                endpoint_id: new URL(
+                                    request.url,
+                                ).searchParams.get("endpoint_id"),
+                                unit: "seconds",
+                                currency: "USD",
+                                unit_price: 0.05,
+                            },
+                        ],
+                    }),
+                "queue.fal.run": async (request: Request) => {
+                    if (request.method === "POST") {
+                        falState.submissions++;
+                        return Response.json({
+                            status_url: "https://queue.fal.run/test/status",
+                            response_url: "https://queue.fal.run/test/result",
+                        });
+                    }
+                    if (request.url.endsWith("/status"))
+                        return Response.json({ status: "COMPLETED" });
+                    return Response.json(
+                        { video: { url: OUTPUT_VIDEO_URL } },
+                        { headers: { "x-fal-billable-units": "21.28" } },
+                    );
+                },
+            },
+            reset: () => {
+                falState.submissions = 0;
+            },
+        },
         tinybird: createMockTinybird(),
         openrouter: {
             state: openRouterState,
@@ -142,8 +179,11 @@ const test = baseTest.extend<{
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
         syncImageEnv(
-            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
-            ["REPLICATE_API_TOKEN"],
+            {
+                REPLICATE_API_TOKEN: "replicate-test-key",
+                FAL_KEY: "fal-test-key",
+            } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN", "FAL_KEY"],
         );
         await use(createBillingVariantMocks());
     },
@@ -171,6 +211,7 @@ async function generate(path: string, apiKey: string, init?: RequestInit) {
     expect(response.status, failureBody).toBe(200);
     await response.arrayBuffer();
     await waitOnExecutionContext(ctx);
+    return response;
 }
 
 test("qwen-image selects text-to-image and edit billing from the real handler input", async ({
@@ -333,5 +374,31 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         tokenPriceCompletionImage: 0.06 * 1.055,
         totalCost: expect.closeTo(0.07 * 1.055, 8),
         totalPrice: 0.07385,
+    });
+});
+
+test("H3 Max bills reference provider units without inflating video duration", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/h3-max-reference-billing?model=minimax/minimax-h3-max&seed=15392&duration=5&resolution=768p&reference_videos=${encodeURIComponent(OUTPUT_VIDEO_URL)}`,
+        paidApiKey,
+    );
+    expect(response.headers.get("x-usage-provider-billable-units")).toBe(
+        "21.28",
+    );
+    expect(response.headers.get("x-usage-provider-unit-cost")).toBe("0.05");
+    expect(mocks.fal.state.submissions).toBe(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "minimax/minimax-h3-max",
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
+        adjustmentCosts: { "fal.minimax_h3_max.provider_units.v1": 1.064 },
+        adjustmentUnits: { "fal.minimax_h3_max.provider_units.v1": 21.28 },
+        isBilledUsage: true,
     });
 });

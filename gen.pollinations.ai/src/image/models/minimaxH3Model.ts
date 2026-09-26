@@ -83,6 +83,7 @@ async function callFalH3API(
     body: Record<string, unknown>,
     durationSeconds: number,
     actualModel: string,
+    billFromProvider = false,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey)
@@ -92,6 +93,41 @@ async function callFalH3API(
 
     const deadline = Date.now() + H3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
+    let unitCost: number | undefined;
+    if (billFromProvider) {
+        const endpointId = new URL(endpoint).pathname.slice(1);
+        const pricingResponse = await fetchUpstream(
+            `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpointId)}`,
+            {
+                headers: authorization,
+                signal: AbortSignal.timeout(remainingTime(deadline, title)),
+                errorLabel: `${title} pricing lookup failed`,
+            },
+        );
+        const pricing = await readJson<{
+            prices?: {
+                endpoint_id: string;
+                unit_price: number;
+                currency: string;
+                unit: string;
+            }[];
+        }>(pricingResponse, `${title} returned invalid pricing`);
+        const price = pricing.prices?.find(
+            (price) => price.endpoint_id === endpointId,
+        );
+        if (
+            !price ||
+            price.currency !== "USD" ||
+            price.unit !== "seconds" ||
+            !Number.isFinite(price.unit_price) ||
+            price.unit_price <= 0
+        ) {
+            throw UpstreamError.fromProvider(502, {
+                message: `${title} returned invalid pricing`,
+            });
+        }
+        unitCost = price.unit_price;
+    }
     const submissionResponse = await fetchUpstream(endpoint, {
         method: "POST",
         headers: { ...authorization, "Content-Type": "application/json" },
@@ -140,6 +176,17 @@ async function callFalH3API(
         signal: AbortSignal.timeout(remainingTime(deadline, title)),
         errorLabel: `${title} result fetch failed`,
     });
+    const billableUnits = Number(
+        resultResponse.headers.get("x-fal-billable-units"),
+    );
+    if (
+        billFromProvider &&
+        (!Number.isFinite(billableUnits) || billableUnits <= 0)
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: `${title} returned invalid billing units`,
+        });
+    }
     const result = await readJson<H3Result>(
         resultResponse,
         `${title} returned an invalid result`,
@@ -163,6 +210,9 @@ async function callFalH3API(
         durationSeconds,
         trackingData: {
             actualModel,
+            ...(unitCost !== undefined
+                ? { providerBilling: { units: billableUnits, unitCost } }
+                : {}),
             usage: { completionVideoSeconds: durationSeconds },
         },
     };
@@ -319,6 +369,7 @@ async function callFalMinimaxMaxVariant(
         },
         duration,
         modelId,
+        modelId === H3_MAX_MODEL,
     );
 }
 

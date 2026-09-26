@@ -2,12 +2,17 @@
  * Utility for building tracking headers for the enter service
  */
 
+import type { PricingInput } from "@shared/registry/cost-variants.ts";
 import type { Usage } from "@shared/registry/registry.ts";
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import {
+    buildUsageHeaders,
+    PROVIDER_BILLING_HEADERS,
+} from "@shared/registry/usage-headers.ts";
 
 export interface TrackingData {
     actualModel?: string;
     usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
+    providerBilling?: PricingInput["providerBilling"];
 }
 
 /**
@@ -25,6 +30,14 @@ export function buildTrackingHeaders(
     const headers = buildUsageHeaders(modelUsed, trackingData.usage);
     if (!Object.keys(headers).some((header) => header.startsWith("x-usage-"))) {
         throw new Error(`Missing billable usage for ${model}`);
+    }
+    if (trackingData.providerBilling) {
+        headers[PROVIDER_BILLING_HEADERS.units] = String(
+            trackingData.providerBilling.units,
+        );
+        headers[PROVIDER_BILLING_HEADERS.unitCost] = String(
+            trackingData.providerBilling.unitCost,
+        );
     }
     return headers;
 }

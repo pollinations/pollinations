@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
@@ -47,6 +49,8 @@ type ProviderRequest = {
 function mockH3Fetch(
     requests: ProviderRequest[],
     status: "COMPLETED" | "FAILED" = "COMPLETED",
+    units: string | null = "5",
+    unitPrice = 0.025,
 ) {
     return vi
         .spyOn(globalThis, "fetch")
@@ -61,6 +65,20 @@ function mockH3Fetch(
                       >)
                     : undefined,
             });
+            if (href.startsWith("https://api.fal.ai/v1/models/pricing?")) {
+                return Response.json({
+                    prices: [
+                        {
+                            endpoint_id: new URL(href).searchParams.get(
+                                "endpoint_id",
+                            ),
+                            unit_price: unitPrice,
+                            currency: "USD",
+                            unit: "seconds",
+                        },
+                    ],
+                });
+            }
             if (
                 href === H3_ENDPOINT ||
                 href === H3_MAX_TEXT_ENDPOINT ||
@@ -81,9 +99,17 @@ function mockH3Fetch(
                 });
             }
             if (href === RESULT_URL) {
-                return Response.json({
-                    video: { url: VIDEO_URL, content_type: "video/mp4" },
-                });
+                return Response.json(
+                    {
+                        video: { url: VIDEO_URL, content_type: "video/mp4" },
+                    },
+                    {
+                        headers:
+                            units === null
+                                ? {}
+                                : { "x-fal-billable-units": units },
+                    },
+                );
             }
             if (href === VIDEO_URL) {
                 return new Response(VIDEO_BYTES, {
@@ -304,7 +330,7 @@ describe("callMinimaxH3MaxAPI", () => {
             },
         );
 
-        expect(requests[0]).toEqual({
+        expect(requests.find((request) => request.body)).toEqual({
             url: H3_MAX_TEXT_ENDPOINT,
             body: {
                 prompt: "a paper windmill turning gently",
@@ -344,7 +370,7 @@ describe("callMinimaxH3MaxAPI", () => {
             image: [start, end],
         });
 
-        expect(requests[0]).toEqual({
+        expect(requests.find((request) => request.body)).toEqual({
             url: H3_MAX_IMAGE_ENDPOINT,
             body: {
                 prompt: "a seamless camera move",
@@ -391,7 +417,7 @@ describe("callMinimaxH3MaxAPI", () => {
             reference_audios: [refAudio],
         });
 
-        expect(requests[0]).toEqual({
+        expect(requests.find((request) => request.body)).toEqual({
             url: H3_MAX_R2V_ENDPOINT,
             body: {
                 prompt: "Image 1 walks dog while Audio 1 plays",
@@ -421,5 +447,79 @@ describe("callMinimaxH3MaxAPI", () => {
             message:
                 "Frame inputs (image[]) and reference media (reference_images, reference_videos, reference_audios) cannot be combined.",
         });
+    });
+    it.each([
+        [5, "480p", "5", 0.025, false, 0.125],
+        [10, "768p", "16", 0.025, false, 0.4],
+        [15, "1080p", "48", 0.025, false, 1.2],
+        [5, "768p", "21.28", 0.05, true, 1.064],
+    ] as const)("bills provider units separately from %ss output at %s", async (duration, resolution, units, rate, reference, cost) => {
+        mockH3Fetch([], "COMPLETED", units, rate);
+        const result = await callMinimaxH3MaxAPI("billing regression", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max",
+            duration,
+            resolution,
+            ...(reference ? { reference_videos: [VIDEO_URL] } : {}),
+        });
+        expect(result.durationSeconds).toBe(duration);
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
+        expect(result.trackingData.providerBilling).toEqual({
+            units: Number(units),
+            unitCost: rate,
+        });
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-h3-max",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max"],
+            input: { providerBilling: result.trackingData.providerBilling },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(cost);
+        expect(billing.price.totalPrice).toBeCloseTo(cost);
+    });
+
+    it.each([
+        null,
+        "",
+        "invalid",
+        "NaN",
+        "Infinity",
+        "-1",
+        "0",
+    ])("rejects invalid reported billing units %s", async (units) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", units);
+        await expect(
+            callMinimaxH3MaxAPI("invalid units", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "MiniMax H3 Max returned invalid billing units",
+        });
+        expect(requests.some((request) => request.url === VIDEO_URL)).toBe(
+            false,
+        );
+    });
+
+    it.each([
+        0,
+        -1,
+        Number.NaN,
+        Number.POSITIVE_INFINITY,
+    ])("rejects invalid pricing %s before submitting a billable job", async (price) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", "5", price);
+        await expect(
+            callMinimaxH3MaxAPI("invalid price", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "MiniMax H3 Max returned invalid pricing",
+        });
+        expect(requests.some((request) => request.body)).toBe(false);
     });
 });

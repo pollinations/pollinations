@@ -35,13 +35,11 @@ export function observeScreen(
                 ? "app-connect"
                 : sdk === "connection-error"
                   ? "app-callback-error"
-                  : sdk === "account-error"
-                    ? "app-account-error"
-                    : sdk === "checking-connection"
-                      ? "app-callback"
-                      : sdk === "connected"
-                        ? "app-connected"
-                        : "app-callback";
+                  : sdk === "checking-connection"
+                    ? "app-callback"
+                    : sdk === "connected"
+                      ? "app-connected"
+                      : "app-callback";
     } else if (path === "/__flow/identity") {
         node = "github-handoff";
     } else if (path === "/error") {

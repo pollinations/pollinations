@@ -255,7 +255,7 @@ export function ReviewProvider({
         setRunning(true);
         setRunError("");
         try {
-            clearExampleStorage();
+            if (state) clearExampleStorage(state.connection.clientId);
             clearReviewSteps();
             if (!(await restart(recipe))) return false;
             setPendingScope(undefined);

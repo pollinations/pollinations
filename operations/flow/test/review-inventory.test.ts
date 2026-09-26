@@ -292,7 +292,6 @@ describe("shared review inventory", () => {
             "app-connected",
             "app-callback",
             "app-callback-error",
-            "app-account-error",
         ]) {
             const page = reviewPageForLocation(
                 { flow: "app", section: "topup" },
@@ -342,7 +341,8 @@ describe("shared review inventory", () => {
         const consent = reviewPageForLocation(
             { flow: "app", section: "topup" },
             { node: "consent", flow: "app" },
-        )!;
+        );
+        if (!consent) throw new Error("Missing consent route");
         expect(
             reviewCasesForFlow(consent.flow, consent.section)
                 .filter((recipe) => recipe.pageId === consent.entry.id)
@@ -363,7 +363,8 @@ describe("shared review inventory", () => {
                         section: section as JourneySection,
                     },
                     { node },
-                )!;
+                );
+                if (!page) throw new Error(`Missing ${node} route`);
                 expect(page).toMatchObject({
                     flow: "app",
                     section: "topup",
@@ -524,7 +525,9 @@ describe("shared review inventory", () => {
             expect(
                 consent?.expected.some(({ selector }) =>
                     selector.includes(
-                        'data-pollinations-action="fund-account"',
+                        id === "no-pollen"
+                            ? 'aria-label="No Pollen. Top up"'
+                            : 'text-is("Paid Pollen:")',
                     ),
                 ),
             ).toBe(true);

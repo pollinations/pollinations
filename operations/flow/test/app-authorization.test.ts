@@ -2,10 +2,13 @@ import { createHash } from "node:crypto";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import { serve } from "@hono/node-server";
+import { chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { Pollinations } from "../../../packages/sdk/src/client.ts";
 import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
+import { reviewCasesForFlow } from "../review-inventory";
 import { startRuntime } from "../runtime.ts";
+import { openReviewContext } from "./review-browser";
 
 // This integration issues one real key in a disposable local database.
 // Run explicitly after scoped local credential-creation approval.
@@ -173,6 +176,129 @@ test.runIf(process.env.FLOW_APP_AUTHORIZATION_TEST === "1")(
         await expect(sdk.accountProfile()).rejects.toMatchObject({
             status: 401,
         });
+    },
+    60000,
+);
+
+test.runIf(process.env.FLOW_CREDENTIAL_TEST === "1")(
+    "SDK restores its session, edits allowance and refreshes on tab return",
+    async () => {
+        const recipe = reviewCasesForFlow("app", "main").find(
+            (item) => item.id === "app-connected",
+        );
+        if (!recipe) throw new Error("Missing connected app situation");
+        const browser = await chromium.launch({ headless: true });
+        try {
+            const { context, credentialRequests } = await openReviewContext(
+                runtime,
+                browser,
+                recipe,
+            );
+            try {
+                const page = await context.newPage();
+                const origin = "http://localhost:4180";
+                await page.goto(
+                    `${origin}/flow-screen.html?${new URLSearchParams({ ...recipe.query, review_case: recipe.id, review_flow: "app", review_section: "main" })}`,
+                );
+                const menu = page.getByRole("button", {
+                    name: "App account menu",
+                    exact: true,
+                });
+                await menu.waitFor();
+                await page.reload();
+                await menu.waitFor();
+                // Restoring tab storage must not restart OAuth or mint another key.
+                expect(
+                    credentialRequests.filter(
+                        (path) => path === "/api/api-keys",
+                    ),
+                ).toHaveLength(1);
+                expect(
+                    credentialRequests.filter(
+                        (path) => path === "/api/oauth/token",
+                    ),
+                ).toHaveLength(1);
+                await page.evaluate(() =>
+                    history.replaceState(
+                        null,
+                        "",
+                        "/flow-example.html?room=abc#latest",
+                    ),
+                );
+                await menu.click();
+                const permissions = page.getByRole("link", {
+                    name: "Permissions",
+                    exact: true,
+                });
+                const destination = new URL(
+                    (await permissions.getAttribute("href")) ?? "",
+                    origin,
+                );
+                expect(destination.pathname).toBe("/edit-key");
+                expect(destination.searchParams.get("redirect")).toBe(
+                    `${origin}/flow-example.html?room=abc#latest`,
+                );
+                const popupReady = page.waitForEvent("popup");
+                await permissions.click();
+                const editor = await popupReady;
+                await editor.locator('input[name="pollen-budget"]').fill("7");
+                await editor
+                    .getByRole("button", { name: "Save changes", exact: true })
+                    .click();
+                await editor
+                    .getByText(
+                        "Changes saved. They apply to future requests.",
+                        { exact: true },
+                    )
+                    .waitFor();
+                await editor.close();
+                await page.bringToFront();
+                const refreshed = page.waitForResponse(
+                    (response) =>
+                        new URL(response.url()).pathname === "/gen/account/key",
+                );
+                await page.evaluate(() =>
+                    document.dispatchEvent(new Event("visibilitychange")),
+                );
+                expect((await refreshed).ok()).toBe(true);
+                await menu.filter({ hasText: "7 pollen" }).waitFor();
+                await menu.click();
+                await page
+                    .getByRole("button", { name: "Disconnect", exact: true })
+                    .click();
+                await page
+                    .getByRole("button", {
+                        name: "Pollinations Connect",
+                        exact: true,
+                    })
+                    .waitFor();
+                expect(
+                    await page.evaluate(() =>
+                        Object.keys(sessionStorage).some(
+                            (key) =>
+                                key.startsWith("polli:") &&
+                                key.endsWith(":token"),
+                        ),
+                    ),
+                ).toBe(false);
+                await page.reload();
+                await page
+                    .getByRole("button", {
+                        name: "Pollinations Connect",
+                        exact: true,
+                    })
+                    .waitFor();
+                expect(
+                    credentialRequests.filter(
+                        (path) => path === "/api/api-keys",
+                    ),
+                ).toHaveLength(1);
+            } finally {
+                await context.close();
+            }
+        } finally {
+            await browser.close();
+        }
     },
     60000,
 );

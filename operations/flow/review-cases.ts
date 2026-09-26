@@ -411,9 +411,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                 ? "app-callback"
                 : situation === "connection-error"
                   ? "app-callback-error"
-                  : situation === "account-error"
-                    ? "app-account-error"
-                    : "app-connected",
+                  : "app-connected",
             {
                 conditions: {
                     account: "signed-in",
@@ -423,6 +421,10 @@ export const appLoginReviewCases: ReviewCase[] = [
                             : "available",
                 },
                 query: { screen: "add-pollen-connect" },
+                ...((situation === "loading-account" ||
+                    situation === "account-error") && {
+                    note: "Main keeps the SDK connected and shows Connected user while the profile is pending or unavailable. The app menu has no profile-error message or retry control.",
+                }),
                 requests:
                     situation === "checking-connection" ||
                     situation === "connection-error"
@@ -457,7 +459,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                     ...(situation === "limit-reached"
                         ? [
                               {
-                                  selector: "input[type='number']",
+                                  selector: "input[name='pollen-budget']",
                                   action: "fill" as const,
                                   value: "0",
                               },
@@ -471,8 +473,21 @@ export const appLoginReviewCases: ReviewCase[] = [
                 ],
                 expected: [
                     {
-                        selector: `[data-flow-state='${situation === "limit-reached" ? "connected" : situation}']`,
+                        selector: `[data-flow-state='${["limit-reached", "loading-account", "account-error"].includes(situation) ? "connected" : situation}']`,
                     },
+                    ...(["loading-account", "account-error"].includes(situation)
+                        ? [
+                              {
+                                  selector:
+                                      'button[aria-label="App account menu"]',
+                                  text: "Connected user",
+                              },
+                              {
+                                  selector:
+                                      'body:not(:has([role="alert"])):not(:has(button:text-is("Try again")))',
+                              },
+                          ]
+                        : []),
                     ...(situation === "limit-reached"
                         ? [{ selector: "button, span", text: "Limit reached" }]
                         : []),

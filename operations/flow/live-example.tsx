@@ -3,7 +3,6 @@ import { setColorMode, useColorMode } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createRoot } from "react-dom/client";
 import { readState } from "./live-client";
-import { exampleStorage } from "./review-storage";
 import "@pollinations/ui/app.css";
 import "./flow-provider.css";
 
@@ -15,7 +14,7 @@ function Example({ appKey }: { appKey: string }) {
     return (
         <PolliProvider
             appKey={appKey}
-            storage={exampleStorage}
+            storage="sessionStorage"
             enterUrl={location.origin}
             apiBaseUrl={`${location.origin}/gen`}
             permissions={["profile", "usage", "keys"]}

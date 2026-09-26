@@ -112,7 +112,6 @@ for (const [id] of external) {
 const panelStates: [string, string[], number, number][] = [
     ["app-callback", ["waiting"], 8, 0],
     ["app-callback-error", ["error", "denied"], 9, 1],
-    ["app-account-error", ["account-error"], 10, 1],
 ];
 const panel = appLoginScreens.get("app-connected");
 if (!panel) throw new Error("Missing connection panel");
@@ -225,7 +224,7 @@ export const appLoginEdges: FlowEdge[] = [
     {
         from: "app-connect",
         to: "loading",
-        label: "Connect with Pollinations",
+        label: "Pollinations Connect",
     },
     { from: "app-ready", to: "app-connected", label: "Restore saved key" },
     { from: "app-ready", to: "app-connect", label: "No stored key" },
@@ -337,32 +336,19 @@ export const appLoginEdges: FlowEdge[] = [
     {
         from: "app-callback",
         to: "app-connected",
-        label: "Stored key valid or token exchanged",
+        label: "Key restored or OAuth token exchanged",
     },
     {
         from: "app-callback",
         to: "app-callback-error",
-        label: "Key check unavailable or OAuth callback failed",
+        label: "OAuth callback failed",
         alternate: true,
     },
-    { from: "app-callback-error", to: "app-callback", label: "Try again" },
     {
         from: "app-callback-error",
         to: "loading",
-        label: "Connect with Pollinations",
+        label: "Pollinations Connect",
     },
-    {
-        from: "app-callback",
-        to: "app-connect",
-        label: "Stored key expired or revoked",
-    },
-    {
-        from: "app-connected",
-        to: "app-account-error",
-        label: "Profile or connection details unavailable",
-        alternate: true,
-    },
-    { from: "app-account-error", to: "app-connected", label: "Try again" },
     {
         from: "app-connected",
         to: "app-connect",

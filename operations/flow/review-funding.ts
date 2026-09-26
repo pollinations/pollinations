@@ -14,22 +14,29 @@ export const fundingVariants = fundingSituations.map(({ id, label }) => ({
 
 export function fundingReview(
     situation: (typeof fundingSituations)[number],
-): Pick<ReviewCase, "conditions" | "steps" | "expected"> {
-    const badge = {
-        selector: `[aria-label="${situation.id === "paid-required" ? "Paid: " : ""}${situation.label}"]`,
-    };
+): Pick<ReviewCase, "conditions" | "steps" | "expected" | "note"> {
+    const badge = { selector: '[aria-label="No Pollen"]' };
     return {
         conditions: { account: "signed-in", pollen: situation.pollen },
+        note:
+            situation.id === "paid-required"
+                ? "The real picker selects only paid models while the wallet has Quest Pollen and no Paid Pollen. Main shows the two balances, but no paid-model warning or top-up badge for this combination."
+                : "An empty wallet shows the real No Pollen badge and its top-up link back to this authorization request.",
         steps: [
             ...(situation.id === "paid-required"
                 ? ([
                       {
-                          selector: 'button[aria-expanded="false"]',
+                          selector: 'button[aria-label="Choose models"]',
+                          action: "click",
+                      },
+                      {
+                          selector: '[aria-label="Model categories"] button',
+                          text: "All",
                           action: "click",
                       },
                       {
                           selector: "button",
-                          text: "Clear all",
+                          text: "Clear shown",
                           action: "click",
                       },
                       {
@@ -49,23 +56,44 @@ export function fundingReview(
                       },
                       {
                           selector: "button",
-                          text: "Select all",
+                          text: "Select all shown",
                           action: "click",
                       },
-                      { ...badge, action: "wait" },
                       {
-                          selector: 'button[aria-expanded="true"]',
+                          selector:
+                              '[aria-label="Requested models"]:has(button[aria-pressed="true"]):not(:has(button[aria-pressed="false"]))',
+                          action: "wait",
+                      },
+                      {
+                          selector:
+                              'button[aria-label="Collapse model selector"]',
                           action: "click",
                       },
                   ] as const)
                 : []),
-            { ...badge, action: "wait" },
+            ...(situation.id === "no-pollen"
+                ? [{ ...badge, action: "wait" as const }]
+                : []),
         ],
-        expected: [
-            badge,
-            {
-                selector: `a[data-pollinations-action="fund-account"][href="/top-up"][aria-label="${situation.label}. Top up (opens in a new tab)"]`,
-            },
-        ],
+        expected:
+            situation.id === "no-pollen"
+                ? [
+                      badge,
+                      {
+                          selector:
+                              'a[href^="/top-up?redirect="][aria-label="No Pollen. Top up"]',
+                      },
+                  ]
+                : [
+                      {
+                          selector: 'span:has(> span:text-is("Paid Pollen:"))',
+                          text: "0",
+                      },
+                      { selector: 'span:text-is("Quest Pollen:")' },
+                      {
+                          selector:
+                              'body:not(:has([role="alert"])):not(:has(a[aria-label="No Pollen. Top up"])) button:enabled:text-is("Allow access")',
+                      },
+                  ],
     };
 }

@@ -274,7 +274,6 @@ export function ConnectedApps() {
                     connectionsLoading ||
                     (searching && displayedConnections.length === 0)
                 }
-                label={searchQuery ? "Searching apps…" : "Loading apps…"}
             >
                 <div className="flex flex-col gap-2" aria-live="polite">
                     {!connectionsLoading &&

@@ -42,7 +42,7 @@ import {
     type ImageParams,
     ImageParamsSchema,
 } from "./params.ts";
-import { sanitizeString, sleep } from "./util.ts";
+import { sanitizeString } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
@@ -260,18 +260,12 @@ async function generateImageResult(
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
-    const result = await createAndReturnImageCached(
+    return await createAndReturnImageCached(
         prompt,
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
-
-    if (result.isChild && result.isMature) {
-        await sleep(5000);
-    }
-
-    return result;
 }
 
 /** Tries the requested model and its fallbacks through one modality-neutral loop. */
@@ -428,6 +422,9 @@ export async function generateImageOrVideoResponse(
             originalPrompt,
             safeParams,
         );
+        if (result.trackingData.pricingInput) {
+            c.var.track.setPricingInput(result.trackingData.pricingInput);
+        }
         const headers = mediaHeaders(
             originalPrompt,
             params,

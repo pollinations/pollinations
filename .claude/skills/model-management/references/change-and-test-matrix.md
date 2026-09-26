@@ -25,6 +25,7 @@ Test every claimed capability:
 
 - non-streaming and streaming completion, including finish reason and final stream marker
 - small `max_tokens` edge
+- non-streaming latency at the default reasoning effort with a realistic hard prompt, against the gateway budget in the operating policy
 - system/user/assistant messages and any supported JSON/structured output
 - tool call and valid tool arguments
 - reasoning usage when advertised
@@ -95,3 +96,4 @@ For any media route that may exceed 120 seconds:
 - Verify paid-only access with the correct balance types.
 - For caches, test a real MISS followed by a byte-identical HIT and understand whether usage headers and billing rows are expected on each.
 - Sample current production peak before choosing burst concurrency. Run cache-busted bursts at expected load and document 429s, 5xx responses, and latency. Zero unexplained 5xx responses is the acceptance gate.
+- For token-limited deployments, also send one request near the largest accepted input and output size. A 429 there means the per-minute token limit is too small for the contract, not that traffic is too high.

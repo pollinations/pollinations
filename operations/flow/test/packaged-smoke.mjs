@@ -55,11 +55,13 @@ try {
             exact: true,
         });
         await prepare.click();
-        await prepare.waitFor({ state: "detached" });
-        assert.equal(
-            (await (await fetch(`${origin}/__flow/state`)).json()).wallet.total,
-            10,
-        );
+        await freshPage
+            .frameLocator(".flow-journey-host iframe")
+            .getByRole("button", { name: "Pollinations Connect", exact: true })
+            .waitFor();
+        const firstState = await fetch(`${origin}/__flow/state`);
+        assert.equal(firstState.status, 200);
+        assert.equal((await firstState.json()).wallet.total, 10);
         assert.equal(
             await freshPage
                 .getByRole("button", { name: "Sign out of Flow", exact: true })

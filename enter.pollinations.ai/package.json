@@ -16,7 +16,7 @@
         "predev:frontend": "npm run build:ui",
         "dev:worker": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 3001 --local --persist-to .wrangler/state --show-interactive-dev-session false",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
-        "pretest": "npm run build:ui && npm run test:code-agent-sdk && mkdir -p dist/client",
+        "pretest": "npm run build:ui && npm run test:code-agent-sdk && node --test scripts/check-fraud-bans.test.mjs && mkdir -p dist/client",
         "test": "vitest run",
         "test:code-agent-sdk": "node --test scripts/code-agent-sdk.test.mjs",
         "test:local": "npm run decrypt-vars && CLOUDFLARE_ENV=local vitest run",

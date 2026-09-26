@@ -108,7 +108,15 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
         applied: 0,
         charges: 106,
         unmapped: 0,
-        report: [{ id: user.id, name: expect.any(String), score: 0.75 }],
+        report: [
+            {
+                id: user.id,
+                name: expect.any(String),
+                github_username: expect.any(String),
+                customerId: "cus_fraud",
+                score: 0.75,
+            },
+        ],
     });
     expect(
         mocks.stripe.state.requests.filter(

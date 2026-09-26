@@ -329,13 +329,13 @@ scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe
 
 - Scheduled and manually dispatched checks are read-only during calibration.
   The report always passes `apply: false`; bans and refunds require manual decisions.
-- Every run posts accounts still needing review to the private Discord channel via
-  `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
-  nothing needs action.
-- A ban needs a **confirmed** signal: a fraudulent dispute, a fraud report, or an
-  early fraud warning. Radar's blocked and highest-risk flags raise the score but
-  never convict alone, because repeated declines of one legitimate card escalate
-  them.
+- The report goes to the private Discord channel via `DISCORD_FRAUD_WEBHOOK_URL`.
+  It lists disputes awaiting a response (count, totals, first deadline) and
+  unbanned accounts to review (GitHub name, score, Stripe customer link), up to
+  five rows each. No message means nothing needs action.
+- Issuer warnings are **suspected** fraud, not proof. Any account with a confirmed
+  signal enters the review queue, even below 0.75. Radar blocks have zero weight;
+  highest-risk flags contribute but never qualify an account alone.
 - Charges before 2026-05-01 carry no identity and are not scanned. Accounts whose
   activity predates that must be reviewed and banned by hand.
 - One account is excluded by id in the source (a settled case). Add later

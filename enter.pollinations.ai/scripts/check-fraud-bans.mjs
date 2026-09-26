@@ -21,49 +21,73 @@ export function fraudCheckErrorMessage(error) {
     return "Unexpected failure; details hidden to protect credentials and payment data.";
 }
 
-/** Private operators' report: one summary line plus the candidate list as a file. */
-export function buildFraudReport(result, apply) {
-    const mode = apply
-        ? `bans applied: ${result.applied}`
-        : `read-only · ${result.candidates} candidate${result.candidates === 1 ? "" : "s"}`;
-    const content = `Fraud ban check · ${mode} · ${result.report.length} awaiting review · ${result.charges} charges scanned, ${result.unmapped} unmapped`;
-    if (!result.report.length) return { content, file: null };
-    const lines = result.report.map(
-        (user) => `${user.score.toFixed(2)}\t${user.id}\t${user.name ?? ""}`,
-    );
-    return {
-        content,
-        file: {
-            name: `fraud-candidates-${new Date().toISOString().slice(0, 10)}.tsv`,
-            body: `score\tuser_id\tname\n${lines.join("\n")}\n`,
-        },
-    };
+const OPEN_DISPUTE = ["needs_response", "warning_needs_response"];
+const ROWS = 5;
+
+/** Disputes still awaiting our response. Stripe gives at most ~3 weeks to answer. */
+export async function listOpenDisputes(stripe, now = Date.now()) {
+    const open = [];
+    for await (const dispute of stripe.disputes.list({
+        limit: 100,
+        created: { gte: Math.floor(now / 1000) - 30 * 86400 },
+    })) {
+        if (OPEN_DISPUTE.includes(dispute.status)) open.push(dispute);
+    }
+    return open;
 }
 
-/** Posts only when an account still needs action, so a message means review. */
-export async function postFraudReport(webhookUrl, result, apply, fetchImpl) {
-    const { content, file } = buildFraudReport(result, apply);
-    if (!file) return false;
-    const form = new FormData();
-    form.set(
-        "payload_json",
-        JSON.stringify({ content, allowed_mentions: { parse: [] } }),
-    );
-    form.set(
-        "files[0]",
-        new Blob([file.body], { type: "text/tab-separated-values" }),
-        file.name,
-    );
+const money = (amount, currency) =>
+    new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currency.toUpperCase(),
+    }).format(amount / 100);
+
+const more = (rows) =>
+    rows.length > ROWS ? `\n+${rows.length - ROWS} more` : "";
+
+/** Private operators' report; null when nothing needs attention. */
+export function formatDailyReport({ accounts, disputes }) {
+    const sections = [];
+    if (disputes.length) {
+        const totals = new Map();
+        for (const d of disputes)
+            totals.set(d.currency, (totals.get(d.currency) ?? 0) + d.amount);
+        const due = Math.min(
+            ...disputes.map((d) => d.evidence_details?.due_by ?? Infinity),
+        );
+        const deadline = Number.isFinite(due)
+            ? ` · first due ${new Date(due * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`
+            : "";
+        sections.push(
+            `**Disputes to answer · ${disputes.length}** (${[...totals].map(([c, a]) => money(a, c)).join(", ")})${deadline} → <https://dashboard.stripe.com/disputes>`,
+        );
+    }
+    if (accounts.length) {
+        const rows = accounts.slice(0, ROWS).map((a) => {
+            const label = `${a.github_username ?? a.id} · ${a.score.toFixed(2)}`;
+            return a.customerId
+                ? `• ${label} → <https://dashboard.stripe.com/customers/${a.customerId}>`
+                : `• ${label}`;
+        });
+        sections.push(
+            `**Accounts to review · ${accounts.length}**\n${rows.join("\n")}${more(accounts)}`,
+        );
+    }
+    if (!sections.length) return null;
+    return `**Daily Stripe report**\n\n${sections.join("\n\n")}\n\n_Manual review only. No actions performed._`;
+}
+
+export async function postFraudReport(webhookUrl, content, fetchImpl = fetch) {
     const response = await fetchImpl(webhookUrl, {
         method: "POST",
-        body: form,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
         signal: AbortSignal.timeout(30000),
     });
     if (!response.ok)
         throw new FraudCheckError(
             `Discord report failed: HTTP ${response.status}`,
         );
-    return true;
 }
 
 // Production-only job. These identities match Enter's production bindings.
@@ -116,23 +140,22 @@ async function main() {
             throw new FraudCheckError("D1 query failed");
         return data.result;
     }
-    const apply = process.env.FRAUD_BAN_APPLY === "true";
-    const result = await runFraudBanCheck(stripe, query, {
-        apply,
+    const webhookUrl = process.env.DISCORD_FRAUD_WEBHOOK_URL;
+    if (!webhookUrl)
+        throw new FraudCheckError("Discord report webhook is not configured");
+    const scan = await runFraudBanCheck(stripe, query, {
         // Add manually restored accounts here before lifting their bans.
         excludedUserIds: (process.env.FRAUD_BAN_EXCLUDED_USER_IDS ?? "")
             .split(",")
             .map((id) => id.trim())
             .filter(Boolean),
     });
-    // Candidate identities go only to the private operators' channel.
-    if (process.env.DISCORD_FRAUD_WEBHOOK_URL)
-        await postFraudReport(
-            process.env.DISCORD_FRAUD_WEBHOOK_URL,
-            result,
-            apply,
-            fetch,
-        );
+    const report = formatDailyReport({
+        accounts: scan.report,
+        disputes: await listOpenDisputes(stripe),
+    });
+    // Account identities go only to the private operators' channel.
+    if (report) await postFraudReport(webhookUrl, report);
 }
 
 if (import.meta.main) {

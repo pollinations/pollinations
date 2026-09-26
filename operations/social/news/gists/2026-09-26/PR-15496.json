@@ -1,0 +1,36 @@
+{
+  "pr_number": 15496,
+  "title": "feat: announce upcoming model changes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15496",
+  "merged_at": "2026-09-26T13:20:29Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Adds one advance website notice for the September 30 Nova Canvas/Reel removal and October 1 MAI Image 2.5 Flash transition.\n- Explains that Nova IDs and aliases will stop without a fallback, while the MAI 2.5 ID will continue through 2.6 Flash at its price.\n- Leaves model routing, pricing, and API endpoints unchanged.\n- Verified Enter typecheck, production frontend build, rendered announcement content and link, Biome, and git diff check.\n- Related: #15486 and #15492. Remove the later duplicate MAI news entry from #15492 before merging that PR.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A note before the petals turn",
+    "blurb": "The news banner now gives the hive a proper heads-up: Nova Canvas and Reel depart on September 30, while MAI Image 2.5 continues its journey through 2.6 Flash on October 1.",
+    "summary": "Added an advance website announcement explaining that Nova Canvas/Reel IDs and aliases stop on September 30 without a fallback, while the MAI Image 2.5 ID transitions to MAI 2.6 Flash on October 1 at the same price.",
+    "impact": "Visitors can plan model updates before the dates arrive, with clear guidance that Nova needs an explicit replacement and MAI Image 2.5 continues through 2.6 Flash without endpoint, routing, or price changes.",
+    "keywords": [
+      "model-changes",
+      "nova-canvas",
+      "nova-reel",
+      "mai-image",
+      "news-banner",
+      "frontend"
+    ],
+    "visual_concept": "A cozy garden noticeboard represents the advance website announcement: one clearly labeled Nova flower bed is being gently marked for its September 30 departure, while a MAI Image 2.5 sapling smoothly grows into a 2.6 Flash bloom beside it. Polli, wearing a tiny librarian hat, pins the dated notice and points warmly at the continuing plant; a retro terminal and small flowers connect the message to model APIs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian hat while pinning a notice to a garden board: a Nova flower bed is marked “SEP 30” and a MAI 2.5 sapling blooms into “2.6 FLASH — OCT 1”; a retro terminal glows nearby amid vines and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15496.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian hat while pinning a notice to a garden board: a Nova flower bed is marked “SEP 30” and a MAI 2.5 sapling blooms into “2.6 FLASH — OCT 1”; a retro terminal glows nearby amid vines and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-26T13:21:25.878290+00:00"
+}

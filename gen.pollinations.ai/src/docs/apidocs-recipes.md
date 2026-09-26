@@ -177,6 +177,57 @@ curl -X POST "https://media.pollinations.ai/upload" \
 
 Each upload gets its own unique id — re-uploading the same bytes yields a new URL. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. An optional `-F "tags=..."` field publishes the upload to those tags' public galleries (`GET https://media.pollinations.ai/media?tag=...`); untagged uploads stay unlisted.
 
+## 🤖 Use Claude Code and Anthropic SDKs
+
+Any client that speaks Anthropic's Messages API works by pointing its base
+URL at `https://gen.pollinations.ai` — no router in between.
+
+Claude Code needs three environment variables:
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=sk_...
+export ANTHROPIC_MODEL=openai
+claude
+```
+
+The official Anthropic SDKs work the same way:
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://gen.pollinations.ai",
+    auth_token="sk_...",
+)
+message = client.messages.create(
+    model="openai",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(message.content)
+```
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+    baseURL: "https://gen.pollinations.ai",
+    authToken: "sk_...",
+});
+const message = await client.messages.create({
+    model: "openai",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+Every text model listed in `/v1/models` supports `/v1/messages` in its
+`supported_endpoints`. Tool use, images, stop sequences, thinking blocks
+and streaming follow Anthropic's Messages API; `x-api-key` is not
+supported — send `Authorization: Bearer` (Claude Code does this via
+`ANTHROPIC_AUTH_TOKEN`, the SDKs via `auth_token`).
+
 ## 💡 Tips
 
 - **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).

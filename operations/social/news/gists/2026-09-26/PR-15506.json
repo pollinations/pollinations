@@ -1,0 +1,37 @@
+{
+  "pr_number": 15506,
+  "title": "fix: restore Polli GitHub Astra and migrate remaining Luna jobs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15506",
+  "merged_at": "2026-09-26T15:23:46Z",
+  "labels": [
+    "BUG",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Restores `openai/gpt-6-astra` for Polli's GitHub coding requests, correcting the tier change in #15505. Background tasks remain on GPT-6 Luna; read-only `askpolli` remains on GPT-6 Sol.\n- Fixes organizer 403s by migrating its missed GPT-5.6 Luna selection to GPT-6 Luna. Also updates app-submission review and the standalone review helper.\n- Validation: 20 existing workflow/review tests, Python syntax, Biome and `git diff --check` pass. Bot keys already permit GPT-6 Luna and Astra. The original organizer rerun and a GPT-6 organizer dry run both passed.\n- Rollout: temporarily restored GPT-5.6 Luna on the shared GitHub bot key so existing `main` consumers and old workflow reruns work. Remove that permission after these consumers are merged and verified on `main`; credential material is unchanged.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli gets her tools back",
+    "blurb": "Polli’s GitHub coding requests are back on Astra, and the organizer can get through its work again. The review helpers have made the move to Luna too.",
+    "summary": "Restored openai/gpt-6-astra for Polli’s GitHub coding requests and migrated the organizer, app-submission review, and standalone review helper to GPT-6 Luna, while read-only askpolli stays on GPT-6 Sol.",
+    "impact": "Contributors get Astra-backed coding responses again, and organizer jobs can run on GPT-6 Luna without the model-selection 403s.",
+    "keywords": [
+      "Polli",
+      "GitHub bot",
+      "Astra",
+      "Luna",
+      "organizer",
+      "app review"
+    ],
+    "visual_concept": "Depict Polli at a cozy GitHub-workflow desk, placing an Astra-labeled coding tool beside a working organizer terminal; small Luna-labeled review folders and a Sol-labeled reading nook distinguish the three jobs. A code-plant and lime-green monitor glow keep the internal workflow scene warm and legible.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli puts an 'ASTRA' coding tool on a desk while a little CRT robot sorts 'LUNA' review folders beside a 'SOL' reading nook and code-plants sprout from lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream and lavender background, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15506.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli puts an 'ASTRA' coding tool on a desk while a little CRT robot sorts 'LUNA' review folders beside a 'SOL' reading nook and code-plants sprout from lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream and lavender background, dark purple (#110518) outlines, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-26T15:24:53.765605+00:00"
+}

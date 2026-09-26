@@ -53,6 +53,10 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
+    AnthropicMessageResponseSchema,
+    CreateAnthropicMessageRequestSchema,
+} from "@shared/schemas/anthropic.ts";
+import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
     DEFAULT_DECISION_MODEL,
@@ -94,6 +98,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateAnthropicMessage } from "@/text/anthropic/handler.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
@@ -226,6 +231,19 @@ const chatCompletionHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+// Anthropic Messages API — translates to the same Chat Completions pipeline.
+const anthropicMessageHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateAnthropicMessageRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateAnthropicMessage,
 );
 
 const decisionHandlers = factory.createHandlers(
@@ -714,6 +732,42 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Anthropic Messages",
+            description: [
+                "Anthropic-compatible Messages API. Point Claude Code or either Anthropic SDK at `https://gen.pollinations.ai` and use any Pollinations text model — no router in between.",
+                "",
+                "Set `ANTHROPIC_BASE_URL=https://gen.pollinations.ai`, `ANTHROPIC_AUTH_TOKEN=sk_...` and `ANTHROPIC_MODEL=<model>`; the SDKs use `base_url` and `auth_token`.",
+                "",
+                "Supports streaming, tool use, system prompts, images, stop sequences and `cache_control` prompt caching. Models that serve `/v1/chat/completions` also serve this endpoint and list `/v1/messages` in `supported_endpoints`.",
+                "",
+                "Errors use Anthropic's shape and status codes (401 authentication_error, 402 billing_error, 429 rate_limit_error).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Anthropic message JSON or SSE stream",
+                    content: {
+                        "application/json": {
+                            schema: resolver(AnthropicMessageResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Anthropic Messages SSE events: message_start, content_block_start/delta/stop, message_delta, message_stop, plus ping keepalives.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...anthropicMessageHandlers,
     )
     .post(
         "/alpha/decisions",

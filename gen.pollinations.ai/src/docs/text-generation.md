@@ -6,9 +6,58 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
+| `POST /v1/messages` | Anthropic Messages protocol — Claude Code and the official Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
+
+### Anthropic Messages API
+
+Claude Code, the official Anthropic SDKs, and any tool that speaks Anthropic's Messages API can use Pollinations text models directly — no router in between. Every model that serves `/v1/chat/completions` also serves `/v1/messages` and lists it in `supported_endpoints`. Media models return a clear 400.
+
+Claude Code needs only three variables:
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=sk_...          # your Pollinations secret key
+export ANTHROPIC_MODEL=<a text model id>    # e.g. openai
+```
+
+The official SDKs use the same base URL with `base_url` and `auth_token`:
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(base_url="https://gen.pollinations.ai", auth_token="sk_...")
+msg = client.messages.create(
+    model="openai",
+    max_tokens=128,
+    messages=[{"role": "user", "content": "Explain why the sky is blue."}],
+)
+print(msg.content[0].text)
+```
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  baseURL: "https://gen.pollinations.ai",
+  apiKey: "sk_...",
+});
+const message = await client.messages.create({
+  model: "openai",
+  max_tokens: 128,
+  messages: [{ role: "user", content: "Explain why the sky is blue." }],
+});
+console.log(message.content);
+```
+
+Plain, streamed, tool-use and image requests all work. Streaming follows the standard Messages event order (`message_start`, `content_block_start`/`delta`/`stop`, `message_delta`, `message_stop`); `ping` events keep long silent reasoning stretches from tripping client timeouts. Tool calls arrive as `tool_use` blocks and tool results are sent back as `tool_result` blocks. Provider reasoning is returned as `thinking` blocks. `cache_control` prompt caching, stop sequences, system prompts and images behave as on `/v1/chat/completions`.
+
+Billing matches Chat Completions: one charge per request, with input, output, cache-read and cache-write tokens reported in Anthropic's `usage` fields. A response without provider usage fails instead of going unbilled. Errors use Anthropic's shape and status codes — `401 authentication_error`, `402 billing_error`, `429 rate_limit_error` (with an integer `retry-after`) — so SDK retries and Claude Code's error handling work as expected.
+
+Out of scope on this endpoint: `/v1/messages/count_tokens`, batches, files, Anthropic server tools, and `x-api-key` auth (use `Authorization: Bearer`, which Claude Code sends via `ANTHROPIC_AUTH_TOKEN` and the SDKs via `auth_token`).
+
 
 ### Responses API
 

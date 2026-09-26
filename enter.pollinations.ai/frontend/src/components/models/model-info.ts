@@ -21,6 +21,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",
+    Meshy: "meshy",
     Meta: "meta",
     Microsoft: "microsoft",
     MiniMax: "minimax",

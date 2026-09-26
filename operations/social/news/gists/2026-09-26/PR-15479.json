@@ -1,0 +1,38 @@
+{
+  "pr_number": 15479,
+  "title": "fix: validate polli CLI option values",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15479",
+  "merged_at": "2026-09-26T10:52:34Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Refs #15434: rejects unknown `models --type` values before either list or stats fetches.\n- Refs #15435: validates text and chat numeric flags against the API schema before requests.\n- Refs #15437: rejects non-HTTP(S) text image values before auth or network access.\n- Adds command regression tests; CLI package suite passed (199 tests).\n- Quest accounting: only #15440 and #15439 are PR-closing reports in this batch; the other reports are linked and closed manually.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The CLI checks the labels",
+    "blurb": "Polli now checks the jar before reaching into it. Unknown model types, malformed number flags, and dubious image URLs get caught at the command line instead of being sent on a small network adventure.",
+    "summary": "The polli CLI now rejects unknown `models --type` values before list or stats requests, validates text/chat numeric flags against the API schema, and accepts only HTTP(S) URLs for text image inputs before authentication or network access.",
+    "impact": "CLI users get immediate, actionable validation errors for invalid model types, numeric options, and image URLs, avoiding unnecessary authenticated API and network requests.",
+    "keywords": [
+      "polli-cli",
+      "validation",
+      "api",
+      "text-generation",
+      "chat",
+      "models",
+      "regression-tests"
+    ],
+    "visual_concept": "Depict Polli as a careful terminal gardener checking three inputs before they enter a cozy API greenhouse: a model-type label rack, a measuring gauge for numeric flags, and a URL watering hose marked HTTP(S). A small CRT monitor robot can eagerly present the validated inputs while code-plants and flowers reinforce that bad seeds are stopped at the gate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny inspector glasses as she checks a model label, a number gauge, and an HTTP(S)-marked watering hose at a garden-gate terminal; a chunky CRT monitor robot holds a clean code printout beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, with lime green (#ecf874) prominent across the terminal glow and garden pots, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and subtle pixel-font text: \"VALID\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15479.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny inspector glasses as she checks a model label, a number gauge, and an HTTP(S)-marked watering hose at a garden-gate terminal; a chunky CRT monitor robot holds a clean code printout beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, with lime green (#ecf874) prominent across the terminal glow and garden pots, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and subtle pixel-font text: \"VALID\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-26T10:53:29.485170+00:00"
+}

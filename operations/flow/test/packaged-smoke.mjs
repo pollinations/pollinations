@@ -42,14 +42,37 @@ if (process.argv[2] === "empty") {
     );
     await before.body?.cancel();
 }
-const prepared = await fetch(`${origin}/__flow/reset`, { method: "POST" });
-assert.equal(prepared.status, 200);
-// Reset supplies the checked-in inert session fixture, not a minted credential.
-const cookie = prepared.headers.get("set-cookie").split(";")[0];
-await prepared.body?.cancel();
 const browser = await chromium.launch({ headless: true });
 try {
     const context = await browser.newContext();
+    if (process.argv[2] !== "empty") {
+        const freshPage = await context.newPage();
+        await freshPage.goto(
+            `${origin}/flow?view=journey&flow=app&section=main&situation=app-connect`,
+        );
+        const prepare = freshPage.getByRole("button", {
+            name: "Prepare review",
+            exact: true,
+        });
+        await prepare.click();
+        await prepare.waitFor({ state: "detached" });
+        assert.equal(
+            (await (await fetch(`${origin}/__flow/state`)).json()).wallet.total,
+            10,
+        );
+        assert.equal(
+            await freshPage
+                .getByRole("button", { name: "Sign out of Flow", exact: true })
+                .count(),
+            process.env.FLOW_HOSTED === "true" ? 1 : 0,
+        );
+        await freshPage.close();
+    }
+    const prepared = await fetch(`${origin}/__flow/reset`, { method: "POST" });
+    assert.equal(prepared.status, 200);
+    // Reset supplies the checked-in inert session fixture, not a minted credential.
+    const cookie = prepared.headers.get("set-cookie").split(";")[0];
+    await prepared.body?.cancel();
     await context.addCookies([
         {
             name: cookie.slice(0, cookie.indexOf("=")),

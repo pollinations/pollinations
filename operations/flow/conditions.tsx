@@ -7,7 +7,12 @@ import {
     useRef,
     useState,
 } from "react";
-import { type LocalState, readState } from "./live-client";
+import {
+    type LocalState,
+    postReviewRequest,
+    ReviewNotPreparedError,
+    readState,
+} from "./live-client";
 import type { ReviewCase } from "./review-cases";
 import { prepareReviewCase } from "./review-prepare";
 import "./conditions.css";
@@ -43,27 +48,25 @@ export function FlowConditionsProvider({ children }: PropsWithChildren) {
         }
         setError("");
         try {
-            if (recipe)
-                await prepareReviewCase(recipe, (path, body) =>
-                    fetch(path, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        ...(body !== undefined && {
-                            body: JSON.stringify(body),
-                        }),
-                    }),
-                );
+            if (recipe) await prepareReviewCase(recipe, postReviewRequest);
             const next = await readState();
             if (id !== request.current) return false;
             setState(next);
             if (recipe) setRevision((value) => value + 1);
             return true;
         } catch (reason) {
+            if (
+                id === request.current &&
+                reason instanceof ReviewNotPreparedError
+            )
+                setState(undefined);
             if (id === request.current)
                 setError(
-                    reason instanceof Error
-                        ? reason.message
-                        : "Unable to read the local account.",
+                    reason instanceof ReviewNotPreparedError
+                        ? ""
+                        : reason instanceof Error
+                          ? reason.message
+                          : "Unable to read the local account.",
                 );
             return false;
         } finally {

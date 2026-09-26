@@ -447,6 +447,7 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
     const { state, busy, error } = useFlowConditions();
     if (!review) return null;
     const { screen, selected: recipe } = review;
+    const needsPreparation = !state && !busy && !error;
     const setup = journey ? review.setup : recipe;
     const situations = review.cases.filter(
         (item) => item.pageId === screen?.id,
@@ -472,6 +473,7 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
     if (
         !hasChoices &&
         !hasDevice &&
+        !needsPreparation &&
         !messages.length &&
         !recipe?.provider &&
         !setup?.note &&
@@ -485,6 +487,20 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
                 className="flow-conditions flow-review-stack"
                 aria-label={journey ? "Journey controls" : "Screen review"}
             >
+                {needsPreparation && recipe && (
+                    <>
+                        <p>
+                            Prepare your disposable fixture account to start
+                            this journey.
+                        </p>
+                        <Button
+                            disabled={review.running}
+                            onClick={() => void review.run(recipe)}
+                        >
+                            Prepare review
+                        </Button>
+                    </>
+                )}
                 {screen && hasChoices && (
                     <fieldset
                         aria-label="Situations"

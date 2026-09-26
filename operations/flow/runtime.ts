@@ -364,6 +364,34 @@ export async function startRuntime(
                         { status: 403 },
                     );
                 }
+                if (url.pathname === "/__flow/admin-session") {
+                    if (url.origin !== ADMIN_ORIGIN)
+                        return new Response(null, { status: 404 });
+                    if (request.method !== "POST")
+                        return new Response(null, {
+                            status: 405,
+                            headers: { Allow: "POST" },
+                        });
+                    // Fixture preparation calls the real logout on the host
+                    // that owns its cookies. It never changes reviewer auth.
+                    const logout = await adminAuth.handle(
+                        new Request(`${ADMIN_ORIGIN}/auth/logout`, {
+                            method: "POST",
+                            headers: { Origin: ADMIN_ORIGIN },
+                        }),
+                    );
+                    if (!logout) throw new Error("Admin logout unavailable");
+                    logout.headers.set(
+                        "Access-Control-Allow-Origin",
+                        ENTER_ORIGIN,
+                    );
+                    logout.headers.set(
+                        "Access-Control-Allow-Credentials",
+                        "true",
+                    );
+                    logout.headers.set("Vary", "Origin");
+                    return logout;
+                }
                 try {
                     // Opening a view selects the existing session cookie without
                     // changing account data, review services or injected faults.
@@ -635,18 +663,7 @@ export async function startRuntime(
                         );
                     }
                     if (clearAdminSession) {
-                        // Use the real handler's cookie names and deletion behavior.
-                        // Role changes should not wait for its 60-second revalidation.
-                        const logout = await adminAuth.handle(
-                            new Request(`${ADMIN_ORIGIN}/auth/logout`, {
-                                method: "POST",
-                                headers: { Origin: ADMIN_ORIGIN },
-                            }),
-                        );
-                        for (const cookie of logout?.headers.getSetCookie() ??
-                            []) {
-                            headers.append("Set-Cookie", cookie);
-                        }
+                        headers.set("X-Flow-Clear-Admin-Session", "true");
                     }
                     return Response.json(state, {
                         headers,

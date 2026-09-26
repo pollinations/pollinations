@@ -1,6 +1,7 @@
 import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
+import { build } from "esbuild";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { getDefaultErrorMessage } from "../../../shared/error.ts";
@@ -1159,6 +1160,144 @@ test("HTTPS review origins drive real Enter cookies, app redirects and Admin OAu
             }),
         );
         expect(refused.status).toBe(403);
+        expect(reset.headers.get("X-Flow-Clear-Admin-Session")).toBe("true");
+        expect(
+            reset.headers
+                .getSetCookie()
+                .some((value) => value.startsWith("pollinations_session=")),
+        ).toBe(false);
+        const wrongHost = await isolated.fetch(
+            new Request(`${origins.enter}/__flow/admin-session`, {
+                method: "POST",
+            }),
+        );
+        expect(wrongHost.status).toBe(404);
+        const wrongOrigin = await isolated.fetch(
+            new Request(`${origins.admin}/__flow/admin-session`, {
+                method: "POST",
+                headers: { Origin: "https://unrelated.test" },
+            }),
+        );
+        expect(wrongOrigin.status).toBe(403);
+
+        // Inert cookies prove browser deletion scope without issuing an OAuth
+        // token. The transport executes the real runtime and auth handlers.
+        const browser = await chromium.launch({ headless: true });
+        try {
+            const context = await browser.newContext();
+            await context.addCookies([
+                {
+                    name: "pollinations_session",
+                    value: "inert-fixture-session",
+                    url: origins.admin,
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "Lax",
+                },
+                {
+                    name: "flow-reviewer_pollinations_session",
+                    value: "inert-reviewer-session",
+                    url: origins.admin,
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "Lax",
+                },
+            ]);
+            await context.route("**/*", async (route) => {
+                const request = route.request();
+                const url = new URL(request.url());
+                if (url.href === `${origins.enter}/cleanup-proof`) {
+                    await route.fulfill({
+                        contentType: "text/html",
+                        body: "<!doctype html><title>Flow transport test</title>",
+                    });
+                    return;
+                }
+                if (![origins.enter, origins.admin].includes(url.origin)) {
+                    await route.abort();
+                    return;
+                }
+                const response = await isolated.fetch(
+                    new Request(url, {
+                        method: request.method(),
+                        headers: await request.allHeaders(),
+                        ...(request.postDataBuffer() && {
+                            body: request.postDataBuffer(),
+                        }),
+                    }),
+                );
+                await route.fulfill({
+                    status: response.status,
+                    body: Buffer.from(await response.arrayBuffer()),
+                    headers: {
+                        ...Object.fromEntries(response.headers),
+                        "set-cookie": response.headers
+                            .getSetCookie()
+                            .join("\n"),
+                    },
+                });
+            });
+            const page = await context.newPage();
+            await page.goto(`${origins.enter}/cleanup-proof`);
+            await page.evaluate((origins) => {
+                Object.assign(window, { __FLOW_ENVIRONMENT__: origins });
+            }, origins);
+            const bundle = await build({
+                entryPoints: [
+                    fileURLToPath(
+                        new URL("../live-client.ts", import.meta.url),
+                    ),
+                ],
+                bundle: true,
+                write: false,
+                platform: "browser",
+                format: "iife",
+                globalName: "flowTestClient",
+            });
+            await page.addScriptTag({ content: bundle.outputFiles[0].text });
+            expect(
+                await page.evaluate(
+                    `flowTestClient.postReviewRequest('/__flow/reset', {}).then(response => response.status)`,
+                ),
+            ).toBe(200);
+            const cookies = await context.cookies(origins.admin);
+            expect(
+                cookies.some(
+                    (cookie) => cookie.name === "pollinations_session",
+                ),
+            ).toBe(false);
+            expect(
+                cookies.some(
+                    (cookie) =>
+                        cookie.name === "flow-reviewer_pollinations_session",
+                ),
+            ).toBe(true);
+            for (const role of ["admin", "member"]) {
+                await context.addCookies([
+                    {
+                        name: "pollinations_session",
+                        value: "inert-fixture-session",
+                        url: origins.admin,
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: "Lax",
+                    },
+                ]);
+                expect(
+                    await page.evaluate(
+                        `flowTestClient.postReviewRequest('/__flow/conditions', {role:${JSON.stringify(role)}}).then(response => response.status)`,
+                    ),
+                ).toBe(200);
+                expect(
+                    (await context.cookies(origins.admin)).some(
+                        (cookie) => cookie.name === "pollinations_session",
+                    ),
+                ).toBe(false);
+            }
+            await context.close();
+        } finally {
+            await browser.close();
+        }
     } finally {
         await isolated.dispose();
     }

@@ -3,7 +3,7 @@ import { setTimeout } from "node:timers/promises";
 import { chromium } from "playwright";
 
 // Run only inside a disposable container: this resets its fixture database.
-const origin = "http://localhost:4180";
+const origin = process.env.FLOW_ENTER_ORIGIN ?? "http://localhost:4180";
 let ready = false;
 let startupFailure;
 for (let attempt = 0; attempt < 120; attempt++) {
@@ -23,6 +23,11 @@ assert(
     ready,
     `Packaged Flow did not start within two minutes: ${startupFailure}`,
 );
+
+const source = await (await fetch(`${origin}/__flow/source`)).json();
+assert.match(source.revision, /^[a-f0-9]{40}$/);
+assert.match(source.mainRevision, /^[a-f0-9]{40}$/);
+assert.equal(typeof source.dirty, "boolean");
 
 const before = await fetch(`${origin}/__flow/state`);
 if (process.argv[2] === "empty") {
@@ -83,6 +88,17 @@ try {
     await page.waitForFunction(() =>
         document.getElementById("canvas-root")?.textContent.includes("Models"),
     );
+    assert(
+        (
+            await page
+                .getByRole("navigation", { name: "Source revisions" })
+                .textContent()
+        ).includes(source.revision.slice(0, 10)),
+    );
+    assert.equal(
+        await page.evaluate(() => window.__FLOW_ENVIRONMENT__.enter),
+        origin,
+    );
     await page.goto(
         `${origin}/flow?theme=dark&view=screens&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
     );
@@ -126,11 +142,13 @@ for (let attempt = 0; attempt < 120; attempt++) {
     const response = await fetch(`${origin}/__flow/previews?${params}`);
     assert.equal(response.status, 200);
     const result = await response.json();
+    assert.deepEqual(result.source, source);
     if (result.status === "loading") {
         await setTimeout(1000);
         continue;
     }
     assert.equal(result.cases[caseId]?.status, "ready", JSON.stringify(result));
+    assert.deepEqual(result.cases[caseId].source, source);
     const image = await fetch(`${origin}${result.cases[caseId].image}`);
     assert.equal(image.status, 200);
     assert.match(image.headers.get("content-type"), /image/);

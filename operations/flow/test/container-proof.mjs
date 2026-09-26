@@ -11,7 +11,23 @@ const names = ["first", "second"].map(
 const docker = async (...args) =>
     (await exec("docker", args, { maxBuffer: 4 * 1024 * 1024 })).stdout.trim();
 const start = (name) =>
-    docker("run", "--detach", "--init", "--name", name, "--memory=3g", image);
+    docker(
+        "run",
+        "--detach",
+        "--init",
+        "--name",
+        name,
+        "--memory=3g",
+        ...(name.endsWith("second")
+            ? [
+                  "--env",
+                  "FLOW_ENTER_ORIGIN=http://127.0.0.1:4180",
+                  "--env",
+                  "FLOW_ADMIN_ORIGIN=http://127.0.0.1:4182",
+              ]
+            : []),
+        image,
+    );
 async function request(name, path, body) {
     // Return only status and wallet total; never print session cookies or keys.
     return JSON.parse(

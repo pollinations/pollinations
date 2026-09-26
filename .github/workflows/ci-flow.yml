@@ -36,7 +36,14 @@ jobs:
         with:
           node-version: '24'
       - name: Build the isolated runtime
-        run: docker build --platform linux/amd64 -f operations/flow/Dockerfile -t flow-proof:ci .
+        env:
+          FLOW_MAIN_REVISION: ${{ github.event.pull_request.base.sha }}
+        run: >-
+          docker build --platform linux/amd64
+          --build-arg FLOW_REVISION="$(git rev-parse HEAD)"
+          --build-arg FLOW_MAIN_REVISION="$FLOW_MAIN_REVISION"
+          --build-arg FLOW_DIRTY=false
+          -f operations/flow/Dockerfile -t flow-proof:ci .
       - name: Run non-credential Flow tests
         run: docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
       - name: Verify built pages, captures and container isolation

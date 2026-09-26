@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
 import type { HarnessContext, OffOutcome } from "./types.js";
@@ -8,6 +9,12 @@ interface FileSnapshot {
     before: string | null;
     /** Digest after the last `on`, used to detect edits without copying secrets. */
     afterHash: string | null;
+    /**
+     * "base64" when the file is binary (e.g. a sqlite config), detected by a
+     * NUL byte; "text" (default) otherwise. before/afterHash are recorded in
+     * the same encoding so both round-trip byte-for-byte.
+     */
+    encoding?: "text" | "base64";
 }
 
 interface Snapshot {
@@ -25,8 +32,40 @@ const snapshotPath = (ctx: HarnessContext, id: string, paths: string[]) => {
     return join(ctx.home, ".pollinations", "harnesses", `${id}.${key}.json`);
 };
 
-const contentHash = (content: string | null) =>
-    content === null ? null : sha256(content);
+/** Read a file for snapshotting, base64-encoding binary content. */
+const readFileForSnapshot = (
+    path: string,
+): { content: string | null; encoding: "text" | "base64" } => {
+    if (!existsSync(path)) return { content: null, encoding: "text" };
+    const buffer = readFileSync(path);
+    if (buffer.includes(0)) {
+        return { content: buffer.toString("base64"), encoding: "base64" };
+    }
+    return { content: buffer.toString("utf-8"), encoding: "text" };
+};
+
+const readFileInEncoding = (
+    path: string,
+    encoding: "text" | "base64" | undefined,
+): string | null => {
+    if (!existsSync(path)) return null;
+    const buffer = readFileSync(path);
+    return encoding === "base64"
+        ? buffer.toString("base64")
+        : buffer.toString("utf-8");
+};
+
+const writeFileInEncoding = (
+    path: string,
+    content: string,
+    encoding: "text" | "base64" | undefined,
+) => {
+    if (encoding === "base64") {
+        writeFileSync(path, Buffer.from(content, "base64"));
+        return;
+    }
+    writeTextAtomic(path, content);
+};
 
 const writeSnapshot = (
     ctx: HarnessContext,
@@ -42,16 +81,16 @@ const writeSnapshot = (
 
 const captureFiles = (paths: string[]) =>
     Object.fromEntries(
-        paths.map((path) => [
-            path,
-            { before: readTextIfExists(path), afterHash: null },
-        ]),
+        paths.map((path) => {
+            const { content, encoding } = readFileForSnapshot(path);
+            return [path, { before: content, afterHash: null, encoding }];
+        }),
     );
 
 const restoreFiles = (files: Record<string, FileSnapshot>) => {
     for (const [path, file] of Object.entries(files)) {
         if (file.before === null) removeIfExists(path);
-        else writeTextAtomic(path, file.before);
+        else writeFileInEncoding(path, file.before, file.encoding);
     }
 };
 
@@ -100,7 +139,12 @@ export const applyWithSnapshot = (
     }
 
     for (const path of paths) {
-        snapshot.files[path].afterHash = contentHash(readTextIfExists(path));
+        const current = readFileInEncoding(
+            path,
+            snapshot.files[path]?.encoding,
+        );
+        snapshot.files[path].afterHash =
+            current === null ? null : sha256(current);
     }
     snapshot.complete = true;
     writeSnapshot(ctx, id, paths, snapshot);
@@ -117,10 +161,13 @@ export const restoreOrStrip = (
     if (
         snapshot &&
         (!snapshot.complete ||
-            Object.entries(snapshot.files).every(
-                ([path, file]) =>
-                    contentHash(readTextIfExists(path)) === file.afterHash,
-            ))
+            Object.entries(snapshot.files).every(([path, file]) => {
+                const current = readFileInEncoding(path, file.encoding);
+                return (
+                    (current === null ? null : sha256(current)) ===
+                    file.afterHash
+                );
+            }))
     ) {
         restoreFiles(snapshot.files);
         clearSnapshot(ctx, id, paths);

@@ -50,3 +50,55 @@ jobs:
           docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
       - name: Verify built pages, captures and container isolation
         run: node operations/flow/test/container-proof.mjs flow-proof:ci
+
+  preview:
+    name: Deploy the approved Flow preview
+    needs: linux
+    # Opt in one same-repository PR branch. Forks never receive deploy credentials.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.FLOW_PREVIEW_BRANCH != '' &&
+      vars.FLOW_PREVIEW_BRANCH == github.event.pull_request.head.ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: flow-preview
+    concurrency:
+      group: flow-preview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm ci --no-audit --no-fund
+      - name: Deploy the tested checkout to the separate preview Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_OBSERVABILITY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          FLOW_MAIN_REVISION: ${{ github.event.pull_request.base.sha }}
+          FLOW_PREVIEW_CLIENT_ID: ${{ vars.FLOW_PREVIEW_CLIENT_ID }}
+        run: |
+          test -n "$FLOW_PREVIEW_CLIENT_ID"
+          npx wrangler deploy --config operations/flow/wrangler.preview.json \
+            --var "FLOW_REVISION:$(git rev-parse HEAD)" \
+            --var "FLOW_MAIN_REVISION:$FLOW_MAIN_REVISION" \
+            --var "FLOW_DIRTY:false" \
+            --var "POLLINATIONS_OAUTH_CLIENT_ID:$FLOW_PREVIEW_CLIENT_ID"
+      - name: Verify HTTPS and signed-out access boundaries
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFile } from 'node:fs/promises';
+          const { vars } = JSON.parse(await readFile('operations/flow/wrangler.preview.json', 'utf8'));
+          for (const origin of [vars.FLOW_ENTER_ORIGIN, vars.FLOW_ADMIN_ORIGIN]) {
+            const entry = await fetch(`${origin}/flow`);
+            assert.equal(entry.status, 200);
+            assert.match(await entry.text(), /Sign in with Pollinations/);
+            for (const path of ['/__flow/state', '/api/auth/get-session', '/auth/session']) {
+              const response = await fetch(`${origin}${path}`, { redirect: 'manual' });
+              assert.equal(response.status, 401, `${origin}${path}`);
+              await response.body?.cancel();
+            }
+            console.log(`${origin}: HTTPS and anonymous access checks passed`);
+          }
+          NODE

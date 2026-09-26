@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { createAudioCommand } from "./audio.js";
 import { createChatCommand } from "./chat.js";
+import { createDecisionCommand } from "./decision.js";
 import { createImageCommand } from "./image.js";
 import { createTextCommand } from "./text.js";
 import { createTranscribeCommand } from "./transcribe.js";
@@ -14,5 +15,6 @@ export function createGenCommand() {
         .addCommand(createAudioCommand())
         .addCommand(createVideoCommand())
         .addCommand(createChatCommand())
-        .addCommand(createTranscribeCommand());
+        .addCommand(createTranscribeCommand())
+        .addCommand(createDecisionCommand());
 }

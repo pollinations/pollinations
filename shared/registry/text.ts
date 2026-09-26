@@ -1404,7 +1404,14 @@ const TEXT_BASE_SERVICES = {
     },
     "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: ["jev", "typesafe/jev"],
+        aliases: [
+            "jev",
+            "typesafe/jev",
+            "jev-latest",
+            "typesafe/jev-latest",
+            "jev-preview",
+            "typesafe/jev-preview",
+        ],
         provider: "openrouter",
         publisher: "TypeSafe",
         category: "text",

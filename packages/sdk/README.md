@@ -508,6 +508,42 @@ console.log(batch.data.length, batch.usage.total_tokens);
 | `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |
 | `inputType` | string | Cohere retrieval role: `'query'` or `'document'` |
 
+## Decisions (TypeSafe Jev)
+
+Make fast, typed probabilistic judgments (`choice`, `score`, `noul`) using TypeSafe's Jev model:
+
+```javascript
+import { decision, choice, score, noul } from '@pollinations/sdk';
+
+const response = await decision({
+  state: "User ticket: I was charged twice for subscription this month.",
+  questions: {
+    department: choice("Which team should handle this ticket?", {
+      billing: "Payment and refund issues",
+      technical: "Product bugs and site issues",
+      general: "General questions"
+    }),
+    is_urgent: noul("Does this convey urgency?"),
+    frustration: score("Rate customer frustration level", [
+      "Calm", "Annoyed", "Extremely frustrated"
+    ])
+  }
+});
+
+console.log(response.answers.department.choice);       // e.g. "billing"
+console.log(response.answers.department.confidence);   // e.g. 0.89
+console.log(response.answers.is_urgent.noul);          // e.g. 0.92
+console.log(response.answers.frustration.score);       // e.g. 1.8
+```
+
+### Question Types
+
+| Type | Builder | Criteria | Description |
+|------|---------|----------|-------------|
+| `choice` | `choice(instructions, criteria)` | `Record<string, string \| object \| null>` | Selects the best option and returns probabilities and confidence |
+| `score` | `score(instructions, criteria)` | `Array<string \| object>` (2-10 items) | Rates on an ordered scale and returns a score, legend, and probabilities |
+| `noul` | `noul(instructions, criteria?)` | `{ true?: ..., false?: ... }` (optional) | Yes/No proposition returning probability (0 to 1) |
+
 ## List Available Models
 
 ```javascript

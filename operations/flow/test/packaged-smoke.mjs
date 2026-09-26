@@ -5,18 +5,24 @@ import { chromium } from "playwright";
 // Run only inside a disposable container: this resets its fixture database.
 const origin = "http://localhost:4180";
 let ready = false;
+let startupFailure;
 for (let attempt = 0; attempt < 120; attempt++) {
     try {
         const response = await fetch(`${origin}/flow`);
         ready = response.ok;
+        startupFailure = `HTTP ${response.status}`;
         await response.body?.cancel();
         if (ready) break;
-    } catch {
+    } catch (error) {
+        startupFailure = `${error.cause?.code} ${error.cause?.address}:${error.cause?.port}`;
         // The entrypoint is still bundling the real Workers and migrating D1.
     }
     await setTimeout(1000);
 }
-assert(ready, "Packaged Flow did not start within two minutes");
+assert(
+    ready,
+    `Packaged Flow did not start within two minutes: ${startupFailure}`,
+);
 
 const before = await fetch(`${origin}/__flow/state`);
 if (process.argv[2] === "empty") {

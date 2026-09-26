@@ -25,6 +25,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import { messagesRoutes } from "@/text/messages/routes.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
@@ -156,7 +157,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
-    .route("/", proxyRoutes);
+    .route("/", proxyRoutes)
+    .route("/", messagesRoutes);
 
 app.notFound(async (c: Context<Env>) => {
     return handleError(new HTTPException(404), c);

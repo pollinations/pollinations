@@ -20,6 +20,7 @@ import {
 const REGISTRY_TTL_MS = 60_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/messages",
     "/text",
     "/text/{prompt}",
 ];

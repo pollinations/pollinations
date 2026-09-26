@@ -81,6 +81,55 @@ console.log(response.choices[0].message.content);
 
 Model IDs come from `GET /v1/models`. Anything `openai`, `claude`, `mistral`, `deepseek`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
 
+## 🐜 Use Claude Code and the Anthropic SDKs
+
+`/v1/messages` speaks Anthropic's Messages API directly — no router in between. Any model that lists `/v1/chat/completions` in `supported_endpoints` (`GET /v1/models`) also works here.
+
+**Claude Code**
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=sk_your_secret_key
+export ANTHROPIC_MODEL=openai/gpt-5.4-nano
+claude
+```
+
+**Python**
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://gen.pollinations.ai",
+    auth_token="sk_your_secret_key",
+)
+
+message = client.messages.create(
+    model="anthropic/claude-sonnet-4.6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Summarise the theory of relativity in one sentence."}],
+)
+print(message.content[0].text)
+```
+
+**Node.js / TypeScript**
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+    baseURL: "https://gen.pollinations.ai",
+    authToken: process.env.POLLINATIONS_KEY,
+});
+
+const message = await client.messages.create({
+    model: "anthropic/claude-sonnet-4.6",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: "Summarise the theory of relativity in one sentence." }],
+});
+console.log(message.content[0].text);
+```
+
 ## 🌊 Streaming chat completions
 
 Set `stream: true` to receive Server-Sent Events (SSE) deltas as the model writes. The wire format is byte-for-byte the OpenAI streaming format, so any OpenAI SDK that supports streaming works unchanged.

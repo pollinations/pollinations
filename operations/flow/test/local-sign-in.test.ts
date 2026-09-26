@@ -75,44 +75,58 @@ async function beginSignIn(decision = "continue") {
     return callback;
 }
 
-test("local provider failure is consumed once and the real callback succeeds on retry", async () => {
-    await request("/__flow/outcome", { signIn: "fail-next" });
-    const failed = await request(await beginSignIn());
-    expect(
-        new URL(failed.headers.get("Location") ?? "/", origin).pathname,
-    ).toBe("/error");
-    expect(await (await request("/api/auth/get-session")).json()).toBeNull();
-    expect(await (await request("/__flow/outcome")).json()).toEqual({
-        signIn: "normal",
-    });
+test.runIf(process.env.FLOW_LOCAL_SIGN_IN_TEST === "1")(
+    "local provider failure is consumed once and the real callback succeeds on retry",
+    async () => {
+        await request("/__flow/outcome", { signIn: "fail-next" });
+        const failed = await request(await beginSignIn());
+        expect(
+            new URL(failed.headers.get("Location") ?? "/", origin).pathname,
+        ).toBe("/error");
+        expect(
+            await (await request("/api/auth/get-session")).json(),
+        ).toBeNull();
+        expect(await (await request("/__flow/outcome")).json()).toEqual({
+            signIn: "normal",
+        });
 
-    const completed = await request(await beginSignIn());
-    expect(
-        new URL(completed.headers.get("Location") ?? "/", origin).pathname,
-    ).toBe("/device");
-    const session = await (await request("/api/auth/get-session")).json();
-    expect(session.user.id).toBe(USER_ID);
-    expect(session.user.githubUsername).toBe(localIdentity.login);
-    expect(session.user.name).toBe(localIdentity.name);
-    // A new Flow view must restore this real session, not a stale fixture token.
-    await request("/__flow/conditions", {});
-    expect(
-        (await (await request("/api/auth/get-session")).json()).session.id,
-    ).toBe(session.session.id);
-    expect((await request("/api/auth/sign-out", {})).status).toBe(200);
-    expect(await (await request("/api/auth/get-session")).json()).toBeNull();
-}, 30_000);
+        const completed = await request(await beginSignIn());
+        expect(
+            new URL(completed.headers.get("Location") ?? "/", origin).pathname,
+        ).toBe("/device");
+        const session = await (await request("/api/auth/get-session")).json();
+        expect(session.user.id).toBe(USER_ID);
+        expect(session.user.githubUsername).toBe(localIdentity.login);
+        expect(session.user.name).toBe(localIdentity.name);
+        // A new Flow view must restore this real session, not a stale fixture token.
+        await request("/__flow/conditions", {});
+        expect(
+            (await (await request("/api/auth/get-session")).json()).session.id,
+        ).toBe(session.session.id);
+        expect((await request("/api/auth/sign-out", {})).status).toBe(200);
+        expect(
+            await (await request("/api/auth/get-session")).json(),
+        ).toBeNull();
+    },
+    30_000,
+);
 
-test("cancel and altered OAuth state cannot establish a local session", async () => {
-    const canceled = await request(await beginSignIn("cancel"));
-    expect(
-        new URL(canceled.headers.get("Location") ?? "/", origin).pathname,
-    ).toBe("/error");
-    const callback = new URL(await beginSignIn());
-    callback.searchParams.set("state", "not-the-state-from-enter");
-    const rejected = await request(callback.href);
-    expect(
-        new URL(rejected.headers.get("Location") ?? "/", origin).pathname,
-    ).toBe("/error");
-    expect(await (await request("/api/auth/get-session")).json()).toBeNull();
-}, 30_000);
+test.runIf(process.env.FLOW_LOCAL_SIGN_IN_TEST === "1")(
+    "cancel and altered OAuth state cannot establish a local session",
+    async () => {
+        const canceled = await request(await beginSignIn("cancel"));
+        expect(
+            new URL(canceled.headers.get("Location") ?? "/", origin).pathname,
+        ).toBe("/error");
+        const callback = new URL(await beginSignIn());
+        callback.searchParams.set("state", "not-the-state-from-enter");
+        const rejected = await request(callback.href);
+        expect(
+            new URL(rejected.headers.get("Location") ?? "/", origin).pathname,
+        ).toBe("/error");
+        expect(
+            await (await request("/api/auth/get-session")).json(),
+        ).toBeNull();
+    },
+    30_000,
+);

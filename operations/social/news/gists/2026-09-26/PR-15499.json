@@ -1,0 +1,38 @@
+{
+  "pr_number": 15499,
+  "title": "fix: configure Gemini API key for staging and production",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15499",
+  "merged_at": "2026-09-26T13:11:32Z",
+  "labels": [
+    "INFRA",
+    "POLLEN-QUEST",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Adds the existing tested `GEMINI_API_KEY` to Gen’s SOPS-encrypted staging and production files, enabling direct Google inference for #15395 and #15491. The user explicitly approved both environments. Existing credentials and encryption recipients are unchanged.\n- Adds the key to the optional generation-secret upload allowlist. Production GitHub Actions uploads it automatically when this change is promoted to `production` and Gen deploys. Staging uses its existing secret-sync workflow. Development secrets are unchanged.\n- Verifies both SOPS decrypt/encrypt round trips against the approved credential, unchanged existing values/recipients, required-secret completeness, upload filtering, JavaScript syntax, formatting, and diff whitespace. Only the key, SOPS metadata, and one allowlist entry changed.\n- Publishes configuration only; no credential creation, rotation, revocation, or remote deployment was performed. Revert this PR before deployment to roll back. Merge this prerequisite before the model PRs; production promotion remains separate.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key finds its hive",
+    "blurb": "Gen’s staging and production secret gardens now know where to find the Gemini API key. The wiring is in place for direct Google inference when the model work lands.",
+    "summary": "Added the existing GEMINI_API_KEY to Gen’s SOPS-encrypted staging and production secret files and to the optional generation-secret upload allowlist, preparing direct Google inference for the upcoming model PRs.",
+    "impact": "Staging secret sync and production promotion can now provide GEMINI_API_KEY to Gen deployments, while development secrets, existing credentials, and encryption recipients remain unchanged.",
+    "keywords": [
+      "gemini",
+      "gen",
+      "secrets",
+      "sops",
+      "deployment",
+      "google-inference"
+    ],
+    "visual_concept": "A cozy secret-delivery scene: Polli carries a small glowing key toward two labeled garden sheds representing staging and production, while a retro terminal safely routes it through an encrypted lock. Code-plants and flowers show that this is quiet deployment plumbing, not a new public feature.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith tool belt, carefully carrying a glowing key to two small garden-server sheds labeled in simple pixel text “STAGING” and “PROD”; a retro terminal beside them shows a dark purple encrypted lock, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, emotionally warm and secure."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15499.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith tool belt, carefully carrying a glowing key to two small garden-server sheds labeled in simple pixel text “STAGING” and “PROD”; a retro terminal beside them shows a dark purple encrypted lock, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, emotionally warm and secure."
+  },
+  "generated_at": "2026-09-26T13:12:33.266243+00:00"
+}

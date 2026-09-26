@@ -9,12 +9,53 @@ Last updated: 2026-09-26
 | Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.540889/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.151667/hr all-in | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2× RTX 3060 | Vast.ai | $0.139259/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the five running Vast instances cost **$1.072556/hr** in total
-(**$772.24 per 30-day month**, 720 hours, excluding metered inference fallbacks).
+At capture time, the five running Vast instances cost **$1.060148/hr** in total
+(**$763.31 per 30-day month**, 720 hours, excluding metered inference fallbacks).
 All five are production workers; there is no isolated canary left running.
+
+### 2026-09-26 — DreamShaper expiry replacement
+
+Human-approved instance `52741049` (machine `35285`, US, RTX 3060 12 GB)
+replaced `47789794` (Romania, RTX 4070), ahead of the old contract's
+September 30 07:00 UTC expiry. The slot falls from **$0.093889/hr to
+$0.081481/hr all-in**, or **$67.60 to $58.67 per 30 days**, saving
+**$8.93/month in Vast credits**. The two DreamShaper GPUs total
+**$100.27/30d**. No additional credit-purchase discount is applied.
+
+The new instance retains its dedicated hostname
+`dreamshaper-canary-35285.myceli.ai` in the `sana` registry pool; despite the
+hostname, it is production and is labeled `dreamshaper-vast-02-production`.
+Its current contract expires **2027-03-30 21:46:49 UTC**. The South Korea
+replica `51216212`, model configuration, prices, and fallback policy are
+unchanged.
+
+Qualification covered authentication rejection, invalid input, normal/wide
+dimensions and oversized clamping, fixed-seed parity, six-request admission
+and queue shedding, and a full-container reboot. A 210-RPM public-path test
+completed **207/210 images**, with three expected queue-full responses,
+**1.107s p50 / 1.676s p95**, and **203.14 successful RPM**. Model plus four
+QUIC connections recovered in 29 seconds after a supervised restart, followed
+by a successful public render with the same fixed-seed hash. These are backend
+measurements, not a claim of zero end-user errors at arbitrary load.
+
+The old host's historical startup script left stale Python processes running
+with heartbeats enabled after its saved flag changed. Those processes were
+stopped and the old endpoint restored with heartbeats disabled. Its registry
+entry then expired, leaving exactly the intended two DreamShaper hostnames.
+Production verification counted **945 successful generations and 25 queue-full
+503 responses** on the new worker, with no runtime errors. At least 346 of
+those successes occurred after the old hostname expired. These are worker
+outcomes (including legacy traffic); retryable 503s are not a measured final
+API failure rate. Both registered DreamShaper hostnames remained healthy.
+
+Retired instance `47789794` was destroyed and disappeared from the complete
+Vast instance list, leaving five running, production-labeled GPUs and no
+retained compute or storage for the replaced instance. The replacement uses
+the current `operations/infrastructure/gpu/dreamshaper` runtime; no registry
+model entry, application deployment, or secret rotation was needed at cutover.
 
 ### 2026-09-26 — Z-Image RTX 5090 replacement
 
@@ -37,8 +78,7 @@ Fal fallback, registry hostname, and other GPU workers are unchanged. Measured
 capacity was **65.6 RPM**, not the older 75 RPM target; see the Z-Image section
 and README for qualification details.
 
-**Next lifecycle deadline:** DreamShaper `47789794` currently expires on
-**2026-09-30 at 07:00 UTC**. Its replacement is a separate operation.
+The DreamShaper September 30 expiry was handled by the replacement above.
 
 ### 2026-09-16 — DreamShaper RTX 3060 replacement (cost optimization)
 
@@ -131,7 +171,7 @@ exists after the routing change deploys.
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
 | dreamshaper-vast-01 | 51216212 | 130717 / South Korea, KR | RTX 3060 | $0.057778/hr | ACTIVE — named tunnel `dreamshaper-canary-51216212.myceli.ai` |
-| dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | ACTIVE — named tunnel `dreamshaper-canary-47789794.myceli.ai` |
+| dreamshaper-vast-02 | 52741049 | 35285 / US | RTX 3060 | $0.081481/hr | ACTIVE — named tunnel `dreamshaper-canary-35285.myceli.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in

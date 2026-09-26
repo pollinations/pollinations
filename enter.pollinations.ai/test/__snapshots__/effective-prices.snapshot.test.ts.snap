@@ -1216,6 +1216,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000079125,
     },
   },
+  "google/gemini-3.8-flash-lite-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio": {
+    "cost": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.00000633,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
+  "google/gemini-3.8-flash-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-tts:openrouter:ai-studio": {
+    "cost": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009495,
+      "promptTextTokens": 0.0000005275,
+    },
+  },
   "google/gemini-3.8-flash:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.00000395625,
@@ -2094,10 +2134,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000375,
-      "promptCacheWriteTokens": 0.000009375,
-      "promptCachedTokens": 0.00000075,
-      "promptTextTokens": 0.0000075,
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
     },
   },
   "openai/gpt-6-astra:azure:datazone": {
@@ -2116,10 +2156,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00004125,
-      "promptCacheWriteTokens": 0.0000103125,
-      "promptCachedTokens": 0.000000825,
-      "promptTextTokens": 0.00000825,
+      "completionTextTokens": 0.000055,
+      "promptCacheWriteTokens": 0.00001375,
+      "promptCachedTokens": 0.0000011,
+      "promptTextTokens": 0.000011,
     },
   },
   "openai/gpt-6-luna": {
@@ -2127,6 +2167,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000005,
       "promptCacheWriteTokens": 0.000000125,
       "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
       "promptTextTokens": 0.0000001,
     },
     "costVariants": {
@@ -2134,6 +2175,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "completionTextTokens": 0.00000075,
         "promptCacheWriteTokens": 0.00000025,
         "promptCachedTokens": 0.00000002,
+        "promptImageTokens": 0.0000002,
         "promptTextTokens": 0.0000002,
       },
     },
@@ -2141,6 +2183,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000005,
       "promptCacheWriteTokens": 0.000000125,
       "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "openai/gpt-6-luna:openai": {
+    "cost": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.000000125,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.00000075,
+        "promptCacheWriteTokens": 0.00000025,
+        "promptCachedTokens": 0.00000002,
+        "promptImageTokens": 0.0000002,
+        "promptTextTokens": 0.0000002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.000000125,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
       "promptTextTokens": 0.0000001,
     },
   },
@@ -2149,6 +2217,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
     },
     "costVariants": {
@@ -2156,6 +2225,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "completionTextTokens": 0.000015,
         "promptCacheWriteTokens": 0.000005,
         "promptCachedTokens": 0.0000004,
+        "promptImageTokens": 0.000004,
         "promptTextTokens": 0.000004,
       },
     },
@@ -2163,6 +2233,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "openai/gpt-6-sol:openai": {
+    "cost": {
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000015,
+        "promptCacheWriteTokens": 0.000005,
+        "promptCachedTokens": 0.0000004,
+        "promptImageTokens": 0.000004,
+        "promptTextTokens": 0.000004,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
     },
   },

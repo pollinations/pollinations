@@ -145,11 +145,45 @@ export const XAI_TTS_VOICES = [
     "zenith",
 ] as const;
 
+export const GEMINI_TTS_VOICES = [
+    "Zephyr",
+    "Puck",
+    "Charon",
+    "Kore",
+    "Fenrir",
+    "Leda",
+    "Orus",
+    "Aoede",
+    "Callirrhoe",
+    "Autonoe",
+    "Enceladus",
+    "Iapetus",
+    "Umbriel",
+    "Algieba",
+    "Despina",
+    "Erinome",
+    "Algenib",
+    "Rasalgethi",
+    "Laomedeia",
+    "Achernar",
+    "Alnilam",
+    "Schedar",
+    "Gacrux",
+    "Pulcherrima",
+    "Achird",
+    "Zubenelgenubi",
+    "Vindemiatrix",
+    "Sadachbia",
+    "Sadaltager",
+    "Sulafat",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
     ...XAI_TTS_VOICES,
+    ...GEMINI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
@@ -490,6 +524,47 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "google/gemini-3.8-flash-tts": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini Developer API standard pricing through 2026-12-31.
+            // https://ai.google.dev/gemini-api/docs/pricing
+            promptTextTokens: 0.5 / 1_000_000,
+            completionAudioTokens: 9 / 1_000_000,
+        },
+        title: "Gemini 3.8 Flash TTS",
+        description:
+            "Expressive, style-steerable speech across 30 voices for creative narration",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
+    },
+    "google/gemini-3.8-flash-lite-tts": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini Developer API standard pricing through 2026-12-31.
+            // https://ai.google.dev/gemini-api/docs/pricing
+            promptTextTokens: 0.5 / 1_000_000,
+            completionAudioTokens: 6 / 1_000_000,
+        },
+        title: "Gemini 3.8 Flash Lite TTS",
+        description: "Fast, high-throughput speech across 30 voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
     },
     "assemblyai/universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2", "universal-2"],

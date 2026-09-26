@@ -68,11 +68,11 @@ interface CloudflareBindings {
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
     FIREWORKS_NEO_API_KEY: string;
+    GEMINI_API_KEY?: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
-    GEMINI_API_KEY?: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
     NOVA_REEL_S3_BUCKET: string;

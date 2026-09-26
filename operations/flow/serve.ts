@@ -16,7 +16,7 @@ const runtime = await startServer({
     loadReviewErrors: () => import("../../shared/error"),
 });
 const server = serve({
-    hostname: "localhost",
+    hostname: "127.0.0.1",
     port: Number(new URL(ENTER_ORIGIN).port),
     fetch: (request) =>
         /^\/(?:__flow|api|gen|auth|\.well-known)\//.test(

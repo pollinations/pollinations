@@ -84,8 +84,10 @@ try {
         .getByRole("heading", { name: "Create secret key", exact: true })
         .waitFor({ state: "detached" });
     await page.goto(adminOrigin);
+    await page.getByRole("heading", { name: "Sign in", exact: true }).waitFor();
+    await page.getByText("Admin example", { exact: true }).waitFor();
     await page
-        .getByRole("heading", { name: "Admin example", exact: true })
+        .getByRole("button", { name: "Sign in with Pollinations", exact: true })
         .waitFor();
     assert.equal(
         await page.evaluate(() => window.__FLOW_ENVIRONMENT__.admin),

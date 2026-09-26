@@ -359,7 +359,7 @@ describe("static provider fallbacks", () => {
                 usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
             }),
         ).toBe("long_context");
-        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.priceMultiplier).toBe(1);
         expect(fallback.paidOnly).not.toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
@@ -368,7 +368,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
-        expect(billing.price.totalPrice).toBe(0.00027);
+        expect(billing.price.totalPrice).toBe(0.00036);
         const model = findModelByName("openai/gpt-6-astra:azure:datazone");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({

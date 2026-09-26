@@ -2094,10 +2094,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000375,
-      "promptCacheWriteTokens": 0.000009375,
-      "promptCachedTokens": 0.00000075,
-      "promptTextTokens": 0.0000075,
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
     },
   },
   "openai/gpt-6-astra:azure:datazone": {
@@ -2116,10 +2116,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00004125,
-      "promptCacheWriteTokens": 0.0000103125,
-      "promptCachedTokens": 0.000000825,
-      "promptTextTokens": 0.00000825,
+      "completionTextTokens": 0.000055,
+      "promptCacheWriteTokens": 0.00001375,
+      "promptCachedTokens": 0.0000011,
+      "promptTextTokens": 0.000011,
     },
   },
   "openai/gpt-6-luna": {

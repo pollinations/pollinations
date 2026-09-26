@@ -490,7 +490,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
         retirementDate: new Date("2028-01-11").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),

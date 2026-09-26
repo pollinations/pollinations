@@ -17,6 +17,7 @@ import {
     type RequestInputs,
     stringifyRequestInputs,
 } from "./observability/request-inputs.ts";
+import type { Usage } from "./registry/registry.ts";
 import { getRoutePath } from "./util.ts";
 
 export type ErrorVariables = {
@@ -49,6 +50,11 @@ type UpstreamErrorOptions = {
      * that callers can detect regardless of the HTTP status.
      */
     errorCode?: string;
+    /**
+     * Usage the provider billed even though the request failed, such as an
+     * xAI video rejected after generation. Tracking charges it.
+     */
+    billedUsage?: Usage;
 };
 
 /** Public HTTP failure plus original provider diagnostics. Bodies are not redacted or truncated. */
@@ -60,6 +66,7 @@ export class UpstreamError extends HTTPException {
     public readonly responseBody?: string;
     public readonly upstreamHeaders?: UpstreamHeaders;
     public readonly errorCode?: string;
+    public readonly billedUsage?: Usage;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
         super(status, options);
@@ -69,6 +76,7 @@ export class UpstreamError extends HTTPException {
         this.responseBody = options?.responseBody;
         this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
+        this.billedUsage = options?.billedUsage;
     }
 
     /** Keep the provider status for diagnostics and retries; expose gateway failures as 5xx. */

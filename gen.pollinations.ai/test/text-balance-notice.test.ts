@@ -116,6 +116,8 @@ describe("text balance notice", () => {
         { path: "/v1/chat/completions", stream: true },
         { path: "/v1/responses", stream: false },
         { path: "/v1/responses", stream: true },
+        { path: "/v1/messages", stream: false },
+        { path: "/v1/messages", stream: true },
     ])("presents $path stream=$stream without caching or billing", async ({
         path,
         stream,
@@ -162,11 +164,18 @@ describe("text balance notice", () => {
                         stream,
                         ...(path === "/v1/responses"
                             ? { input: "hello" }
-                            : {
-                                  messages: [
-                                      { role: "user", content: "hello" },
-                                  ],
-                              }),
+                            : path === "/v1/messages"
+                              ? {
+                                    max_tokens: 64,
+                                    messages: [
+                                        { role: "user", content: "hello" },
+                                    ],
+                                }
+                              : {
+                                    messages: [
+                                        { role: "user", content: "hello" },
+                                    ],
+                                }),
                     }),
                 }),
             });
@@ -193,12 +202,28 @@ describe("text balance notice", () => {
                     expect(response.headers.get("content-type")).toContain(
                         "text/event-stream",
                     );
-                    expect(body).toContain("data: [DONE]");
-                    expect(body).toContain(
-                        path === "/v1/responses"
-                            ? '"type":"response.completed"'
-                            : '"finish_reason":"stop"',
-                    );
+                    if (path === "/v1/messages") {
+                        // Anthropic clients only accept Anthropic events.
+                        expect(body).toContain("event: message_start");
+                        expect(body).toContain("event: message_delta");
+                        expect(body).toContain("event: message_stop");
+                        expect(body).not.toContain("data: [DONE]");
+                    } else {
+                        expect(body).toContain("data: [DONE]");
+                        expect(body).toContain(
+                            path === "/v1/responses"
+                                ? '"type":"response.completed"'
+                                : '"finish_reason":"stop"',
+                        );
+                    }
+                } else if (path === "/v1/messages") {
+                    expect(JSON.parse(body)).toMatchObject({
+                        type: "message",
+                        role: "assistant",
+                        content: [{ type: "text" }],
+                        stop_reason: "end_turn",
+                        usage: { input_tokens: 0, output_tokens: 0 },
+                    });
                 } else if (path === "/v1/responses") {
                     expect(JSON.parse(body)).toMatchObject({
                         status: "completed",
@@ -287,6 +312,14 @@ describe("text balance notice", () => {
                 },
             },
         },
+        {
+            path: "/v1/messages",
+            body: {
+                output_config: {
+                    format: { type: "json_schema", schema: { type: "object" } },
+                },
+            },
+        },
     ])("preserves 402 for JSON output on $path", async ({ path, body }) => {
         const caller = await createTestApiKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -305,11 +338,18 @@ describe("text balance notice", () => {
                         model,
                         ...(path === "/v1/responses"
                             ? { input: "hello" }
-                            : {
-                                  messages: [
-                                      { role: "user", content: "hello" },
-                                  ],
-                              }),
+                            : path === "/v1/messages"
+                              ? {
+                                    max_tokens: 64,
+                                    messages: [
+                                        { role: "user", content: "hello" },
+                                    ],
+                                }
+                              : {
+                                    messages: [
+                                        { role: "user", content: "hello" },
+                                    ],
+                                }),
                         ...body,
                     }),
                 }),
@@ -319,7 +359,16 @@ describe("text balance notice", () => {
         );
         const text = await response.text();
         expect(response.status, text).toBe(402);
-        expect(text).toContain("INSUFFICIENT_BALANCE");
+        if (path === "/v1/messages") {
+            // Anthropic errors keep their own envelope, without error codes.
+            expect(JSON.parse(text)).toMatchObject({
+                type: "error",
+                error: { type: "billing_error" },
+                request_id: expect.any(String),
+            });
+        } else {
+            expect(text).toContain("INSUFFICIENT_BALANCE");
+        }
         await waitOnExecutionContext(ctx);
     });
 });

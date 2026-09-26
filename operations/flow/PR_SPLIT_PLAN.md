@@ -2,7 +2,17 @@
 
 ## Current plan — 26 September 2026
 
-**This section supersedes the historical plan below.** This development tool is now named **Pollinations Flow** and lives in `operations/flow`; **Pollinations Connect** remains the product login feature. The approved Git branch/workspace keep their existing names. The goal is to ship a usable, hosted review tool that faithfully runs current `main`, while building an evidence-backed backlog of improvements to the product. Flow must be useful before those improvements are implemented. The SDK, dashboard and Device reconciliation has runtime evidence. Clean-checkout startup, built-page serving without Vite and Linux container execution are verified. Public origins, hosted reviewer access/routing, source-version display and remote deployment remain open.
+**This section supersedes the historical plan below.** This development tool is now named **Pollinations Flow** and lives in `operations/flow`; **Pollinations Connect** remains the product login feature. The approved Git branch/workspace keep their existing names. The goal is to ship a usable, hosted review tool that faithfully runs current `main`, while building an evidence-backed backlog of improvements to the product. Flow must be useful before those improvements are implemented. The SDK, dashboard and Device reconciliation has runtime evidence. Clean-checkout startup, built-page serving without Vite and Linux container execution are verified. Configurable public origins and visible source revisions are implemented; local runtime/build checks pass. Updated Linux browser verification, hosted reviewer access/routing and remote deployment remain open.
+
+### Public-origin and provenance checkpoint — 26 September
+
+- **Preview audience confirmed:** Pollinations admins. Use the existing admin role check from shared dashboard auth; review access must remain independent of the fixture user/role being inspected.
+- Browser origins are runtime configuration (`FLOW_ENTER_ORIGIN`, `FLOW_ADMIN_ORIGIN`); container ports remain controlled by `FLOW_PORT`. The same built frontend can serve different origins. Private capture transport uses its own origins and reads assets directly, without following public reviewer login or forwarding cookies.
+- HTTPS fixture sessions use Better Auth’s own cookie configuration. A real-runtime test verifies the Secure cookie, Enter session recognition, registered app redirect and Admin authorization callback at configured HTTPS origins. No product handlers were modified.
+- Flow shows the integrated main commit, checkout commit, local-change flag and fixture-data notice. Capture results retain their source metadata. Packaged builds supply `FLOW_REVISION`, `FLOW_MAIN_REVISION`, `FLOW_DIRTY`; CI records the actual tested merge checkout and PR base, not an assumed PR head.
+- Local verification: 249 default tests passed, 136 opt-in checks skipped; typecheck/build passed (existing large-chunk warning). Account settings renders in Screens after Vite dependency optimization finished. Updated Linux CI must additionally prove one built image works with both localhost and 127.0.0.1 public origins, including capture provenance.
+- **Next gate:** reviewer auth and per-reviewer container routing. Shared auth currently owns `/auth/*` and fixed cookie names, which collide with the real Admin example on its origin. Do not hide that with cookie/header rewriting or copy auth logic into Flow. Resolve the namespace/boundary explicitly before remote exposure. Protect both browser origins and all fixture controls, and verify one reviewer cannot address another reviewer’s runtime.
+- Cloudflare preview is not deployed. No remote credentials/resources were created. Any new preview OAuth client or session-signing secret needs a separate scoped approval once the concrete configuration is reviewable.
 
 ### Delivery decision
 
@@ -20,7 +30,7 @@ The immediate work is to refresh the baseline, finish current-main scenario reco
 | Active workspace | `/private/tmp/pollinations-connect-review-workspace` |
 | Active branch | `codex/connect-review-workspace` |
 | Product baseline | `a9bb750a2113d2d790090200be0fc26bb3623cdd` — integrated through merge `1fec592dcf`; final capture/recovery evidence stays at `279edfad8f` because the newer commit only changes internal Polli/news jobs |
-| Latest remote main observed | `a9bb750a2113d2d790090200be0fc26bb3623cdd` — integrated; no Flow/product runtime paths changed after the tested `279edfad8f` baseline |
+| Latest remote main observed | `20160f4246b766bb90dfe498bc37e82564840195` — four newer commits are not integrated yet (Polli jobs, model policy, Gemini TTS and Lyria). The source display continues to identify the integrated baseline; do not relabel older evidence. |
 | Runtime evidence baselines | App/Device captures: `d3e84e005d`; Keys/Apps/Models/Agents/Wallet/Account/Quests/Admin captures and 71 resource/wallet/settings recovery checks: `1b7e621066`. Ten non-credential Device checks and the Admin recovery/callback/Journey checks also pass at `1b7e621066`. |
 | Audited main | `645599a6c6b97a1d55cc8b11ebce5a9f63767c87` |
 | Historical Connect UX source | `origin/codex/pollen-connect-ux` at `27e396e48b1ee3b5dffda6e8f8fc999f1cfd0a8b` |

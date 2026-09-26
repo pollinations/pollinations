@@ -10,6 +10,7 @@ import debug from "debug";
 import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
     callMinimaxH3MaxTurboAPI,
@@ -121,6 +122,9 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "kwaivgi/kling-v3.0-std":
+            result = await callKlingVideoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

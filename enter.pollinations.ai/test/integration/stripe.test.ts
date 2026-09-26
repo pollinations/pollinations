@@ -115,6 +115,7 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { AUTO_TOP_UP_DECLINE_REASON } from "../../src/utils/stripe-billing/constants.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -227,6 +228,7 @@ async function insertAutoTopUpAttempt({
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
+    failureReason = null,
 }: {
     id?: string;
     userId: string;
@@ -236,6 +238,7 @@ async function insertAutoTopUpAttempt({
     completedAt?: number | null;
     createdAt?: number;
     updatedAt?: number;
+    failureReason?: string | null;
 }) {
     await env.DB.prepare(
         `INSERT INTO stripe_auto_top_up_attempt (
@@ -246,8 +249,9 @@ async function insertAutoTopUpAttempt({
             status,
             created_at,
             updated_at,
-            completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            completed_at,
+            failure_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
@@ -258,6 +262,7 @@ async function insertAutoTopUpAttempt({
             createdAt,
             updatedAt,
             completedAt,
+            failureReason,
         )
         .run();
 }
@@ -1440,9 +1445,14 @@ test.for([
 });
 
 test.for([
-    { name: "within an hour of a decline", minutesAgo: 10, status: "skipped" },
-    { name: "an hour after a decline", minutesAgo: 61, status: "created" },
-] as const)("POST /api/stripe/auto-top-up/trigger retries a declined card only $name", async ({
+    { declines: 1, minutesAgo: 59, status: "skipped" },
+    { declines: 1, minutesAgo: 61, status: "created" },
+    { declines: 2, minutesAgo: 239, status: "skipped" },
+    { declines: 2, minutesAgo: 241, status: "created" },
+    { declines: 3, minutesAgo: 1439, status: "skipped" },
+    { declines: 3, minutesAgo: 1441, status: "created" },
+] as const)("POST /api/stripe/auto-top-up/trigger after $declines declines $minutesAgo minutes ago is $status", async ({
+    declines,
     minutesAgo,
     status,
 }, { sessionToken, mocks }) => {
@@ -1475,14 +1485,20 @@ test.for([
         })
         .where(eq(userTable.id, user.id));
 
-    const declinedAt = Date.now() - minutesAgo * 60 * 1000;
-    await insertAutoTopUpAttempt({
-        userId: user.id,
-        invoiceId: "in_declined_earlier",
-        status: "failed",
-        createdAt: declinedAt,
-        completedAt: declinedAt,
-    });
+    for (let index = 0; index < declines; index++) {
+        const declinedAt =
+            Date.now() -
+            minutesAgo * 60 * 1000 -
+            (declines - 1 - index) * 24 * 60 * 60 * 1000;
+        await insertAutoTopUpAttempt({
+            userId: user.id,
+            invoiceId: `in_declined_${index}`,
+            status: "failed",
+            createdAt: declinedAt,
+            completedAt: declinedAt,
+            failureReason: AUTO_TOP_UP_DECLINE_REASON,
+        });
+    }
 
     const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
         method: "POST",
@@ -2925,6 +2941,8 @@ test.for([
             status,
             createdAt: at,
             completedAt: at,
+            failureReason:
+                status === "failed" ? AUTO_TOP_UP_DECLINE_REASON : null,
         });
     }
 
@@ -2967,6 +2985,246 @@ test.for([
         .bind(user.id)
         .first<{ autoTopUpEnabled: number | boolean | null }>();
     expect(updatedUser?.autoTopUpEnabled).toBe(enabled);
+});
+
+test("POST /api/webhooks/stripe counts a decline that arrives after the invoice void", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    for (let index = 0; index < 3; index++) {
+        const at = Date.now() - (4 - index) * 24 * 60 * 60 * 1000;
+        await insertAutoTopUpAttempt({
+            userId,
+            invoiceId: `in_prior_decline_${index}`,
+            status: "failed",
+            createdAt: at,
+            completedAt: at,
+            failureReason: AUTO_TOP_UP_DECLINE_REASON,
+        });
+    }
+    const invoiceId = "in_fourth_decline";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    mocks.stripe.state.invoices.push({
+        id: invoiceId,
+        object: "invoice",
+        status: "void",
+        customer: "cus_webhook",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+    });
+
+    // Stripe does not guarantee event order: the void from our own cleanup
+    // can land before the decline that caused it.
+    for (const type of ["invoice.voided", "invoice.payment_failed"] as const) {
+        const response = await postSignedStripeWebhook(
+            createAutoTopUpInvoiceEvent(type, invoiceId, userId),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    const row = await env.DB.prepare(
+        "SELECT auto_top_up_enabled AS enabled FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ enabled: number }>();
+    expect(row?.enabled).toBe(0);
+});
+
+test("POST /api/webhooks/stripe does not count voided invoices as declines", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    for (let index = 0; index < 3; index++) {
+        const invoiceId = `in_voided_${index}`;
+        await insertAutoTopUpAttempt({
+            userId,
+            invoiceId,
+            createdAt: Date.now() - (4 - index) * 24 * 60 * 60 * 1000,
+        });
+        const response = await postSignedStripeWebhook(
+            createAutoTopUpInvoiceEvent("invoice.voided", invoiceId, userId),
+        );
+        expect(response.status).toBe(200);
+    }
+    const invoiceId = "in_first_real_decline";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    mocks.stripe.state.invoices.push({
+        id: invoiceId,
+        object: "invoice",
+        status: "open",
+        customer: "cus_webhook",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+    });
+
+    const response = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent(
+            "invoice.payment_failed",
+            invoiceId,
+            userId,
+        ),
+    );
+    expect(response.status).toBe(200);
+
+    const row = await env.DB.prepare(
+        "SELECT auto_top_up_enabled AS enabled FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ enabled: number }>();
+    expect(row?.enabled).toBe(1);
+});
+
+test("POST /api/stripe/auto-top-up/trigger does not wait after a voided invoice", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_voided_only");
+    customer.invoice_settings.default_payment_method = "pm_voided_only";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_voided_only", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    const invoiceId = "in_voided_only";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    const voided = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent("invoice.voided", invoiceId, userId),
+    );
+    expect(voided.status).toBe(200);
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+    });
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as { status: string }).status).toBe(
+        "created",
+    );
+});
+
+test("POST /api/stripe/auto-top-up/trigger does not charge after a decline that landed mid-request", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const { processAutoTopUpForUser } = await import(
+        "../../src/utils/stripe-billing/auto-top-up.ts"
+    );
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_decline_race");
+    customer.invoice_settings.default_payment_method = "pm_decline_race";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_decline_race", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+
+    // Pause request A's claim INSERT, after it has read the decline history.
+    let reachedClaim!: () => void;
+    const atClaim = new Promise<void>((resolve) => {
+        reachedClaim = resolve;
+    });
+    let resumeClaim!: () => void;
+    const claimReleased = new Promise<void>((resolve) => {
+        resumeClaim = resolve;
+    });
+    const pausedDb = new Proxy(env.DB, {
+        get(target, property) {
+            if (property !== "prepare") {
+                const value = Reflect.get(target, property);
+                return typeof value === "function" ? value.bind(target) : value;
+            }
+            return (sql: string) => {
+                const statement = target.prepare(sql);
+                if (!sql.includes("INSERT INTO stripe_auto_top_up_attempt")) {
+                    return statement;
+                }
+                return {
+                    bind: (...args: unknown[]) => {
+                        const bound = statement.bind(...args);
+                        return {
+                            run: async () => {
+                                reachedClaim();
+                                await claimReleased;
+                                return bound.run();
+                            },
+                        };
+                    },
+                };
+            };
+        },
+    });
+    const requestA = processAutoTopUpForUser({ ...env, DB: pausedDb }, userId);
+    await atClaim;
+    try {
+        // Request B charges the card and it is declined meanwhile.
+        const requestB = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+        });
+        const resultB = (await requestB.json()) as {
+            status: string;
+            invoiceId: string;
+        };
+        expect(resultB.status).toBe("created");
+        const invoice = mocks.stripe.state.invoices.find(
+            (row) => row.id === resultB.invoiceId,
+        );
+        if (!invoice) throw new Error("Expected request B invoice");
+        invoice.status = "open";
+        invoice.amount_paid = 0;
+        const declined = await postSignedStripeWebhook(
+            createAutoTopUpInvoiceEvent(
+                "invoice.payment_failed",
+                resultB.invoiceId,
+                userId,
+            ),
+        );
+        expect(declined.status).toBe(200);
+    } finally {
+        resumeClaim();
+    }
+
+    expect((await requestA).status).toBe("skipped");
+    expect(mocks.stripe.state.invoices).toHaveLength(1);
 });
 
 test.for([

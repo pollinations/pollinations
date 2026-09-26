@@ -13,6 +13,7 @@ export {
     updateAutoTopUpSettings,
 } from "./auto-top-up.ts";
 export { getBillingOverview } from "./billing-overview.ts";
+export { AUTO_TOP_UP_DECLINE_REASON } from "./constants.ts";
 export { getOrCreateStripeCustomerId } from "./customer.ts";
 export { createBillingPortalSession } from "./portal.ts";
 export type { AutoTopUpIssue, BillingOverview } from "./types.ts";

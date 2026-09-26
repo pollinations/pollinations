@@ -20,6 +20,7 @@ import { getBillingOverview } from "./billing-overview.ts";
 import {
     AUTO_TOP_UP_ATTEMPT_STATUS,
     AUTO_TOP_UP_CLAIM_TTL_MS,
+    AUTO_TOP_UP_DECLINE_REASON,
     AUTO_TOP_UP_MAX_DECLINES,
     AUTO_TOP_UP_PENDING_TTL_MS,
     AUTO_TOP_UP_PURPOSE,
@@ -191,6 +192,7 @@ export async function processAutoTopUpForUser(
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
+        seenUntil: declines.lastAt,
     });
     if (!claimed) {
         return {
@@ -441,7 +443,7 @@ export async function markAutoTopUpInvoiceFailed(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,
     reason: string,
-    options: { cleanupInvoice?: boolean; disableAutoTopUp?: boolean } = {},
+    options: { cleanupInvoice?: boolean; declined?: boolean } = {},
 ): Promise<void> {
     const metadata = invoice.metadata ?? {};
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
@@ -463,21 +465,53 @@ export async function markAutoTopUpInvoiceFailed(
         await cleanupFailedAutoTopUpInvoice(env, invoice.id);
     }
 
-    const attempt = await markAttemptFailedByInvoice(
-        env.DB,
-        invoice.id,
-        reason,
-    );
+    if (!options.declined) {
+        await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
+        return;
+    }
 
-    if (options.disableAutoTopUp !== false && attempt) {
-        const declines = await getDeclineStreak(env.DB, attempt.userId);
-        if (declines.count >= AUTO_TOP_UP_MAX_DECLINES) {
-            await disableAutoTopUp(env.DB, attempt.userId);
-        }
+    const attempt = await recordDecline(env.DB, invoice.id);
+    if (!attempt) return;
+    const declines = await getDeclineStreak(env.DB, attempt.userId);
+    if (declines.count >= AUTO_TOP_UP_MAX_DECLINES) {
+        await disableAutoTopUp(env.DB, attempt.userId);
     }
 }
 
-/** Failed attempts in a row since the last paid one, newest first. */
+/**
+ * Records a card decline, also over a failure a void already recorded, so
+ * out-of-order or redelivered events still count it. Paid attempts stay paid.
+ */
+async function recordDecline(
+    db: D1Database,
+    invoiceId: string,
+): Promise<{ userId: string } | null> {
+    const now = Date.now();
+    return (
+        (await db
+            .prepare(
+                `UPDATE stripe_auto_top_up_attempt
+                    SET status = ?,
+                        failure_reason = ?,
+                        updated_at = ?,
+                        completed_at = COALESCE(completed_at, ?)
+                    WHERE stripe_invoice_id = ?
+                        AND status != ?
+                    RETURNING user_id AS userId`,
+            )
+            .bind(
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                AUTO_TOP_UP_DECLINE_REASON,
+                now,
+                now,
+                invoiceId,
+                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            )
+            .first<{ userId: string }>()) ?? null
+    );
+}
+
+/** Card declines in a row since the last paid attempt, newest first. */
 async function getDeclineStreak(
     db: D1Database,
     userId: string,
@@ -487,14 +521,15 @@ async function getDeclineStreak(
             `SELECT status, COALESCE(completed_at, updated_at) AS at
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
-                    AND status IN (?, ?)
+                    AND (status = ? OR (status = ? AND failure_reason = ?))
                 ORDER BY created_at DESC
                 LIMIT ?`,
         )
         .bind(
             userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
             AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            AUTO_TOP_UP_DECLINE_REASON,
             AUTO_TOP_UP_MAX_DECLINES,
         )
         .all<{ status: string; at: number }>();
@@ -623,6 +658,8 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
+        /** Newest decline or payment the caller read before deciding to claim. */
+        seenUntil: number;
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -652,6 +689,14 @@ async function claimAutoTopUpAttempt(
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
                     AND status IN (?, ?)
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM stripe_auto_top_up_attempt
+                WHERE user_id = ?
+                    AND status = ?
+                    AND failure_reason = ?
+                    AND COALESCE(completed_at, updated_at) > ?
             )`,
         )
         .bind(
@@ -666,6 +711,10 @@ async function claimAutoTopUpAttempt(
             input.userId,
             AUTO_TOP_UP_ATTEMPT_STATUS.CLAIMED,
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
+            input.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            AUTO_TOP_UP_DECLINE_REASON,
+            input.seenUntil,
         )
         .run();
 

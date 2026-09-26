@@ -17,6 +17,9 @@ export const AUTO_TOP_UP_RETRY_DELAYS_MS = [
     24 * 60 * 60 * 1000,
 ];
 export const AUTO_TOP_UP_MAX_DECLINES = AUTO_TOP_UP_RETRY_DELAYS_MS.length + 1;
+/** The failure reason stored for card declines; only these count as declines. */
+export const AUTO_TOP_UP_DECLINE_REASON =
+    "Stripe could not charge the default payment method.";
 
 /**
  * The `stripe_auto_top_up_attempt.status` state machine, named once:

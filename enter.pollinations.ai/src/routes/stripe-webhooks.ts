@@ -8,6 +8,7 @@ import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
+    AUTO_TOP_UP_DECLINE_REASON,
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
@@ -772,7 +773,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,
-                    "Stripe could not charge the default payment method.",
+                    AUTO_TOP_UP_DECLINE_REASON,
+                    { declined: true },
                 );
                 break;
             }
@@ -784,7 +786,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                     invoice,
                     "Stripe invoice can no longer be collected.",
-                    { cleanupInvoice: false, disableAutoTopUp: false },
+                    { cleanupInvoice: false },
                 );
                 break;
             }

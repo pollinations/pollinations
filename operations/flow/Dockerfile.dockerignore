@@ -2,6 +2,12 @@
 **
 !package.json
 !package-lock.json
+# Gen imports these guides into its real documentation routes.
+!BRING_YOUR_OWN_MODEL.md
+!BRING_YOUR_OWN_POLLEN.md
+!BUILD_YOUR_OWN_AGENT.md
+!CODING_HARNESSES.md
+!packages/polli-cli/README.md
 !shared/**
 !enter.pollinations.ai/**
 !gen.pollinations.ai/**

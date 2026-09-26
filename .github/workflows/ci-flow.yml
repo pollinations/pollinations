@@ -15,6 +15,11 @@ on:
       - operations/economics/web/**
       - package.json
       - package-lock.json
+      - BRING_YOUR_OWN_MODEL.md
+      - BRING_YOUR_OWN_POLLEN.md
+      - BUILD_YOUR_OWN_AGENT.md
+      - CODING_HARNESSES.md
+      - packages/polli-cli/README.md
       - .github/workflows/ci-flow.yml
 
 permissions:

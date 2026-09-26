@@ -2,7 +2,9 @@ import { writeFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import {
+    fail,
     getOutputMode,
     printError,
     printInfo,
@@ -91,6 +93,13 @@ export function createTextCommand() {
             const images: string[] = Array.isArray(opts.image)
                 ? opts.image
                 : [];
+            const invalidImage = images.find(
+                (url) => !/^https?:\/\//i.test(url),
+            );
+            if (invalidImage)
+                fail(
+                    `--image requires a public http(s) URL, not a local path: ${invalidImage}`,
+                );
             if (images.length > 0) {
                 const parts: ContentPart[] = [{ type: "text", text: prompt }];
                 for (const url of images) {
@@ -104,15 +113,44 @@ export function createTextCommand() {
             const body: Record<string, unknown> = { messages };
             if (opts.model) body.model = opts.model;
             if (opts.temperature !== undefined)
-                body.temperature = Number(opts.temperature);
+                body.temperature = numberOption(
+                    "--temperature",
+                    opts.temperature,
+                    0,
+                    2,
+                );
             if (opts.maxTokens !== undefined)
-                body.max_tokens = Number(opts.maxTokens);
-            if (opts.topP !== undefined) body.top_p = Number(opts.topP);
+                body.max_tokens = numberOption(
+                    "--max-tokens",
+                    opts.maxTokens,
+                    0,
+                    Number.MAX_SAFE_INTEGER,
+                    true,
+                );
+            if (opts.topP !== undefined)
+                body.top_p = numberOption("--top-p", opts.topP, 0, 1);
             if (opts.frequencyPenalty !== undefined)
-                body.frequency_penalty = Number(opts.frequencyPenalty);
+                body.frequency_penalty = numberOption(
+                    "--frequency-penalty",
+                    opts.frequencyPenalty,
+                    -2,
+                    2,
+                );
             if (opts.presencePenalty !== undefined)
-                body.presence_penalty = Number(opts.presencePenalty);
-            if (opts.seed !== undefined) body.seed = Number(opts.seed);
+                body.presence_penalty = numberOption(
+                    "--presence-penalty",
+                    opts.presencePenalty,
+                    -2,
+                    2,
+                );
+            if (opts.seed !== undefined)
+                body.seed = numberOption(
+                    "--seed",
+                    opts.seed,
+                    -1,
+                    2147483647,
+                    true,
+                );
             if (opts.jsonResponse)
                 body.response_format = { type: "json_object" };
             if (opts.reasoning) body.reasoning_effort = opts.reasoning;

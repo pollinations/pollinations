@@ -15,7 +15,6 @@ const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
 const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const WAN_TURBO_RATIOS = ["16:9", "9:16", "1:1"] as const;
 const SEEDANCE_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
-const MEDIA_POLL_MAX_ATTEMPTS = 60;
 
 type FalFile = { url?: string; content_type?: string };
 
@@ -100,7 +99,6 @@ export async function callFalFallbackImage(
                     },
                     params,
                 ),
-                pollMaxAttempts: MEDIA_POLL_MAX_ATTEMPTS,
             },
             requireFalKey(),
         );
@@ -231,7 +229,6 @@ export async function callFalFallbackVideo(
                     },
                     params,
                 ),
-                pollMaxAttempts: MEDIA_POLL_MAX_ATTEMPTS,
             },
             requireFalKey(),
         );

@@ -156,7 +156,7 @@ function errorCases(namespace: string, page: CanvasScreen) {
                         : "signed-out",
             },
             expected: [
-                { selector: "#sign-in-title", text: error.title },
+                heading("Sign in"),
                 { selector: '[role="alert"]', text: error.message },
             ],
         });
@@ -536,7 +536,13 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             return (page.variants ?? []).map((variant) =>
                 makeCase("dashboard", page, variant, {
                     conditions: { account: "signed-out" },
-                    expected: [...newsContent, newsAccount(false)],
+                    expected: [
+                        heading("Sign in"),
+                        {
+                            selector:
+                                'button:enabled:text-is("Sign in with GitHub")',
+                        },
+                    ],
                     ...(variant.params?.action === "sign-in" && {
                         action: {
                             type: "sign-in" as const,
@@ -556,7 +562,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                 : [
                                       {
                                           selector: "[role='alert']",
-                                          text: loginSituations.default.message,
+                                          text: "We couldn’t sign you in to your Pollinations account. Please try again.",
                                       },
                                   ],
                     }),
@@ -605,12 +611,14 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         ],
                     }),
                     ...(page.id === "catalog" && {
+                        prepare: { catalog: "available" as const },
+                        note: "The real Gen catalog uses a local Tinybird health fixture for openai/gpt-6-sol. Model data, filtering and UI come from main; this is not live model-health evidence.",
                         expected: [
                             heading(headings.catalog),
                             noPageError,
                             {
                                 selector:
-                                    'button[aria-label^="All, "]:not([aria-label="All, 0 models"])',
+                                    'button[aria-label^="Copy model id "]',
                             },
                         ],
                     }),
@@ -685,13 +693,34 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             );
         for (const variant of page.variants ?? []) {
             if (
+                page.id === "catalog" &&
+                variant.params?.model_catalog === "health-unavailable"
+            ) {
+                cases.push(
+                    makeCase("dashboard", page, variant, {
+                        note: "The local external health feed is unavailable. Main receives the real catalog with unknown health; its default Reliable filter hides those models.",
+                        expected: [
+                            heading(headings.catalog),
+                            noPageError,
+                            {
+                                selector: "p",
+                                text: "No official models match the selected filters.",
+                            },
+                        ],
+                    }),
+                );
+            }
+            if (
                 ["models", "agents", "catalog"].includes(page.id) &&
                 ["Loading", "Load failed"].includes(variant.label)
             ) {
                 const pending = variant.label === "Loading";
                 cases.push(
                     makeCase("dashboard", page, variant, {
-                        prepare: { dashboard: "populated" },
+                        prepare:
+                            page.id === "catalog"
+                                ? { catalog: "available" }
+                                : { dashboard: "populated" },
                         requests: [
                             {
                                 path:
@@ -722,7 +751,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                       {
                                           selector: pending
                                               ? page.id === "catalog"
-                                                  ? "button[aria-label='All, 0 models']"
+                                                  ? 'body:not(:has(button[aria-label^="Copy model id "])) button[aria-label="All"]'
                                                   : "output, p, span, td, div"
                                               : "[role='alert']",
                                           ...(!pending
@@ -1191,7 +1220,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         expected: [
                             {
                                 selector: "p",
-                                text: "No transactions in this selected period",
+                                text: "No usage in this period.",
                             },
                         ],
                     }),
@@ -1703,6 +1732,8 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             )
                 cases.push(
                     makeCase("dashboard", page, variant, {
+                        prepare: { activity: "available" },
+                        note: "Main keeps the Usage controls visible while the chart is loading. Failed reads show the HTTP status and Try again; no replacement loading text is added by Flow.",
                         requests: [
                             {
                                 path: "/api/account/usage/daily",
@@ -1713,13 +1744,26 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             },
                         ],
                         expected: [
-                            {
-                                selector: "p",
-                                text:
-                                    label === "Loading"
-                                        ? "Fetching usage data"
-                                        : "Failed to fetch usage data",
-                            },
+                            heading("Usage"),
+                            heading("Earnings"),
+                            ...(label === "Loading"
+                                ? [
+                                      noPageError,
+                                      {
+                                          selector:
+                                              'body:not(:has(table[aria-label="Usage by model"])):not(:has(p:has-text("No usage in this period")))',
+                                      },
+                                  ]
+                                : [
+                                      {
+                                          selector: '[role="alert"]',
+                                          text: "Failed to load usage: 503",
+                                      },
+                                      {
+                                          selector:
+                                              'button:enabled:text-is("Try again")',
+                                      },
+                                  ]),
                         ],
                     }),
                 );
@@ -1853,13 +1897,13 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                     steps: [
                         {
                             selector: "button",
-                            text: "Connect with Pollinations",
+                            text: "Pollinations Connect",
                             action: "click",
                         },
                         ...(variant.params?.sim_budget === "0"
                             ? [
                                   {
-                                      selector: "input[type='number']",
+                                      selector: "input[name='pollen-budget']",
                                       action: "fill" as const,
                                       value: "0",
                                   },
@@ -1902,8 +1946,8 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                             {
                                 selector: pending ? "h1" : "[role='alert']",
                                 text: pending
-                                    ? "Loading app access"
-                                    : "Couldn’t load app access",
+                                    ? "Edit access"
+                                    : "Couldn’t load this key. Check that you’re signed in to the account that owns it.",
                             },
                         ],
                     }),
@@ -1938,7 +1982,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                         steps: [
                             {
                                 selector: "button",
-                                text: cancel ? "Cancel" : "Save",
+                                text: cancel ? "Cancel" : "Save changes",
                                 action: "click",
                             },
                         ],
@@ -1953,11 +1997,13 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                                         },
                                     ]
                                   : [
-                                        heading(
-                                            cancel
-                                                ? "No changes"
-                                                : "App access updated",
-                                        ),
+                                        heading("Edit app access"),
+                                        {
+                                            selector: "p",
+                                            text: cancel
+                                                ? "Nothing changed."
+                                                : "Changes saved. They apply to future requests.",
+                                        },
                                     ],
                     }),
                 ];
@@ -1966,6 +2012,13 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                 return [
                     makeCase("topup", page, variant, {
                         prepare: { dashboard: "populated" },
+                        expected: [
+                            heading("Edit app access"),
+                            {
+                                selector:
+                                    'button:enabled:text-is("Save changes")',
+                            },
+                        ],
                     }),
                 ];
             if (variant.label === "Sign in")
@@ -1974,8 +2027,8 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                         conditions: { account: "signed-out" },
                         expected: [
                             {
-                                selector: "#sign-in-title",
-                                text: "Sign in to manage app access",
+                                selector: "h1",
+                                text: "Edit access",
                             },
                         ],
                     }),
@@ -1987,8 +2040,8 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                         action: { type: "sign-in", outcome: "error" },
                         expected: [
                             {
-                                selector: "#sign-in-title",
-                                text: loginSituations.default.title,
+                                selector: '[role="alert"]',
+                                text: "We couldn’t sign you in to your Pollinations account. Please try again.",
                             },
                         ],
                     }),
@@ -2000,7 +2053,13 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                             screen: pageRoute(page),
                             account_case: "missing",
                         },
-                        expected: [heading("App access unavailable")],
+                        expected: [
+                            heading("Edit access"),
+                            {
+                                selector: '[role="alert"]',
+                                text: "Couldn’t load this key. Check that you’re signed in to the account that owns it.",
+                            },
+                        ],
                     }),
                 ];
             return [];

@@ -1,11 +1,6 @@
 import { oauthSignInCallback } from "@frontend/lib/oauth-sign-in";
-import {
-    clearSignInContext,
-    getSignInContext,
-    rememberSignIn,
-} from "@frontend/lib/sign-in-context";
-import { getLoginError, loginErrors } from "@shared/auth/login-errors.ts";
-import { describe, expect, it, vi } from "vitest";
+import { isBannedLoginError } from "@shared/auth/ban.ts";
+import { describe, expect, it } from "vitest";
 import { accountActionScreens } from "../flow-account-actions";
 import { adminScreens } from "../flow-admin";
 import {
@@ -34,6 +29,7 @@ import {
     galleryScreensForFlow,
 } from "../flow-gallery-data";
 import { entrances } from "../flow-journey-state";
+import { loginSituations as loginErrors } from "../review-auth";
 import { reviewFlows } from "../review-inventory";
 
 describe("stable situation bindings", () => {
@@ -227,9 +223,14 @@ describe("Complete managed screen inventory", () => {
                         : [],
                 )
                 .sort(),
-        ).toEqual(["admin_required", "invalid_state", "unavailable"]);
+        ).toEqual([
+            "admin_required",
+            "cancelled",
+            "invalid_state",
+            "unavailable",
+        ]);
     });
-    it("exposes account loading and payment waiting alongside their errors", () => {
+    it("exposes account loading and checkout returns alongside their errors", () => {
         const account = galleryScreensForFlow("account");
         expect(
             account
@@ -250,7 +251,7 @@ describe("Complete managed screen inventory", () => {
                 .find((entry) => entry.id === "account-wallet")
                 ?.variants?.some(
                     (variant) =>
-                        variant.params?.account_case === "payment-error",
+                        variant.params?.account_case === "checkout-return",
                 ),
         ).toBe(true);
     });
@@ -329,10 +330,10 @@ it("shows every Enter error route state separately in every login flow and map",
                 ?.variants?.some((variant) => variant.screen === error.id),
         ).toBe(true);
 });
-it("recognizes the ban code emitted by Better Auth and keeps unknown failures generic", () => {
-    expect(getLoginError("BANNED_USER")).toBe(loginErrors.banned);
-    expect(getLoginError("banned")).toBe(loginErrors.banned);
-    expect(getLoginError(loginErrors.staging.code)).toBe(loginErrors.staging);
+it("represents current Enter ban and staging codes in the App map", () => {
+    expect(isBannedLoginError(loginErrors.banned.code)).toBe(true);
+    expect(isBannedLoginError("banned")).toBe(true);
+    expect(isBannedLoginError("unknown")).toBe(false);
     expect(appLoginScreens.has(loginErrors.staging.id)).toBe(true);
     expect(
         appLoginEdges.some(
@@ -341,13 +342,6 @@ it("recognizes the ban code emitted by Better Auth and keeps unknown failures ge
                 edge.to === loginErrors.staging.id,
         ),
     ).toBe(true);
-    for (const code of [
-        "",
-        "state_mismatch",
-        "unable_to_get_user_info",
-        "toString",
-    ])
-        expect(getLoginError(code)).toBe(loginErrors.default);
 });
 it("keeps authentication in main flows and purchases in signed-in top-up flows", () => {
     for (const flow of ["app", "account"] as const) {
@@ -429,6 +423,8 @@ it("keeps app and account top-up maps separate", () => {
         "account-auth-error",
         "account-payment",
         "account-billing",
+        "account-dashboard",
+        "account-contact-billing",
     ]);
     expect(app.edges).toContainEqual({
         from: "account-key",
@@ -474,17 +470,20 @@ it("shows every configured state as its own page with the original render parame
     // Wallet loading and inline billing each expose their session recovery.
     expect(account).toHaveLength(22);
     expect(account.map((entry) => entry.variants?.[0].label)).toEqual(
-        expect.arrayContaining(["Session expired", "Billing session expired"]),
+        expect.arrayContaining([
+            "Balance session expired",
+            "Billing session expired",
+        ]),
     );
     expect(
         account.map((entry) => entry.variants?.[0].params?.account_case),
-    ).toContain("pending");
+    ).toContain("loading");
     expect(
         account.map((entry) => entry.variants?.[0].params?.account_case),
-    ).toContain("payment-error");
+    ).not.toContain("payment-error");
     expect(
         account.map((entry) => entry.variants?.[0].params?.account_case),
-    ).toContain("credited");
+    ).toContain("checkout-return");
 });
 it("shows the shared app sign-in UI once while keeping each visible sign-in state", () => {
     const pages = galleryPagesForFlow("app", "main");
@@ -494,7 +493,6 @@ it("shows the shared app sign-in UI once while keeping each visible sign-in stat
         "Sign in to Pollinations · Checking app",
         "Sign in to Pollinations · Signing in",
         "Sign in to Pollinations · Sign-in failed",
-        "Sign in to Pollinations · Session expired before approval",
     ]);
     expect(pages.some((entry) => entry.title.startsWith("Check account"))).toBe(
         true,
@@ -529,8 +527,8 @@ it("groups configuration controls without hiding loading, success, or error stat
                 if (id === "app" && section === "main") {
                     const counts: Record<string, number> = {
                         "Sign in to Pollinations": 4,
-                        "Pollinations sign-in error": 5,
-                        "App connection error": 13,
+                        "Pollinations sign-in error": 4,
+                        "App connection error": 14,
                         "Allow access": 7,
                         "App · Connection status": 7,
                     };
@@ -609,7 +607,7 @@ it("groups matching request errors while preserving identity, phase, and recover
         (entry) => entry.title === "App connection error",
     );
     expect(blocked).toHaveLength(1);
-    expect(blocked[0].variants).toHaveLength(13);
+    expect(blocked[0].variants).toHaveLength(14);
     const expectedReasons = [
         "redirect",
         "app",
@@ -709,7 +707,7 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
     );
     expect(failures).toHaveLength(1);
     const card = failures[0];
-    expect(card.variants).toHaveLength(5);
+    expect(card.variants).toHaveLength(4);
     expect(card.variants?.[0].params).toEqual({
         action: "sign-in",
         result: "error",
@@ -719,8 +717,8 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
         params: { login_error: "unknown", login_flow: "app" },
     });
     expect(card.variants?.[2]).toMatchObject({
-        label: "Session expired before approval",
-        params: { authorize_error: "session" },
+        label: "Account suspended",
+        params: { login_error: "BANNED_USER" },
     });
     for (const [index, from, to] of [
         [0, "app-signing-in", "error"],
@@ -925,32 +923,19 @@ describe("shared Admin inventory", () => {
             ["identity", "admin-github"],
             ["admin-callback", "dashboard-connected"],
             ["admin-callback", "dashboard-sign-in"],
-            ["admin-auth-error", "identity"],
+            ["admin-auth-error", "staging-invite-only-exit"],
             ["dashboard-connected", "dashboard-sign-in"],
         ])
             expect(edges).toContainEqual(expect.objectContaining({ from, to }));
     });
 });
-it("preserves the Admin issuer request for retry without accepting another origin", () => {
-    vi.stubGlobal(
-        "location",
-        new URL("https://enter.pollinations.ai/app/sign-in"),
+it("preserves the issuer's signed query when returning from GitHub", () => {
+    const input = new URL(
+        "http://localhost:4180/app/sign-in?client_id=admin-example&state=example-state&code_challenge=example-challenge&sig=example-signature#discard",
     );
-    try {
-        clearSignInContext();
-        const callback = oauthSignInCallback(
-            "https://enter.pollinations.ai/app/sign-in?client_id=admin-example&state=preview-state&code_challenge=preview-challenge",
-        );
-        rememberSignIn(callback);
-        expect(getSignInContext()?.path).toBe(
-            "/api/auth/oauth2/authorize?client_id=admin-example&state=preview-state&code_challenge=preview-challenge",
-        );
-        rememberSignIn(
-            "https://other.example/api/auth/oauth2/authorize?client_id=other",
-        );
-        expect(getSignInContext()?.path).toBe("/sign-in");
-    } finally {
-        clearSignInContext();
-        vi.unstubAllGlobals();
-    }
+    const callback = new URL(oauthSignInCallback(input.href));
+    expect(callback.origin).toBe(input.origin);
+    expect(callback.pathname).toBe("/api/auth/oauth2/authorize");
+    expect(callback.search).toBe(input.search);
+    expect(callback.hash).toBe("");
 });

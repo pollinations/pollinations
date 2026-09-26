@@ -36,7 +36,7 @@ async function openScreen() {
             throw new Error(
                 "The selected review situation does not match this flow.",
             );
-        steps = initialReviewSteps(recipe, window.innerWidth < 768);
+        steps = initialReviewSteps(recipe);
     }
     if (route?.startsWith(ADMIN_ORIGIN)) {
         queueReviewSteps(steps);

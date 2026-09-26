@@ -21,9 +21,11 @@ describe("independent account actions", () => {
         const map = getFlowFocus("app", "topup");
         expect(map.nodes).toEqual(accountActionNodes);
         expect(map.edges).toEqual(accountActionEdges);
-        expect(new Set(map.nodes.map((node) => node.screen))).toEqual(
-            new Set(accountActionScreens.map((screen) => screen.id)),
-        );
+        expect(
+            new Set(
+                map.nodes.flatMap((node) => (node.screen ? [node.screen] : [])),
+            ),
+        ).toEqual(new Set(accountActionScreens.map((screen) => screen.id)));
     });
     it("gives every page an exit and every transition an existing destination", () => {
         for (const screen of accountActionScreens)
@@ -32,9 +34,9 @@ describe("independent account actions", () => {
             ).toBe(true);
         for (const edge of accountActionEdges)
             for (const id of [edge.from, edge.to])
-                expect(
-                    accountActionScreens.some((screen) => screen.id === id),
-                ).toBe(true);
+                expect(accountActionNodes.some((node) => node.id === id)).toBe(
+                    true,
+                );
     });
     it("keeps all key and payment failure states on their actual owner routes", () => {
         const key = accountActionScreens.find(

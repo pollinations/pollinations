@@ -106,7 +106,7 @@ describe("App Login visual review cases", () => {
         for (const recipe of appLoginReviewCases.filter(
             (item) => item.action?.type === "sign-in",
         )) {
-            expect(initialReviewSteps(recipe, false)).toEqual([
+            expect(initialReviewSteps(recipe)).toEqual([
                 {
                     selector: "button",
                     text: "Sign in with GitHub",

@@ -120,6 +120,24 @@ export const accountActionNodes: FlowNode[] = accountActionScreens.map(
         y: 150 + Math.floor(index / 3) * 850,
     }),
 );
+accountActionNodes.push(
+    {
+        id: "account-dashboard",
+        kind: "outcome",
+        label: "Dashboard",
+        note: "Sign-in errors return to News when signed out.",
+        x: 2040,
+        y: 150,
+    },
+    {
+        id: "account-contact-billing",
+        kind: "outcome",
+        label: "Contact billing",
+        note: "Suspended account: billing@pollinations.ai",
+        x: 2040,
+        y: 500,
+    },
+);
 export const accountActionEdges: FlowEdge[] = [
     {
         from: "account-github",
@@ -128,22 +146,16 @@ export const accountActionEdges: FlowEdge[] = [
     },
     {
         from: "account-auth-error",
-        to: "account-key",
-        label: "Sign-in failure · retry requested app access",
+        to: "account-dashboard",
+        label: "Go to dashboard",
     },
     {
         from: "account-auth-error",
-        to: "account-wallet",
-        label: "Sign-in failure · retry requested wallet",
+        to: "account-contact-billing",
+        label: "Contact billing",
     },
-
-    {
-        from: "account-auth-error",
-        to: "account-app",
-        label: "Account restricted · close tab",
-    },
-    { from: "account-app", to: "account-key", label: "App access" },
-    { from: "account-app", to: "account-wallet", label: "Wallet" },
+    { from: "account-app", to: "account-key", label: "Permissions" },
+    { from: "account-app", to: "account-wallet", label: "Buy Pollen" },
     {
         from: "account-key",
         to: "account-wallet",

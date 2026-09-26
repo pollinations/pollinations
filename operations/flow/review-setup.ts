@@ -13,6 +13,7 @@ export const reviewSetupOptions = {
     billing: ["ready", "enabled", "payment-action"],
     connections: ["available", "connected"],
     activity: ["available", "empty"],
+    catalog: ["available"],
     discord: ["connected", "unavailable"],
     endpoint: ["success"],
     payment: ["credited", "failed"],

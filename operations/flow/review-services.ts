@@ -84,6 +84,22 @@ export function createReviewServices() {
             }
             if (request.method !== "GET") return;
             if (
+                setup.catalog === "available" &&
+                url.origin === "https://api.europe-west2.gcp.tinybird.co" &&
+                url.pathname === "/v0/pipes/model_route_health.json"
+            )
+                return Response.json({
+                    data: [
+                        {
+                            model: "openai/gpt-6-sol",
+                            event_type: "generate.text",
+                            is_rollup: 1,
+                            status_2xx: 10,
+                            errors_5xx: 0,
+                        },
+                    ],
+                });
+            if (
                 url.origin === "https://api.github.com" &&
                 url.pathname === `/user/${localIdentity.id}`
             )

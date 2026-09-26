@@ -10,17 +10,9 @@ export type ReviewStep = {
 
 // Both Journey and captures click the same real controls. The external-provider
 // handoff remains an explicit page; capture automation continues it separately.
-export function initialReviewSteps(
-    recipe: ReviewCase,
-    mobile: boolean,
-): ReviewStep[] {
+export function initialReviewSteps(recipe: ReviewCase): ReviewStep[] {
     const steps: ReviewStep[] = [];
     if (recipe.action?.type === "sign-in") {
-        if (recipe.pageId === "enter-signed-out" && mobile)
-            steps.push({
-                selector: 'button[aria-label="Open navigation"]',
-                action: "click",
-            });
         steps.push({
             selector: "button",
             text: "Sign in with GitHub",

@@ -60,7 +60,7 @@ type Job = {
 export function captureIdentity(recipe: ReviewCase, selection: Selection) {
     const {
         id,
-        pageId,
+        pageId: _pageId,
         family: _family,
         title: _title,
         variant: _variant,
@@ -72,10 +72,6 @@ export function captureIdentity(recipe: ReviewCase, selection: Selection) {
             behavior,
             size: selection.size,
             theme: selection.theme,
-            mobileDashboardSignIn:
-                pageId === "enter-signed-out" &&
-                recipe.action?.type === "sign-in" &&
-                selection.size === "mobile",
             verifyDeviceGrant:
                 selection.flow === "device" && id === "device-result",
         },
@@ -387,10 +383,7 @@ export function createCaptureService(options: {
                 );
             }
             stage = "checking the expected page content";
-            if (
-                initialReviewSteps(recipe, job.selection.size === "mobile")
-                    .length
-            ) {
+            if (initialReviewSteps(recipe).length) {
                 stage = "exercising the real controls";
                 await page.waitForFunction(
                     () =>
@@ -422,7 +415,8 @@ export function createCaptureService(options: {
                 entryRoute &&
                 !visitedRoutes.has(
                     new URL(entryRoute, origin).pathname +
-                        new URL(entryRoute, origin).search,
+                        new URL(entryRoute, origin).search +
+                        new URL(entryRoute, origin).hash,
                 )
             )
                 throw new Error("Requested entry route was not loaded");

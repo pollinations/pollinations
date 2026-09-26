@@ -90,6 +90,10 @@ export const dashboardScreens: CanvasScreen[] = [
         screen: "dash-catalog",
         variants: [
             { label: "Models available" },
+            {
+                label: "Health unavailable",
+                params: { model_catalog: "health-unavailable" },
+            },
             { label: "Loading", params: { model_catalog: "loading" } },
             { label: "Load failed", params: { model_catalog: "error" } },
         ],
@@ -642,33 +646,22 @@ export function getDashboardFlow(section?: string) {
         y: 150 + Math.floor(i / 3) * 850,
     }));
     if (!section || section === "main") {
-        nodes.push(
-            {
-                id: "dashboard-billing",
-                kind: "outcome",
-                label: "Contact billing",
-                note: "Account suspended · email billing@pollinations.ai",
-                x: 2040,
-                y: 250,
-            },
-            {
-                id: "dashboard-production",
-                kind: "outcome",
-                label: "Visit pollinations.ai",
-                note: "Staging is invite-only · continue on the public site",
-                x: 2040,
-                y: 560,
-            },
-        );
+        nodes.push({
+            id: "dashboard-billing",
+            kind: "outcome",
+            label: "Contact billing",
+            note: "Account suspended · email billing@pollinations.ai",
+            x: 2040,
+            y: 250,
+        });
         ids.add("dashboard-billing");
-        ids.add("dashboard-production");
     }
-    if (section === "main") {
+    if (!section || section === "main") {
         nodes.push({
             id: "dashboard-ready",
             kind: "outcome",
             label: "Dashboard",
-            note: "Continue to any dashboard page",
+            note: "Signed in: Wallet. Signed out: News.",
             x: 800,
             y: 1010,
         });
@@ -724,18 +717,13 @@ export function getDashboardFlow(section?: string) {
         },
         {
             from: "dashboard-auth-error",
-            to: "enter-signed-out",
-            label: "Generic failure · retry sign-in",
+            to: "dashboard-ready",
+            label: "Go to dashboard · generic failure or staging restriction",
         },
         {
             from: "dashboard-auth-error",
             to: "dashboard-billing",
             label: "Account suspended",
-        },
-        {
-            from: "dashboard-auth-error",
-            to: "dashboard-production",
-            label: "Staging restricted",
         },
         { from: "enter-connected", to: "account-checkout", label: "Buy" },
         {

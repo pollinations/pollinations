@@ -39,7 +39,8 @@ describe("focused flow navigation", () => {
                 expect(focus.edges).toContainEqual(
                     expect.objectContaining({
                         from: "admin-auth-error",
-                        to: "identity",
+                        to: "staging-invite-only-exit",
+                        label: "Go to dashboard",
                     }),
                 );
                 continue;
@@ -54,7 +55,7 @@ describe("focused flow navigation", () => {
                 expect(focus.edges).toContainEqual(
                     expect.objectContaining({
                         from: "dashboard-auth-error",
-                        to: "enter-signed-out",
+                        to: "dashboard-ready",
                     }),
                 );
                 continue;
@@ -105,8 +106,9 @@ describe("focused flow navigation", () => {
         expect(
             device.edges.some(
                 (edge) =>
-                    edge.from === "device-denying" &&
-                    edge.to === "device-declined",
+                    edge.from === "consent" &&
+                    edge.to === "device-declined" &&
+                    edge.label === "Decline recorded",
             ),
         ).toBe(true);
     });

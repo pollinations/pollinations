@@ -31,6 +31,125 @@ async function capture(
     }
 }
 
+it
+    .runIf(process.env.FLOW_CAPTURE_TEST === "1")
+    .each(["main", "news", "catalog", "activity"])(
+    "captures current main dashboard remainder: %s",
+    async (section) => {
+        const { startRuntime } = await import("../runtime");
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            for (const recipe of reviewCasesForFlow("account", section)) {
+                const result = await capture(
+                    service,
+                    "account",
+                    section,
+                    recipe.id,
+                    section === "main" || section === "catalog"
+                        ? { theme: "dark", size: "mobile" }
+                        : { theme: "light", size: "desktop" },
+                );
+                expect(
+                    result.status,
+                    `${recipe.id}: ${result.status === "error" ? result.error : ""}`,
+                ).toBe(recipe.provider ? "reference" : "ready");
+                console.log(`Verified ${recipe.id}`);
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    240_000,
+);
+
+it.runIf(process.env.FLOW_CAPTURE_TEST === "1").each(["main", "link"])(
+    "captures Device funding without approval: %s",
+    async (section) => {
+        const { startRuntime } = await import("../runtime");
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            for (const recipe of reviewCasesForFlow("device", section).filter(
+                (item) =>
+                    ["consent-no-pollen", "consent-paid-required"].includes(
+                        item.id,
+                    ),
+            )) {
+                const result = await capture(
+                    service,
+                    "device",
+                    section,
+                    recipe.id,
+                );
+                expect(
+                    result.status,
+                    `${recipe.id}: ${result.status === "error" ? result.error : ""}`,
+                ).toBe("ready");
+                console.log(`Verified device/${section}/${recipe.id}`);
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    120_000,
+);
+
+it.runIf(process.env.FLOW_CREDENTIAL_TEST === "1").each([
+    ["app", "main"],
+    ["app", "topup"],
+    ["account", "keys"],
+    ["account", "apps"],
+])(
+    "captures final SDK and key editor batch: %s/%s",
+    async (flow, section) => {
+        const { startRuntime } = await import("../runtime");
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            const cases = reviewCasesForFlow(flow, section).filter((recipe) =>
+                flow === "account"
+                    ? recipe.variant === "Created · copy key"
+                    : section === "topup"
+                      ? [
+                            "account-app",
+                            "account-key",
+                            "account-auth-error",
+                        ].includes(recipe.pageId)
+                      : [
+                            "app-connected",
+                            "app-checking-connection",
+                            "app-connection-error",
+                            "app-loading-account",
+                            "app-account-error",
+                            "app-limit-reached",
+                            "consent-no-pollen",
+                            "consent-paid-required",
+                            "consent-failed-code",
+                        ].includes(recipe.id),
+            );
+            expect(cases.length).toBeGreaterThan(0);
+            for (const recipe of cases) {
+                const result = await capture(service, flow, section, recipe.id);
+                expect(
+                    result.status,
+                    `${recipe.id}: ${result.status === "error" ? result.error : ""}`,
+                ).toBe("ready");
+                console.log(`Verified ${recipe.id}`);
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    300_000,
+);
+
 it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     "captures current main Admin without issuing credentials",
     async () => {
@@ -1086,21 +1205,25 @@ describe("capture request selection", () => {
             },
         });
         try {
-            const response = await service.fetch(
-                new Request(
-                    "http://localhost:4180/__flow/previews?flow=app&section=main&cases=github-handoff",
-                ),
-            );
-            expect(await response?.json()).toMatchObject({
-                status: "ready",
-                stale: false,
-                cases: {
-                    "github-handoff": {
-                        status: "reference",
-                        provider: "GitHub",
-                    },
-                },
-            });
+            for (const { flow, section, cases } of reviewFlows) {
+                for (const recipe of cases.filter((item) => item.provider)) {
+                    const response = await service.fetch(
+                        new Request(
+                            `http://localhost:4180/__flow/previews?${new URLSearchParams({ flow, section, cases: recipe.id })}`,
+                        ),
+                    );
+                    expect(await response?.json()).toMatchObject({
+                        status: "ready",
+                        stale: false,
+                        cases: {
+                            [recipe.id]: {
+                                status: "reference",
+                                provider: recipe.provider,
+                            },
+                        },
+                    });
+                }
+            }
             expect(runtimeLoads).toBe(0);
         } finally {
             await service.close();

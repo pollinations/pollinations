@@ -117,3 +117,145 @@ for (const section of ["keys", "apps"]) {
         );
     }
 }
+
+for (const section of ["catalog", "activity"]) {
+    test.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
+        `Dashboard retries its failed ${section} read without losing the page`,
+        async () => {
+            const recipe = reviewCasesForFlow("account", section).find(
+                (item) => item.variant === "Load failed",
+            );
+            if (!recipe) throw new Error(`Missing ${section} failure`);
+            const browser = await chromium.launch({ headless: true });
+            try {
+                const { context, credentialRequests } = await openReviewContext(
+                    runtime,
+                    browser,
+                    recipe,
+                );
+                try {
+                    const page = await context.newPage();
+                    await page.goto(
+                        `${origin}/flow-screen.html?${new URLSearchParams(recipe.query)}`,
+                    );
+                    for (const expected of recipe.expected)
+                        await page
+                            .locator(expected.selector)
+                            .filter(
+                                expected.text ? { hasText: expected.text } : {},
+                            )
+                            .first()
+                            .waitFor();
+                    const retry = page.getByRole("button", {
+                        name: "Try again",
+                        exact: true,
+                    });
+                    expect(await retry.isEnabled()).toBe(true);
+                    const restored = await page.evaluate(async () => {
+                        const response = await fetch(
+                            "/__flow/review/requests",
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: "[]",
+                            },
+                        );
+                        return response.ok;
+                    });
+                    expect(restored).toBe(true);
+                    await retry.click();
+                    const ready = reviewCasesForFlow("account", section)[0];
+                    for (const expected of ready.expected)
+                        await page
+                            .locator(expected.selector)
+                            .filter(
+                                expected.text ? { hasText: expected.text } : {},
+                            )
+                            .first()
+                            .waitFor();
+                    expect(await page.locator('[role="alert"]').count()).toBe(
+                        0,
+                    );
+                    expect(new URL(page.url()).pathname).toBe(
+                        section === "catalog" ? "/models" : "/activity",
+                    );
+                    expect(credentialRequests).toEqual([]);
+                } finally {
+                    await context.close();
+                }
+            } finally {
+                await browser.close();
+            }
+        },
+        60000,
+    );
+}
+
+for (const recipe of reviewCasesForFlow("account", "main").filter(
+    (item) => item.pageId === "dashboard-auth-error",
+)) {
+    test.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
+        `Dashboard error exposes the current recovery destination: ${recipe.id}`,
+        async () => {
+            const browser = await chromium.launch({ headless: true });
+            try {
+                const { context, credentialRequests } = await openReviewContext(
+                    runtime,
+                    browser,
+                    recipe,
+                );
+                try {
+                    const page = await context.newPage();
+                    await page.goto(
+                        `${origin}/flow-screen.html?${new URLSearchParams(recipe.query)}`,
+                    );
+                    for (const expected of recipe.expected)
+                        await page
+                            .locator(expected.selector)
+                            .filter(
+                                expected.text ? { hasText: expected.text } : {},
+                            )
+                            .first()
+                            .waitFor();
+                    const banned = recipe.conditions.account === "banned";
+                    const link = page.getByRole("link", {
+                        name: banned
+                            ? "billing@pollinations.ai"
+                            : "Go to dashboard",
+                        exact: true,
+                    });
+                    expect(await link.getAttribute("href")).toBe(
+                        banned ? "mailto:billing@pollinations.ai" : "/",
+                    );
+                    const edges = getDashboardFlow("main").edges;
+                    expect(edges).toContainEqual(
+                        expect.objectContaining({
+                            from: "dashboard-auth-error",
+                            to: banned
+                                ? "dashboard-billing"
+                                : "dashboard-ready",
+                        }),
+                    );
+                    if (!banned) {
+                        await link.click();
+                        await page.waitForURL(
+                            (url) => url.pathname === "/news",
+                        );
+                        await page
+                            .getByRole("button", {
+                                name: "Sign in with GitHub",
+                                exact: true,
+                            })
+                            .waitFor();
+                    }
+                    expect(credentialRequests).toEqual([]);
+                } finally {
+                    await context.close();
+                }
+            } finally {
+                await browser.close();
+            }
+        },
+        60000,
+    );
+}

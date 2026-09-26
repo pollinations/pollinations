@@ -100,6 +100,8 @@ describe("OpenAI image cache", () => {
         for (const response_format of ["b64_json", "url"]) {
             const form = new FormData();
             form.set("prompt", "make it blue");
+            form.set("duration", "3");
+            form.set("audio", "false");
             form.set("response_format", response_format);
             form.append(
                 "image",
@@ -122,6 +124,8 @@ describe("OpenAI image cache", () => {
                               },
                               body: JSON.stringify({
                                   prompt: "make it blue",
+                                  duration: 3,
+                                  audio: false,
                                   image: [
                                       {
                                           image_url:
@@ -146,6 +150,10 @@ describe("OpenAI image cache", () => {
                 contentType: string;
                 input: { image: string[]; response_format: string };
             }>();
+            expect(JSON.parse(result.body)).toMatchObject({
+                duration: encoding === "json" ? 3 : "3",
+                audio: encoding === "json" ? false : "false",
+            });
             expect(result.input.response_format).toBe(response_format);
             expect(result.input.image).toHaveLength(2);
             expect(JSON.parse(result.body)).not.toHaveProperty("seed");

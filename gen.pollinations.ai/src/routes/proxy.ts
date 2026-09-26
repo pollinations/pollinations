@@ -1216,6 +1216,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "Video models that advertise this endpoint in `/models` use the images as frame inputs. The Pollinations extensions `duration` (seconds) and `audio` (boolean) are forwarded in both JSON and multipart requests; supported values depend on the model.",
                 'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
                 "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",

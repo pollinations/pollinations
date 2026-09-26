@@ -1,10 +1,12 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { falBillableUnits } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:kling:ops");
@@ -15,7 +17,6 @@ const KLING_TEXT_ENDPOINT =
 const KLING_IMAGE_ENDPOINT =
     "https://queue.fal.run/fal-ai/kling-video/v3/standard/image-to-video";
 const KLING_POLL_INTERVAL_MS = 3_000;
-const KLING_TIMEOUT_MS = 10 * 60 * 1_000;
 // Text-to-video's aspect_ratio enum; image-to-video has no such field and
 // instead follows the supplied start image.
 const KLING_ASPECT_RATIOS = ["16:9", "9:16", "1:1"] as const;
@@ -45,14 +46,25 @@ async function readJson<T>(response: Response, message: string): Promise<T> {
     }
 }
 
-function remainingTime(deadline: number): number {
-    const remaining = deadline - Date.now();
-    if (remaining <= 0) {
-        throw UpstreamError.fromProvider(504, {
-            message: "Kling generation timed out",
-        });
+// Retrying a status/result GET is safe; never retry the paid submission.
+// fal can keep running and billing the job after a polling connection drops.
+async function fetchKlingRead(
+    url: string,
+    options: Parameters<typeof fetchUpstream>[1],
+) {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await fetchUpstream(url, options);
+        } catch (error) {
+            if (
+                !(error instanceof UpstreamError) ||
+                error.status < 500 ||
+                attempt >= 2
+            )
+                throw error;
+            await sleep(KLING_POLL_INTERVAL_MS);
+        }
     }
-    return remaining;
 }
 
 export async function callKlingVideoAPI(
@@ -86,24 +98,35 @@ export async function callKlingVideoAPI(
         requestBody.start_image_url = startImage;
         if (endImage) requestBody.end_image_url = endImage;
     } else {
-        requestBody.aspect_ratio = closestRatioLogSpace(
-            safeParams.width,
-            safeParams.height,
-            KLING_ASPECT_RATIOS,
-        );
+        if (
+            safeParams.aspectRatio !== undefined &&
+            !KLING_ASPECT_RATIOS.some(
+                (ratio) => ratio === safeParams.aspectRatio,
+            )
+        ) {
+            throw new UpstreamError(400, {
+                message:
+                    "Kling text-to-video supports aspectRatio 16:9, 9:16, or 1:1",
+            });
+        }
+        requestBody.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(
+                safeParams.width,
+                safeParams.height,
+                KLING_ASPECT_RATIOS,
+            );
     }
 
     const endpoint = isImageToVideo
         ? KLING_IMAGE_ENDPOINT
         : KLING_TEXT_ENDPOINT;
-    const deadline = Date.now() + KLING_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const submissionResponse = await fetchUpstream(endpoint, {
         method: "POST",
         headers: { ...authorization, "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Kling submission failed",
     });
     const submission = await readJson<FalQueueSubmission>(
@@ -117,9 +140,8 @@ export async function callKlingVideoAPI(
     }
 
     while (true) {
-        const statusResponse = await fetchUpstream(submission.status_url, {
+        const statusResponse = await fetchKlingRead(submission.status_url, {
             headers: authorization,
-            signal: AbortSignal.timeout(remainingTime(deadline)),
             errorLabel: "Kling status check failed",
         });
         const status = await readJson<FalQueueStatus>(
@@ -137,14 +159,23 @@ export async function callKlingVideoAPI(
                 message: "Kling returned an invalid status",
             });
         }
-        await sleep(Math.min(KLING_POLL_INTERVAL_MS, remainingTime(deadline)));
+        await sleep(KLING_POLL_INTERVAL_MS);
     }
 
-    const resultResponse = await fetchUpstream(submission.response_url, {
+    const resultResponse = await fetchKlingRead(submission.response_url, {
         headers: authorization,
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Kling result fetch failed",
     });
+    // fal reports normalized seconds priced at $0.14/unit for both endpoints.
+    // Convert the reported quantity to the registry's silent/audio second rate;
+    // never substitute the requested duration for the provider's billed usage.
+    const rates = IMAGE_SERVICES[KLING_MODEL].cost;
+    const rate =
+        rates.completionVideoSeconds +
+        (generateAudio ? rates.completionAudioSeconds : 0);
+    const billedSeconds = Number(
+        ((falBillableUnits(resultResponse) * 0.14) / rate).toFixed(9),
+    );
     const result = await readJson<KlingResult>(
         resultResponse,
         "Kling returned an invalid result",
@@ -155,8 +186,7 @@ export async function callKlingVideoAPI(
         });
     }
 
-    const videoResponse = await fetchUpstream(result.video.url, {
-        signal: AbortSignal.timeout(remainingTime(deadline)),
+    const videoResponse = await fetchKlingRead(result.video.url, {
         errorLabel: "Failed to download Kling output",
     });
 
@@ -176,8 +206,10 @@ export async function callKlingVideoAPI(
         trackingData: {
             actualModel: KLING_MODEL,
             usage: {
-                completionVideoSeconds: duration,
-                ...(generateAudio ? { completionAudioSeconds: duration } : {}),
+                completionVideoSeconds: billedSeconds,
+                ...(generateAudio
+                    ? { completionAudioSeconds: billedSeconds }
+                    : {}),
             },
         },
     };

@@ -36,6 +36,8 @@ type ProviderRequest = {
 function mockKlingFetch(
     requests: ProviderRequest[],
     status: "COMPLETED" | "FAILED" = "COMPLETED",
+    billableUnits: string | null = "1.8",
+    statusFailures = 0,
 ) {
     return vi
         .spyOn(globalThis, "fetch")
@@ -57,15 +59,25 @@ function mockKlingFetch(
                 });
             }
             if (href === STATUS_URL) {
+                if (statusFailures-- > 0)
+                    throw new TypeError("Network connection lost.");
                 return Response.json({
                     status,
                     error: "provider rejected prompt",
                 });
             }
             if (href === RESULT_URL) {
-                return Response.json({
-                    video: { url: VIDEO_URL, content_type: "video/mp4" },
-                });
+                return Response.json(
+                    {
+                        video: { url: VIDEO_URL, content_type: "video/mp4" },
+                    },
+                    {
+                        headers:
+                            billableUnits === null
+                                ? {}
+                                : { "x-fal-billable-units": billableUnits },
+                    },
+                );
             }
             if (href === VIDEO_URL) {
                 return new Response(VIDEO_BYTES, {
@@ -87,7 +99,7 @@ afterEach(() => {
 });
 
 describe("callKlingVideoAPI", () => {
-    it("routes text-to-video with the aspect ratio and bills exactly the requested silent seconds (no 5s minimum)", async () => {
+    it("routes text-to-video with the aspect ratio and bills provider-reported seconds", async () => {
         const requests: ProviderRequest[] = [];
         mockKlingFetch(requests);
 
@@ -116,9 +128,33 @@ describe("callKlingVideoAPI", () => {
         });
     });
 
-    it("bills video and audio seconds separately when audio is on", async () => {
+    it("honors explicit aspectRatio when dimensions default to square", async () => {
         const requests: ProviderRequest[] = [];
         mockKlingFetch(requests);
+        await callKlingVideoAPI("landscape scene", {
+            ...baseParams,
+            width: 1024,
+            height: 1024,
+            dimensionsExplicit: false,
+            aspectRatio: "16:9",
+        });
+        expect(requests[0].body?.aspect_ratio).toBe("16:9");
+    });
+
+    it("rejects unsupported explicit text aspect ratios before submission", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callKlingVideoAPI("scene", {
+                ...baseParams,
+                aspectRatio: "4:3",
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("bills video and audio seconds separately when audio is on", async () => {
+        const requests: ProviderRequest[] = [];
+        mockKlingFetch(requests, "COMPLETED", "2.7");
 
         const result = await callKlingVideoAPI("a quiet scene", {
             ...baseParams,
@@ -181,6 +217,38 @@ describe("callKlingVideoAPI", () => {
             callKlingVideoAPI("too long", { ...baseParams, duration: 16 }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("uses billable units even when they differ from the requested duration", async () => {
+        mockKlingFetch([], "COMPLETED", "3");
+        const result = await callKlingVideoAPI("scene", {
+            ...baseParams,
+            duration: 3,
+        });
+        expect(result.trackingData?.usage?.completionVideoSeconds).toBeCloseTo(
+            5,
+        );
+    });
+
+    it.each([
+        null,
+        "0",
+        "NaN",
+        "-1",
+    ])("rejects missing or invalid fal billable units: %s", async (units) => {
+        mockKlingFetch([], "COMPLETED", units);
+        await expect(
+            callKlingVideoAPI("scene", baseParams),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("recovers a dropped status connection without resubmitting the paid job", async () => {
+        const requests: ProviderRequest[] = [];
+        mockKlingFetch(requests, "COMPLETED", "1.8", 1);
+        const result = await callKlingVideoAPI("scene", baseParams);
+        expect(requests.filter((r) => r.url === TEXT_ENDPOINT)).toHaveLength(1);
+        expect(requests.filter((r) => r.url === STATUS_URL)).toHaveLength(2);
+        expect(result.trackingData?.usage?.completionVideoSeconds).toBe(3);
     });
 
     it("surfaces a failed generation as an upstream error", async () => {

@@ -94,8 +94,8 @@ device,main,consent,consent,Allow access,adapt-to-main,C01;C02,captured-current-
 device,main,consent-no-pollen,consent,Allow access · No Pollen,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
 device,main,consent-paid-required,consent,Allow access · Paid required,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
 device,main,device-request-app,device-errors,App unavailable,adapt-to-main,C01;C02,captured-current-main-2026-09-26
-device,main,device-result,device-result,Access approved,adapt-to-main,C01;C02,source-audit-only
-device,main,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,source-audit-only
+device,main,device-result,device-result,Access approved,adapt-to-main,C01;C02,captured-main-a9bb750a21-2026-09-26
+device,main,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,captured-main-a9bb750a21-2026-09-26
 device,main,device-session,sign-in,Checking account,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
 device,main,device-verifying,device-code,Verifying code,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
 device,main,device-code-unavailable,device-code,Verification unavailable,product-gap,C01;C02;G04,captured-current-main-2026-09-26
@@ -125,8 +125,8 @@ device,link,consent,consent,Allow access,adapt-to-main,C01;C02,captured-current-
 device,link,consent-no-pollen,consent,Allow access · No Pollen,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
 device,link,consent-paid-required,consent,Allow access · Paid required,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
 device,link,device-request-app,device-errors,App unavailable,adapt-to-main,C01;C02,captured-current-main-2026-09-26
-device,link,device-result,device-result,Access approved,adapt-to-main,C01;C02,source-audit-only
-device,link,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,source-audit-only
+device,link,device-result,device-result,Access approved,adapt-to-main,C01;C02,captured-main-a9bb750a21-2026-09-26
+device,link,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,captured-main-a9bb750a21-2026-09-26
 device,link,device-session,sign-in,Checking account,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
 device,link,device-verifying,device-code,Verifying code,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
 device,link,device-code-unavailable,device-code,Verification unavailable,product-gap,C01;C02;G04,captured-current-main-2026-09-26

@@ -1,6 +1,16 @@
 import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
+    "google/lyria-3.5": {
+        "google/lyria-3.5:fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-26").getTime(),
+            cost: {
+                // fal bills per generation; callers retain Google's $0.08 quote.
+                completionAudioTokens: 0.1,
+            },
+        },
+    },
     "google/gemini-3.8-flash-tts": {
         "google/gemini-3.8-flash-tts:openrouter:ai-studio": {
             provider: "openrouter",

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15487,
+  "title": "docs: reconcile Vast replacements and DreamShaper capacity regression",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15487",
+  "merged_at": "2026-09-26T13:35:15Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Records Z-Image 52731560 and DreamShaper 52741049 promotions, retirement of 51212460/47789794, and five production-labeled GPUs with no retained retired storage.\n- Updates fleet burn to $1.060148/hour ($763.31/720h); DreamShaper costs $100.27/30d and saves $8.93/month. Model prices, fallbacks, and secrets are unchanged.\n- Flags an unresolved DreamShaper regression: corrected final-event queries show 0.25% 5xx before versus 4.84% after, excluding client 4xx; p95 rose from 1.268s to 2.169s. Transition also had 153 final 502s. Short windows are not load-matched.\n- Documents the initial wrong model-name filter, destruction before corrected final API verification, stale-process drain hazard, and need to restore burst capacity. The isolated 210-RPM benchmark did not prove sufficient production headroom.\n- Checks: named-tunnel auth/dimensions/parity/load/restart, live registry and worker attribution, corrected Tinybird final outcomes, full Vast reconciliation, and git diff --check. Biome ignores Markdown; commit hook reports missing lefthook. Documentation only; production capacity remediation remains a separate follow-up.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The fleet ledger blooms",
+    "blurb": "The hive’s GPU garden book now tracks the Z-Image and DreamShaper handoff in full, including the capacity notes needed for the next round of tending.",
+    "summary": "Documented the promotion of Z-Image 52731560 and DreamShaper 52741049, retirement of 51212460 and 47789794, five production-labeled GPUs, updated fleet burn of $1.060148/hour, and the measured DreamShaper capacity follow-up needed after the transition.",
+    "impact": "Operators now have a reconciled Vast inventory, verified final-outcome measurements, and explicit restoration targets for DreamShaper burst capacity before treating the 210-RPM benchmark as production headroom.",
+    "keywords": [
+      "documentation",
+      "GPU fleet",
+      "Vast",
+      "DreamShaper",
+      "Z-Image",
+      "capacity"
+    ],
+    "visual_concept": "A cozy infrastructure garden ledger: Polli, wearing a tiny mechanic tool belt, compares labeled GPU seed packets for Z-Image and DreamShaper beside a retro terminal and a carefully updated garden map. Small code-plants and five glowing server sprouts represent the reconciled production fleet and the capacity work still being tended.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, updating a warm cream garden ledger beside five small glowing server-planters labeled with simple pixel text “Z-IMAGE” and “DREAMSHAPER”; a retro CRT terminal glows prominently lime green (#ecf874) while code-vines and pastel flowers grow around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15487.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, updating a warm cream garden ledger beside five small glowing server-planters labeled with simple pixel text “Z-IMAGE” and “DREAMSHAPER”; a retro CRT terminal glows prominently lime green (#ecf874) while code-vines and pastel flowers grow around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-26T13:36:24.651419+00:00"
+}

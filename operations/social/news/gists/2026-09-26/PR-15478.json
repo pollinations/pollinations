@@ -1,0 +1,38 @@
+{
+  "pr_number": 15478,
+  "title": "fix: make polli text output consistent across modes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15478",
+  "merged_at": "2026-09-26T10:56:26Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Fixes #15440 by registering `--stream` and using TTY auto-detection only when neither stream flag is passed.\n- Refs #15438: reports the server model and token count from streamed events, with `null` when unavailable.\n- Refs #15442: emits JSON file metadata after `gen text --output`.\n- Adds command regression tests; CLI package suite passed (189 tests).\n- Quest accounting: only #15440 and #15439 are PR-closing reports in this batch; the other reports are linked and closed manually.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The CLI found its voice",
+    "blurb": "Polli's text command now behaves the same whether it is chatting with a terminal, streaming on purpose, or writing to a file. The little bee also brings back useful receipts: model, tokens, and output-file metadata.",
+    "summary": "Fixed `polli gen text` stream-mode handling by registering `--stream`, applying TTY auto-detection only when no stream flag is supplied, reporting streamed server model and token counts when available, and emitting JSON file metadata after `--output`.",
+    "impact": "CLI users now get predictable text output across interactive and scripted modes, plus machine-readable output-file details and streamed model/token information instead of having to infer them.",
+    "keywords": [
+      "polli-cli",
+      "gen-text",
+      "streaming",
+      "tty",
+      "json-output",
+      "metadata",
+      "tokens"
+    ],
+    "visual_concept": "Depict Polli as a careful terminal operator choosing between two clearly labeled stream paths while a cozy CRT terminal prints a neat text response. A small JSON receipt and a file card show the returned model and token count, with code-plants and flowers making the command-line workshop feel organized rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and tidies two terminal stream pipes beside a CRT monitor glowing lime green (#ecf874), with pixel-font labels \"STREAM\" and \"JSON\" on a small file receipt showing model and token icons. Code-plants sprout from flower pots around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15478.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and tidies two terminal stream pipes beside a CRT monitor glowing lime green (#ecf874), with pixel-font labels \"STREAM\" and \"JSON\" on a small file receipt showing model and token icons. Code-plants sprout from flower pots around the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-26T10:57:24.200430+00:00"
+}

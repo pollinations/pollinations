@@ -1,7 +1,8 @@
+import { defaultKeyHasher } from "@better-auth/api-key";
 import { bytesToHex } from "@shared/client-ip.ts";
 import { parseListingPayload } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -118,6 +119,82 @@ export const adminRoutes = new Hono<Env>()
         }
         return c.json({ redeployed: rows.length - failed.length, failed });
     })
+
+    .post("/revoke-key", async (c) => {
+        let body: unknown;
+        try {
+            body = await c.req.json();
+        } catch {
+            throw new HTTPException(400, { message: "Invalid JSON body" });
+        }
+        if (!body || typeof body !== "object") {
+            throw new HTTPException(400, { message: "Invalid revoke request" });
+        }
+        const { key, keyHash } = body as {
+            key?: unknown;
+            keyHash?: unknown;
+        };
+
+        let hash: string | undefined;
+        let prefix: "sk" | "pk" | undefined;
+        if (typeof key === "string" && key.length > 0) {
+            if (!key.startsWith("sk_") && !key.startsWith("pk_")) {
+                throw new HTTPException(400, {
+                    message: "key must be an sk_ or pk_ API key",
+                });
+            }
+            prefix = key.startsWith("pk_") ? "pk" : "sk";
+            hash = await defaultKeyHasher(key);
+        } else if (typeof keyHash === "string" && keyHash.length > 0) {
+            hash = keyHash;
+        } else {
+            throw new HTTPException(400, {
+                message: "Provide key or keyHash",
+            });
+        }
+
+        const db = drizzle(c.env.DB, { schema });
+        const existing = await db.query.apikey.findFirst({
+            where: and(
+                eq(schema.apikey.key, hash),
+                ...(prefix ? [eq(schema.apikey.prefix, prefix)] : []),
+            ),
+        });
+        if (!existing) {
+            return c.json({
+                success: true,
+                revoked: false,
+                reason: "not_found",
+            });
+        }
+        if (existing.enabled === false) {
+            return c.json({
+                success: true,
+                revoked: false,
+                reason: "already_revoked",
+                keyId: existing.id,
+                referenceId: existing.referenceId,
+                prefix: existing.prefix,
+                start: existing.start,
+            });
+        }
+
+        await db
+            .update(schema.apikey)
+            .set({ enabled: false, updatedAt: new Date() })
+            .where(eq(schema.apikey.id, existing.id));
+
+        return c.json({
+            success: true,
+            revoked: true,
+            keyId: existing.id,
+            referenceId: existing.referenceId,
+            prefix: existing.prefix,
+            start: existing.start,
+            name: existing.name,
+        });
+    })
+
     .route("/status-notice", statusNoticeAdminRoutes)
     .route("/quest-grants", questGrantAdminRoutes);
 

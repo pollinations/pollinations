@@ -1,5 +1,6 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { CreateAnthropicMessageRequestSchema } from "@shared/schemas/anthropic.ts";
 import {
     CreateDecisionRequestSchema,
     DEFAULT_DECISION_MODEL,
@@ -33,6 +34,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateAnthropicMessage } from "@/text/anthropic/handler.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
@@ -90,6 +92,19 @@ generationExecutorRoutes.post(
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/v1/messages",
+    textBodyLimit,
+    validator("json", CreateAnthropicMessageRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateAnthropicMessage,
 );
 
 generationExecutorRoutes.post(

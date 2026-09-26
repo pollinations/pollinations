@@ -120,6 +120,8 @@ export default defineConfig(async ({ mode }) => {
     return {
         ...baseConfig,
         test: {
+            // model-permissions and similar worker tests can exceed Vitest's 5s default under CI load
+            testTimeout: 30_000,
             // Use Gen's pool, not the older version hoisted for Enter.
             pool: fileURLToPath(
                 import.meta.resolve("@cloudflare/vitest-pool-workers"),

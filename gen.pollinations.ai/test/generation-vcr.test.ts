@@ -2772,14 +2772,14 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     expect(response.headers.get("x-model-used")).toBe(
         "openai/gpt-image-2:openai",
     );
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[2]");
     await response.arrayBuffer();
     await wait();
 
     expect(mocks.gptImage.state.openAIRequests).toEqual([
         expect.objectContaining({ model: "gpt-image-2" }),
     ]);
-    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(3);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "openai/gpt-image-2",
         modelProviderUsed: "azure",
@@ -2787,6 +2787,13 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
         isFinal: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelUsed: "openai/gpt-image-2:azure:eastus2",
+        modelProviderUsed: "azure",
+        responseStatus: 502,
+        isFinal: false,
+        fallbackUsed: true,
+    });
+    expect(mocks.tinybird.state.events[2]).toMatchObject({
         modelUsed: "openai/gpt-image-2:openai",
         modelProviderUsed: "openai",
         responseStatus: 200,
@@ -2812,12 +2819,12 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
     expect(response.headers.get("x-model-used")).toBe(
         "openai/gpt-image-2:openai",
     );
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[2]");
     await response.arrayBuffer();
     await wait();
-    expect(mocks.gptImage.state.imageHostRequests).toBe(2);
+    expect(mocks.gptImage.state.imageHostRequests).toBe(3);
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(1);
-    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(3);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         // Failed-attempt telemetry maps the image host's 429 to a gateway failure.
         responseStatus: 502,
@@ -2825,6 +2832,12 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
         isBilledUsage: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
+        responseStatus: 502,
+        isFinal: false,
+        isBilledUsage: false,
+        fallbackUsed: true,
+    });
+    expect(mocks.tinybird.state.events[2]).toMatchObject({
         responseStatus: 200,
         fallbackUsed: true,
         isFinal: true,

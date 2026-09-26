@@ -94,27 +94,49 @@ describe("registry fallback linking", () => {
         );
     });
 
-    it("declares direct OpenAI fallbacks for every GPT Image model", () => {
+    it("declares Azure-region then OpenAI fallbacks for GPT Image models", () => {
         const pairs = [
-            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
-            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
-            ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
-            ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-flare:openai"],
+            [
+                "openai/gpt-image-1-mini",
+                [
+                    "openai/gpt-image-1-mini:azure:westus3",
+                    "openai/gpt-image-1-mini:openai",
+                ],
+            ],
+            [
+                "openai/gpt-image-1.5",
+                [
+                    "openai/gpt-image-1.5:azure:westus3",
+                    "openai/gpt-image-1.5:openai",
+                ],
+            ],
+            [
+                "openai/gpt-image-2",
+                [
+                    "openai/gpt-image-2:azure:eastus2",
+                    "openai/gpt-image-2:openai",
+                ],
+            ],
+            [
+                "openai/gpt-image-2.5-flare",
+                ["openai/gpt-image-2.5-flare:openai"],
+            ],
             [
                 "openai/gpt-image-2.5-sunburst",
-                "openai/gpt-image-2.5-sunburst:openai",
+                ["openai/gpt-image-2.5-sunburst:openai"],
             ],
         ] as const;
 
-        for (const [primary, fallback] of pairs) {
-            expect(IMAGE_SERVICES[primary].fallbacks).toEqual([fallback]);
-            expect(IMAGE_SERVICES[fallback]).toMatchObject({
-                aliases: [],
-                hidden: true,
-                fallbackOnly: true,
-                provider: "openai",
-            });
-            expect(getVisibleImageModels()).not.toContain(fallback);
+        for (const [primary, fallbacks] of pairs) {
+            expect(IMAGE_SERVICES[primary].fallbacks).toEqual([...fallbacks]);
+            for (const fallback of fallbacks) {
+                expect(IMAGE_SERVICES[fallback]).toMatchObject({
+                    aliases: [],
+                    hidden: true,
+                    fallbackOnly: true,
+                });
+                expect(getVisibleImageModels()).not.toContain(fallback);
+            }
         }
     });
 

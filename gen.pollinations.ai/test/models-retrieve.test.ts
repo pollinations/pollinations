@@ -474,6 +474,21 @@ test("keeps supported Chat parameters identical for aliases and list entries", a
     expect(alias).not.toHaveProperty("default_parameters");
 });
 
+test("advertises Anthropic Messages for text models but not media models", async () => {
+    const text = await fetchWorker("/v1/models/claude");
+    expect(text.status).toBe(200);
+    await expect(text.json()).resolves.toMatchObject({
+        supported_endpoints: expect.arrayContaining(["/v1/messages"]),
+    });
+
+    const media = await fetchWorker("/v1/models/flux");
+    expect(media.status).toBe(200);
+    const mediaBody = (await media.json()) as {
+        supported_endpoints?: string[];
+    };
+    expect(mediaBody.supported_endpoints).not.toContain("/v1/messages");
+});
+
 test("advertises direct Responses support through supported_endpoints", async () => {
     const supported = await fetchWorker("/v1/models/qwen-large");
     expect(supported.status).toBe(200);

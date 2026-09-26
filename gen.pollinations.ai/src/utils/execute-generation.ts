@@ -11,6 +11,7 @@ import type {
 import { logger } from "@/middleware/logger.ts";
 import { frontendKeyBilling } from "@/middleware/rate-limit-durable.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
+import { handleAnthropicMessagesError } from "@/text/messages/errors.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -79,7 +80,11 @@ function generationExecutor(
             await next();
         })
         .route("/", generationExecutorRoutes);
-    executor.onError(handleError);
+    executor.onError((error, c) =>
+        c.req.path === "/v1/messages"
+            ? handleAnthropicMessagesError(error, c)
+            : handleError(error, c),
+    );
     return executor;
 }
 

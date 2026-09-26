@@ -117,6 +117,29 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("returns Anthropic-shaped 401 for unauthenticated Messages requests", async () => {
+        const response = await fetchWorker("/v1/messages", env, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                model: "openai/gpt-5.4-nano",
+                max_tokens: 64,
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        });
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            type: "error",
+            error: {
+                type: "authentication_error",
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+            },
+            request_id: expect.any(String),
+        });
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 

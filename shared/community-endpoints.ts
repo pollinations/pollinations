@@ -329,7 +329,12 @@ export const COMMUNITY_MODALITY_SPEC = {
         category: "text",
         inputModalities: MODEL_INPUT_MODALITIES,
         outputModalities: ["text"],
-        supportedEndpoints: ["/v1/chat/completions", "/text", "/text/{prompt}"],
+        supportedEndpoints: [
+            "/v1/chat/completions",
+            "/v1/messages",
+            "/text",
+            "/text/{prompt}",
+        ],
         priceFields: COMMUNITY_TEXT_PRICE_FIELDS,
     },
     image: {

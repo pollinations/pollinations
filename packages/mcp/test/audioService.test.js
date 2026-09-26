@@ -15,6 +15,8 @@ test("transcribes public audio through the Pollinations API", async (t) => {
         const url = String(input);
         calls.push({ url, init });
         if (url === SOURCE) {
+            // Workers throw on redirect: "error".
+            assert.equal(init.redirect, "manual");
             return new Response(new Uint8Array([1, 2, 3]), {
                 headers: {
                     "Content-Type": "audio/mpeg",
@@ -63,4 +65,25 @@ test("rejects private audio URLs before fetching", async (t) => {
         /public HTTPS URL/,
     );
     assert.equal(calls, 0);
+});
+
+test("rejects redirecting audio URLs without following them", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) => {
+        calls.push(String(input));
+        return new Response(null, {
+            status: 302,
+            headers: { Location: "https://127.0.0.1/audio.mp3" },
+        });
+    };
+
+    await assert.rejects(
+        transcribeAudio({ source: SOURCE }, CONTEXT),
+        /redirects/,
+    );
+    assert.deepEqual(calls, [SOURCE]);
 });

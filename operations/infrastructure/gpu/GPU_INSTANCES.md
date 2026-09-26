@@ -1,20 +1,44 @@
 # GPU Instances
 
-Last updated: 2026-09-16
+Last updated: 2026-09-26
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
 | Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
-| Z-Image | 1 | RTX 5090 | Vast.ai | $0.622222/hr all-in | **ACTIVE — one production with Fal spillover** |
+| Z-Image | 1 | RTX 5090 | Vast.ai | $0.540889/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.151667/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the five running Vast instances cost **$1.153889/hr** in total
-(**$830.80 per 30-day month**).
+At capture time, the five running Vast instances cost **$1.072556/hr** in total
+(**$772.24 per 30-day month**, 720 hours, excluding metered inference fallbacks).
 All five are production workers; there is no isolated canary left running.
+
+### 2026-09-26 — Z-Image RTX 5090 replacement
+
+Human-approved candidate `52731560` (machine `53578`, Florida, US) replaced
+`51212460` (machine `19569`, South Korea). Its **$0.540889/hr all-in** rate
+reduces this slot from **$448.00 to $389.44 per 30 days**, saving **$58.56 in
+Vast credits**. No additional credit-purchase discount is applied here.
+
+The candidate passed isolated functional, queue, fixed-seed parity, sustained
+load, and full-container reboot checks. It then joined the existing production
+tunnel with explicit connector-token replacement approval. Production
+verification observed **38 successful generations and zero backend errors**
+after promotion, including successful traffic after the old connector drained.
+Shared-hostname health and production heartbeats remained healthy.
+
+Retired instance `51212460` was destroyed and disappeared from the full Vast
+instance list, leaving no retained compute or storage for that instance. The
+replacement is labeled `zimage-vast-01-production`. Queue limit 3, model price,
+Fal fallback, registry hostname, and other GPU workers are unchanged. Measured
+capacity was **65.6 RPM**, not the older 75 RPM target; see the Z-Image section
+and README for qualification details.
+
+**Next lifecycle deadline:** DreamShaper `47789794` currently expires on
+**2026-09-30 at 07:00 UTC**. Its replacement is a separate operation.
 
 ### 2026-09-16 — DreamShaper RTX 3060 replacement (cost optimization)
 
@@ -77,14 +101,12 @@ tunnel or secret was created. All four QUIC connections registered, the
 worker appeared in `/register`, and real attributed production traffic (9/9
 requests observed) returned 200 before the dead instance was destroyed.
 
-The replacement is priced above the outgoing instance's original rate
+That replacement was priced above the outgoing instance's original rate
 ($0.622/hr vs $0.351/hr) because live RTX 5090 offers meeting the fleet's
 verified/reliability/bandwidth bar had moved up to a ~$0.54–0.66/hr market
 range at rental time; $0.351/hr reflected a deal from whenever the retired
-instance was originally provisioned, not the current market. This is a
-placeholder while a cheaper offer is sourced in a follow-up replacement (see
-`manage-vast-gpu-fleet` skill for the standard qualify/canary/promote flow);
-it is not intended as the long-term rate.
+instance was originally provisioned, not the market at that time. It was a
+temporary rate until the cheaper September 26 replacement documented above.
 
 The Vast API on 2026-09-03 confirmed that all five instances are in both
 `actual_status=running` and `intended_status=running`. The surviving Flux
@@ -94,10 +116,10 @@ registry entry. The other model endpoints were last fully verified on
 DreamShaper hostnames, while Klein remained reachable through the `KLEIN_VPC`
 Workers VPC binding instead of the heartbeat registry.
 
-The `zimage-vast-canary` dashboard label on `46003779` is historical; the
-instance is the production Z-Image worker, not a spare canary. Vast labels do
-not control routing; instance IDs, registered hostnames, and the Klein VPC
-tunnel are authoritative.
+The old `zimage-vast-canary` dashboard label on retired instance `46003779`
+did not mean it was an unused spare: it served production until its September
+outage. Vast labels do not control routing; instance IDs, registered hostnames,
+and the Klein VPC tunnel are authoritative.
 
 ## Provider: Vast.ai — DreamShaper 8 LCM
 
@@ -329,11 +351,31 @@ balances requests across them.
 
 | Worker | Vast instance | Machine / region | Reliability | All-in rate | Status |
 |--------|---------------|------------------|-------------|-------------|--------|
-| zimage-vast-01 | 51212460 | 19569 / South Korea, KR | 0.9985 | $0.622222/hr | ACTIVE — production |
+| zimage-vast-01 | 52731560 | 53578 / Florida, US | 0.998059 at qualification | $0.540889/hr | ACTIVE — production |
 
-The active Vast worker costs `$0.622222/hr`, or **$448.00 per 30-day month** in
+The active Vast worker costs `$0.540889/hr`, or **$389.44 per 30-day month** in
 Vast credits. Requests beyond its three admitted generation slots receive 503
 and spill to the hidden Fal fallback.
+
+**Replacement validation (2026-09-26):**
+
+- Source commit `9ec81c20172b64558deeb55c245eecda01051dc8` had identical
+  Z-Image code to the outgoing worker; checkpoint revision
+  `f332072aa78be7aecdf3ee76d5c247082da564a6` and runtime dependencies matched.
+- Isolated local and dedicated-tunnel checks passed authentication (403),
+  oversized dimensions (422), maximum 1536x1536 generation, and fixed-seed
+  pixel parity at 512x512, 1024x1024, and 768x1152.
+- Concurrency 3 completed 134/134 mixed-size generations in 122.502 seconds:
+  **1.094 img/s / 65.6 RPM**, 2.737s p50, 2.752s p95, and 2.859s p99. This
+  measured capacity was accepted explicitly; it does not establish 75 RPM.
+- An eight-request burst admitted three and shed five with expected queue-full
+  503s; public-path rejections took at most 61ms. No CUDA/OOM/traceback errors.
+- Full container reboot restored local health in approximately eight seconds
+  and four tunnel connections in fourteen seconds; post-reboot parity passed.
+- Promotion retained `zimage-vast.myceli.ai` and its existing tunnel. The old
+  connector's screen restart loop initially reconnected after SIGTERM; its
+  supervisor was then paused and the connector drained completely. Successful
+  sole-worker traffic was verified before destroying `51212460`.
 
 **Outage and replacement (2026-09-16):** instance `46003779` (the prior
 `zimage-vast-canary`, California, $0.351111/hr) went down around 2026-09-14
@@ -352,10 +394,10 @@ weights were cached) — then joined the existing shared
 (`zimage-vast.myceli.ai`) using the tunnel's existing connector token. All
 four QUIC connections registered, the worker appeared in `/register`, and 9
 attributed production requests returned 200 before `46003779` was
-destroyed. The new instance is priced above the old one ($0.622/hr vs
+destroyed. That instance was priced above the old one ($0.622/hr vs
 $0.351/hr) because live RTX 5090 offers meeting the fleet's bar had moved to
-a ~$0.54–0.66/hr market range at rental time — this is a placeholder rate
-pending a cheaper follow-up replacement, not a long-term choice.
+a ~$0.54–0.66/hr market range at rental time. It was replaced by `52731560`
+on September 26.
 
 **Single-worker cutover validation (2026-08-11):**
 

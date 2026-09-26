@@ -651,6 +651,31 @@ rate limits.
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)
 
+
+
+## Vercel AI SDK `useChat` (Responses transport)
+
+Point `useChat` at Pollinations agents / Responses without a custom backend:
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { createResponsesChatTransport } from '@pollinations/sdk';
+
+const transport = createResponsesChatTransport({
+  apiKey: process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY!,
+  model: 'openai', // or an agent id
+});
+
+export function Chat() {
+  const { messages, sendMessage } = useChat({ transport });
+  // ...
+}
+```
+
+The transport calls `POST /v1/responses` and converts the stream to AI SDK UI
+message chunks on the client. Public Chat Completions / Responses payloads are
+unchanged.
+
 ## License
 
 MIT

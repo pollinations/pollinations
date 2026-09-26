@@ -9,6 +9,7 @@ import {
     resolver,
     validator,
 } from "hono-openapi";
+import { removeMetadata } from "picscrub";
 import { z } from "zod";
 import type { CatalogItem, CatalogPage } from "./catalog.ts";
 import {
@@ -24,7 +25,6 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
-
 import { readMedia } from "./media-upload.ts";
 
 export { MediaUpload } from "./media-upload.ts";
@@ -281,7 +281,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Image metadata (EXIF/GPS/XMP) is stripped by default to protect privacy (pass ?preserve_metadata=true or X-Preserve-Metadata: true to retain). Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -529,7 +529,31 @@ api.post(
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
-            const stored = await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+            const preserveMetadata =
+                c.req.query("preserve_metadata") === "true" ||
+                c.req.header("x-preserve-metadata") === "true";
+
+            let uploadBytes: Uint8Array<ArrayBufferLike> = new Uint8Array(
+                fileBuffer,
+            );
+            if (
+                !preserveMetadata &&
+                contentType.toLowerCase().startsWith("image/")
+            ) {
+                try {
+                    const stripped = await removeMetadata(uploadBytes, {
+                        preserveOrientation: true,
+                        preserveColorProfile: true,
+                    });
+                    if (stripped.removedMetadata.length > 0) {
+                        uploadBytes = stripped.data;
+                    }
+                } catch {
+                    // Fall back to original bytes on odd formats or unparseable images without failing upload
+                }
+            }
+
+            const stored = await c.env.MEDIA_BUCKET.put(id, uploadBytes, {
                 ...(requestedId !== undefined && {
                     onlyIf: new Headers({ "If-None-Match": "*" }),
                 }),
@@ -561,7 +585,7 @@ api.post(
                     ownerUserId: authResult.userId,
                     appKeyId: authResult.byopClientKeyId,
                     contentType,
-                    size: fileBuffer.byteLength,
+                    size: uploadBytes.byteLength,
                     tags,
                 });
             }
@@ -570,7 +594,7 @@ api.post(
                 JSON.stringify({
                     event: "upload",
                     id,
-                    size: fileBuffer.byteLength,
+                    size: uploadBytes.byteLength,
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
@@ -581,7 +605,7 @@ api.post(
                 id,
                 url: mediaUrl(id),
                 contentType,
-                size: fileBuffer.byteLength,
+                size: uploadBytes.byteLength,
                 ...(tags.length > 0 ? { tags } : {}),
             });
         } catch (error) {

@@ -89,6 +89,42 @@ const toggleReasoningExceptForcedTools: TransformFn = async (
     return forcedToolWithoutReasoning(toggled.messages, toggled.options);
 };
 
+// Perplexity's Agent API rejects penalties, and takes Sonar's search options
+// on its web_search tool instead of as request fields.
+const perplexityWebSearch: TransformFn = (messages, options) => {
+    const {
+        frequency_penalty: _frequencyPenalty,
+        presence_penalty: _presencePenalty,
+        web_search_options: webSearchOptions,
+        search_domain_filter: searchDomainFilter,
+        search_recency_filter: searchRecencyFilter,
+        ...rest
+    } = options;
+    const filters = {
+        ...(searchDomainFilter == null
+            ? {}
+            : { search_domain_filter: searchDomainFilter }),
+        ...(searchRecencyFilter == null
+            ? {}
+            : { search_recency_filter: searchRecencyFilter }),
+    };
+    return {
+        messages,
+        options: {
+            ...rest,
+            perplexityWebSearch: {
+                ...(webSearchOptions?.search_context_size
+                    ? {
+                          search_context_size:
+                              webSearchOptions.search_context_size,
+                      }
+                    : {}),
+                ...(Object.keys(filters).length ? { filters } : {}),
+            },
+        },
+    };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
@@ -404,6 +440,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6-azure-sweden"],
     },
     {
+        name: "x-ai/grok-4.6:xai",
+        config: portkeyConfig["grok-4.6-xai"],
+    },
+    {
         name: "openai/gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
@@ -606,27 +646,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity/sonar",
-        config: portkeyConfig["sonar"],
-    },
-    {
-        name: "perplexity/sonar:openrouter:perplexity",
         config: portkeyConfig["perplexity/sonar"],
-    },
-    {
-        name: "perplexity/sonar-pro",
-        config: portkeyConfig["sonar-pro"],
-    },
-    {
-        name: "perplexity/sonar-pro:openrouter:perplexity",
-        config: portkeyConfig["perplexity/sonar-pro"],
-    },
-    {
-        name: "perplexity/sonar-reasoning-pro",
-        config: portkeyConfig["sonar-reasoning-pro"],
-    },
-    {
-        name: "perplexity/sonar-reasoning-pro:openrouter:perplexity",
-        config: portkeyConfig["perplexity/sonar-reasoning-pro"],
+        transform: perplexityWebSearch,
+        useResponsesApi: true,
     },
     {
         name: "moonshotai/kimi-k2.6",
@@ -791,6 +813,10 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.0-flash-vl",
+        config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
     {
         name: "tencent/hy3:openrouter:phala",

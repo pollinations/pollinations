@@ -254,11 +254,13 @@ export const Models: FC = () => {
     );
     const searchOptions = useMemo(() => {
         let options = getModelQuerySuggestions(
-            draftFilter ? search : visibleSearch,
+            draftFilter
+                ? `${draftFilter.key}:${draftFilter.value}`
+                : visibleSearch,
             activeTabModels,
             supportedFilterKeys,
         );
-        if (explicitModelSource) {
+        if (explicitModelSource && draftFilter?.key !== "source") {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
@@ -268,7 +270,6 @@ export const Models: FC = () => {
         activeTabModels,
         draftFilter,
         explicitModelSource,
-        search,
         supportedFilterKeys,
         visibleSearch,
     ]);
@@ -648,14 +649,7 @@ export const Models: FC = () => {
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
                 ) : (
-                    <SectionContent
-                        loading={catalogLoading}
-                        label={
-                            activePrimaryTab === "agent"
-                                ? "Loading agents…"
-                                : "Loading models…"
-                        }
-                    >
+                    <SectionContent loading={catalogLoading}>
                         {catalogError ? (
                             <LoadError
                                 onRetry={() => {

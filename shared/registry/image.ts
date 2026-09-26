@@ -1190,6 +1190,56 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
+    "qwen/qwen-image-2.1": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-09-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Fal pricing: $0.02 per megapixel for text-to-image and $0.11/3 per
+        // megapixel for edits. gen bills the megapixels fal reports. Fal
+        // rounds output up to whole megapixels of 2^20 px, adds half a
+        // megapixel per reference and doubles edits for the guidance_scale gen
+        // sends (measured 2026-09-25). Usage counts millionths of a megapixel
+        // (UInt32 usage columns), so perMillion(x) = $x per megapixel.
+        cost: {
+            completionImageTokens: perMillion(0.02),
+        },
+        ...defineCostVariants(
+            {
+                edit: {
+                    completionImageTokens: perMillion(0.11 / 3),
+                },
+            },
+            ({ input }) => (input?.hasImage ? "edit" : undefined),
+            {
+                edit: {
+                    label: "Image editing",
+                    description:
+                        "Applies when the request includes one or more input images.",
+                },
+            },
+            "Image generation",
+            [
+                {
+                    "key": "operation",
+                    "label": "Operation",
+                    "values": {
+                        "": "Generation",
+                        "edit": "Editing",
+                    },
+                },
+            ],
+        ),
+        title: "Qwen Image 2.1",
+        description:
+            "Generates and edits images from prompts and up to ten references, with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "alibaba",
@@ -1200,7 +1250,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptImageTokens: 0.003, // per reference image ingested
-            completionImageTokens: 0.04, // per image up to 1536x1536
+            completionImageTokens: 0.04, // per image up to 2,250,000 pixels
         },
         ...defineCostVariants(
             {
@@ -1210,14 +1260,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             ({ input }) =>
-                (input?.megapixels ?? 0) > (1536 * 1536) / 1_000_000
-                    ? "2k"
-                    : undefined,
+                // DashScope bills 2K above 2,250,000 output pixels.
+                (input?.megapixels ?? 0) > 2.25 ? "2k" : undefined,
             {
                 "2k": {
                     label: "2K",
                     description:
-                        "Applies when the requested output exceeds 1536×1536 total pixels.",
+                        "Applies when the requested output exceeds 2,250,000 total pixels (about 1500×1500).",
                 },
             },
             "1K",
@@ -1386,6 +1435,25 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1,
+    },
+    "recraft/recraft-v4.1-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: new Date("2026-09-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter bills 4,175 image tokens per image (same convention
+            // as Recraft Vector): $0.007 fixed per output image, verified
+            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
+            completionImageTokens: 0.007 * 1.055,
+        },
+        title: "Recraft V4.1 Flash",
+        description: "Fast, low-cost raster image generation from text",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
@@ -1641,14 +1709,14 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
+        // fal list rates (launch promotion ends 2026-09-30), verified 2026-09-25.
         cost: {
-            completionVideoSeconds: 0.00625, // 480p per output second.
+            completionVideoSeconds: 0.025, // 480p per output second.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.01 },
-                "1080p": { completionVideoSeconds: 0.02 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {

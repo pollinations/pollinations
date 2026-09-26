@@ -274,6 +274,49 @@ test("restored auth allows old and future names without expanding account or com
     ]);
 });
 
+test("keys allowed the retired Sonar Pro models still reach Sonar and nothing else", async () => {
+    // The canonical IDs migration 0062 stored before Sonar Pro and Reasoning
+    // Pro became aliases of Sonar.
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: {
+                id: "test",
+                permissions: {
+                    models: [
+                        "perplexity/sonar-pro",
+                        "perplexity/sonar-reasoning-pro",
+                    ],
+                },
+            },
+        }),
+    );
+    app.get("/:model", (c) => {
+        const requested = c.req.param("model");
+        c.set("model", { requested, resolved: resolveModelName(requested) });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+        "perplexity-reasoning",
+        "perplexity/sonar",
+    ]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status, model).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["perplexity/sonar"],
+        });
+    }
+    const other = await app.request("/flux");
+    expect(other.status).toBe(403);
+});
+
 test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1")).toBe(
         "https://enter.pollinations.ai/edit-key?id=key-1",

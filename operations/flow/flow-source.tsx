@@ -30,6 +30,14 @@ export function FlowSource() {
             </a>
             {source.dirty && <span> · Local changes</span>}
             <span> · Fixture data</span>
+            {window.__FLOW_ENVIRONMENT__.reviewerAuthPath && (
+                <form
+                    action={`${window.__FLOW_ENVIRONMENT__.reviewerAuthPath}/logout`}
+                    method="post"
+                >
+                    <button type="submit">Sign out of Flow</button>
+                </form>
+            )}
         </nav>
     );
 }

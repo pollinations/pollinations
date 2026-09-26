@@ -4,6 +4,7 @@ import { createCaptureService, type ReviewCaseModule } from "./captures";
 import { environmentScript } from "./flow-environment";
 import { ADMIN_ORIGIN, ORIGINS, PORT, RUNTIME_ORIGIN } from "./local-origins";
 import type { LoadReviewErrors } from "./review-requests";
+import { REVIEWER_AUTH_PATH } from "./reviewer-gateway";
 import { bundleWorkers, startRuntime } from "./runtime.ts";
 import { assetRequest } from "./source-assets";
 import { readSourceInfo } from "./source-info";
@@ -38,7 +39,13 @@ export async function startServer(options: {
     const fetchRuntime = async (request: Request) => {
         const pathname = new URL(request.url).pathname;
         if (pathname === "/__flow/config.js")
-            return environmentScript({ ...ORIGINS, source });
+            return environmentScript({
+                ...ORIGINS,
+                source,
+                ...(process.env.FLOW_HOSTED === "true" && {
+                    reviewerAuthPath: REVIEWER_AUTH_PATH,
+                }),
+            });
         if (pathname === "/__flow/source")
             return Response.json(source, {
                 headers: { "Cache-Control": "no-store" },

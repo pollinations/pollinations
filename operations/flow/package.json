@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@cloudflare/containers": "0.3.7",
     "@cloudflare/vitest-pool-workers": "^0.10.10",
     "@cloudflare/workers-types": "^4.20260426.1",
     "@hono/node-server": "^1.19.6",

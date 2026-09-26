@@ -44,7 +44,9 @@ jobs:
           --build-arg FLOW_MAIN_REVISION="$FLOW_MAIN_REVISION"
           --build-arg FLOW_DIRTY=false
           -f operations/flow/Dockerfile -t flow-proof:ci .
-      - name: Run non-credential Flow tests
-        run: docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
+      - name: Run shared auth and non-credential Flow tests
+        run: |
+          docker run --rm --init flow-proof:ci npm test --workspace=@pollinations/auth
+          docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
       - name: Verify built pages, captures and container isolation
         run: node operations/flow/test/container-proof.mjs flow-proof:ci

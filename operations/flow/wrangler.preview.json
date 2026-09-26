@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "pollinations-flow-preview",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "flow-preview.pollinations.ai", "custom_domain": true },
+    { "pattern": "admin.flow-preview.pollinations.ai", "custom_domain": true }
+  ],
+  "vars": {
+    "FLOW_ENTER_ORIGIN": "https://flow-preview.pollinations.ai",
+    "FLOW_ADMIN_ORIGIN": "https://admin.flow-preview.pollinations.ai"
+  },
+  "containers": [{
+    "class_name": "FlowRuntime",
+    "image": "./Dockerfile",
+    "image_build_context": "../..",
+    "instance_type": "standard-1",
+    "max_instances": 10
+  }],
+  "durable_objects": {
+    "bindings": [{ "name": "FLOW_RUNTIME", "class_name": "FlowRuntime" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FlowRuntime"] }]
+}

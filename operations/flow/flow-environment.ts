@@ -4,7 +4,10 @@ export type SourceInfo = {
     mainRevision: string;
     dirty: boolean;
 };
-export type FlowEnvironment = FlowOrigins & { source: SourceInfo };
+export type FlowEnvironment = FlowOrigins & {
+    source: SourceInfo;
+    reviewerAuthPath?: string;
+};
 
 declare global {
     interface Window {

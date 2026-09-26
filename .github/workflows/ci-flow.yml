@@ -91,7 +91,7 @@ jobs:
           import { readFile } from 'node:fs/promises';
           const { vars } = JSON.parse(await readFile('operations/flow/wrangler.preview.json', 'utf8'));
           for (const origin of [vars.FLOW_ENTER_ORIGIN, vars.FLOW_ADMIN_ORIGIN]) {
-            const entry = await fetch(`${origin}/flow`);
+            const entry = await fetch(`${origin}/flow`, { headers: { Accept: 'text/html' } });
             assert.equal(entry.status, 200);
             assert.match(await entry.text(), /Sign in with Pollinations/);
             for (const path of ['/__flow/state', '/api/auth/get-session', '/auth/session']) {

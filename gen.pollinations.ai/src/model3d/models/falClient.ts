@@ -12,6 +12,7 @@
  */
 
 import { sleep } from "../../image/util.ts";
+import { falBillableUnits } from "../../image/utils/falBillableUnits.ts";
 import { getModel3dEnv } from "../env.ts";
 
 const QUEUE_BASE = "https://queue.fal.run";
@@ -61,22 +62,40 @@ export async function runFalJob(
     opts: RunFalJobOptions,
     apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
+    return (await runFalJobResponse(opts, apiKey)).json();
+}
+
+export async function runFalJobWithUsage(
+    opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
+): Promise<{ data: Record<string, unknown>; billableUnits: number }> {
+    const response = await runFalJobResponse(opts, apiKey);
+    const billableUnits = falBillableUnits(response);
+    return { data: await response.json(), billableUnits };
+}
+
+async function runFalJobResponse(
+    opts: RunFalJobOptions,
+    apiKey: string,
+): Promise<Response> {
+    const submissionResponse = await falFetch(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
         body: opts.input,
     });
+    const submission = await submissionResponse.json<FalQueueSubmitResponse>();
 
     // Fal still runs and bills a job we stop polling, so wait until it
     // finishes. The durable generation alarm bounds the wait.
     while (true) {
         await sleep(POLL_INTERVAL_MS);
-        const status = await falFetch<FalQueueStatusResponse>(apiKey, {
+        const statusResponse = await falFetch(apiKey, {
             method: "GET",
             url: submission.status_url,
         });
+        const status = await statusResponse.json<FalQueueStatusResponse>();
         if (status.status === "COMPLETED") {
-            return falFetch<Record<string, unknown>>(apiKey, {
+            return falFetch(apiKey, {
                 method: "GET",
                 url: submission.response_url,
             });
@@ -102,14 +121,14 @@ export function extractFalModelMesh(
     return modelMesh;
 }
 
-async function falFetch<T>(
+async function falFetch(
     apiKey: string,
     args: {
         method: "GET" | "POST";
         url: string;
         body?: Record<string, unknown>;
     },
-): Promise<T> {
+): Promise<Response> {
     const headers: Record<string, string> = {
         Authorization: `Key ${apiKey}`,
     };
@@ -129,7 +148,7 @@ async function falFetch<T>(
             text,
         );
     }
-    return (await response.json()) as T;
+    return response;
 }
 
 export function classifyFalHttpStatus(httpStatus: number): number {

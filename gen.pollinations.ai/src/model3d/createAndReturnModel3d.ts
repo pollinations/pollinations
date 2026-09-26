@@ -1,5 +1,6 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import { callAssetHarvester } from "./models/assetHarvesterModel.ts";
+import { callMeshy71 } from "./models/meshy71Model.ts";
 import { callRodinFalAPI } from "./models/rodinModel.ts";
 import { callTrellis2Fal } from "./models/trellis2FalModel.ts";
 import { callTrellis2 } from "./models/trellis2Model.ts";
@@ -27,6 +28,8 @@ export async function createAndReturnModel3d(
             return await callAssetHarvester(safeParams);
         case "hyper3d/rodin-2.5":
             return await callRodinFalAPI(prompt, safeParams);
+        case "meshy/meshy-7.1":
+            return await callMeshy71(prompt, safeParams);
         default:
             throw new Error(
                 `3D generation not supported for model: ${safeParams.model}`,

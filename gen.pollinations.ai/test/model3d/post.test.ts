@@ -17,6 +17,7 @@ import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 type ProviderBody = Record<string, unknown>;
+let reportedFalUnits: number | undefined;
 
 function create3dMocks() {
     const inferenceportBodies: ProviderBody[] = [];
@@ -74,14 +75,35 @@ function create3dMocks() {
                     if (pathname.endsWith("/status")) {
                         return Response.json({ status: "COMPLETED" });
                     }
-                    return Response.json({
-                        model_mesh: {
-                            url: "https://models.example.test/model.glb",
+                    return Response.json(
+                        {
+                            model_mesh: {
+                                url: "https://models.example.test/model.glb",
+                            },
                         },
-                    });
+                        {
+                            headers:
+                                reportedFalUnits === undefined
+                                    ? {}
+                                    : {
+                                          "x-fal-billable-units":
+                                              String(reportedFalUnits),
+                                      },
+                        },
+                    );
                 },
-                "models.example.test": async () =>
-                    new Response(new TextEncoder().encode("glTF")),
+                "models.example.test": async () => {
+                    if (reportedFalUnits === undefined)
+                        return new Response(new TextEncoder().encode("glTF"));
+                    const glb = Buffer.alloc(24);
+                    glb.write("glTF");
+                    glb.writeUInt32LE(2, 4);
+                    glb.writeUInt32LE(24, 8);
+                    glb.writeUInt32LE(4, 12);
+                    glb.write("JSON", 16);
+                    glb.write("{}  ", 20);
+                    return new Response(glb);
+                },
             },
             reset: () => {
                 falBodies.length = 0;
@@ -93,6 +115,7 @@ function create3dMocks() {
 let mocks: ReturnType<typeof create3dMocks>;
 
 beforeEach(() => {
+    reportedFalUnits = undefined;
     mocks = create3dMocks();
 });
 
@@ -352,3 +375,60 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
         resolution: "medium",
     });
 });
+
+// Use an atypical provider quantity to prove billing is not hardcoded to one request.
+test("Meshy 7.1 bills provider usage once across joined requests and cached retrieval", async () => {
+    reportedFalUnits = 3;
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        FAL_KEY: "fal_test_key",
+    });
+    await mocks.enable("tinybird", "fal");
+    const { key, userId } = await createTestApiKey({
+        user: { packBalance: 5 },
+        allowedModels: ["meshy/meshy-7.1"],
+    });
+    const path = `/3d/${crypto.randomUUID()}`;
+    const init = {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "meshy/meshy-7.1", seed: 42 }),
+    };
+    const [first, joined] = await Promise.all([
+        fetch3d(path, init, bindings),
+        fetch3d(path, init, bindings),
+    ]);
+    expect(first.status).toBe(200);
+    expect(joined.status).toBe(200);
+    expect(await first.arrayBuffer()).toEqual(await joined.arrayBuffer());
+    const cached = await fetch3d(path, init, bindings);
+    expect(cached.status).toBe(200);
+    expect(cached.headers.get("x-cache")).toBe("HIT");
+    expect(mocks.fal.state.bodies).toHaveLength(1);
+    const billed = mocks.tinybird.state.events.filter(
+        (event) => event.isBilledUsage,
+    );
+    expect(billed).toHaveLength(1);
+    expect(billed[0]).toMatchObject({
+        modelUsed: "meshy/meshy-7.1",
+        modelProviderUsed: "fal",
+        totalPrice: 2.4,
+        totalCost: 2.4,
+    });
+    expect(
+        (await getUserBalance(drizzle(env.DB), userId)).packBalance,
+    ).toBeCloseTo(2.6, 10);
+    const { key: questKey } = await createTestApiKey({
+        user: { tierBalance: 5, packBalance: 0 },
+    });
+    const rejected = await fetch3d(
+        `/3d/${crypto.randomUUID()}?model=meshy%2Fmeshy-7.1`,
+        { headers: { Authorization: `Bearer ${questKey}` } },
+        bindings,
+    );
+    expect(rejected.status).toBe(402);
+    expect(mocks.fal.state.bodies).toHaveLength(1);
+}, 15000);

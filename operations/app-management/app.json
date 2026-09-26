@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🎬",
+    "name": "TTA",
+    "url": "https://mahmoudtracy641-hub.github.io/GLM234",
+    "description": "Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri,",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "mahmoudtracy641-hub",
+    "githubUserId": "309074908",
+    "repositoryUrl": "https://github.com/mahmoudtracy641-hub/GLM234",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15469",
+    "approvedDate": "2026-09-26",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🎬",
     "name": "What TTS",
     "url": "https://bloodtubes6-cmyk.github.io/Blood",
     "description": "App Description: A static web application featuring an Arabic interface with Right-to-Left (RTL) support. It implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely on the client side, requi",

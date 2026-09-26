@@ -1,0 +1,37 @@
+{
+  "pr_number": 15334,
+  "title": "docs: add capacity, scope and lifecycle rules to model policy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15334",
+  "merged_at": "2026-09-26T15:28:50Z",
+  "labels": [
+    "DOCS"
+  ],
+  "pr_body_excerpt": "Lessons from the first Azure catalog run (#15304, #15306, #15317, #15320), written into the model-management policy so the next models don't repeat them.\n\n- Capacity: unused Azure Global Standard capacity costs nothing, so size token limits to the largest accepted request. GPT-5.3 Codex at 10K TPM rejects any ~15K-token prompt with a 429 at zero traffic. Scarce image pools are sized from measured demand instead.\n- Scope: add models that are differentiated; close superseded versions of an already-public family instead of queuing them.\n- Lifecycle: migrate public models facing retirement before new additions, keep the two-month cutoff for new models, and treat Preview routes as short-lived.\n- Economics: credits are used by traffic volume, not catalog breadth, so moving high-volume cash-spend traffic onto credit-eligible routes comes first.\n- Latency: non-streaming text beyond about 125s is unreliable on the gateway (GPT-5.4 Pro took 314s at default effort), so reasoning-heavy routes need a non-streaming latency check.\n- Test matrix: adds the max-size request and non-streaming latency checks.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A field guide for models",
+    "blurb": "The first Azure catalog run left useful notes in the margins. They’re now part of the model-management policy, with checks for prompts that don’t fit and responses that take their time.",
+    "summary": "Documented Azure model-management rules for capacity, catalog scope, and lifecycle, and added max-size request and non-streaming latency checks after a 10K TPM route rejected a roughly 15K-token prompt and a reasoning-heavy route exceeded the gateway’s roughly 125-second reliable window.",
+    "impact": "Model operators now have concrete checks for accepted prompt size and non-streaming latency, plus guidance to prioritize retirement migrations and differentiated additions.",
+    "keywords": [
+      "documentation",
+      "model management",
+      "Azure",
+      "capacity",
+      "lifecycle",
+      "latency",
+      "test matrix"
+    ],
+    "visual_concept": "An internal model-management field guide sits beside a retro terminal: a stack of token blocks tests whether a route can hold a full prompt, while a small clock marks the latency check. Polli, wearing tiny reading glasses, annotates the guide; code-plants and a lime-green desk lamp keep the scene warm.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny reading glasses and annotates a model field guide beside a retro terminal, a stack of token blocks, a small clock, and sprouting code-plants; soft lime green (#ecf874) glows prominently against a warm cream and pastel gradient background with dark purple (#110518) outlines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never oversized, and strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15334.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny reading glasses and annotates a model field guide beside a retro terminal, a stack of token blocks, a small clock, and sprouting code-plants; soft lime green (#ecf874) glows prominently against a warm cream and pastel gradient background with dark purple (#110518) outlines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never oversized, and strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-26T15:29:51.002636+00:00"
+}

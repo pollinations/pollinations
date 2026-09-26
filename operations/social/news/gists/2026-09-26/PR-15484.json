@@ -1,0 +1,37 @@
+{
+  "pr_number": 15484,
+  "title": "fix: stop Grafana denying dashboards for a minute after boot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15484",
+  "merged_at": "2026-09-26T10:48:19Z",
+  "labels": [
+    "BUG",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "Every production deploy restarts Grafana with an empty database. The first authenticated request fills Grafana's 60s RBAC permission cache before the dashboards are provisioned, so for the next minute every Editor gets \"Access denied to this dashboard\" even though search still lists it. That is what Thomas hit right after the 25 Sep deploy.\n\n- Fix: set `GF_RBAC_PERMISSION_CACHE=false` so permissions are read from Grafana's DB per request (a handful of admin users, negligible cost)\n- Reproduced twice with `grafana/grafana:11.4.0`, the production auth proxy env and this repo's provisioning: 403 for exactly 60s after boot, then 200\n- With the cache off: under a second of 404 while dashboards provision, then 200, no 403 window\n- Observability tests pass; no change to auth or the admin gate",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more dashboard sulking",
+    "blurb": "Grafana now waits politely for its dashboards instead of remembering an empty room for a full minute. Editors can get back to watching the hive without the post-deploy cold shoulder.",
+    "summary": "Disabled Grafana's 60-second RBAC permission cache via `GF_RBAC_PERMISSION_CACHE=false`, preventing authenticated Editors from receiving dashboard 403s after production boot while provisioning completes.",
+    "impact": "After deploys, dashboard access now moves from a sub-second provisioning 404 to normal 200 responses, without the previous one-minute \"Access denied\" window for Editors.",
+    "keywords": [
+      "grafana",
+      "observability",
+      "rbac",
+      "dashboards",
+      "deployment",
+      "bug-fix"
+    ],
+    "visual_concept": "A cozy observability garden after a server reboot: Polli, wearing a tiny mechanic tool belt, helps a CRT-monitor robot refresh a dashboard display as code-plants finish sprouting. A small permission-cache jar is set aside, while the dashboard screen changes from a brief \"loading\" sign to a friendly green check mark; flowers and vines show the system settling in.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed where the cute yellow bee mascot with dark brown stripes, pink cheek blush, light blue wings, and a tiny mechanic tool belt helps a chunky CRT-monitor robot bring a dashboard online; code-plants sprout around a retro terminal glowing lime green (#ecf874), with a small cache jar gently set aside and a pixel screen showing a green check mark. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15484.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed where the cute yellow bee mascot with dark brown stripes, pink cheek blush, light blue wings, and a tiny mechanic tool belt helps a chunky CRT-monitor robot bring a dashboard online; code-plants sprout around a retro terminal glowing lime green (#ecf874), with a small cache jar gently set aside and a pixel screen showing a green check mark. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-26T10:49:15.700130+00:00"
+}

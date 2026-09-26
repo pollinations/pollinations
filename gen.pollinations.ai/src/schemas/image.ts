@@ -6,6 +6,20 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
+/**
+ * Clamp an arbitrary integer seed into the valid [0, MAX_SEED_VALUE] range.
+ *
+ * Developers commonly use `Date.now()` (a 13-digit ms timestamp) as a quick
+ * unique seed. Without clamping this causes a 400 "Too big" validation error
+ * (issue #15464). Applying modulo keeps the result deterministic for a given
+ * input while staying within the INT32 range required by strict providers
+ * such as Vertex AI.
+ */
+export const clampSeed = (n: number): number => {
+    if (n === -1) return -1;
+    return Math.abs(Math.round(n)) % (MAX_SEED_VALUE + 1);
+};
+
 const NOVA_REEL_MODELS = new Set([
     "amazon/nova-reel-v1",
     ...IMAGE_SERVICES["amazon/nova-reel-v1"].aliases,
@@ -39,16 +53,23 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
-    seed: z.coerce
-        .number()
-        .int()
-        .min(-1)
-        .max(MAX_SEED_VALUE)
+    seed: z
+        .preprocess(
+            // Clamp before int/min/max validation so values like Date.now()
+            // (13-digit ms timestamps) succeed instead of returning a 400.
+            (v) => {
+                if (v === undefined || v === null || v === "") return undefined;
+                const parsed = Number(v);
+                if (Number.isNaN(parsed)) return v;
+                return clampSeed(parsed);
+            },
+            z.number().int().min(-1).max(MAX_SEED_VALUE),
+        )
         .optional()
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Large values (e.g. Date.now()) are automatically clamped into the valid range via modulo. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z

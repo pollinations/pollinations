@@ -24,7 +24,7 @@ The immediate work is to refresh the baseline, finish current-main scenario reco
 | Runtime evidence baselines | App/Device captures: `d3e84e005d`; Keys/Apps/Models/Agents/Wallet/Account/Quests/Admin captures and 71 resource/wallet/settings recovery checks: `1b7e621066`. Ten non-credential Device checks and the Admin recovery/callback/Journey checks also pass at `1b7e621066`. |
 | Audited main | `645599a6c6b97a1d55cc8b11ebce5a9f63767c87` |
 | Historical Connect UX source | `origin/codex/pollen-connect-ux` at `27e396e48b1ee3b5dffda6e8f8fc999f1cfd0a8b` |
-| Extraction PR | Draft checkpoint being published from `codex/connect-review-workspace` to `main`; this is the Flow extraction only |
+| Extraction PR | [#15503 — feat(flow): add product flow review workspace](https://github.com/pollinations/pollinations/pull/15503), draft, `codex/connect-review-workspace` → `main` |
 | Current changes | Imported tool renamed to operations/flow; main reconciliation, root workspace registration, lockfile and scenario ledger grouped into focused commits. Product behavior fixes remain separate. |
 
 Do not work in `/Users/comsom/Github/pollinations`: it is an unrelated, dirty `codex/account-connect` checkout. The historical `/private/tmp/pollinations-pollen-connect-ux` workspace is no longer present; use the preserved remote source ref. Do not restore its complete product files over main.
@@ -35,7 +35,7 @@ The merged extractions are #14936 (SDK browser auth), #14949 (dialog tooltips), 
 
 ### Draft checkpoint and remaining gates
 
-The user authorized committing and pushing the current extraction as a draft. Earlier progress entries saying local/uncommitted/unpushed describe those earlier batches. This checkpoint does not certify all situations or deploy Flow.
+The user authorized committing and pushing the current extraction as a draft. Six focused commits were pushed and draft PR #15503 was opened; this plan also records that published location. Earlier progress entries saying local/uncommitted/unpushed describe those earlier batches. This checkpoint does not certify all situations or deploy Flow.
 
 - Finish remaining SDK and dashboard main/news/catalog/activity reconciliation. The ledger currently has 55 active source-only rows; capture counts and baselines are recorded below.
 - Complete separately approved credential checks, including Device approvals and key reveal. Do not reuse fulfilled credential batches for new scenarios.

@@ -1,11 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
+import { gen } from "../lib/api.js";
 import { commandExists, readTextIfExists } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
-import { gen } from "../lib/api.js";
 
 const ID = "codex";
 const LABEL = "Codex";
@@ -167,9 +167,12 @@ const configureViaRouter = (
     } else {
         router(["providers", "generic", "add", PROVIDER_ID, ...descriptor]);
     }
-    router(["providers", "generic", "credential", PROVIDER_ID, "set", "--stdin"], {
-        input: settings.apiKey,
-    });
+    router(
+        ["providers", "generic", "credential", PROVIDER_ID, "set", "--stdin"],
+        {
+            input: settings.apiKey,
+        },
+    );
     // add/edit already publishes the descriptor enabled; `providers enable`
     // only handles built-in providers, not generic ones.
     // Publish the selected model from Pollinations' live catalog; the

@@ -679,6 +679,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        "qwen/qwen3-coder-30b-a3b-instruct:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-09-26").getTime(),
+            cost: {
+                // AWS Pricing API, Bedrock on-demand standard tier, us-east-1.
+                promptTextTokens: perMillion(0.15),
+                completionTextTokens: perMillion(0.6),
+            },
+        },
+    },
     "qwen/qwen3-coder-next": {
         "qwen/qwen3-coder-next:openrouter:streamlake": {
             supportedParameters: CHAT_PARAMETERS.openRouterQwenCoderNext,

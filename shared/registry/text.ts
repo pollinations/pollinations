@@ -728,19 +728,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
-        supportedParameters: CHAT_PARAMETERS.ovhQwenCoder,
+        supportedParameters: CHAT_PARAMETERS.openRouterQwenCoderSiliconFlow,
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
-        provider: "ovhcloud",
+        provider: "openrouter",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        // OVHcloud AI Endpoints catalog model_eol_date.
-        retirementDate: new Date("2026-10-01").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
-            promptTextTokens: perMillion(0.07),
-            completionTextTokens: perMillion(0.26),
+            // OpenRouter SiliconFlow fp8, including the 5.5% credit-purchase fee.
+            // SiliconFlow reports cached prompt tokens but bills them at the
+            // full input rate.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            promptCachedTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.28) * 1.055,
         },
         title: "Qwen3 Coder 30B",
         description:

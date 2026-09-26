@@ -394,6 +394,7 @@ test("H3 Max bills reference provider units without inflating video duration", a
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "minimax/minimax-h3-max",
+        costVariant: "768p",
         tokenCountCompletionVideoSeconds: 5,
         totalCost: 1.064,
         totalPrice: 1.064,

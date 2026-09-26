@@ -1712,6 +1712,35 @@ const IMAGE_BASE_SERVICES = {
         // fal reports resolution-weighted units including reference-media charges.
         // Keep output duration separate; charge the current endpoint price below.
         cost: { completionVideoSeconds: 0 },
+        // Retain resolution selection for the catalog and analytics. All
+        // resolutions are billed by provider units, not output duration.
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0 },
+                "1080p": { completionVideoSeconds: 0 },
+            },
+            matchResolution("768p", "1080p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "768p video billed from provider-reported units.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "1080p video billed from provider-reported units.",
+                },
+            },
+            "480p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "480p", "768p": "768p", "1080p": "1080p" },
+                },
+            ],
+        ),
         billing: {
             adjustments: [
                 {

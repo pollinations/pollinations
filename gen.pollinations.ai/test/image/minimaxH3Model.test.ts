@@ -472,8 +472,14 @@ describe("callMinimaxH3MaxAPI", () => {
             model: "minimax/minimax-h3-max",
             usage: result.trackingData.usage,
             servedBy: IMAGE_SERVICES["minimax/minimax-h3-max"],
-            input: { providerBilling: result.trackingData.providerBilling },
+            input: {
+                resolution,
+                providerBilling: result.trackingData.providerBilling,
+            },
         });
+        expect(billing.costVariant).toBe(
+            resolution === "480p" ? undefined : resolution,
+        );
         expect(billing.cost.totalCost).toBeCloseTo(cost);
         expect(billing.price.totalPrice).toBeCloseTo(cost);
     });

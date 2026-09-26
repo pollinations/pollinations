@@ -15,7 +15,6 @@ const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
 const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 const WAN_TURBO_RATIOS = ["16:9", "9:16", "1:1"] as const;
 const SEEDANCE_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
-const MEDIA_POLL_MAX_ATTEMPTS = 60;
 
 type FalFile = { url?: string; content_type?: string };
 
@@ -100,7 +99,6 @@ export async function callFalFallbackImage(
                     },
                     params,
                 ),
-                pollMaxAttempts: MEDIA_POLL_MAX_ATTEMPTS,
             },
             requireFalKey(),
         );
@@ -145,6 +143,8 @@ type FalVideoConfig = {
         duration: number,
         hasImage: boolean,
     ) => Record<string, unknown>;
+    // fal bills a video that xAI's moderation rejects after generating it.
+    billsRejectedVideos?: boolean;
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
@@ -157,6 +157,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             resolution: "720p",
             aspect_ratio: resolveGrokAspectRatio(params),
         }),
+        billsRejectedVideos: true,
     },
     "x-ai/grok-imagine-video-1.5:fal": {
         textEndpoint: "xai/grok-imagine-video/v1.5/text-to-video",
@@ -219,6 +220,10 @@ export async function callFalFallbackVideo(
     }
     const image = params.image[0];
     const duration = config.duration(params);
+    const usage = {
+        ...(image ? { promptImageTokens: params.image.length } : {}),
+        completionVideoSeconds: duration,
+    };
     try {
         const result = await runFalJob(
             {
@@ -231,7 +236,6 @@ export async function callFalFallbackVideo(
                     },
                     params,
                 ),
-                pollMaxAttempts: MEDIA_POLL_MAX_ATTEMPTS,
             },
             requireFalKey(),
         );
@@ -243,17 +247,33 @@ export async function callFalFallbackVideo(
             buffer,
             mimeType: mimeType || "video/mp4",
             durationSeconds: duration,
-            trackingData: {
-                actualModel: params.model,
-                usage: {
-                    ...(image
-                        ? { promptImageTokens: params.image.length }
-                        : {}),
-                    completionVideoSeconds: duration,
-                },
-            },
+            trackingData: { actualModel: params.model, usage },
         };
     } catch (error) {
+        if (config.billsRejectedVideos && isRejectedAfterGeneration(error)) {
+            throw UpstreamError.fromProvider(422, {
+                message: `${error.message} The video was rejected after it was generated, so this request was charged.`,
+                responseBody: error.responseBody,
+                billedUsage: usage,
+            });
+        }
         throw toUpstreamError(error, params.model);
+    }
+}
+
+// fal answers a video that xAI rejected after generating it with a
+// content_policy_violation that echoes the whole request, duration included.
+// A rejection before generation echoes only the checked prompt and images,
+// and fal does not bill it.
+function isRejectedAfterGeneration(error: unknown): error is FalError {
+    if (!(error instanceof FalError) || error.status !== 422) return false;
+    try {
+        const detail = JSON.parse(error.responseBody ?? "").detail?.[0];
+        return (
+            detail?.type === "content_policy_violation" &&
+            typeof detail.input?.duration === "number"
+        );
+    } catch {
+        return false;
     }
 }

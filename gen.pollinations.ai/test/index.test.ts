@@ -21,6 +21,7 @@ const TRANSCRIPTION_MODEL_IDS = [
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
 });
 
 function envWithEnter(
@@ -1928,11 +1929,14 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes stable-audio-3-medium requests through fal",
+    "routes stable-audio-3-medium requests through the fal queue",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const falEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+        const statusUrl = `${falEndpoint}/requests/sa3/status`;
+        const resultUrl = `${falEndpoint}/requests/sa3`;
         const falFileUrl = "https://v3.fal.media/files/test-stable-audio.mp3";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1955,6 +1959,18 @@ fixtureTest(
                     expect(body.num_inference_steps).toBe(6);
                     expect(body.seed).toBe(42);
 
+                    return Response.json({
+                        request_id: "sa3",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
                     return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 42,
@@ -1981,7 +1997,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request(
                 "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-medium&seconds=12&steps=6&seed=42",
                 {
@@ -1994,6 +2010,10 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        // The first status poll follows a five-second wait.
+        await vi.waitFor(() => expect(calls).toContain(falEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
@@ -2011,6 +2031,7 @@ fixtureTest(
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(falEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );
@@ -2018,9 +2039,12 @@ fixtureTest(
 fixtureTest(
     "routes stable-audio-3-medium reference_audio through fal audio-to-audio",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const a2aEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const statusUrl = `${a2aEndpoint}/requests/a2a/status`;
+        const resultUrl = `${a2aEndpoint}/requests/a2a`;
         const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
         const referenceAudioUrl =
             "https://media.pollinations.ai/test-reference-audio";
@@ -2049,6 +2073,18 @@ fixtureTest(
                     sentAudioUrl = body.audio_url;
 
                     return Response.json({
+                        request_id: "a2a",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
+                    return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 1,
                     });
@@ -2074,7 +2110,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
                 headers: {
@@ -2093,6 +2129,9 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
@@ -2112,6 +2151,7 @@ fixtureTest(
 
         expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );

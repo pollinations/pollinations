@@ -54,6 +54,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.4-pro": {
+        "openai/gpt-5.4-pro:azure:sweden": {
+            provider: "azure",
+            retirementDate: new Date("2027-09-07").getTime(),
+        },
+    },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",

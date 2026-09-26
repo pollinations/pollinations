@@ -162,6 +162,18 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-5.4-pro",
+        config: portkeyConfig["gpt-5.4-pro"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-5.4-pro:azure:sweden",
+        config: portkeyConfig["gpt-5.4-pro-azure-sweden"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
         transform: omitOpenAISampling,

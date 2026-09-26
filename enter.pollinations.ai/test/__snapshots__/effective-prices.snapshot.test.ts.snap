@@ -1993,6 +1993,38 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
+  "openai/gpt-5.4-pro": {
+    "cost": {
+      "completionTextTokens": 0.00018,
+      "promptTextTokens": 0.00003,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.00027,
+        "promptTextTokens": 0.00006,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.000135,
+      "promptTextTokens": 0.0000225,
+    },
+  },
+  "openai/gpt-5.4-pro:azure:sweden": {
+    "cost": {
+      "completionTextTokens": 0.00018,
+      "promptTextTokens": 0.00003,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.00027,
+        "promptTextTokens": 0.00006,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.000135,
+      "promptTextTokens": 0.0000225,
+    },
+  },
   "openai/gpt-5.5": {
     "cost": {
       "completionTextTokens": 0.00003,

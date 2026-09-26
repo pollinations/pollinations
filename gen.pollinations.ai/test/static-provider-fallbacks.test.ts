@@ -379,6 +379,55 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("uses the identical Sweden checkpoint as the GPT-5.4 Pro fallback", () => {
+        const primary = TEXT_SERVICES["openai/gpt-5.4-pro"];
+        const fallback = TEXT_SERVICES["openai/gpt-5.4-pro:azure:sweden"];
+        expect(primary).toMatchObject({
+            provider: "azure",
+            aliases: [],
+            fallbacks: ["openai/gpt-5.4-pro:azure:sweden"],
+            priceMultiplier: 0.75,
+            maxCompletionTokens: 128000,
+            contextLength: 1050000,
+        });
+        expect(primary).not.toHaveProperty("paidOnly", true);
+        expect(fallback).toMatchObject({
+            provider: "azure",
+            fallbackOnly: true,
+            hidden: true,
+            aliases: [],
+        });
+        expect(fallback.paidOnly).not.toBe(true);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.costVariants).toEqual(primary.costVariants);
+
+        const shortBilling = calculateUsageBilling({
+            model: "openai/gpt-5.4-pro",
+            usage: {
+                promptTextTokens: 10,
+                completionTextTokens: 5,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(shortBilling.cost.totalCost).toBeCloseTo(0.0012, 12);
+        expect(shortBilling.price.totalPrice).toBeCloseTo(0.0009, 12);
+
+        const longBilling = calculateUsageBilling({
+            model: "openai/gpt-5.4-pro",
+            usage: {
+                promptTextTokens: 272001,
+                completionTextTokens: 5,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(longBilling.costVariant).toBe("long_context");
+        expect(longBilling.price.totalPrice).toBe(
+            longBilling.cost.totalCost * 0.75,
+        );
+    });
+
     it("uses Fal first for Grok Video Pro without changing prices or access", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
         const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];

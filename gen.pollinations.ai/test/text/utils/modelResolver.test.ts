@@ -99,6 +99,36 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
+    it("keeps GPT-5.4 Pro primary and Sweden fallback routes distinct", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-pro",
+        });
+        const fallback = findModelByName("openai/gpt-5.4-pro:azure:sweden");
+
+        expect(primary.options.model).toBe("gpt-5.4-pro");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-5.4-pro",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(fallback?.useResponsesApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "gpt-5.4-pro",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it("does not expose GPT-5.4 Pro through an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-5.4-pro" }),
+        ).toThrow("Model configuration not found for: gpt-5.4-pro");
+    });
+
     it.each([
         "gpt-6-sol",
         "gpt-6-luna",

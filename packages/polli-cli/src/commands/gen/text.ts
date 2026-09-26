@@ -8,6 +8,7 @@ import {
     getOutputMode,
     printError,
     printInfo,
+    printMeta,
     printResult,
     printSuccess,
 } from "../../lib/output.js";
@@ -44,11 +45,12 @@ export function createTextCommand() {
             "Attach image URL(s) for vision models (repeatable)",
         )
         .option("--output <path>", "Save to file instead of stdout")
+        .option("--stream", "Stream tokens even when stdout is piped")
         .option(
             "--no-stream",
             "Wait for full response instead of streaming tokens",
         )
-        .action(async (promptArg, opts) => {
+        .action(async (promptArg, opts, command: Command) => {
             const stdinText = await readStdin();
             const prompt = promptArg || stdinText;
 
@@ -71,12 +73,12 @@ export function createTextCommand() {
             // Auto-off when piping/redirecting so SSE chunks don't leak into
             // the downstream consumer. `--no-stream` forces off; `--stream`
             // (when explicitly passed) forces on even if piped.
-            const explicitStream = opts.stream === true;
             const autoStream = isHuman && !!process.stdout.isTTY;
             const useStream =
-                opts.stream !== false &&
                 !opts.output &&
-                (explicitStream || autoStream);
+                (command.getOptionValueSource("stream") === "cli"
+                    ? opts.stream
+                    : autoStream);
 
             type ContentPart =
                 | { type: "text"; text: string }
@@ -173,13 +175,20 @@ export function createTextCommand() {
                         ? (s: string) => chalk.dim(s)
                         : (s: string) => s;
                     let content = "";
-                    for await (const chunk of streamSSE(res)) {
+                    let model: string | null = null;
+                    let tokens: number | null = null;
+                    for await (const chunk of streamSSE(res, (event) => {
+                        if (typeof event.model === "string")
+                            model = event.model;
+                        if (typeof event.usage?.total_tokens === "number")
+                            tokens = event.usage.total_tokens;
+                    })) {
                         content += chunk;
                         if (isHuman) process.stdout.write(colorize(chunk));
                     }
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
-                        printResult({ content, model: opts.model ?? null });
+                        printResult({ content, model, tokens });
                     }
                     return;
                 }
@@ -189,7 +198,16 @@ export function createTextCommand() {
 
                 if (opts.output) {
                     writeFileSync(opts.output, content, "utf-8");
-                    printSuccess(`Saved to ${opts.output}`);
+                    if (getOutputMode() === "json") {
+                        printMeta({
+                            path: opts.output,
+                            size: Buffer.byteLength(content, "utf-8"),
+                            model: data.model,
+                            tokens: data.usage?.total_tokens ?? null,
+                        });
+                    } else {
+                        printSuccess(`Saved to ${opts.output}`);
+                    }
                 } else if (getOutputMode() === "json") {
                     printResult({
                         content,

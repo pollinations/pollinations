@@ -767,11 +767,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "invoice.payment_failed": {
                 const invoice = event.data.object as Stripe.Invoice;
+                // A decline turns auto top-up off. Leaving it on made every
+                // paid request retry the same declined card.
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,
                     "Stripe could not charge the default payment method.",
-                    { disableAutoTopUp: false },
                 );
                 break;
             }

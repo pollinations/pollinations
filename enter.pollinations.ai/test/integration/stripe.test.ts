@@ -2730,7 +2730,7 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
 // simulate the new `invoice.payments.data[0].payment.payment_intent`
 // expansion that the live Stripe API requires.
 
-test("POST /api/webhooks/stripe fails declined invoices without disabling auto top-up", async ({
+test("POST /api/webhooks/stripe turns auto top-up off after a declined invoice", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2803,7 +2803,7 @@ test("POST /api/webhooks/stripe fails declined invoices without disabling auto t
             completedAt: number | null;
         }>();
 
-    expect(updatedUser?.autoTopUpEnabled).toBe(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(0);
     expect(attempt?.status).toBe("failed");
     expect(attempt?.failureReason).toContain(
         "Stripe could not charge the default payment method.",

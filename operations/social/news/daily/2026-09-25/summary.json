@@ -1,0 +1,103 @@
+{
+  "date": "2026-09-25",
+  "period_start": "2026-09-25",
+  "period_end": "2026-09-25",
+  "title": "More ways to make pixels and speak Arabic",
+  "summary": "A buzzing day for builders: new image models, a growing collective-memory ecosystem, smoother integrations, and contributor tooling that remembers what people did.\n\nThe image shelf gained Qwen Image 2.1 for generation and reference-guided edits, plus Recraft V4.1 Flash with explicit aspect-ratio support. The community app catalog also picked up What TTS, an Arabic right-to-left app with browser-based Pollinations login.\n\nSix community contributions made the shared repository more alive and less forgetful: a Gazette turns activity into dated front pages; Gotcha Scout reruns old reproductions; Tessera paints cautiously on games/place; the Crooked Lantern passes rumours along; and Show Your Work independently checks maths notes. New agent authors can now publish through the public flow too.\n\nPolli can now configure tgpt's authenticated Pollinations provider in one command and restore prior settings on the way out. Sonar moved to Perplexity's Agent API without changing its familiar endpoints, Ask Jev joined the hosted MCP catalog, and explicitly delegated child keys can create further scoped keys.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 14690,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 14865,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15082,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15113,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15142,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15223,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15236,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15357,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15362,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15372,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15408,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15419,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15424,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15429,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15431,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15432,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15436,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15441,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15445,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15446,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15450,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15451,
+      "date": "2026-09-25"
+    },
+    {
+      "number": 15452,
+      "date": "2026-09-25"
+    }
+  ],
+  "generated_at": "2026-09-26T06:28:00.970530+00:00"
+}

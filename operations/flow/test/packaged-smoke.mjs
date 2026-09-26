@@ -84,8 +84,11 @@ try {
         document.getElementById("canvas-root")?.textContent.includes("Models"),
     );
     await page.goto(
-        `${origin}/flow?theme=dark&view=journey&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
+        `${origin}/flow?theme=dark&view=screens&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
     );
+    // Opening Journey applies the selected situation; a direct Journey URL
+    // preserves the current review instead of silently resetting its data.
+    await page.getByRole("button", { name: "Journey", exact: true }).click();
     const journey = page.frameLocator(".flow-journey-host iframe");
     await journey
         .getByRole("alert")

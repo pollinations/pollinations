@@ -89,15 +89,15 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
+    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
         expect(ensureModelQueryDefaults("")).toBe(
-            "source:official status:healthy",
+            "source:official status:reliable",
         );
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:healthy capability:reasoning",
+            "source:official status:reliable capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:healthy source:community",
+            "status:reliable source:community",
         );
         expect(ensureModelQueryDefaults("source: status:")).toBe(
             "source: status:",
@@ -108,23 +108,47 @@ describe("model query defaults", () => {
     });
 });
 
-it("filters by health without hiding unknown models in all mode", () => {
-    for (const status of ["healthy", "degraded", "down", "unknown"] as const) {
+it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
+    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
         const candidate = model({
-            health: { status, requests: 0, successRate: null },
+            community: true,
+            health: {
+                status: successRate == null ? "unknown" : "degraded",
+                requests: successRate == null ? 0 : 50,
+                success_rate: successRate,
+            },
         });
-        expect(matches(candidate, "status:healthy")).toBe(status === "healthy");
-        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
-            status === "healthy",
+        const visible = successRate == null || successRate > 80;
+        expect(matches(candidate, "source:community status:reliable")).toBe(
+            visible,
         );
+        expect(matches(candidate, "status:reliable")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
     }
-    expect(matches(model(), "status:healthy")).toBe(false);
+    const official = model({
+        health: { status: "down", requests: 50, success_rate: 0 },
+    });
+    expect(matches(official, "status:reliable")).toBe(false);
+    expect(
+        matches(
+            { ...official, community: true, agent: true },
+            "status:reliable",
+        ),
+    ).toBe(false);
     expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
-    expect(matches(model(), "status:all")).toBe(true);
+    expect(
+        matches(
+            model({
+                health: { status: "healthy", requests: 50, success_rate: 99 },
+            }),
+            ensureModelQueryDefaults(""),
+        ),
+    ).toBe(true);
+    expect(matches(model(), "status:healthy")).toBe(false);
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",
         "status:healthy ",
+        "status:reliable ",
     ]);
 });
 

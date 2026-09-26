@@ -24,11 +24,6 @@ type ContentViolation = {
     severity: ContentViolationSeverity;
 };
 
-export type ContentSafetyFlags = {
-    isMature: boolean;
-    isChild: boolean;
-};
-
 const SAFE_RESULT: ContentSafetyResults = {
     safe: true,
     violations: [],

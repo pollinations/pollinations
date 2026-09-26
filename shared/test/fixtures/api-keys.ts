@@ -75,7 +75,6 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         pollenBudget: type === "publishable" ? 0 : testPollenBudget,
         accountPermissions: opts.accountPermissions,
         metadata: opts.metadata,
-        allowAccountKeysPermission: true,
         defaultCreatedVia: "test",
     });
 

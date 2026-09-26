@@ -16,7 +16,6 @@ import { getModel3dEnv } from "../env.ts";
 
 const QUEUE_BASE = "https://queue.fal.run";
 const POLL_INTERVAL_MS = 5000;
-const POLL_MAX_ATTEMPTS = 120; // 10 min ceiling for the slowest providers (Rodin HighPack)
 
 export class FalError extends Error {
     constructor(
@@ -30,7 +29,6 @@ export class FalError extends Error {
 }
 
 interface FalQueueSubmitResponse {
-    request_id: string;
     status_url: string;
     response_url: string;
 }
@@ -49,7 +47,6 @@ export interface FalModelMesh {
 export interface RunFalJobOptions {
     endpoint: string;
     input: Record<string, unknown>;
-    pollMaxAttempts?: number;
 }
 
 function requireFalApiKey(): string {
@@ -70,15 +67,9 @@ export async function runFalJob(
         body: opts.input,
     });
 
-    let pollAttempts = 0;
-    const pollMaxAttempts = opts.pollMaxAttempts ?? POLL_MAX_ATTEMPTS;
+    // Fal still runs and bills a job we stop polling, so wait until it
+    // finishes. The durable generation alarm bounds the wait.
     while (true) {
-        if (pollAttempts >= pollMaxAttempts) {
-            throw new FalError(
-                `fal.ai request ${submission.request_id} timed out after ${(pollMaxAttempts * POLL_INTERVAL_MS) / 1000}s`,
-                504,
-            );
-        }
         await sleep(POLL_INTERVAL_MS);
         const status = await falFetch<FalQueueStatusResponse>(apiKey, {
             method: "GET",
@@ -90,7 +81,6 @@ export async function runFalJob(
                 url: submission.response_url,
             });
         }
-        pollAttempts++;
     }
 }
 

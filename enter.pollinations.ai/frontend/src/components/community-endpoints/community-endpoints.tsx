@@ -28,7 +28,7 @@ import {
 } from "react";
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -92,6 +92,30 @@ function ProviderProfileField({
     );
 }
 
+export function DeploymentsPlaceholder({
+    canPublish = false,
+    error,
+    onRetry,
+}: {
+    canPublish?: boolean;
+    error?: string | null;
+    onRetry?: () => void;
+}) {
+    if (!error) return null;
+    const titles = canPublish
+        ? ["Publisher info", "Agents", "Models"]
+        : ["Agents", "Models"];
+    return (
+        <div className="flex flex-col gap-6">
+            {titles.map((title) => (
+                <Section key={title} title={title}>
+                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                </Section>
+            ))}
+        </div>
+    );
+}
+
 export function CommunityEndpoints({
     onChange,
     canPublish,
@@ -100,6 +124,7 @@ export function CommunityEndpoints({
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
@@ -128,33 +153,38 @@ export function CommunityEndpoints({
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
-        const [endpointResponse, agentResponse] = await Promise.all([
-            apiClient.account["my-models"].$get(),
-            apiClient.account.agents.$get(),
-        ]);
-        if (!endpointResponse.ok || !agentResponse.ok) {
-            setError(
-                await readError(
-                    endpointResponse.ok ? agentResponse : endpointResponse,
-                ),
-            );
+        try {
+            const [endpointResponse, agentResponse] = await Promise.all([
+                apiClient.account["my-models"].$get(),
+                apiClient.account.agents.$get(),
+            ]);
+            if (!endpointResponse.ok || !agentResponse.ok) {
+                setError(
+                    await readError(
+                        endpointResponse.ok ? agentResponse : endpointResponse,
+                    ),
+                );
+                return;
+            }
+            const endpointBody = (await endpointResponse.json()) as {
+                data: CommunityEndpoint[];
+                provider: CommunityProviderProfile;
+            };
+            const agentBody = (await agentResponse.json()) as {
+                data: ManagedAgent[];
+            };
+            setEndpoints(endpointBody.data);
+            setAgents(agentBody.data);
+            setProviderName(endpointBody.provider.name ?? "");
+            setProviderUrl(endpointBody.provider.url ?? "");
+            setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
+            setSavedProvider(endpointBody.provider);
+            setHasLoaded(true);
+        } catch {
+            setError("Couldn’t load models and agents.");
+        } finally {
             setIsLoading(false);
-            return;
         }
-        const endpointBody = (await endpointResponse.json()) as {
-            data: CommunityEndpoint[];
-            provider: CommunityProviderProfile;
-        };
-        const agentBody = (await agentResponse.json()) as {
-            data: ManagedAgent[];
-        };
-        setEndpoints(endpointBody.data);
-        setAgents(agentBody.data);
-        setProviderName(endpointBody.provider.name ?? "");
-        setProviderUrl(endpointBody.provider.url ?? "");
-        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
-        setSavedProvider(endpointBody.provider);
-        setIsLoading(false);
     }, []);
 
     useEffect(() => {
@@ -436,8 +466,18 @@ export function CommunityEndpoints({
         </Button>
     );
 
-    if (isLoading)
-        return <DashboardLoading label="Loading models and agents…" />;
+    if (isLoading || (error && !hasLoaded)) {
+        return (
+            <DeploymentsPlaceholder
+                canPublish={canPublish}
+                error={isLoading ? null : error}
+                onRetry={() => {
+                    setIsLoading(true);
+                    void loadEndpoints();
+                }}
+            />
+        );
+    }
 
     return (
         <>

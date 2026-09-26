@@ -151,8 +151,6 @@ async function generateDeepInfraImage(
     });
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel,
             usage: {

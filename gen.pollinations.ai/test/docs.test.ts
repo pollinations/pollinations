@@ -559,6 +559,8 @@ describe("docs routes", () => {
         expect(mcpBody).toContain(
             "https://gen.pollinations.ai/mcp/pollinations",
         );
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ask-jev");
+        expect(mcpBody).toContain("`jev_decide`");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/composio");

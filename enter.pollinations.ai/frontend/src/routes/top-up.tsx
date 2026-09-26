@@ -157,8 +157,7 @@ function TopUpPage() {
         );
     }
 
-    if (!wallet || billing === undefined)
-        return <AuthModalLoading title="Top-up" />;
+    if (!wallet) return <AuthModalLoading title="Top-up" />;
 
     return (
         <AuthFlowScreen
@@ -175,19 +174,24 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            <BuyPollenPanel
-                initialBillingState={billing}
-                selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                onSelectedPackAmountChange={(amount) => {
-                    const pack = getPollenPackByAmount(amount);
-                    if (pack) {
-                        void navigate({
-                            search: (prev) => ({ ...prev, pack: pack.packKey }),
-                        });
-                    }
-                }}
-                returnToTopUp={{ redirect: search.redirect }}
-            />
+            {billing === undefined ? null : (
+                <BuyPollenPanel
+                    initialBillingState={billing}
+                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                    onSelectedPackAmountChange={(amount) => {
+                        const pack = getPollenPackByAmount(amount);
+                        if (pack) {
+                            void navigate({
+                                search: (prev) => ({
+                                    ...prev,
+                                    pack: pack.packKey,
+                                }),
+                            });
+                        }
+                    }}
+                    returnToTopUp={{ redirect: search.redirect }}
+                />
+            )}
         </AuthFlowScreen>
     );
 }

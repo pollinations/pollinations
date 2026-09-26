@@ -1,5 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
@@ -22,6 +23,9 @@ import { mp4TrackDurations } from "./mp4.ts";
 export const MMAUDIO_VERSION =
     "62871fb59889b2d7c13777f08deb3b36bdff88f7e1d53a50ad7694548a41b484";
 
+const { minDuration, maxDuration, defaultDuration } =
+    IMAGE_SERVICES["sony/mmaudio-v2"];
+
 export const VideoAudioRequestSchema = z
     .object({
         model: z.string().default("sony/mmaudio-v2"),
@@ -32,7 +36,11 @@ export const VideoAudioRequestSchema = z
                 "Expected a public HTTP(S) video URL",
             ),
         prompt: z.string().min(1).max(10000),
-        duration: z.number().min(1).default(8),
+        duration: z
+            .number()
+            .min(minDuration)
+            .max(maxDuration)
+            .default(defaultDuration),
         negative_prompt: z.string().max(10000).default(""),
         seed: z.number().int().min(0).max(2147483647).optional(),
     })

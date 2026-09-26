@@ -343,6 +343,43 @@ export async function processAutoTopUpForUser(
     }
 }
 
+/**
+ * Retries declined auto top-ups once their wait has passed, so recovery does
+ * not depend on another paid request. Only accounts whose latest top-up was
+ * declined are retried; `processAutoTopUpForUser` rechecks eligibility and
+ * claims atomically, so a concurrent request cannot charge twice.
+ */
+export async function retryDeclinedAutoTopUps(
+    env: CloudflareBindings,
+): Promise<void> {
+    const { results } = await env.DB.prepare(
+        `SELECT id
+            FROM user
+            WHERE auto_top_up_enabled = 1
+                AND COALESCE(pack_balance, 0) <= ?`,
+    )
+        .bind(AUTO_TOP_UP_THRESHOLD_POLLEN)
+        .all<{ id: string }>();
+
+    for (const { id } of results) {
+        try {
+            if ((await getDeclineStreak(env.DB, id)).count === 0) continue;
+            const result = await processAutoTopUpForUser(env, id);
+            if (result.status !== "skipped") {
+                console.log("[auto-top-up] scheduled retry", {
+                    userId: id,
+                    ...result,
+                });
+            }
+        } catch (error) {
+            console.error("[auto-top-up] scheduled retry failed", {
+                userId: id,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+}
+
 export async function creditAutoTopUpInvoice(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,

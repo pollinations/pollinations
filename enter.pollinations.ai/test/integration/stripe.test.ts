@@ -2987,6 +2987,45 @@ test.for([
     expect(updatedUser?.autoTopUpEnabled).toBe(enabled);
 });
 
+test.for([
+    { name: "a decline whose wait has passed", minutesAgo: 120, invoices: 1 },
+    { name: "a decline still in its wait", minutesAgo: 10, invoices: 0 },
+    { name: "no declined top-up", minutesAgo: null, invoices: 0 },
+] as const)("scheduled auto top-up retry charges only $name", async ({
+    minutesAgo,
+    invoices,
+}, { sessionToken, mocks }) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_scheduled_retry");
+    customer.invoice_settings.default_payment_method = "pm_scheduled_retry";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_scheduled_retry", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    if (minutesAgo !== null) {
+        const declinedAt = Date.now() - minutesAgo * 60 * 1000;
+        await insertAutoTopUpAttempt({
+            userId,
+            invoiceId: "in_scheduled_decline",
+            status: "failed",
+            createdAt: declinedAt,
+            completedAt: declinedAt,
+            failureReason: AUTO_TOP_UP_DECLINE_REASON,
+        });
+    }
+
+    await SELF.scheduled({ cron: "*/15 * * * *" });
+
+    expect(mocks.stripe.state.invoices).toHaveLength(invoices);
+});
+
 test("POST /api/webhooks/stripe counts a decline that arrives after the invoice void", async ({
     sessionToken,
     mocks,

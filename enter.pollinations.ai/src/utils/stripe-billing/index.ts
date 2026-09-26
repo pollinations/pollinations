@@ -10,6 +10,7 @@ export {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
     processAutoTopUpForUser,
+    retryDeclinedAutoTopUps,
     updateAutoTopUpSettings,
 } from "./auto-top-up.ts";
 export { getBillingOverview } from "./billing-overview.ts";

@@ -148,19 +148,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000033,
     },
   },
-  "amazon/nova-canvas-v1": {
-    "cost": {
-      "completionImageTokens": 0.04,
-    },
-    "costVariants": {
-      "2048": {
-        "completionImageTokens": 0.06,
-      },
-    },
-    "price": {
-      "completionImageTokens": 0.04,
-    },
-  },
   "amazon/nova-micro-v1": {
     "cost": {
       "completionTextTokens": 0.00000014,
@@ -173,14 +160,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCacheWriteTokens": 0,
       "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
-    },
-  },
-  "amazon/nova-reel-v1": {
-    "cost": {
-      "completionVideoSeconds": 0.08,
-    },
-    "price": {
-      "completionVideoSeconds": 0.08,
     },
   },
   "anthropic/claude-fable-5": {

@@ -59,12 +59,4 @@ describe("video duration registry fields", () => {
         );
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
-
-    it("nova-reel exposes duration_step", () => {
-        const info = modelInfoFromDefinition(
-            "amazon/nova-reel-v1",
-            IMAGE_SERVICES["amazon/nova-reel-v1"],
-        );
-        expect(info.duration_step).toBe(6);
-    });
 });

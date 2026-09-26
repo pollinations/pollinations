@@ -244,16 +244,12 @@ describe("Veo Replicate fallback", () => {
                 definition: IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES],
             })),
             ({ id }) =>
-                createAndReturnVideo(
-                    "a paper boat",
-                    {
-                        ...params,
-                        model: id as
-                            | "google/veo-3.1-fast"
-                            | "google/veo-3.1-fast:replicate",
-                    },
-                    "veo-test",
-                ),
+                createAndReturnVideo("a paper boat", {
+                    ...params,
+                    model: id as
+                        | "google/veo-3.1-fast"
+                        | "google/veo-3.1-fast:replicate",
+                }),
             attempts,
         );
         expect(index).toBe(1);

@@ -37,7 +37,6 @@ const VIDEO_FRAME_LIMITS = [
     ["minimax/minimax-h3", 0],
     ["minimax/minimax-h3-max-turbo", 2],
     ["prunaai/p-video", 1],
-    ["amazon/nova-reel-v1", 1],
 ] as const satisfies readonly (readonly [ImageModelName, number])[];
 
 function params(model: ImageModelName, frameCount: number): ImageParams {
@@ -102,7 +101,6 @@ describe("video frame validation", () => {
             createAndReturnVideo(
                 "animate these frames",
                 params(model, maxFrames + 1),
-                "test-request-id",
             ),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

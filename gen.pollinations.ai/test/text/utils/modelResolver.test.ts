@@ -715,19 +715,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+    it("routes Command A+ to Cohere on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "command-a-plus-05-2026",
         });
 
-        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.model).toBe("cohere/command-a-plus");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-eastus",
-            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
-            "azure-model-name": "Cohere-command-a-plus-05-2026",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
-        expect(result.options.provider).toBeUndefined();
+        expect(result.options.provider).toEqual({
+            only: ["Cohere"],
+            allow_fallbacks: false,
+        });
     });
 
     it.each([

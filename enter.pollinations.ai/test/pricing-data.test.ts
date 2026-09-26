@@ -1178,9 +1178,18 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
-// input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
+// Jev is low-cost; Command A+ preserves its existing Quest access during
+// the approved Azure-to-OpenRouter route migration.
+const OPENROUTER_QUEST_ACCESS_EXCEPTIONS = new Set([
+    "typesafe/jev-1.13",
+    "cohere/command-a-plus",
+]);
+
+test.each([
+    ...OPENROUTER_QUEST_ACCESS_EXCEPTIONS,
+])("%s remains Quest-accessible", (model) => {
+    expect(getRegistryModelDefinition(model).paidOnly).not.toBe(true);
+});
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
@@ -1188,7 +1197,7 @@ test("caller-selectable OpenRouter models require paid balance", () => {
         if (
             definition.provider === "openrouter" &&
             definition.fallbackOnly !== true &&
-            !OPENROUTER_FREE_TIER_MODELS.has(model)
+            !OPENROUTER_QUEST_ACCESS_EXCEPTIONS.has(model)
         ) {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }

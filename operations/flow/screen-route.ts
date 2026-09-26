@@ -9,6 +9,7 @@ export function screenRoute(
     query: URLSearchParams,
     state: Pick<LocalState, "connection" | "device" | "admin">,
     origin: string,
+    adminOrigin = ADMIN_ORIGIN,
 ) {
     const screen = query.get("screen") ?? "oauth";
     const error = Object.values(loginSituations).find(
@@ -38,7 +39,7 @@ export function screenRoute(
             params.set("auth_error", error);
         return params.size ? `/?${params}` : "/";
     }
-    if (screen === "identity") return `${ADMIN_ORIGIN}/auth/login`;
+    if (screen === "identity") return `${adminOrigin}/auth/login`;
     if (screen.startsWith("account-key")) {
         const params = new URLSearchParams({
             id:

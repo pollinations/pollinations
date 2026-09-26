@@ -217,6 +217,7 @@ export function createCaptureService(options: {
                 new URLSearchParams(recipe.query),
                 state,
                 origin,
+                ADMIN_ORIGIN,
             );
             context = await browser.newContext({
                 viewport: viewports[job.selection.size],

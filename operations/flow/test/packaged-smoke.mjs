@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 
 // Run only inside a disposable container: this resets its fixture database.
 const origin = process.env.FLOW_ENTER_ORIGIN ?? "http://localhost:4180";
+const adminOrigin = process.env.FLOW_ADMIN_ORIGIN ?? "http://localhost:4182";
 let ready = false;
 let startupFailure;
 for (let attempt = 0; attempt < 120; attempt++) {
@@ -82,6 +83,14 @@ try {
     await page
         .getByRole("heading", { name: "Create secret key", exact: true })
         .waitFor({ state: "detached" });
+    await page.goto(adminOrigin);
+    await page
+        .getByRole("heading", { name: "Admin example", exact: true })
+        .waitFor();
+    assert.equal(
+        await page.evaluate(() => window.__FLOW_ENVIRONMENT__.admin),
+        adminOrigin,
+    );
     await page.goto(
         `${origin}/flow?theme=dark&view=map&flow=account&section=catalog`,
     );

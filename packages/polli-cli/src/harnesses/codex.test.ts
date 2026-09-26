@@ -10,7 +10,15 @@ import {
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from "vitest";
 import type { HarnessContext } from "./types.js";
 
 const ROUTER_SCRIPT = `#!/usr/bin/env node
@@ -233,19 +241,21 @@ describe("codex harness", () => {
         // Fresh setup: a dedicated child key was minted and stored in the
         // router's own protected credential file.
         expect(readFileSync(keyFile(), "utf-8")).toBe("sk_mock_child_key");
-        expect(readFileSync(join(stateDir(), "user-models.json"), "utf-8")).toContain(
-            `pollinations/${settings.model}`,
-        );
+        expect(
+            readFileSync(join(stateDir(), "user-models.json"), "utf-8"),
+        ).toContain(`pollinations/${settings.model}`);
         // Credential traveled over stdin: never embedded in a descriptor.
-        expect(readFileSync(join(stateDir(), "generic-providers.json"), "utf-8")).not.toContain(
-            settings.apiKey,
-        );
+        expect(
+            readFileSync(join(stateDir(), "generic-providers.json"), "utf-8"),
+        ).not.toContain(settings.apiKey);
     });
 
     it("rejects a missing codex client before any login or config change", async () => {
         const { codex } = await import("./codex.js");
         const isolated = { home, env: { PATH: join(home, "empty") } };
-        await expect(codex.on(isolated, {})).rejects.toThrow(/npm install -g @openai\/codex/);
+        await expect(codex.on(isolated, {})).rejects.toThrow(
+            /npm install -g @openai\/codex/,
+        );
         expect(existsSync(stateDir())).toBe(false);
     });
 
@@ -257,14 +267,19 @@ describe("codex harness", () => {
         writeFileSync(codexPath, "#!/bin/sh\necho pong\n");
         chmodSync(codexPath, 0o755);
         const isolated = { home, env: { PATH: onlyCodex } };
-        await expect(codex.on(isolated, {})).rejects.toThrow(/Codex Router was not found/);
+        await expect(codex.on(isolated, {})).rejects.toThrow(
+            /Codex Router was not found/,
+        );
         expect(existsSync(stateDir())).toBe(false);
     });
 
     it("rolls the router state back byte-for-byte when a step fails", async () => {
         const { codex } = await import("./codex.js");
         await codex.on(ctx, { model: settings.model });
-        const before = readFileSync(join(stateDir(), "generic-providers.json"), "utf-8");
+        const before = readFileSync(
+            join(stateDir(), "generic-providers.json"),
+            "utf-8",
+        );
         const keyBefore = readFileSync(keyFile(), "utf-8");
 
         const failing: HarnessContext = {
@@ -272,11 +287,13 @@ describe("codex harness", () => {
             env: { ...ctx.env, FAKE_CURATE_FAILS: "1" },
         };
         await expect(codex.on(failing, { model: "other" })).rejects.toThrow();
-        expect(readFileSync(join(stateDir(), "generic-providers.json"), "utf-8")).toBe(before);
+        expect(
+            readFileSync(join(stateDir(), "generic-providers.json"), "utf-8"),
+        ).toBe(before);
         expect(readFileSync(keyFile(), "utf-8")).toBe(keyBefore);
-        expect(readFileSync(join(stateDir(), "user-models.json"), "utf-8")).not.toContain(
-            "pollinations/other",
-        );
+        expect(
+            readFileSync(join(stateDir(), "user-models.json"), "utf-8"),
+        ).not.toContain("pollinations/other");
     });
 
     it("restores the untouched router state byte-for-byte on off", async () => {
@@ -292,7 +309,8 @@ describe("codex harness", () => {
         expect(result.outcome).toBe("restored");
         for (const [path, original] of before) {
             expect(existsSync(path)).toBe(original !== null);
-            if (original !== null) expect(readFileSync(path, "utf-8")).toBe(original);
+            if (original !== null)
+                expect(readFileSync(path, "utf-8")).toBe(original);
         }
         expect(codex.status(ctx).configured).toBe(false);
     });
@@ -309,8 +327,16 @@ describe("codex harness", () => {
         const result = codex.off(ctx);
         expect(result.outcome).toBe("stripped");
         const after = JSON.parse(readFileSync(providersPath, "utf-8"));
-        expect(after.providers.some((p: { id: string }) => p.id === "friend-provider")).toBe(true);
-        expect(after.providers.some((p: { id: string }) => p.id === "pollinations")).toBe(false);
+        expect(
+            after.providers.some(
+                (p: { id: string }) => p.id === "friend-provider",
+            ),
+        ).toBe(true);
+        expect(
+            after.providers.some(
+                (p: { id: string }) => p.id === "pollinations",
+            ),
+        ).toBe(false);
         expect(existsSync(keyFile())).toBe(false);
     });
 
@@ -333,9 +359,13 @@ describe("codex harness", () => {
         const { codex } = await import("./codex.js");
         await codex.on(ctx, { model: settings.model });
         const stored = readFileSync(keyFile(), "utf-8");
-        const before = requests.filter((r) => r.includes("/account/keys")).length;
+        const before = requests.filter((r) =>
+            r.includes("/account/keys"),
+        ).length;
         await codex.on(ctx, { model: settings.model });
-        const after = requests.filter((r) => r.includes("/account/keys")).length;
+        const after = requests.filter((r) =>
+            r.includes("/account/keys"),
+        ).length;
         expect(after).toBe(before);
         expect(readFileSync(keyFile(), "utf-8")).toBe(stored);
     });

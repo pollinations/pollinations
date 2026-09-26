@@ -1,0 +1,37 @@
+{
+  "pr_number": 15395,
+  "title": "feat: add Gemini 3.8 TTS with Google primary and OpenRouter fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15395",
+  "merged_at": "2026-09-26T15:35:07Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes #15495\n\n- Adds `google/gemini-3.8-flash-tts` and `google/gemini-3.8-flash-lite-tts`: Google publisher/provider, Gemini Developer API `/v1beta/interactions` primary with bare upstream IDs; no aliases, paid-only, multiplier 1, no Pollinations GPU. Tested Vertex routes returned 404.\n- Adds hidden OpenRouter `/audio/speech` fallback pinned to `google-ai-studio`, with provider fallbacks disabled. Bills reported Google usage or OpenRouter generation-record native tokens; rejects invalid usage/audio. Supports 30 voices, style instructions, WAV default and PCM; rejects unsupported explicit formats.\n- Prices: $0.50/M text input, $9/M Flash or $6/M Lite audio output through 2026-12-31 ([Google pricing](https://ai.google.dev/gemini-api/docs/pricing)). Fallback costs include 5.5%; customers retain primary pricing, so Pollinations absorbs the premium. Both routes use Google inference.\n- Verified locally: 233 automated tests, both service typechecks, 120 live voice checks, native/speech/chat/Responses routes, permissions/errors, 10,000-character inputs, cache and disconnect/rejoin with one debit/event. Reconciled 83 Google and 78 fallback billed events; all 78 OpenRouter generation records matched.\n- Merge gates: Google invoice export reconciliation; approved `GEMINI_API_KEY` provisioning/mapping; fresh CI/current-main validation. Fallback adds usage-lookup latency; longest Lite request took 253s. Repeated-text fidelity remains uncertain; production concurrency unproven. No remote deployment or secret changes performed.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive finds its voice",
+    "blurb": "Two Gemini text-to-speech models join the audio API, with 30 voices to choose from. Polli has already started narrating the garden.",
+    "summary": "Added paid-only `google/gemini-3.8-flash-tts` and `google/gemini-3.8-flash-lite-tts`, using Google's Interactions API first and a Google AI Studio-pinned OpenRouter fallback for speech generation.",
+    "impact": "Developers can generate WAV or PCM speech in 30 voices, add style instructions, and use either model through the audio API with fallback when the primary route is unavailable.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "Gemini",
+      "Google",
+      "OpenRouter",
+      "voices"
+    ],
+    "visual_concept": "Gemini text-to-speech is the subject: a cozy microphone and retro audio terminal turn written words into soft sound waves and blooming flowers. Polli wears tiny headphones and listens beside a CRT monitor robot displaying two voice tracks, suggesting the primary and fallback routes without implying a separate model mascot.",
+    "image_prompt": "In a cozy pixel art garden studio, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and listens as a CRT monitor robot turns text on a screen into gentle sound waves and blooming flowers. She is small-to-medium sized, sharing the scene with the robot and a microphone, never oversized or elongated; strictly pixel art, never realistic, with prominent lime green (#ecf874), warm cream, soft pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, warm lighting, and retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15395.jpg",
+    "prompt": "In a cozy pixel art garden studio, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and listens as a CRT monitor robot turns text on a screen into gentle sound waves and blooming flowers. She is small-to-medium sized, sharing the scene with the robot and a microphone, never oversized or elongated; strictly pixel art, never realistic, with prominent lime green (#ecf874), warm cream, soft pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, warm lighting, and retro gaming vibes."
+  },
+  "generated_at": "2026-09-26T15:36:07.467701+00:00"
+}

@@ -1,9 +1,9 @@
 {
   "name": "pollinations.ai",
   "short_name": "pollinations.ai",
-  "description": "Build AI apps with easy APIs and community support",
-  "theme_color": "#E8F372",
-  "background_color": "#110518",
+  "description": "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
+  "theme_color": "#e7e0d2",
+  "background_color": "#fef8eb",
   "display": "standalone",
   "start_url": "/",
   "icons": [{

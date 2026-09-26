@@ -13,6 +13,7 @@ import {
 } from "./models/azureFluxKontextModel.js";
 import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFalQwenImageAPI } from "./models/falQwenImageModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -35,7 +36,6 @@ import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
-import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
@@ -52,7 +52,6 @@ import { sanitizeString } from "./util.ts";
 import { closestByRatio } from "./utils/aspectRatio.ts";
 import {
     analyzeImageSafety,
-    type ContentSafetyFlags,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
@@ -96,8 +95,6 @@ type AzureGPTImageUsage = {
 export type ImageGenerationResult = {
     buffer: Buffer;
     mimeType?: string;
-    isMature: boolean;
-    isChild: boolean;
     // Tracking data for enter service headers
     trackingData: TrackingData;
 };
@@ -707,12 +704,8 @@ const callGPTImageWithEndpoint = async (
         `GPT Image billable usage: promptText=${usage.promptTextTokens}, promptCached=${usage.promptCachedTokens}, promptImage=${usage.promptImageTokens}, completionText=${usage.completionTextTokens}, completionImage=${usage.completionImageTokens}`,
     );
 
-    // Azure doesn't provide content safety information directly, so we'll set defaults
-    // In a production environment, you might want to use a separate content moderation service
     return {
         buffer: imageBuffer,
-        isMature: false, // Default assumption
-        isChild: false, // Default assumption
         trackingData: {
             actualModel: safeParams.model,
             usage,
@@ -971,6 +964,13 @@ const generateImage = async (
         case "qwen/qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
+        case "qwen/qwen-image-2.1":
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-2.1",
+            );
+
         case "qwen/qwen-image-3":
             return await callAlibabaImage(
                 prompt,
@@ -979,7 +979,11 @@ const generateImage = async (
             );
 
         case "qwen/qwen-image-3:fal":
-            return await callQwenImage3API(prompt, safeParams);
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "qwen/qwen-image-3:fal",
+            );
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
@@ -1010,22 +1014,6 @@ const generateImage = async (
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
-const extractMaturityFlags = (
-    result: ImageGenerationResult,
-): ContentSafetyFlags => {
-    const r = result as ImageGenerationResult & {
-        has_nsfw_concept?: boolean;
-        concept?: { special_scores?: Record<string, number> };
-    };
-    const isMature = Boolean(r.isMature || r.has_nsfw_concept);
-    const isChild =
-        Boolean(r.isChild) ||
-        Object.values(r.concept?.special_scores || {})
-            ?.slice(1)
-            .some((score) => score > -0.05);
-    return { isMature, isChild };
-};
-
 const prepareMetadata = (
     prompt: string,
     originalPrompt: string,
@@ -1038,25 +1026,29 @@ const prepareMetadata = (
  * Processes the image buffer with format conversion and metadata
  * @param {Buffer} buffer - The raw image buffer
  * @param {Object} metadataObj - Metadata to embed in the image
- * @param {Object} maturity - Additional maturity information
+ * @param {Object} resultMetadata - Generation result fields to embed
  * @returns {Promise<Buffer>} - The processed image buffer
  */
 const processImageBuffer = async (
     buffer: Buffer,
     metadataObj: object,
-    maturity: object,
+    resultMetadata: object,
 ): Promise<Buffer> => {
     const processedBuffer = await convertToJpeg(buffer);
-    return await writeExifMetadata(processedBuffer, metadataObj, maturity);
+    return await writeExifMetadata(
+        processedBuffer,
+        metadataObj,
+        resultMetadata,
+    );
 };
 
 /**
- * Creates and returns images with metadata, checking for NSFW content.
+ * Creates and returns images with metadata.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
  * @param {string} originalPrompt - The original prompt before any transformations.
  * @param {Object} userInfo - User authentication info for safety logging.
- * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
+ * @returns {Promise<ImageGenerationResult>}
  */
 export async function createAndReturnImageCached(
     prompt: string,
@@ -1068,21 +1060,8 @@ export async function createAndReturnImageCached(
         // Generate the image using the appropriate model
         const result = await generateImage(prompt, safeParams, userInfo);
 
-        // Extract maturity flags
-        const maturityFlags = extractMaturityFlags(result);
-        const { isMature, isChild } = maturityFlags;
-        logError("isMature", isMature, "concepts", isChild);
-
-        // Safety check
-        if (safeParams.safe && isMature) {
-            throw UpstreamError.fromProvider(400, {
-                message:
-                    "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
-            });
-        }
-
         // Prepare metadata
-        const { buffer: _buffer, ...maturity } = result;
+        const { buffer: _buffer, ...resultMetadata } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
@@ -1094,14 +1073,12 @@ export async function createAndReturnImageCached(
                 : await processImageBuffer(
                       result.buffer,
                       metadataObj,
-                      maturity,
+                      resultMetadata,
                   );
 
         return {
             buffer: processedBuffer,
             mimeType: result.mimeType,
-            isChild,
-            isMature,
             trackingData: result.trackingData,
         };
     } catch (error) {

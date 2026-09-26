@@ -158,6 +158,7 @@ export type ImageInputErrorCode =
 const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
     402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"],
     400: [
+        "content_blocked",
         "failed_to_download_image",
         "invalid_image_url",
         "image_too_large",

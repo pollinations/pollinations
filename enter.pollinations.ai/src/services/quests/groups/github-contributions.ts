@@ -54,10 +54,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 4,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -133,8 +133,7 @@ type PaginatedSearchData<TNode> = {
     };
 };
 
-// Reads at most 10 linked PRs per quest on purpose: close losing PRs before
-// merging winners so every paid PR stays within the first 10.
+// Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:100){
@@ -143,7 +142,7 @@ query($query:String!){
         number state title url body
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
-        closedByPullRequestsReferences(first:10){
+        closedByPullRequestsReferences(first:100){
           nodes{ number mergedAt author{ ... on User{ databaseId } } }
         }
       }

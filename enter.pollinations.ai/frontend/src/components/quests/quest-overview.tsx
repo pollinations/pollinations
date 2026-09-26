@@ -892,22 +892,21 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                <SectionContent loading={state.loading} label="Loading quests…">
+                {state.loading && (
+                    <LoadingStatus>Loading quests…</LoadingStatus>
+                )}
+                <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (
-                        <>
-                            <QuestSummary
-                                quests={claimedStats.quests}
-                                pollen={claimedStats.pollen}
-                                claimable={claimable}
-                            />
-                            {state.checking && (
-                                <LoadingStatus>
-                                    Checking for new quests…
-                                </LoadingStatus>
-                            )}
-                        </>
+                        <QuestSummary
+                            quests={claimedStats.quests}
+                            pollen={claimedStats.pollen}
+                            claimable={claimable}
+                        />
+                    )}
+                    {state.checking && (
+                        <LoadingStatus>Refreshing quests…</LoadingStatus>
                     )}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (

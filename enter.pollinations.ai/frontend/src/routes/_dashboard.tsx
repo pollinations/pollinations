@@ -9,10 +9,7 @@ import { useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
-import {
-    LoadError,
-    SectionContent,
-} from "../components/layout/dashboard-loading.tsx";
+import { LoadError } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -127,12 +124,7 @@ function DashboardLayout() {
             showFooterLinks={Boolean(data.user)}
             walletArea={
                 data.user ? (
-                    <Await
-                        promise={data.balance}
-                        fallback={
-                            <SectionContent loading label="Loading balance…" />
-                        }
-                    >
+                    <Await promise={data.balance} fallback={null}>
                         {(balance) =>
                             balance ? (
                                 <Await

@@ -2434,62 +2434,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "perplexity/sonar": {
     "cost": {
-      "completionTextTokens": 0.000001,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.0000025,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.0000000625,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.000001,
-      "promptTextTokens": 0.000001,
-    },
-  },
-  "perplexity/sonar-pro": {
-    "cost": {
-      "completionTextTokens": 0.000015,
-      "promptTextTokens": 0.000003,
-    },
-    "price": {
-      "completionTextTokens": 0.000015,
-      "promptTextTokens": 0.000003,
-    },
-  },
-  "perplexity/sonar-pro:openrouter:perplexity": {
-    "cost": {
-      "completionTextTokens": 0.000015825,
-      "promptTextTokens": 0.000003165,
-    },
-    "price": {
-      "completionTextTokens": 0.000015825,
-      "promptTextTokens": 0.000003165,
-    },
-  },
-  "perplexity/sonar-reasoning-pro": {
-    "cost": {
-      "completionTextTokens": 0.000008,
-      "promptTextTokens": 0.000002,
-    },
-    "price": {
-      "completionTextTokens": 0.000008,
-      "promptTextTokens": 0.000002,
-    },
-  },
-  "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
-    "cost": {
-      "completionTextTokens": 0.00000844,
-      "promptTextTokens": 0.00000211,
-    },
-    "price": {
-      "completionTextTokens": 0.00000844,
-      "promptTextTokens": 0.00000211,
-    },
-  },
-  "perplexity/sonar:openrouter:perplexity": {
-    "cost": {
-      "completionTextTokens": 0.000001055,
-      "promptTextTokens": 0.000001055,
-    },
-    "price": {
-      "completionTextTokens": 0.000001055,
-      "promptTextTokens": 0.000001055,
+      "completionTextTokens": 0.0000025,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.0000000625,
+      "promptTextTokens": 0.00000025,
     },
   },
   "pollinations/midijourney": {
@@ -2583,6 +2537,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.025,
+    },
+  },
+  "qwen/qwen-image-2.1": {
+    "cost": {
+      "completionImageTokens": 0.00000002,
+    },
+    "costVariants": {
+      "edit": {
+        "completionImageTokens": 0.00000003666666666667,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.00000002,
     },
   },
   "qwen/qwen-image-3": {

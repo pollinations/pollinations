@@ -1,0 +1,38 @@
+{
+  "pr_number": 15483,
+  "title": "fix: bill Grok videos that xAI rejects after generating them",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15483",
+  "merged_at": "2026-09-26T11:28:53Z",
+  "labels": [
+    "BUG",
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "## What changes\n\n- Charges `grok-imagine-video` requests that xAI rejects **after** generating the video. fal bills us for these; we charged the user nothing.\n- Requests rejected before generation stay free.\n- The error message tells the caller the request was charged.\n\n| Rejection | fal bills us | Before | After |\n|---|---|---|---|\n| After generation (fal echoes the whole request) | yes | free | video price |\n| Before generation (fal echoes only prompt/images) | no | free | free |\n\n## Why\n\n- Sep 20–24: 224 such rejections from one user, about $236 at fal's rate, billed $0. None since Sep 25.\n- fal sends no usage header for Grok, so usage comes from the request, as on the success path. The shape matched fal's request log for all 302 rejections: charged jobs ran 10–120 s or more; free ones ended in under 10 s.\n\n## How\n\n- New `UpstreamError.billedUsage`. The fal handler sets it; `trackResponse` bills a failed response only when it is set.\n- Only on `x-ai/grok-imagine-video`, where the evidence is. Other fal video models are unchanged.\n\n## Tests\n\n- fal handler: charged vs free rejection shapes.\n- Tracking: a failed request carrying billed usage emits one billed event and debits the wallet once.\n- The image error rewrap keeps `billedUsage`.\n\nFollow-up to #15458.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_018KYryAWAc97Nz3Gp2MgyR8\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "No more phantom video tabs",
+    "blurb": "Grok video requests now keep an honest tab when a video was generated upstream but rejected before delivery. Early rejections still drift away free, as they should.",
+    "summary": "Fixed Grok Imagine Video billing so failed `x-ai/grok-imagine-video` requests are charged only when xAI/fal generated the video and returned billable usage; rejections before generation remain free.",
+    "impact": "Callers now receive an explicit charged-error message for post-generation Grok video rejections, while fast pre-generation rejections continue to debit no Pollen.",
+    "keywords": [
+      "grok-imagine-video",
+      "xai",
+      "fal",
+      "billing",
+      "error-handling",
+      "wallet"
+    ],
+    "visual_concept": "A cozy video workshop distinguishes two outcomes: a completed pixel film reel carries a small price tag after an upstream rejection, while an unopened prompt envelope remains free. Polli, wearing a tiny accountant visor, checks the two paths beside a warm CRT terminal and code-plants, making the billing boundary visible without making it feel punitive.",
+    "image_prompt": "Cozy pixel art scene in a warm garden video workshop: Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and a tiny accountant visor, compares a finished pixel film reel marked \"GENERATED\" with a small Pollen token to an unopened prompt envelope marked \"FREE\" beside a lime green (#ecf874) CRT terminal; code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15483.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden video workshop: Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and a tiny accountant visor, compares a finished pixel film reel marked \"GENERATED\" with a small Pollen token to an unopened prompt envelope marked \"FREE\" beside a lime green (#ecf874) CRT terminal; code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-26T11:30:11.037310+00:00"
+}

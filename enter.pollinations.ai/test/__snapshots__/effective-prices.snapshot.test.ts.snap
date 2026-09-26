@@ -1360,6 +1360,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.04,
     },
   },
+  "google/lyria-3.5": {
+    "cost": {
+      "completionAudioTokens": 0.08,
+    },
+    "price": {
+      "completionAudioTokens": 0.08,
+    },
+  },
+  "google/lyria-3.5:fal": {
+    "cost": {
+      "completionAudioTokens": 0.1,
+    },
+    "price": {
+      "completionAudioTokens": 0.1,
+    },
+  },
   "google/veo-3.1-fast": {
     "cost": {
       "completionAudioSeconds": 0.02,

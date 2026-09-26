@@ -186,6 +186,10 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    retirement_date: z
+        .number()
+        .optional()
+        .describe("Scheduled model retirement time, in Unix milliseconds."),
     health: ModelHealthSchema.optional(),
 });
 
@@ -304,6 +308,7 @@ export function modelInfoFromDefinition(
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
         added_date: service.addedDate,
+        retirement_date: service.retirementDate,
     };
 }
 

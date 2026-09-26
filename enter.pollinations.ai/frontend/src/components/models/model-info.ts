@@ -164,6 +164,19 @@ export const isNewModel = (model: ModelPrice): boolean => {
     return model.addedDate > sevenDaysAgo;
 };
 
+/** Days remaining during the final 14 days before a scheduled retirement. */
+export const getRetirementDays = (
+    model: ModelPrice,
+    now = Date.now(),
+): number | null => {
+    if (model.retirementDate === undefined) return null;
+    const remaining = model.retirementDate - now;
+    const day = 24 * 60 * 60 * 1000;
+    return remaining > 0 && remaining <= 14 * day
+        ? Math.ceil(remaining / day)
+        : null;
+};
+
 /**
  * Check if a model requires paid balance only, not Quest Pollen.
  */

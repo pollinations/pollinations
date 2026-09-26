@@ -52,6 +52,7 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import { CreateMessageRequestSchema } from "@shared/schemas/anthropic.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -95,6 +96,8 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { anthropicErrorEnvelope } from "@/text/messages/errors.ts";
+import { generateMessage } from "@/text/messages/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -252,6 +255,20 @@ const responsesHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateCreateResponse,
+);
+
+const messagesHandlers = factory.createHandlers(
+    anthropicErrorEnvelope,
+    textBodyLimit,
+    validator("json", CreateMessageRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateMessage,
 );
 
 // Helper to filter models by API key permissions and paid balance.
@@ -792,6 +809,41 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...responsesHandlers,
+    )
+
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create a Message (Anthropic Messages API)",
+            description: [
+                "Generate text through the Anthropic Messages API (`/v1/messages`). Point Claude Code or any Anthropic SDK at `https://gen.pollinations.ai` with `ANTHROPIC_BASE_URL`/`auth_token` — no router needed.",
+                "",
+                "Supports streaming SSE in Anthropic's event order (message_start, content_block_*, message_delta with usage, message_stop), tool use, images, stop sequences and thinking blocks. Errors use Anthropic's `{type:\"error\"}` shape and status semantics, including integer `retry-after` on 429.",
+                "",
+                "Successful responses contain usage in Anthropic's fields; a response (or stream) without provider usage fails instead of going unbilled.",
+                "",
+                "`/v1/messages/count_tokens`, batches, files and server tools are out of scope.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Message JSON or Anthropic SSE stream",
+                    content: {
+                        "application/json": { schema: resolver(z.any()) },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Anthropic Messages SSE events: message_start, content_block_start/delta/stop, message_delta (usage), message_stop.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...messagesHandlers,
     )
     .post(
         "/v1/embeddings",

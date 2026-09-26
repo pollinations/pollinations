@@ -1,0 +1,38 @@
+{
+  "pr_number": 15458,
+  "title": "fix: let fal queue jobs finish and move Stable Audio to the queue",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15458",
+  "merged_at": "2026-09-26T10:29:24Z",
+  "labels": [
+    "BUG",
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes the fal billing audit findings where fal ran and billed jobs we had already failed.\n\n- Removes the `runFalJob` poll cap (5 min for the video and image fallbacks, 10 min for 3D). The durable generation alarm bounds the wait, as #15283 did for Wan 3.\n- Moves Stable Audio 3 Medium from the blocking `fal.run` route to the fal queue.\n- Trade-off: a job fal never finishes now fails at the 15-min alarm limit instead of after 5 min.\n\n| Finding (last 14 days) | fal request log |\n|---|---|\n| `wan-2.2-fast:fal` 504 \"timed out after 300s\" ×2 | One finished (200) at 375 s, 75 s after we gave up. The other ran 80 min, then 422. |\n| `stable-audio-3-medium` 524 ×2 | Both ran on fal after our 125 s cutoff. One user then retried 5×. |\n\nFindings that need no change here:\n- Wan 3 504s: fixed by #15283, none since.\n- MiniMax overcharge: deliberate until the fal promo ends Sep 30 (#15413).\n- `cost_variant = 'undefined'`: Tinybird's default for an unset string.\n- grok-imagine-video gap: fal bills xAI's post-generation rejections, which we never bill. This needs a pricing decision and gets its own PR.\n\nTests: fal client, fallback and 3D unit tests (32) and both Stable Audio route tests pass. `tsc` is clean.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_018KYryAWAc97Nz3Gp2MgyR8\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Let the queue finish buzzing",
+    "blurb": "fal jobs now get the time their durable queue already promised them. Stable Audio 3 Medium has also moved into the queue, where long-running sound can finish its little song without being cut off at the door.",
+    "summary": "Removed the 5-minute (and 10-minute 3D) `runFalJob` polling caps so durable fal generations can complete until the 15-minute generation alarm, and moved Stable Audio 3 Medium from blocking `fal.run` to the fal queue.",
+    "impact": "Image, video, 3D, and Stable Audio requests that take longer than the former 125–300 second cutoffs can now return their completed fal result through the queue, with unfinished work bounded by the 15-minute alarm.",
+    "keywords": [
+      "fal",
+      "queue",
+      "stable-audio-3-medium",
+      "billing",
+      "generation",
+      "reliability"
+    ],
+    "visual_concept": "A cozy queue garden represents durable generation work being allowed to bloom instead of being prematurely clipped: Stable Audio is a little retro cassette/speaker plant with musical notes traveling along a clear queue path toward a finished-output terminal. Polli, wearing tiny studio headphones, patiently tends the path while a CRT monitor robot watches the completion light; clocks are present but friendly, showing that the queue has time to finish.",
+    "image_prompt": "Cozy pixel art scene of a durable generation queue as a warm garden path: a retro cassette-and-speaker code-plant labeled “STABLE AUDIO” sends pastel music-note pixels toward a glowing completed-output CRT, while the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny studio headphones and tends the queue beside a helpful monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle friendly clock icons, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15458.jpg",
+    "prompt": "Cozy pixel art scene of a durable generation queue as a warm garden path: a retro cassette-and-speaker code-plant labeled “STABLE AUDIO” sends pastel music-note pixels toward a glowing completed-output CRT, while the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny studio headphones and tends the queue beside a helpful monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle friendly clock icons, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-26T10:30:29.169725+00:00"
+}

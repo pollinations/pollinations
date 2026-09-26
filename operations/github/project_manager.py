@@ -37,7 +37,7 @@ PR_HEAD_REF = ITEM_DATA.get("head", {}).get("ref", "") if IS_PULL_REQUEST else "
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-AI_MODEL = "gpt-5.6-luna"
+AI_MODEL = "openai/gpt-6-luna"
 # Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
 # Re-classify items that already have labels, replacing the classifier's older labels.

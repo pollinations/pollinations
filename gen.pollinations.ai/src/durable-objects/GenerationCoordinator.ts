@@ -3,26 +3,23 @@ import type {
     GenerationCacheIdentity,
     GenerationJob,
     GenerationOutcome,
-    GenerationRequestSnapshot,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
+import {
+    bodyChunkKeys,
+    type PersistedGenerationRequest,
+    persistRequest,
+    restoreRequest,
+} from "../utils/generation-request-storage.ts";
+import {
+    createX402Coordinator,
+    type X402Coordinator,
+} from "../x402/coordinator.ts";
 
 const JOB_KEY = "job";
-const BODY_KEY_PREFIX = "body:";
-const BODY_CHUNK_BYTES = 1_000_000;
 
-type PersistedJob = Omit<GenerationJob, "request"> & {
-    request: Omit<GenerationRequestSnapshot, "body">;
-    bodyChunks: number;
-    started: boolean;
-};
-
-function bodyChunkKeys(count: number): string[] {
-    return Array.from(
-        { length: count },
-        (_, index) => `${BODY_KEY_PREFIX}${index}`,
-    );
-}
+type PersistedJob = Omit<GenerationJob, "request"> &
+    PersistedGenerationRequest & { started: boolean };
 
 async function cacheExists(
     env: CloudflareBindings,
@@ -46,6 +43,42 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
+
+    private readonly x402 = createX402Coordinator(this.ctx, this.env);
+
+    override fetch(request: Request): Promise<Response> {
+        return this.x402.fetch(request);
+    }
+
+    getFinalPaymentOperation(
+        ...args: Parameters<X402Coordinator["getFinalPaymentOperation"]>
+    ) {
+        return this.x402.getFinalPaymentOperation(...args);
+    }
+
+    getGeneratedPaymentOperation(
+        ...args: Parameters<X402Coordinator["getGeneratedPaymentOperation"]>
+    ) {
+        return this.x402.getGeneratedPaymentOperation(...args);
+    }
+
+    startPaymentOperation(
+        ...args: Parameters<X402Coordinator["startPaymentOperation"]>
+    ) {
+        return this.x402.startPaymentOperation(...args);
+    }
+
+    completePaymentOperation(
+        ...args: Parameters<X402Coordinator["completePaymentOperation"]>
+    ) {
+        return this.x402.completePaymentOperation(...args);
+    }
+
+    completeFinalPaymentOperation(
+        ...args: Parameters<X402Coordinator["completeFinalPaymentOperation"]>
+    ) {
+        return this.x402.completeFinalPaymentOperation(...args);
+    }
 
     async startAndWait(job: GenerationJob): Promise<GenerationOutcome> {
         let immediate: GenerationOutcome | undefined;
@@ -78,6 +111,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     async alarm(): Promise<void> {
+        if (await this.x402.alarm()) return;
+
         let stored: PersistedJob | undefined;
         let interrupted: PersistedJob | undefined;
 
@@ -128,73 +163,17 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     private async persist(job: GenerationJob): Promise<void> {
-        const body = job.request.body;
-        const chunks: Uint8Array[] = [];
-        if (body !== undefined) {
-            const bytes = body;
-            for (let offset = 0; offset < bytes.byteLength; ) {
-                const end = Math.min(
-                    offset + BODY_CHUNK_BYTES,
-                    bytes.byteLength,
-                );
-                chunks.push(bytes.slice(offset, end));
-                offset = end;
-            }
-        }
-
-        const { body: _body, ...request } = job.request;
         const stored: PersistedJob = {
-            cache: job.cache,
-            auth: job.auth,
-            requestId: job.requestId,
-            balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request,
-            bodyChunks: chunks.length,
+            ...job,
+            ...(await persistRequest(this.ctx.storage, job.request)),
             started: false,
         };
-        const entries: Record<string, unknown> = { [JOB_KEY]: stored };
-        for (const [index, chunk] of chunks.entries()) {
-            entries[`${BODY_KEY_PREFIX}${index}`] = chunk;
-        }
-        await this.ctx.storage.put(entries);
+        await this.ctx.storage.put(JOB_KEY, stored);
         await this.ctx.storage.setAlarm(Date.now());
     }
 
     private async restore(job: PersistedJob): Promise<GenerationJob> {
-        let body: Uint8Array | undefined;
-        if (job.bodyChunks > 0) {
-            const keys = bodyChunkKeys(job.bodyChunks);
-            const storedChunks = await this.ctx.storage.get<Uint8Array>(keys);
-            const chunks = keys.map((key) => storedChunks.get(key));
-            if (chunks.some((chunk) => chunk === undefined)) {
-                throw new Error("Persisted generation request is incomplete");
-            }
-            const size = chunks.reduce(
-                (total, chunk) => total + (chunk?.byteLength ?? 0),
-                0,
-            );
-            const bytes = new Uint8Array(size);
-            let offset = 0;
-            for (const chunk of chunks) {
-                if (!chunk) {
-                    throw new Error(
-                        "Persisted generation request is incomplete",
-                    );
-                }
-                bytes.set(chunk, offset);
-                offset += chunk.byteLength;
-            }
-            body = bytes;
-        }
-        return {
-            cache: job.cache,
-            auth: job.auth,
-            requestId: job.requestId,
-            balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request: { ...job.request, ...(body !== undefined && { body }) },
-        };
+        return { ...job, request: await restoreRequest(this.ctx.storage, job) };
     }
 
     private async finish(

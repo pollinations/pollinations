@@ -5,17 +5,40 @@ export const TINYBIRD_MODEL_STATS_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=5000";
 const CACHE_KEY = "model-stats-v3";
 const CACHE_TTL = 3600; // 1 hour
+const MIN_PRICE_SAMPLES = 3;
 
 // Raw Tinybird response format - no transformation needed
 export type TinybirdModelStats = {
     data: Array<{
         model: string;
         avg_cost_usd: number;
+        min_price_usd?: number;
+        max_price_usd?: number;
         request_count?: number;
         priced_success_count?: number;
+        price_sample_count?: number;
         user_count?: number;
     }>;
 };
+
+export function getHistoricalPriceRange(
+    stats: TinybirdModelStats,
+    model: string,
+    aliases: string[] = [],
+): { minimum: number; maximum: number } | null {
+    const row =
+        stats.data.find((candidate) => candidate.model === model) ??
+        stats.data.find((candidate) => aliases.includes(candidate.model));
+    const minimum = row?.min_price_usd;
+    const maximum = row?.max_price_usd;
+    return (row?.price_sample_count ?? 0) >= MIN_PRICE_SAMPLES &&
+        typeof minimum === "number" &&
+        minimum > 0 &&
+        typeof maximum === "number" &&
+        maximum >= minimum
+        ? { minimum, maximum }
+        : null;
+}
 
 export async function getModelStats(
     kv: KVNamespace,

@@ -238,6 +238,19 @@ describe("docs routes", () => {
         expect(integrations?.tags).toContain("Publish an Agent");
         expect(integrations?.tags).toContain("Coding Harnesses");
         expect(integrations?.tags).not.toContain("Community Agents");
+        expect(
+            schema["x-tagGroups"].find((group) => group.name === "Get Started")
+                ?.tags,
+        ).toContain("x402 Payments");
+        const authentication = schema.tags.find(
+            (tag) => tag.name === "Authentication",
+        )?.description;
+        const x402 = schema.tags.find(
+            (tag) => tag.name === "x402 Payments",
+        )?.description;
+        expect(authentication).toContain("/docs#tag/x402-payments");
+        expect(authentication).not.toContain("PAYMENT-REQUIRED");
+        expect(x402).toContain("PAYMENT-REQUIRED");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -513,6 +526,19 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
         expect(apiBody).not.toContain("## Connect User Wallets");
+
+        const x402Res = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=x402",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(x402Res.status).toBe(200);
+        const x402Body = await x402Res.text();
+        expect(x402Body).toContain("## x402 Payments");
+        expect(x402Body).not.toContain("## Authentication");
+        expect(apiBody).toContain(x402Body);
 
         const byopRes = await worker.fetch(
             new Request(

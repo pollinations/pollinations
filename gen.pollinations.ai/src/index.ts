@@ -36,7 +36,7 @@ export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateL
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
-const app = new Hono<Env>();
+export const app = new Hono<Env>();
 
 const PERMISSIVE_CORS_OPTIONS = {
     origin: "*",

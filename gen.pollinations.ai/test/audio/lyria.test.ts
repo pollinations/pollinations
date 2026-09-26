@@ -99,7 +99,10 @@ describe("Lyria 3.5", () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementation(async (url) => {
-                if (String(url).includes("generativelanguage.googleapis.com"))
+                if (
+                    url ===
+                    "https://generativelanguage.googleapis.com/v1beta/interactions"
+                )
                     return Response.json(
                         { error: { message: "Busy" } },
                         { status: 429 },

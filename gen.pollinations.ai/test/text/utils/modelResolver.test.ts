@@ -102,17 +102,24 @@ describe("resolveModelConfig", () => {
     it.each([
         "gpt-6-sol",
         "gpt-6-luna",
-    ])("routes %s through the direct OpenAI Responses API", (model) => {
+    ])("routes %s through Azure with direct OpenAI fallback", (model) => {
         const canonical = `openai/${model}`;
         const result = resolveModelConfig(messages, { model: canonical });
 
         expect(result.options.model).toBe(model);
         expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": model,
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+        expect(findModelByName(`${canonical}:openai`)?.config()).toMatchObject({
             provider: "openai",
             model,
             responsesEndpoint: "https://api.openai.com/v1/responses",
         });
-        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
         expect(() => resolveModelConfig(messages, { model })).toThrow(
             `Model configuration not found for: ${model}`,
         );

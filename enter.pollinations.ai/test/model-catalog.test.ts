@@ -3,6 +3,12 @@ import {
     getModelPricesFromCatalog,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
+import { getRetirementDays } from "@frontend/components/models/model-info.ts";
+import { ModelStatusChips } from "@frontend/components/models/model-status-chips.tsx";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../frontend/src/config.ts", () => ({
@@ -53,6 +59,44 @@ it("keeps catalog health for filtering and status display", () => {
         })),
     );
     expect(models.map((model) => model.health)).toEqual(health);
+});
+
+it("shows a compact retirement countdown only in the final 14 days", () => {
+    const name = "amazon/nova-canvas-v1";
+    const info = modelInfoFromDefinition(
+        name,
+        getRegistryModelDefinition(name),
+    );
+    const retirementDate = info.retirement_date;
+    if (retirementDate === undefined)
+        throw new Error("Missing retirement date");
+    const now = retirementDate - 14 * 24 * 60 * 60 * 1000;
+    const [model] = getModelPricesFromCatalog([info]);
+
+    expect(model.retirementDate).toBe(retirementDate);
+    expect(getRetirementDays(model, now - 1)).toBeNull();
+    expect(getRetirementDays(model, now)).toBe(14);
+    expect(getRetirementDays(model, now + 24 * 60 * 60 * 1000)).toBe(13);
+    expect(getRetirementDays(model, retirementDate - 1)).toBe(1);
+    expect(getRetirementDays(model, retirementDate)).toBeNull();
+    expect(
+        getRetirementDays({ ...model, retirementDate: undefined }, now),
+    ).toBeNull();
+
+    const html = renderToStaticMarkup(
+        createElement(ModelStatusChips, {
+            showNew: true,
+            showAlpha: true,
+            retirementDays: 13,
+            retirementDate,
+        }),
+    );
+    expect(html).toContain("New");
+    expect(html).toContain("Alpha");
+    expect(html).toContain("Retires · 13d");
+    expect(html.indexOf("Retires · 13d")).toBeGreaterThan(
+        html.indexOf("Alpha"),
+    );
 });
 
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {

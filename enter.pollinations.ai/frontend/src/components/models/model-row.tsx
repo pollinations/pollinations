@@ -17,6 +17,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    getRetirementDays,
     hasPollinationsTools,
     isAlpha,
     isNewModel,
@@ -211,6 +212,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const retirementDays = getRetirementDays(model);
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -330,7 +332,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <PerUserRateLimit value={model.perUserRpm} />
                         </div>
                     )}
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        retirementDays) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -339,6 +344,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                retirementDays={retirementDays}
+                                retirementDate={model.retirementDate}
                             />
                         </div>
                     )}

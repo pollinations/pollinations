@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-25",
+  "period_start": "2026-09-25",
+  "period_end": "2026-09-25",
+  "generated_at": "2026-09-26T06:28:00.970530+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-25/images/reddit.jpg"
+    }
+  ],
+  "title": "23 merged PRs: models, memory, and keys",
+  "text": "23 PRs merged today.\n\nModel and media work: `qwen/qwen-image-2.1` is available through fal, Recraft V4.1 Flash is available through OpenRouter, and What TTS was added to `video_audio`. Sonar was also moved to Perplexity's agent API. The Flux documentation and generated API docs were refreshed.\n\nCollective memory gained a few new residents: The Memory Gazette, the Crooked Lantern tavern-rumours agent, gotcha-scout for prompt work, an independent maths reviewer, and agent-tessera for mosaic painting in games/place. Authors can now publish collective-memory agents themselves.\n\nOn the infrastructure side, child keys can create keys, hosted MCP now registers Ask Jev, and the dashboard combobox suggestions behave properly while editing tokens. We also removed some dashboard loading chatter, because a loading state does not need to narrate its life story.\n\nQuest handling got less ceremonial: issue reporters can receive rewards after fixes merge, eligibility lookback is now 90 days, and multi-winner quests include all linked PRs. Safety-block errors now return a clearer body and an unused NSFW output check is gone.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md"
+}

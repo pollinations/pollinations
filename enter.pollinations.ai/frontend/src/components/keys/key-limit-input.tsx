@@ -15,6 +15,30 @@ const limits = {
         accessHelper: (subject: "app" | "device") =>
             `Spending cap for this ${subject}. Requests are rejected after the budget is spent. Leave empty for no cap.`,
     },
+    budgetTier: {
+        label: "Quest budget",
+        icon: <CardIcon />,
+        name: "pollen-budget-tier",
+        unit: "pollen",
+        min: 0,
+        step: "any",
+        empty: "Unlimited",
+        helper: "Quest (free) pollen cap for this key. Quest-billed requests are rejected after this is spent. Leave empty for no separate cap.",
+        accessHelper: (subject: "app" | "device") =>
+            `Quest (free) pollen cap for this ${subject}. Quest-billed requests are rejected after this is spent. Leave empty for no separate cap.`,
+    },
+    budgetPaid: {
+        label: "Paid budget",
+        icon: <CardIcon />,
+        name: "pollen-budget-paid",
+        unit: "pollen",
+        min: 0,
+        step: "any",
+        empty: "Unlimited",
+        helper: "Paid pollen cap for this key. Paid-billed requests are rejected after this is spent. Leave empty for no separate cap.",
+        accessHelper: (subject: "app" | "device") =>
+            `Paid pollen cap for this ${subject}. Paid-billed requests are rejected after this is spent. Leave empty for no separate cap.`,
+    },
     expiry: {
         label: "Expiry",
         icon: <ClockIcon />,
@@ -49,7 +73,7 @@ export function KeyLimitInput({
     // A spent key may already be below zero. Preserve that balance on edit,
     // while new budgets and further reductions still have a lower bound.
     const [min] = useState(() =>
-        kind === "budget" ? Math.min(0, value ?? 0) : limit.min,
+        kind === "expiry" ? limit.min : Math.min(0, value ?? 0),
     );
 
     useEffect(() => {

@@ -32,6 +32,9 @@ type CreateApiKeyForUserInput = {
     expiresIn?: number;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    pollenBudgetTier?: number | null;
+    pollenBudgetPaid?: number | null;
+    allowPaidOnly?: boolean;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
     defaultCreatedVia: string;
@@ -217,6 +220,9 @@ export async function createApiKeyForUser({
     expiresIn,
     allowedModels,
     pollenBudget,
+    pollenBudgetTier,
+    pollenBudgetPaid,
+    allowPaidOnly,
     accountPermissions,
     metadata,
     defaultCreatedVia,
@@ -235,6 +241,34 @@ export async function createApiKeyForUser({
         });
     }
     const effectivePollenBudget = isPublishable ? 0 : pollenBudget;
+    if (
+        isPublishable &&
+        ((pollenBudgetTier != null && pollenBudgetTier !== 0) ||
+            (pollenBudgetPaid != null && pollenBudgetPaid !== 0))
+    ) {
+        throw new HTTPException(400, {
+            message: "Publishable keys must have a pollen budget of 0",
+        });
+    }
+    if (pollenBudgetTier != null && !(pollenBudgetTier >= 0)) {
+        throw new HTTPException(400, {
+            message: "pollenBudgetTier must be a non-negative number",
+        });
+    }
+    if (pollenBudgetPaid != null && !(pollenBudgetPaid >= 0)) {
+        throw new HTTPException(400, {
+            message: "pollenBudgetPaid must be a non-negative number",
+        });
+    }
+    const effectivePollenBudgetTier = isPublishable
+        ? 0
+        : (pollenBudgetTier ?? null);
+    const effectivePollenBudgetPaid = isPublishable
+        ? 0
+        : (pollenBudgetPaid ?? null);
+    const effectiveAllowPaidOnly = isPublishable
+        ? false
+        : (allowPaidOnly ?? true);
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
@@ -261,6 +295,13 @@ export async function createApiKeyForUser({
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(effectivePollenBudgetTier != null && {
+            pollenBudgetTier: effectivePollenBudgetTier,
+        }),
+        ...(effectivePollenBudgetPaid != null && {
+            pollenBudgetPaid: effectivePollenBudgetPaid,
+        }),
+        allowPaidOnly: effectiveAllowPaidOnly,
     };
 
     const created = await authClient.api.createApiKey({
@@ -312,6 +353,9 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: effectivePollenBudget ?? null,
+        pollenBudgetTier: effectivePollenBudgetTier,
+        pollenBudgetPaid: effectivePollenBudgetPaid,
+        allowPaidOnly: effectiveAllowPaidOnly,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

@@ -884,6 +884,60 @@ test("prepares the same isolated account after earlier review data", async () =>
     expect(JSON.stringify(repeated.keys)).toContain("flow-review-key");
 });
 
+test("isolates concurrent review data, faults and resets and discards disposable state", async () => {
+    const scripts = await bundleWorkers();
+    const first = await startRuntime({ persist: false, scripts });
+    const second = await startRuntime({ persist: false, scripts });
+    const request = (target: typeof first, path: string, body?: unknown) =>
+        target.fetch(
+            new Request(`http://localhost:4180${path}`, {
+                method: body === undefined ? "GET" : "POST",
+                headers: { "Content-Type": "application/json" },
+                ...(body !== undefined && { body: JSON.stringify(body) }),
+            }),
+        );
+    const post = async (target: typeof first, path: string, body: unknown) => {
+        const response = await request(target, path, body);
+        expect(response.status).toBe(200);
+        await response.body?.cancel();
+    };
+    const state = async (target: typeof first) =>
+        (await request(target, "/__flow/state")).json();
+    const faults = [{ path: "/api/app-lookup", outcome: "unavailable" }];
+    try {
+        await Promise.all(
+            [first, second].map((target) => post(target, "/__flow/reset", {})),
+        );
+        await post(first, "/__flow/conditions", { pollen: "empty" });
+        await post(second, "/__flow/conditions", { pollen: "quest" });
+        await post(second, "/__flow/review/requests", faults);
+        expect((await state(first)).wallet.total).toBe(0);
+        const other = await state(second);
+        expect(other.wallet.total).toBe(5);
+        await post(first, "/__flow/reset", {});
+        expect((await state(first)).wallet.total).toBe(10);
+        expect(await state(second)).toEqual(other);
+        const path = `/api/app-lookup?client_id=${CLIENT_ID}`;
+        const [normal, failed] = await Promise.all([
+            request(first, path),
+            request(second, path),
+        ]);
+        expect(normal.status).toBe(200);
+        expect(failed.status).toBe(503);
+        await Promise.all([normal.body?.cancel(), failed.body?.cancel()]);
+    } finally {
+        await Promise.all([first.dispose(), second.dispose()]);
+    }
+    const restarted = await startRuntime({ persist: false, scripts });
+    try {
+        const response = await request(restarted, "/__flow/state");
+        expect(response.status).toBe(409);
+        await response.body?.cancel();
+    } finally {
+        await restarted.dispose();
+    }
+}, 60_000);
+
 test("opening review state preserves prepared data and faults and reuses the existing session", async () => {
     const request = (path: string, body?: unknown, cookie = "") =>
         runtime.fetch(

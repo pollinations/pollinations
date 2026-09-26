@@ -206,7 +206,7 @@ function buildRegistry(
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
     const entries = sourceEntries.map((entry) => {
-        const supportedEndpoints = mediaPromptRoute(entry)
+        const routed = mediaPromptRoute(entry)
             ? [
                   ...new Set([
                       ...entry.supportedEndpoints,
@@ -215,6 +215,13 @@ function buildRegistry(
                   ]),
               ]
             : entry.supportedEndpoints;
+        // Messages adapts onto Chat Completions, so text models serving one
+        // serve the other.
+        const supportedEndpoints =
+            entry.eventType === "generate.text" &&
+            routed.includes("/v1/chat/completions")
+                ? [...routed, "/v1/messages"]
+                : routed;
         return {
             ...entry,
             supportedEndpoints,

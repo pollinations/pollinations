@@ -128,6 +128,26 @@ describe("getGenerationModelRegistry", () => {
         expect(advertised).not.toContain("midijourney-large");
     });
 
+    it("advertises Messages on every text model that serves Chat Completions", async () => {
+        const entries = (
+            await getGenerationModelRegistry(env)
+        ).visibleEntries();
+        const serving = (entry: (typeof entries)[number]) =>
+            entry.supportedEndpoints.includes("/v1/chat/completions");
+        const text = entries.filter((e) => e.definition.category === "text");
+
+        expect(text.filter(serving).length).toBeGreaterThan(0);
+        for (const entry of text.filter(serving)) {
+            expect(entry.supportedEndpoints).toContain("/v1/messages");
+        }
+        // Media models are reachable through Chat Completions, but not Messages.
+        for (const entry of entries.filter(
+            (e) => e.definition.category !== "text",
+        )) {
+            expect(entry.supportedEndpoints).not.toContain("/v1/messages");
+        }
+    });
+
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);

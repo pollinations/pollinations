@@ -172,11 +172,20 @@ export async function generateEmbeddingsResponse(
     );
 }
 
-export async function generateChatCompletion(
+export function generateChatCompletion(c: Context<Env>): Promise<Response> {
+    return chatCompletionResponse(
+        c,
+        c.req.valid("json" as never) as CreateChatCompletionRequest,
+    );
+}
+
+/** The Chat Completions pipeline, shared by every API that adapts onto it. */
+export async function chatCompletionResponse(
     c: Context<Env>,
+    body: CreateChatCompletionRequest,
 ): Promise<Response> {
     const requestBody = await applySafetyToInput(c, {
-        ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
+        ...body,
         model: c.var.model.resolved,
     });
 

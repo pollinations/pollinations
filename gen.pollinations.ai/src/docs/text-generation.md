@@ -6,6 +6,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
+| `POST /v1/messages` | Anthropic Messages — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
@@ -34,6 +35,32 @@ Community text models and endpoint agents declare one upstream API and one exact
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
+
+### Claude Code and Anthropic SDKs
+
+`POST /v1/messages` accepts Anthropic Messages requests for any text model that lists `/v1/messages` in `supported_endpoints`. Point the base URL at `https://gen.pollinations.ai` and authenticate with a Bearer token; `x-api-key` is not accepted.
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=$POLLINATIONS_API_KEY
+export ANTHROPIC_MODEL=openai
+claude
+```
+
+```python
+import anthropic
+
+client = anthropic.Anthropic(base_url="https://gen.pollinations.ai", auth_token="sk_...")
+message = client.messages.create(
+    model="openai",
+    max_tokens=256,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+The request runs through the Chat Completions pipeline, so balance checks, key permissions, rate limits, caching and billing match `/v1/chat/completions`. Usage is reported in Anthropic's fields, with cache reads and writes counted apart from `input_tokens`. Text, image, `tool_use` and `tool_result` blocks, system prompts, `stop_sequences`, `cache_control` and streaming work as on Chat Completions; streams send `ping` events while a model is silent. `thinking` and `output_config.effort` select the reasoning effort, and provider reasoning returns as `thinking` blocks. Other fields, including `metadata` and `anthropic-beta`, are accepted and ignored. Anthropic-hosted tools and `/v1/messages/count_tokens` are not supported.
+
+Failures use Anthropic's error shape, for example `authentication_error` (401), `billing_error` (402) and `rate_limit_error` (429, with `retry-after` in seconds). A response without provider usage fails instead of going unbilled: JSON returns an error and a stream ends with an `error` event.
 
 ### Media models in conversations
 

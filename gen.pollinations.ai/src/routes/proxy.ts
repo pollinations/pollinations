@@ -95,6 +95,10 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { anthropicErrors } from "@/text/messages/errors.ts";
+import { generateMessage } from "@/text/messages/handler.ts";
+import { CreateMessageRequestSchema } from "@/text/messages/request.ts";
+import { MessageResponseSchema } from "@/text/messages/response.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -240,6 +244,18 @@ const decisionHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateDecision,
+);
+
+// Anthropic Messages adapts onto Chat Completions; streams skip deduplication.
+const messagesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateMessageRequestSchema),
+    resolveModel("generate.text", { supportedEndpoint: "/v1/messages" }),
+    track("generate.text"),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateMessage,
 );
 
 const responsesHandlers = factory.createHandlers(
@@ -397,6 +413,8 @@ async function resolveVisibleModelEntry(
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Outermost, so even edge rate limits use Anthropic's error shape here.
+    .use("/v1/messages", anthropicErrors)
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
@@ -714,6 +732,42 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Message (Anthropic-compatible)",
+            description: [
+                "Anthropic Messages API for Claude Code, the Anthropic SDKs, and other clients that speak it. Point the base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer <key>`; `x-api-key` is not accepted.",
+                "",
+                "Any text model that supports `/v1/chat/completions` also lists `/v1/messages` in `supported_endpoints`. The request runs through the Chat Completions pipeline, so balance checks, key permissions, rate limits, caching, and billing are identical.",
+                "",
+                "Supported: text, image, `tool_use` and `tool_result` blocks, system prompts, `stop_sequences`, `cache_control`, and streaming with keep-alive `ping` events. `thinking` and `output_config.effort` select the reasoning effort, and provider reasoning returns as `thinking` blocks. Fields this endpoint does not use, such as `metadata` and `anthropic-beta`, are accepted and ignored. Anthropic-hosted tools (web search, bash) and `/v1/messages/count_tokens` are not supported.",
+                "",
+                "Successful responses report Anthropic usage fields. A provider response without usage fails: JSON returns an error and a stream ends with an `error` event. Errors use Anthropic's `{type, error: {type, message}}` shape with `retry-after` in integer seconds on 429.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Message JSON or Anthropic SSE stream",
+                    content: {
+                        "application/json": {
+                            schema: resolver(MessageResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Messages SSE events: message_start, content_block_start, content_block_delta, content_block_stop, message_delta, and message_stop, with ping events while the model is silent.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...messagesHandlers,
     )
     .post(
         "/alpha/decisions",

@@ -34,6 +34,8 @@ import {
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { generateMessage } from "@/text/messages/handler.ts";
+import { CreateMessageRequestSchema } from "@/text/messages/request.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -90,6 +92,17 @@ generationExecutorRoutes.post(
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/v1/messages",
+    textBodyLimit,
+    validator("json", CreateMessageRequestSchema),
+    resolveModel("generate.text", { supportedEndpoint: "/v1/messages" }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateMessage,
 );
 
 generationExecutorRoutes.post(

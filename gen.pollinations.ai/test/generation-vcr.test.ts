@@ -1230,6 +1230,176 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
 
+const postMessages = (key: string, body: Record<string, unknown>) =>
+    fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 64,
+            ...body,
+        }),
+    });
+
+test("Messages returns an Anthropic message and bills like Chat Completions", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await postMessages(paidApiKey, {
+        system: "be brief",
+        messages: [{ role: "user", content: "vcr simple text" }],
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
+    await expect(response.json()).resolves.toMatchObject({
+        type: "message",
+        role: "assistant",
+        model: "openai/gpt-5-nano",
+        content: [{ type: "text", text: "snapshot text response" }],
+        stop_reason: "end_turn",
+        usage: { input_tokens: 6, output_tokens: 4 },
+    });
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        max_completion_tokens: 64,
+        messages: [
+            { role: "system", content: "be brief" },
+            { role: "user", content: "vcr simple text" },
+        ],
+    });
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        tokenCountPromptText: 6,
+        tokenCountCompletionText: 4,
+        isBilledUsage: true,
+    });
+});
+
+test("Messages streams Anthropic events and bills the terminal usage once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await postMessages(paidApiKey, {
+        stream: true,
+        messages: [{ role: "user", content: "vcr messages stream" }],
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    const stream = await response.text();
+    expect([...stream.matchAll(/^event: (.*)$/gm)].map((m) => m[1])).toEqual([
+        "message_start",
+        "content_block_start",
+        "content_block_delta",
+        "content_block_stop",
+        "message_delta",
+        "message_stop",
+    ]);
+    expect(stream).toContain('"text":"snapshot stream"');
+    expect(stream).toContain(
+        '"usage":{"input_tokens":7,"output_tokens":3,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}',
+    );
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 200,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+        isBilledUsage: true,
+    });
+});
+
+test("Messages without provider usage fails and stays unbilled", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+
+    const json = await postMessages(caller.key, {
+        messages: [{ role: "user", content: "vcr missing chat usage" }],
+    });
+    expect(json.response.status).toBe(502);
+    await expect(json.response.json()).resolves.toMatchObject({
+        type: "error",
+        error: {
+            type: "api_error",
+            message: expect.stringContaining("omitted usage"),
+        },
+    });
+    await json.wait();
+
+    const stream = await postMessages(caller.key, {
+        stream: true,
+        messages: [{ role: "user", content: "vcr missing chat stream usage" }],
+    });
+    expect(stream.response.status).toBe(200);
+    const text = await stream.response.text();
+    expect(text).toContain("event: error");
+    expect(text).not.toContain("message_stop");
+    await stream.wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({ isBilledUsage: false, totalPrice: 0 });
+    }
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test("Messages failures use Anthropic error types", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const broke = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 0 },
+    });
+    const messages = [{ role: "user", content: "hi" }];
+
+    const unauthenticated = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 8,
+            messages,
+        }),
+    });
+    const noBalance = await postMessages(broke.key, { messages });
+    const media = await postMessages(paidApiKey, { model: "flux", messages });
+    const invalid = await postMessages(paidApiKey, { messages: [] });
+
+    const failures = [
+        [unauthenticated, 401, "authentication_error"],
+        [noBalance, 402, "billing_error"],
+        [media, 400, "invalid_request_error"],
+        [invalid, 400, "invalid_request_error"],
+    ] as const;
+    for (const [{ response, wait }, status, type] of failures) {
+        expect(response.status).toBe(status);
+        await expect(response.json()).resolves.toMatchObject({
+            type: "error",
+            error: { type },
+        });
+        await wait();
+    }
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+});
+
 test.for([
     "/v1/chat/completions",
     "/v1/responses",

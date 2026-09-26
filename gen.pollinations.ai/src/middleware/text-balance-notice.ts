@@ -12,6 +12,8 @@ import {
     textResponseStream,
 } from "../media/response-output.ts";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
+import { chatCompletionToAnthropic } from "../text/messages/response.ts";
+import { chatStreamToAnthropic } from "../text/messages/stream.ts";
 import { requestsJson } from "../text/requestUtils.ts";
 import {
     responsesToChatCompletion,
@@ -53,6 +55,19 @@ function appOrigin(c: Context<Env>): string | null {
     } catch {
         return null;
     }
+}
+
+/** Anthropic requests carry structured-output requests in output_config. */
+function anthropicOutputFormat(
+    request: GenerateTextRequestQueryParams &
+        CreateChatCompletionRequest &
+        CreateResponseRequest,
+): string | undefined {
+    const config = (
+        request as { output_config?: { format?: { type?: unknown } } }
+    ).output_config;
+    const type = config?.format?.type;
+    return typeof type === "string" ? type : undefined;
 }
 
 export function balanceNoticeMessage(
@@ -98,6 +113,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     );
 
     const isResponses = c.req.path === "/v1/responses";
+    const isMessages = c.req.path === "/v1/messages";
     const request = c.req.valid(
         (c.req.method === "POST" ? "json" : "query") as never,
     ) as GenerateTextRequestQueryParams &
@@ -106,12 +122,16 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     const outputModalities =
         request.modalities ?? c.var.model.definition.outputModalities;
     if (outputModalities?.includes("audio")) return;
+    // Anthropic asks for structured output through output_config.format.
     const format = isResponses
         ? request.text?.format?.type
-        : request.response_format?.type;
+        : isMessages
+          ? anthropicOutputFormat(request)
+          : request.response_format?.type;
     // Match chat normalization: an explicit response_format overrides aliases.
     const jsonAlias =
         !isResponses &&
+        !isMessages &&
         !request.response_format &&
         requestsJson(request.json, request.jsonMode);
     if (jsonAlias || format === "json_object" || format === "json_schema")
@@ -124,6 +144,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     if (
         !request.stream &&
         !isResponses &&
+        !isMessages &&
         c.req.path !== "/v1/chat/completions"
     ) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
@@ -141,10 +162,24 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     if (request.stream) {
         headers.set("Content-Type", "text/event-stream; charset=utf-8");
         const stream = textResponseStream(response);
+        // Anthropic clients only accept Anthropic SSE events.
+        const chatStream = isResponses
+            ? stream
+            : responsesToChatStream(stream, model);
         c.res = new Response(
-            isResponses ? stream : responsesToChatStream(stream, model),
+            isMessages ? chatStreamToAnthropic(chatStream, model) : chatStream,
             { headers },
         );
+    } else if (isMessages) {
+        headers.set("Content-Type", "application/json; charset=utf-8");
+        const completion = responsesToChatCompletion(
+            response,
+            model,
+            new URL(c.req.url),
+        );
+        c.res = Response.json(chatCompletionToAnthropic(completion, model), {
+            headers,
+        });
     } else {
         headers.set("Content-Type", "application/json; charset=utf-8");
         c.res = Response.json(

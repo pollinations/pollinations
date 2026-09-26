@@ -17,6 +17,7 @@ import { createMockVcr } from "@shared/test/mocks/vcr.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
@@ -463,6 +464,13 @@ async function fakePortkeyResponse(request: Request) {
     const reportedModel = prompt.includes("provider model mismatch")
         ? "provider-model-version"
         : model;
+
+    if (prompt.includes("vcr provider rate limit")) {
+        return Response.json(
+            { error: { message: "provider rate limited" } },
+            { status: 429, headers: { "Retry-After": "1.2" } },
+        );
+    }
 
     if (body.stream) {
         const streamEvent = {
@@ -1226,6 +1234,274 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
         upstream_status: 200,
         error_code: "usage_missing",
         upstream_body: expect.any(String),
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test("Anthropic Messages uses Chat billing once and reports Anthropic usage", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 128,
+            messages: [
+                { role: "user", content: "vcr anthropic messages billing" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        type: "message",
+        role: "assistant",
+        model: "openai/gpt-5-nano",
+        content: [{ type: "text", text: "snapshot response" }],
+        stop_reason: "end_turn",
+        usage: { input_tokens: 7, output_tokens: 3 },
+    });
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano",
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+        responseStatus: 200,
+        isBilledUsage: true,
+    });
+});
+
+test("Anthropic Messages rejects JSON without provider usage and does not bill", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 128,
+            messages: [{ role: "user", content: "vcr missing chat usage" }],
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        type: "error",
+        error: {
+            type: "api_error",
+            message: expect.stringContaining("omitted usage"),
+        },
+        request_id: expect.any(String),
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test("Anthropic Messages returns Anthropic-shaped balance errors", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 0 },
+        pollenBudget: 1,
+    });
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 128,
+            messages: [{ role: "user", content: "billing error" }],
+        }),
+    });
+
+    expect(response.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
+    if (TEXT_BALANCE_NOTICE_ENABLED) {
+        // The balance notice still has to speak Anthropic.
+        await expect(response.json()).resolves.toMatchObject({
+            type: "message",
+            role: "assistant",
+            model: "openai/gpt-5-nano",
+            content: [
+                { type: "text", text: expect.stringContaining("credits") },
+            ],
+            stop_reason: "end_turn",
+            usage: { input_tokens: 0, output_tokens: 0 },
+        });
+        expect(response.headers.get("cache-control")).toBe("private, no-store");
+    } else {
+        await expect(response.json()).resolves.toMatchObject({
+            type: "error",
+            error: { type: "billing_error" },
+            request_id: expect.any(String),
+        });
+    }
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+});
+
+test("Anthropic Messages preserves provider 429 with integer retry-after", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 128,
+            messages: [{ role: "user", content: "vcr provider rate limit" }],
+        }),
+    });
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("2");
+    await expect(response.json()).resolves.toMatchObject({
+        type: "error",
+        error: {
+            type: "rate_limit_error",
+            message: expect.stringContaining("provider rate limited"),
+        },
+        request_id: expect.any(String),
+    });
+    await wait();
+});
+
+test("Anthropic Messages rejects invalid bodies with an Anthropic 400", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "no max_tokens" }],
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        type: "error",
+        error: { type: "invalid_request_error" },
+        request_id: expect.any(String),
+    });
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+});
+
+test("Anthropic Messages rejects media models with a clear 400", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "flux",
+            max_tokens: 64,
+            messages: [{ role: "user", content: "make an image" }],
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        type: "error",
+        error: {
+            type: "invalid_request_error",
+            message: expect.stringContaining("flux"),
+        },
+        request_id: expect.any(String),
+    });
+    await wait();
+});
+
+test("Anthropic Messages stream without usage ends with error and remains unbilled", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+
+    const { response, wait } = await fetchWorker("/v1/messages", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            max_tokens: 128,
+            stream: true,
+            messages: [
+                {
+                    role: "user",
+                    content: "vcr missing chat stream usage",
+                },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: message_start");
+    expect(stream).toContain("event: error");
+    expect(stream).toContain("usage");
+    expect(stream).not.toContain("event: message_stop");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });

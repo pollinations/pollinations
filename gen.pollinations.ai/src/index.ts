@@ -31,6 +31,7 @@ import { mcpRoutes } from "./routes/mcp.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
+import { handleAnthropicMessagesError } from "./text/messages/errors.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -162,7 +163,11 @@ app.notFound(async (c: Context<Env>) => {
     return handleError(new HTTPException(404), c);
 });
 
-app.onError(handleError);
+app.onError((error, c) =>
+    c.req.path === "/v1/messages"
+        ? handleAnthropicMessagesError(error, c)
+        : handleError(error, c),
+);
 
 export default {
     fetch: app.fetch,

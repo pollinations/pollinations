@@ -95,6 +95,27 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
+    it("advertises Messages for every text model that supports Chat Completions", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const chatModels = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    entry.definition.category === "text" &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions"),
+            );
+
+        expect(chatModels.length).toBeGreaterThan(0);
+        for (const entry of chatModels) {
+            expect(entry.supportedEndpoints, entry.id).toContain(
+                "/v1/messages",
+            );
+            expect(entry.info.supported_endpoints, entry.id).toContain(
+                "/v1/messages",
+            );
+        }
+    });
+
     it("advertises every configured direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels

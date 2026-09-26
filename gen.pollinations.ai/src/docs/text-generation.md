@@ -1,14 +1,69 @@
 ## Text Generation
 
-Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs — use an OpenAI SDK by changing the base URL.
+Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs, or the Anthropic Messages API used by Claude Code and official Anthropic SDKs.
 
 | Endpoint | Best for |
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
+| `POST /v1/messages` | Anthropic Messages compatibility — Claude Code, Anthropic SDKs, streaming, tools, vision |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
+
+### Anthropic Messages API
+
+Every text model that supports `/v1/chat/completions` also supports `POST /v1/messages`. Point Claude Code or an official Anthropic SDK directly at `https://gen.pollinations.ai`; no compatibility router is required. Authentication uses `Authorization: Bearer`, not `x-api-key`.
+
+Claude Code needs these three environment variables:
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=sk_...
+export ANTHROPIC_MODEL=openai/gpt-5.4-nano
+claude
+```
+
+Python with the official Anthropic SDK:
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://gen.pollinations.ai",
+    auth_token=os.environ["POLLINATIONS_API_KEY"],
+)
+
+message = client.messages.create(
+    model="openai/gpt-5.4-nano",
+    max_tokens=256,
+    messages=[{"role": "user", "content": "Hello from Pollinations"}],
+)
+print(message.content[0].text)
+```
+
+TypeScript with the official Anthropic SDK:
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  baseURL: "https://gen.pollinations.ai",
+  authToken: process.env.POLLINATIONS_API_KEY,
+});
+
+const message = await client.messages.create({
+  model: "openai/gpt-5.4-nano",
+  max_tokens: 256,
+  messages: [{ role: "user", content: "Hello from Pollinations" }],
+});
+console.log(message.content);
+```
+
+Messages requests use the same Pollinations text pipeline, fallback routing, prompt caching, rate limits, and billing as Chat Completions. System prompts, images, function tools and tool results, stop sequences, `cache_control`, streaming, and reasoning are translated at the protocol boundary. Provider reasoning is exposed as Anthropic `thinking` blocks; real Claude thinking signatures are preserved across tool-use turns. Streaming emits standard Messages events and periodic `ping` events during upstream silence. Successful text responses require provider usage; missing usage fails JSON requests and terminates streams with an Anthropic `error` event.
+
+`/v1/messages/count_tokens`, Message Batches, Files, Anthropic server tools, and `x-api-key` authentication are not implemented.
 
 ### Responses API
 

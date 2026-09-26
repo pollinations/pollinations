@@ -40,6 +40,7 @@ const REGISTRY_TTL_MS = 60_000;
 const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/messages",
     "/text",
     "/text/{prompt}",
 ];
@@ -120,10 +121,16 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const baseEndpoints =
         definition.supportedEndpoints ??
         supportedEndpointsForEventType(eventType);
+    const textEndpoints =
+        eventType === "generate.text" &&
+        baseEndpoints.includes("/v1/chat/completions") &&
+        !baseEndpoints.includes("/v1/messages")
+            ? [...baseEndpoints, "/v1/messages"]
+            : baseEndpoints;
     const supportedEndpoints =
         eventType === "generate.text" && supportsDirectResponses(modelName)
-            ? [...baseEndpoints, "/v1/responses"]
-            : baseEndpoints;
+            ? [...textEndpoints, "/v1/responses"]
+            : textEndpoints;
     const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,

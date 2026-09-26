@@ -36,6 +36,22 @@ import {
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+function anthropicMessagesErrorDescriptions(...statuses: number[]) {
+    return Object.fromEntries(
+        statuses.map((status) => [
+            status,
+            {
+                description: "Anthropic-compatible error response",
+                content: {
+                    "application/json": {
+                        schema: resolver(AnthropicErrorResponseSchema),
+                    },
+                },
+            },
+        ]),
+    );
+}
+
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
@@ -52,6 +68,11 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import {
+    AnthropicErrorResponseSchema,
+    AnthropicMessageRequestSchema,
+    AnthropicMessageResponseSchema,
+} from "@shared/schemas/anthropic.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
@@ -95,6 +116,8 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { anthropicMessagesErrorBoundary } from "@/text/messages/errors.ts";
+import { generateAnthropicMessage } from "@/text/messages/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -226,6 +249,19 @@ const chatCompletionHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+const messagesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", AnthropicMessageRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateAnthropicMessage,
 );
 
 const decisionHandlers = factory.createHandlers(
@@ -397,6 +433,9 @@ async function resolveVisibleModelEntry(
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Messages clients require Anthropic-shaped errors even from middleware
+    // that runs before generation (auth, balance, and rate limiting).
+    .use("/v1/messages", anthropicMessagesErrorBoundary)
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
@@ -714,6 +753,53 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Anthropic Message",
+            description: [
+                "Generate a message using the Anthropic Messages API contract while running the same Pollinations text-model pipeline as /v1/chat/completions.",
+                "",
+                "Point Claude Code or an official Anthropic SDK at https://gen.pollinations.ai and authenticate with Authorization: Bearer <key>. All text models that advertise /v1/messages use the same model permissions, fallback routing, rate limits, caching, and billing as Chat Completions.",
+                "",
+                "Supports text and image input, system prompts, function tools and tool results, stop sequences, prompt cache_control, streaming, and reasoning. Provider reasoning is returned as Anthropic thinking blocks. Claude Code compatibility fields such as thinking, output_config, and metadata are accepted.",
+                "",
+                "Streaming uses Anthropic Messages SSE events. ping events keep long silent reasoning requests alive. Successful responses require provider usage; a stream without terminal usage ends with an Anthropic error event.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Anthropic Message JSON or SSE stream",
+                    content: {
+                        "application/json": {
+                            schema: resolver(AnthropicMessageResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Anthropic Messages SSE events: message_start, content blocks, message_delta, and message_stop, with ping keepalives when upstream reasoning is silent.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...anthropicMessagesErrorDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                    503,
+                    504,
+                ),
+            },
+        }),
+        ...messagesHandlers,
     )
     .post(
         "/alpha/decisions",

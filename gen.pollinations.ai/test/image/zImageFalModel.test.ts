@@ -38,18 +38,21 @@ describe("callZImageFalAPI", () => {
             const href = url.toString();
             requests.push({ url: href, init });
             if (href === FAL_ENDPOINT) {
-                return Response.json({
-                    images: [
-                        {
-                            url: IMAGE_URL,
-                            content_type: "image/jpeg",
-                            width: 1024,
-                            height: 768,
-                        },
-                    ],
-                    seed: 42,
-                    has_nsfw_concepts: [false],
-                });
+                return Response.json(
+                    {
+                        images: [
+                            {
+                                url: IMAGE_URL,
+                                content_type: "image/jpeg",
+                                width: 1024,
+                                height: 768,
+                            },
+                        ],
+                        seed: 42,
+                        has_nsfw_concepts: [false],
+                    },
+                    { headers: { "x-fal-billable-units": "1" } },
+                );
             }
             if (href === IMAGE_URL) {
                 return new Response(JPEG_BYTES, {
@@ -79,9 +82,24 @@ describe("callZImageFalAPI", () => {
         });
         expect(result.buffer).toEqual(Buffer.from(JPEG_BYTES));
         expect(result.mimeType).toBe("image/jpeg");
+        // 1024x768 is 0.75 MP; fal bills it as one whole megapixel.
         expect(result.trackingData).toEqual({
             actualModel: "tongyi-mai/z-image-turbo:fal",
             usage: { completionImageTokens: 1 },
+            pricingInput: { megapixels: 1 },
+        });
+    });
+
+    it("rejects a response without fal billable units", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ images: [{ url: IMAGE_URL }] }),
+        );
+
+        await expect(
+            callZImageFalAPI("a red apple", params),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "Fal response has no billable units",
         });
     });
 

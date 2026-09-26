@@ -365,6 +365,7 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
+                    c.get("error"),
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -672,6 +673,7 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
+    error?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -698,9 +700,32 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({
+        // A failure is billed only when the provider charged for it, which the
+        // handler reports on the error (an xAI video rejected after generation).
+        const usage =
+            error instanceof UpstreamError ? error.billedUsage : undefined;
+        if (!usage) {
+            return notBilled({
+                modelUsed,
+            });
+        }
+        return {
+            responseStatus: response.status,
+            cacheHit,
+            isBilledUsage: true,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                input: pricingInput,
+            }),
             modelUsed,
-        });
+            modelProviderUsed,
+            usage,
+        };
     }
 
     // Verify the response content-type matches the expected output before

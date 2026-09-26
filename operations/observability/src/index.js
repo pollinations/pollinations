@@ -57,6 +57,9 @@ export class ObservabilityGrafana extends Container {
         GF_SECURITY_ALLOW_EMBEDDING: "true",
         GF_SERVER_SERVE_FROM_SUB_PATH: "true",
         GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
+        // The 60s role cache fills before dashboards are provisioned on boot,
+        // denying every Editor the current dashboards for the first minute.
+        GF_RBAC_PERMISSION_CACHE: "false",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),

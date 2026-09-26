@@ -13,10 +13,10 @@ import type {
     UsageType,
 } from "./registry";
 
-// Normalized request facts that can affect pricing. Set once per request by
-// the service layer via the track middleware's pricing input, consumed only by
-// selectCostVariant. Keep this vocabulary small: a key earns its place when a
-// live model prices on it.
+// Normalized request facts that can affect pricing. Set by the service layer
+// via the track middleware's pricing input; a provider's response may refine
+// them. Consumed by selectCostVariant and billing adjustments. Keep this
+// vocabulary small: a key earns its place when a live model prices on it.
 export type PricingInput = {
     resolution?: string;
     quality?: string;

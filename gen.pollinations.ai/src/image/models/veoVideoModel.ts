@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -11,6 +10,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
+import type { TrackingData } from "../utils/trackingHeaders.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
@@ -49,10 +49,7 @@ export interface VideoGenerationResult {
     buffer: Buffer;
     mimeType: string;
     durationSeconds: number;
-    trackingData: {
-        actualModel: string;
-        usage: Usage & { totalTokenCount?: number };
-    };
+    trackingData: TrackingData & { actualModel: string };
 }
 
 interface VeoOperationResponse {

@@ -40,6 +40,10 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
   collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Bill from the usage the provider reports: a usage block, or a billing header
+  such as fal's `x-fal-billable-units`. Do not rebuild the provider's price
+  formula from request parameters. Derive usage from the request only when the
+  provider reports none, and check it against the provider's billing records.
 - Successful billable text responses must contain valid provider usage. Reject
   non-stream responses without it; streamed protocols must contain terminal
   usage and fail the stream otherwise.

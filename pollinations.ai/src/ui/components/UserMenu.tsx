@@ -3,7 +3,9 @@ import { AUTH_COPY } from "../../copy/content/auth";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Button } from "./ui/button";
+import { InlineLink } from "./ui/inline-link";
 
 export function UserMenu() {
     const { apiKey, isLoggedIn, profile, balance, login, logout } = useAuth();
@@ -113,7 +115,7 @@ export function UserMenu() {
                         href={LINKS.byopDocs}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block mb-4 p-2 rounded-md bg-[rgb(var(--cream))] hover:opacity-80 transition-opacity"
+                        className="polli-link-surface relative pr-6 block mb-4 p-2 rounded-md bg-[rgb(var(--cream))] hover:opacity-80 transition-opacity"
                     >
                         <span className="text-xs uppercase tracking-wider text-dark font-bold block">
                             🔌 {copy.byopTitle}
@@ -122,22 +124,23 @@ export function UserMenu() {
                             {copy.byopDescription}
                         </span>
                         <span className="text-xs text-dark font-medium mt-1 block">
-                            {copy.byopLink} →
+                            {copy.byopLink}
                         </span>
+                        <ExternalLinkIcon
+                            className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
+                            aria-hidden="true"
+                        />
                     </a>
 
                     {/* Enter Dashboard */}
-                    <Button
+                    <InlineLink
                         as="a"
                         href={LINKS.enter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="primary"
                         size="sm"
-                        className="w-full mb-2 bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
+                        className="inline-flex items-center gap-1.5"
                     >
                         {copy.enterLink}
-                    </Button>
+                    </InlineLink>
 
                     {/* Logout */}
                     <Button

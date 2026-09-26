@@ -12,7 +12,6 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@pollinations/sdk": "file:../../packages/sdk",
         "@pollinations/ui": "file:../../packages/ui",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"

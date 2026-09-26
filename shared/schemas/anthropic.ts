@@ -120,8 +120,8 @@ export const AnthropicToolChoiceSchema = z
 
 export const AnthropicThinkingSchema = z
     .object({
-        type: z.literal("enabled").optional(),
         budget_tokens: z.number().int().positive().optional(),
+        type: z.enum(["enabled", "disabled"]).optional(),
     })
     .passthrough()
     .meta({ $id: "AnthropicThinking" });

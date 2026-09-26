@@ -1008,10 +1008,16 @@ function getContentTypeGuard(
         const isTimestampedTts =
             response.headers.get("x-pollinations-response-format") ===
             "audio-with-timestamps";
+        const isStemSeparation =
+            requestTracking.modelDefinition.supportedEndpoints?.includes(
+                "/audio/stem-separation",
+            );
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
+                (isStemSeparation &&
+                    contentType.startsWith("application/zip")) ||
                 (isSTTModel &&
                     (contentType.startsWith("application/json") ||
                         contentType.startsWith("text/plain"))) ||

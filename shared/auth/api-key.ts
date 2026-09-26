@@ -262,16 +262,22 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token inherits the parent's model access but never its account scope:
-    // it is a generation credential held by a third party, so it must not be
-    // able to manage the owner's keys, endpoints or account.
-    const models = parent.apiKey.permissions?.models;
+    // The token inherits the parent's model access but no account scope beyond
+    // `machines`: it is a spending credential held by a third party, so it must
+    // not be able to manage the owner's keys, endpoints or account. Machines
+    // only spend, like generation, and the owner grants them per parent key.
+    const { models, account } = parent.apiKey.permissions ?? {};
+    const permissions: Record<string, string[]> = {};
+    if (models) permissions.models = models;
+    if (account?.includes("machines")) permissions.account = ["machines"];
 
     return {
         ...parent,
         apiKey: {
             ...parent.apiKey,
-            permissions: models ? { models } : undefined,
+            permissions: Object.keys(permissions).length
+                ? permissions
+                : undefined,
         },
         agentRun: claims,
     };
@@ -282,7 +288,7 @@ async function authenticateAgentRunToken(
  * This deliberately does not accept the parent key's raw value so delegated
  * credentials never need to contain or recover that secret.
  */
-async function loadActiveApiKeyAuthResult(opts: {
+export async function loadActiveApiKeyAuthResult(opts: {
     apiKeyId: string;
     rawApiKey: string;
     env: ApiKeyAuthBindings;

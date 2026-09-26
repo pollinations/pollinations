@@ -52,7 +52,8 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
-Override the stored key for a single command with `--key <key>`.
+Override the stored key for a single command with `--key <key>`, or set
+`POLLINATIONS_API_KEY` (used when no `--key` is given, before the stored login).
 
 ## Recipes
 

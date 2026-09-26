@@ -62,7 +62,7 @@ type DeduplicationEnv = {
         } & Partial<ModelVariables>;
 };
 
-function createAuthSnapshot(
+export function createAuthSnapshot(
     auth: AuthVariables["auth"],
 ): GenerationAuthSnapshot {
     const user = auth.requireUser();

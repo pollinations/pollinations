@@ -45,6 +45,7 @@ import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
+import MACHINES_MD from "../docs/machines.md?raw";
 import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
@@ -67,6 +68,7 @@ const DOC_TAGS = {
     cli: "CLI",
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
+    machines: "Machines",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -91,6 +93,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServers,
+    "🖥️ Machines": DOC_TAGS.machines,
     "❌ Errors": DOC_TAGS.errors,
     "🛡️ Safety": DOC_TAGS.safety,
     "✍️ Text": DOC_TAGS.text,
@@ -141,6 +144,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
+    ),
+    [DOC_TAGS.machines]: docsIcon(
+        '<rect x="3" y="4" width="18" height="7" rx="1.5" /><rect x="3" y="13" width="18" height="7" rx="1.5" /><path d="M7 7.5h.01M7 16.5h.01" />',
     ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
@@ -200,6 +206,7 @@ const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
+const MACHINES_DOCS = stripLeadingHeading(MACHINES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -472,6 +479,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
                     DOC_TAGS.mcpServers,
+                    DOC_TAGS.machines,
                     DOC_TAGS.cli,
                     DOC_TAGS.codingHarnesses,
                 ],
@@ -545,6 +553,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.mcpServers,
                 description: MCP_DOCS,
+            },
+            {
+                name: DOC_TAGS.machines,
+                description: MACHINES_DOCS,
             },
             {
                 name: DOC_TAGS.errors,

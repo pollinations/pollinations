@@ -127,7 +127,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too.',
+            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted machines.',
         ),
     redirectUris: z
         .array(z.string())

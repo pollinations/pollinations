@@ -71,10 +71,11 @@ async function probe(app: Hono<AuthEnv>, url: string, token?: string) {
     );
 }
 
-test("resolves to the parent key, without its account scope", async () => {
+test("resolves to the parent key, keeping only its machines scope", async () => {
     const parent = await createTestApiKey({
         allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
         pollenBudget: 42,
+        accountPermissions: ["profile", "usage", "keys", "machines"],
         user: { tierBalance: 100 },
     });
     const token = await runTokenFor(parent.id);
@@ -91,9 +92,12 @@ test("resolves to the parent key, without its account scope", async () => {
         userId: parent.userId,
         apiKeyId: parent.id,
         pollenBalance: 42,
-        // Model access is inherited; every other scope the parent may hold is
-        // dropped, so the token cannot manage the owner's account.
-        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+        // Model access and machines are inherited; the other account scopes
+        // are dropped, so the token cannot manage the owner's account.
+        permissions: {
+            models: [RESTRICTED_TEXT_TEST_MODEL],
+            account: ["machines"],
+        },
         agentRun: { parentApiKeyId: parent.id },
     });
 });

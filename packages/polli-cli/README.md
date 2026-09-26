@@ -161,6 +161,28 @@ their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
+## Machines
+
+Host a long-running agent on a persistent Linux machine. The disk survives a
+stop; processes do not, so `--command` runs again on every start.
+
+```bash
+polli machine create my-agent --image node:22-bookworm-slim \
+  --mint-key --command "node /root/agent.js"   # dedicated key in POLLINATIONS_API_KEY
+polli machine exec my-agent -- sh -c "npm install -g opencode-ai"
+polli machine list
+polli machine logs my-agent
+polli machine stop my-agent       # start | rm
+```
+
+A running machine costs pollen per hour by size (`polli machine list` shows
+it), and it stops when your balance runs out. Your login key needs the
+`machines` permission: if you logged in before machines existed, run
+`polli auth login` again.
+
+`--mint-key` gives the machine's key `account:keys`, so `polli harness <id> on`
+inside the machine mints its own harness key from `POLLINATIONS_API_KEY`.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

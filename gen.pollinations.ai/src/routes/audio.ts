@@ -1065,6 +1065,173 @@ function groupXaiWordsBySpeaker(
     return segments;
 }
 
+const OPENROUTER_STT_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/transcriptions";
+const GEMINI_TRANSCRIBE_MODEL = "google/gemini-3.5-transcribe";
+// Google meters audio at $0.003/min against $2 per 1M tokens: 25 tokens/s.
+const GEMINI_TRANSCRIBE_TOKENS_PER_SECOND = 25;
+const OPENROUTER_STT_FORMATS = [
+    "wav",
+    "mp3",
+    "flac",
+    "m4a",
+    "ogg",
+    "webm",
+    "aac",
+] as const;
+const OPENROUTER_STT_FORMAT_ALIASES: Record<string, string> = {
+    mpeg: "mp3",
+    mpga: "mp3",
+    wave: "wav",
+};
+
+function resolveOpenRouterSttFormat(file: File): string {
+    const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
+    const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
+    for (const candidate of [extension, subtype ?? ""]) {
+        const format = OPENROUTER_STT_FORMAT_ALIASES[candidate] ?? candidate;
+        if ((OPENROUTER_STT_FORMATS as readonly string[]).includes(format)) {
+            return format;
+        }
+    }
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `Unsupported audio format for ${GEMINI_TRANSCRIBE_MODEL}. Supported: ${OPENROUTER_STT_FORMATS.join(", ")}`,
+    });
+}
+
+interface OpenRouterSttResponse {
+    text: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
+    segments?: { start: number; end: number; text: string }[];
+    words?: { word: string; start: number; end: number; speaker?: number }[];
+}
+
+export async function transcribeWithOpenRouterGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveOpenRouterSttFormat(file);
+
+    // Timestamps and speaker labels are opt-in upstream: Google notes that
+    // word timestamps can reduce accuracy, so plain formats skip them.
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const body = {
+        model: GEMINI_TRANSCRIBE_MODEL,
+        input_audio: {
+            data: arrayBufferToBase64(await file.arrayBuffer()),
+            format,
+        },
+        ...(language ? { language } : {}),
+        ...(wantsWords
+            ? {
+                  response_format: "verbose_json",
+                  timestamp_granularities: ["segment", "word"],
+              }
+            : {}),
+        ...(responseFormat === "diarized_json"
+            ? {
+                  provider: {
+                      options: {
+                          "google-ai-studio": { diarization_mode: "speaker" },
+                      },
+                  },
+              }
+            : {}),
+    };
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_STT_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        }),
+        OPENROUTER_STT_ENDPOINT,
+    );
+    const transcript = (await response
+        .json()
+        .catch(() => null)) as OpenRouterSttResponse | null;
+    const inputTokens = transcript?.usage?.input_tokens;
+    const outputTokens = transcript?.usage?.output_tokens ?? 0;
+    if (
+        !transcript ||
+        typeof transcript.text !== "string" ||
+        typeof inputTokens !== "number" ||
+        !Number.isInteger(inputTokens) ||
+        inputTokens <= 0 ||
+        !Number.isInteger(outputTokens) ||
+        outputTokens < 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "OpenRouter transcription response did not include valid token usage.",
+        });
+    }
+
+    log.info(
+        "OpenRouter Gemini transcription: {chars} chars, {tokens} tokens",
+        {
+            chars: transcript.text.length,
+            tokens: inputTokens,
+        },
+    );
+
+    const words = transcript.words ?? [];
+    const diarizedSegments = groupXaiWordsBySpeaker(
+        words.map((word) => ({
+            text: word.word,
+            start: word.start,
+            end: word.end,
+            speaker: word.speaker,
+        })),
+    );
+    return buildTranscriptionResponse({
+        normalized: {
+            // With diarization the provider joins speaker turns without a
+            // separator ("numbers?Yes"), so rebuild the text from the turns.
+            text:
+                responseFormat === "diarized_json" && diarizedSegments.length
+                    ? diarizedSegments.map((segment) => segment.text).join(" ")
+                    : transcript.text,
+            // The provider reports tokens, not seconds; the documented 25
+            // tokens/s rate recovers the duration to within a token.
+            duration:
+                Math.round(
+                    (inputTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words: words.map(({ word, start, end }) => ({ word, start, end })),
+            segments: transcript.segments ?? [],
+            diarizedSegments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: inputTokens,
+            input_token_details: { audio_tokens: inputTokens, text_tokens: 0 },
+            output_tokens: outputTokens,
+            total_tokens: inputTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(GEMINI_TRANSCRIBE_MODEL, {
+            promptAudioTokens: inputTokens,
+            completionTextTokens: outputTokens,
+        }),
+    });
+}
+
 export async function transcribeWithElevenLabs(opts: {
     file: File;
     language?: string;
@@ -3485,6 +3652,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 log,
             });
         }
+        if (candidate.id === GEMINI_TRANSCRIBE_MODEL) {
+            return transcribeWithOpenRouterGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                apiKey: c.env.OPENROUTER_API_KEY,
+                log,
+            });
+        }
         if (candidate.id === "openai/gpt-transcribe") {
             return transcribeWithAzure({
                 file,
@@ -4040,6 +4216,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
+                "- `google/gemini-3.5-transcribe` — Google speech recognition with word timestamps and speaker labels (wav, mp3, flac, m4a, ogg, webm, aac; `prompt` is ignored)",
                 "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -4061,7 +4238,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `google/gemini-3.5-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",

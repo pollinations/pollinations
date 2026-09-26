@@ -1156,6 +1156,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000003165,
     },
   },
+  "google/gemini-3.5-transcribe": {
+    "cost": {
+      "completionTextTokens": 0.00001266,
+      "promptAudioTokens": 0.00000211,
+    },
+    "price": {
+      "completionTextTokens": 0.00001266,
+      "promptAudioTokens": 0.00000211,
+    },
+  },
   "google/gemini-3.7-flash": {
     "cost": {
       "completionTextTokens": 0.00000375,

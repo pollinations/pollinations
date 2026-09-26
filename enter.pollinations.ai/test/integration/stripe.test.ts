@@ -3026,6 +3026,163 @@ test.for([
     expect(mocks.stripe.state.invoices).toHaveLength(invoices);
 });
 
+test("scheduled auto top-up retry skips an account whose latest attempt was voided", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_latest_void");
+    customer.invoice_settings.default_payment_method = "pm_latest_void";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_latest_void", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    const olderAt = Date.now() - 3 * 3600000;
+    await insertAutoTopUpAttempt({
+        userId,
+        invoiceId: "in_older_decline",
+        status: "failed",
+        failureReason: AUTO_TOP_UP_DECLINE_REASON,
+        createdAt: olderAt,
+        completedAt: olderAt,
+    });
+    const invoiceId = "in_newer_void";
+    await insertAutoTopUpAttempt({
+        userId,
+        invoiceId,
+        createdAt: Date.now() - 3600000,
+    });
+    expect(
+        (
+            await postSignedStripeWebhook(
+                createAutoTopUpInvoiceEvent(
+                    "invoice.voided",
+                    invoiceId,
+                    userId,
+                ),
+            )
+        ).status,
+    ).toBe(200);
+    await SELF.scheduled({ cron: "*/15 * * * *" });
+    expect(mocks.stripe.state.invoices).toHaveLength(0);
+});
+
+test("POST /api/stripe/auto-top-up/trigger does not charge when a late decline lengthens the wait mid-request", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const { processAutoTopUpForUser } = await import(
+        "../../src/utils/stripe-billing/auto-top-up.ts"
+    );
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_late_decline");
+    customer.invoice_settings.default_payment_method = "pm_late_decline";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_late_decline", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    const oldInvoice = "in_late_old";
+    const olderAt = Date.now() - 3 * 3600000;
+    const newerAt = Date.now() - 2 * 3600000;
+    await insertAutoTopUpAttempt({
+        userId,
+        invoiceId: oldInvoice,
+        status: "failed",
+        failureReason: "Stripe invoice can no longer be collected.",
+        createdAt: olderAt,
+        completedAt: olderAt,
+    });
+    await insertAutoTopUpAttempt({
+        userId,
+        invoiceId: "in_late_new",
+        status: "failed",
+        failureReason: AUTO_TOP_UP_DECLINE_REASON,
+        createdAt: newerAt,
+        completedAt: newerAt,
+    });
+    mocks.stripe.state.invoices.push({
+        id: oldInvoice,
+        object: "invoice",
+        status: "void",
+        customer: customer.id,
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+    });
+    let reachedClaim!: () => void;
+    const atClaim = new Promise<void>((resolve) => {
+        reachedClaim = resolve;
+    });
+    let resumeClaim!: () => void;
+    const claimReleased = new Promise<void>((resolve) => {
+        resumeClaim = resolve;
+    });
+    const pausedDb = new Proxy(env.DB, {
+        get(target, property) {
+            if (property !== "prepare") {
+                const value = Reflect.get(target, property);
+                return typeof value === "function" ? value.bind(target) : value;
+            }
+            return (sql: string) => {
+                const statement = target.prepare(sql);
+                if (!sql.includes("INSERT INTO stripe_auto_top_up_attempt"))
+                    return statement;
+                return {
+                    bind: (...args: unknown[]) => {
+                        const bound = statement.bind(...args);
+                        return {
+                            run: async () => {
+                                reachedClaim();
+                                await claimReleased;
+                                return bound.run();
+                            },
+                        };
+                    },
+                };
+            };
+        },
+    });
+    const requestA = processAutoTopUpForUser({ ...env, DB: pausedDb }, userId);
+    await atClaim;
+    try {
+        expect(
+            (
+                await postSignedStripeWebhook(
+                    createAutoTopUpInvoiceEvent(
+                        "invoice.payment_failed",
+                        oldInvoice,
+                        userId,
+                    ),
+                )
+            ).status,
+        ).toBe(200);
+        // After the late webhook, two declines now require a four-hour wait.
+        const freshRead = await processAutoTopUpForUser(env, userId);
+        expect(freshRead.status).toBe("skipped");
+        expect(freshRead).toHaveProperty(
+            "reason",
+            "waiting after a declined auto top-up",
+        );
+    } finally {
+        resumeClaim();
+    }
+    expect((await requestA).status).toBe("skipped");
+});
+
 test("POST /api/webhooks/stripe counts a decline that arrives after the invoice void", async ({
     sessionToken,
     mocks,

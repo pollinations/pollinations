@@ -192,7 +192,7 @@ export async function processAutoTopUpForUser(
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
-        seenUntil: declines.lastAt,
+        declines,
     });
     if (!claimed) {
         return {
@@ -345,25 +345,35 @@ export async function processAutoTopUpForUser(
 
 /**
  * Retries declined auto top-ups once their wait has passed, so recovery does
- * not depend on another paid request. Only accounts whose latest top-up was
- * declined are retried; `processAutoTopUpForUser` rechecks eligibility and
- * claims atomically, so a concurrent request cannot charge twice.
+ * not depend on another paid request. Only accounts whose latest attempt was
+ * a card decline are retried; `processAutoTopUpForUser` rechecks eligibility
+ * and claims atomically, so a concurrent request cannot charge twice.
  */
 export async function retryDeclinedAutoTopUps(
     env: CloudflareBindings,
 ): Promise<void> {
     const { results } = await env.DB.prepare(
-        `SELECT id
-            FROM user
-            WHERE auto_top_up_enabled = 1
-                AND COALESCE(pack_balance, 0) <= ?`,
+        `SELECT u.id
+            FROM user u
+            WHERE u.auto_top_up_enabled = 1
+                AND COALESCE(u.pack_balance, 0) <= ?
+                AND (
+                    SELECT a.status = ? AND a.failure_reason = ?
+                    FROM stripe_auto_top_up_attempt a
+                    WHERE a.user_id = u.id
+                    ORDER BY a.created_at DESC
+                    LIMIT 1
+                ) = 1`,
     )
-        .bind(AUTO_TOP_UP_THRESHOLD_POLLEN)
+        .bind(
+            AUTO_TOP_UP_THRESHOLD_POLLEN,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            AUTO_TOP_UP_DECLINE_REASON,
+        )
         .all<{ id: string }>();
 
     for (const { id } of results) {
         try {
-            if ((await getDeclineStreak(env.DB, id)).count === 0) continue;
             const result = await processAutoTopUpForUser(env, id);
             if (result.status !== "skipped") {
                 console.log("[auto-top-up] scheduled retry", {
@@ -548,35 +558,50 @@ async function recordDecline(
     );
 }
 
-/** Card declines in a row since the last paid attempt, newest first. */
+/** Card declines since the last paid attempt, and when the latest one landed. */
 async function getDeclineStreak(
     db: D1Database,
     userId: string,
 ): Promise<{ count: number; lastAt: number }> {
-    const { results } = await db
+    const row = await db
         .prepare(
-            `SELECT status, COALESCE(completed_at, updated_at) AS at
-                FROM stripe_auto_top_up_attempt
-                WHERE user_id = ?
-                    AND (status = ? OR (status = ? AND failure_reason = ?))
-                ORDER BY created_at DESC
-                LIMIT ?`,
+            `SELECT ${DECLINE_STREAK_COUNT} AS count, ${DECLINE_STREAK_LAST_AT} AS lastAt`,
         )
-        .bind(
-            userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-            AUTO_TOP_UP_DECLINE_REASON,
-            AUTO_TOP_UP_MAX_DECLINES,
-        )
-        .all<{ status: string; at: number }>();
-    const firstPaid = results.findIndex(
-        (row) => row.status !== AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-    );
-    return {
-        count: firstPaid === -1 ? results.length : firstPaid,
-        lastAt: results[0]?.at ?? 0,
-    };
+        .bind(...declineStreakParams(userId), ...declineStreakParams(userId))
+        .first<{ count: number; lastAt: number }>();
+    return { count: row?.count ?? 0, lastAt: row?.lastAt ?? 0 };
+}
+
+/**
+ * Card declines since the account's last paid attempt. The claim evaluates
+ * the same definition, so both agree on the streak a charge was decided on.
+ * Bind with `declineStreakParams(userId)`.
+ */
+const DECLINES_SINCE_LAST_PAID = `
+    FROM stripe_auto_top_up_attempt d
+    WHERE d.user_id = ?
+        AND d.status = ?
+        AND d.failure_reason = ?
+        AND d.created_at > COALESCE(
+            (
+                SELECT MAX(p.created_at)
+                FROM stripe_auto_top_up_attempt p
+                WHERE p.user_id = ?
+                    AND p.status = ?
+            ),
+            0
+        )`;
+const DECLINE_STREAK_COUNT = `(SELECT COUNT(*) ${DECLINES_SINCE_LAST_PAID})`;
+const DECLINE_STREAK_LAST_AT = `(SELECT COALESCE(MAX(COALESCE(d.completed_at, d.updated_at)), 0) ${DECLINES_SINCE_LAST_PAID})`;
+
+function declineStreakParams(userId: string) {
+    return [
+        userId,
+        AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        AUTO_TOP_UP_DECLINE_REASON,
+        userId,
+        AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+    ];
 }
 
 async function retrieveInvoicePaymentIntent(
@@ -695,8 +720,8 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
-        /** Newest decline or payment the caller read before deciding to claim. */
-        seenUntil: number;
+        /** The decline streak the caller decided on; it must be unchanged. */
+        declines: { count: number; lastAt: number };
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -727,14 +752,8 @@ async function claimAutoTopUpAttempt(
                 WHERE user_id = ?
                     AND status IN (?, ?)
             )
-            AND NOT EXISTS (
-                SELECT 1
-                FROM stripe_auto_top_up_attempt
-                WHERE user_id = ?
-                    AND status = ?
-                    AND failure_reason = ?
-                    AND COALESCE(completed_at, updated_at) > ?
-            )`,
+            AND ${DECLINE_STREAK_COUNT} = ?
+            AND ${DECLINE_STREAK_LAST_AT} = ?`,
         )
         .bind(
             input.attemptId,
@@ -748,10 +767,10 @@ async function claimAutoTopUpAttempt(
             input.userId,
             AUTO_TOP_UP_ATTEMPT_STATUS.CLAIMED,
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
-            input.userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-            AUTO_TOP_UP_DECLINE_REASON,
-            input.seenUntil,
+            ...declineStreakParams(input.userId),
+            input.declines.count,
+            ...declineStreakParams(input.userId),
+            input.declines.lastAt,
         )
         .run();
 

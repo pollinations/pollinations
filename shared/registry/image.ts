@@ -9,6 +9,43 @@ export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
+    "sony/mmaudio-v2": {
+        aliases: [],
+        provider: "replicate",
+        publisher: "Sony AI",
+        category: "video",
+        title: "MMAudio V2",
+        description:
+            "Adds synchronized sound effects and ambience to an existing video",
+        addedDate: new Date("2026-09-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        inputModalities: ["text", "video"],
+        outputModalities: ["video"],
+        supportedEndpoints: ["/video/audio"],
+        videoCapabilities: ["audio_output"],
+        // Replicate L40S: https://replicate.com/pricing (verified 2026-09-26).
+        // Output seconds price the customer; GPU time prices the provider.
+        cost: { completionVideoSeconds: 0 },
+        price: { completionVideoSeconds: 0.001 },
+        billing: {
+            adjustments: [
+                {
+                    id: "replicate.mmaudio.compute.v1",
+                    description: "Replicate L40S execution time",
+                    kind: "compute",
+                    unit: "second",
+                    unitCost: 0.000975,
+                    publicPricing: {
+                        label: "GPU execution",
+                        quantity: 1,
+                        unit: "second",
+                    },
+                    countUnits: (_output, input) => input?.computeSeconds ?? 0,
+                },
+            ],
+        },
+    },
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],
         provider: "fal",

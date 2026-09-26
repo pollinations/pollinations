@@ -87,7 +87,7 @@ export type UsagePrice = Usage & {
 // Provider cost rates in USD-equivalent per usage unit.
 export type CostDefinition = { [K in UsageType]?: number };
 
-// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
+// User-facing rates in Pollen per unit, derived from the rate sheet × multiplier.
 export type PriceDefinition = CostDefinition;
 
 export type CostVariantMetadata = {
@@ -136,9 +136,8 @@ export type BillingRules = {
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
-// The model's single priceMultiplier applies uniformly to tokens and
-// adjustments alike (there is no per-rule multiplier), so adjustment prices
-// are always derivable from costs: price = cost × svc.priceMultiplier.
+// The model's multiplier applies to usage and adjustments. An explicit fixed
+// price sheet instead makes these provider adjustments cost-only.
 export type BillingAdjustment = {
     ruleId: string;
     kind: string;
@@ -165,6 +164,9 @@ export type ModelDefinition = {
     publisher: string;
     category: Category;
     cost: CostDefinition;
+    /** Fixed customer rate sheet before the multiplier. When set, provider
+     * costs and billing adjustments do not determine the customer charge. */
+    price?: PriceDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant
     // picks one (keys not listed in a variant inherit the base rate). Rates
     // are always data — selectors return a NAME, never a number. Provider
@@ -183,8 +185,8 @@ export type ModelDefinition = {
     // undefined (or an unknown name — warned) bills at base rates. Selection
     // is code; money is data.
     selectCostVariant?: (context: CostVariantContext) => string | undefined;
-    // USD-cost to Pollen-price multiplier. Required on every model — there is
-    // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
+    // Rate-sheet to Pollen-price multiplier. Required on every model. Uses
+    // provider cost unless a separate fixed customer price sheet is declared.
     priceMultiplier: number;
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
@@ -365,7 +367,7 @@ export function calculateBillingAdjustments(
             units,
             unitCost,
             cost,
-            price: cost * svc.priceMultiplier,
+            price: svc.price ? 0 : cost * svc.priceMultiplier,
         });
     }
     return adjustments;
@@ -418,9 +420,9 @@ export type UsageBillingInput = {
 /**
  * Rates one usage against one model definition.
  *
- * Price is the cost scaled by that definition's multiplier, so it cannot be
- * borrowed across definitions: community endpoints carry per-usage-type rate
- * vectors their owners set, and rescaling one owner's cost by another's
+ * Price uses this definition's fixed sheet, or its cost scaled by the
+ * multiplier. It cannot be borrowed across definitions: community endpoints
+ * carry rate vectors their owners set, and rescaling one's cost by another's
  * multiplier would invent a price neither of them published.
  */
 function rateAgainst(
@@ -451,8 +453,11 @@ function rateAgainst(
                   totalCost: usageCost.totalCost + adjustmentCost,
               };
 
+    const priceBasis = svc.price
+        ? calculateLinearCost(model, usage, svc.price)
+        : usageCost;
     const usagePrice = Object.fromEntries(
-        Object.entries(usageCost)
+        Object.entries(priceBasis)
             .filter(([usageType]) => usageType !== "totalCost")
             .map(([usageType, usageTypeCost]) => [
                 usageType,
@@ -472,7 +477,10 @@ function rateAgainst(
         cost,
         price,
         adjustments,
-        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        priceDefinition: derivePrice(
+            svc.price ?? effectiveCost,
+            svc.priceMultiplier,
+        ),
         costVariant,
         costVariantStatus: selection.status,
     };
@@ -625,7 +633,7 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
-    return derivePrice(svc.cost, svc.priceMultiplier);
+    return derivePrice(svc.price ?? svc.cost, svc.priceMultiplier);
 }
 
 /**

@@ -104,6 +104,10 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
+import {
+    generateVideoAudio,
+    VideoAudioRequestSchema,
+} from "../video/mmaudio.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
@@ -200,6 +204,21 @@ const imageVideoHandlers = factory.createHandlers(
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateImageVideo,
+);
+
+const videoAudioHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", VideoAudioRequestSchema),
+    resolveModel("generate.image", {
+        defaultModel: "sony/mmaudio-v2",
+        supportedEndpoint: "/video/audio",
+    }),
+    track("generate.image"),
+    prepareGenerationRequest,
+    imageCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateVideoAudio,
 );
 
 // 3D shares the image event type to avoid changing Tinybird consumers.
@@ -653,6 +672,28 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
+    .post(
+        "/video/audio",
+        describeRoute({
+            tags: ["🎬 Video"],
+            summary: "Add a video soundtrack",
+            description:
+                "Adds synchronized audio to a publicly accessible source video. Send JSON with `video_url` and a sound `prompt`; optional `duration` defaults to 8 seconds. The source may be trimmed to that duration. Returns the MP4 with its generated soundtrack when complete. Billing uses the returned video's duration. Identical requests can rejoin a running generation or retrieve its cached result. See `/video/models` for supported models and pricing.",
+            responses: {
+                200: {
+                    description: "Video with generated audio",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "video/mp4": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...videoAudioHandlers,
+    )
     .get(
         "/realtime",
         describeRealtimeWebSocket("/realtime"),

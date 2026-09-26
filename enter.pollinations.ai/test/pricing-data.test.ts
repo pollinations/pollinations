@@ -1060,7 +1060,7 @@ test("Perplexity billing keeps executable rules private", () => {
     }
 });
 
-test("every billing adjustment has public catalog metadata", () => {
+test("customer-billed adjustments have public metadata; fixed prices exclude provider-only charges", () => {
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
         const rules = definition.billing?.adjustments ?? [];
@@ -1068,6 +1068,21 @@ test("every billing adjustment has public catalog metadata", () => {
             model,
             definition,
         ).pricing_adjustments;
+
+        if (definition.price) {
+            expect(
+                adjustments,
+                `${model}: fixed customer price excludes provider fees`,
+            ).toBeUndefined();
+            for (const [unit, rate] of Object.entries(definition.price)) {
+                expect(
+                    getPriceDefinition(model)?.[
+                        unit as keyof typeof definition.price
+                    ],
+                ).toBeCloseTo(rate * definition.priceMultiplier, 10);
+            }
+            continue;
+        }
 
         expect(
             adjustments?.length ?? 0,

@@ -37,6 +37,10 @@ import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
+    generateVideoAudio,
+    VideoAudioRequestSchema,
+} from "../video/mmaudio.ts";
+import {
     handleSimpleAudio,
     handleSpeech,
     handleSpeechWithTimestamps,
@@ -78,6 +82,21 @@ const model3dHandlers = factory.createHandlers(
 );
 
 export const generationExecutorRoutes = new Hono<Env>();
+
+generationExecutorRoutes.post(
+    "/video/audio",
+    textBodyLimit,
+    validator("json", VideoAudioRequestSchema),
+    resolveModel("generate.image", {
+        defaultModel: "sony/mmaudio-v2",
+        supportedEndpoint: "/video/audio",
+    }),
+    track("generate.image"),
+    prepareGenerationRequest,
+    imageExecutionCache,
+    apiKeyBudgetReservation,
+    generateVideoAudio,
+);
 
 generationExecutorRoutes.post(
     "/v1/chat/completions",

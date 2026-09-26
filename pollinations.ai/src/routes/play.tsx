@@ -21,8 +21,8 @@ function AccountAction() {
     return (
         <div className="self-start">
             <AppUserMenu
+                connectSize="lg"
                 labels={{
-                    authorize: "Connect",
                     logout: "Disconnect app",
                 }}
             />

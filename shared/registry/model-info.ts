@@ -266,11 +266,9 @@ export function modelInfoFromDefinition(
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
         pricing_dimensions: service.pricingDimensions,
-        pricing_adjustments: service.price
-            ? undefined
-            : service.billing?.adjustments?.map((rule) =>
-                  pricingAdjustmentInfoFromRule(rule, service),
-              ),
+        pricing_adjustments: service.billing?.adjustments?.map((rule) =>
+            pricingAdjustmentInfoFromRule(rule, service),
+        ),
         resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,

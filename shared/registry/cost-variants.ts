@@ -20,8 +20,6 @@ import type {
 export type PricingInput = {
     /** Provider-reported GPU execution time, used by compute billing adjustments. */
     computeSeconds?: number;
-    /** Provider-reported audio billing quantity, which may exceed media length. */
-    providerAudioSeconds?: number;
     resolution?: string;
     quality?: string;
     hasImage?: boolean;

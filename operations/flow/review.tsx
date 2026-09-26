@@ -212,6 +212,7 @@ export function ReviewProvider({
                     setPreview({
                         query,
                         result: {
+                            source: window.__FLOW_ENVIRONMENT__.source,
                             revision: "",
                             status: "error",
                             stale: false,

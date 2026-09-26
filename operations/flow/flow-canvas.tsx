@@ -43,6 +43,7 @@ import {
     type JourneySelection,
 } from "./flow-journey-state";
 import { ScreenContent, ScreenOwnership } from "./flow-preview";
+import { FlowSource } from "./flow-source";
 import {
     ReviewHeader,
     ReviewJourney,
@@ -887,6 +888,7 @@ function FlowLab() {
                             </fieldset>
                         </div>
                     </div>
+                    <FlowSource />
                     <ScrollArea axis="x" className="flow-header-secondary">
                         <div className="flow-navigation">
                             <nav

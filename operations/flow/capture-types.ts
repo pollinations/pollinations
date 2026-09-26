@@ -1,3 +1,5 @@
+import type { SourceInfo } from "./flow-environment";
+
 export type PreviewCaseResult = {
     status: "pending" | "ready" | "error" | "reference";
     provider?: "GitHub" | "Stripe";
@@ -6,9 +8,11 @@ export type PreviewCaseResult = {
     entryRoute?: string;
     finalRoute?: string;
     error?: string;
+    source?: SourceInfo;
 };
 
 export type PreviewResult = {
+    source: SourceInfo;
     revision: string;
     status: "loading" | "ready" | "error";
     stale: boolean;

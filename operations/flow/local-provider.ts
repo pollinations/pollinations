@@ -1,8 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { localIdentity } from "./fixtures";
-import { ENTER_ORIGIN as origin } from "./local-origins";
+import { ENTER_ORIGIN } from "./local-origins";
 
-const callback = `${origin}/api/auth/callback/github`;
 const providerToken = "mock_github_auth_token";
 const clientId = "test_github_client_id";
 const lifetime = 10 * 60_000;
@@ -22,13 +21,14 @@ export function parseOutcome(value: unknown): SignInOutcome {
     return (value as { signIn: SignInOutcome }).signIn;
 }
 
-export function validateProviderRequest(value: string) {
+export function validateProviderRequest(value: string, origin = ENTER_ORIGIN) {
     const url = new URL(value);
     if (
         url.origin !== "https://github.com" ||
         url.pathname !== "/login/oauth/authorize" ||
         url.searchParams.get("client_id") !== clientId ||
-        url.searchParams.get("redirect_uri") !== callback ||
+        url.searchParams.get("redirect_uri") !==
+            `${origin}/api/auth/callback/github` ||
         !url.searchParams.get("state") ||
         (url.searchParams.has("code_challenge") &&
             url.searchParams.get("code_challenge_method") !== "S256")
@@ -45,7 +45,8 @@ type Authorization = ReturnType<typeof validateProviderRequest> & {
 };
 
 /** Only the external identity provider is simulated; Enter owns authentication. */
-export function createLocalProvider() {
+export function createLocalProvider(origin = ENTER_ORIGIN) {
+    const callback = `${origin}/api/auth/callback/github`;
     const handoffs = new Map<string, Authorization>();
     const codes = new Map<string, Authorization>();
     let signIn: SignInOutcome = "normal";
@@ -78,7 +79,7 @@ export function createLocalProvider() {
             if (!response.ok) return response;
             const body = (await response.clone().json()) as { url?: string };
             if (!body.url) return response;
-            const authorization = validateProviderRequest(body.url);
+            const authorization = validateProviderRequest(body.url, origin);
             if (signIn === "slow") {
                 signIn = "normal";
                 await new Promise((resolve) => setTimeout(resolve, 1500));

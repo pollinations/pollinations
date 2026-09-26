@@ -2,7 +2,7 @@ import { once } from "node:events";
 import { access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import { ENTER_ORIGIN } from "./local-origins";
+import { ENTER_ORIGIN, PORT } from "./local-origins";
 import { startServer } from "./server";
 import { createBuiltPages } from "./static-pages";
 
@@ -14,16 +14,21 @@ const pages = createBuiltPages(directory);
 const runtime = await startServer({
     loadReviewCases: () => import("./review-inventory"),
     loadReviewErrors: () => import("../../shared/error"),
+    fetchAssets: (request) => Promise.resolve(pages.fetch(request)),
 });
 const server = serve({
-    hostname: "127.0.0.1",
-    port: Number(new URL(ENTER_ORIGIN).port),
-    fetch: (request) =>
-        /^\/(?:__flow|api|gen|auth|\.well-known)\//.test(
-            new URL(request.url).pathname,
-        )
+    hostname: process.env.FLOW_BIND_ADDRESS ?? "127.0.0.1",
+    port: PORT,
+    fetch: (request) => {
+        const url = new URL(request.url);
+        request = new Request(
+            new URL(`${url.pathname}${url.search}`, ENTER_ORIGIN),
+            request,
+        );
+        return /^\/(?:__flow|api|gen|auth|\.well-known)\//.test(url.pathname)
             ? runtime.fetch(request)
-            : pages.fetch(request),
+            : pages.fetch(request);
+    },
 });
 try {
     await once(server, "listening");

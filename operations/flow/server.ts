@@ -1,15 +1,21 @@
 import { once } from "node:events";
 import { serve } from "@hono/node-server";
 import { createCaptureService, type ReviewCaseModule } from "./captures";
-import { ADMIN_ORIGIN, ENTER_ORIGIN, RUNTIME_ORIGIN } from "./local-origins";
+import { environmentScript } from "./flow-environment";
+import { ADMIN_ORIGIN, ORIGINS, PORT, RUNTIME_ORIGIN } from "./local-origins";
 import type { LoadReviewErrors } from "./review-requests";
 import { bundleWorkers, startRuntime } from "./runtime.ts";
+import { assetRequest } from "./source-assets";
+import { readSourceInfo } from "./source-info";
 import { buildSourceStyles } from "./source-styles";
 
 export async function startServer(options: {
     loadReviewCases?: () => Promise<ReviewCaseModule>;
     loadReviewErrors: LoadReviewErrors;
+    fetchAssets?: (request: Request) => Promise<Response>;
 }) {
+    let source = await readSourceInfo();
+    const fetchAssets = options.fetchAssets ?? fetch;
     let scripts = await bundleWorkers();
     const runtime = await startRuntime({
         scripts,
@@ -19,6 +25,8 @@ export async function startServer(options: {
     const captures = options.loadReviewCases
         ? createCaptureService({
               loadCases: options.loadReviewCases,
+              source: () => source,
+              fetchAssets,
               loadRuntime: async () => (runtimeOptions) =>
                   startRuntime({
                       ...runtimeOptions,
@@ -28,6 +36,13 @@ export async function startServer(options: {
           })
         : undefined;
     const fetchRuntime = async (request: Request) => {
+        const pathname = new URL(request.url).pathname;
+        if (pathname === "/__flow/config.js")
+            return environmentScript({ ...ORIGINS, source });
+        if (pathname === "/__flow/source")
+            return Response.json(source, {
+                headers: { "Cache-Control": "no-store" },
+            });
         try {
             await ready;
         } catch {
@@ -43,33 +58,24 @@ export async function startServer(options: {
     const server = serve({
         fetch: fetchRuntime,
         hostname: "127.0.0.1",
-        port: Number(new URL(RUNTIME_ORIGIN).port),
+        port: PORT + 1,
     });
     const admin = serve({
-        hostname: "127.0.0.1",
-        port: Number(new URL(ADMIN_ORIGIN).port),
+        hostname: process.env.FLOW_BIND_ADDRESS ?? "127.0.0.1",
+        port: PORT + 2,
         fetch: async (request) => {
             const url = new URL(request.url);
+            request = new Request(
+                new URL(`${url.pathname}${url.search}`, ADMIN_ORIGIN),
+                request,
+            );
             if (/^\/(?:auth|__flow)(?:\/|$)/.test(url.pathname))
                 return fetchRuntime(request);
             if (!["GET", "HEAD"].includes(request.method))
                 return new Response("Source files are read-only", {
                     status: 405,
                 });
-            const source = new URL(
-                `${url.pathname}${url.search}`,
-                ENTER_ORIGIN,
-            );
-            if (source.pathname === "/") source.pathname = "/flow-admin.html";
-            const headers = new Headers(request.headers);
-            headers.delete("cookie");
-            headers.delete("authorization");
-            headers.delete("host");
-            return fetch(source, {
-                method: request.method,
-                headers,
-                redirect: "manual",
-            });
+            return fetchAssets(assetRequest(request, ADMIN_ORIGIN));
         },
     });
     try {
@@ -103,6 +109,7 @@ export async function startServer(options: {
                     ]);
                     await runtime.reload(next);
                     scripts = next;
+                    source = await readSourceInfo();
                 });
             return ready;
         },

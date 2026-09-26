@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import type { D1Database } from "@cloudflare/workers-types";
-import { serializeSignedCookie } from "better-call";
+import { getCookies } from "better-auth/cookies";
+import { serializeCookie, serializeSignedCookie } from "better-call";
 import { type Conditions, defaultConditions } from "./conditions-data";
 import githubProfile from "./github-profile.json";
-import { ADMIN_ORIGIN, ENTER_ORIGIN } from "./local-origins";
+import { ORIGINS } from "./local-origins";
 
 export type { Conditions } from "./conditions-data";
 
-// Inert fixtures confined to this harness's loopback-only, isolated database.
+// Inert fixtures confined to this harness's isolated review database.
 // This signing value is the existing Enter Workers test binding.
 export const TEST_AUTH_SECRET = "not-a-secret-workers-test-only";
 // Same inert public signing fixture already used by the Admin preview.
@@ -18,7 +19,6 @@ export const OWNER_ID = "flow-local-developer";
 export const CLIENT_KEY_ID = "flow-local-app";
 export const CLIENT_ID = "pk_flow_local_example_not_a_real_credential";
 export const ADMIN_CLIENT_ID = "pk_admin_preview_only";
-export const CALLBACK_URL = `${ENTER_ORIGIN}/flow-example.html`;
 const SESSION_TOKEN = "flow-local-session-fixture-not-a-real-credential";
 export const localIdentity = {
     // Public profile imported from https://api.github.com/users/pollinationsagent.
@@ -31,6 +31,7 @@ export const localIdentity = {
 export async function seedFixtures(
     db: D1Database,
     kv: { put(key: string, value: string): Promise<unknown> },
+    origins = ORIGINS,
 ) {
     const now = Math.floor(Date.now() / 1000);
     await db.batch([
@@ -111,7 +112,7 @@ export async function seedFixtures(
                     keyType: "publishable",
                     createdVia: "flow-local-fixture",
                     plaintextKey: CLIENT_ID,
-                    redirectUris: [CALLBACK_URL],
+                    redirectUris: [`${origins.enter}/flow-example.html`],
                     earningsEnabled: false,
                 }),
                 now,
@@ -129,7 +130,7 @@ export async function seedFixtures(
                 OWNER_ID,
                 JSON.stringify(["openid", "profile", "email"]),
                 "Admin example",
-                JSON.stringify([`${ADMIN_ORIGIN}/auth/callback`]),
+                JSON.stringify([`${origins.admin}/auth/callback`]),
                 JSON.stringify(["authorization_code"]),
                 JSON.stringify(["code"]),
                 now,
@@ -268,7 +269,7 @@ export async function setConditions(
     await db.batch(statements);
 }
 
-export async function readState(db: D1Database) {
+export async function readState(db: D1Database, origins = ORIGINS) {
     const conditions = await db
         .prepare(
             "SELECT account, pollen, allowance, role FROM flow_conditions WHERE id = 1",
@@ -367,8 +368,8 @@ export async function readState(db: D1Database) {
               }
             : null,
         runtime: {
-            enterOrigin: ENTER_ORIGIN,
-            genBaseUrl: `${ENTER_ORIGIN}/gen`,
+            enterOrigin: origins.enter,
+            genBaseUrl: `${origins.enter}/gen`,
         },
     };
 }
@@ -386,7 +387,9 @@ export type FlowState = Awaited<ReturnType<typeof readState>>;
 export async function sessionCookie(
     db: D1Database,
     account: Conditions["account"],
+    origin = ORIGINS.enter,
 ) {
+    const cookie = getCookies({ baseURL: origin }).sessionToken;
     const session =
         account === "signed-out"
             ? null
@@ -397,12 +400,15 @@ export async function sessionCookie(
                   .bind(USER_ID, Math.floor(Date.now() / 1000))
                   .first<{ token: string }>();
     if (!session) {
-        return "better-auth.session_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+        return serializeCookie(cookie.name, "", {
+            ...cookie.attributes,
+            maxAge: 0,
+        });
     }
     return serializeSignedCookie(
-        "better-auth.session_token",
+        cookie.name,
         session.token,
         TEST_AUTH_SECRET,
-        { path: "/", httpOnly: true, sameSite: "lax", maxAge: 7 * 86400 },
+        cookie.attributes,
     );
 }

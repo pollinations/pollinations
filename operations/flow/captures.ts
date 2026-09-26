@@ -14,13 +14,10 @@ import {
 } from "playwright";
 import { captureDocument } from "./capture-document";
 import type { PreviewCaseResult, PreviewResult } from "./capture-types";
+import type { SourceInfo } from "./flow-environment";
 import githubProfile from "./github-profile.json";
 import type { LocalState } from "./live-client";
-import {
-    ADMIN_ORIGIN,
-    ENTER_ORIGIN as origin,
-    screenOrigin,
-} from "./local-origins";
+import { LOCAL_ORIGINS, screenOrigin } from "./local-origins";
 import type { ReviewCase } from "./review-cases";
 import { initialReviewSteps } from "./review-driver";
 import { prepareReviewCase } from "./review-prepare";
@@ -30,6 +27,7 @@ import type { startRuntime } from "./runtime";
 import { screenRoute } from "./screen-route";
 
 const endpoint = "/__flow/previews";
+const { enter: origin, admin: ADMIN_ORIGIN } = LOCAL_ORIGINS;
 const viewports = {
     mobile: { width: 375, height: 815 },
     desktop: { width: 1280, height: 800 },
@@ -52,6 +50,7 @@ type Job = {
     selection: Selection;
     recipe: ReviewCase;
     revision: string;
+    source: SourceInfo;
     result: PreviewCaseResult;
 };
 
@@ -89,6 +88,8 @@ export function captureIdentity(recipe: ReviewCase, selection: Selection) {
 export function createCaptureService(options: {
     loadCases(): Promise<ReviewCaseModule>;
     loadRuntime(): Promise<typeof startRuntime>;
+    source(): SourceInfo;
+    fetchAssets?: (request: Request) => Promise<Response>;
 }) {
     let version = 1;
     let closed = false;
@@ -143,15 +144,25 @@ export function createCaptureService(options: {
         const createRuntime = await options.loadRuntime();
         const session: Resources = {
             version: sourceVersion,
-            runtime: await createRuntime({ persist: false }),
+            runtime: await createRuntime({
+                persist: false,
+                origins: LOCAL_ORIGINS,
+            }),
             callbackRequests: 0,
         };
         resources = session;
-        session.transport = await serveReviewTransport((request) => {
-            if (new URL(request.url).pathname === "/api/auth/callback/github")
-                session.callbackRequests++;
-            return session.runtime.fetch(request);
-        });
+        session.transport = await serveReviewTransport(
+            (request) => {
+                if (
+                    new URL(request.url).pathname ===
+                    "/api/auth/callback/github"
+                )
+                    session.callbackRequests++;
+                return session.runtime.fetch(request);
+            },
+            options.fetchAssets,
+            options.source(),
+        );
         const transportOrigin = `http://127.0.0.1:${(session.transport.address() as AddressInfo).port}`;
         // Reuse the browser and services, not page storage or account state.
         // The proxy covers every native redirect, including OAuth callbacks.
@@ -357,7 +368,7 @@ export function createCaptureService(options: {
                 theme: job.selection.theme,
             });
             await page.goto(
-                `${screenOrigin(recipe.query.screen)}/flow-screen.html?${query}`,
+                `${screenOrigin(recipe.query.screen, LOCAL_ORIGINS)}/flow-screen.html?${query}`,
                 {
                     waitUntil: "domcontentloaded",
                 },
@@ -595,6 +606,7 @@ export function createCaptureService(options: {
             documents.set(documentUrl, html);
             job.result = {
                 status: "ready",
+                source: job.source,
                 image,
                 document: documentUrl,
                 entryRoute: entryRoute
@@ -607,6 +619,7 @@ export function createCaptureService(options: {
             // Never expose browser errors or OAuth callback query strings.
             job.result = {
                 status: "error",
+                source: job.source,
                 error: `Capture failed while ${stage}.${diagnostics.length ? ` ${diagnostics.slice(-8).join("; ")}` : ""}`,
             };
         } finally {
@@ -628,6 +641,7 @@ export function createCaptureService(options: {
                         if (current(job)) {
                             job.result = {
                                 status: "error",
+                                source: job.source,
                                 error: "Capture runtime cleanup failed.",
                             };
                         }
@@ -658,7 +672,7 @@ export function createCaptureService(options: {
                 });
             if (
                 request.headers.get("origin") &&
-                request.headers.get("origin") !== origin
+                request.headers.get("origin") !== url.origin
             ) {
                 return Response.json(
                     { error: "Local origin required" },
@@ -765,6 +779,7 @@ export function createCaptureService(options: {
                         selection,
                         recipe,
                         revision: `${version}-${randomUUID()}`,
+                        source: options.source(),
                         result: { status: "pending" },
                     };
                     jobs.set(key, job);
@@ -787,6 +802,7 @@ export function createCaptureService(options: {
                 (job) => job.result.status === "pending",
             );
             const result: PreviewResult = {
+                source: options.source(),
                 revision: String(version),
                 status: waiting.length ? "loading" : "ready",
                 stale: false,

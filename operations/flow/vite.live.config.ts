@@ -5,7 +5,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { ENTER_ORIGIN, RUNTIME_ORIGIN } from "./local-origins";
+import { ENTER_ORIGIN, PORT, RUNTIME_ORIGIN } from "./local-origins";
 import { buildSourceStyles } from "./source-styles";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -23,9 +23,6 @@ export default defineConfig(({ command }) => ({
     envDir: false,
     define: {
         "import.meta.env.MODE": JSON.stringify("development"),
-        "process.env.FLOW_PORT": JSON.stringify(
-            process.env.FLOW_PORT ?? "4180",
-        ),
     },
     assetsInclude: ["**/*.md"],
     resolve: {
@@ -104,7 +101,7 @@ export default defineConfig(({ command }) => ({
     },
     server: {
         host: "localhost",
-        port: Number(new URL(ENTER_ORIGIN).port),
+        port: PORT,
         strictPort: true,
         fs: {
             allow: [fileURLToPath(new URL("../../", import.meta.url))],
@@ -126,6 +123,19 @@ export default defineConfig(({ command }) => ({
         },
     },
     plugins: [
+        {
+            name: "flow-runtime-configuration",
+            transformIndexHtml: {
+                order: "post",
+                handler: () => [
+                    {
+                        tag: "script",
+                        attrs: { src: "/__flow/config.js" },
+                        injectTo: "head-prepend",
+                    },
+                ],
+            },
+        },
         tanstackRouter({
             target: "react",
             autoCodeSplitting: true,

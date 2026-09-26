@@ -6,6 +6,9 @@ import type { PreviewResult } from "../capture-types";
 import { captureIdentity, createCaptureService } from "../captures";
 import type { ReviewCase } from "../review-cases";
 import { reviewCasesForFlow, reviewFlows } from "../review-inventory";
+import { readSourceInfo } from "../source-info";
+
+const source = await readSourceInfo();
 
 async function capture(
     service: ReturnType<typeof createCaptureService>,
@@ -38,6 +41,7 @@ it
     async (section) => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -70,6 +74,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1").each(["main", "link"])(
     async (section) => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -109,6 +114,7 @@ it.runIf(process.env.FLOW_CREDENTIAL_TEST === "1").each([
     async (flow, section) => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -155,6 +161,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -186,6 +193,7 @@ it.runIf(process.env.FLOW_ADMIN_OAUTH_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -218,6 +226,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1").each(["account", "quests"])(
     async (section) => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -256,6 +265,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1").each(["account", "app"])(
     async (flow) => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -291,6 +301,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -359,6 +370,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
         );
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -402,6 +414,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -428,6 +441,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -489,6 +503,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
     async () => {
         const { startRuntime } = await import("../runtime");
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -535,6 +550,7 @@ for (const requiresKey of [false, true]) {
         async () => {
             const { startRuntime } = await import("../runtime");
             const service = createCaptureService({
+                source: () => source,
                 loadCases: async () => ({ reviewCasesForFlow }),
                 loadRuntime: async () => startRuntime,
             });
@@ -620,6 +636,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
         );
         let probe: ReviewCase | undefined;
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({
                 reviewCasesForFlow: (flow, section) =>
                     reviewCasesForFlow(flow, section).map((item) =>
@@ -773,6 +790,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
                 return browser;
             });
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => startRuntime,
         });
@@ -833,6 +851,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
         const { startRuntime } = await import("../runtime");
         let probe: ReviewCase | undefined;
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({
                 reviewCasesForFlow: (flow, section) =>
                     reviewCasesForFlow(flow, section).map((item) =>
@@ -946,6 +965,7 @@ it.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
         let wrongError = false;
         let wrongSituation: string | undefined;
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({
                 reviewCasesForFlow: (flow, section) =>
                     reviewCasesForFlow(flow, section).map((item) => {
@@ -1198,6 +1218,7 @@ describe("capture request selection", () => {
     it("returns external references without creating a runtime", async () => {
         let runtimeLoads = 0;
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => {
                 runtimeLoads++;
@@ -1233,6 +1254,7 @@ describe("capture request selection", () => {
     it("rejects unknown cases and treats an empty selection as no work", async () => {
         let runtimeLoads = 0;
         const service = createCaptureService({
+            source: () => source,
             loadCases: async () => ({ reviewCasesForFlow }),
             loadRuntime: async () => {
                 runtimeLoads++;

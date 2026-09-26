@@ -4,7 +4,8 @@ import {
     PromptAgentConfigSchema,
     ProxyListingPayloadSchema,
 } from "../../shared/community-endpoints.ts";
-import { CALLBACK_URL, CLIENT_KEY_ID, USER_ID } from "./fixtures";
+import { CLIENT_KEY_ID, USER_ID } from "./fixtures";
+import { ENTER_ORIGIN } from "./local-origins";
 
 // These are database records for viewing real management pages, not credentials.
 // An impossible hash and no plaintext ensure no fixture key can authenticate.
@@ -14,6 +15,7 @@ const listingIds = ["flow-review-model", "flow-review-agent"] as const;
 export async function prepareDashboardReview(
     db: D1Database,
     selection: "populated" | "empty",
+    enterOrigin = ENTER_ORIGIN,
 ) {
     await db.batch([
         db
@@ -69,7 +71,9 @@ export async function prepareDashboardReview(
                         index
                             ? {
                                   keyType: "publishable",
-                                  redirectUris: [CALLBACK_URL],
+                                  redirectUris: [
+                                      `${enterOrigin}/flow-example.html`,
+                                  ],
                                   earningsEnabled: false,
                               }
                             : {

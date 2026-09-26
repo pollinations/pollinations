@@ -5,10 +5,14 @@ import { serve } from "@hono/node-server";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { Pollinations } from "../../../packages/sdk/src/client.ts";
-import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
+import { CLIENT_ID, USER_ID } from "../fixtures.ts";
+import { ENTER_ORIGIN } from "../local-origins";
+
 import { reviewCasesForFlow } from "../review-inventory";
 import { startRuntime } from "../runtime.ts";
 import { openReviewContext } from "./review-browser";
+
+const CALLBACK_URL = `${ENTER_ORIGIN}/flow-example.html`;
 
 // This integration issues one real key in a disposable local database.
 // Run explicitly after scoped local credential-creation approval.

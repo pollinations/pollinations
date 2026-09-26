@@ -28,7 +28,8 @@ import {
     TEST_AUTH_SECRET,
     TEST_DASHBOARD_SECRET,
 } from "./fixtures.ts";
-import { ADMIN_ORIGIN, ENTER_ORIGIN } from "./local-origins";
+import type { FlowOrigins } from "./flow-environment";
+import { ORIGINS } from "./local-origins";
 import { createLocalProvider } from "./local-provider";
 import { prepareDashboardReview } from "./review-dashboard-fixtures";
 import { createReviewRequests, type LoadReviewErrors } from "./review-requests";
@@ -188,9 +189,12 @@ export async function startRuntime(
     options: {
         persist?: boolean;
         scripts?: WorkerScripts;
+        origins?: FlowOrigins;
         loadReviewErrors?: LoadReviewErrors;
     } = {},
 ) {
+    const origins = options.origins ?? ORIGINS;
+    const { enter: ENTER_ORIGIN, admin: ADMIN_ORIGIN } = origins;
     const pendingBodies = new Set<(reason?: unknown) => Promise<void>>();
     function webResponse(response: WorkerResponse) {
         const reader = response.body?.getReader();
@@ -229,7 +233,7 @@ export async function startRuntime(
         });
     }
 
-    const localProvider = createLocalProvider();
+    const localProvider = createLocalProvider(ENTER_ORIGIN);
     const reviewRequests = createReviewRequests(options.loadReviewErrors);
     const reviewServices = createReviewServices();
     const scripts = options.scripts ?? (await bundleWorkers());
@@ -419,7 +423,7 @@ export async function startRuntime(
                         await Promise.all(
                             entries.keys.map(({ name }) => kv.delete(name)),
                         );
-                        await seedFixtures(db, kv);
+                        await seedFixtures(db, kv, origins);
                         reviewRequests.reset();
                         reviewServices.configure({});
                         establishSession = true;
@@ -432,7 +436,8 @@ export async function startRuntime(
                             ...parseConditions(await request.json()),
                         };
                         reviewRequests.configure([]);
-                        const current = (await readState(db)).conditions;
+                        const current = (await readState(db, origins))
+                            .conditions;
                         // Re-selecting the current auth condition must not
                         // recreate Enter's session or sign the admin out.
                         if (patch.account === current.account)
@@ -458,6 +463,7 @@ export async function startRuntime(
                             await prepareDashboardReview(
                                 db,
                                 setup.dashboard as "populated" | "empty",
+                                ENTER_ORIGIN,
                             );
                         await prepareReviewData(db, setup);
                         reviewServices.configure(setup);
@@ -614,14 +620,18 @@ export async function startRuntime(
                             { status: 404 },
                         );
                     }
-                    const state = await readState(db);
+                    const state = await readState(db, origins);
                     const headers = new Headers({
                         "Cache-Control": "no-store",
                     });
                     if (establishSession) {
                         headers.append(
                             "Set-Cookie",
-                            await sessionCookie(db, state.conditions.account),
+                            await sessionCookie(
+                                db,
+                                state.conditions.account,
+                                ENTER_ORIGIN,
+                            ),
                         );
                     }
                     if (clearAdminSession) {

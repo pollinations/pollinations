@@ -4,15 +4,18 @@ import { serve } from "@hono/node-server";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { getDefaultErrorMessage } from "../../../shared/error.ts";
-import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
+import { CLIENT_ID, USER_ID } from "../fixtures.ts";
 import { getFlowFocus } from "../flow-diagram";
 import githubProfile from "../github-profile.json";
+import { ENTER_ORIGIN } from "../local-origins";
 import type { ReviewCase } from "../review-cases.ts";
 import { reviewCasesForFlow, reviewPageForLocation } from "../review-inventory";
 import { prepareReviewCase } from "../review-prepare.ts";
 import { bundleWorkers, startRuntime } from "../runtime.ts";
 import { screenRoute } from "../screen-route";
 import { openReviewContext } from "./review-browser";
+
+const CALLBACK_URL = `${ENTER_ORIGIN}/flow-example.html`;
 
 let runtime: Awaited<ReturnType<typeof startRuntime>>;
 let server: ReturnType<typeof serve>;
@@ -1110,3 +1113,53 @@ test("public GitHub identity survives local conditions and repeated resets", asy
         await profile();
     }
 }, 30_000);
+
+test("HTTPS review origins drive real Enter cookies, app redirects and Admin OAuth without production bindings", async () => {
+    const origins = {
+        enter: "https://enter.flow.test",
+        admin: "https://admin.flow.test",
+    };
+    const isolated = await startRuntime({ persist: false, origins });
+    try {
+        const reset = await isolated.fetch(
+            new Request(`${origins.enter}/__flow/reset`, { method: "POST" }),
+        );
+        expect(reset.status).toBe(200);
+        const cookie = reset.headers.get("set-cookie") ?? "";
+        expect(cookie).toContain("__Secure-better-auth.session_token=");
+        expect(cookie).toContain("Secure");
+        expect((await reset.json()).runtime.enterOrigin).toBe(origins.enter);
+        const session = await isolated.fetch(
+            new Request(`${origins.enter}/api/auth/get-session`, {
+                headers: { cookie: cookie.split(";")[0] },
+            }),
+        );
+        expect((await session.json()).user.id).toBe(USER_ID);
+        const app = await isolated.fetch(
+            new Request(
+                `${origins.enter}/api/app-lookup?client_id=${CLIENT_ID}`,
+            ),
+        );
+        expect(app.status).toBe(200);
+        const appData = await app.text();
+        expect(appData).toContain(`${origins.enter}/flow-example.html`);
+        expect(appData).not.toContain("localhost");
+        const login = await isolated.fetch(
+            new Request(`${origins.admin}/auth/login`),
+        );
+        const target = new URL(login.headers.get("location") ?? "");
+        expect(target.origin).toBe(origins.enter);
+        expect(target.searchParams.get("redirect_uri")).toBe(
+            `${origins.admin}/auth/callback`,
+        );
+        const refused = await isolated.fetch(
+            new Request(`${origins.enter}/__flow/reset`, {
+                method: "POST",
+                headers: { Origin: "https://unrelated.test" },
+            }),
+        );
+        expect(refused.status).toBe(403);
+    } finally {
+        await isolated.dispose();
+    }
+}, 60_000);

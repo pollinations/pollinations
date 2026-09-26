@@ -137,3 +137,10 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .canvas-inspector-overlay .canvas-inspector:not(.canvas-inspector-desktop) { --status-width: clamp(112px, 24cqw, 220px); --phone-width: min(375px, calc(100cqw - var(--status-width) - 26px), calc((100cqh - 10px) * 1206 / 2622)); }
 .canvas-inspector:not(.canvas-inspector-desktop) .canvas-inspector-title { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
 .canvas-inspector-overlay .canvas-inspector-desktop { --phone-width: min(1120px, calc(100cqw - 32px), calc((100cqh - 32px) * 1.6)); }
+.flow-source {
+    padding: 0.25rem 1rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    opacity: 0.75;
+    overflow-wrap: anywhere;
+}

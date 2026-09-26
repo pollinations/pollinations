@@ -20,8 +20,10 @@ import { getBillingOverview } from "./billing-overview.ts";
 import {
     AUTO_TOP_UP_ATTEMPT_STATUS,
     AUTO_TOP_UP_CLAIM_TTL_MS,
+    AUTO_TOP_UP_MAX_DECLINES,
     AUTO_TOP_UP_PENDING_TTL_MS,
     AUTO_TOP_UP_PURPOSE,
+    AUTO_TOP_UP_RETRY_DELAYS_MS,
     METADATA_PURPOSE,
     METADATA_USER_ID,
 } from "./constants.ts";
@@ -168,6 +170,20 @@ export async function processAutoTopUpForUser(
             status: "skipped",
             reason: `auto top-up already pending (${pendingAttempt.stripeInvoiceId ?? pendingAttempt.id})`,
         };
+    }
+
+    const declines = await getDeclineStreak(env.DB, userId);
+    if (declines.count > 0) {
+        const delayMs =
+            AUTO_TOP_UP_RETRY_DELAYS_MS[
+                Math.min(declines.count, AUTO_TOP_UP_RETRY_DELAYS_MS.length) - 1
+            ];
+        if (Date.now() - declines.lastAt < delayMs) {
+            return {
+                status: "skipped",
+                reason: "waiting after a declined auto top-up",
+            };
+        }
     }
 
     const attemptId = crypto.randomUUID();
@@ -454,8 +470,41 @@ export async function markAutoTopUpInvoiceFailed(
     );
 
     if (options.disableAutoTopUp !== false && attempt) {
-        await disableAutoTopUp(env.DB, attempt.userId);
+        const declines = await getDeclineStreak(env.DB, attempt.userId);
+        if (declines.count >= AUTO_TOP_UP_MAX_DECLINES) {
+            await disableAutoTopUp(env.DB, attempt.userId);
+        }
     }
+}
+
+/** Failed attempts in a row since the last paid one, newest first. */
+async function getDeclineStreak(
+    db: D1Database,
+    userId: string,
+): Promise<{ count: number; lastAt: number }> {
+    const { results } = await db
+        .prepare(
+            `SELECT status, COALESCE(completed_at, updated_at) AS at
+                FROM stripe_auto_top_up_attempt
+                WHERE user_id = ?
+                    AND status IN (?, ?)
+                ORDER BY created_at DESC
+                LIMIT ?`,
+        )
+        .bind(
+            userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            AUTO_TOP_UP_MAX_DECLINES,
+        )
+        .all<{ status: string; at: number }>();
+    const firstPaid = results.findIndex(
+        (row) => row.status !== AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+    );
+    return {
+        count: firstPaid === -1 ? results.length : firstPaid,
+        lastAt: results[0]?.at ?? 0,
+    };
 }
 
 async function retrieveInvoicePaymentIntent(

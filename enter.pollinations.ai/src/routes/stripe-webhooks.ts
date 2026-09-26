@@ -767,8 +767,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "invoice.payment_failed": {
                 const invoice = event.data.object as Stripe.Invoice;
-                // A decline turns auto top-up off. Leaving it on made every
-                // paid request retry the same declined card.
+                // Declines wait 1h, 4h, then 24h before the next charge;
+                // the fourth decline in a row turns auto top-up off.
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,

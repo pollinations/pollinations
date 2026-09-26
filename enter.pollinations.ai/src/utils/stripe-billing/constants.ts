@@ -8,6 +8,17 @@ export const AUTO_TOP_UP_CLAIM_TTL_MS = 5 * 60 * 1000;
 export const AUTO_TOP_UP_PENDING_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * Wait after the 1st, 2nd and 3rd declined auto top-up in a row before
+ * charging the card again. The next decline turns auto top-up off.
+ */
+export const AUTO_TOP_UP_RETRY_DELAYS_MS = [
+    60 * 60 * 1000,
+    4 * 60 * 60 * 1000,
+    24 * 60 * 60 * 1000,
+];
+export const AUTO_TOP_UP_MAX_DECLINES = AUTO_TOP_UP_RETRY_DELAYS_MS.length + 1;
+
+/**
  * The `stripe_auto_top_up_attempt.status` state machine, named once:
  *
  *   `claimed`  → attempt row reserved, invoice not yet created/linked.

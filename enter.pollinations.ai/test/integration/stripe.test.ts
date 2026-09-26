@@ -1439,6 +1439,68 @@ test.for([
     expect(attempts?.count).toBe(0);
 });
 
+test.for([
+    { name: "within an hour of a decline", minutesAgo: 10, status: "skipped" },
+    { name: "an hour after a decline", minutesAgo: 61, status: "created" },
+] as const)("POST /api/stripe/auto-top-up/trigger retries a declined card only $name", async ({
+    minutesAgo,
+    status,
+}, { sessionToken, mocks }) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const declinedAt = Date.now() - minutesAgo * 60 * 1000;
+    await insertAutoTopUpAttempt({
+        userId: user.id,
+        invoiceId: "in_declined_earlier",
+        status: "failed",
+        createdAt: declinedAt,
+        completedAt: declinedAt,
+    });
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as { status: string };
+    expect(data.status).toBe(status);
+    expect(mocks.stripe.state.invoices).toHaveLength(
+        status === "created" ? 1 : 0,
+    );
+});
+
 test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice", async ({
     sessionToken,
     mocks,
@@ -2730,7 +2792,7 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
 // simulate the new `invoice.payments.data[0].payment.payment_intent`
 // expansion that the live Stripe API requires.
 
-test("POST /api/webhooks/stripe turns auto top-up off after a declined invoice", async ({
+test("POST /api/webhooks/stripe fails declined invoices without disabling auto top-up", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2803,7 +2865,7 @@ test("POST /api/webhooks/stripe turns auto top-up off after a declined invoice",
             completedAt: number | null;
         }>();
 
-    expect(updatedUser?.autoTopUpEnabled).toBe(0);
+    expect(updatedUser?.autoTopUpEnabled).toBe(1);
     expect(attempt?.status).toBe("failed");
     expect(attempt?.failureReason).toContain(
         "Stripe could not charge the default payment method.",
@@ -2820,6 +2882,91 @@ test("POST /api/webhooks/stripe turns auto top-up off after a declined invoice",
         mocks.stripe.state.invoices.find((invoice) => invoice.id === invoiceId)
             ?.status,
     ).toBe("void");
+});
+
+test.for([
+    {
+        name: "the fourth decline in a row",
+        history: ["failed", "failed", "failed"],
+        enabled: 0,
+    },
+    {
+        name: "declines split by a paid top-up",
+        history: ["failed", "paid", "failed"],
+        enabled: 1,
+    },
+] as const)("POST /api/webhooks/stripe sets auto top-up after $name", async ({
+    history,
+    enabled,
+}, { sessionToken, mocks }) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    const start = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    for (const [index, status] of history.entries()) {
+        const at = start + index * 60 * 60 * 1000;
+        await insertAutoTopUpAttempt({
+            userId: user.id,
+            invoiceId: `in_history_${index}`,
+            status,
+            createdAt: at,
+            completedAt: at,
+        });
+    }
+
+    const invoiceId = "in_latest_decline";
+    await insertAutoTopUpAttempt({ userId: user.id, invoiceId });
+    mocks.stripe.state.paymentIntents.push({
+        id: "pi_requires_payment_method",
+        object: "payment_intent",
+        status: "requires_payment_method",
+    });
+    mocks.stripe.state.invoices.push({
+        id: invoiceId,
+        object: "invoice",
+        customer: "cus_webhook",
+        status: "open",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+        metadata: {
+            pollinations_user_id: user.id,
+            pollinations_purpose: "auto_top_up",
+        },
+    });
+
+    const response = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent(
+            "invoice.payment_failed",
+            invoiceId,
+            user.id,
+            { payment_intent: "pi_requires_payment_method" },
+        ),
+    );
+    expect(response.status).toBe(200);
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpEnabled: number | boolean | null }>();
+    expect(updatedUser?.autoTopUpEnabled).toBe(enabled);
 });
 
 test.for([

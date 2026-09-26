@@ -1,0 +1,39 @@
+{
+  "pr_number": 15491,
+  "title": "feat: add Lyria 3.5 with Google primary and fal fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15491",
+  "merged_at": "2026-09-26T16:51:52Z",
+  "labels": [
+    "FEATURE",
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `google/lyria-3.5`: text-to-MP3 music through existing audio endpoints, paid-only, no aliases, no Pollinations GPU, registry provider Google. Approximate length belongs in the prompt; explicit duration and reference audio are rejected.\n- Routes to Google `POST https://generativelanguage.googleapis.com/v1beta/interactions`, model `lyria-3.5`; uses the tested same-model MP3 fallback `POST https://queue.fal.run/google/lyria-3.5`, hidden as `google/lyria-3.5:fal`. Preserves fal’s reported billing units.\n- Sets multiplier **1** and user price **$0.08/song** from [Google pricing](https://ai.google.dev/gemini-api/docs/pricing#lyria-3.5). Records [fal’s $0.10 cost](https://fal.ai/models/google/lyria-3.5) separately; Pollinations absorbs the difference.\n- Validates **116 focused tests**, TypeScript, and formatting. Worker tests cover both audio endpoints, forced fallback, paid/model permissions, one wallet debit, one billed event payload, and cache retrieval with mocked upstreams. Direct probes returned valid MP3s: Google ~19s; two fal requests ~35s with reconciled $0.10 charges. Local catalog shows $0.08.\n- **Draft gates:** Google billing export reconciliation; authenticated live E2E (existing local token/database mismatch), disconnect/rejoin, live analytics, and quota/burst validation. No new secret: `GEMINI_API_KEY` is already configured for staging and production in #15499 (shared with Gemini 3.8 TTS, #15395). No deployment.\n\nAddresses #15259. Quest-Pollen access remains outside this paid-only contract.\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new song in the hive",
+    "blurb": "Lyria 3.5 is wired up for text-to-MP3 music. Give it a prompt, including an approximate length, and the existing audio API can handle the rest once the launch checks are done.",
+    "summary": "Added paid-only `google/lyria-3.5` to the existing audio endpoints at $0.08 per song, using Google as the primary provider and a same-model fal fallback; live billing and deployment checks remain open.",
+    "impact": "Once deployed, paid users can request MP3 songs through the audio API by describing the music and approximate length in the prompt; explicit duration and reference audio are not supported.",
+    "keywords": [
+      "Lyria 3.5",
+      "music generation",
+      "audio API",
+      "Google",
+      "fal",
+      "MP3",
+      "billing"
+    ],
+    "visual_concept": "Polli helps make music at a cozy pixel-art workstation: a glowing prompt flows into a little MP3 record, with a primary Google-labeled channel and a smaller fal-labeled backup channel. Flowers and code-plants surround the console; Polli wears tiny headphones.",
+    "image_prompt": "In a cozy pixel-art music nook, a prompt on a retro console becomes a little MP3 record beside two softly lit channels labeled 'Google' and 'fal', while flowers and code-plants grow around a prominent lime green (#ecf874) screen. Polli wears tiny headphones and taps along: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15491.jpg",
+    "prompt": "In a cozy pixel-art music nook, a prompt on a retro console becomes a little MP3 record beside two softly lit channels labeled 'Google' and 'fal', while flowers and code-plants grow around a prominent lime green (#ecf874) screen. Polli wears tiny headphones and taps along: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-26T16:53:04.595183+00:00"
+}

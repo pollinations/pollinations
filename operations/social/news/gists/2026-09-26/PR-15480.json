@@ -1,0 +1,37 @@
+{
+  "pr_number": 15480,
+  "title": "fix: correct polli audio filenames and playback failure",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15480",
+  "merged_at": "2026-09-26T11:00:00Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Refs #15443: derives the default audio filename from `--format`.\n- Fixes #15439 by bounding the Windows MediaPlayer startup wait and returning a nonzero exit code when playback fails.\n- Adds tests for all documented output formats; CLI package suite passed (190 tests).\n- Windows playback runtime verification remains outstanding; PowerShell is unavailable on this Mac.\n- Quest accounting: only #15440 and #15439 are PR-closing reports in this batch; the other reports are linked and closed manually.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The bee found the file",
+    "blurb": "Polli CLI now gives generated audio the right filename for its chosen format, and Windows playback no longer waits around forever when the player declines the invitation.",
+    "summary": "Fixed Polli CLI audio generation so default output filenames derive from the selected --format, and bounded Windows MediaPlayer startup while returning a nonzero exit code on playback failure.",
+    "impact": "CLI users can reliably find audio files with extensions matching every documented output format, while failed Windows playback now finishes promptly and reports failure to scripts and terminals.",
+    "keywords": [
+      "polli-cli",
+      "audio",
+      "filenames",
+      "playback",
+      "windows",
+      "cli"
+    ],
+    "visual_concept": "Depict Polli as a careful audio technician in a cozy garden workstation, labeling a row of tiny audio-file jars with matching format tags while a friendly retro Windows-style media player monitor successfully plays a warm waveform. Use code-plants and flowers to make the filename-and-playback fix feel like putting each sound seed in the correct pot.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings, wearing tiny sound-engineer headphones as she labels little audio-file jars by their matching format beside a friendly CRT media-player robot showing a playing waveform; code-plants and flowers grow around the workstation, with lime green (#ecf874) prominent among warm cream, mint, lavender, and peach. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text: \"PLAYING\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15480.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings, wearing tiny sound-engineer headphones as she labels little audio-file jars by their matching format beside a friendly CRT media-player robot showing a playing waveform; code-plants and flowers grow around the workstation, with lime green (#ecf874) prominent among warm cream, mint, lavender, and peach. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text: \"PLAYING\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-26T11:00:59.762049+00:00"
+}

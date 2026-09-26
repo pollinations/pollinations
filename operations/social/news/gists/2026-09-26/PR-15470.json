@@ -1,0 +1,39 @@
+{
+  "pr_number": 15470,
+  "title": "Add TTA to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15470",
+  "merged_at": "2026-09-26T06:37:03Z",
+  "labels": [
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "- Adds [TTA](https://mahmoudtracy641-hub.github.io/GLM234) to video_audio\n- Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri,\n\nFixes #15469",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "TTA joins the garden",
+    "blurb": "TTA has landed in video_audio, bringing another little creative machine to the patch. It uses Pollinations’ BYOP authorization flow, so the keys stay where they belong: with the gardener.",
+    "summary": "Added the TTA app to video_audio and registered its Pollinations BYOP authorization flow, which redirects public-app-key users through enter.pollinations.ai/authorize with a redirect URI.",
+    "impact": "People can now use TTA through video_audio with Pollinations authorization handled by the BYOP flow rather than requiring a classic PKCE setup.",
+    "keywords": [
+      "TTA",
+      "video_audio",
+      "apps",
+      "BYOP",
+      "authorization",
+      "OAuth"
+    ],
+    "visual_concept": "Depict TTA as a cozy creative audio-and-video workstation: a retro CRT editing screen with gentle waveform and film-strip pixels, connected to a small authorization key and a winding garden path. Polli wears tiny headphones and helps guide the public app key into the glowing terminal, while code-plants and flowers make the authorization handoff feel welcoming rather than bureaucratic.",
+    "image_prompt": "A cozy pixel art video-and-audio garden studio where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny headphones while guiding a little key toward a retro CRT terminal showing simple pixel text “TTA”; film strips, soft sound waves, flowers, and code-plants surround the workstation. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15470.jpg",
+    "prompt": "A cozy pixel art video-and-audio garden studio where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny headphones while guiding a little key toward a retro CRT terminal showing simple pixel text “TTA”; film strips, soft sound waves, flowers, and code-plants surround the workstation. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-26T06:38:08.081952+00:00",
+  "app_name": "TTA",
+  "app_url": "https://mahmoudtracy641-hub.github.io/GLM234"
+}

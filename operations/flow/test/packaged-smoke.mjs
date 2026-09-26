@@ -80,6 +80,27 @@ try {
     await page.waitForFunction(() =>
         document.getElementById("canvas-root")?.textContent.includes("Models"),
     );
+    await page.goto(
+        `${origin}/flow?theme=dark&view=journey&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
+    );
+    const journey = page.frameLocator(".flow-journey-host iframe");
+    await journey
+        .getByRole("alert")
+        .filter({ hasText: "Could not load models." })
+        .waitFor();
+    const restored = await context.request.post(
+        `${origin}/__flow/review/requests`,
+        { data: [] },
+    );
+    assert(restored.ok());
+    await journey
+        .getByRole("button", { name: "Try again", exact: true })
+        .click();
+    await journey
+        .getByRole("button", { name: /^Copy model id / })
+        .first()
+        .waitFor();
+    assert.equal(await journey.getByRole("alert").count(), 0);
     assert.deepEqual(errors, []);
     await context.close();
 } finally {
@@ -113,5 +134,5 @@ for (let attempt = 0; attempt < 120; attempt++) {
 }
 assert(captured, "Packaged error capture did not finish within two minutes");
 console.log(
-    "Built Enter dialog, loaded fonts, Flow Map and real Worker error capture passed.",
+    "Built Enter dialog, fonts, Flow Map, Journey recovery and error capture passed.",
 );

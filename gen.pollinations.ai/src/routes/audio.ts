@@ -82,10 +82,10 @@ const CreateSpeechRequestSchema = z
             }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-            .default("mp3")
+            .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS returns WAV, or raw 24 kHz PCM when set to pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -148,7 +148,7 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (qwen/qwen3-tts-instruct-flash only). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -2078,13 +2078,231 @@ export async function generateOpenRouterFishSpeech(opts: {
     });
 }
 
-const GEMINI_TTS_SAMPLE_RATE = 24000;
-// Google bills generated speech at 32 audio tokens per second.
-const GEMINI_TTS_AUDIO_TOKENS_PER_SECOND = 32;
-const GEMINI_TTS_DEFAULT_VOICE = "Kore";
+const GEMINI_TTS_MODELS = {
+    "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
+    "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
+} as const;
+const GEMINI_TTS_ENDPOINT =
+    "https://generativelanguage.googleapis.com/v1beta/interactions";
 
-// OpenRouter returns raw 16-bit mono PCM; wrap it so browsers and players can
-// open the result.
+const GeminiSpeechResponseSchema = z.object({
+    status: z.literal("completed"),
+    usage: z.object({
+        total_input_tokens: z.number().int().nonnegative(),
+        total_output_tokens: z.number().int().positive(),
+        input_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("text"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        output_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("audio"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        total_cached_tokens: z.literal(0),
+        total_thought_tokens: z.literal(0),
+        total_tool_use_tokens: z.literal(0),
+    }),
+    steps: z.array(
+        z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.string(),
+                        mime_type: z.string().optional(),
+                        data: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        }),
+    ),
+});
+
+// Validate the actual speech and billable usage together: a successful HTTP
+// response without usable audio or provider usage must never settle a charge.
+export function parseGeminiSpeechResponse(
+    data: unknown,
+    responseFormat: string,
+) {
+    const parsed = GeminiSpeechResponseSchema.safeParse(data);
+    if (!parsed.success) {
+        throw new UpstreamError(502, {
+            message: "Google returned incomplete speech or invalid usage",
+        });
+    }
+    // Google bills the public usage totals. raw_prompt_token and invocation
+    // counters include internal tokens; adding them would double-count usage.
+    // https://discuss.ai.google.dev/t/182722/2
+    const { usage, steps } = parsed.data;
+    if (
+        usage.input_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_input_tokens ||
+        usage.output_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_output_tokens
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned inconsistent speech usage",
+        });
+    }
+    const blocks = steps
+        .flatMap((step) => step.content ?? [])
+        .filter((block) => block.type === "audio");
+    const block = blocks[0];
+    const expectedMime = responseFormat === "pcm" ? "audio/l16" : "audio/wav";
+    if (
+        blocks.length !== 1 ||
+        !block?.data ||
+        block.mime_type?.split(";")[0] !== expectedMime
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned missing or unexpected speech audio",
+        });
+    }
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+        bytes = Uint8Array.from(atob(block.data), (char) => char.charCodeAt(0));
+    } catch {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid speech audio encoding",
+        });
+    }
+    if (!bytes.length || (responseFormat === "pcm" && bytes.length % 2 !== 0)) {
+        throw new UpstreamError(502, {
+            message: "Google returned empty or truncated speech audio",
+        });
+    }
+    if (
+        responseFormat === "wav" &&
+        (new TextDecoder().decode(bytes.subarray(0, 4)) !== "RIFF" ||
+            new TextDecoder().decode(bytes.subarray(8, 12)) !== "WAVE")
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid WAV audio",
+        });
+    }
+    return {
+        bytes,
+        usage: {
+            promptTextTokens: usage.total_input_tokens,
+            completionAudioTokens: usage.total_output_tokens,
+        },
+    };
+}
+
+function resolveGeminiSpeechVoice(
+    modelName: string,
+    requestedVoice: string,
+    responseFormat: string,
+) {
+    const voice = GEMINI_TTS_VOICES.find(
+        (candidate) =>
+            candidate.toLowerCase() ===
+            (requestedVoice === "alloy"
+                ? "Kore"
+                : requestedVoice
+            ).toLowerCase(),
+    );
+    if (!voice) {
+        throw new UpstreamError(400, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+    if (responseFormat !== "wav" && responseFormat !== "pcm") {
+        throw new UpstreamError(400, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: wav, pcm.`,
+        });
+    }
+    return voice;
+}
+
+export async function generateGeminiSpeech(opts: {
+    modelName: keyof typeof GEMINI_TTS_MODELS;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    instructions?: string;
+    apiKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, responseFormat, instructions, apiKey, log } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        modelName,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey) {
+        throw new UpstreamError(500, {
+            message: "Google Gemini is not configured (missing API key)",
+        });
+    }
+    const response = await ensureUpstreamOk(
+        await fetch(GEMINI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "x-goog-api-key": apiKey,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: GEMINI_TTS_MODELS[modelName],
+                store: false,
+                input: [
+                    {
+                        type: "user_input",
+                        content: [
+                            {
+                                type: "text",
+                                text,
+                                ...(instructions
+                                    ? {
+                                          annotations: [
+                                              {
+                                                  type: "speech_metadata",
+                                                  style: instructions,
+                                              },
+                                          ],
+                                      }
+                                    : {}),
+                            },
+                        ],
+                    },
+                ],
+                response_format: {
+                    type: "audio",
+                    mime_type:
+                        responseFormat === "pcm" ? "audio/l16" : "audio/wav",
+                },
+                generation_config: { speech_config: [{ voice }] },
+            }),
+        }),
+        GEMINI_TTS_ENDPOINT,
+    );
+    const { bytes, usage } = parseGeminiSpeechResponse(
+        await response.json(),
+        responseFormat,
+    );
+    log.info("Gemini TTS success: model={model}, usage={usage}", {
+        model: modelName,
+        usage,
+    });
+    return new Response(bytes, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
+                    : "audio/wav",
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+        },
+    });
+}
+
 function pcmToWav(
     pcm: Uint8Array,
     sampleRate: number,
@@ -2112,46 +2330,74 @@ function pcmToWav(
     return wav;
 }
 
+// Speech responses carry audio only. The generation record becomes available
+// asynchronously; wait for its native tokens before returning billable audio.
+export async function readOpenRouterSpeechUsage(
+    generationId: string,
+    apiKey: string,
+) {
+    const endpoint = `https://openrouter.ai/api/v1/generation?id=${encodeURIComponent(generationId)}`;
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const response = await fetch(endpoint, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 404) {
+            await response.body?.cancel();
+            if (attempt < 29) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+            continue;
+        }
+        await ensureUpstreamOk(response, endpoint);
+        const parsed = z
+            .object({
+                data: z.object({
+                    native_tokens_prompt: z.number().int().nonnegative(),
+                    native_tokens_completion: z.number().int().positive(),
+                    total_cost: z.number().nonnegative(),
+                }),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "OpenRouter returned invalid speech usage",
+            });
+        return {
+            promptTextTokens: parsed.data.data.native_tokens_prompt,
+            completionAudioTokens: parsed.data.data.native_tokens_completion,
+        };
+    }
+    throw new UpstreamError(502, {
+        message: "OpenRouter speech usage is not available",
+    });
+}
+
 export async function generateOpenRouterGeminiSpeech(opts: {
-    modelName:
-        | "google/gemini-3.8-flash-tts"
-        | "google/gemini-3.8-flash-lite-tts";
+    modelName: string;
+    upstreamModel: keyof typeof GEMINI_TTS_MODELS;
     text: string;
     voice: string;
     responseFormat: string;
+    instructions?: string;
     apiKey: string;
-    log: Logger;
 }): Promise<Response> {
-    const { modelName, text, responseFormat, apiKey, log } = opts;
-
-    if (!apiKey) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
+    const {
+        modelName,
+        upstreamModel,
+        text,
+        responseFormat,
+        instructions,
+        apiKey,
+    } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        upstreamModel,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey)
+        throw new UpstreamError(500, {
             message: "OpenRouter is not configured (missing API key)",
         });
-    }
-
-    const requestedVoice =
-        opts.voice === "alloy" ? GEMINI_TTS_DEFAULT_VOICE : opts.voice;
-    const voice = GEMINI_TTS_VOICES.find(
-        (candidate) => candidate.toLowerCase() === requestedVoice.toLowerCase(),
-    );
-    if (!voice) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
-        });
-    }
-
-    const inputBytes = new TextEncoder().encode(text).byteLength;
-    log.info(
-        "Gemini TTS request: model={model}, voice={voice}, bytes={bytes}",
-        {
-            model: modelName,
-            voice,
-            bytes: inputBytes,
-        },
-    );
-
-    // Gemini TTS only produces PCM upstream; other formats are rejected.
     const response = await ensureUpstreamOk(
         await fetch(OPENROUTER_SPEECH_ENDPOINT, {
             method: "POST",
@@ -2160,10 +2406,11 @@ export async function generateOpenRouterGeminiSpeech(opts: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: modelName,
+                model: upstreamModel,
                 input: text,
                 voice,
                 response_format: "pcm",
+                ...(instructions ? { instructions } : {}),
                 provider: {
                     only: ["google-ai-studio"],
                     allow_fallbacks: false,
@@ -2172,48 +2419,25 @@ export async function generateOpenRouterGeminiSpeech(opts: {
         }),
         OPENROUTER_SPEECH_ENDPOINT,
     );
-
     const pcm = new Uint8Array(await response.arrayBuffer());
-    const samples = Math.floor(pcm.byteLength / 2);
-    if (samples === 0) {
-        throw new UpstreamError(502 as ContentfulStatusCode, {
-            message: `${modelName} returned no audio`,
-            requestUrl: new URL(OPENROUTER_SPEECH_ENDPOINT),
-        });
-    }
-
-    // OpenRouter reports no usage for speech, so derive it: exact audio tokens
-    // from the PCM length, and input tokens at roughly four UTF-8 bytes each.
-    const audioSeconds = samples / GEMINI_TTS_SAMPLE_RATE;
-    const usage = {
-        promptTextTokens: Math.ceil(inputBytes / 4),
-        completionAudioTokens: Math.ceil(
-            audioSeconds * GEMINI_TTS_AUDIO_TOKENS_PER_SECOND,
-        ),
-    };
-    log.info("Gemini TTS success: model={model}, seconds={seconds}", {
-        model: modelName,
-        seconds: audioSeconds,
-    });
-
     const generationId = response.headers.get("x-generation-id");
-    const isPcm = responseFormat === "pcm";
-    return new Response(
-        isPcm
-            ? pcm
-            : pcmToWav(pcm.subarray(0, samples * 2), GEMINI_TTS_SAMPLE_RATE),
-        {
-            status: 200,
-            headers: {
-                "Content-Type": isPcm
-                    ? `audio/pcm;rate=${GEMINI_TTS_SAMPLE_RATE};channels=1`
+    if (!pcm.length || pcm.length % 2 !== 0 || !generationId)
+        throw new UpstreamError(502, {
+            message:
+                "OpenRouter returned incomplete speech audio or no generation ID",
+        });
+    const usage = await readOpenRouterSpeechUsage(generationId, apiKey);
+    return new Response(responseFormat === "pcm" ? pcm : pcmToWav(pcm, 24000), {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
                     : "audio/wav",
-                ...buildUsageHeaders(modelName, usage),
-                "x-tts-voice": voice,
-                ...(generationId ? { "x-generation-id": generationId } : {}),
-            },
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+            "x-generation-id": generationId,
         },
-    );
+    });
 }
 
 export async function generateXaiSpeech(opts: {
@@ -2914,13 +3138,32 @@ async function dispatchAudioGeneration(
         case "google/gemini-3.8-flash-lite-tts":
             return withSafetyHeaders(
                 c,
-                await generateOpenRouterGeminiSpeech({
+                await generateGeminiSpeech({
                     modelName: model,
                     text,
                     voice,
                     responseFormat,
-                    apiKey: openRouterApiKey,
+                    apiKey: c.env.GEMINI_API_KEY,
+                    instructions,
                     log,
+                }),
+            );
+        case "google/gemini-3.8-flash-tts:openrouter:ai-studio":
+        case "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterGeminiSpeech({
+                    modelName: model,
+                    upstreamModel:
+                        model ===
+                        "google/gemini-3.8-flash-tts:openrouter:ai-studio"
+                            ? "google/gemini-3.8-flash-tts"
+                            : "google/gemini-3.8-flash-lite-tts",
+                    text,
+                    voice,
+                    responseFormat,
+                    instructions,
+                    apiKey: openRouterApiKey,
                 }),
             );
         case "sesame/csm-1b":
@@ -2952,7 +3195,9 @@ async function generateAudioFromSpeechRequest(
         input,
         safe,
         voice,
-        response_format,
+        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
+            ? "wav"
+            : "mp3",
         duration,
         seconds,
         steps,
@@ -3129,8 +3374,13 @@ export async function handleSpeechWithTimestamps(
     c: AudioContext,
 ): Promise<Response> {
     const log = c.get("log").getChild("tts-timestamps");
-    const { input, safe, voice, response_format, seed } =
-        await parseSpeechRequest(c);
+    const {
+        input,
+        safe,
+        voice,
+        response_format = "mp3",
+        seed,
+    } = await parseSpeechRequest(c);
     const modelName = c.var.model.resolved;
     if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -3537,7 +3787,8 @@ export const audioRoutes = new Hono<Env>()
                                         "wav",
                                         "pcm",
                                     ],
-                                    default: "mp3",
+                                    description:
+                                        "Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav or raw 24 kHz pcm and rejects other explicit formats.",
                                 },
                                 duration: {
                                     type: "number",
@@ -3570,7 +3821,11 @@ export const audioRoutes = new Hono<Env>()
                                     minimum: 0,
                                     maximum: 4294967295,
                                 },
-                                instructions: { type: "string" },
+                                instructions: {
+                                    type: "string",
+                                    description:
+                                        "Emotion/style instruction for Gemini TTS and Qwen instruct speech.",
+                                },
                                 loop: { type: "boolean" },
                                 prompt_influence: {
                                     type: "number",

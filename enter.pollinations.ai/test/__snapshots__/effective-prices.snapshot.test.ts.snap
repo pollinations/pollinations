@@ -1218,6 +1218,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemini-3.8-flash-lite-tts": {
     "cost": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000006,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio": {
+    "cost": {
       "completionAudioTokens": 0.00000633,
       "promptTextTokens": 0.0000005275,
     },
@@ -1227,6 +1237,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "google/gemini-3.8-flash-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionAudioTokens": 0.000009,
+      "promptTextTokens": 0.0000005,
+    },
+  },
+  "google/gemini-3.8-flash-tts:openrouter:ai-studio": {
     "cost": {
       "completionAudioTokens": 0.000009495,
       "promptTextTokens": 0.0000005275,

@@ -1114,7 +1114,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
-                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
+                "**Output formats:** Model-dependent. Defaults to mp3 except Gemini TTS (wav); Gemini TTS supports wav and raw 24 kHz pcm and rejects other explicit formats. Other available formats include opus, aac, and flac.",
                 "",
                 "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",

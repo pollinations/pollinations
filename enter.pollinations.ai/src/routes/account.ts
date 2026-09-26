@@ -127,7 +127,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too.',
         ),
     redirectUris: z
         .array(z.string())
@@ -1461,7 +1461,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1506,7 +1506,6 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget,
                 accountPermissions,
                 metadata,
-                allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
             });
             return c.json(created);

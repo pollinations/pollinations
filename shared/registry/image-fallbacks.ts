@@ -296,9 +296,10 @@ export const IMAGE_FALLBACKS = {
         "tongyi-mai/z-image-turbo:fal": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
-            // Fal bills $0.005 per output megapixel. The token line stays at
-            // zero; the adjustment below records the exact provider cost while
-            // the caller keeps the public zimage flat price.
+            // Fal bills $0.005 per output megapixel, rounded up per image; the
+            // handler passes fal's reported count as `megapixels`. The token
+            // line stays at zero; the adjustment below records the exact
+            // provider cost while the caller keeps the public zimage flat price.
             cost: {
                 completionImageTokens: 0,
             },

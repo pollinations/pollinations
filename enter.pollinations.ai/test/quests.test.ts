@@ -516,7 +516,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 4,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -1940,7 +1940,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
-test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excluding administrative issues", async ({
+test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1958,7 +1958,7 @@ test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excludin
     const issues = [
         { number: 9101, labels: [], mergedAt: afterLaunch },
         { number: 9102, labels: [{ name: "BUG" }], mergedAt: afterLaunch },
-        { number: 9103, labels: [], mergedAt: "2026-03-27T19:45:45Z" },
+        { number: 9103, labels: [], mergedAt: "2026-06-25T19:45:45Z" },
         {
             number: 9104,
             labels: [{ name: "APP-SUBMISSION" }],
@@ -1971,7 +1971,7 @@ test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excludin
         },
         { number: 9106, labels: [], mergedAt: null },
         { number: 9107, labels: [], mergedAt: afterLaunch },
-        { number: 9108, labels: [], mergedAt: "2026-03-27T19:45:46Z" },
+        { number: 9108, labels: [], mergedAt: "2026-06-25T19:45:46Z" },
         { number: 9109, labels: [], mergedAt: afterLaunch },
         { number: 9110, labels: [], mergedAt: afterLaunch },
         { number: 9111, labels: [], mergedAt: afterLaunch },
@@ -2024,7 +2024,7 @@ test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excludin
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        3, 3, 3,
+        4, 4, 4,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2040,7 +2040,7 @@ test("reporters earn 3 Pollen per issue fixed since the 180-day cutoff, excludin
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

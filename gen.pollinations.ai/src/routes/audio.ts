@@ -38,6 +38,8 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { runFalJob } from "@/model3d/models/falClient.ts";
+import { toUpstreamError } from "@/model3d/modelUtils.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
@@ -2616,15 +2618,14 @@ export async function generateDeepInfraSpeech(opts: {
  * Dispatches the resolved text-to-audio model and wraps the result in safety
  * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
  */
-// fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
-// so the blocking `fal.run` route returns inline without needing the queue/poll
-// API.
+// fal queue endpoint. The blocking `fal.run` route returns a 524 once a job has
+// waited about two minutes for a runner, and fal may still run and bill it.
 const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+    "fal-ai/stable-audio-3/medium/text-to-audio";
 // A reference clip switches fal to audio-to-audio (style transfer) — a separate
 // endpoint with its own flat fee.
 const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+    "fal-ai/stable-audio-3/medium/audio-to-audio";
 
 // Stable Audio 3 Large runs on Stability's direct API, which is asynchronous:
 // the POST returns 202 + { id } and the rendered audio is retrieved by polling
@@ -2701,17 +2702,15 @@ export async function generateStableAudio3Medium(opts: {
         },
     );
 
-    const rawResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
-            Authorization: `Key ${falKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(input),
-    });
-    const response = await ensureUpstreamOk(rawResponse, endpoint);
-    const result = (await response.json()) as FalAudioOutput;
+    let result: FalAudioOutput;
+    try {
+        result = (await runFalJob(
+            { endpoint, input },
+            falKey,
+        )) as FalAudioOutput;
+    } catch (error) {
+        throw toUpstreamError(error);
+    }
     const audioUrl =
         typeof result.audio === "string" ? result.audio : result.audio?.url;
     if (!audioUrl) {

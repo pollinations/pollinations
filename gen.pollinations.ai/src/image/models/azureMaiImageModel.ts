@@ -210,8 +210,6 @@ export async function callAzureMaiImage(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {

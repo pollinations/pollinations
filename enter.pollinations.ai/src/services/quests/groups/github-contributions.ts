@@ -26,8 +26,8 @@ const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
     "APP-SUBMISSION",
     "AUTOMATED",
 ]);
-// Fixed 180-day lookback from launch; later visits must not move the cutoff.
-const ISSUE_REPORT_START = Date.parse("2026-03-27T19:45:46Z");
+// Fixed 90-day lookback from launch; later visits must not move the cutoff.
+const ISSUE_REPORT_START = Date.parse("2026-06-25T19:45:46Z");
 const ISSUE_REPORT_EXCLUDED_TITLE =
     /\[(?:App|Project) Submission\]|^\[(?:Community(?: Model)? Publisher Access|QUEST)\]/i;
 const REPO_OWNER = "pollinations";
@@ -54,10 +54,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 4,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -133,8 +133,7 @@ type PaginatedSearchData<TNode> = {
     };
 };
 
-// Reads at most 10 linked PRs per quest on purpose: close losing PRs before
-// merging winners so every paid PR stays within the first 10.
+// Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:100){
@@ -143,7 +142,7 @@ query($query:String!){
         number state title url body
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
-        closedByPullRequestsReferences(first:10){
+        closedByPullRequestsReferences(first:100){
           nodes{ number mergedAt author{ ... on User{ databaseId } } }
         }
       }
@@ -306,7 +305,7 @@ async function reportedIssueProposals(token: string, user: QuestUser) {
         const data: PaginatedSearchData<ReportedIssueNode> = await graphql<
             PaginatedSearchData<ReportedIssueNode>
         >(token, REPORTED_ISSUES_QUERY, {
-            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-03-27`,
+            query: `repo:${REPO} is:issue is:closed author:${user.githubUsername} updated:>=2026-06-25`,
             after,
         });
         for (const issue of data.search.nodes) {

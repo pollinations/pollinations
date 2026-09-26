@@ -23,21 +23,6 @@ import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
     [
-        "perplexity/sonar:openrouter:perplexity",
-        "perplexity/sonar",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-pro:openrouter:perplexity",
-        "perplexity/sonar-pro",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-reasoning-pro:openrouter:perplexity",
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ],
-    [
         "qwen/qwen3.8-27b:openrouter:akashml-fp8",
         "qwen/qwen3.8-27b",
         "akashml/fp8",
@@ -306,63 +291,6 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it.each([
-        "sonar",
-        "sonar-pro",
-        "sonar-reasoning-pro",
-    ] as const)("keeps %s on direct Perplexity with an OpenRouter fallback", (upstream) => {
-        const model = `perplexity/${upstream}` as const;
-        const primary: ModelDefinition = TEXT_SERVICES[model];
-        expect(primary).toMatchObject({
-            provider: "perplexity",
-            priceMultiplier: 1,
-            fallbacks: [`${model}:openrouter:perplexity`],
-        });
-        expect(primary).not.toHaveProperty("paidOnly", true);
-        expect(findModelByName(model)?.config()).toMatchObject({
-            provider: "perplexity-ai",
-            model: upstream,
-        });
-    });
-
-    it.each([
-        ["perplexity/sonar", "low", 0.005],
-        ["perplexity/sonar", "high", 0.012],
-        ["perplexity/sonar-pro", "high", 0.014],
-        ["perplexity/sonar-reasoning-pro", "high", 0.014],
-    ] as const)("bills %s %s search once when OpenRouter reports a total cost", (model, searchContextSize, searchFee) => {
-        const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:openrouter:perplexity`];
-        const usage = { promptTextTokens: 100, completionTextTokens: 20 };
-        const expected =
-            100 * primary.cost.promptTextTokens +
-            20 * primary.cost.completionTextTokens +
-            searchFee;
-        // OpenRouter's numeric cost already includes token and search costs.
-        const completion = { usage: { cost: expected } };
-        for (const output of [
-            completion,
-            { streamEvents: [{ choices: [] }, completion] },
-        ]) {
-            const billed = calculateUsageBilling({
-                model,
-                usage,
-                servedBy: fallback,
-                quotedBy: primary,
-                output,
-                input: { searchContextSize },
-            });
-            expect(billed.cost.totalCost).toBeCloseTo(expected * 1.055, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
-            expect(billed.adjustments).toHaveLength(1);
-            expect(billed.adjustments[0]).toMatchObject({
-                kind: "search_request",
-                units: 1,
-                cost: searchFee * 1.055,
-            });
-        }
-    });
-
     it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
         const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
         const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
@@ -431,7 +359,7 @@ describe("static provider fallbacks", () => {
                 usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
             }),
         ).toBe("long_context");
-        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.priceMultiplier).toBe(1);
         expect(fallback.paidOnly).not.toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
@@ -440,7 +368,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
-        expect(billing.price.totalPrice).toBe(0.00027);
+        expect(billing.price.totalPrice).toBe(0.00036);
         const model = findModelByName("openai/gpt-6-astra:azure:datazone");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
@@ -448,6 +376,25 @@ describe("static provider fallbacks", () => {
             "azure-resource-name": "myceli-prod-eastus",
             responsesEndpoint:
                 "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it.each([
+        "openai/gpt-6-luna",
+        "openai/gpt-6-sol",
+    ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openai`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:openai`]);
+        expect(primary.paidOnly).toBe(false);
+        expect(fallback.provider).toBe("openai");
+        expect(fallback.paidOnly).toBe(false);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.costVariants).toEqual(primary.costVariants);
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
+            responsesEndpoint: "https://api.openai.com/v1/responses",
         });
     });
 
@@ -833,6 +780,36 @@ describe("static provider fallbacks", () => {
                 request,
             ),
         ).toBe(true);
+    });
+
+    it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
+        const sonar = TEXT_SERVICES["perplexity/sonar"];
+        for (const request of [
+            { response_format: { type: "json_object" } },
+            { text: { format: { type: "json_object" } } },
+        ]) {
+            expect(textCapabilityError(sonar, request)).toMatch(
+                /does not support JSON mode/,
+            );
+        }
+        for (const request of [
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "answer",
+                        schema: {
+                            type: "object",
+                            properties: { capital: { type: "string" } },
+                        },
+                    },
+                },
+            },
+            { response_format: { type: "text" } },
+            {},
+        ]) {
+            expect(textCapabilityError(sonar, request)).toBeUndefined();
+        }
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

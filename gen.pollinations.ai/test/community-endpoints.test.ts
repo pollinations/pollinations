@@ -116,6 +116,92 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const db = drizzle(env.DB);
 
 fixtureTest(
+    "official agent aliases survive the ownership transfer",
+    async () => {
+        const sourceUserId = await createTestUser({
+            githubId: 240205932,
+            githubUsername: "pollinations-router",
+        });
+        const destinationUserId = await createTestUser({
+            githubId: 314960022,
+            githubUsername: "pollinations-ai",
+        });
+        const listings = [
+            ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
+            ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
+            ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
+        ] as const;
+        await insertCommunityEndpoints(
+            listings.map(([id, name]) => ({
+                id,
+                ownerUserId: sourceUserId,
+                name,
+                title: name,
+                description: null,
+                type:
+                    name === "midijourney" ? "prompt_agent" : "endpoint_agent",
+                visibility: "public",
+                baseUrl:
+                    name === "midijourney"
+                        ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                        : `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name === "midijourney" ? id : name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const caller = await createTestApiKey({
+            allowedModels: [communityModelId("pollinations-router", "polli")],
+        });
+
+        for (const [owner, expectedUserId] of [
+            ["pollinations-router", sourceUserId],
+            ["pollinations-ai", destinationUserId],
+        ] as const) {
+            if (owner === "pollinations-ai") {
+                await db
+                    .update(communityEndpointTable)
+                    .set({ ownerUserId: destinationUserId })
+                    .where(
+                        eq(communityEndpointTable.ownerUserId, sourceUserId),
+                    );
+            }
+            await resetGenerationModelRegistryCache(env);
+            const registry = await getGenerationModelRegistry(env);
+            const catalog = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/models", {
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                }),
+            );
+            expect(catalog.status).toBe(200);
+            const body = (await catalog.json()) as { data: { id: string }[] };
+            expect(body.data.map((model) => model.id)).toContain(
+                communityModelId(owner, "polli"),
+            );
+            for (const [, name] of listings) {
+                const canonical = communityModelId(owner, name);
+                const entry = registry.resolve(canonical);
+                expect(entry?.id).toBe(canonical);
+                expect(entry?.communityEndpoint?.ownerUserId).toBe(
+                    expectedUserId,
+                );
+                for (const aliasOwner of [
+                    "pollinations-router",
+                    "pollinations-ai",
+                ]) {
+                    for (const alias of [
+                        communityModelId(aliasOwner, name),
+                        legacyCommunityModelId(aliasOwner, name),
+                    ]) {
+                        expect(registry.resolve(alias)).toBe(entry);
+                    }
+                }
+            }
+        }
+    },
+);
+
+fixtureTest(
     "banned owners' public models and agents leave the registry",
     async () => {
         const ownerUserId = await createTestUser({

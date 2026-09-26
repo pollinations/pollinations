@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import {
     communityModelId,
     effectiveCommunityEndpointVisibility,
+    OFFICIAL_AGENT_MODEL_RENAMES,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
 import {
@@ -59,9 +60,24 @@ export function canonicalizeModelPermissionIds(
         } catch {
             // Preserve unknown and community model IDs.
         }
-        if (!seen.has(canonicalId)) {
-            seen.add(canonicalId);
-            canonicalIds.push(canonicalId);
+        const rename = OFFICIAL_AGENT_MODEL_RENAMES.find(
+            ({ previous, current }) =>
+                canonicalId === previous || canonicalId === current,
+        );
+        for (const id of [
+            canonicalId,
+            ...(rename
+                ? [
+                      canonicalId === rename.previous
+                          ? rename.current
+                          : rename.previous,
+                  ]
+                : []),
+        ]) {
+            if (!seen.has(id)) {
+                seen.add(id);
+                canonicalIds.push(id);
+            }
         }
     }
     return canonicalIds;

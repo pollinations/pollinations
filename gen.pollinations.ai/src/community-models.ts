@@ -6,6 +6,7 @@ import {
     communityModelDefinition,
     communityModelId,
     effectiveCommunityEndpointVisibility,
+    officialAgentModelAliases,
     parseListingPayload,
     resolveEffectiveProxyListing,
     usesAgentRunToken,
@@ -236,6 +237,12 @@ async function queryCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        definition.aliases = [
+            ...new Set([
+                ...definition.aliases,
+                ...officialAgentModelAliases(row.id, modelId),
+            ]),
+        ];
         const info = modelInfoFromDefinition(modelId, definition, {
             community: true,
             agent: usesAgentRunToken(communityEndpoint),

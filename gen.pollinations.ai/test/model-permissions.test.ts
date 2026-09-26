@@ -127,6 +127,49 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
     });
 });
 
+test("stored MAI Image 2.5 permissions allow the 2.6 Flash catalog entry", async () => {
+    const currentModel = "microsoft/mai-image-2.6-flash";
+    const oldModel = "microsoft/mai-image-2.5-flash";
+    const { key, id } = await createTestApiKey({
+        allowedModels: [currentModel],
+        user: { packBalance: 100 },
+    });
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
+        .where(eq(apikey.id, id));
+
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    expect(models).toEqual([
+        expect.objectContaining({ name: currentModel, aliases: [oldModel] }),
+    ]);
+    expect(resolveModelName(oldModel)).toBe(currentModel);
+
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: { id, permissions: { models: [oldModel] } },
+        }),
+    );
+    app.get("/check", (c) => {
+        c.set("model", { requested: oldModel, resolved: currentModel });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    const allowed = await app.request("/check");
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toEqual({ models: [currentModel] });
+});
+
 test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },

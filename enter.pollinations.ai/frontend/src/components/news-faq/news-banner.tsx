@@ -25,6 +25,13 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-10-01",
+        emoji: "🖼️",
+        title: "MAI Image 2.5 Flash moves to 2.6 Flash",
+        description:
+            "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
+    },
+    {
         date: "2026-09-24",
         emoji: "🔄",
         title: "Model provider changes",

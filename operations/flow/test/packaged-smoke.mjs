@@ -74,12 +74,9 @@ try {
         ),
     );
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
-    assert.equal(
-        await page
-            .getByRole("heading", { name: "Create secret key", exact: true })
-            .count(),
-        0,
-    );
+    await page
+        .getByRole("heading", { name: "Create secret key", exact: true })
+        .waitFor({ state: "detached" });
     await page.goto(
         `${origin}/flow?theme=dark&view=map&flow=account&section=catalog`,
     );
@@ -106,7 +103,7 @@ try {
         .getByRole("button", { name: /^Copy model id / })
         .first()
         .waitFor();
-    assert.equal(await journey.getByRole("alert").count(), 0);
+    await journey.getByRole("alert").waitFor({ state: "detached" });
     assert.deepEqual(errors, []);
     await context.close();
 } finally {

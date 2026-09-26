@@ -94,6 +94,13 @@ const anthropicError = (
 });
 
 const server = createServer(async (req, res) => {
+    // Claude Code probes this before sending anything; an unanswered preflight
+    // makes it give up silently.
+    if (req.method === "HEAD" && req.url?.startsWith("/api/hello")) {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
     if (req.method === "GET" && req.url === "/health") {
         res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify({ ok: true }));

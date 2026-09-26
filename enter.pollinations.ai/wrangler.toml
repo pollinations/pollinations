@@ -94,11 +94,10 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
-# Explicitly detach cron schedules. Deleting the [triggers] block leaves
-# previously-deployed crons attached (crons undefined = unchanged); only
-# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
+# Retries declined auto top-ups whose wait has passed. The old tier-refill
+# schedule stays detached: this list replaces it rather than adding to it.
 [env.production.triggers]
-crons = []
+crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -149,9 +148,9 @@ STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
-# See production note above: explicit empty crons detaches the schedule.
+# See production note above.
 [env.staging.triggers]
-crons = []
+crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"

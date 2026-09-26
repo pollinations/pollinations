@@ -11,6 +11,7 @@ import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
+import { retryDeclinedAutoTopUps } from "./utils/stripe-billing/index.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -91,5 +92,8 @@ export default {
             return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
         }
         return app.fetch(request, env, ctx);
+    },
+    async scheduled(_controller, env) {
+        await retryDeclinedAutoTopUps(env);
     },
 } satisfies ExportedHandler<Env["Bindings"]>;

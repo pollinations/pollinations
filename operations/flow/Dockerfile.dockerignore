@@ -1,0 +1,25 @@
+# The build context is the repository root. Include only Flow's workspaces.
+**
+!package.json
+!package-lock.json
+!shared/**
+!enter.pollinations.ai/**
+!gen.pollinations.ai/**
+!packages/auth/**
+!packages/sdk/**
+!packages/ui/**
+!apps/react/**
+!operations/economics/web/**
+!operations/flow/**
+
+**/node_modules
+**/dist
+**/dist-live
+**/.local
+**/.wrangler
+**/.git
+**/secrets
+**/.env*
+**/.dev.vars*
+**/.testingtokens
+**/*.pem

@@ -706,16 +706,16 @@ const TEXT_BASE_SERVICES = {
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
         ],
-        provider: "azure",
+        provider: "openrouter",
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Azure model catalog; the retirement schedule says 2026-10-16.
-        retirementDate: new Date("2026-10-13").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.8),
-            completionTextTokens: perMillion(3.2),
+            // Cohere's OpenRouter route, including the 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(1.5) * 1.055,
         },
         title: "Cohere Command A+",
         description:

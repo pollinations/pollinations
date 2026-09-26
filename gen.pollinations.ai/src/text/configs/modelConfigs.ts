@@ -260,13 +260,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "grok-4.6",
     }),
 
-    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
-    "Cohere-command-a-plus-05-2026": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-        ),
-
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
     // replaces, so this route asks by default.
@@ -291,6 +284,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
+    "cohere/command-a-plus": createPinnedOpenRouterConfig(
+        "cohere/command-a-plus",
+        "Cohere",
+    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",

@@ -630,12 +630,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "cohere/command-a-plus": {
     "cost": {
-      "completionTextTokens": 0.0000032,
-      "promptTextTokens": 0.0000008,
+      "completionTextTokens": 0.0000015825,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.0000003165,
     },
     "price": {
-      "completionTextTokens": 0.0000024,
-      "promptTextTokens": 0.0000006,
+      "completionTextTokens": 0.0000015825,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.0000003165,
     },
   },
   "cohere/embed-v4.0": {

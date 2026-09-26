@@ -5,6 +5,8 @@
   "scripts": {
     "predev": "playwright install chromium",
     "dev": "tsx --tsconfig tsconfig.flow.json dev.ts",
+    "prestart": "playwright install chromium",
+    "start": "tsx --tsconfig tsconfig.flow.json serve.ts",
     "reset": "tsx reset.ts",
     "build": "npm run typecheck && vite build --config vite.live.config.ts",
     "typecheck": "tsc --noEmit --project tsconfig.flow.json",
@@ -20,6 +22,7 @@
     "@tanstack/react-router": "^1.139.3",
     "better-call": "^1.4.0",
     "esbuild": "^0.27.3",
+    "hono": "^4.10.6",
     "miniflare": "4.20260424.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -90,6 +90,7 @@ export async function startServer(options: {
     console.log(`Flow local Workers ready at ${RUNTIME_ORIGIN}`);
     console.log(`Flow Admin example ready at ${ADMIN_ORIGIN}`);
     return {
+        fetch: fetchRuntime,
         waitUntilReady: () => ready,
         reload() {
             captures?.invalidate();

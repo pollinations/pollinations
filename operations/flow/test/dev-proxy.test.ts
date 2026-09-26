@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createServer } from "vite";
 import { describe, expect, it } from "vitest";
+import { createBuiltPages } from "../static-pages";
 import configure from "../vite.live.config";
 
 const config = configure({ command: "serve", mode: "development" });
@@ -145,5 +146,60 @@ it("resolves shared UI and SDK to source with only CSS compiled separately", asy
         }
     } finally {
         await server.close();
+    }
+});
+
+it("serves built product routes and assets without exposing source or returning HTML for missing modules", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "flow-built-test-"));
+    const root = path.join(directory, "dist-live");
+    const files = {
+        "operations/flow/flow-flows.html": "Flow page",
+        "operations/flow/flow-example.html": "App example",
+        "operations/flow/flow-admin.html": "Admin example",
+        "operations/flow/flow-screen.html": "Screen launcher",
+        "enter.pollinations.ai/frontend/index.html": "Enter router",
+        "assets/app.js": "export const loaded = true;",
+        "assets/app.woff2": "font fixture",
+    };
+    try {
+        for (const [relative, content] of Object.entries(files)) {
+            const file = path.join(root, relative);
+            await mkdir(path.dirname(file), { recursive: true });
+            await writeFile(file, content);
+        }
+        await writeFile(path.join(directory, "private.txt"), "outside build");
+        const app = createBuiltPages(root);
+        for (const [route, body] of Object.entries({
+            "/flow": "Flow page",
+            "/flow-example.html": "App example",
+            "/flow-admin.html": "Admin example",
+            "/flow-screen.html": "Screen launcher",
+            "/authorize?client_id=example": "Enter router",
+            "/keys": "Enter router",
+        })) {
+            const response = await app.request(route);
+            expect(response.status).toBe(200);
+            expect(await response.text()).toBe(body);
+        }
+        for (const [route, type] of [
+            ["/assets/app.js", "javascript"],
+            ["/assets/app.woff2", "font/woff2"],
+        ]) {
+            const response = await app.request(route, { method: "HEAD" });
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Content-Type")).toContain(type);
+            expect(await response.text()).toBe("");
+        }
+        for (const route of [
+            "/assets/missing.js",
+            "/src/main.tsx",
+            "/%2e%2e%2fprivate.txt",
+        ])
+            expect((await app.request(route)).status).toBe(404);
+        expect((await app.request("/keys", { method: "POST" })).status).toBe(
+            405,
+        );
+    } finally {
+        await rm(directory, { recursive: true, force: true });
     }
 });

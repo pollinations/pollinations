@@ -164,7 +164,8 @@ export const CHAT_PARAMETERS = {
     // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
-    ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // SiliconFlow ignores stop and seed; Bedrock rejects stop.
+    openRouterQwenCoderSiliconFlow: [...TOOL_CHAT, ...SAMPLING],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

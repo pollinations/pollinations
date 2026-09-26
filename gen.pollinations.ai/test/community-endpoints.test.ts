@@ -309,7 +309,7 @@ const TEST_MP4_BYTES = [
 ];
 
 function isChatCompletionsRequest(request: Request): boolean {
-    return new URL(request.url).pathname === "/v1/chat/completions";
+    return new URL(request.url).pathname.endsWith("/v1/chat/completions");
 }
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
@@ -9110,7 +9110,7 @@ fixtureTest(
 
 fixtureTest(
     "uses the served model's transform for a registry fallback",
-    async ({ apiKey }) => {
+    async ({ paidApiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
@@ -9139,9 +9139,7 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition(
-            "qwen/qwen3-coder-30b-a3b-instruct",
-        );
+        const source = getRegistryModelDefinition("qwen/qwen3-coder-next");
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];
@@ -9199,11 +9197,11 @@ fixtureTest(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${apiKey}`,
+                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        model: "qwen-coder",
+                        model: "qwen3-coder-next",
                         messages: [{ role: "user", content: "hello" }],
                     }),
                 }),

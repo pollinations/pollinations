@@ -43,10 +43,11 @@ const PINNED_NEWS: Highlight[] = [
         description:
             "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
         details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
-            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
+            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B, and Qwen3 Coder 30B from September 30.",
+            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%; Qwen3 Coder 30B to $0.074/$0.30 from September 30.",
             "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
             "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
+            "From September 30, Qwen3 Coder 30B no longer supports seed or logprobs.",
         ],
     },
     {

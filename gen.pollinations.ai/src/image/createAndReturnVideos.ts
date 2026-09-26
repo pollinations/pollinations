@@ -15,6 +15,7 @@ import {
     callMinimaxH3MaxAPI,
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
+import { callMMAudioAPI } from "./models/mmaudioReplicateModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
@@ -137,6 +138,9 @@ export async function createAndReturnVideo(
             break;
         case "minimax/minimax-h3-max-turbo":
             result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);
+            break;
+        case "sony/mmaudio-v2":
+            result = await callMMAudioAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

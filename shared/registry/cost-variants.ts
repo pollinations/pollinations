@@ -18,6 +18,8 @@ import type {
 // them. Consumed by selectCostVariant and billing adjustments. Keep this
 // vocabulary small: a key earns its place when a live model prices on it.
 export type PricingInput = {
+    /** Provider-reported GPU execution time, used by compute billing adjustments. */
+    computeSeconds?: number;
     resolution?: string;
     quality?: string;
     hasImage?: boolean;

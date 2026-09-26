@@ -3131,6 +3131,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.000007,
     },
   },
+  "sony/mmaudio-v2": {
+    "cost": {
+      "completionVideoSeconds": 0,
+    },
+    "price": {
+      "completionVideoSeconds": 0,
+    },
+  },
   "stability-ai/stable-audio-3": {
     "cost": {
       "completionAudioTokens": 0.26,

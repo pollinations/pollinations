@@ -28,7 +28,7 @@ describe("catalog filter dropdowns", () => {
             "status",
             "all",
             "status:all source:community llama",
-            ["all", "healthy", "reliable"],
+            ["all", "healthy"],
         ],
     ])("changes %s without editing its other tokens", (initial, key, choice, expected, values) => {
         let query = initial;

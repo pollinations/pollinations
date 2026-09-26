@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { join } from "node:path";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
 import type { HarnessContext, OffOutcome } from "./types.js";
 
@@ -83,10 +83,7 @@ const captureFiles = (paths: string[]) =>
     Object.fromEntries(
         paths.map((path) => {
             const { content, encoding } = readFileForSnapshot(path);
-            return [
-                path,
-                { before: content, afterHash: null, encoding },
-            ];
+            return [path, { before: content, afterHash: null, encoding }];
         }),
     );
 
@@ -164,15 +161,13 @@ export const restoreOrStrip = (
     if (
         snapshot &&
         (!snapshot.complete ||
-            Object.entries(snapshot.files).every(
-                ([path, file]) => {
-                    const current = readFileInEncoding(path, file.encoding);
-                    return (
-                        (current === null ? null : sha256(current)) ===
-                        file.afterHash
-                    );
-                },
-            ))
+            Object.entries(snapshot.files).every(([path, file]) => {
+                const current = readFileInEncoding(path, file.encoding);
+                return (
+                    (current === null ? null : sha256(current)) ===
+                    file.afterHash
+                );
+            }))
     ) {
         restoreFiles(snapshot.files);
         clearSnapshot(ctx, id, paths);

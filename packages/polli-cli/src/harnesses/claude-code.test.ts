@@ -7,11 +7,19 @@ import {
     rmSync,
     writeFileSync,
 } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createServer, type Server } from "node:http";
 import { DatabaseSync } from "node:sqlite";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from "vitest";
 import type { HarnessContext } from "./types.js";
 
 const settings = { apiKey: "sk_test_key", model: "chat" };
@@ -80,7 +88,10 @@ beforeEach(() => {
     // Fake ccr: "starts" but never serves a gateway, so the smoke path
     // takes its skip branch and the config write is still exercised.
     const ccrPath = join(binDir, "ccr");
-    writeFileSync(ccrPath, "#!/usr/bin/env node\nif (process.argv[2] === 'start') process.stdout.write('started');\n");
+    writeFileSync(
+        ccrPath,
+        "#!/usr/bin/env node\nif (process.argv[2] === 'start') process.stdout.write('started');\n",
+    );
     chmodSync(ccrPath, 0o755);
     ctx = {
         home,
@@ -108,7 +119,9 @@ const loadDoc = (): {
         const row = db
             .prepare("SELECT value_json FROM app_config WHERE key = 'default'")
             .get() as { value_json: string } | undefined;
-        return row ? JSON.parse(row.value_json) : { Providers: [], profile: { profiles: [] } };
+        return row
+            ? JSON.parse(row.value_json)
+            : { Providers: [], profile: { profiles: [] } };
     } finally {
         db.close();
     }
@@ -159,7 +172,9 @@ const seedDoc = (
     }
 };
 
-describe("claude-code harness", () => {
+// The smoke path polls a (never-appearing) gateway, so each `on` costs
+// several seconds; give the suite headroom under parallel test load.
+describe("claude-code harness", { timeout: 30_000 }, () => {
     it("writes provider, isolated profile, and gateway keys into CCR's own config", async () => {
         const { claudeCode } = await import("./claude-code.js");
         const result = await claudeCode.on(ctx, { model: settings.model });
@@ -173,7 +188,9 @@ describe("claude-code harness", () => {
         expect(provider?.api_key).toBe("sk_mock_child_key");
         expect(provider?.models).toContain(settings.model);
 
-        const profile = doc.profile.profiles.find((p) => p.id === "pollinations");
+        const profile = doc.profile.profiles.find(
+            (p) => p.id === "pollinations",
+        );
         expect(profile?.agent).toBe("claude-code");
         expect(profile?.scope).toBe("ccr");
         expect(profile?.model).toBe(`pollinations/${settings.model}`);
@@ -219,17 +236,21 @@ describe("claude-code harness", () => {
             api_key: "sk_friend2",
             models: [],
         });
-        db.prepare("UPDATE app_config SET value_json = ? WHERE key = 'default'").run(
-            JSON.stringify(doc),
-        );
+        db.prepare(
+            "UPDATE app_config SET value_json = ? WHERE key = 'default'",
+        ).run(JSON.stringify(doc));
         db.close();
 
         const result = await claudeCode.off(ctx);
         expect(result.outcome).toBe("stripped");
         const after = loadDoc();
         expect(after.Providers.some((p) => p.name === "friend")).toBe(true);
-        expect(after.Providers.some((p) => p.name === "pollinations")).toBe(false);
-        expect(after.profile.profiles.some((p) => p.id === "pollinations")).toBe(false);
+        expect(after.Providers.some((p) => p.name === "pollinations")).toBe(
+            false,
+        );
+        expect(
+            after.profile.profiles.some((p) => p.id === "pollinations"),
+        ).toBe(false);
         expect(after.profile.profiles.some((p) => p.id === "work")).toBe(true);
     });
 
@@ -244,13 +265,17 @@ describe("claude-code harness", () => {
                 enabled: true,
             });
         });
-        const before = requests.filter((r) => r.includes("/account/keys")).length;
+        const before = requests.filter((r) =>
+            r.includes("/account/keys"),
+        ).length;
         await claudeCode.on(ctx, { model: settings.model });
-        const after = requests.filter((r) => r.includes("/account/keys")).length;
+        const after = requests.filter((r) =>
+            r.includes("/account/keys"),
+        ).length;
         expect(after).toBe(before);
-        expect(loadDoc().Providers.find((p) => p.name === "pollinations")?.api_key).toBe(
-            settings.apiKey,
-        );
+        expect(
+            loadDoc().Providers.find((p) => p.name === "pollinations")?.api_key,
+        ).toBe(settings.apiKey);
     });
 
     it("reports an unconfigured status before on", async () => {
@@ -261,9 +286,9 @@ describe("claude-code harness", () => {
     it("refuses a missing Claude Code client before any login or config change", async () => {
         const { claudeCode } = await import("./claude-code.js");
         const isolated = { home, env: { PATH: join(home, "empty") } };
-        await expect(
-            claudeCode.on(isolated, {}),
-        ).rejects.toThrow(/npm install -g @anthropic-ai\/claude-code/);
+        await expect(claudeCode.on(isolated, {})).rejects.toThrow(
+            /npm install -g @anthropic-ai\/claude-code/,
+        );
         expect(existsSync(configDb())).toBe(false);
     });
 
@@ -275,9 +300,9 @@ describe("claude-code harness", () => {
         writeFileSync(claudePath, "#!/bin/sh\nexit 0\n");
         chmodSync(claudePath, 0o755);
         const isolated = { home, env: { PATH: onlyClaude } };
-        await expect(
-            claudeCode.on(isolated, {}),
-        ).rejects.toThrow(/Claude Code Router was not found/);
+        await expect(claudeCode.on(isolated, {})).rejects.toThrow(
+            /Claude Code Router was not found/,
+        );
         expect(existsSync(configDb())).toBe(false);
     });
 });

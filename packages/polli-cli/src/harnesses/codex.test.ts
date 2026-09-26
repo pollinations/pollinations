@@ -7,10 +7,9 @@ import {
     rmSync,
     writeFileSync,
 } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createServer, type Server } from "node:http";
-import { createServer, type Server } from "node:http";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { HarnessContext } from "./types.js";
 

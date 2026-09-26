@@ -3,10 +3,10 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { printInfo } from "../lib/output.js";
 import { commandExists, readTextIfExists, resolveHomePath } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
-import { printInfo } from "../lib/output.js";
 import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
@@ -17,9 +17,8 @@ type DatabaseSyncCtor = typeof import("node:sqlite").DatabaseSync;
 // config database.
 const databaseSync = (): DatabaseSyncCtor => {
     try {
-        return createRequire(import.meta.url)(
-            "node:sqlite",
-        ).DatabaseSync as DatabaseSyncCtor;
+        return createRequire(import.meta.url)("node:sqlite")
+            .DatabaseSync as DatabaseSyncCtor;
     } catch {
         throw new Error(
             "Configuring Claude Code Router requires Node.js 22.5+ (node:sqlite).",
@@ -154,7 +153,10 @@ const saveConfig = (db: DatabaseSync, config: CcrConfig) => {
     ).run(JSON.stringify(config), new Date().toISOString());
 };
 
-const upsertApiKey = (db: DatabaseSync, key: { id: string; name: string; value: string }) => {
+const upsertApiKey = (
+    db: DatabaseSync,
+    key: { id: string; name: string; value: string },
+) => {
     db.prepare(
         `INSERT INTO api_keys (id, name, encrypted_key, encryption, created_at, expires_at, limits_json)
          VALUES (?, ?, ?, 'plain', ?, '', '')
@@ -194,7 +196,8 @@ const readProviderKey = (ctx: HarnessContext): string | null => {
     return typeof key === "string" && key.length > 5 ? key : null;
 };
 
-const newProfileKey = () => `ccr-profile-${randomBytes(24).toString("base64url")}`;
+const newProfileKey = () =>
+    `ccr-profile-${randomBytes(24).toString("base64url")}`;
 
 /** Synchronous RPC against a running CCR management service. */
 const rpc = <T>(ctx: HarnessContext, method: string, args: unknown[]): T => {
@@ -210,11 +213,19 @@ const rpc = <T>(ctx: HarnessContext, method: string, args: unknown[]): T => {
         })
         .then((response) => response.text())
         .then((body) => process.stdout.write(body));`;
-    const raw = execFileSync(process.execPath, ["-e", script, JSON.stringify({ method, args })], {
-        timeout: 60_000,
-        encoding: "utf-8",
-    });
-    const parsed = JSON.parse(raw) as { ok: boolean; value?: T; error?: { message?: string } };
+    const raw = execFileSync(
+        process.execPath,
+        ["-e", script, JSON.stringify({ method, args })],
+        {
+            timeout: 60_000,
+            encoding: "utf-8",
+        },
+    );
+    const parsed = JSON.parse(raw) as {
+        ok: boolean;
+        value?: T;
+        error?: { message?: string };
+    };
     if (!parsed.ok) {
         throw new Error(parsed.error?.message ?? `CCR RPC ${method} failed`);
     }
@@ -254,11 +265,9 @@ const ensureGateway = (ctx: HarnessContext) => {
     // The daemon boots asynchronously; give the health endpoint a moment.
     for (let attempt = 0; attempt < 8; attempt += 1) {
         if (gatewayHealthy(ctx)) return true;
-        execFileSync(
-            process.execPath,
-            ["-e", "setTimeout(() => {}, 250);"],
-            { timeout: 5000 },
-        );
+        execFileSync(process.execPath, ["-e", "setTimeout(() => {}, 250);"], {
+            timeout: 5000,
+        });
     }
     return false;
 };
@@ -316,7 +325,10 @@ const smoke = (ctx: HarnessContext, model: string) => {
     }
 };
 
-const buildProvider = (settings: { apiKey: string; model: string }): CcrProvider => ({
+const buildProvider = (settings: {
+    apiKey: string;
+    model: string;
+}): CcrProvider => ({
     name: PROVIDER_ID,
     api_base_url: POLLINATIONS_BASE_URL,
     api_key: settings.apiKey,
@@ -499,9 +511,7 @@ export const configureClaudeCode = (
 };
 
 export const disableClaudeCode = (ctx: HarnessContext): HarnessResult => {
-    const outcome = restoreOrStrip(ctx, ID, files(ctx), () =>
-        stripConfig(ctx),
-    );
+    const outcome = restoreOrStrip(ctx, ID, files(ctx), () => stripConfig(ctx));
     // Disk truth wins: a byte-for-byte restore may legitimately bring
     // back a pre-existing Pollinations setup the user had before `on`.
     return { ...result(ctx), outcome };
@@ -512,8 +522,7 @@ const claudeInstalled = (ctx: HarnessContext) =>
         join(ctx.home, ".local", "bin", "claude"),
     ]);
 
-const ccrInstalled = (ctx: HarnessContext) =>
-    commandExists("ccr", ctx.env, []);
+const ccrInstalled = (ctx: HarnessContext) => commandExists("ccr", ctx.env, []);
 
 export const claudeCode: HarnessAdapter = {
     id: ID,
@@ -521,7 +530,7 @@ export const claudeCode: HarnessAdapter = {
     description:
         "Configure Claude Code through Claude Code Router to use Pollinations",
     restartHint:
-        "Run `ccr \"Pollinations\"` (or start CCR and pick the Pollinations profile) to launch Claude Code on Pollinations.",
+        'Run `ccr "Pollinations"` (or start CCR and pick the Pollinations profile) to launch Claude Code on Pollinations.',
 
     async on(ctx, options) {
         if (!claudeInstalled(ctx)) {

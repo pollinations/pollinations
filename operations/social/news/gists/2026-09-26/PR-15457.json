@@ -1,0 +1,37 @@
+{
+  "pr_number": 15457,
+  "title": "feat: enable Azure GPT-6 with consistent 1x pricing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15457",
+  "merged_at": "2026-09-26T13:32:46Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Routes `openai/gpt-6-sol` and `openai/gpt-6-luna` through Azure `myceli-prod-eastus`, exact `2026-09-22` Global Standard checkpoints, with direct OpenAI Responses fallbacks. Enables Quest Pollen, preserves no aliases, and keeps both at 1×.\n- Sets `openai/gpt-6-astra` to 1× too. Preserves its Azure Global primary and existing US Data Zone fallback; fallback costs remain separately attributed while callers keep the primary quote. All three use provider-operated infrastructure.\n- Preserves provider rates and adds Sol/Luna image-input rates. Exact short/long-context and cache rates match [Microsoft’s GPT-6 price table](https://azure.microsoft.com/en-us/blog/gpt-6-astra-sol-and-luna-for-production-agents-in-microsoft-foundry/) and [OpenAI pricing](https://developers.openai.com/api/docs/pricing).\n- Verified 809 focused tests after updating from `main`, Gen/Enter typechecks, local build/catalog, and direct-provider text, two-image vision, tools, structured output, streaming, reasoning, errors, cache writes/hits, and 20-request bursts for Azure Sol/Luna.\n- Verified the local authenticated gateway with a Quest-only account: Azure primary attribution, 1× billing, Quest Pollen debit, zero paid balance, output-cache reuse without a second debit, and forced Azure-to-OpenAI fallback with one final billed event. The temporary local key was deleted after testing.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Three new minds, one price",
+    "blurb": "Sol and Luna have landed in the hive through Azure, with Astra joining them at a clean 1× rate. Quest Pollen can now feed all three without needing a small billing archaeology expedition.",
+    "summary": "Added Azure Global routing for `openai/gpt-6-sol` and `openai/gpt-6-luna` via `myceli-prod-eastus` with direct OpenAI Responses fallbacks, enabled Quest Pollen for both, and standardized GPT-6 Astra, Sol, and Luna at 1× pricing with image-input, cache, and context-specific provider rates.",
+    "impact": "Developers can call all three GPT-6 models at a consistent 1× quote using paid balance or Quest Pollen, including vision, tools, structured output, streaming, reasoning, and cached responses while provider fallback remains seamless.",
+    "keywords": [
+      "gpt-6",
+      "azure",
+      "openai",
+      "text-models",
+      "quest-pollen",
+      "pricing",
+      "vision"
+    ],
+    "visual_concept": "A cozy model-routing garden: three labeled glowing seed pods for Astra, Sol, and Luna sit on an Azure-blue-but-pastel cloud server, each fed by the same 1× watering line. Polli, wearing tiny accountant glasses and carrying a Pollen coin watering can, checks the equal flow while code-plants and flowers grow around the server; a small fallback path connects to a retro OpenAI-style response terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and watering three glowing code-plants labeled “ASTRA”, “SOL”, and “LUNA” from a Pollen coin watering can; each plant is fed by an equal “1×” pipe from a friendly pastel cloud server, with flowers and a small retro fallback terminal nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15457.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and watering three glowing code-plants labeled “ASTRA”, “SOL”, and “LUNA” from a Pollen coin watering can; each plant is fed by an equal “1×” pipe from a friendly pastel cloud server, with flowers and a small retro fallback terminal nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-26T13:33:51.289876+00:00"
+}

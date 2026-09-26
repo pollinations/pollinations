@@ -54,10 +54,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 4,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };

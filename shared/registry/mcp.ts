@@ -16,6 +16,9 @@ export const MCP_USAGE_HEADERS = {
 // Gen overwrites this header before forwarding a user-scoped MCP request.
 // Private MCP Workers use it to select the caller's connected accounts.
 export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
+// The caller's linked GitHub account as `id+username`, the local part of its
+// noreply address. Gen overwrites it too.
+export const MCP_USER_GITHUB_HEADER = "x-pollinations-user-github";
 
 type McpServerDefinitionBase = {
     id: string;
@@ -39,6 +42,7 @@ export type McpPricingInfo = {
 
 export type McpBindingName =
     | "POLLINATIONS_MCP"
+    | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -110,6 +114,19 @@ export const MCP_SERVERS = [
         },
     },
     {
+        id: "ask-jev",
+        name: "Ask Jev",
+        description:
+            "Evaluate state with typed choice, score, and probability questions.",
+        binding: "ASK_JEV_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
         id: "ffmpeg",
         name: "FFmpeg",
         description:
@@ -174,9 +191,9 @@ export const MCP_SERVERS = [
     },
     {
         id: "composio",
-        name: "Composio",
+        name: "Connected Apps",
         description:
-            "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+            "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",

@@ -17,6 +17,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
+    inclusionAI: "inclusionai",
     Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",
@@ -36,10 +37,22 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
+};
+
+export const getFixedResolution = (
+    model: Pick<ModelPrice, "pricingDimensions">,
+): string | undefined => {
+    const resolution = model.pricingDimensions?.find(
+        ({ key }) => key === "resolution",
+    );
+    const values = new Set(Object.values(resolution?.values ?? {}));
+    return values.size === 1 ? [...values][0] : undefined;
 };
 
 const getInputModalities = (model: ModelPrice): string[] =>

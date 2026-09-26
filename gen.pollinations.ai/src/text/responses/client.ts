@@ -10,6 +10,8 @@ type JsonObject = Record<string, unknown>;
 
 export type DirectResponsesTarget = {
     authConfigured: boolean;
+    /** Managed agents run on this gateway, so their statuses are already caller-facing. */
+    callerFacingStatus?: true;
     disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
@@ -45,9 +47,16 @@ export function responsesTargetFromConfig(
         headers: authHeader,
         model,
         defaults: {
+            // Request fields the route always sends unless the caller sets them.
+            ...(isPlainObject(config.responsesDefaults)
+                ? config.responsesDefaults
+                : {}),
             ...(chatDefaults.provider === undefined
                 ? {}
                 : { provider: chatDefaults.provider }),
+            ...(chatDefaults.providerOptions === undefined
+                ? {}
+                : { providerOptions: chatDefaults.providerOptions }),
             ...(chatDefaults.max_tokens === undefined
                 ? {}
                 : { max_output_tokens: chatDefaults.max_tokens }),
@@ -143,7 +152,9 @@ export async function callDirectResponses(
         const error = new Error(
             errorMessage(details, response),
         ) as ServiceError;
-        error.status = remapUpstreamStatus(response.status);
+        error.status = target.callerFacingStatus
+            ? response.status
+            : remapUpstreamStatus(response.status);
         error.upstreamStatus = response.status;
         error.details = details;
         error.responseBody = text;

@@ -1,4 +1,5 @@
 import { assertNotBanned, assertStagingAccess } from "@shared/auth/api-key.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -15,7 +16,12 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getAppPurchase } from "../utils/app-purchase.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
+import {
+    captureFromRequest,
+    referringSource,
+} from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
@@ -27,6 +33,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { expireOpenStripeCheckoutSessions } from "../utils/stripe-fraud-ban.ts";
 
 /**
  * Stripe pack configuration
@@ -86,6 +93,16 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
+        const buyer = await getUserStripeBillingRow(c.env.DB, userId);
+        if (isUserBanned(buyer)) {
+            if (buyer.stripeCustomerId)
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    buyer.stripeCustomerId,
+                );
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+        }
+
         // App purchases use their validated return URL. Other checkouts return
         // to the standalone top-up page or Pollen dashboard on this origin.
         const baseUrl =
@@ -128,6 +145,15 @@ export const stripeRoutes = new Hono<Env>()
                 c.env.DB,
                 userId,
             );
+            // Request 3DS on first purchases and small packs. Successful
+            // authentication can shift fraud liability; requesting it alone
+            // does not guarantee authentication or eliminate dispute fees.
+            const priorCredit = await c.env.DB.prepare(
+                "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? LIMIT 1",
+            )
+                .bind(userId)
+                .first();
+            const requestThreeDSecure = !priorCredit || pack.amountUsd < 10;
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
@@ -182,6 +208,11 @@ export const stripeRoutes = new Hono<Env>()
                         },
                     ],
                     adaptive_pricing: { enabled: true },
+                    ...(requestThreeDSecure && {
+                        payment_method_options: {
+                            card: { request_three_d_secure: "any" },
+                        },
+                    }),
                     // Enable discount/promotion codes
                     allow_promotion_codes: true,
                     // Automatic tax & VAT
@@ -226,7 +257,23 @@ export const stripeRoutes = new Hono<Env>()
             );
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
+            if (isUserBanned(await getUserStripeBillingRow(c.env.DB, userId))) {
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    stripeCustomerId,
+                );
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
             if (checkoutSession.url) {
+                captureFromRequest(c, "checkout_started", userId, {
+                    pack_key: pack.packKey,
+                    // Where the buyer came from, so checkouts divide by
+                    // views of that same page, as sign-ins already do.
+                    ...referringSource(
+                        c.req.raw.headers,
+                        c.env.BETTER_AUTH_URL,
+                    ),
+                });
                 if (purchase) {
                     await c.env.DB.prepare(
                         "UPDATE app_key_top_up SET checkout_session_id = ? WHERE id = ?",
@@ -346,6 +393,12 @@ export const stripeRoutes = new Hono<Env>()
         if (!result.ok) {
             return c.json({ error: result.error }, result.status);
         }
+        captureFromRequest(
+            c,
+            body.enabled ? "auto_top_up_enabled" : "auto_top_up_disabled",
+            user.id,
+            { amount_usd: body.packAmountUsd },
+        );
 
         return c.json(result.overview);
     })

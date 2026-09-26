@@ -1,4 +1,8 @@
-import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
+import type {
+    PricingDimension,
+    PublicPriceInfo,
+} from "@shared/registry/public-pricing.ts";
 
 export type ModelCategory =
     | "text"
@@ -58,6 +62,7 @@ export type ModelPrice = {
     aliases?: string[];
     type: ModelCategory;
     community?: boolean;
+    health?: ModelHealth;
     agent?: boolean;
     baseModel?: string;
     perUserRpm?: number | null;
@@ -79,6 +84,7 @@ export type ModelPrice = {
     prices: ModelPriceLine[];
     priceVariants?: ModelPriceVariant[];
     priceDefaultLabel?: string;
+    pricingDimensions?: PricingDimension[];
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;

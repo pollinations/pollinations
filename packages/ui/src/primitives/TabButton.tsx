@@ -42,7 +42,7 @@ const tabButtonBaseClass =
     "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200";
 
 const tabButtonSizeClass = {
-    xs: "polli:px-3 polli:py-1.5 polli:text-xs",
+    xs: "polli:px-2.5 polli:py-1 polli:text-xs",
     lg: "polli:px-5 polli:py-2 polli:text-lg",
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",
@@ -69,12 +69,6 @@ const variantClasses = {
     },
 } as const;
 
-const neutralClasses = {
-    active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
-    inactive:
-        "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
-} as const;
-
 export function TabButton<T extends ElementType = "button">({
     as,
     active,
@@ -90,7 +84,7 @@ export function TabButton<T extends ElementType = "button">({
 }: TabButtonProps<T>) {
     const Component: ElementType = as || "button";
     const isButton = Component === "button";
-    const classes = variantClasses[variant];
+    const colors = variantClasses[intent === "neutral" ? "soft" : variant];
     const handleClick = disabled
         ? (event: ReactMouseEvent) => {
               event.preventDefault();
@@ -105,8 +99,9 @@ export function TabButton<T extends ElementType = "button">({
             {...(!isButton && disabled
                 ? { "aria-disabled": true, tabIndex: -1 }
                 : {})}
+            {...(Component === "a" && disabled ? { href: undefined } : {})}
             onClick={handleClick}
-            aria-label={ariaLabel}
+            {...(ariaLabel !== undefined ? { "aria-label": ariaLabel } : {})}
             // aria-pressed is for toggles; a link that navigates announces its
             // selected state with aria-current instead.
             {...(isButton
@@ -114,14 +109,8 @@ export function TabButton<T extends ElementType = "button">({
                 : { "aria-current": active ? "page" : undefined })}
             className={cn(
                 tabButtonBaseClass,
-                classes.base,
-                intent === "neutral"
-                    ? active
-                        ? neutralClasses.active
-                        : neutralClasses.inactive
-                    : active
-                      ? classes.active
-                      : classes.inactive,
+                variantClasses[variant].base,
+                active ? colors.active : colors.inactive,
                 disabled &&
                     "polli:pointer-events-none polli:cursor-not-allowed polli:opacity-50",
                 tabButtonSizeClass[size],

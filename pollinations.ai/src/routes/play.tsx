@@ -21,7 +21,6 @@ function AccountAction() {
     return (
         <div className="self-start">
             <AppUserMenu
-                triggerVariant="action"
                 labels={{
                     authorize: "Connect",
                     logout: "Disconnect app",

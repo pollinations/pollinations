@@ -57,8 +57,10 @@ SQL >
         ) AS official_availability,
         round(quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

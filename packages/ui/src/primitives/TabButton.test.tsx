@@ -3,6 +3,14 @@ import { describe, expect, test, vi } from "vitest";
 import { TabButton } from "./TabButton.tsx";
 
 describe("TabButton", () => {
+    test("passes the native accessible label through to the button", () => {
+        const html = renderToStaticMarkup(
+            <TabButton active={false} aria-label="Choose model">
+                Models
+            </TabButton>,
+        );
+        expect(html).toContain('aria-label="Choose model"');
+    });
     test("keeps neutral selected and unselected states distinct", () => {
         const active = renderToStaticMarkup(
             <TabButton active intent="neutral">
@@ -31,6 +39,7 @@ describe("TabButton", () => {
         });
         const props = element.props as {
             "aria-disabled": boolean;
+            href?: string;
             onClick: (event: {
                 preventDefault: () => void;
                 stopPropagation: () => void;
@@ -46,6 +55,7 @@ describe("TabButton", () => {
 
         expect(props["aria-disabled"]).toBe(true);
         expect(props.tabIndex).toBe(-1);
+        expect(props.href).toBeUndefined();
         expect(event.preventDefault).toHaveBeenCalledOnce();
         expect(event.stopPropagation).toHaveBeenCalledOnce();
     });

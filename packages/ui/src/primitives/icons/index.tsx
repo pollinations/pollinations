@@ -382,7 +382,7 @@ export function TerminalIcon(props: IconProps) {
 export function ToolIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l2.1 2.1a1 1 0 0 0 1.4 0l4-4a6 6 0 0 1-8 8l-8 8a2.8 2.8 0 0 1-4-4l8-8a6 6 0 0 1 8-8l-4 4Z" />
         </svg>
     );
 }
@@ -524,6 +524,16 @@ export function EyeIcon(props: IconProps) {
     );
 }
 
+export function EyeOffIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M3 3l18 18" />
+        </svg>
+    );
+}
+
 export function VideoIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -596,6 +606,15 @@ export function SignOutIcon(props: IconProps) {
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <path d="m16 17 5-5-5-5" />
             <path d="M21 12H9" />
+        </svg>
+    );
+}
+
+export function PowerIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 2v10" />
+            <path d="M18.4 6.6a9 9 0 1 1-12.77.04" />
         </svg>
     );
 }
@@ -692,6 +711,24 @@ export function GlobeIcon(props: IconProps) {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
             <path d="M2 12h20" />
+        </svg>
+    );
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+        </svg>
+    );
+}
+
+export function RefreshIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
         </svg>
     );
 }

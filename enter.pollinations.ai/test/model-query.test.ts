@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
@@ -88,17 +88,68 @@ describe("parseModelQuery", () => {
     });
 });
 
-describe("model query source", () => {
-    it("preselects official without replacing an explicit source", () => {
-        expect(ensureModelQuerySource("")).toBe("source:official");
-        expect(ensureModelQuerySource("capability:reasoning")).toBe(
-            "source:official capability:reasoning",
+describe("model query defaults", () => {
+    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe(
+            "source:official status:reliable",
         );
-        expect(ensureModelQuerySource("source:community")).toBe(
-            "source:community",
+        expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
+            "source:official status:reliable capability:reasoning",
         );
-        expect(ensureModelQuerySource("source:")).toBe("source:");
+        expect(ensureModelQueryDefaults("source:community")).toBe(
+            "status:reliable source:community",
+        );
+        expect(ensureModelQueryDefaults("source: status:")).toBe(
+            "source: status:",
+        );
+        expect(ensureModelQueryDefaults("SOURCE:community status:all")).toBe(
+            "SOURCE:community status:all",
+        );
     });
+});
+
+it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
+    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
+        const candidate = model({
+            community: true,
+            health: {
+                status: successRate == null ? "unknown" : "degraded",
+                requests: successRate == null ? 0 : 50,
+                success_rate: successRate,
+            },
+        });
+        const visible = successRate == null || successRate > 80;
+        expect(matches(candidate, "source:community status:reliable")).toBe(
+            visible,
+        );
+        expect(matches(candidate, "status:reliable")).toBe(visible);
+        expect(matches(candidate, "status:all")).toBe(true);
+    }
+    const official = model({
+        health: { status: "down", requests: 50, success_rate: 0 },
+    });
+    expect(matches(official, "status:reliable")).toBe(false);
+    expect(
+        matches(
+            { ...official, community: true, agent: true },
+            "status:reliable",
+        ),
+    ).toBe(false);
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    expect(
+        matches(
+            model({
+                health: { status: "healthy", requests: 50, success_rate: 99 },
+            }),
+            ensureModelQueryDefaults(""),
+        ),
+    ).toBe(true);
+    expect(matches(model(), "status:healthy")).toBe(false);
+    expect(getModelQuerySuggestions("status:", [])).toEqual([
+        "status:all ",
+        "status:healthy ",
+        "status:reliable ",
+    ]);
 });
 
 describe("model query filter tokens", () => {
@@ -312,6 +363,7 @@ describe("getModelQuerySuggestions", () => {
             "id:",
             "publisher:",
             "source:",
+            "status:",
             "type:",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([

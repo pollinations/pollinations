@@ -10,6 +10,7 @@ import { deviceRoutes } from "./routes/device.ts";
 import { integrationsRoutes } from "./routes/integrations.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { oauthRoutes } from "./routes/oauth.ts";
+import { productAnalyticsRoutes } from "./routes/product-analytics.ts";
 import { questsRoutes } from "./routes/quests.ts";
 import { referralRoutes } from "./routes/referral.ts";
 import { statusNoticeRoutes } from "./routes/status-notice.ts";
@@ -28,6 +29,7 @@ export const frontendApi = new Hono<Env>()
     .route("/oauth", oauthRoutes)
     .route("/model-stats", modelStatsRoutes)
     .route("/referral", referralRoutes)
+    .route("/analytics", productAnalyticsRoutes)
     .route("/status-notice", statusNoticeRoutes)
     .route("/quests", questsRoutes);
 

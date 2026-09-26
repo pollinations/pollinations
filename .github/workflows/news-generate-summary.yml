@@ -54,6 +54,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
       - name: Generate Pollinations AI Token
@@ -171,3 +172,9 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_MONTH: ${{ steps.mode.outputs.monthly_target }}
         run: python operations/social/scripts/generate_monthly.py
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

@@ -34,6 +34,7 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { keyPermissionsLink } from "@/middleware/auth.ts";
 import {
     reduceAdjustmentsToEventFields,
     requestIdentity,
@@ -126,10 +127,12 @@ type RealtimeBillingContext = {
 };
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
+    const apiKey = c.var.auth.apiKey;
+    const allowedModels = apiKey?.permissions?.models;
+    if (apiKey && allowedModels && !allowedModels.includes(model)) {
+        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
         throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key`,
+            message: `Model '${model}' is not allowed for this API key. Manage key permissions at ${link}`,
         });
     }
 }

@@ -42,7 +42,7 @@ import {
     type ImageParams,
     ImageParamsSchema,
 } from "./params.ts";
-import { sanitizeString, sleep } from "./util.ts";
+import { sanitizeString } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
@@ -75,8 +75,11 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
@@ -257,18 +260,12 @@ async function generateImageResult(
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
-    const result = await createAndReturnImageCached(
+    return await createAndReturnImageCached(
         prompt,
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
-
-    if (result.isChild && result.isMature) {
-        await sleep(5000);
-    }
-
-    return result;
 }
 
 /** Tries the requested model and its fallbacks through one modality-neutral loop. */
@@ -425,6 +422,9 @@ export async function generateImageOrVideoResponse(
             originalPrompt,
             safeParams,
         );
+        if (result.trackingData.pricingInput) {
+            c.var.track.setPricingInput(result.trackingData.pricingInput);
+        }
         const headers = mediaHeaders(
             originalPrompt,
             params,

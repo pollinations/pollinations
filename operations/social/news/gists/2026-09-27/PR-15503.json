@@ -1,0 +1,36 @@
+{
+  "pr_number": 15503,
+  "title": "feat(flow): add product flow review workspace",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15503",
+  "merged_at": "2026-09-27T16:27:17Z",
+  "labels": [
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "- Adds Flow under `operations/flow` to inspect real Enter, Gen, SDK, shared and UI behavior. Explicit fixtures and the scenario ledger distinguish current behavior from follow-up product fixes.\n- Gives every Pollinations account one identity-only login and an isolated review container, including the simulated Admin app. Production data and reviewer tokens stay outside containers. Capacity is capped at ten active runtimes.\n- Deploys through the existing **Deploy / Applications** workflow and `deploy.json`: merge to `main`, then promote to `production` for `flow.pollinations.ai`. Reuses the existing Worker, session secret and Myceli deployment credential; removes the separate PR deployment job.\n- All CI passes at `d5e6962c63`, with main `92c5a372d2` integrated: [Linux proof](https://github.com/pollinations/pollinations/actions/runs/36331466687) covers 259 Flow tests, 32 shared-auth tests, Docker exclusions, pages, captures and isolation; [repository checks](https://github.com/pollinations/pollinations/actions/runs/36331466684) and CodeQL pass. One local five-second timeout passes alone. Earlier credential-backed evidence remains in the [delivery plan](https://github.com/pollinations/pollinations/blob/codex/connect-review-workspace/operations/flow/PR_SPLIT_PLAN.md).\n- Permanent callback verified; preview callback and identity-only PKCE preserved. TLS provisioning is approved through standard production deployment. **Ready for review; unmerged.** After promotion, verify live sign-in/isolation. The preview still serves `b9a3546502`; permanent domains are not deployed yet.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A greenhouse for product flows",
+    "blurb": "Flow gives reviewers a place to inspect how Enter, Gen, the SDK, and the UI behave together. Each account gets its own review container; production data stays outside.",
+    "summary": "Added the Flow review workspace under operations/flow, with explicit fixtures and a scenario ledger for Enter, Gen, SDK, shared-auth, and UI behavior, plus identity-only sign-in and isolated review containers capped at ten active runtimes.",
+    "impact": "After production promotion and live sign-in verification, reviewers can inspect current product flows—including a simulated Admin app—without placing production data or reviewer tokens inside their containers.",
+    "keywords": [
+      "Flow",
+      "product review",
+      "isolated runtimes",
+      "authentication",
+      "scenario ledger",
+      "deployment"
+    ],
+    "visual_concept": "Depict Flow as a cozy greenhouse workspace: separate glass terrariums hold miniature product journeys, while a scenario ledger distinguishes observed behavior from follow-up work. Polli checks the ledger beside a helpful CRT monitor robot; the terrariums convey isolation without suggesting the workspace is already live.",
+    "image_prompt": "In a cozy pixel-art greenhouse workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Wearing tiny reviewer glasses, she checks a scenario ledger beside a friendly CRT monitor robot and separate glass terrariums of code-plants representing product flows. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) foliage, warm cream background, and dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15503.jpg",
+    "prompt": "In a cozy pixel-art greenhouse workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Wearing tiny reviewer glasses, she checks a scenario ledger beside a friendly CRT monitor robot and separate glass terrariums of code-plants representing product flows. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) foliage, warm cream background, and dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-27T16:28:17.644398+00:00"
+}

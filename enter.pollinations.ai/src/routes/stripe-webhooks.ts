@@ -8,7 +8,6 @@ import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
-    AUTO_TOP_UP_DECLINE_REASON,
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
@@ -768,13 +767,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "invoice.payment_failed": {
                 const invoice = event.data.object as Stripe.Invoice;
-                // Declines wait 1h, 4h, then 24h before the next charge;
-                // the fourth decline in a row turns auto top-up off.
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,
-                    AUTO_TOP_UP_DECLINE_REASON,
-                    { declined: true },
+                    "Stripe could not charge the default payment method.",
                 );
                 break;
             }
@@ -786,7 +782,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                     invoice,
                     "Stripe invoice can no longer be collected.",
-                    { cleanupInvoice: false },
+                    { cleanupInvoice: false, disableAutoTopUp: false },
                 );
                 break;
             }

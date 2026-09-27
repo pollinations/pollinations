@@ -20,11 +20,8 @@ import { getBillingOverview } from "./billing-overview.ts";
 import {
     AUTO_TOP_UP_ATTEMPT_STATUS,
     AUTO_TOP_UP_CLAIM_TTL_MS,
-    AUTO_TOP_UP_DECLINE_REASON,
-    AUTO_TOP_UP_MAX_DECLINES,
     AUTO_TOP_UP_PENDING_TTL_MS,
     AUTO_TOP_UP_PURPOSE,
-    AUTO_TOP_UP_RETRY_DELAYS_MS,
     METADATA_PURPOSE,
     METADATA_USER_ID,
 } from "./constants.ts";
@@ -173,26 +170,11 @@ export async function processAutoTopUpForUser(
         };
     }
 
-    const declines = await getDeclineStreak(env.DB, userId);
-    if (declines.count > 0) {
-        const delayMs =
-            AUTO_TOP_UP_RETRY_DELAYS_MS[
-                Math.min(declines.count, AUTO_TOP_UP_RETRY_DELAYS_MS.length) - 1
-            ];
-        if (Date.now() - declines.lastAt < delayMs) {
-            return {
-                status: "skipped",
-                reason: "waiting after a declined auto top-up",
-            };
-        }
-    }
-
     const attemptId = crypto.randomUUID();
     const claimed = await claimAutoTopUpAttempt(env.DB, {
         attemptId,
         userId,
         amountUsd: pack.amountUsd,
-        declines,
     });
     if (!claimed) {
         return {
@@ -343,53 +325,6 @@ export async function processAutoTopUpForUser(
     }
 }
 
-/**
- * Retries declined auto top-ups once their wait has passed, so recovery does
- * not depend on another paid request. Only accounts whose latest attempt was
- * a card decline are retried; `processAutoTopUpForUser` rechecks eligibility
- * and claims atomically, so a concurrent request cannot charge twice.
- */
-export async function retryDeclinedAutoTopUps(
-    env: CloudflareBindings,
-): Promise<void> {
-    const { results } = await env.DB.prepare(
-        `SELECT u.id
-            FROM user u
-            WHERE u.auto_top_up_enabled = 1
-                AND COALESCE(u.pack_balance, 0) <= ?
-                AND (
-                    SELECT a.status = ? AND a.failure_reason = ?
-                    FROM stripe_auto_top_up_attempt a
-                    WHERE a.user_id = u.id
-                    ORDER BY a.created_at DESC
-                    LIMIT 1
-                ) = 1`,
-    )
-        .bind(
-            AUTO_TOP_UP_THRESHOLD_POLLEN,
-            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-            AUTO_TOP_UP_DECLINE_REASON,
-        )
-        .all<{ id: string }>();
-
-    for (const { id } of results) {
-        try {
-            const result = await processAutoTopUpForUser(env, id);
-            if (result.status !== "skipped") {
-                console.log("[auto-top-up] scheduled retry", {
-                    userId: id,
-                    ...result,
-                });
-            }
-        } catch (error) {
-            console.error("[auto-top-up] scheduled retry failed", {
-                userId: id,
-                error: error instanceof Error ? error.message : String(error),
-            });
-        }
-    }
-}
-
 export async function creditAutoTopUpInvoice(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,
@@ -490,7 +425,7 @@ export async function markAutoTopUpInvoiceFailed(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,
     reason: string,
-    options: { cleanupInvoice?: boolean; declined?: boolean } = {},
+    options: { cleanupInvoice?: boolean; disableAutoTopUp?: boolean } = {},
 ): Promise<void> {
     const metadata = invoice.metadata ?? {};
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
@@ -508,100 +443,48 @@ export async function markAutoTopUpInvoiceFailed(
         if (paymentIntent?.status === "requires_action") return;
     }
 
+    if (options.disableAutoTopUp === false) {
+        await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
+    } else {
+        // Disable and record the decline together, before another request can claim.
+        // A void may already have marked the attempt failed. A repeated decline
+        // must not undo a customer's subsequent decision to re-enable auto top-up.
+        const now = Date.now();
+        await env.DB.batch([
+            env.DB.prepare(
+                `UPDATE user
+                SET auto_top_up_enabled = 0
+                WHERE id IN (
+                    SELECT user_id FROM stripe_auto_top_up_attempt
+                    WHERE stripe_invoice_id = ?
+                        AND status != ?
+                        AND (status != ? OR failure_reason IS NOT ?)
+                )`,
+            ).bind(
+                invoice.id,
+                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+            ),
+            env.DB.prepare(
+                `UPDATE stripe_auto_top_up_attempt
+                SET status = ?, failure_reason = ?, updated_at = ?,
+                    completed_at = COALESCE(completed_at, ?)
+                WHERE stripe_invoice_id = ? AND status != ?`,
+            ).bind(
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+                now,
+                now,
+                invoice.id,
+                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            ),
+        ]);
+    }
+
     if (options.cleanupInvoice !== false) {
         await cleanupFailedAutoTopUpInvoice(env, invoice.id);
     }
-
-    if (!options.declined) {
-        await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
-        return;
-    }
-
-    const attempt = await recordDecline(env.DB, invoice.id);
-    if (!attempt) return;
-    const declines = await getDeclineStreak(env.DB, attempt.userId);
-    if (declines.count >= AUTO_TOP_UP_MAX_DECLINES) {
-        await disableAutoTopUp(env.DB, attempt.userId);
-    }
-}
-
-/**
- * Records a card decline, also over a failure a void already recorded, so
- * out-of-order or redelivered events still count it. Paid attempts stay paid.
- */
-async function recordDecline(
-    db: D1Database,
-    invoiceId: string,
-): Promise<{ userId: string } | null> {
-    const now = Date.now();
-    return (
-        (await db
-            .prepare(
-                `UPDATE stripe_auto_top_up_attempt
-                    SET status = ?,
-                        failure_reason = ?,
-                        updated_at = ?,
-                        completed_at = COALESCE(completed_at, ?)
-                    WHERE stripe_invoice_id = ?
-                        AND status != ?
-                    RETURNING user_id AS userId`,
-            )
-            .bind(
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-                AUTO_TOP_UP_DECLINE_REASON,
-                now,
-                now,
-                invoiceId,
-                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            )
-            .first<{ userId: string }>()) ?? null
-    );
-}
-
-/** Card declines since the last paid attempt, and when the latest one landed. */
-async function getDeclineStreak(
-    db: D1Database,
-    userId: string,
-): Promise<{ count: number; lastAt: number }> {
-    const row = await db
-        .prepare(
-            `SELECT ${DECLINE_STREAK_COUNT} AS count, ${DECLINE_STREAK_LAST_AT} AS lastAt`,
-        )
-        .bind(...declineStreakParams(userId), ...declineStreakParams(userId))
-        .first<{ count: number; lastAt: number }>();
-    return { count: row?.count ?? 0, lastAt: row?.lastAt ?? 0 };
-}
-
-/**
- * Card declines since the account's last paid attempt. The claim evaluates
- * the same definition, so both agree on the streak a charge was decided on.
- * Bind with `declineStreakParams(userId)`.
- */
-const DECLINES_SINCE_LAST_PAID = `
-    FROM stripe_auto_top_up_attempt d
-    WHERE d.user_id = ?
-        AND d.status = ?
-        AND d.failure_reason = ?
-        AND d.created_at > COALESCE(
-            (
-                SELECT MAX(p.created_at)
-                FROM stripe_auto_top_up_attempt p
-                WHERE p.user_id = ?
-                    AND p.status = ?
-            ),
-            0
-        )`;
-const DECLINE_STREAK_COUNT = `(SELECT COUNT(*) ${DECLINES_SINCE_LAST_PAID})`;
-const DECLINE_STREAK_LAST_AT = `(SELECT COALESCE(MAX(COALESCE(d.completed_at, d.updated_at)), 0) ${DECLINES_SINCE_LAST_PAID})`;
-
-function declineStreakParams(userId: string) {
-    return [
-        userId,
-        AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-        AUTO_TOP_UP_DECLINE_REASON,
-        userId,
-        AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-    ];
 }
 
 async function retrieveInvoicePaymentIntent(
@@ -720,8 +603,6 @@ async function claimAutoTopUpAttempt(
         attemptId: string;
         userId: string;
         amountUsd: number;
-        /** The decline streak the caller decided on; it must be unchanged. */
-        declines: { count: number; lastAt: number };
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -751,9 +632,7 @@ async function claimAutoTopUpAttempt(
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
                     AND status IN (?, ?)
-            )
-            AND ${DECLINE_STREAK_COUNT} = ?
-            AND ${DECLINE_STREAK_LAST_AT} = ?`,
+            )`,
         )
         .bind(
             input.attemptId,
@@ -767,10 +646,6 @@ async function claimAutoTopUpAttempt(
             input.userId,
             AUTO_TOP_UP_ATTEMPT_STATUS.CLAIMED,
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
-            ...declineStreakParams(input.userId),
-            input.declines.count,
-            ...declineStreakParams(input.userId),
-            input.declines.lastAt,
         )
         .run();
 

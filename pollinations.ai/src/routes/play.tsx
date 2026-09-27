@@ -2,7 +2,6 @@ import { PolliProvider } from "@pollinations/sdk/react";
 import { ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
-import { useArt } from "../art";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
@@ -28,25 +27,6 @@ function AccountAction() {
                 }}
             />
         </div>
-    );
-}
-
-function PlaygroundSky() {
-    const sky = useArt("play", "sky");
-
-    return (
-        <img
-            src={sky.src}
-            srcSet={sky.srcSet}
-            sizes="(max-width: 1440px) 100vw, 1440px"
-            alt=""
-            aria-hidden="true"
-            width={2048}
-            height={854}
-            loading="lazy"
-            decoding="async"
-            className="playground-top-scene pointer-events-none absolute inset-x-0 top-0 h-40 w-full select-none object-cover object-top"
-        />
     );
 }
 
@@ -81,8 +61,7 @@ function PlayPage() {
                     <AccountAction />
                 </HeroScene>
             </PageCard>
-            <PageCard className="relative isolate pt-6 sm:pt-8">
-                <PlaygroundSky />
+            <PageCard className="pt-6 sm:pt-8">
                 <Playground />
                 <BottomScene page="play" />
             </PageCard>

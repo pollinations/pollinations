@@ -31,12 +31,6 @@
             "gravity": "south",
             "prompt": "Wide panorama for the bottom of a page. The top quarter is calm sky fading to flat pale cream #fef8eb at the top edge. Continuous ground across the whole width reaching the bottom edge, with no floating island, rim or border. The characters are in the middle 70% of the width, between 35% and 90% of the height."
         },
-        "sky": {
-            "request": "2048x878",
-            "size": "2048x854",
-            "gravity": "north",
-            "prompt": "A wide band of calm sky only, no ground. The detail (clouds, a tiny far island, a tiny flying bee) sits in the top 30%; below that the sky fades to flat pale cream #fef8eb."
-        },
         "card": {
             "request": "2048x1152",
             "size": "2048x1024",
@@ -81,7 +75,9 @@
             "slot": "quests",
             "frame": "card",
             "seed": 5102,
-            "refs": ["home-hero"],
+            "refs": [
+                "home-hero"
+            ],
             "prompt": "The same hill as image 2, at the Hive's little bee-door. {robot} holds out a small brass key to {polli}. Beside them a small quest board holds three cards; the first card is ticked, and a gentle arc of honey-gold pollen flies from it into her honey jar."
         },
         {
@@ -100,18 +96,13 @@
         },
         {
             "page": "play",
-            "slot": "sky",
-            "frame": "sky",
-            "seed": 5202,
-            "refs": ["play-hero"],
-            "prompt": "The sky above the cove of image 2: pale sea-glass sky with a few honey-edged clouds, a tiny far island with {hive}, and a tiny {polli} flying in the upper right trailing a few pollen motes. Low contrast and calm."
-        },
-        {
-            "page": "play",
             "slot": "closing",
             "frame": "closing",
             "seed": 5203,
-            "refs": ["pollinations.ai/public/art/v1/play-closing-day.webp", "play-hero"],
+            "refs": [
+                "pollinations.ai/public/art/v1/play-closing-day.webp",
+                "play-hero"
+            ],
             "prompt": "Image 2 is the current closing scene: keep its long workbench, its stations, its layout and its pixel grid exactly. Change only this: the blank paper on the left becomes a small retro terminal printing a chat scroll whose end {nomnom} happily munches; the heartbeat monitor becomes a small gramophone with headphones hanging on it; the bee becomes {polli}, wearing a painter's beret, adding a brushstroke to the framed painting; the bushes behind become a pier rail with the lagoon of image 3 beyond."
         },
         {
@@ -119,7 +110,9 @@
             "slot": "hero",
             "frame": "hero",
             "seed": 5301,
-            "refs": ["pollinations.ai/public/art/v1/apps-hero-day.webp"],
+            "refs": [
+                "pollinations.ai/public/art/v1/apps-hero-day.webp"
+            ],
             "prompt": "Keep the layout of image 2: the lane of app-window stalls receding to the right and Nomnom's place in it. {nomnom} strolls the lane carrying one colourful app window. {polli}, wearing a little leaf hat, strings a line of lanterns between the first two stalls. Giant monstera leaves frame the top right, and {hive} peeks through a gap in the leaves."
         },
         {
@@ -127,7 +120,10 @@
             "slot": "closing",
             "frame": "closing",
             "seed": 5302,
-            "refs": ["pollinations.ai/public/art/v1/apps-closing-day.webp", "apps-hero"],
+            "refs": [
+                "pollinations.ai/public/art/v1/apps-closing-day.webp",
+                "apps-hero"
+            ],
             "prompt": "Image 2 is the current scene: keep the noticeboard, the stalls, the cart and the layout. Change only this: the bee becomes {polli}, wearing a little leaf hat, hovering beside the board and pinning an app card (no longer standing on Nomnom); the round creature becomes {nomnom}; giant leaves frame the top corners and honey light patches fall on the lane, matching image 3."
         },
         {
@@ -153,7 +149,10 @@
             "slot": "votes",
             "frame": "closing",
             "seed": 5402,
-            "refs": ["pollinations.ai/public/art/v1/community-votes-day.webp", "community-hero"],
+            "refs": [
+                "pollinations.ai/public/art/v1/community-votes-day.webp",
+                "community-hero"
+            ],
             "prompt": "Image 2 is the current scene: keep the idea beds, the vote box with its VOTE lettering, the lantern, the characters and the layout. Change only this: the two small round creatures become one full-size {nomnom} queuing with a ballot in his mouth; the robot becomes {robot}; the upper sky becomes calm cream with apricot only at the horizon; the grass becomes sage with heather; a bulb string hangs behind the beds, matching image 3."
         },
         {
@@ -161,7 +160,9 @@
             "slot": "closing",
             "frame": "closing",
             "seed": 5403,
-            "refs": ["community-hero"],
+            "refs": [
+                "community-hero"
+            ],
             "prompt": "There's a seat for you: a long wooden table on the green of image 2 under the ring of bulbs, set with cups and small plant pots, and one bench pulled out toward the viewer. {polli}, in her mint scarf, pours honey tea; {robot} sits beside her; {nomnom} happily munches the potluck. In the centre of the table the sprout from the idea card has bloomed in a pot."
         }
     ]

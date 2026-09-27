@@ -226,10 +226,6 @@
     }
 }
 
-.playground-top-scene {
-    mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
-}
-
 .play-routing-value[data-customized="false"] {
     color: var(--polli-color-text-muted);
 }

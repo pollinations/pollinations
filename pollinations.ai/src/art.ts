@@ -8,7 +8,7 @@ import { useColorMode } from "@pollinations/ui";
 export const ART_SET = "v2";
 
 type ArtPage = "home" | "play" | "apps" | "community";
-type ArtSlot = "hero" | "quests" | "sky" | "votes" | "placeholder" | "closing";
+type ArtSlot = "hero" | "quests" | "votes" | "placeholder" | "closing";
 
 /** One illustration in the current light: day in light mode, night in dark mode. */
 export function useArt(page: ArtPage, slot: ArtSlot) {

@@ -129,7 +129,7 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
                 {["Secrets", "Apps"].map((title) => (
                     <Section key={title} title={title}>
                         <LoadError onRetry={onRetry}>
@@ -142,7 +142,7 @@ function KeysContent({
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             {apiKeys === null && (
                 <LoadError onRetry={onRetry}>
                     Couldn’t refresh keys. Showing the last loaded list.

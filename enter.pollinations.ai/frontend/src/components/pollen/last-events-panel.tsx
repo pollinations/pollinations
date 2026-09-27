@@ -248,7 +248,7 @@ export const LastEventsPanel: FC = () => {
                     {state.rows.map((event) => (
                         <li
                             key={`${event.kind}-${event.id}`}
-                            className="flex flex-col gap-1.5 rounded-lg bg-theme-bg-pale p-3"
+                            className="flex flex-col gap-1.5 rounded-2xl bg-surface-opaque p-3"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="font-semibold text-ink-900 truncate">
@@ -344,6 +344,7 @@ export const LastEventsPanel: FC = () => {
                                 setVisibleCount((count) => count + PAGE_SIZE)
                             }
                             disabled={state.loading}
+                            intent="neutral"
                             className="self-start sm:self-auto"
                         >
                             {loadingMore ? "Loading…" : "Show older"}

@@ -53,7 +53,7 @@ export function AppAttribution({
                                     height={20}
                                     loading="lazy"
                                     referrerPolicy="no-referrer"
-                                    className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
+                                    className="h-5 w-5 shrink-0 rounded-full bg-control object-cover"
                                 />
                                 <span className="underline">@{owner}</span>
                             </InlineLink>

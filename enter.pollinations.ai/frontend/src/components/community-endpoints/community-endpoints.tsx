@@ -106,7 +106,7 @@ export function DeploymentsPlaceholder({
         ? ["Publisher info", "Agents", "Models"]
         : ["Agents", "Models"];
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             {titles.map((title) => (
                 <Section key={title} title={title}>
                     <LoadError onRetry={onRetry}>{error}</LoadError>
@@ -481,7 +481,7 @@ export function CommunityEndpoints({
 
     return (
         <>
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
                 {canPublish && (
                     <Section title="Publisher info">
                         <form

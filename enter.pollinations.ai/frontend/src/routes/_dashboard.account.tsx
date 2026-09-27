@@ -76,7 +76,7 @@ function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             <Section title="Profile">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -88,7 +88,7 @@ function AccountPage() {
                             />
                         ) : (
                             <div
-                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-theme-bg-subtle text-theme-text-muted"
+                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-control text-theme-text-muted"
                                 aria-hidden="true"
                             >
                                 <GitHubIcon className="h-7 w-7" />
@@ -108,7 +108,7 @@ function AccountPage() {
                     </div>
                     <Button
                         type="button"
-                        intent="commit"
+                        intent="neutral"
                         icon={<SignOutIcon />}
                         disabled={isSigningOut}
                         className="shrink-0 self-start sm:self-center"

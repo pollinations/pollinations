@@ -968,7 +968,7 @@ export function CommunityEndpointDialog({
                                                                 className={
                                                                     modelId ===
                                                                     selected
-                                                                        ? "bg-theme-bg-active text-theme-text-strong"
+                                                                        ? "bg-control-strong text-theme-text-strong"
                                                                         : undefined
                                                                 }
                                                                 onClick={() => {

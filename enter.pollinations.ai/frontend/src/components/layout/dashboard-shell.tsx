@@ -10,6 +10,7 @@ import {
     CopyButton,
     cn,
     DiscordIcon,
+    DropdownItem,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -338,17 +339,17 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                    <div className="flex shrink-0 flex-col gap-2 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
                             <BrandMark size="drawer" />
                             <button
                                 type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-control text-theme-text-strong hover:bg-control-strong"
                                 onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
@@ -369,9 +370,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-2 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
                         {children}
                     </main>
                 </ScrollArea>
@@ -464,10 +465,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-3 py-5 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
+        <div className="hidden shrink-0 flex-col gap-2.5 pb-3 pl-1 lg:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -507,7 +508,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
+        <div className="flex shrink-0 flex-col gap-2 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
@@ -522,7 +523,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >
@@ -564,12 +565,12 @@ const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
+        className="inline-flex items-center gap-1.5 rounded-full bg-control py-1 pr-2.5 pl-2 text-micro font-medium leading-none text-theme-text-base transition-colors hover:bg-control-strong hover:text-theme-text-strong"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
+            <span className="ml-0.5 font-mono text-micro text-theme-text-muted">
                 {count}
             </span>
         )}
@@ -580,11 +581,11 @@ const DashboardSupport: FC<{
     action: SupportAction;
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
-    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
+    <div className="mt-5">
         {/* "Docs" header on the left; a small labelled copy button on the right
             (no tooltip — the visible label says what it does). */}
         <div className="flex items-center justify-between gap-2 px-3 py-1">
-            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
+            <span className="flex items-center gap-2.5 text-sm font-medium text-theme-text-base">
                 {action.icon}
                 {action.label}
             </span>
@@ -594,7 +595,7 @@ const DashboardSupport: FC<{
                     value={action.copyValue}
                     copiedTimeoutMs={1500}
                     tooltip={null}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-active px-2.5 py-1 text-xs font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-solid/20 px-2.5 py-1 text-xs font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-solid/30"
                 >
                     {(copied) => (
                         <>
@@ -605,7 +606,7 @@ const DashboardSupport: FC<{
                 </CopyButton>
             </span>
         </div>
-        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+        <div className="mt-0.5 flex flex-col gap-0.5 pl-6">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />
             ))}
@@ -618,7 +619,7 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-theme-text-muted transition-colors hover:bg-control hover:text-theme-text-strong"
     >
         <span className="flex items-center gap-2">
             {icon}
@@ -680,34 +681,32 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 {links.length > 0 && (
                     <div className="my-1 border-t border-divider" />
                 )}
-                <Link
+                <DropdownItem
+                    as={Link}
                     to="/account"
                     onClick={() => {
                         close();
                         onNavigate?.();
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     <AccountIcon
                         className="h-4 w-4 shrink-0"
                         aria-hidden="true"
                     />
                     <span>Account</span>
-                </Link>
-                <button
-                    type="button"
+                </DropdownItem>
+                <DropdownItem
                     onClick={() => {
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     <SignOutIcon
                         className="h-4 w-4 shrink-0"
                         aria-hidden="true"
                     />
                     <span>Sign Out</span>
-                </button>
+                </DropdownItem>
             </>
         )}
     </AccountMenu>
@@ -719,16 +718,16 @@ const AccountMenuLinkRow: FC<AccountMenuLink> = ({
     icon,
     ariaLabel,
 }) => (
-    <a
+    <DropdownItem
+        as="a"
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}
         </span>
         <span>{label}</span>
-    </a>
+    </DropdownItem>
 );

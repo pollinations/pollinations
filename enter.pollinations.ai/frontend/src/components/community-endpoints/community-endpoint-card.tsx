@@ -77,7 +77,7 @@ export function CommunityEndpointCard({
     const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
-        <Surface className="transition-colors hover:bg-surface-opaque/90">
+        <Surface>
             <ResourceCardHeader
                 icon={
                     isAgent ? (
@@ -325,7 +325,7 @@ function CommunityDetailRow({
                         value={copyValue}
                         tooltip={copyLabel}
                         copiedTooltip="Copied"
-                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-control-strong hover:text-theme-text-strong"
                     >
                         {(copied: boolean) =>
                             copied ? (

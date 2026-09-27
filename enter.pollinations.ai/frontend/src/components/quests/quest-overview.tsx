@@ -353,10 +353,10 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 aria-valuemin={0}
                 aria-valuemax={progress.target}
                 aria-valuenow={Math.min(progress.current, progress.target)}
-                className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
+                className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-control-strong"
             >
                 <div
-                    className="h-full rounded-full bg-theme-text-soft"
+                    className="h-full rounded-full bg-theme-bg-solid"
                     style={{ width: `${percentage}%` }}
                 />
             </div>
@@ -394,9 +394,8 @@ function QuestMarker({
     // coming_soon, which always renders claimed) → no tile, muted glyph.
     function resolveTile(): string {
         if (!comingSoon && status === "open")
-            return "bg-theme-bg-active text-theme-text-strong";
-        if (status === "claimable")
-            return "bg-theme-bg-subtle text-theme-text-muted";
+            return "bg-theme-bg-solid/20 text-theme-text-soft";
+        if (status === "claimable") return "bg-control text-theme-text-muted";
         return "text-theme-text-muted";
     }
     const MarkerIcon = resolveIcon();
@@ -887,7 +886,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
     const showSummary = !initialError;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             {/* Summary. The per-user accounting (completed/claimed cards +
                 claimable footers + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
@@ -945,7 +944,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
                 {bonusRewardCards.length > 0 && (
                     <Section
                         title="Bonus rewards"

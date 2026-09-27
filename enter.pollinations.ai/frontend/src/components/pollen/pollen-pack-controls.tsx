@@ -10,8 +10,6 @@ const pollenPackSliderStyle = {
     "--polli-slider-fill": "var(--polli-color-paid-soft)",
     "--polli-slider-track": "var(--polli-color-paid-pale)",
     "--polli-slider-thumb-border": "var(--polli-color-paid-deep)",
-    "--polli-slider-thumb-shadow":
-        "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
 } as CSSProperties;
 
 const formatPackAriaLabel = (pack: PollenPack): string =>

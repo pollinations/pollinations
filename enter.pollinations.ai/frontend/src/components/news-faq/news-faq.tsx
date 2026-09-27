@@ -8,7 +8,7 @@ import {
 } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3">
         <Section title="Announcements" framed>
             <Announcements />
         </Section>

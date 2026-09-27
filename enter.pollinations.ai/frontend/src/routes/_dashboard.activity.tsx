@@ -86,7 +86,7 @@ function ActivityPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             <Section title="Usage" framed>
                 <UsageSection
                     period={usagePeriod}

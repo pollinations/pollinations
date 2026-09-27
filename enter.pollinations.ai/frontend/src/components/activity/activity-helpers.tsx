@@ -103,6 +103,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             as="button"
             onClick={onClick}
             disabled={disabled}
+            intent="neutral"
             size="sm"
             className="gap-2 whitespace-nowrap"
         >

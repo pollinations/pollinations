@@ -60,7 +60,7 @@ function PollenPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             <Section title="Wallet">
                 <Await promise={balance} fallback={null}>
                     {(balances) =>

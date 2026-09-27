@@ -83,7 +83,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                         href={checkoutHref}
                         target="_self"
                         intent="commit"
-                        className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                        className="w-28 min-w-0 gap-1.5 self-start text-center sm:shrink-0 sm:self-center"
                     >
                         <span className="inline-flex items-center gap-1.5">
                             <WalletIcon className="h-4 w-4 shrink-0" />

@@ -32,7 +32,7 @@ Pull requests use `BUG` or no type. Return `null` when no type fits.
 - `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. For pull requests, not for adding or repricing a model; `MODEL` already covers model pricing
 - `SECURITY`: API keys, permissions, secrets or secret files (`secrets/*.json`), account access, fraud or ban handling, or allowlists
 - `AUTOMATED`: The author's account type is `Bot`. A person relayed from Discord is not automated
-- `POLLEN-QUEST`: Pull requests only. A linked issue has the `POLLEN-QUEST` label
+- `POLLEN-QUEST`: Pull requests only. The pull request solves or closes a linked issue that has the `POLLEN-QUEST` label. Mentioning a quest issue, for example as a bug report, is not enough
 
 Return an empty `flags` list when none apply.
 

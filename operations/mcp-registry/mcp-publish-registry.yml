@@ -1,3 +1,6 @@
+# Move this file to .github/workflows/mcp-publish-registry.yml when merging.
+# It lives here instead because contributor PR pushes can't touch
+# .github/workflows/ without the `workflow` OAuth scope.
 name: MCP / Publish registry entries
 
 on:

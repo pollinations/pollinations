@@ -66,7 +66,7 @@ function AppCard({
     return (
         <Surface className="flex min-h-16 items-center justify-between gap-3 p-4">
             <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] shadow-sm ring-1 ring-[rgba(0,0,0,0.18)]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] ring-1 ring-[rgba(0,0,0,0.18)]">
                     {logo ? (
                         <img
                             src={logo}

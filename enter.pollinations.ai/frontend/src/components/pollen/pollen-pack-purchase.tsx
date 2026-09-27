@@ -1,16 +1,12 @@
-import {
-    ExternalLinkButton,
-    Surface,
-    Tooltip,
-    WalletIcon,
-} from "@pollinations/ui";
+import { Button, Surface, WalletIcon } from "@pollinations/ui";
 import {
     calculateServiceFeeCents,
     formatUsdCentsCompact,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import type { FC } from "react";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { PackSliderRow, PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenPackPurchaseProps = {
     selectedPackAmount: number;
@@ -48,50 +44,34 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
         `/api/stripe/checkout/${selectedPack.packKey}` +
         (checkoutQuery ? `?${checkoutQuery}` : "");
 
+    // The charged total (pack + service fee) appears once, on the button that
+    // charges it; the fee breakdown and tax treatment sit right under it.
     return (
-        <Surface>
-            <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
+        <Surface className="flex flex-col gap-3">
+            <PackSliderRow
+                slider={
                     <PollenPackSlider
                         value={selectedPack.amountUsd}
                         onChange={onSelectedPackAmountChange}
-                        selectedBadgeLabel={chargeLabel}
-                        selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                     />
-                </div>
-                <Tooltip
-                    triggerAs="span"
-                    className="polli:cursor-pointer"
-                    content={
-                        <span className="block">
-                            Buy{" "}
-                            <span className="font-semibold text-theme-text-strong">
-                                {selectedPack.amountUsd} pollen
-                            </span>{" "}
-                            for{" "}
-                            <span className="font-semibold text-theme-text-strong">
-                                {chargeLabel}
-                            </span>
-                            <span className="mt-1 block text-theme-text-muted">
-                                Tax calculated at checkout
-                            </span>
-                        </span>
-                    }
-                    displayContents
-                >
-                    <ExternalLinkButton
+                }
+                action={
+                    <Button
+                        as="a"
                         href={checkoutHref}
-                        target="_self"
                         intent="commit"
-                        className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                        size="lg"
+                        icon={<WalletIcon />}
+                        className="w-full tabular-nums"
                     >
-                        <span className="inline-flex items-center gap-1.5">
-                            <WalletIcon className="h-4 w-4 shrink-0" />
-                            Buy
-                        </span>
-                    </ExternalLinkButton>
-                </Tooltip>
-            </div>
+                        Buy for {chargeLabel}
+                    </Button>
+                }
+            />
+            <p className="text-[13px] leading-snug text-theme-text-muted">
+                Includes {formatUsdCentsCompact(serviceFeeCents)}{" "}
+                {SERVICE_FEE_NAME.toLowerCase()} · Tax calculated at checkout
+            </p>
         </Surface>
     );
 };

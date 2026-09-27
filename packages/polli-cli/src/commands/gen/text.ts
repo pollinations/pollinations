@@ -51,7 +51,9 @@ export function createTextCommand() {
             "Wait for full response instead of streaming tokens",
         )
         .action(async (promptArg, opts, command: Command) => {
-            const stdinText = await readStdin();
+            // With a prompt argument, stdin is optional context: don't wait
+            // forever on a caller that leaves stdin open.
+            const stdinText = await readStdin(promptArg ? 3000 : undefined);
             const prompt = promptArg || stdinText;
 
             if (!prompt) {

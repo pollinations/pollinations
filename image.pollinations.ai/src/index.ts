@@ -34,6 +34,7 @@ import {
 import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { requireImagePayment, weftImageEnabled } from "./weftX402.js";
 import {
     buildPaymentRequirements,
     send402Challenge,
@@ -113,11 +114,13 @@ const incrementIpViolations = (ip: string) => {
 const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT, Payment-Signature");
     res.setHeader("Access-Control-Expose-Headers", [
         "X-Auth-Status",
         "X-Auth-Reason",
         "X-PAYMENT-RESPONSE",
+        "Payment-Required",
+        "Payment-Response",
         "X-Debug-Token",
         "X-Debug-Token-Source",
         "X-Debug-Referrer",
@@ -377,6 +380,7 @@ const imageGen = async ({
 const checkCacheAndGenerate = async (
     req: IncomingMessage,
     res: ServerResponse,
+    weftPaid = false,
 ): Promise<void> => {
     const { pathname, query } = parse(req.url, true);
 
@@ -408,7 +412,9 @@ const checkCacheAndGenerate = async (
         payload: PaymentPayload;
         requirements: PaymentRequirements;
     } | null = null;
-    if (x402Enabled()) {
+    // When Weft is configured, it owns both Payment-Signature and X-PAYMENT.
+    // The older Coinbase verifier only understands the v1 X-PAYMENT format.
+    if (x402Enabled() && !weftImageEnabled()) {
         const outcome = await verifyIncomingPayment(req);
         if (outcome?.ok === false) {
             res.writeHead(outcome.status, { "Content-Type": "application/json" });
@@ -490,10 +496,10 @@ const checkCacheAndGenerate = async (
                 
                 // Anonymous sana requests only
                 queueConfig = QUEUE_CONFIG;
-                logAuth(`${modelName} model (anonymous) - 120 second interval, cap=1`);
+                logAuth(`${modelName} model (anonymous) - 45 second interval, cap=1`);
 
                 // x402 paid callers skip the anonymous queue entirely.
-                if (paidContext) {
+                if (paidContext || weftPaid) {
                     progress.setProcessing(requestId);
                     return generateImage();
                 }
@@ -506,7 +512,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true },
+                    { ...queueConfig, rejectWhenQueued: weftImageEnabled() },
                 );
 
                 return result;
@@ -600,9 +606,21 @@ const checkCacheAndGenerate = async (
                     ? "Too Many Requests"
                     : "Internal Server Error";
 
+        if (error.paymentEligible && weftImageEnabled()) {
+            requireImagePayment(req, res, () => checkCacheAndGenerate(req, res, true));
+            return;
+        }
+
+        // Weft settles only successful images; error JPEGs have HTTP 200.
+        if (weftPaid) {
+            res.writeHead(statusCode, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: error.message || "Image generation failed" }));
+            return;
+        }
+
         // x402: rate-limited (429) requests without a valid payment get a
         // 402 challenge so x402 clients can pay to bypass on the same URL.
-        if (statusCode === 429 && !paidContext && x402Enabled()) {
+        if (statusCode === 429 && !paidContext && x402Enabled() && !weftImageEnabled()) {
             send402Challenge(
                 req,
                 res,

@@ -22,7 +22,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
         allowHeaders: ["*"],
-        exposeHeaders: Object.keys(ATTRIBUTION_HEADERS),
+        exposeHeaders: [...Object.keys(ATTRIBUTION_HEADERS), "Payment-Required", "Payment-Response"],
     }),
 );
 

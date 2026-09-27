@@ -49,6 +49,8 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     // - X-Error-Type header is present (error images should not be cached)
     if (
         c.res?.ok &&
+        !c.req.header("payment-signature") &&
+        !c.req.header("x-payment") &&
         c.res.headers.get("content-type")?.includes("image/") &&
         // don't store it if there is a semantic hit
         !(c.res.headers.get("x-cache") === "HIT") &&

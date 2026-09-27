@@ -30,7 +30,11 @@ const plain = await client.messages.create({
     max_tokens: 64,
     messages: [{ role: "user", content: "Reply with exactly one word: pong" }],
 });
-line("plain", { content: plain.content, stop_reason: plain.stop_reason, usage: plain.usage });
+line("plain", {
+    content: plain.content,
+    stop_reason: plain.stop_reason,
+    usage: plain.usage,
+});
 
 // 2. streamed
 process.stdout.write("\n== streamed ==\n");
@@ -41,7 +45,10 @@ const stream = client.messages.stream({
 });
 let text = "";
 for await (const event of stream) {
-    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+    if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta"
+    ) {
         text += event.delta.text;
     }
 }
@@ -62,7 +69,9 @@ const tool = await client.messages.create({
             },
         },
     ],
-    messages: [{ role: "user", content: "What's the weather in Paris? Use the tool." }],
+    messages: [
+        { role: "user", content: "What's the weather in Paris? Use the tool." },
+    ],
 });
 line("tool-use", tool.content);
 

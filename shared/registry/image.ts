@@ -1790,15 +1790,15 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch rates, verified 2026-09-27. Update cost and price in a
-        // separate PR when the promotion ends on 2026-09-30; keep multiplier 1.
+        // fal published post-promotion rates (promotion ends 2026-09-30).
+        // Activate only after confirming these rates with fal; keep multiplier 1.
         cost: {
-            completionVideoSeconds: 0.0125, // Also fal's rate per reported billing unit.
+            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.02 },
-                "1080p": { completionVideoSeconds: 0.04 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {

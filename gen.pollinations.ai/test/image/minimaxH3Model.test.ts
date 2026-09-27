@@ -279,10 +279,10 @@ describe("callMinimaxH3MaxTurboAPI", () => {
     });
 
     it.each([
-        [5, "480p", "5", 0.0625],
-        [10, "768p", "16", 0.2],
-        [15, "1080p", "48", 0.6],
-        [5, "480p", "6.25", 0.078125],
+        [5, "480p", "5", 0.125],
+        [10, "768p", "16", 0.4],
+        [15, "1080p", "48", 1.2],
+        [5, "480p", "6.25", 0.15625],
     ] as const)("charges provider cost at multiplier 1 for %ss at %s", async (duration, resolution, units, cost) => {
         const requests: ProviderRequest[] = [];
         mockH3Fetch(requests, "COMPLETED", units);
@@ -296,7 +296,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
         expect(result.trackingData.providerBilling).toEqual({
             units: Number(units),
-            unitCost: 0.0125,
+            unitCost: 0.025,
         });
         const billing = calculateUsageBilling({
             model: "minimax/minimax-h3-max-turbo",
@@ -332,7 +332,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
 
     it("keeps the reviewed registry rate when fal's pricing API changes", async () => {
         const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", "5", 0.025);
+        mockH3Fetch(requests, "COMPLETED", "5", 0.05);
         const result = await callMinimaxH3MaxTurboAPI("reviewed pricing", {
             ...baseParams,
             model: "minimax/minimax-h3-max-turbo",
@@ -342,7 +342,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         ).toBe(false);
         expect(result.trackingData.providerBilling).toEqual({
             units: 5,
-            unitCost: 0.0125,
+            unitCost: 0.025,
         });
     });
 

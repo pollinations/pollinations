@@ -37,6 +37,7 @@ import type {
     QuestCheckResult,
 } from "../../backend-types.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -658,6 +659,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         loading: false,
                         error: null,
                     }));
+                    window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
                     return;
                 }
                 // Not ok (throttled or failed) — just stop the indicator.
@@ -696,6 +698,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     (id) => id !== rewardId,
                 ),
             }));
+            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,

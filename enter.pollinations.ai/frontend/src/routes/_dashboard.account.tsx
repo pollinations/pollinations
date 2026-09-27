@@ -201,7 +201,7 @@ function AccountPage() {
                         type="button"
                         intent="danger"
                         icon={<TrashIcon />}
-                        className="shrink-0"
+                        className="shrink-0 self-start sm:self-center"
                         onClick={() => setDeleteDialogOpen(true)}
                     >
                         Delete account

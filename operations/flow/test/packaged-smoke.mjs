@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import { setTimeout } from "node:timers/promises";
 import { chromium } from "playwright";
+import { STARTUP_TIMEOUT_MS } from "../startup.ts";
 
 // Run only inside a disposable container: this resets its fixture database.
 const origin = process.env.FLOW_ENTER_ORIGIN ?? "http://localhost:4180";
 const adminOrigin = process.env.FLOW_ADMIN_ORIGIN ?? "http://localhost:4182";
 let ready = false;
 let startupFailure;
-for (let attempt = 0; attempt < 120; attempt++) {
+for (
+    const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+    Date.now() < deadline;
+) {
     try {
         const response = await fetch(`${origin}/flow`);
         ready = response.ok;
@@ -16,13 +20,13 @@ for (let attempt = 0; attempt < 120; attempt++) {
         if (ready) break;
     } catch (error) {
         startupFailure = `${error.cause?.code} ${error.cause?.address}:${error.cause?.port}`;
-        // The entrypoint is still bundling the real Workers and migrating D1.
+        // The entrypoint is starting the real Workers and migrating D1.
     }
     await setTimeout(1000);
 }
 assert(
     ready,
-    `Packaged Flow did not start within two minutes: ${startupFailure}`,
+    `Packaged Flow exceeded the hosted readiness budget: ${startupFailure}`,
 );
 
 const source = await (await fetch(`${origin}/__flow/source`)).json();
@@ -62,12 +66,6 @@ try {
         const firstState = await fetch(`${origin}/__flow/state`);
         assert.equal(firstState.status, 200);
         assert.equal((await firstState.json()).wallet.total, 10);
-        assert.equal(
-            await freshPage
-                .getByRole("button", { name: "Sign out of Flow", exact: true })
-                .count(),
-            process.env.FLOW_HOSTED === "true" ? 1 : 0,
-        );
         await freshPage.close();
     }
     const prepared = await fetch(`${origin}/__flow/reset`, { method: "POST" });

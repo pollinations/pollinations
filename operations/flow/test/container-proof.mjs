@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { setTimeout } from "node:timers/promises";
 import { promisify } from "node:util";
+import { STARTUP_TIMEOUT_MS } from "../startup.ts";
 
 const exec = promisify(execFile);
 const image = process.argv[2];
@@ -10,14 +12,20 @@ const names = ["first", "second"].map(
 );
 const docker = async (...args) =>
     (await exec("docker", args, { maxBuffer: 4 * 1024 * 1024 })).stdout.trim();
-const start = (name) =>
-    docker(
+const start = async (name) => {
+    const started = Date.now();
+    await docker(
         "run",
         "--detach",
         "--init",
         "--name",
         name,
-        "--memory=3g",
+        "--memory=4g",
+        "--cpus=0.5",
+        "--env",
+        "FLOW_BIND_ADDRESS=0.0.0.0",
+        "--publish",
+        "127.0.0.1::4180",
         ...(name.endsWith("second")
             ? [
                   "--env",
@@ -28,6 +36,25 @@ const start = (name) =>
             : []),
         image,
     );
+    const address = await docker("port", name, "4180");
+    while (Date.now() - started < STARTUP_TIMEOUT_MS) {
+        const response = await fetch(`http://${address}/flow`, {
+            signal: AbortSignal.timeout(1000),
+        }).catch(() => null);
+        await response?.body?.cancel();
+        if (response?.ok) {
+            assert(Date.now() - started < STARTUP_TIMEOUT_MS);
+            console.log(
+                `${name} ready in ${Date.now() - started}ms at 0.5 CPU / 4 GiB`,
+            );
+            return;
+        }
+        await setTimeout(1000);
+    }
+    throw new Error(
+        `${name} exceeded the hosted startup budget (${STARTUP_TIMEOUT_MS}ms)`,
+    );
+};
 async function request(name, path, body) {
     // Return only status and wallet total; never print session cookies or keys.
     return JSON.parse(

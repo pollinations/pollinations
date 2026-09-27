@@ -1,5 +1,6 @@
 import { Container } from "@cloudflare/containers";
 import { createReviewerGateway } from "./reviewer-gateway";
+import { STARTUP_TIMEOUT_MS } from "./startup";
 
 type Bindings = {
     ASSETS: Fetcher;
@@ -14,6 +15,23 @@ type Bindings = {
 };
 
 export class FlowRuntime extends Container<Bindings> {
+    override startAndWaitForPorts(
+        ...args: Parameters<Container["startAndWaitForPorts"]>
+    ) {
+        const [ports, cancellationOptions, startOptions] = args;
+        const options =
+            typeof ports === "object" && !Array.isArray(ports)
+                ? ports
+                : { ports, cancellationOptions, startOptions };
+        // containerFetch still owns capacity/rate-limit responses and cancellation.
+        return super.startAndWaitForPorts({
+            ...options,
+            cancellationOptions: {
+                portReadyTimeoutMS: STARTUP_TIMEOUT_MS,
+                ...options.cancellationOptions,
+            },
+        });
+    }
     defaultPort = 4180;
     requiredPorts = [4180, 4182];
     sleepAfter = "10m";

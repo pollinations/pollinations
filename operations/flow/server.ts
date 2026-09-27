@@ -5,19 +5,20 @@ import { environmentScript } from "./flow-environment";
 import { ADMIN_ORIGIN, ORIGINS, PORT, RUNTIME_ORIGIN } from "./local-origins";
 import type { LoadReviewErrors } from "./review-requests";
 import { REVIEWER_AUTH_PATH } from "./reviewer-gateway";
-import { bundleWorkers, startRuntime } from "./runtime.ts";
+import { bundleWorkers, startRuntime, type WorkerScripts } from "./runtime.ts";
 import { assetRequest } from "./source-assets";
 import { readSourceInfo } from "./source-info";
 import { buildSourceStyles } from "./source-styles";
 
 export async function startServer(options: {
+    scripts?: WorkerScripts;
     loadReviewCases?: () => Promise<ReviewCaseModule>;
     loadReviewErrors: LoadReviewErrors;
     fetchAssets?: (request: Request) => Promise<Response>;
 }) {
     let source = await readSourceInfo();
     const fetchAssets = options.fetchAssets ?? fetch;
-    let scripts = await bundleWorkers();
+    let scripts = options.scripts ?? (await bundleWorkers());
     const runtime = await startRuntime({
         scripts,
         loadReviewErrors: options.loadReviewErrors,

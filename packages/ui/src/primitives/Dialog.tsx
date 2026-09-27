@@ -172,7 +172,10 @@ export type DialogBodyProps = ScrollAreaProps & {
     bodyClassName?: string;
 };
 
-/** Full-height scroll area with floating actions and an optional bottom link. */
+/**
+ * Scroll area whose actions follow the content and stay pinned to the bottom
+ * once the content scrolls, so a short screen never opens a gap above them.
+ */
 export function DialogBody({
     children,
     actions,
@@ -191,7 +194,7 @@ export function DialogBody({
         >
             <div
                 className={cn(
-                    "polli:grow polli:space-y-4 polli:px-6 polli:py-4",
+                    "polli:space-y-4 polli:px-6 polli:py-4",
                     bodyClassName,
                 )}
             >
@@ -224,6 +227,9 @@ export const DialogFooter: FC<DialogFooterProps> = ({
         <div
             className={cn(
                 "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4",
+                // Actions are the screen's main controls: touch-sized, sharing
+                // the row on phones, and spanning it when there is only one.
+                "polli:[&>.polli-control]:min-h-12 polli:[&>.polli-control]:text-base polli:max-sm:[&>.polli-control]:flex-auto polli:[&>.polli-control:only-child]:flex-auto",
                 className,
             )}
             {...props}

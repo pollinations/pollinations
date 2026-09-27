@@ -102,7 +102,8 @@ export function AuthFlowLayout({
     actions,
     footnote = legalFootnote,
     dialog,
-    size,
+    // Most auth steps are a title, a line and one action; busy steps opt into more width.
+    size = "sm",
     onClose,
 }: AuthFlowLayoutProps) {
     const generatedId = useId();

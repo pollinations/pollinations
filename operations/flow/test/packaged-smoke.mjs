@@ -107,8 +107,9 @@ try {
         .getByRole("heading", { name: "Create secret key", exact: true })
         .waitFor({ state: "detached" });
     await page.goto(adminOrigin);
-    await page.getByRole("heading", { name: "Sign in", exact: true }).waitFor();
-    await page.getByText("Admin example", { exact: true }).waitFor();
+    await page
+        .getByRole("heading", { name: "Sign in to Admin example", exact: true })
+        .waitFor();
     await page
         .getByRole("button", { name: "Sign in with Pollinations", exact: true })
         .waitFor();

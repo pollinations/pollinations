@@ -11,8 +11,9 @@ on:
       - packages/auth/**
       - packages/sdk/**
       - packages/ui/**
-      - apps/react/**
-      - operations/economics/web/**
+      - apps/react/package.json
+      - operations/economics/web/package.json
+      - .dockerignore
       - package.json
       - package-lock.json
       - BRING_YOUR_OWN_MODEL.md
@@ -35,15 +36,20 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+      - name: Check build-context exclusions
+        run: node operations/flow/test/build-context.mjs seed
       - name: Build the isolated runtime
         env:
           FLOW_MAIN_REVISION: ${{ github.event.pull_request.base.sha }}
+        # Wrangler sends the Dockerfile on stdin, using the root ignore rules.
         run: >-
           docker build --platform linux/amd64
           --build-arg FLOW_REVISION="$(git rev-parse HEAD)"
           --build-arg FLOW_MAIN_REVISION="$FLOW_MAIN_REVISION"
           --build-arg FLOW_DIRTY=false
-          -f operations/flow/Dockerfile -t flow-proof:ci .
+          -f - -t flow-proof:ci . < operations/flow/Dockerfile
+      - name: Verify the image excludes local credentials and unrelated apps
+        run: docker run --rm flow-proof:ci node operations/flow/test/build-context.mjs verify
       - name: Run shared auth and non-credential Flow tests
         run: |
           docker run --rm --init flow-proof:ci npm test --workspace=@pollinations/auth
@@ -73,11 +79,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Deploy the tested checkout to the separate preview Worker
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_OBSERVABILITY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_FLOW_PREVIEW }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           FLOW_MAIN_REVISION: ${{ github.event.pull_request.base.sha }}
           FLOW_PREVIEW_CLIENT_ID: ${{ vars.FLOW_PREVIEW_CLIENT_ID }}
         run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Configure the dedicated flow-preview environment credential before deployment."; exit 1; }
           test -n "$FLOW_PREVIEW_CLIENT_ID"
           npx wrangler deploy --config operations/flow/wrangler.preview.json \
             --var "FLOW_REVISION:$(git rev-parse HEAD)" \

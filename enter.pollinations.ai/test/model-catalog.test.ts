@@ -214,3 +214,33 @@ it("adds rolling user counts from public model stats", () => {
     });
     expect(model.realAvgCost).toBeUndefined();
 });
+
+it("does not label provider-cost-only pricing as free", () => {
+    const adjustment = {
+        name: "provider.units.v1",
+        label: "Provider cost",
+        kind: "video",
+        price: "1",
+        currency: "pollen" as const,
+        quantity: 1,
+        unit: "USD",
+    };
+    const [paid, free] = getModelPricesFromCatalog([
+        {
+            name: "provider-cost-video",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_adjustments: [adjustment],
+        },
+        {
+            name: "free-video",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_adjustments: [{ ...adjustment, price: "0" }],
+        },
+    ]);
+    expect(paid.free).toBe(false);
+    expect(paid.prices).toEqual([]);
+    expect(paid.priceAdjustments).toEqual([adjustment]);
+    expect(free.free).toBe(true);
+});

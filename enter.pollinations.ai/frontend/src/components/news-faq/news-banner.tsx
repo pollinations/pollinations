@@ -1,29 +1,30 @@
 import { InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
-const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
-export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
-
-const DYNAMIC_NEWS_COUNT = 6;
-
-interface Highlight {
-    date?: string;
-    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
-    dateLabel?: string;
-    emoji: string;
-    title: string;
-    description: string;
-    /** Optional bullet list rendered under the description (pinned items only). */
-    details?: string[];
-}
+import {
+    DYNAMIC_NEWS_COUNT,
+    HIGHLIGHTS_RAW_URL,
+    type Highlight,
+    parseHighlights,
+} from "./highlights";
 
 /**
  * Pinned news items that stay visible regardless of daily updates.
  * Edit this array to add/remove pinned announcements.
  */
 const PINNED_NEWS: Highlight[] = [
+    {
+        date: "2026-09-26",
+        emoji: "📅",
+        title: "Upcoming model changes",
+        description:
+            "Nova Canvas and Nova Reel are retiring; MAI Image 2.5 Flash is moving to 2.6 Flash. Check the model IDs used by your apps.",
+        details: [
+            "September 30: amazon/nova-canvas-v1 and amazon/nova-reel-v1 will be removed, including their aliases. Requests will not automatically fall back to another model. Choose another image or video model before then.",
+            "October 1: MAI Image 2.5 Flash will leave the catalog as a separate model. Its existing ID, microsoft/mai-image-2.5-flash, will keep working but use MAI Image 2.6 Flash and 2.6 Flash pricing. Use microsoft/mai-image-2.6-flash for new integrations.",
+            "[Browse models](/models) for available options and current prices.",
+        ],
+    },
     {
         date: "2026-09-24",
         emoji: "🔄",
@@ -120,25 +121,6 @@ function renderWithLinks(text: string): ReactNode[] {
         parts.push(text.slice(lastIndex));
     }
     return parts;
-}
-
-function parseHighlights(md: string): Highlight[] {
-    return md
-        .split("\n")
-        .filter((line) => line.startsWith("- **"))
-        .filter((line) => !line.includes("<!-- app -->"))
-        .map((line) => {
-            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
-            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
-            const descStart = line.lastIndexOf("**") + 2;
-            const description = line.slice(descStart).trim();
-            return {
-                date: dateMatch?.[1] ?? "",
-                emoji: emojiTitleMatch?.[1] ?? "",
-                title: emojiTitleMatch?.[2]?.trim() ?? "",
-                description,
-            };
-        });
 }
 
 function formatNewsDate(date: string): string {

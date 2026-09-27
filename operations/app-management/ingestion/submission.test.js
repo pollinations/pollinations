@@ -54,6 +54,17 @@ test("preserves multiline textarea content", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
+test("parses the optional quest reference", () => {
+    const withQuest = (value) =>
+        parseSubmission(`${BODY}\n\n### Quest\n${value}`);
+    assert.equal(withQuest("#15600").quest, "15600");
+    assert.equal(withQuest("15600").quest, "15600");
+    assert.equal(withQuest("_No response_").quest, "");
+    assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
+        "Quest must be a quest issue number such as #15600.",
+    ]);
+});
+
 test("infers known distribution platforms", () => {
     assert.equal(
         inferPlatform("Example", "https://play.google.com/store/apps/x", ""),
@@ -147,4 +158,53 @@ if (args[0] === "issue" && args[1] === "list") {
         byop: false,
         requests24h: 0,
     });
+});
+
+test("a named quest must be an open POLLEN-QUEST issue", () => {
+    const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "app-validator-"));
+    fs.writeFileSync(
+        path.join(fakeBin, "gh"),
+        `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "issue" && args[1] === "view") {
+    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: "POLLEN-QUEST" }] }));
+} else if (args[0] === "issue" && args[1] === "list") {
+    console.log("[]");
+} else if (args[0] === "api") {
+    console.log('{"id":123}');
+} else {
+    process.exit(91);
+}
+`,
+        { mode: 0o755 },
+    );
+    const validate = (questState) =>
+        spawnSync(
+            process.execPath,
+            [path.join(__dirname, "validate-submission.js")],
+            {
+                encoding: "utf8",
+                env: {
+                    ...process.env,
+                    PATH: `${fakeBin}:${process.env.PATH}`,
+                    QUEST_STATE: questState,
+                    ISSUE_NUMBER: "1",
+                    ISSUE_AUTHOR: "example",
+                    ISSUE_BODY: `${BODY}\n\n### Quest\n#15600`,
+                    ISSUE_CREATED_AT: "2026-07-01T00:00:00Z",
+                    ISSUE_URL:
+                        "https://github.com/pollinations/pollinations/issues/1",
+                },
+            },
+        );
+    const open = validate("OPEN");
+    const closed = validate("CLOSED");
+    fs.rmSync(fakeBin, { recursive: true, force: true });
+
+    assert.equal(open.status, 0, open.stderr || open.stdout);
+    assert.equal(JSON.parse(open.stdout).submission.quest, "15600");
+    assert.equal(closed.status, 2, closed.stderr || closed.stdout);
+    assert.deepEqual(JSON.parse(closed.stdout).errors, [
+        "Quest #15600 is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.",
+    ]);
 });

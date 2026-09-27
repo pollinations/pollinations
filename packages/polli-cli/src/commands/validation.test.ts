@@ -53,6 +53,24 @@ describe("CLI argument validation", () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
+    it("fetches only /3d/models for --type 3d", async () => {
+        prepare();
+        const fetch = vi.fn(async (url: string) =>
+            url.includes("/3d/models")
+                ? Response.json([
+                      {
+                          name: "microsoft/trellis-2",
+                          output_modalities: ["3d"],
+                      },
+                  ])
+                : Response.json([]),
+        );
+        vi.stubGlobal("fetch", fetch);
+        await modelsCommand.parseAsync(["--type", "3d"], { from: "user" });
+        const urls = fetch.mock.calls.map(([url]) => url as string);
+        expect(urls).toEqual([expect.stringContaining("/3d/models")]);
+    });
+
     it("rejects an unknown model type in stats mode too", async () => {
         const fetch = prepare();
         await expect(

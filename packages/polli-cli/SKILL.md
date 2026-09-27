@@ -33,10 +33,15 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
+| Generate a 3D model | `polli gen 3d "<prompt>" --output out.glb` (or `--image <url>` for image-only models) |
+| Embed text | `polli gen embeddings "<text>" ["<text2>" ...]` (one vector per line; also reads stdin) |
+| Change a voice | `polli gen voice-change talk.mp3 --voice nova` |
+| Isolate speech | `polli gen isolate interview.mp4` (strips music/noise) |
+| Speech + character timings | `polli gen audio "<text>" --timestamps` (also writes `speech.json`) |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` |
+| Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`, max 90) |
@@ -126,7 +131,34 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 
 **Flag support varies per model and is not enforced client-side.** `--duration`, `--aspect-ratio`, and `--audio` are forwarded to the server but may be silently ignored — verified on `wan-fast` where duration is locked to 5s, `--aspect-ratio 9:16` still returns 16:9, and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
 
-**Video is not tracked by `--stats`.** `polli models --type video --stats` returns empty — the stats pipe only records text/image/audio events. To compare video models, fall back to `polli models --type video --json` and look at price/description fields.
+**Video is not tracked by `--stats`.** `polli models --type video --stats` returns empty — the stats pipe only records text/image/audio events. To compare video models, fall back to `polli models --type video --json` and look at price/description fields. The same applies to `--type 3d`.
+
+### Generate a 3D model
+```bash
+polli gen 3d "a red fox" --output fox.glb
+polli gen 3d --image https://media.pollinations.ai/abc --resolution high
+```
+Default `microsoft/trellis-2` is **image-to-3D only** (`input_modalities: ["image"]`) — pass `--image <url>` (public http(s), upload local files first with `polli upload`). `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen.
+
+### Generate embeddings
+```bash
+polli gen embeddings "first text" "second text" --model google/gemini-embedding-2
+printf 'first\nsecond\n' | polli gen embeddings          # one input per stdin line
+```
+Prints one JSON array per input, in input order, one per line (pipe/`jq`-friendly). `--dimensions <n>` (128-4096), `--task-type` (Gemini retrieval hint), and `--input-type query|document` (Cohere) are optional. `--json` prints the full response including `usage`.
+
+### Change or isolate a voice
+```bash
+polli gen voice-change talk.mp3 --voice nova --format wav
+polli gen isolate interview.mp4
+```
+`voice-change` re-speaks a **local** audio file in another voice (preset name or ElevenLabs voice ID) — default output `voice.<format>`. `isolate` strips music/background noise from local audio **or video**, keeping only speech — default output `isolated.mp3`. Both upload the file as multipart form data; ElevenLabs requires **at least 4.6 seconds** of audio for isolation, shorter clips fail with the API's `audio_too_short` error.
+
+### Speech with character-level timestamps
+```bash
+polli gen audio "Hello world" --timestamps
+```
+Saves the audio as usual (`speech.mp3` by default) and writes `speech.json` next to it (same base name, `.json` extension) with `alignment`/`normalized_alignment` character timings. Only `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2` support this — other models fail with the API's error message.
 
 ### Transcribe audio to text
 ```bash

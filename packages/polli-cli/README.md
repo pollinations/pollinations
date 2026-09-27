@@ -57,7 +57,13 @@ polli gen image "enhance this" --image https://media.pollinations.ai/abc --model
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
+polli gen audio "Hello world" --timestamps            # also saves speech.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+polli gen 3d "a red fox" --output fox.glb
+polli gen 3d --image https://media.pollinations.ai/abc --resolution high
+polli gen embeddings "first text" "second text"        # one vector per line
+polli gen voice-change talk.mp3 --voice nova
+polli gen isolate interview.mp4                        # strip music/noise, keep speech
 polli gen transcribe speech.mp3
 
 polli gen chat --model openai                         # interactive multi-turn
@@ -69,7 +75,7 @@ polli gen chat --model openai                         # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter
+polli models --type image    # filter (text, image, audio, video, 3d, embedding)
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint

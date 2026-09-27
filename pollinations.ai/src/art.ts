@@ -5,7 +5,7 @@ import { useColorMode } from "@pollinations/ui";
  * prompt) and its images. scripts/art.mjs makes a new set; switching sets is
  * this one constant.
  */
-export const ART_SET = "v1";
+export const ART_SET = "v2";
 
 type ArtPage = "home" | "play" | "apps" | "community";
 type ArtSlot = "hero" | "quests" | "sky" | "votes" | "placeholder" | "closing";

@@ -19,7 +19,7 @@ import {
     communityEndpoint as communityEndpointTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { handleError } from "@shared/error.ts";
+import { handleError, UpstreamError } from "@shared/error.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
@@ -2308,6 +2308,59 @@ describe("tracking observability", () => {
             totalPrice: 0.544,
         });
         expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.544);
+    });
+
+    it("bills a failed video for the usage the provider charged", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const rejection = UpstreamError.fromProvider(422, {
+            message: "The generated video was rejected",
+            billedUsage: { completionVideoSeconds: 5 },
+        });
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.image",
+            rejection,
+            "x-ai/grok-imagine-video",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "GET",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(422);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as {
+            totalPrice: number;
+        };
+        expect(event).toMatchObject({
+            responseStatus: 422,
+            isBilledUsage: true,
+            tokenCountCompletionVideoSeconds: 5,
+        });
+        expect(event.totalPrice).toBeGreaterThan(0);
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(event.totalPrice);
     });
 
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {

@@ -258,7 +258,7 @@ describe("long-context cost variants", () => {
         ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
-        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
     ] satisfies [
         ModelName,
         number,

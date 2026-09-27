@@ -516,7 +516,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 4,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -1940,7 +1940,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
-test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
+test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2024,7 +2024,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        2, 2, 2,
+        4, 4, 4,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2040,7 +2040,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 6);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

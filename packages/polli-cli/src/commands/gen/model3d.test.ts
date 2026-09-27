@@ -43,13 +43,16 @@ function run(args: string[], contentType: string) {
 }
 
 describe("gen 3d output", () => {
-    it("saves .glb by default from a text prompt", async () => {
+    it("saves .glb by default from a text prompt, defaulting to the text-capable model", async () => {
         const { folder, request, meta } = await run(
             ["a red fox"],
             "model/gltf-binary",
         );
         try {
             expect(request).toContain("/3d/a%20red%20fox?");
+            expect(
+                new URLSearchParams(request.split("?")[1]).get("model"),
+            ).toBe("hyper3d/rodin-2.5");
             expect(meta.path).toBe("model.glb");
             expect([...readFileSync(join(folder, "model.glb"))]).toEqual([
                 1, 2, 3,
@@ -60,12 +63,15 @@ describe("gen 3d output", () => {
         }
     });
 
-    it("saves .ply when the response is a Gaussian Splat", async () => {
-        const { folder, meta } = await run(
+    it("saves .ply when the response is a Gaussian Splat, defaulting to the image-only model", async () => {
+        const { folder, request, meta } = await run(
             ["--image", "https://example.com/a.png"],
             "model/ply",
         );
         try {
+            expect(
+                new URLSearchParams(request.split("?")[1]).get("model"),
+            ).toBe("microsoft/trellis-2");
             expect(meta.path).toBe("model.ply");
         } finally {
             process.chdir(originalCwd);

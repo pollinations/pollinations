@@ -42,9 +42,9 @@ describe("gen voice-change", () => {
 
             expect(request?.url).toContain("/v1/audio/voice-changer");
             expect(request?.body.get("voice")).toBe("nova");
-            expect((request?.body.get("audio") as Blob).size).toBe(
-                "source audio".length,
-            );
+            const audio = request?.body.get("audio") as Blob;
+            expect(audio.size).toBe("source audio".length);
+            expect(audio.type).toBe("audio/mpeg");
             const meta = JSON.parse(output.join(""));
             expect(meta.path).toBe("voice.mp3");
             expect([...readFileSync("voice.mp3")]).toEqual([1, 2, 3]);

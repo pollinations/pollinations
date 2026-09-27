@@ -26,7 +26,7 @@ export function createEmbeddingsCommand() {
         .action(async (inputsArg: string[], opts) => {
             const inputs = inputsArg.length
                 ? inputsArg
-                : (await readStdin()).split("\n").filter(Boolean);
+                : (await readStdin()).split(/\r?\n/).filter(Boolean);
             if (inputs.length === 0) {
                 printError(
                     "No input provided. Pass as arguments or pipe via stdin.",

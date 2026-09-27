@@ -18,7 +18,10 @@ export function createModel3dCommand() {
     return new Command("3d")
         .description("Generate a 3D model from a prompt and/or image")
         .argument("[prompt]", "3D model description (optional with --image)")
-        .option("--model <model>", "3D model", "microsoft/trellis-2")
+        .option(
+            "--model <model>",
+            "3D model (default: microsoft/trellis-2 with --image, hyper3d/rodin-2.5 for text-only)",
+        )
         .option(
             "--resolution <res>",
             "low/medium/high (microsoft/trellis-2 only)",
@@ -44,7 +47,14 @@ export function createModel3dCommand() {
                 process.exit(1);
             }
 
-            const params = new URLSearchParams({ model: opts.model });
+            // microsoft/trellis-2 is image-to-3D only (rejects a bare
+            // prompt); hyper3d/rodin-2.5 is the only model that also takes
+            // a text-only prompt, so the default follows --image.
+            const model =
+                opts.model ??
+                (images.length ? "microsoft/trellis-2" : "hyper3d/rodin-2.5");
+
+            const params = new URLSearchParams({ model });
             if (opts.resolution) params.set("resolution", opts.resolution);
             if (opts.seed) params.set("seed", opts.seed);
             if (images.length) params.set("image", images.join("|"));
@@ -67,7 +77,7 @@ export function createModel3dCommand() {
                 printMeta({
                     path: output,
                     size: buffer.length,
-                    model: opts.model,
+                    model,
                 });
             } catch (error) {
                 exitWithError(error);

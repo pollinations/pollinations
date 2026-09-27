@@ -138,7 +138,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 polli gen 3d "a red fox" --output fox.glb
 polli gen 3d --image https://media.pollinations.ai/abc --resolution high
 ```
-Default `microsoft/trellis-2` is **image-to-3D only** (`input_modalities: ["image"]`) — pass `--image <url>` (public http(s), upload local files first with `polli upload`). `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen.
+`--model` defaults to `hyper3d/rodin-2.5` for a text-only prompt and `microsoft/trellis-2` once `--image <url>` is given (public http(s), upload local files first with `polli upload`) — `trellis-2` is **image-to-3D only** and rejects a bare prompt. `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen.
 
 ### Generate embeddings
 ```bash

@@ -105,4 +105,37 @@ describe("gen audio output", () => {
             rmSync(folder, { recursive: true });
         }
     });
+
+    it("keeps the alignment JSON separate from an extension-less --output", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            Object.defineProperty(process.stdin, "isTTY", {
+                configurable: true,
+                value: true,
+            });
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+            vi.stubGlobal("fetch", async () =>
+                Response.json({
+                    audio_base64: Buffer.from([1, 2, 3]).toString("base64"),
+                    alignment: { characters: ["h", "i"] },
+                    normalized_alignment: { characters: ["h", "i"] },
+                }),
+            );
+
+            await createAudioCommand().parseAsync(
+                ["hi", "--timestamps", "--output", "speech"],
+                { from: "user" },
+            );
+
+            expect([...readFileSync("speech")]).toEqual([1, 2, 3]);
+            const alignment = JSON.parse(readFileSync("speech.json", "utf-8"));
+            expect(alignment.alignment.characters).toEqual(["h", "i"]);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
 });

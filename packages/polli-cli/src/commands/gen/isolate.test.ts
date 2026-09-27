@@ -40,9 +40,9 @@ describe("gen isolate", () => {
             });
 
             expect(request?.url).toContain("/v1/audio/voice-isolator");
-            expect((request?.body.get("audio") as Blob).size).toBe(
-                "source media".length,
-            );
+            const audio = request?.body.get("audio") as Blob;
+            expect(audio.size).toBe("source media".length);
+            expect(audio.type).toBe("video/mp4");
             const meta = JSON.parse(output.join(""));
             expect(meta.path).toBe("isolated.mp3");
             expect([...readFileSync("isolated.mp3")]).toEqual([4, 5, 6]);

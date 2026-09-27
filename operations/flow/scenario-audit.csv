@@ -1,0 +1,319 @@
+flow,section,situation,page,title,disposition,evidence,verification
+app,main,app-connect,app-connect,App · Connect,adapt-to-main,C01;C02,observed-in-app-journey-2026-09-26
+app,main,sign-in,sign-in,Sign in to Pollinations,adapt-to-main,C01;C02,observed-in-app-journey-2026-09-26
+app,main,consent,consent,Allow access,adapt-to-main,C01;C02,observed-in-app-journey-2026-09-26
+app,main,consent-no-pollen,consent,Allow access · No Pollen,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,main,consent-paid-required,consent,Allow access · Paid required,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
+app,main,app-checking,sign-in,Sign in to Pollinations · Checking app,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+app,main,loading,loading,Check account,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+app,main,blocked-lookup,connection-link-errors,Connection blocked errors · App verification failed,product-gap,C01;C02;G01,captured-current-main-2026-09-26
+app,main,consent-checking,consent,Allow access · Checking app,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+app,main,consent-models-loading,consent,Allow access · Loading models,product-gap,C01;C02;C03;G10,captured-current-main-2026-09-26
+app,main,consent-models-error,consent,Allow access · Models unavailable,product-gap,C01;C02;G10,captured-current-main-2026-09-26
+app,main,consent-connecting,consent,Allow access · Connecting,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+app,main,account-deactivated,account-deactivated,Account suspended,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+app,main,staging-invite-only,staging-invite-only,Staging is invite-only,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+app,main,login-failed,login-failed,Couldn’t sign in,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+app,main,blocked-redirect,connection-link-errors,Connection blocked errors · Unregistered redirect,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-app,connection-link-errors,Connection blocked errors · App unavailable,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-missing-redirect,connection-link-errors,Connection blocked errors · Missing redirect,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-invalid-redirect,connection-link-errors,Connection blocked errors · Invalid redirect,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-redirect-scheme,connection-link-errors,Connection blocked errors · Unsupported redirect scheme,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-response-type,connection-link-errors,Connection blocked errors · Unsupported response,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-missing-client,connection-link-errors,Connection blocked errors · Missing client,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-missing-challenge,connection-link-errors,Connection blocked errors · Missing security challenge,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-challenge-method,connection-link-errors,Connection blocked errors · Unsupported challenge method,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,blocked-invalid-challenge,connection-link-errors,Connection blocked errors · Invalid security challenge,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,app-signing-in,sign-in,Sign in to Pollinations · Signing in,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+app,main,error,sign-in-errors,Sign in to Pollinations errors · Sign-in failed,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,app-connected,app-connected,App · Connection status · Connected,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,main,app-checking-connection,app-connected,App · Connection status · Checking connection,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+app,main,app-connection-error,app-connected,App · Connection status · Connection not completed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,main,app-loading-account,app-connected,App · Connection status · Loading account,adapt-to-main,C01;C02;C03;D03,captured-main-279edfad8f-2026-09-26
+app,main,app-account-error,app-connected,App · Connection status · Account details unavailable,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
+app,main,app-limit-reached,app-connected,App · Connection status · Limit reached,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,main,app-access-declined,app-connected,App · Connection status · Access declined,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+app,main,consent-failed-key,consent-errors,Allow access errors · Key creation failed,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+app,main,consent-failed-code,consent-errors,Allow access errors · Authorization code creation failed,product-gap,C01;C02;G02;G06,captured-main-279edfad8f-2026-09-26
+app,main,consent-session-expired,consent-errors,Allow access errors · Session expired before approval,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+app,main,github-handoff,github-handoff,Continue on GitHub · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+app,topup,topup-account-app--account_action=1&app_menu=open,account-app,App allowance,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-app--account_action=1&app_menu=open&sim_budget=0,account-app,App allowance · Limit reached,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key,account-key,App access,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--screen=account-key-signed-out,account-key,App access · Sign in,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=sign-in-error&action=sign-in&screen=account-key-signed-out,account-key,App access · Starting sign-in failed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=loading,account-key,App access · Loading,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=load-error,account-key,App access · Load failed,product-gap,C01;C02;G07,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=missing,account-key,App access · Key unavailable,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=saving&action=save,account-key,App access · Saving,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--account_case=save-error&action=save,account-key,App access · Save failed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--action=save,account-key,App access · Saved,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-key--action=close-key,account-key,App access · Closed without changes,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-wallet,account-wallet,Top-up,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--sim_paid=0,account-wallet,Top-up · Quest only,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--sim_paid=0&sim_quest=0,account-wallet,Top-up · Empty,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--screen=account-wallet-signed-out,account-wallet,Top-up · Sign in,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=sign-in-error&action=sign-in&screen=account-wallet-signed-out,account-wallet,Top-up · Starting sign-in failed,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=loading,account-wallet,Top-up · Balance loading,adapt-to-main,C01;C02;C03;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=load-error,account-wallet,Top-up · Balance unavailable,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=canceled,account-wallet,Top-up · Checkout canceled,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=pending,account-wallet,Wallet · Payment pending,unshipped-feature,C01;C02;D01,deferred-not-on-main
+app,topup,topup-account-wallet--account_case=payment-error,account-wallet,Wallet · Payment check failed,unshipped-feature,C01;C02;D01,deferred-not-on-main
+app,topup,topup-account-wallet--account_case=credited,account-wallet,Wallet · Payment credited,unshipped-feature,C01;C02;D01,deferred-not-on-main
+app,topup,topup-account-wallet--action=billing-setup&billing_case=setup,account-wallet,Top-up · Auto top-up setup,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-setup&billing_case=ready,account-wallet,Top-up · Auto top-up ready,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--billing_case=enabled,account-wallet,Top-up · Auto top-up enabled,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-save&billing_case=ready&result=waiting,account-wallet,Top-up · Saving auto top-up,product-gap,C01;C02;C03;C04;G13,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-save&billing_case=ready&result=error,account-wallet,Top-up · Auto top-up save failed,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--billing_case=failed,account-wallet,Top-up · Last charge failed,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--billing_case=payment,account-wallet,Top-up · Payment action required,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-portal&billing_case=enabled&result=waiting,account-wallet,Top-up · Opening billing,adapt-to-main,C01;C02;C03;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-portal&billing_case=enabled&result=error,account-wallet,Top-up · Billing handoff failed,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--action=billing-save&billing_case=ready&result=session-expired,account-wallet,Top-up · Billing session expired,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=session-expired,account-wallet,Top-up · Balance session expired,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-github,account-github,Continue on GitHub · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+app,topup,topup-account-auth-error--account_action=1&login_error=BANNED_USER&screen=account-deactivated,account-auth-error,Account suspended,adapt-to-main,C01;C02;D02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-auth-error--account_action=1&login_error=staging_is_invite-only&screen=staging-invite-only,account-auth-error,Staging is invite-only,adapt-to-main,C01;C02;D02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-auth-error--account_action=1&login_error=unknown,account-auth-error,Couldn’t sign in,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+app,topup,topup-account-payment,account-payment,Checkout · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+app,topup,topup-account-billing,account-billing,Manage billing · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+device,main,sign-in,sign-in,Sign in to Pollinations,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-signing-in,sign-in,Signing in,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,main,error,sign-in-errors,Starting sign-in,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,account-deactivated,sign-in-errors,Account suspended,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,main,staging-invite-only,sign-in-errors,Staging is invite-only,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,main,login-failed,sign-in-errors,Couldn’t sign in,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,main,device-code,device-code,Enter device code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-code-invalid,device-code,Invalid code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-request-invalid,device-errors,Invalid code,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,main,device-code-expired,device-code,Expired code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-request-expired,device-errors,Expired code,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,main,device-code-used,device-code,Used code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-request-used,consent,Used code,product-gap,C01;C02;G03,captured-current-main-2026-09-26
+device,main,consent,consent,Allow access,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,consent-no-pollen,consent,Allow access · No Pollen,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+device,main,consent-paid-required,consent,Allow access · Paid required,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
+device,main,device-request-app,device-errors,App unavailable,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,main,device-result,device-result,Access approved,adapt-to-main,C01;C02,captured-main-a9bb750a21-2026-09-26
+device,main,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,captured-main-a9bb750a21-2026-09-26
+device,main,device-session,sign-in,Checking account,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,main,device-verifying,device-code,Verifying code,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,main,device-code-unavailable,device-code,Verification unavailable,product-gap,C01;C02;G04,captured-current-main-2026-09-26
+device,main,device-checking,consent,Checking request,product-gap,C01;C02;C03;G03,captured-current-main-2026-09-26
+device,main,device-request-unavailable,device-errors,Verification unavailable,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,main,device-request-lookup,device-errors,App lookup unavailable,product-gap,C01;C02;G01,captured-current-main-2026-09-26
+device,main,device-approving,consent,Connecting,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,main,device-denying,consent,Declining,product-gap,C01;C02;C03;G05,captured-current-main-2026-09-26
+device,main,device-submit-key,device-errors,Key creation failed,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+device,main,device-submit-deny,device-result,Decline failed,product-gap,C01;C02;G05,captured-current-main-2026-09-26
+device,main,device-submit-session,device-errors,Session expired,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+device,main,device-declined,device-result,Connection declined,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,sign-in,sign-in,Sign in to Pollinations,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-signing-in,sign-in,Signing in,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,link,error,sign-in-errors,Starting sign-in,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,account-deactivated,sign-in-errors,Account suspended,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,link,staging-invite-only,sign-in-errors,Staging is invite-only,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,link,login-failed,sign-in-errors,Couldn’t sign in,adapt-to-main,C01;C02;D02,captured-current-main-2026-09-26
+device,link,device-code,device-code,Enter another code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-code-invalid,device-code,Invalid code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-request-invalid,device-errors,Invalid code,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,link,device-code-expired,device-code,Expired code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-request-expired,device-errors,Expired code,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,link,device-code-used,device-code,Used code,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-request-used,consent,Used code,product-gap,C01;C02;G03,captured-current-main-2026-09-26
+device,link,consent,consent,Allow access,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,consent-no-pollen,consent,Allow access · No Pollen,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+device,link,consent-paid-required,consent,Allow access · Paid required,adapt-to-main,C01;C02;D03,captured-main-279edfad8f-2026-09-26
+device,link,device-request-app,device-errors,App unavailable,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+device,link,device-result,device-result,Access approved,adapt-to-main,C01;C02,captured-main-a9bb750a21-2026-09-26
+device,link,device-submit-approve,device-errors,Approval failed,product-gap,C01;C02;G02;G06,captured-main-a9bb750a21-2026-09-26
+device,link,device-session,sign-in,Checking account,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,link,device-verifying,device-code,Verifying code,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,link,device-code-unavailable,device-code,Verification unavailable,product-gap,C01;C02;G04,captured-current-main-2026-09-26
+device,link,device-checking,consent,Checking request,product-gap,C01;C02;C03;G03,captured-current-main-2026-09-26
+device,link,device-request-unavailable,device-errors,Verification unavailable,product-gap,C01;C02;G03;G04,captured-current-main-2026-09-26
+device,link,device-request-lookup,device-errors,App lookup unavailable,product-gap,C01;C02;G01,captured-current-main-2026-09-26
+device,link,device-approving,consent,Connecting,adapt-to-main,C01;C02;C03,captured-current-main-2026-09-26
+device,link,device-denying,consent,Declining,product-gap,C01;C02;C03;G05,captured-current-main-2026-09-26
+device,link,device-submit-key,device-errors,Key creation failed,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+device,link,device-submit-deny,device-result,Decline failed,product-gap,C01;C02;G05,captured-current-main-2026-09-26
+device,link,device-submit-session,device-errors,Session expired,product-gap,C01;C02;G02,captured-current-main-2026-09-26
+device,link,device-declined,device-result,Connection declined,adapt-to-main,C01;C02,captured-current-main-2026-09-26
+account,main,dashboard-enter-signed-out,enter-signed-out,Dashboard sign-in,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,main,dashboard-enter-signed-out--action=sign-in&result=waiting,enter-signed-out,Dashboard sign-in · Signing in,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+account,main,dashboard-enter-signed-out--action=sign-in&result=error,enter-signed-out,Dashboard sign-in · Request failed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,main,dashboard-dashboard-github,dashboard-github,Continue on GitHub · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+account,main,dashboard-dashboard-auth-error--dashboard_preview=1&login_error=BANNED_USER&login_flow=account&screen=account-deactivated,dashboard-auth-error,Account suspended,adapt-to-main,C01;C02;D02,captured-main-279edfad8f-2026-09-26
+account,main,dashboard-dashboard-auth-error--dashboard_preview=1&login_error=staging_is_invite-only&login_flow=account&screen=staging-invite-only,dashboard-auth-error,Staging is invite-only,adapt-to-main,C01;C02;D02,captured-main-279edfad8f-2026-09-26
+account,main,dashboard-dashboard-auth-error--dashboard_preview=1&login_error=unknown&login_flow=account,dashboard-auth-error,Couldn’t sign in,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,news,dashboard-news,news,News & FAQ,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,news,dashboard-news--screen=dash-news-signed-out,news,News & FAQ · Signed out,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,catalog,dashboard-catalog,catalog,Models,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,catalog,dashboard-catalog--model_catalog=loading,catalog,Models · Loading,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+account,catalog,dashboard-catalog--model_catalog=error,catalog,Models · Load failed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,models,dashboard-models,models,Your models,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-models--collection_case=empty,models,Your models · Empty,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-models--collection_case=loading,models,Your models · Loading,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-models--collection_case=error,models,Your models · Load failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-models--publisher=1,models,Your models · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-models--hidden=1,models,Your models · Hidden,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-create,model-create,Add model,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-create--action=create&result=waiting,model-create,Add model · Submitting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-create--action=create&result=error,model-create,Add model · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-create--publisher=1,model-create,Add model · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit,model-edit,Edit model,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--action=save&result=waiting,model-edit,Edit model · Saving,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--action=save&result=error,model-edit,Edit model · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--publisher=1,model-edit,Edit model · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--publisher=1&queued=1,model-edit,Edit model · Changes queued,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--action=test&publisher=1&result=waiting,model-edit,Edit model · Testing endpoint,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--action=test&publisher=1&result=error,model-edit,Edit model · Test failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-edit--action=test&publisher=1&result=success,model-edit,Edit model · Test succeeded,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-delete,model-delete,Delete model,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-delete--action=delete&result=waiting,model-delete,Delete model · Deleting,product-gap,C01;C02;C03;G12,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-delete--action=delete&result=error,model-delete,Delete model · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-visibility,model-visibility,Model visibility,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-visibility--hidden=1,model-visibility,Model visibility · Relist,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-visibility--action=visibility&result=waiting,model-visibility,Model visibility · Updating visibility,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,models,dashboard-model-visibility--action=visibility&result=error,model-visibility,Model visibility · Visibility update failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-keys,keys,API keys,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-keys--collection_case=empty,keys,API keys · Empty,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-create,key-create,Add API key,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-create--action=create&result=waiting,key-create,Add API key · Submitting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-create--action=create&result=error,key-create,Add API key · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-create--action=create&result=success,key-create,Add API key · Created · copy key,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,keys,dashboard-key-edit,key-edit,Edit API key,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-edit--action=save&result=waiting,key-edit,Edit API key · Saving,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-edit--action=save&result=error,key-edit,Edit API key · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-delete,key-delete,Delete API key,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-delete--action=delete&result=waiting,key-delete,Delete API key · Deleting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,keys,dashboard-key-delete--action=delete&result=error,key-delete,Delete API key · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-apps,apps,Apps,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-apps--collection_case=empty,apps,Apps · Empty,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-create,app-create,Add app,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-create--action=create&result=waiting,app-create,Add app · Submitting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-create--action=create&result=error,app-create,Add app · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-create--action=create&result=success,app-create,Add app · Created · copy key,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,apps,dashboard-app-edit,app-edit,Edit app,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-edit--action=save&result=waiting,app-edit,Edit app · Saving,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-edit--action=save&result=error,app-edit,Edit app · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-delete,app-delete,Delete app,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-delete--action=delete&result=waiting,app-delete,Delete app · Deleting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,apps,dashboard-app-delete--action=delete&result=error,app-delete,Delete app · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents,agents,Your agents,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents--collection_case=empty,agents,Your agents · Empty,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents--collection_case=loading,agents,Your agents · Loading,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents--collection_case=error,agents,Your agents · Load failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents--publisher=1,agents,Your agents · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agents--hidden=1,agents,Your agents · Hidden,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create,agent-create,Add agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--action=create&result=waiting,agent-create,Add agent · Submitting,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--action=create&result=error,agent-create,Add agent · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--publisher=1,agent-create,Add agent · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit,agent-edit,Edit agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=save&result=waiting,agent-edit,Edit agent · Saving,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=save&result=error,agent-edit,Edit agent · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--publisher=1,agent-edit,Edit agent · Public publishing,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--agent_kind=endpoint,agent-edit,Edit agent · Endpoint agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-delete,agent-delete,Delete agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-delete--action=delete&result=waiting,agent-delete,Delete agent · Deleting,product-gap,C01;C02;C03;G12,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-delete--action=delete&result=error,agent-delete,Delete agent · Failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-visibility,agent-visibility,Agent visibility,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-visibility--hidden=1,agent-visibility,Agent visibility · Relist,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-visibility--action=visibility&result=waiting,agent-visibility,Agent visibility · Updating visibility,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-visibility--action=visibility&result=error,agent-visibility,Agent visibility · Visibility update failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected,enter-connected,Account wallet,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--sim_paid=0,enter-connected,Account wallet · Quest only,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--sim_paid=0&sim_quest=0,enter-connected,Account wallet · Empty,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=loading,enter-connected,Account wallet · Balance loading,product-gap,C01;C02;C03;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=load-error,enter-connected,Account wallet · Balance unavailable,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=canceled,enter-connected,Account wallet · Checkout canceled,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=pending,enter-connected,Account wallet · Payment pending,unshipped-feature,C01;C02;D01,deferred-not-on-main
+account,topup,dashboard-enter-connected--account_case=payment-error,enter-connected,Account wallet · Payment check failed,unshipped-feature,C01;C02;D01,deferred-not-on-main
+account,topup,dashboard-enter-connected--account_case=credited,enter-connected,Account wallet · Payment credited,unshipped-feature,C01;C02;D01,deferred-not-on-main
+account,topup,dashboard-enter-connected--action=billing-setup&billing_case=setup,enter-connected,Account wallet · Auto top-up setup,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-setup&billing_case=ready,enter-connected,Account wallet · Auto top-up ready,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--billing_case=enabled,enter-connected,Account wallet · Auto top-up enabled,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-save&billing_case=ready&result=waiting,enter-connected,Account wallet · Saving auto top-up,product-gap,C01;C02;C03;C04;G13,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-save&billing_case=ready&result=error,enter-connected,Account wallet · Auto top-up save failed,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--billing_case=failed,enter-connected,Account wallet · Last charge failed,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--billing_case=payment,enter-connected,Account wallet · Payment action required,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-portal&billing_case=enabled&result=waiting,enter-connected,Account wallet · Opening billing,adapt-to-main,C01;C02;C03;C04,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-portal&billing_case=enabled&result=error,enter-connected,Account wallet · Billing handoff failed,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--action=billing-save&billing_case=ready&result=session-expired,enter-connected,Account wallet · Billing session expired,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=session-expired,enter-connected,Account wallet · Balance session expired,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-account-checkout,account-checkout,Checkout · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+account,topup,dashboard-account-billing,account-billing,Manage billing · external reference,external-reference,C01;C02;C05,reference-verified-main-279edfad8f-2026-09-26
+account,activity,dashboard-activity,activity,Activity,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,activity,dashboard-activity--collection_case=empty,activity,Activity · No activity,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,activity,dashboard-activity--collection_case=loading,activity,Activity · Loading,adapt-to-main,C01;C02;C03,captured-main-279edfad8f-2026-09-26
+account,activity,dashboard-activity--collection_case=error,activity,Activity · Load failed,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26
+account,quests,dashboard-quests,quests,Quests,product-gap,C01;C02;C06;G15,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--collection_case=empty,quests,Quests · No earned rewards,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--collection_case=loading,quests,Quests · Loading,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--collection_case=error,quests,Quests · Load failed,product-gap,C01;C02;C06;G14,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--quest_check=waiting,quests,Quests · Checking quests,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--quest_check=error,quests,Quests · Check unavailable,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--action=claim&result=waiting,quests,Quests · Claiming,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--action=claim&result=error,quests,Quests · Claim failed,product-gap,C01;C02;C06;G14;G15,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--action=claim&result=success,quests,Quests · Reward claimed,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account,account,Account settings,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=loading,account,Account settings · Loading connections,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=error,account,Account settings · Connections unavailable,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=toolkits-loading,account,Account settings · Loading app catalog,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=toolkits-error,account,Account settings · App catalog unavailable,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=discord-connected,account,Account settings · Discord connected,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=discord-check-error,account,Account settings · Discord check failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=discord-lookup-error,account,Account settings · Discord lookup failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=discord-error,account,Account settings · Discord identity unavailable,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=link-discord&result=waiting,account,Account settings · Connecting Discord,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=link-discord&result=error,account,Account settings · Discord connection failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=unlink-discord&result=waiting&settings_case=discord-connected,account,Account settings · Disconnecting Discord,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=unlink-discord&result=error&settings_case=discord-connected,account,Account settings · Discord disconnect failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=apps-connected,account,Account settings · App connected,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=link-integration&result=waiting,account,Account settings · Connecting app,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=link-integration&result=error,account,Account settings · App connection failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=unlink-integration&result=waiting,account,Account settings · Disconnecting app,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=unlink-integration&result=error,account,Account settings · App disconnect failed,product-gap,C01;C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account-delete,account-delete,Delete account,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account-delete--action=confirm-account,account-delete,Delete account · Acknowledged,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account-delete--action=delete-account&result=waiting,account-delete,Delete account · Deleting,adapt-to-main,C01;C02;C03;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account-delete--action=delete-account&result=error,account-delete,Delete account · Deletion failed,adapt-to-main,C01;C02;C06,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-sign-in,dashboard-sign-in,Admin sign-in,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-admin_required,dashboard-sign-in,Admin access required,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-invalid_state,dashboard-sign-in,Sign-in link expired,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-unavailable,dashboard-sign-in,Couldn’t sign in,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,identity,identity,Sign in to Pollinations,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-sign-in-pending,identity,Signing in,adapt-to-main,C01;C02;C03;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-sign-in-error,identity,Starting sign-in failed,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-account-deactivated,admin-auth-error,Account suspended,adapt-to-main,C01;C02;C07;D02,captured-main-1b7e621066-2026-09-26
+admin,main,admin-staging-invite-only,admin-auth-error,Staging is invite-only,adapt-to-main,C01;C02;C07;D02,captured-main-1b7e621066-2026-09-26
+admin,main,admin-login-failed,admin-auth-error,Couldn’t sign in,adapt-to-main,C01;C02;C07;D02,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-connected,dashboard-connected,Admin account,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-account-menu,dashboard-connected,Account menu,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-sign-out-error,dashboard-connected,Sign-out failed,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-session-pending,dashboard-sign-in,Checking sign-in,adapt-to-main,C01;C02;C03;C07,captured-main-1b7e621066-2026-09-26
+admin,main,admin-session-unavailable,dashboard-sign-in,Session check failed,adapt-to-main,C01;C02;C07,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--agent_kind=code,agent-create,Add agent · Code agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--action=create&agent_kind=code&result=waiting,agent-create,Add agent · Creating code agent,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-create--action=create&agent_kind=code&result=error,agent-create,Add agent · Code creation failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--agent_kind=code,agent-edit,Edit agent · Code agent,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=save&agent_kind=code&result=waiting,agent-edit,Edit agent · Saving code agent,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=save&agent_kind=code&result=error,agent-edit,Edit agent · Code save failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=sync&agent_kind=code&result=waiting,agent-edit,Edit agent · Syncing code,adapt-to-main,C01;C02;C03,captured-main-1b7e621066-2026-09-26
+account,agents,dashboard-agent-edit--action=sync&agent_kind=code&result=error,agent-edit,Edit agent · Code sync failed,adapt-to-main,C01;C02,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=billing-loading,account-wallet,Top-up · Billing loading,adapt-to-main,C01;C02;C04,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=billing-error,account-wallet,Top-up · Billing unavailable,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+app,topup,topup-account-wallet--account_case=checkout-return,account-wallet,Top-up · Checkout returned,adapt-to-main,C01;C02;C04;D01,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=billing-loading,enter-connected,Account wallet · Billing loading,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=billing-error,enter-connected,Account wallet · Billing unavailable,product-gap,C01;C02;C04;G09,captured-main-1b7e621066-2026-09-26
+account,topup,dashboard-enter-connected--account_case=checkout-return,enter-connected,Account wallet · Checkout returned,adapt-to-main,C01;C02;C04;D01,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--quest_catalog=loading,quests,Quests · Loading catalog,adapt-to-main,C02;C06,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--quest_catalog=error,quests,Quests · Catalog unavailable,product-gap,C02;C06;G14,captured-main-1b7e621066-2026-09-26
+account,quests,dashboard-quests--quest_rewards=session-expired,quests,Quests · Rewards session expired,adapt-to-main,C02;C06;G14,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=profile-loading,account,Account settings · Loading profile,product-gap,C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--settings_case=profile-error,account,Account settings · Profile unavailable,product-gap,C02;C06;G08,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=sign-out&result=waiting,account,Account settings · Signing out,adapt-to-main,C02;C06,captured-main-1b7e621066-2026-09-26
+account,account,dashboard-account--action=sign-out&result=error,account,Account settings · Sign-out failed,product-gap,C02;C06;G08,captured-main-1b7e621066-2026-09-26
+admin,main,dashboard-cancelled,dashboard-sign-in,Sign-in cancelled,adapt-to-main,C07,captured-main-1b7e621066-2026-09-26
+account,catalog,dashboard-catalog--model_catalog=health-unavailable,catalog,Models · Health unavailable,adapt-to-main,C01;C02,captured-main-279edfad8f-2026-09-26

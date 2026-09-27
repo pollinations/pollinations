@@ -47,7 +47,7 @@ jobs:
       - name: Run shared auth and non-credential Flow tests
         run: |
           docker run --rm --init flow-proof:ci npm test --workspace=@pollinations/auth
-          docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=2
+          docker run --rm --init flow-proof:ci npm test --workspace=pollinations-flow -- --maxWorkers=1
       - name: Verify built pages, captures and container isolation
         run: node operations/flow/test/container-proof.mjs flow-proof:ci
 

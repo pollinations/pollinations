@@ -13,6 +13,7 @@
         "fixtures.ts",
         "server.ts",
         "worker.ts",
+        "reviewer/*.tsx",
         "../../enter.pollinations.ai/worker-runtime.d.ts",
         "../../enter.pollinations.ai/worker-bindings.d.ts",
         "../../enter.pollinations.ai/src/code-agent-sdk.d.ts",

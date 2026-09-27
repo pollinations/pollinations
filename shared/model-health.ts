@@ -18,7 +18,7 @@ export type ModelHealth = {
 };
 
 // Diagnostic colors are independent of the >80% community discovery cutoff.
-const DEGRADED_5XX_PERCENT = 5;
+const DEGRADED_5XX_PERCENT = 10;
 const DOWN_5XX_PERCENT = 20;
 
 /** Discovery is fail-open when there are no recent observations. */
@@ -52,7 +52,7 @@ function modelHealthFromRow(row: ModelHealthRow | undefined): ModelHealth {
     const status =
         percent5xx >= DOWN_5XX_PERCENT
             ? "down"
-            : percent5xx >= DEGRADED_5XX_PERCENT
+            : percent5xx > DEGRADED_5XX_PERCENT
               ? "degraded"
               : "healthy";
     return { status, requests, successRate: (success / requests) * 100 };

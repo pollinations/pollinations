@@ -24,7 +24,6 @@ export function BaseModelInput({
     );
     const { comboboxProps } = useModelQuerySearch({
         models: textModels,
-        initial: ["source:official", value].filter(Boolean).join(" "),
         pickable: true,
         value,
         onTextChange: onChange,

@@ -34,6 +34,7 @@ import {
     ModelFilterTokens,
 } from "./model-filter-tokens.tsx";
 import {
+    AGENT_QUERY_FILTER_KEYS,
     ensureModelQueryDefaults,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
@@ -82,7 +83,6 @@ const PRIMARY_TABS = [
     { value: "mcp", label: "MCP", Icon: McpIcon },
 ] as const;
 
-const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
 const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
 const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
     models: "q",
@@ -158,10 +158,10 @@ export const Models: FC = () => {
     const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
     const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
     const urlSearch = modelSearch[searchParam] ?? "";
-    const initialSearch =
-        activePrimaryTab === "models"
-            ? ensureModelQueryDefaults(urlSearch)
-            : urlSearch;
+    const initialSearch = ensureModelQueryDefaults(
+        urlSearch,
+        supportedFilterKeys,
+    );
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
         ModelQueryDraftFilter | undefined
@@ -443,10 +443,10 @@ export const Models: FC = () => {
         lastPushedSearchRef.current = urlSearch;
         setPendingRemovalIndex(undefined);
         setEditingFilterToken(undefined);
-        const nextSearch =
-            activePrimaryTab === "models"
-                ? ensureModelQueryDefaults(urlSearch)
-                : urlSearch;
+        const nextSearch = ensureModelQueryDefaults(
+            urlSearch,
+            supportedFilterKeys,
+        );
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
         );

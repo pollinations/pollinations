@@ -35,7 +35,7 @@ export const ModelHealthSchema = z
     .object({
         status: z.enum(["healthy", "degraded", "down", "unknown"]).meta({
             description:
-                "Healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown with no measured requests.",
+                "Healthy at 90% success or above, degraded above 80% and below 90%, down at 80% or below, unknown with no measured requests.",
         }),
         success_rate: z.number().min(0).max(100).nullable().meta({
             description:

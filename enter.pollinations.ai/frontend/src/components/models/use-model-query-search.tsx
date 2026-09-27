@@ -5,6 +5,7 @@ import {
     ModelFilterTokens,
 } from "./model-filter-tokens.tsx";
 import {
+    ensureModelQueryDefaults,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
@@ -42,7 +43,7 @@ type ComboboxSearchProps = Pick<
  */
 export function useModelQuerySearch({
     models,
-    initial = "source:official",
+    initial = ensureModelQueryDefaults(""),
     pickable = false,
     value,
     onTextChange,

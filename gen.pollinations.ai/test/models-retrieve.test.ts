@@ -177,10 +177,13 @@ test("counts final fallback rescues, retains unknown models and fails open on un
     const response = await fetchWorker("/text/models");
     const models = (await response.json()) as {
         name: string;
-        health: { success_rate: number | null };
+        health: { success_rate: number | null; status: string };
     }[];
     expect(models.find((model) => model.name === id)?.health.success_rate).toBe(
         92,
+    );
+    expect(models.find((model) => model.name === id)?.health.status).toBe(
+        "healthy",
     );
     expect(models.some((model) => model.health.success_rate === null)).toBe(
         true,

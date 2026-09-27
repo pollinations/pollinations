@@ -41,7 +41,7 @@ it("fetches the full catalog for show-all without a separate health request", as
 it("keeps catalog health for filtering and status display", () => {
     const health = [
         { status: "healthy" as const, requests: 100, success_rate: 96 },
-        { status: "degraded" as const, requests: 100, success_rate: 95 },
+        { status: "degraded" as const, requests: 100, success_rate: 85 },
         { status: "down" as const, requests: 100, success_rate: 80 },
         { status: "unknown" as const, requests: 0, success_rate: null },
     ];

@@ -28,7 +28,8 @@ const IMAGE_BASE_SERVICES = {
         // Replicate sets no upper bound; fal documents 1-30s for this model.
         minDuration: 1,
         maxDuration: 30,
-        defaultDuration: 8,
+        // Read up to the supported limit; the provider stops at the source length.
+        defaultDuration: 30,
         // Billed from Replicate's reported GPU time on L40S:
         // https://replicate.com/pricing (verified 2026-09-26).
         cost: { completionVideoSeconds: 0 },

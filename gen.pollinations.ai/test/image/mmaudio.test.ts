@@ -139,6 +139,8 @@ const body = (): Record<string, string> => ({
     prompt: `Rain falling ${crypto.randomUUID()}`,
     seed: "42",
 });
+const computeRate =
+    IMAGE_SERVICES["sony/mmaudio-v2"].billing.adjustments[0].unitCost;
 
 test("Replicate bills reported GPU time and rejoins one generation", async () => {
     const { key, userId } = await createTestApiKey({
@@ -174,7 +176,7 @@ test("Replicate bills reported GPU time and rejoins one generation", async () =>
             input: {
                 video: input.reference_videos,
                 prompt: input.prompt,
-                duration: 8,
+                duration: 30,
                 seed: 42,
                 num_steps: 25,
                 cfg_strength: 4.5,
@@ -186,14 +188,30 @@ test("Replicate bills reported GPU time and rejoins one generation", async () =>
     );
     expect(billed).toHaveLength(1);
     // Prices are rounded to 8 decimals; costs keep full precision.
-    expect(billed[0].totalPrice).toBeCloseTo(4.074095673 * 0.000975, 8);
+    expect(billed[0].totalPrice).toBeCloseTo(computeSeconds * computeRate, 8);
     expect(billed[0]).toMatchObject({
-        totalCost: 4.074095673 * 0.000975,
+        totalCost: computeSeconds * computeRate,
         modelProviderUsed: "replicate",
         adjustmentUnits: { "replicate.mmaudio.compute.v1": 4.074095673 },
     });
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.packBalance).toBeCloseTo(1 - 4.074095673 * 0.000975, 8);
+    expect(balance.packBalance).toBeCloseTo(
+        1 - computeSeconds * computeRate,
+        8,
+    );
+});
+
+test("explicit duration overrides the full-clip default", async ({
+    paidApiKey,
+}) => {
+    for (const duration of [1, 8, 30]) {
+        const response = await request(paidApiKey, {
+            ...body(),
+            duration: String(duration),
+        });
+        expect(response.status).toBe(200);
+        expect(replicateBodies.at(-1)).toMatchObject({ input: { duration } });
+    }
 });
 
 test("invalid source and unsupported fields fail before the provider runs", async ({
@@ -267,6 +285,7 @@ test("catalog shows the source-video input and GPU pricing, scaled by the multip
     const info = modelInfoFromDefinition("sony/mmaudio-v2", definition);
     expect(info.video_capabilities).toContain("reference_videos");
     expect(info.max_reference_videos).toBe(1);
+    expect(info.default_duration).toBe(30);
     expect(info.pricing_adjustments).toHaveLength(1);
     const billed = calculateUsageBilling({
         model: "sony/mmaudio-v2",
@@ -274,6 +293,6 @@ test("catalog shows the source-video input and GPU pricing, scaled by the multip
         usage: { completionVideoSeconds: 5 },
         input: { computeSeconds: 100 },
     });
-    expect(billed.cost.totalCost).toBeCloseTo(0.0975);
-    expect(billed.price.totalPrice).toBeCloseTo(0.195);
+    expect(billed.cost.totalCost).toBeCloseTo(100 * computeRate);
+    expect(billed.price.totalPrice).toBeCloseTo(100 * computeRate * 2);
 });

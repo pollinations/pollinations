@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-26",
+  "period_start": "2026-09-26",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:29:23.006194+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-26/images/twitter.jpg"
+    }
+  ],
+  "text": "14 PRs merged today: MiniMax H3 Max video, Gemini 3.8 TTS, and a polli CLI that rejects bad flags before hitting the network. fal jobs now wait for queue completion. Lyria 3.5 music is merged; deploy checks are still open."
+}

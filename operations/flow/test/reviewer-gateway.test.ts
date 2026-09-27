@@ -100,7 +100,7 @@ type Gateway = ReturnType<typeof createReviewerGateway>;
 async function signIn(gateway: Gateway, id: string) {
     const login = await gateway(
         new Request(
-            `${origins.enter}${REVIEWER_AUTH_PATH}/login?return_to=%2Fflow`,
+            `${origins.enter}${REVIEWER_AUTH_PATH}/login?return_to=%2Fscreens`,
         ),
     );
     const target = new URL(login.headers.get("Location") ?? "");
@@ -116,7 +116,7 @@ async function signIn(gateway: Gateway, id: string) {
             },
         ),
     );
-    expect(callback.headers.get("Location")).toBe(`${origins.enter}/flow`);
+    expect(callback.headers.get("Location")).toBe(`${origins.enter}/screens`);
     expect(
         callback.headers
             .getSetCookie()
@@ -216,7 +216,7 @@ test("protects every origin and route before starting a review environment", asy
     );
     for (const origin of Object.values(origins)) {
         for (const path of [
-            "/flow",
+            "/screens",
             "/__flow/state",
             "/api/auth/get-session",
             "/auth/session",
@@ -238,13 +238,13 @@ test("protects every origin and route before starting a review environment", asy
         ).toBe(401);
     }
     const entry = await gateway(
-        new Request(`${origins.enter}/flow?view=journey`, {
+        new Request(`${origins.enter}/journey?flow=device`, {
             headers: { Accept: "text/html" },
         }),
     );
     const entryHtml = await entry.text();
     expect(entryHtml).toContain("Pollinations Flow");
-    expect(entryHtml).toContain("return_to=%2Fflow%3Fview%3Djourney");
+    expect(entryHtml).toContain("return_to=%2Fjourney%3Fflow%3Ddevice");
     const script = entryHtml.match(/src="([^"]+\.js)"/)?.[1];
     expect(script).toBeTruthy();
     const asset = await gateway(new Request(`${origins.enter}${script}`));
@@ -413,7 +413,9 @@ test("preserves capacity responses and lets the same non-admin reviewer retry", 
     );
     const session = await signIn(gateway, "alice");
     const request = () =>
-        new Request(`${origins.enter}/flow`, { headers: { Cookie: session } });
+        new Request(`${origins.enter}/screens`, {
+            headers: { Cookie: session },
+        });
     const busy = await gateway(request());
     expect(busy.status).toBe(503);
     expect(await busy.text()).toBe("No container instance is available.");
@@ -495,7 +497,7 @@ test("a browser shares one HttpOnly session across exactly the configured gatewa
         ]);
         for (const origin of Object.values(origins)) {
             const page = await context.newPage();
-            await page.goto(`${origin}/flow`);
+            await page.goto(`${origin}/screens`);
             expect(await page.title()).toBe("Isolated review");
             expect(await page.evaluate(() => document.cookie)).not.toContain(
                 sessionName,
@@ -503,7 +505,7 @@ test("a browser shares one HttpOnly session across exactly the configured gatewa
             await page.close();
         }
         const page = await context.newPage();
-        await page.goto(`${origins.admin}/flow`);
+        await page.goto(`${origins.admin}/screens`);
         // Chromium applies the deletion cookies before returning an opaque
         // redirect. Keep the redirect inside the intercepted test transport.
         expect(
@@ -524,7 +526,7 @@ test("a browser shares one HttpOnly session across exactly the configured gatewa
             ),
         ).toBe(false);
         for (const origin of Object.values(origins)) {
-            await page.goto(`${origin}/flow`);
+            await page.goto(`${origin}/screens`);
             expect(await page.title()).toBe("Pollinations Flow");
             await page
                 .getByRole("button", { name: "Sign in with Pollinations" })
@@ -579,8 +581,7 @@ test("built sign-in renders shared themes and errors, and preserves the canonica
         page.on("console", (message) => {
             if (message.type() === "error") errors.push(message.text());
         });
-        const selection =
-            "/flow?view=journey&flow=device&situation=device-approve";
+        const selection = "/journey?flow=device&situation=device-approve";
         for (const width of [320, 375, 1280]) {
             await page.setViewportSize({ width, height: 800 });
             for (const colorScheme of ["light", "dark"] as const) {
@@ -672,19 +673,21 @@ test("built sign-in renders shared themes and errors, and preserves the canonica
         );
         // An expired reviewer session inside the Admin iframe must sign in
         // at the top level on the canonical Flow host.
-        await page.route(`${origins.enter}/flow`, (route) =>
+        await page.route(`${origins.enter}/screens`, (route) =>
             route.fulfill({
                 contentType: "text/html",
-                body: `<iframe title="Admin" src="${origins.admin}/flow" style="width:100%;height:800px"></iframe>`,
+                body: `<iframe title="Admin" src="${origins.admin}/screens" style="width:100%;height:800px"></iframe>`,
             }),
         );
-        await page.goto(`${origins.enter}/flow`);
+        await page.goto(`${origins.enter}/screens`);
         await page
             .frameLocator("iframe")
             .getByRole("button", { name: "Sign in with Pollinations" })
             .click();
         await page.waitForURL(`${origins.enter}${REVIEWER_AUTH_PATH}/login?**`);
-        expect(new URL(page.url()).searchParams.get("return_to")).toBe("/flow");
+        expect(new URL(page.url()).searchParams.get("return_to")).toBe(
+            "/screens",
+        );
         expect(authorize?.searchParams.get("redirect_uri")).toBe(
             `${origins.enter}${REVIEWER_AUTH_PATH}/callback`,
         );
@@ -711,7 +714,7 @@ test("hosted homepage opens Flow while iframe and Admin roots keep their product
         );
         expect(response.status).toBe(302);
         expect(response.headers.get("Location")).toBe(
-            `${origins.enter}/flow?theme=dark`,
+            `${origins.enter}/screens?theme=dark`,
         );
     }
     expect(forward).not.toHaveBeenCalled();

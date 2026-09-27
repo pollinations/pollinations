@@ -38,7 +38,7 @@ const start = async (name) => {
     );
     const address = await docker("port", name, "4180");
     while (Date.now() - started < STARTUP_TIMEOUT_MS) {
-        const response = await fetch(`http://${address}/flow`, {
+        const response = await fetch(`http://${address}/screens`, {
             signal: AbortSignal.timeout(1000),
         }).catch(() => null);
         await response?.body?.cancel();

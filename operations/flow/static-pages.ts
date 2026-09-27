@@ -3,7 +3,9 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 
 const pages: Record<string, string> = {
-    "/flow": "operations/flow/flow-flows.html",
+    "/screens": "operations/flow/flow-flows.html",
+    "/map": "operations/flow/flow-flows.html",
+    "/journey": "operations/flow/flow-flows.html",
     "/flow-screen.html": "operations/flow/flow-screen.html",
     "/flow-example.html": "operations/flow/flow-example.html",
     "/flow-admin.html": "operations/flow/flow-admin.html",

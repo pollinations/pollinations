@@ -653,12 +653,10 @@ function FlowLab() {
     const { mode } = useColorMode();
     const [desktop, setDesktop] = useState(false);
     const [journeyCase, setJourneyCase] = useState<ReviewCase>();
-    const [view, setView] = useState(
-        ["map", "screens"].includes(
-            new URLSearchParams(location.search).get("view") ?? "",
-        )
-            ? (new URLSearchParams(location.search).get("view") ?? "journey")
-            : "journey",
+    const [view, setView] = useState(() =>
+        ["journey", "map", "screens"].includes(location.pathname.slice(1))
+            ? location.pathname.slice(1)
+            : "screens",
     );
     const [journeyVisited, setJourneyVisited] = useState(view === "journey");
     const [subsections, setSubsections] = useState<
@@ -745,7 +743,8 @@ function FlowLab() {
     const changeView = (next: string) => {
         if (next === "journey") setJourneyVisited(true);
         const url = new URL(location.href);
-        url.searchParams.set("view", next);
+        url.pathname = `/${next}`;
+        url.searchParams.delete("view");
         history.replaceState({}, "", url);
         setView(next);
     };

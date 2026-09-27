@@ -35,7 +35,7 @@ export class FlowRuntime extends Container<Bindings> {
     defaultPort = 4180;
     requiredPorts = [4180, 4182];
     sleepAfter = "10m";
-    pingEndpoint = "localhost/flow";
+    pingEndpoint = "localhost/screens";
     // Only public runtime configuration enters the fixture environment.
     envVars = {
         FLOW_BIND_ADDRESS: "0.0.0.0",

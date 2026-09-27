@@ -29,10 +29,10 @@ Return `null` when no type fits, for example a refactor, cleanup or routine upda
 
 ## Flags (zero or more)
 
-- `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. Not for a model's price; `MODEL` covers model pricing
+- `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. Setting or changing a model's price is `MODEL`, not `BILLING`; a report that users are charged the wrong amount is `BILLING`
 - `SECURITY`: API keys, permissions, secrets or secret files (`secrets/*.json`), account access, fraud or ban handling, or allowlists
 - `AUTOMATED`: The author's account type is `Bot`. A person relayed from Discord is not automated
-- `POLLEN-QUEST`: Pull requests only. The pull request solves or closes a linked issue that has the `POLLEN-QUEST` label. Mentioning a quest issue, for example as a bug report, is not enough
+- `POLLEN-QUEST`: Pull requests only. The pull request says it closes or completes a referenced issue that has the `POLLEN-QUEST` label (for example `Fixes #123`). Fixing a problem that a quest issue reported, or only mentioning one, is not enough
 
 Return an empty `flags` list when none apply.
 

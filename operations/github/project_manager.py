@@ -557,7 +557,7 @@ def label_pull_request():
     files = fetch_pr_files()
     linked = "\n".join(fetch_linked_issues()) or "none"
     listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
-    classification = classify(f"Linked issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
+    classification = classify(f"Referenced issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
     if classification is None:
         fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
     labels = classification["labels"]

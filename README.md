@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ image2gpt](https://image2gpt.vercel.app) | Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three | [@18074148384](https://github.com/18074148384) |
 | [🎬 TTA](https://mahmoudtracy641-hub.github.io/GLM234) | Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri, | [@mahmoudtracy641-hub](https://github.com/mahmoudtracy641-hub) |
 | [🎬 What TTS](https://bloodtubes6-cmyk.github.io/Blood) | App Description: A static web application featuring an Arabic interface with Right-to-Left (RTL) support. It implements the Pollinations.ai OAuth 2.1 PKCE login flow entirely on the client side, requi | [@bloodtubes6-cmyk](https://github.com/bloodtubes6-cmyk) |
 | [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
@@ -37,7 +38,6 @@
 | [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ aaarraaa](https://aaarraaarr990-rgb.github.io/Monster) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@aaarraaarr990-rgb](https://github.com/aaarraaarr990-rgb) |
 | [🎬 Text to speech](https://thinglover21-ux.github.io/My-app-mod) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@thinglover21-ux](https://github.com/thinglover21-ux) |
-| [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

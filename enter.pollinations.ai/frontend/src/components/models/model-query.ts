@@ -1,3 +1,4 @@
+import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { isModelReliable } from "@shared/model-health.ts";
 import { getModelCapabilities, getModelDisplayName } from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
@@ -234,10 +235,8 @@ function getSearchableCapabilities(model: ModelPrice): string[] {
 
 function getModelPublisher(model: ModelPrice): string | null {
     if (model.community) {
-        const separator = model.name.indexOf("/");
-        return separator > 0
-            ? model.name.slice(0, separator).toLowerCase()
-            : null;
+        const owner = parseCommunityModelId(model.name)?.ownerGithubUsername;
+        return owner?.toLowerCase() ?? null;
     }
     return model.publisher?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
 }

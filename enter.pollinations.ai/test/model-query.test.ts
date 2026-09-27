@@ -281,6 +281,21 @@ describe("matchesModelQuery", () => {
         ).toBe(true);
     });
 
+    it("matches community owners behind the community/ model ID prefix", () => {
+        const community = model({
+            name: "community/PublicOwner/image-model",
+            aliases: ["PublicOwner/image-model"],
+            community: true,
+            publisher: "Community",
+        });
+
+        expect(matches(community, "publisher:publicowner")).toBe(true);
+        expect(matches(community, "publisher:community")).toBe(false);
+        expect(getModelQuerySuggestions("publisher:", [community])).toEqual([
+            "publisher:publicowner ",
+        ]);
+    });
+
     it("filters official and community model sources", () => {
         expect(matches(model(), "source:official")).toBe(true);
         expect(matches(model(), "source:community")).toBe(false);

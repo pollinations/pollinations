@@ -446,40 +446,28 @@ export async function markAutoTopUpInvoiceFailed(
     if (options.disableAutoTopUp === false) {
         await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
     } else {
-        // Disable and record the decline together, before another request can claim.
-        // A void may already have marked the attempt failed. A repeated decline
-        // must not undo a customer's subsequent decision to re-enable auto top-up.
         const now = Date.now();
-        await env.DB.batch([
-            env.DB.prepare(
-                `UPDATE user
-                SET auto_top_up_enabled = 0
-                WHERE id IN (
-                    SELECT user_id FROM stripe_auto_top_up_attempt
-                    WHERE stripe_invoice_id = ?
-                        AND status != ?
-                        AND (status != ? OR failure_reason IS NOT ?)
-                )`,
-            ).bind(
-                invoice.id,
-                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-                reason,
-            ),
-            env.DB.prepare(
-                `UPDATE stripe_auto_top_up_attempt
-                SET status = ?, failure_reason = ?, updated_at = ?,
-                    completed_at = COALESCE(completed_at, ?)
-                WHERE stripe_invoice_id = ? AND status != ?`,
-            ).bind(
+        const attempt = await env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+            SET status = ?, failure_reason = ?, updated_at = ?,
+                completed_at = COALESCE(completed_at, ?)
+            WHERE stripe_invoice_id = ?
+                AND status != ?
+                AND (status != ? OR failure_reason IS NOT ?)
+            RETURNING user_id AS userId`,
+        )
+            .bind(
                 AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
                 reason,
                 now,
                 now,
                 invoice.id,
                 AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            ),
-        ]);
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+            )
+            .first<{ userId: string }>();
+        if (attempt) await disableAutoTopUp(env.DB, attempt.userId);
     }
 
     if (options.cleanupInvoice !== false) {

@@ -81,9 +81,19 @@ export type AuthFlowLayoutProps = {
 const legalFootnote = (
     <>
         By continuing, you agree to the{" "}
-        <InlineLink href="https://pollinations.ai/terms">Terms</InlineLink> and
-        acknowledge the{" "}
-        <InlineLink href="https://pollinations.ai/privacy">
+        <InlineLink
+            href="https://pollinations.ai/terms"
+            tone="quiet"
+            showIcon={false}
+        >
+            Terms
+        </InlineLink>{" "}
+        and acknowledge the{" "}
+        <InlineLink
+            href="https://pollinations.ai/privacy"
+            tone="quiet"
+            showIcon={false}
+        >
             Privacy Policy
         </InlineLink>
         .
@@ -144,13 +154,16 @@ export function AuthFlowLayout({
     );
 }
 
-/** The one line under the actions: legal, dashboard, back or help. */
+/**
+ * The quiet line under the actions: legal, dashboard, back or help. Its links
+ * use the quiet tone without arrows, and wrapped text splits into even lines.
+ */
 export function AuthModalFootnote({ children }: { children: ReactNode }) {
     return (
         <Text
             size="xs"
             tone="muted"
-            className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pb-5 polli:text-center polli:text-[13px]"
+            className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pb-5 polli:text-center polli:text-[13px] polli:text-balance"
         >
             {children}
         </Text>

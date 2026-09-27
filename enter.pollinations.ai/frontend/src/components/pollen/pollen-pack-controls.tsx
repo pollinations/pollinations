@@ -21,7 +21,8 @@ type PollenPackSliderProps = {
 };
 
 /** Pack slider with its stops underneath; the chosen stop is highlighted in
- * place. Prices live with the action that charges them, not on the slider. */
+ * place with its unit below it. Prices live with the action that charges
+ * them, not on the slider. */
 export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     value,
     onChange,
@@ -63,7 +64,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
             </div>
             <div
                 aria-hidden="true"
-                className="relative mx-[11px] mt-1.5 h-5 text-sm font-bold tracking-tight text-theme-text-muted tabular-nums"
+                className="relative mx-[11px] mt-1.5 h-9 text-sm font-bold tracking-tight text-theme-text-muted tabular-nums"
             >
                 {packs.map((pack, index) => (
                     <span
@@ -77,14 +78,19 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                         className={cn(
                             "absolute top-0 whitespace-nowrap transition-colors",
                             index === 0
-                                ? "-ml-[11px]"
+                                ? "-ml-[11px] text-left"
                                 : lastIndex > 0 && index === lastIndex
-                                  ? "ml-[11px] -translate-x-full"
-                                  : "-translate-x-1/2",
+                                  ? "ml-[11px] -translate-x-full text-right"
+                                  : "-translate-x-1/2 text-center",
                             index === selectedIndex && "text-paid-deep",
                         )}
                     >
                         {formatPollenPackValue(pack.amountUsd)}
+                        {index === selectedIndex && (
+                            <span className="block text-xs font-medium leading-4">
+                                pollen
+                            </span>
+                        )}
                     </span>
                 ))}
             </div>

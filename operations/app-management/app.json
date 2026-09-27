@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Simple Image Generator",
+    "url": "https://xzeyrix.github.io/Simple-Image-Generator",
+    "description": "A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own Pollen balance. The app supports",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "xZeyrix",
+    "githubUserId": "246016372",
+    "repositoryUrl": "https://github.com/xZeyrix/Simple-Image-Generator",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15481",
+    "approvedDate": "2026-09-27",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "image2gpt",
     "url": "https://image2gpt.vercel.app",
     "description": "Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three",

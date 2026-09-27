@@ -31,6 +31,8 @@
     --polli-font-pixel:      "Geist Pixel Square", ui-monospace, monospace;
     --polli-text-micro:      10px;
     --polli-text-base:       16px;
+    --polli-radius-block:    1.75rem;
+    --polli-radius-card:     1.25rem;
 
     /* Brand constants — hue-themed, but never flipped by `.dark`. Use these
        when an element must keep its identity on top of a dark panel: inside
@@ -65,7 +67,6 @@
        (a plain ink shade can't: it inverts and vanishes on the desk in dark).
        Distinct from theme-border (themed element outline) by design. */
     --polli-color-divider:             oklch(0.835 0.007 80);
-
 
     /* Neutral ink ramp */
     --polli-color-ink-50:  oklch(0.985 0.002 247.839);
@@ -225,7 +226,7 @@
 
     /* Neutral separator line (dark) — a quiet hairline LIGHTER than the
        surface so it reads on desk and cards alike. */
-    --polli-color-divider:             oklch(0.3 0.005 80);
+    --polli-color-divider:             oklch(0.35 0.005 80);
 
     /* Ink ramp — inverted (high numbers read light); same warm neutral hue */
     --polli-color-ink-50:  oklch(0.165 0.006 80);

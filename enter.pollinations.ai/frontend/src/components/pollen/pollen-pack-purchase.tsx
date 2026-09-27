@@ -62,7 +62,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                         intent="commit"
                         size="lg"
                         icon={<WalletIcon />}
-                        className="w-full text-base tabular-nums"
+                        className="w-full tabular-nums"
                     >
                         Buy for {chargeLabel}
                     </Button>

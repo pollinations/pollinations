@@ -12,6 +12,8 @@
     --font-pixel: var(--polli-font-pixel);
     --text-micro: var(--polli-text-micro);
     --text-base: var(--polli-text-base);
+    --radius-block: var(--polli-radius-block);
+    --radius-card: var(--polli-radius-card);
 
     --color-transparent: transparent;
     --color-current: currentColor;

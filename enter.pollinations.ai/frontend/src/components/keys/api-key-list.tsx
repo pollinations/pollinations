@@ -316,69 +316,67 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     return (
         <>
-            <div className="flex flex-col gap-3">
-                <Section
-                    title="Secrets"
-                    id="api-keys"
-                    action={sortedApiKeys.length > 0 && keyAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {!sortedApiKeys.length && (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{keyAction}</div>
-                                <p className="text-sm text-theme-text-muted">
-                                    Use secret keys for your own private
-                                    server-side integrations.
-                                </p>
-                            </Surface>
-                        )}
-                        {sortedApiKeys.map(renderKeyCard)}
-                    </div>
-                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <Section
+                title="Secrets"
+                id="api-keys"
+                action={sortedApiKeys.length > 0 && keyAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {!sortedApiKeys.length && (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{keyAction}</div>
+                            <p className="text-sm text-theme-text-muted">
+                                Use secret keys for your own private server-side
+                                integrations.
+                            </p>
+                        </Surface>
+                    )}
+                    {sortedApiKeys.map(renderKeyCard)}
+                </div>
+                <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Your backends, scripts, CLIs, connected apps, and
+                        devices use these keys and spend from your Pollinations
+                        account. Keep them private.
+                    </span>
+                </p>
+            </Section>
+            <Section
+                title="Apps"
+                id="app-keys"
+                action={sortedAppKeys.length > 0 && appAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {!sortedAppKeys.length && (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{appAction}</div>
+                            <p className="text-sm text-theme-text-muted">
+                                Use app keys when your users bring their own
+                                Pollinations account.
+                            </p>
+                        </Surface>
+                    )}
+                    {sortedAppKeys.map(renderKeyCard)}
+                </div>
+                <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    <p className="flex items-start gap-1.5">
+                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Your backends, scripts, CLIs, connected apps, and
-                            devices use these keys and spend from your
-                            Pollinations account. Keep them private.
+                            For apps where users sign in with their own
+                            Pollinations account and spend their own Pollen.
+                            Connect your app with the Pollinations SDK.
                         </span>
                     </p>
-                </Section>
-                <Section
-                    title="Apps"
-                    id="app-keys"
-                    action={sortedAppKeys.length > 0 && appAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {!sortedAppKeys.length && (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{appAction}</div>
-                                <p className="text-sm text-theme-text-muted">
-                                    Use app keys when your users bring their own
-                                    Pollinations account.
-                                </p>
-                            </Surface>
-                        )}
-                        {sortedAppKeys.map(renderKeyCard)}
-                    </div>
-                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        <p className="flex items-start gap-1.5">
-                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                For apps where users sign in with their own
-                                Pollinations account and spend their own Pollen.
-                                Connect your app with the Pollinations SDK.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Turn on earnings to receive 20% of the Pollen
-                                users spend in your app.
-                            </span>
-                        </p>
-                    </div>
-                </Section>
-            </div>
+                    <p className="flex items-start gap-1.5">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Turn on earnings to receive 20% of the Pollen users
+                            spend in your app.
+                        </span>
+                    </p>
+                </div>
+            </Section>
             <DeleteConfirmation
                 app={deletingKey ? isAppKey(deletingKey) : null}
                 error={deleteError}

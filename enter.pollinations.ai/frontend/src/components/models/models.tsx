@@ -482,7 +482,7 @@ export const Models: FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-3">
+        <>
             <Section
                 title={
                     activePrimaryTab === "agent"
@@ -730,6 +730,6 @@ export const Models: FC = () => {
                     </div>
                 )}
             </Section>
-        </div>
+        </>
     );
 };

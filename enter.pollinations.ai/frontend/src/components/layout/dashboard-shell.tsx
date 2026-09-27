@@ -343,7 +343,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 px-4 py-3">
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
                             <BrandMark size="drawer" />
                             <button
@@ -464,10 +464,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-3 py-5 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2.5 pb-3 pl-1 lg:flex">
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -507,7 +507,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 <DashboardSupport action={supportAction} links={supportLinks} />
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 flex-col gap-2 pt-4">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
             <DashboardFooter links={showFooterLinks ? footerLinks : []} />
@@ -580,7 +580,7 @@ const DashboardSupport: FC<{
     action: SupportAction;
     links: readonly SupportLink[];
 }> = ({ action, links }) => (
-    <div className="mt-5">
+    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
         {/* "Docs" header on the left; a small labelled copy button on the right
             (no tooltip — the visible label says what it does). */}
         <div className="flex items-center justify-between gap-2 px-3 py-1">
@@ -605,7 +605,7 @@ const DashboardSupport: FC<{
                 </CopyButton>
             </span>
         </div>
-        <div className="mt-0.5 flex flex-col gap-0.5 pl-6">
+        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
             {links.map((link) => (
                 <SupportLinkRow key={link.href} {...link} />
             ))}

@@ -517,7 +517,6 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 size="lg"
                 icon={<CheckIcon />}
                 disabled={saveDisabled}
-                className="text-base"
             >
                 Save
             </Button>

@@ -6,10 +6,10 @@ type SurfaceVariant = "panel" | "card" | "card-themed";
 const variantClasses: Record<SurfaceVariant, string> = {
     // Phones get tighter padding (and a matching radius) so nested cards keep
     // their width; from `sm` up the page has room for the full spacing.
-    panel: "polli:rounded-3xl polli:bg-surface-block polli:p-4 polli:sm:rounded-[1.75rem] polli:sm:p-7",
-    card: "polli:rounded-[1.25rem] polli:bg-surface-opaque polli:p-3.5 polli:sm:p-4",
+    panel: "polli:rounded-3xl polli:bg-surface-block polli:p-4 polli:sm:rounded-block polli:sm:p-7",
+    card: "polli:rounded-card polli:bg-surface-opaque polli:p-3.5 polli:sm:p-4",
     "card-themed":
-        "polli:rounded-[1.25rem] polli:bg-theme-bg-pale polli:p-3.5 polli:sm:p-4",
+        "polli:rounded-card polli:bg-theme-bg-pale polli:p-3.5 polli:sm:p-4",
 };
 
 type SurfaceOwnProps = {

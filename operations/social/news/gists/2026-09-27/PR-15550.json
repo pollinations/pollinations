@@ -1,0 +1,38 @@
+{
+  "pr_number": 15550,
+  "title": "fix: price MiniMax Turbo at current fal cost",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15550",
+  "merged_at": "2026-09-27T15:42:02Z",
+  "labels": [
+    "BUG",
+    "BILLING",
+    "ECONOMICS"
+  ],
+  "pr_body_excerpt": "- Set MiniMax H3 Max Turbo cost and customer price to fal’s current promo rates: 480p $0.0125/s, 768p $0.02/s, 1080p $0.04/s; keep `priceMultiplier: 1`. Replaces #15413’s list-price decision.\n- Bill from fal’s reported weighted units at the reviewed registry rate. Turbo uses no live pricing lookup; H3 Max retains its existing lookup. Preserve requested-model quotes for fallbacks.\n- Pass the billing rate explicitly from the caller, remove unnecessary test changes, and correct the price-sheet comment: public duration × rate need not reproduce a provider-unit-based total.\n- Validation: 237 focused tests, Gen/Enter type checks, Biome, and six authenticated local cases passed. Both text-to-video and image-to-video at 480p/768p/1080p matched fal’s actual charges: five seconds used 5/8/16 units and cost $0.0625/$0.10/$0.20. Each proved disconnect/rejoin, identical cached video, one upstream job, one wallet debit, one staging billing event, and no missing-rate warnings.\n- Restore published rates through #15555 before the September 30, 2026 promotion ends, including production promotion/deployment. Maintainer accepts switching a few hours early. During that window recorded cost follows configuration and can differ from fal’s actual charge; reconcile afterward. No automatic switch or deployment.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Turbo gets the right price tag",
+    "blurb": "MiniMax H3 Max Turbo now uses fal’s current promotional rates. The billing ledger reads fal’s weighted units, because video pricing apparently needed one more unit of measurement.",
+    "summary": "MiniMax H3 Max Turbo now quotes fal’s promotional prices of $0.0125/s at 480p, $0.02/s at 768p, and $0.04/s at 1080p, while billing from fal’s reported weighted units at the configured rate.",
+    "impact": "A five-second Turbo video at 480p, 768p, or 1080p costs $0.0625, $0.10, or $0.20 respectively; these promotional rates require a manual update before September 30, 2026.",
+    "keywords": [
+      "MiniMax H3 Max Turbo",
+      "video",
+      "fal",
+      "billing",
+      "promotional pricing",
+      "weighted units"
+    ],
+    "visual_concept": "Depict three cozy pixel video screens labeled 480p, 768p, and 1080p, each connected to a small ledger showing its price. Polli, wearing a tiny accountant’s visor, checks the ledger while the Monitor Robot holds the video reels; code-flowers grow around their workspace. The three sizes and matching prices are the visual focus, not a generic sale sign.",
+    "image_prompt": "In a cozy pixel art garden workshop, three little video screens labeled 480p, 768p, and 1080p glow above price tags reading $0.0625, $0.10, and $0.20, while a chunky CRT monitor robot holds the reels beside a ledger and code-flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant’s visor and checks the ledger, small-to-medium within the scene, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), dark purple (#110518) outlines, and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15550.jpg",
+    "prompt": "In a cozy pixel art garden workshop, three little video screens labeled 480p, 768p, and 1080p glow above price tags reading $0.0625, $0.10, and $0.20, while a chunky CRT monitor robot holds the reels beside a ledger and code-flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant’s visor and checks the ledger, small-to-medium within the scene, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), dark purple (#110518) outlines, and a warm cream background."
+  },
+  "generated_at": "2026-09-27T15:43:17.382487+00:00"
+}

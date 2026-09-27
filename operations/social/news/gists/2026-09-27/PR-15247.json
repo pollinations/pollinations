@@ -1,0 +1,35 @@
+{
+  "pr_number": 15247,
+  "title": "[Community Publisher Access List ] Add aadirajuthup , Jonakss and suniyintellekt998114-star to the list ",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/15247",
+  "merged_at": "2026-09-27T17:13:30Z",
+  "labels": [
+    "API",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "Closes #15116 and #15324 and #15508",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Three more in the garden",
+    "blurb": "The community publisher list has three new names. Polli made room on the clipboard.",
+    "summary": "Added aadirajuthup, Jonakss, and suniyintellekt998114-star to the community publisher GitHub ID access list in shared/auth/github-id-list.ts.",
+    "impact": "These three contributors are now included in the list used to authorize community publishers.",
+    "keywords": [
+      "community publishers",
+      "GitHub",
+      "access list",
+      "authorization"
+    ],
+    "visual_concept": "Depict Polli welcoming three contributors, represented by small name badges, into a cozy garden workspace. A clipboard marked “PUBLISHERS” represents the GitHub ID access list; the scene is about granting access, not a security incident.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli adds three small name badges to a clipboard marked “PUBLISHERS” beside lime green (#ecf874) code-plants and a warm cream-to-mint pastel background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat, is small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15247.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli adds three small name badges to a clipboard marked “PUBLISHERS” beside lime green (#ecf874) code-plants and a warm cream-to-mint pastel background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat, is small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-27T17:14:35.710938+00:00"
+}

@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { afterEach, expect, test, vi } from "vitest";
 import deployment from "../deploy.json";
 import { createReviewerGateway, REVIEWER_AUTH_PATH } from "../reviewer-gateway";
-import workerConfig from "../wrangler.json";
+
+const workerConfig = JSON.parse(
+    readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+);
 
 const origins = {
     enter: workerConfig.vars.FLOW_ENTER_ORIGIN,

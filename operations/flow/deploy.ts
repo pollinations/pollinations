@@ -30,7 +30,7 @@ execFileSync(
     { stdio: "inherit", env: { ...process.env, ...vars } },
 );
 const { vars: origins } = JSON.parse(
-    await readFile(new URL("./wrangler.json", import.meta.url), "utf8"),
+    await readFile(new URL("./wrangler.jsonc", import.meta.url), "utf8"),
 );
 for (const origin of [origins.FLOW_ENTER_ORIGIN, origins.FLOW_ADMIN_ORIGIN]) {
     const entry = await fetch(`${origin}/flow`, {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15554,
+  "title": "fix: show Lyria 3.5 per-song pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15554",
+  "merged_at": "2026-09-27T15:22:39Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Marks Lyria 3.5 as a flat-rate audio model.\n- Shows 0.08 Pollen per generated song instead of an estimated 1.2 Pollen per second.\n- Adds a catalog pricing regression test.\n\nTests: `npx vitest run test/pricing-data.test.ts` (56 passed)\n\nFixes #15549",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A song has one price",
+    "blurb": "Lyria 3.5 now shows its price per song. Much easier to read than a per-second estimate for a song that hasn't been written yet.",
+    "summary": "Marked Lyria 3.5 as a flat-rate audio model so the catalog displays 0.08 Pollen per generated song instead of an estimated 1.2 Pollen per second, with a regression test to keep the display accurate.",
+    "impact": "Users can see Lyria 3.5's per-song price before generating music, rather than a per-second estimate.",
+    "keywords": [
+      "Lyria 3.5",
+      "audio",
+      "pricing",
+      "Pollen",
+      "model catalog"
+    ],
+    "visual_concept": "Depict Lyria 3.5 as a cozy music-making setup: a retro music player, a floating pixel song note, and a clear tag reading '0.08 Pollen / song'. Polli, wearing tiny headphones, points out the tag beside a small code-plant; no separate Lyria mascot is indicated.",
+    "image_prompt": "In a cozy pixel art music nook, Polli points to a pixel-font tag reading '0.08 Pollen / song' beside a retro music player emitting gentle notes, with a code-plant growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny headphones; she is small-to-medium in the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15554.jpg",
+    "prompt": "In a cozy pixel art music nook, Polli points to a pixel-font tag reading '0.08 Pollen / song' beside a retro music player emitting gentle notes, with a code-plant growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny headphones; she is small-to-medium in the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-09-27T15:23:37.269470+00:00"
+}

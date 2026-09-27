@@ -183,7 +183,7 @@ export async function bundleWorkers() {
     return { enter, gen };
 }
 
-type WorkerScripts = Awaited<ReturnType<typeof bundleWorkers>>;
+export type WorkerScripts = Awaited<ReturnType<typeof bundleWorkers>>;
 
 export async function startRuntime(
     options: {

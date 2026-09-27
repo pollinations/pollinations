@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-import { dashboardFetch, useDashboardSession } from "../src/react";
+import { dashboardFetch, signOut, useDashboardSession } from "../src/react";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -79,5 +79,46 @@ it("keeps the open dashboard through a failed poll and only clears a confirmed i
     } finally {
         if (renderer) await act(async () => renderer.unmount());
         vi.useRealTimers();
+    }
+});
+
+it("uses the supplied auth namespace for the reviewer session and logout", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    const assign = vi.fn();
+    vi.stubGlobal(
+        "window",
+        Object.assign(new EventTarget(), {
+            setInterval,
+            clearInterval,
+            location: { assign },
+        }),
+    );
+    const upstream = vi.fn().mockImplementation(async () =>
+        Response.json({
+            user: { sub: "reviewer", email: "reviewer@example.com" },
+        }),
+    );
+    vi.stubGlobal("fetch", upstream);
+    function Account() {
+        useDashboardSession("/flow-reviewer/auth");
+        return null;
+    }
+    let renderer!: ReactTestRenderer;
+    try {
+        await act(async () => {
+            renderer = create(createElement(Account));
+        });
+        expect(upstream).toHaveBeenCalledWith(
+            "/flow-reviewer/auth/session",
+            expect.objectContaining({ credentials: "same-origin" }),
+        );
+        await signOut("/flow-reviewer/auth");
+        expect(upstream).toHaveBeenLastCalledWith(
+            "/flow-reviewer/auth/logout",
+            expect.objectContaining({ method: "POST" }),
+        );
+        expect(assign).toHaveBeenCalledWith("/");
+    } finally {
+        if (renderer) await act(async () => renderer.unmount());
     }
 });

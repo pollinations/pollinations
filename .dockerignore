@@ -12,6 +12,7 @@
 **/.DS_Store
 **/Thumbs.db
 **/dist-live
+**/dist-runtime
 **/.local
 **/.wrangler
 **/.claude

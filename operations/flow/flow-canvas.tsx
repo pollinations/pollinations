@@ -20,6 +20,7 @@ import logoUrl from "@pollinations/ui/brand/mark.svg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { FlowConditionsProvider } from "./conditions";
+import { FlowAccount } from "./flow-account";
 import { appLoginScreens } from "./flow-app-login";
 import { type CanvasScreen, canvasGroups } from "./flow-canvas-data";
 import { dashboardSections } from "./flow-dashboard";
@@ -43,7 +44,6 @@ import {
     type JourneySelection,
 } from "./flow-journey-state";
 import { ScreenContent, ScreenOwnership } from "./flow-preview";
-import { FlowSource } from "./flow-source";
 import {
     ReviewHeader,
     ReviewJourney,
@@ -887,8 +887,14 @@ function FlowLab() {
                                 </IconButton>
                             </fieldset>
                         </div>
+                        {window.__FLOW_ENVIRONMENT__.reviewerAuthPath && (
+                            <FlowAccount
+                                authPath={
+                                    window.__FLOW_ENVIRONMENT__.reviewerAuthPath
+                                }
+                            />
+                        )}
                     </div>
-                    <FlowSource />
                     <ScrollArea axis="x" className="flow-header-secondary">
                         <div className="flow-navigation">
                             <nav

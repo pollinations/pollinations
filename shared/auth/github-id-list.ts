@@ -52,6 +52,9 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     286385677, // Creatneworld
     156744205, // tsgabrielle
     243879765, // fadyabohamza-netizen
+    77214872, // aadirajuthup
+    11493034, // Jonakss
+    334253163, // suniyintellekt998114-star
     128448668, // Saauf
     319410519, // afanasevmylife
     133474899, // Marcus-Mok-GH

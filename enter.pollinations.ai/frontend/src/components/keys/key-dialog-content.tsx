@@ -113,7 +113,6 @@ export function KeyDialogContent({
             <CopyButton
                 value={createdKey}
                 variant="button"
-                intent="commit"
                 copiedTimeoutMs={500}
                 tooltip={null}
                 onCopied={onCopied}

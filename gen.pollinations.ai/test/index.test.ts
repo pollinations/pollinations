@@ -90,6 +90,29 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("requires authentication on /v1/messages like every other text route", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    max_tokens: 16,
+                    messages: [{ role: "user", content: "hi" }],
+                }),
+            }),
+            env,
+            ctx,
+        );
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code: "UNAUTHORIZED" },
+        });
+        await waitOnExecutionContext(ctx);
+    });
+
     it("returns the same 401 message for an invalid API key", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(

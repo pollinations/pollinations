@@ -13,6 +13,7 @@ type Config = {
     clientId: string;
     sessionSecret: string;
     authFetch?: typeof fetch;
+    assets: { fetch(request: Request): Promise<Response> };
 };
 
 // This is the public boundary. The container receives product fixture traffic,
@@ -38,18 +39,6 @@ export function createReviewerGateway(
 
     async function signInPage(request: Request) {
         const url = new URL(request.url);
-        const messages: Record<string, string> = {
-            cancelled: "Sign-in was cancelled. You can try again.",
-            invalid_state: "Your sign-in link expired. Please try again.",
-            access_denied:
-                "Your account could not sign in to Flow. Please try again.",
-            unavailable:
-                "Pollinations sign-in is temporarily unavailable. Please try again.",
-        };
-        const message =
-            url.pathname === `${REVIEWER_AUTH_PATH}/error`
-                ? messages[url.searchParams.get("auth_error") ?? ""]
-                : undefined;
         const login = new URL(
             `${REVIEWER_AUTH_PATH}/login`,
             config.origins.enter,
@@ -60,22 +49,20 @@ export function createReviewerGateway(
                 ? `${url.pathname}${url.search}`
                 : "/flow",
         );
+        const page = await config.assets.fetch(
+            new Request(new URL(`/${namespace}/index.html`, url)),
+        );
+        if (!page.ok) return page;
+        const loginMeta =
+            await html`<meta name="flow-login" content="${login.href}">`;
         return new Response(
-            await html`<!doctype html><html lang="en"><head>
-            <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-            <meta name="color-scheme" content="light dark"><title>Pollinations Flow</title>
-            <style>body{font:1rem/1.5 system-ui,sans-serif;max-width:36rem;margin:12vh auto;padding:1.5rem}a{display:inline-block;padding:.75rem 0}</style>
-            </head><body><main><h1>Pollinations Flow</h1>
-            <p>Review product journeys in your own disposable environment. Screens use fixture data.</p>
-            ${message ? html`<p role="alert">${message}</p>` : ""}
-            <a href="${login.href}" target="_top">Sign in with Pollinations</a>
-            </main></body></html>`,
+            (await page.text()).replace("</head>", `${loginMeta}</head>`),
             {
                 headers: {
                     "Content-Type": "text/html; charset=utf-8",
                     "Cache-Control": "private, no-store",
                     "Referrer-Policy": "no-referrer",
-                    "Content-Security-Policy": `default-src 'none'; style-src 'unsafe-inline'; frame-ancestors ${config.origins.enter}`,
+                    "Content-Security-Policy": `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; frame-ancestors ${config.origins.enter}; base-uri 'none'; form-action 'none'`,
                 },
             },
         );
@@ -90,6 +77,11 @@ export function createReviewerGateway(
             !origins.includes(request.headers.get("Origin") ?? "")
         )
             return new Response(null, { status: 403 });
+
+        // Only the gateway's built sign-in assets are public. Product assets
+        // still require a reviewer session and belong to its container.
+        if (url.pathname.startsWith(`/${namespace}/assets/`))
+            return config.assets.fetch(request);
 
         if (
             url.pathname === `/${namespace}` ||

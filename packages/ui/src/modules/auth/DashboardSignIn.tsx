@@ -12,6 +12,11 @@ const signInErrors = {
         message:
             "Your Pollinations account does not have admin access. Switch accounts on Pollinations, then try again.",
     },
+    access_denied: {
+        title: "Couldn’t sign in",
+        message:
+            "Your Pollinations account could not sign in. Please try again.",
+    },
     cancelled: {
         title: "Sign-in cancelled",
         message: "Sign-in was cancelled. You can try again.",
@@ -32,20 +37,22 @@ export function DashboardSignIn({
     onSignIn,
     isPending = false,
     sessionError,
+    description = "Sign in with your Pollinations admin account.",
+    authError = typeof window === "undefined"
+        ? null
+        : new URLSearchParams(window.location.search).get("auth_error"),
 }: {
     appName: string;
     onSignIn: () => void;
     isPending?: boolean;
     sessionError?: string | null;
+    description?: string;
+    authError?: string | null;
 }) {
-    const code =
-        typeof window === "undefined"
-            ? null
-            : new URLSearchParams(window.location.search).get("auth_error");
     const error = sessionError
         ? { title: "Couldn’t check your session", message: sessionError }
-        : code && Object.hasOwn(signInErrors, code)
-          ? signInErrors[code as keyof typeof signInErrors]
+        : authError && Object.hasOwn(signInErrors, authError)
+          ? signInErrors[authError as keyof typeof signInErrors]
           : null;
     return (
         <AuthFlowLayout
@@ -77,7 +84,7 @@ export function DashboardSignIn({
             </Surface>
             {!(!isPending && error) && (
                 <Text size="sm" tone="muted">
-                    Sign in with your Pollinations admin account.
+                    {description}
                 </Text>
             )}
         </AuthFlowLayout>

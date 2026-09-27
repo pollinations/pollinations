@@ -1,6 +1,18 @@
+import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import { Miniflare } from "miniflare";
 import { chromium } from "playwright";
-import { afterEach, expect, test, vi } from "vitest";
+import {
+    afterAll,
+    afterEach,
+    assert,
+    beforeAll,
+    expect,
+    test,
+    vi,
+} from "vitest";
 import deployment from "../deploy.json";
 import { createReviewerGateway, REVIEWER_AUTH_PATH } from "../reviewer-gateway";
 
@@ -12,11 +24,46 @@ const origins = {
     enter: workerConfig.vars.FLOW_ENTER_ORIGIN,
     admin: workerConfig.vars.FLOW_ADMIN_ORIGIN,
 };
-const config = {
-    origins,
-    clientId: "pk_inert_gateway_test",
-    sessionSecret: "public-inert-flow-gateway-test-secret",
-};
+let assetRuntime: Miniflare;
+let config: Parameters<typeof createReviewerGateway>[0];
+beforeAll(async () => {
+    await promisify(execFile)("npm", ["run", "build:reviewer"], {
+        cwd: fileURLToPath(new URL("..", import.meta.url)),
+    });
+    // Exercise the built UI through Cloudflare's real local asset binding.
+    assetRuntime = new Miniflare({
+        modules: true,
+        script: "export default {}",
+        assets: {
+            directory: fileURLToPath(new URL("../dist", import.meta.url)),
+            binding: workerConfig.assets.binding,
+            assetConfig: {
+                html_handling: workerConfig.assets.html_handling,
+                not_found_handling: workerConfig.assets.not_found_handling,
+            },
+        },
+    });
+    const { ASSETS } = await assetRuntime.getBindings();
+    config = {
+        origins,
+        clientId: "pk_inert_gateway_test",
+        sessionSecret: "public-inert-flow-gateway-test-secret",
+        assets: {
+            fetch: (request) => {
+                // The Node proxy is a localhost RPC transport. Browser origin
+                // checks have already run in the real gateway above it.
+                const headers = new Headers(request.headers);
+                headers.delete("Origin");
+                headers.delete("Host");
+                return ASSETS.fetch(request.url, {
+                    method: request.method,
+                    headers: Object.fromEntries(headers),
+                });
+            },
+        },
+    };
+}, 60_000);
+afterAll(async () => assetRuntime?.dispose());
 const sessionName = "flow-reviewer_pollinations_session";
 const flowName = "flow-reviewer_pollinations_oauth_flow";
 const cookie = (response: Response, name: string) =>
@@ -195,13 +242,28 @@ test("protects every origin and route before starting a review environment", asy
             headers: { Accept: "text/html" },
         }),
     );
-    expect(await entry.text()).toContain("Sign in with Pollinations");
+    const entryHtml = await entry.text();
+    expect(entryHtml).toContain("Pollinations Flow");
+    expect(entryHtml).toContain("return_to=%2Fflow%3Fview%3Djourney");
+    const script = entryHtml.match(/src="([^"]+\.js)"/)?.[1];
+    expect(script).toBeTruthy();
+    const asset = await gateway(new Request(`${origins.enter}${script}`));
+    expect(asset.status).toBe(200);
+    expect(asset.headers.get("Content-Type")).toContain("javascript");
+    await asset.body?.cancel();
+    expect(
+        (
+            await gateway(
+                new Request(`${origins.enter}/flow-reviewer/assets/missing.js`),
+            )
+        ).status,
+    ).toBe(404);
     for (const url of deployment.verify) {
         const health = await gateway(
             new Request(url, { headers: { Accept: "*/*" } }),
         );
         expect(health.status).toBe(200);
-        expect(await health.text()).toContain("Sign in with Pollinations");
+        expect(await health.text()).toContain('name="flow-login"');
     }
     expect(forward).not.toHaveBeenCalled();
 });
@@ -378,7 +440,7 @@ test("reviewer callback errors stay out of the simulated Admin callback route", 
     const recovery = await gateway(
         new Request(failure.headers.get("Location") ?? ""),
     );
-    expect(await recovery.text()).toContain("Your sign-in link expired.");
+    expect(await recovery.text()).toContain('name="flow-login"');
     const session = await signIn(gateway, "alice");
     const fixture = await gateway(
         new Request(`${origins.admin}/?auth_error=admin_required`, {
@@ -464,12 +526,170 @@ test("a browser shares one HttpOnly session across exactly the configured gatewa
         for (const origin of Object.values(origins)) {
             await page.goto(`${origin}/flow`);
             expect(await page.title()).toBe("Pollinations Flow");
+            await page
+                .getByRole("button", { name: "Sign in with Pollinations" })
+                .waitFor({ state: "visible" });
             expect(
                 await page
-                    .getByRole("link", { name: "Sign in with Pollinations" })
+                    .getByRole("button", { name: "Sign in with Pollinations" })
                     .count(),
             ).toBe(1);
         }
+        await context.close();
+    } finally {
+        await browser.close();
+    }
+}, 30_000);
+
+test("built sign-in renders shared themes and errors, and preserves the canonical login destination", async () => {
+    const forward = vi.fn();
+    const gateway = createReviewerGateway(config, forward);
+    const browser = await chromium.launch({ headless: true });
+    const errors: string[] = [];
+    try {
+        const context = await browser.newContext();
+        let authorize: URL | undefined;
+        await context.route("**/*", async (route) => {
+            const incoming = route.request();
+            const response = await gateway(
+                new Request(incoming.url(), {
+                    headers: await incoming.allHeaders(),
+                }),
+            );
+            if (
+                new URL(incoming.url()).pathname ===
+                `${REVIEWER_AUTH_PATH}/login`
+            ) {
+                // Run the real login handler, then stop before the external
+                // identity provider. Callback/session checks live above.
+                authorize = new URL(response.headers.get("Location") ?? "");
+                await route.fulfill({
+                    body: "<!doctype html><title>Login requested</title>",
+                });
+                return;
+            }
+            await route.fulfill({
+                status: response.status,
+                body: Buffer.from(await response.arrayBuffer()),
+                headers: Object.fromEntries(response.headers),
+            });
+        });
+        const page = await context.newPage();
+        page.on("pageerror", (error) => errors.push(error.message));
+        page.on("console", (message) => {
+            if (message.type() === "error") errors.push(message.text());
+        });
+        const selection =
+            "/flow?view=journey&flow=device&situation=device-approve";
+        for (const width of [320, 375, 1280]) {
+            await page.setViewportSize({ width, height: 800 });
+            for (const colorScheme of ["light", "dark"] as const) {
+                await page.emulateMedia({ colorScheme });
+                await page.goto(`${origins.enter}${selection}`);
+                const button = page.getByRole("button", {
+                    name: "Sign in with Pollinations",
+                });
+                await button.waitFor({ state: "visible" });
+                expect(
+                    await page
+                        .getByText("Screens use sample data.", { exact: false })
+                        .count(),
+                ).toBe(1);
+                expect(
+                    await page
+                        .getByText("admin account", { exact: false })
+                        .count(),
+                ).toBe(0);
+                expect(
+                    await page
+                        .getByRole("switch", { name: "Toggle dark mode" })
+                        .getAttribute("aria-checked"),
+                ).toBe(String(colorScheme === "dark"));
+                await page.evaluate(() => document.fonts.ready);
+                const metrics = await page
+                    .getByRole("dialog")
+                    .evaluate((element) => ({
+                        width: element.getBoundingClientRect().width,
+                        overflow: element.scrollWidth > element.clientWidth,
+                        fontsLoaded: [...document.fonts].some(
+                            (font) => font.status === "loaded",
+                        ),
+                    }));
+                expect(
+                    await button.evaluate(
+                        (element) => getComputedStyle(element).fontFamily,
+                    ),
+                ).toContain("Uncut Sans");
+                expect(metrics.fontsLoaded).toBe(true);
+                expect(metrics.overflow).toBe(false);
+                expect(metrics.width).toBeLessThanOrEqual(width);
+                const bounds = await button.boundingBox();
+                assert(bounds);
+                expect(bounds.y + bounds.height).toBeLessThanOrEqual(800);
+            }
+        }
+        const toggle = page.getByRole("switch", { name: "Toggle dark mode" });
+        await toggle.click();
+        expect(await toggle.getAttribute("aria-checked")).toBe("false");
+        await page.reload();
+        await toggle.waitFor({ state: "visible" });
+        expect(await toggle.getAttribute("aria-checked")).toBe("false");
+        for (const [code, message] of Object.entries({
+            cancelled: "Sign-in was cancelled. You can try again.",
+            invalid_state:
+                "Your Pollinations sign-in link expired. Please try again.",
+            unavailable:
+                "Couldn’t complete your Pollinations sign-in. Please try again.",
+            access_denied:
+                "Your Pollinations account could not sign in. Please try again.",
+        })) {
+            await page.goto(
+                `${origins.enter}${REVIEWER_AUTH_PATH}/error?auth_error=${code}`,
+            );
+            await page
+                .getByRole("button", { name: "Try again" })
+                .waitFor({ state: "visible" });
+            expect(await page.getByRole("alert").textContent()).toContain(
+                message,
+            );
+        }
+        // A fixture's auth_error must not become a reviewer sign-in error.
+        await page.goto(
+            `${origins.enter}${selection}&auth_error=admin_required`,
+        );
+        await page
+            .getByRole("button", { name: "Sign in with Pollinations" })
+            .click();
+        await page.waitForURL(`${origins.enter}${REVIEWER_AUTH_PATH}/login?**`);
+        expect(new URL(page.url()).searchParams.get("return_to")).toBe(
+            `${selection}&auth_error=admin_required`,
+        );
+        expect(authorize?.searchParams.get("redirect_uri")).toBe(
+            `${origins.enter}${REVIEWER_AUTH_PATH}/callback`,
+        );
+        expect(authorize?.searchParams.get("scope")).toBe(
+            "openid profile email",
+        );
+        // An expired reviewer session inside the Admin iframe must sign in
+        // at the top level on the canonical Flow host.
+        await page.route(`${origins.enter}/flow`, (route) =>
+            route.fulfill({
+                contentType: "text/html",
+                body: `<iframe title="Admin" src="${origins.admin}/flow" style="width:100%;height:800px"></iframe>`,
+            }),
+        );
+        await page.goto(`${origins.enter}/flow`);
+        await page
+            .frameLocator("iframe")
+            .getByRole("button", { name: "Sign in with Pollinations" })
+            .click();
+        await page.waitForURL(`${origins.enter}${REVIEWER_AUTH_PATH}/login?**`);
+        expect(new URL(page.url()).searchParams.get("return_to")).toBe("/flow");
+        expect(authorize?.searchParams.get("redirect_uri")).toBe(
+            `${origins.enter}${REVIEWER_AUTH_PATH}/callback`,
+        );
+        expect(forward).not.toHaveBeenCalled();
+        expect(errors).toEqual([]);
         await context.close();
     } finally {
         await browser.close();

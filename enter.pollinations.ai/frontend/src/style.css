@@ -1,5 +1,10 @@
 @import "@pollinations/ui/app.css";
 
+.model-title-link,
+.model-title-link span {
+    text-decoration: none;
+}
+
 .resource-dialog {
     /* Keep controls stationary when expandable content changes height. */
     margin-block: 0;

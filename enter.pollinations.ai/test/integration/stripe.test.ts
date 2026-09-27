@@ -3055,12 +3055,163 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
     expect(attempt?.failureReason).toBeNull();
 });
 
-// SCA recovery is verified end-to-end against the Stripe sandbox (see
-// STAGING_AUTO_TOPUP_TEST_PLAN.md S6/S7). The unit-test path can't easily
-// simulate the new `invoice.payments.data[0].payment.payment_intent`
-// expansion that the live Stripe API requires.
+test.for([
+    false,
+    true,
+])("declined auto top-up can be re-enabled without waiting (void first: %s)", async (voidFirst, {
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_manual_reenable");
+    customer.invoice_settings.default_payment_method = "pm_manual_reenable";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_manual_reenable", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    const invoiceId = "in_manual_reenable";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    mocks.stripe.state.invoices.push({
+        id: invoiceId,
+        object: "invoice",
+        customer: customer.id,
+        status: voidFirst ? "void" : "open",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+    });
+    if (voidFirst) {
+        expect(
+            (
+                await postSignedStripeWebhook(
+                    createAutoTopUpInvoiceEvent(
+                        "invoice.voided",
+                        invoiceId,
+                        userId,
+                    ),
+                )
+            ).status,
+        ).toBe(200);
+    }
+    const declined = createAutoTopUpInvoiceEvent(
+        "invoice.payment_failed",
+        invoiceId,
+        userId,
+    );
+    expect((await postSignedStripeWebhook(declined)).status).toBe(200);
+    const disabledTrigger = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+    });
+    expect(await disabledTrigger.json()).toEqual({
+        status: "skipped",
+        reason: "auto top-up disabled",
+    });
+    expect(mocks.stripe.state.invoices).toHaveLength(1);
+    const reenable = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ enabled: true, packAmountUsd: 10 }),
+    });
+    expect(reenable.status).toBe(200);
+    // A duplicate old failure must not reverse the customer's explicit choice.
+    expect((await postSignedStripeWebhook(declined)).status).toBe(200);
+    const next = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+    });
+    expect(next.status).toBe(200);
+    expect(await next.json()).toMatchObject({ status: "created" });
+    expect(mocks.stripe.state.invoices).toHaveLength(2);
+});
 
-test("POST /api/webhooks/stripe fails declined invoices without disabling auto top-up", async ({
+test("payment_failed keeps a 3DS invoice open and auto top-up enabled", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    const invoiceId = "in_webhook_3ds";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    // The retrieve endpoint returns the expanded PaymentIntent supplied here.
+    const invoice = {
+        id: invoiceId,
+        object: "invoice" as const,
+        customer: "cus_webhook",
+        status: "open",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+        payments: {
+            data: [
+                {
+                    payment: {
+                        payment_intent: {
+                            id: "pi_3ds",
+                            object: "payment_intent",
+                            status: "requires_action",
+                        },
+                    },
+                },
+            ],
+        },
+    };
+    mocks.stripe.state.invoices.push(invoice);
+    expect(
+        (
+            await postSignedStripeWebhook(
+                createAutoTopUpInvoiceEvent(
+                    "invoice.payment_failed",
+                    invoiceId,
+                    userId,
+                ),
+            )
+        ).status,
+    ).toBe(200);
+    const user = await env.DB.prepare(
+        "SELECT auto_top_up_enabled AS enabled FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ enabled: number }>();
+    const attempt = await env.DB.prepare(
+        "SELECT status FROM stripe_auto_top_up_attempt WHERE stripe_invoice_id = ?",
+    )
+        .bind(invoiceId)
+        .first<{ status: string }>();
+    expect(user?.enabled).toBe(1);
+    expect(attempt?.status).toBe("pending");
+    expect(invoice.status).toBe("open");
+    expect(
+        mocks.stripe.state.requests.some((request) =>
+            request.path.endsWith("/void"),
+        ),
+    ).toBe(false);
+});
+
+test("POST /api/webhooks/stripe disables auto top-up on the first declined invoice", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3133,7 +3284,7 @@ test("POST /api/webhooks/stripe fails declined invoices without disabling auto t
             completedAt: number | null;
         }>();
 
-    expect(updatedUser?.autoTopUpEnabled).toBe(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(0);
     expect(attempt?.status).toBe("failed");
     expect(attempt?.failureReason).toContain(
         "Stripe could not charge the default payment method.",

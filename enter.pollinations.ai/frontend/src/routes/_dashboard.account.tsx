@@ -76,7 +76,7 @@ function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Profile">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -201,7 +201,7 @@ function AccountPage() {
                         type="button"
                         intent="danger"
                         icon={<TrashIcon />}
-                        className="shrink-0"
+                        className="shrink-0 self-start sm:self-center"
                         onClick={() => setDeleteDialogOpen(true)}
                     >
                         Delete account
@@ -209,7 +209,7 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
                 <span>© 2026 Myceli.AI OÜ</span>
                 <InlineLink
                     href="https://pollinations.ai/terms"
@@ -238,7 +238,7 @@ function AccountPage() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
             />
-        </div>
+        </>
     );
 }
 

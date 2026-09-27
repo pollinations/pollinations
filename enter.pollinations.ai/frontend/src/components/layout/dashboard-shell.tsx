@@ -338,7 +338,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -369,9 +369,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
                         {children}
                     </main>
                 </ScrollArea>
@@ -464,7 +464,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
@@ -522,7 +522,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

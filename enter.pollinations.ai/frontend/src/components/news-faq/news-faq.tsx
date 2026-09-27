@@ -5,7 +5,7 @@ import { HIGHLIGHTS_GITHUB_URL } from "./highlights.ts";
 import { Announcements, NewsBanner } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
-    <div className="flex flex-col gap-6">
+    <>
         <Section title="Announcements" framed>
             <Announcements />
         </Section>
@@ -27,5 +27,5 @@ export const NewsFaq: FC = () => (
         <Section title="FAQ" id="faq">
             <FAQ showTitle={false} />
         </Section>
-    </div>
+    </>
 );

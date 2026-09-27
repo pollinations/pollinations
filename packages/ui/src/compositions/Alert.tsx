@@ -6,7 +6,7 @@ import { Text } from "../primitives/Typography.tsx";
 type AlertIntent = "info" | "advisory" | "warning" | "danger";
 
 const intentClasses: Record<AlertIntent, string> = {
-    info: "polli:bg-theme-bg-pale polli:text-theme-text-strong",
+    info: "polli:bg-control polli:text-theme-text-strong",
     advisory: "polli:bg-intent-warning-bg-light/45 polli:text-theme-text-base",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",

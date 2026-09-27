@@ -1,5 +1,6 @@
 import { apiClient } from "@frontend/api.ts";
 import {
+    Alert,
     Button,
     CardIcon,
     CheckIcon,
@@ -406,7 +407,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 </div>
             )}
 
-            {error && <ErrorNotice>{error}</ErrorNotice>}
+            {error && <Alert intent="danger">{error}</Alert>}
         </div>
     );
 };
@@ -578,15 +579,6 @@ const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
         <span className="inline-flex rounded-lg bg-control px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
-    </div>
-);
-
-const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
-    <div
-        role="alert"
-        className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text"
-    >
-        {children}
     </div>
 );
 

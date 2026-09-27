@@ -1,0 +1,168 @@
+{
+    "about": "v2: Around the Hive. One small world with the Hive at its centre and four lands around it, one per page (gold, blue, green, violet). Amber is always the light; each land's own colour lives in its ground, plants, water and shadows. Day shows in light mode, night in dark mode; every night is an edit of its day.",
+    "model": "nanobanana-2",
+    "sheet": "operations/social/prompts/brand/characters-ref.jpg",
+    "style": "Cozy 8-bit pixel art like Stardew Valley and A Short Hike. Chunky sprites on a strict grid: one art pixel is about 6 image pixels at 2048 px wide, 1-pixel stair-stepped plum-brown #301d26 outlines, flat cel shading with at most three tones per surface. No anti-aliasing, dithering, blur, airbrushed glow, light beams or painterly texture. Amber leads: honey #ffd76d and lamp amber #ffc766 are the only light colours (sun glints, lit windows, lamps, a few drifting pollen motes). The world's own colour lives in ground, foliage, water and shadow, never in the upper sky. Soft pastels; never neon, hot pink, navy or indigo. Image 1 is the character sheet: draw only the characters the scene names, exactly as drawn there, one of each, never copying its layout or background. Polli is about a fifth of the frame height, the Robot 1.1 times Polli, Nomnom 0.8 times Polli. No text, letters, logos, borders, moon or sun disc.",
+    "cast": {
+        "polli": "Polli the bee (one round honey-yellow #fcd45e ball a little wider than tall, never a capsule and never a head on a body; dark brown stripes on her back half, black vertical oval eyes, soft rose #f67fac rectangular blush, a small smile, small pale-blue wings, thin black antennae, tiny black legs)",
+        "robot": "the Robot (a peach-cream CRT-monitor head #edceaa with a dark slate glass screen showing two mint #9fe3b8 square eyes and a small smile, no blush and never orange; a small boxy cream body, stubby segmented grey arms and legs)",
+        "nomnom": "Nomnom (one round tan #dc9f66 mochi ball a little wider than tall, dot eyes, rosy cheeks, a wide happy mouth, no limbs except two tiny nubs when carrying something)",
+        "hive": "the Hive (a small honey-gold straw skep with one round glowing amber window)"
+    },
+    "lights": {
+        "day": {
+            "prompt": "Soft clear daylight from the upper right, off-frame; short soft shadows fall to the left. Honey-coloured sun glints on edges and leaves."
+        },
+        "night": {
+            "from": "day",
+            "prompt": "Image 1 is a finished daytime scene. Redraw image 1 at night: keep the exact composition, framing, every object, every character and pose, and the pixel grid; change only light and colour. The sky and any flat background become very dark warm charcoal #262420 at the edges, only faintly tinted by the world. Light comes only from the scene's own lamps, windows and glowing screens, in warm amber #ffc766. Sparse tiny warm stars, no moon, no navy or indigo. Keep the characters bright, readable and exactly as drawn on image 2, the character sheet."
+        }
+    },
+    "frames": {
+        "hero": {
+            "request": "2048x878",
+            "size": "2048x854",
+            "gravity": "south",
+            "prompt": "Wide banner. The left 60% and the top third are calm empty sky in the world's palest tint, fading to flat pale cream #fef8eb at the left and bottom edges. Scenery sits low on the right; the characters stand in the right third, between 30% and 70% of the height."
+        },
+        "closing": {
+            "request": "2048x878",
+            "size": "2048x854",
+            "gravity": "south",
+            "prompt": "Wide panorama for the bottom of a page. The top quarter is calm sky fading to flat pale cream #fef8eb at the top edge. Continuous ground across the whole width reaching the bottom edge, with no floating island, rim or border. The characters are in the middle 70% of the width, between 35% and 90% of the height."
+        },
+        "sky": {
+            "request": "2048x878",
+            "size": "2048x854",
+            "gravity": "north",
+            "prompt": "A wide band of calm sky only, no ground. The detail (clouds, a tiny far island, a tiny flying bee) sits in the top 30%; below that the sky fades to flat pale cream #fef8eb."
+        },
+        "card": {
+            "request": "2048x1152",
+            "size": "2048x1024",
+            "gravity": "south",
+            "prompt": "Wide illustration for the bottom of a card. The top quarter fades to flat off-white #fffefb; the scene sits in the lower three quarters, centred, with continuous ground to the bottom edge."
+        },
+        "tile": {
+            "request": "2048x1152",
+            "size": "2048x1024",
+            "gravity": "center",
+            "prompt": "One centred subject inside the middle half of the frame; every edge is flat plain background so any crop works."
+        }
+    },
+    "worlds": {
+        "home": {
+            "look": "Hive Hill: a honey-wheat hill with clover and sunflowers around the Hive, and a small mint-glass greenhouse. Colour cast: gold over soft sage, the most amber of the four lands.",
+            "night": "Its lights: the Hive's round window and bee-door glow amber and spill onto the wheat, the greenhouse is lit from inside, a few amber fireflies."
+        },
+        "play": {
+            "look": "Sea-glass Cove: a painter's open-air studio on a sun-bleached wooden pier over a calm lagoon, with the Hive small on a far island. Colour cast: sea-glass blue water, a pale blue horizon and periwinkle shadows, the coolest of the four lands, with warm wooden boards.",
+            "night": "Its lights: amber pier lanterns with long stepped reflections in the water, the Robot's mint screen eyes, the Hive a tiny amber dot reflected on the lagoon."
+        },
+        "apps": {
+            "look": "Canopy Bazaar: a lane of little market stalls shaped like app windows, under giant monstera and banana leaves hung with lanterns. Colour cast: leaf green and jade shade with honey light patches on the lane; the one land where fresh lime green #ecf874 appears, on new leaf tips and stall title bars.",
+            "night": "Its lights: stall windows glow warm like app screens, lanterns hang from the vines, a few lime fireflies."
+        },
+        "community": {
+            "look": "Lantern Hill: a hilltop village green with a noticeboard, raised idea beds, a vote box and a long table, ringed by a string of round bulbs; the Hive glows small in the valley below. Colour cast: heather violet and lilac in the shadows and distant hills, sage grass and a few apricot blossoms; lilac only near the horizon, never in the upper sky.",
+            "night": "Its lights: the ring of bulbs fully lit with warm pools on the grass, a lantern on the noticeboard, the Robot's mint screen, more stars than any other land."
+        }
+    },
+    "images": [
+        {
+            "page": "home",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 5101,
+            "prompt": "Four model-flowers grow in a raised bed in front of {hive}: one with speech-bubble leaves, one with picture-frame petals, a film-strip vine, and bell flowers puffing tiny music notes. Each sends a thin thread of honey-gold pollen into one small honey jar that {polli} carries as she flies toward the Hive."
+        },
+        {
+            "page": "home",
+            "slot": "quests",
+            "frame": "card",
+            "seed": 5102,
+            "refs": ["home-hero"],
+            "prompt": "The same hill as image 2, at the Hive's little bee-door. {robot} holds out a small brass key to {polli}. Beside them a small quest board holds three cards; the first card is ticked, and a gentle arc of honey-gold pollen flies from it into her honey jar."
+        },
+        {
+            "page": "home",
+            "slot": "closing",
+            "frame": "closing",
+            "seed": 5103,
+            "prompt": "At the greenhouse potting bench, {polli} and {robot} build a tiny glass greenhouse among pots of code-plants, tools and coiled hoses, with the big greenhouse behind them."
+        },
+        {
+            "page": "play",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 5201,
+            "prompt": "At the end of the pier, {robot} proudly holds up a small finished painting of the lagoon beside its wooden easel, eyes wide. {polli}, wearing a small painter's beret, hovers beside it holding a tiny brush. A mooring post holds a speech-bubble sign, a clapperboard and a pair of headphones. {hive} sits small on a far island."
+        },
+        {
+            "page": "play",
+            "slot": "sky",
+            "frame": "sky",
+            "seed": 5202,
+            "refs": ["play-hero"],
+            "prompt": "The sky above the cove of image 2: pale sea-glass sky with a few honey-edged clouds, a tiny far island with {hive}, and a tiny {polli} flying in the upper right trailing a few pollen motes. Low contrast and calm."
+        },
+        {
+            "page": "play",
+            "slot": "closing",
+            "frame": "closing",
+            "seed": 5203,
+            "refs": ["pollinations.ai/public/art/v1/play-closing-day.webp", "play-hero"],
+            "prompt": "Image 2 is the current closing scene: keep its long workbench, its stations, its layout and its pixel grid exactly. Change only this: the blank paper on the left becomes a small retro terminal printing a chat scroll whose end {nomnom} happily munches; the heartbeat monitor becomes a small gramophone with headphones hanging on it; the bee becomes {polli}, wearing a painter's beret, adding a brushstroke to the framed painting; the bushes behind become a pier rail with the lagoon of image 3 beyond."
+        },
+        {
+            "page": "apps",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 5301,
+            "refs": ["pollinations.ai/public/art/v1/apps-hero-day.webp"],
+            "prompt": "Keep the layout of image 2: the lane of app-window stalls receding to the right and Nomnom's place in it. {nomnom} strolls the lane carrying one colourful app window. {polli}, wearing a little leaf hat, strings a line of lanterns between the first two stalls. Giant monstera leaves frame the top right, and {hive} peeks through a gap in the leaves."
+        },
+        {
+            "page": "apps",
+            "slot": "closing",
+            "frame": "closing",
+            "seed": 5302,
+            "refs": ["pollinations.ai/public/art/v1/apps-closing-day.webp", "apps-hero"],
+            "prompt": "Image 2 is the current scene: keep the noticeboard, the stalls, the cart and the layout. Change only this: the bee becomes {polli}, wearing a little leaf hat, hovering beside the board and pinning an app card (no longer standing on Nomnom); the round creature becomes {nomnom}; giant leaves frame the top corners and honey light patches fall on the lane, matching image 3."
+        },
+        {
+            "page": "apps",
+            "slot": "placeholder",
+            "frame": "tile",
+            "seed": 5303,
+            "world": {
+                "look": "",
+                "night": "Its light: the honey cells glow amber from inside, the frame dims to warm taupe, and the flat background becomes exactly #2a2826."
+            },
+            "prompt": "One chunky pixel app window with extra-chunky pixels (about 16 image pixels per art pixel): a cream frame with a honey title bar and three dots. Its screen is a honeycomb of about twelve wax cells: five full of glowing honey (#ffd76d to #ffc95a), the rest pale empty outlines, and one honey drop falling into the next empty cell. Flat plain #fffefb background. No characters and no cast shadow."
+        },
+        {
+            "page": "community",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 5401,
+            "prompt": "At the noticeboard on the green, {polli}, wearing a mint scarf, pins a sprout-drawing idea card; {robot} hands up the next card; {nomnom} sits by a basket of seed packets nibbling an old crumpled card. The bulb string on its posts is just switching on. {hive} glows small in the valley below."
+        },
+        {
+            "page": "community",
+            "slot": "votes",
+            "frame": "closing",
+            "seed": 5402,
+            "refs": ["pollinations.ai/public/art/v1/community-votes-day.webp", "community-hero"],
+            "prompt": "Image 2 is the current scene: keep the idea beds, the vote box with its VOTE lettering, the lantern, the characters and the layout. Change only this: the two small round creatures become one full-size {nomnom} queuing with a ballot in his mouth; the robot becomes {robot}; the upper sky becomes calm cream with apricot only at the horizon; the grass becomes sage with heather; a bulb string hangs behind the beds, matching image 3."
+        },
+        {
+            "page": "community",
+            "slot": "closing",
+            "frame": "closing",
+            "seed": 5403,
+            "refs": ["community-hero"],
+            "prompt": "There's a seat for you: a long wooden table on the green of image 2 under the ring of bulbs, set with cups and small plant pots, and one bench pulled out toward the viewer. {polli}, in her mint scarf, pours honey tea; {robot} sits beside her; {nomnom} happily munches the potluck. In the centre of the table the sprout from the idea card has bloomed in a pot."
+        }
+    ]
+}

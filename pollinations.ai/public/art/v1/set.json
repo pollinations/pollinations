@@ -1,0 +1,55 @@
+{
+    "about": "v1: the original hand-made set. Only the four day heroes had a recorded recipe (below, from the retired generate-hero-scenes.mjs, drawn with GET /image and no character sheet); every other image was made by hand.",
+    "model": "nanobanana-2",
+    "sheet": "operations/social/prompts/brand/characters-ref.jpg",
+    "style": "",
+    "cast": {
+        "polli": "a cute pixel art bee mascot with a round yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile and small rounded light blue translucent wings",
+        "robot": "a cute chunky pixel robot with a CRT monitor for a head, expressive square pixel eyes on its screen, a small boxy body and stubby mechanical arms",
+        "nomnom": "a round friendly tan-brown spherical creature like a pixel mochi ball, with tiny dot eyes, rosy cheeks and a wide happy mouth"
+    },
+    "lights": {
+        "day": {
+            "prompt": ""
+        }
+    },
+    "frames": {
+        "hero": {
+            "request": "2048x1152",
+            "size": "2048x854",
+            "gravity": "south",
+            "prompt": "Wide panoramic cozy 8-bit pixel art scene, chunky retro sprites, large visible pixels. The upper and left two thirds of the image are a vast, calm, nearly empty very pale cream sky (#fef8eb tones) with at most one or two faint soft clouds — quiet negative space, nothing detailed there. All scenery sits low and to the right. Soft warm cream palette with gentle lime green (#ecf874) accents, soft warm morning light, lo-fi wholesome vibes like Stardew Valley or A Short Hike. Along the bottom edge the scene gradually melts into a flat solid #fef8eb colour, a soft painted fade with no hard line. No text, no words, no letters, no logos, no borders. Serene, nostalgic, emotionally warm."
+        }
+    },
+    "worlds": {},
+    "images": [
+        {
+            "page": "home",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 4101,
+            "prompt": "A gentle meadow garden where small pixel flowers and tiny code-plants grow from neat garden beds, a little glass greenhouse far in the distance. {polli} hovers small in the right third of the frame, watering a code-plant with a tiny watering can."
+        },
+        {
+            "page": "play",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 4102,
+            "prompt": "A quiet outdoor painting spot at the edge of a garden, with a small wooden easel and a few paint pots in the grass. {robot} stands small in the right third of the frame, painting a tiny picture on the easel."
+        },
+        {
+            "page": "apps",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 4113,
+            "prompt": "A tiny quiet village lane where little market stalls are shaped like pastel app windows, with awnings and small plants between them — the whole lane tucked entirely into the right third of the frame, receding into the distance toward the right edge. {nomnom} strolls small among the stalls, happily carrying one colourful app window. Absolutely nothing left of the centre line except empty pale sky."
+        },
+        {
+            "page": "community",
+            "slot": "hero",
+            "frame": "hero",
+            "seed": 4104,
+            "prompt": "A soft grassy hill with a small picnic blanket, tiny paper lanterns on a string and a few pixel flowers. Three friends together small in the right third of the frame: {polli}, {robot}, and {nomnom}, sitting close and celebrating."
+        }
+    ]
+}

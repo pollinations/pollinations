@@ -1,0 +1,37 @@
+{
+  "pr_number": 15576,
+  "title": "fix: stop polli gen text waiting forever on open stdin",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15576",
+  "merged_at": "2026-09-27T19:43:32Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Fix `polli gen text \"<prompt>\"` hanging with no output when the caller leaves stdin open (Node `exec`/`spawn`, agent harnesses, CI runners)\n- With a prompt argument, stdin is optional context: wait up to 3 s for the first byte, then continue without it (`< /dev/null` skips the wait)\n- Without an argument, stdin is the prompt and is read to EOF as before\n- Same approach as Gemini CLI (500 ms) and Claude Code (3 s); bumps the CLI to 0.1.18\n\n| Caller | Before | After |\n|---|---|---|\n| Open socket/pipe + prompt argument | hangs forever | runs after 3 s |\n| `cat file \\| polli gen text \"q\"` | file as context | unchanged |\n| `echo hi \\| polli gen text` | prompt from stdin | unchanged |\n\nVerified: the new test fails on main; the built CLI with the socketpair repro from #15518 sends its request after 3.5 s.\n\nFixes #15518\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The pipe can wait",
+    "blurb": "Polli no longer waits forever for stdin that might never say hello. Give `polli gen text` a prompt, and it gets on with the job after three seconds.",
+    "summary": "Polli CLI 0.1.18 lets `polli gen text \"<prompt>\"` proceed after waiting up to 3 seconds for optional stdin context, while preserving piped context and stdin-only prompts.",
+    "impact": "Calls from Node processes, agent harnesses, and CI runners with an open stdin pipe now send their request instead of hanging; piped input still works as before.",
+    "keywords": [
+      "polli-cli",
+      "text generation",
+      "stdin",
+      "pipes",
+      "CI",
+      "0.1.18"
+    ],
+    "visual_concept": "Depict the Polli CLI as a cozy retro terminal. An open pipe and a small three-second timer show the former wait; Polli taps the send key while a CRT robot watches the request go through. Add a code-plant beside the terminal.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro terminal glows lime green (#ecf874) as Polli taps its send key beside an open pipe, a tiny three-second timer, and a curious CRT robot; a code-plant grows nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized, wears a tiny tool belt, and shares the frame with the terminal and robot; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15576.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro terminal glows lime green (#ecf874) as Polli taps its send key beside an open pipe, a tiny three-second timer, and a curious CRT robot; a code-plant grows nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized, wears a tiny tool belt, and shares the frame with the terminal and robot; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-27T19:44:34.685309+00:00"
+}

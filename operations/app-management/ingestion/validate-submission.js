@@ -26,7 +26,7 @@ function isOpenQuest(number) {
                 "--repo",
                 "pollinations/pollinations",
                 "--json",
-                "state,labels,url",
+                "state,labels",
             ]),
         );
     } catch {
@@ -34,7 +34,6 @@ function isOpenQuest(number) {
     }
     return (
         issue.state === "OPEN" &&
-        issue.url.includes("/issues/") &&
         issue.labels.some((label) => label.name === "POLLEN-QUEST")
     );
 }

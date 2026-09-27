@@ -79,5 +79,5 @@ body:
     id: quest
     attributes:
       label: Quest
-      description: Optional. The number of an open POLLEN-QUEST issue this app completes. Approval closes the quest and pays you its reward.
+      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
       placeholder: "#15600"

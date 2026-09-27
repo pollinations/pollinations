@@ -58,11 +58,7 @@ test("parses the optional quest reference", () => {
     const withQuest = (value) =>
         parseSubmission(`${BODY}\n\n### Quest\n${value}`);
     assert.equal(withQuest("#15600").quest, "15600");
-    assert.equal(
-        withQuest("https://github.com/pollinations/pollinations/issues/15600")
-            .quest,
-        "15600",
-    );
+    assert.equal(withQuest("15600").quest, "15600");
     assert.equal(withQuest("_No response_").quest, "");
     assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
         "Quest must be a quest issue number such as #15600.",
@@ -171,7 +167,7 @@ test("a named quest must be an open POLLEN-QUEST issue", () => {
         `#!/usr/bin/env node
 const args = process.argv.slice(2);
 if (args[0] === "issue" && args[1] === "view") {
-    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: "POLLEN-QUEST" }], url: "https://github.com/pollinations/pollinations/issues/15600" }));
+    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: "POLLEN-QUEST" }] }));
 } else if (args[0] === "issue" && args[1] === "list") {
     console.log("[]");
 } else if (args[0] === "api") {

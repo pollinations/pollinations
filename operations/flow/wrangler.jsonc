@@ -7,6 +7,7 @@
     "nodejs_compat"
   ],
   "workers_dev": false,
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } },
   "preview_urls": false,
   "build": {
     "command": "npm run build:reviewer"

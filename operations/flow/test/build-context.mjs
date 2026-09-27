@@ -32,6 +32,7 @@ if (process.argv[2] === "seed") {
     for (const path of [
         "enter.pollinations.ai/src/index.ts",
         "operations/flow/dist-live/operations/flow/flow-flows.html",
+        "operations/flow/dist-runtime/workers.json",
         "apps/react/package.json",
         "operations/economics/web/package.json",
     ])

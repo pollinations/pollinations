@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { ENTER_ORIGIN, PORT } from "./local-origins";
@@ -12,6 +12,12 @@ await access(`${directory}operations/flow/flow-flows.html`).catch(() => {
 });
 const pages = createBuiltPages(directory);
 const runtime = await startServer({
+    scripts: JSON.parse(
+        await readFile(
+            new URL("./dist-runtime/workers.json", import.meta.url),
+            "utf8",
+        ),
+    ),
     loadReviewCases: () => import("./review-inventory"),
     loadReviewErrors: () => import("../../shared/error"),
     fetchAssets: (request) => Promise.resolve(pages.fetch(request)),

@@ -6,10 +6,7 @@ import {
     getVisibleTextModels,
     resolveModelName,
 } from "@shared/registry/registry.ts";
-import {
-    canonicalizeModelPermissionIds,
-    filterPermissionsToVisibleModels,
-} from "@shared/registry/visible-model-ids.ts";
+import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids.ts";
 import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
@@ -76,42 +73,6 @@ test("catalog metadata exposes publisher rather than author or brand", async () 
         expect(model).not.toHaveProperty("author");
         expect(model).not.toHaveProperty("brand");
     }
-});
-
-test("official agent scopes authorize both canonical names during cutover", async () => {
-    const oldId = "community/pollinations-router/polli";
-    const newId = "community/pollinations-ai/polli";
-    for (const storedId of [oldId, newId]) {
-        expect(canonicalizeModelPermissionIds([storedId])).toEqual([
-            storedId,
-            storedId === oldId ? newId : oldId,
-        ]);
-        const app = new Hono<AuthEnv>();
-        app.use(
-            "*",
-            authFromSnapshot({
-                user: { id: "caller", tier: "seed" },
-                apiKey: { id: "scoped", permissions: { models: [storedId] } },
-            }),
-        );
-        app.get("/:model", (c) => {
-            const model = c.req.param("model");
-            c.set("model", { requested: model, resolved: model });
-            c.var.auth.requireModelAccess();
-            return c.text("ok");
-        });
-        for (const modelId of [oldId, newId]) {
-            expect(
-                (await app.request(`/${encodeURIComponent(modelId)}`)).status,
-            ).toBe(200);
-        }
-        expect((await app.request("/community%2Fother%2Fpolli")).status).toBe(
-            403,
-        );
-    }
-    expect(
-        filterPermissionsToVisibleModels({ models: [oldId] }, new Set([newId])),
-    ).toEqual({ models: [newId] });
 });
 
 test("permission readback canonicalizes aliases without exposing hidden or unknown entries", () => {

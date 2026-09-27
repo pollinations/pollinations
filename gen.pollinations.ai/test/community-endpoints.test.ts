@@ -116,7 +116,7 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const db = drizzle(env.DB);
 
 fixtureTest(
-    "official agent aliases survive the ownership transfer",
+    "official agent ownership transfer changes callable model IDs",
     async () => {
         const sourceUserId = await createTestUser({
             githubId: 240205932,
@@ -150,54 +150,53 @@ fixtureTest(
                 updatedAt: new Date(),
             })),
         );
-        const caller = await createTestApiKey({
-            allowedModels: [communityModelId("pollinations-router", "polli")],
-        });
+        const oldPolli = communityModelId("pollinations-router", "polli");
+        const newPolli = communityModelId("pollinations-ai", "polli");
+        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
 
-        for (const [owner, expectedUserId] of [
-            ["pollinations-router", sourceUserId],
-            ["pollinations-ai", destinationUserId],
-        ] as const) {
-            if (owner === "pollinations-ai") {
-                await db
-                    .update(communityEndpointTable)
-                    .set({ ownerUserId: destinationUserId })
-                    .where(
-                        eq(communityEndpointTable.ownerUserId, sourceUserId),
-                    );
-            }
-            await resetGenerationModelRegistryCache(env);
-            const registry = await getGenerationModelRegistry(env);
-            const catalog = await fetchGen(
+        const catalogIdsFor = async (key: string) => {
+            const response = await fetchGen(
                 new Request("https://gen.pollinations.ai/v1/models", {
-                    headers: { Authorization: `Bearer ${caller.key}` },
+                    headers: { Authorization: `Bearer ${key}` },
                 }),
             );
-            expect(catalog.status).toBe(200);
-            const body = (await catalog.json()) as { data: { id: string }[] };
-            expect(body.data.map((model) => model.id)).toContain(
-                communityModelId(owner, "polli"),
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { id: string }[] };
+            return body.data.map((model) => model.id);
+        };
+
+        await resetGenerationModelRegistryCache(env);
+        expect(await catalogIdsFor(oldKey.key)).toContain(oldPolli);
+        await db
+            .update(communityEndpointTable)
+            .set({ ownerUserId: destinationUserId })
+            .where(eq(communityEndpointTable.ownerUserId, sourceUserId));
+        await resetGenerationModelRegistryCache(env);
+        const registry = await getGenerationModelRegistry(env);
+        for (const [, name] of listings) {
+            expect(
+                registry.resolve(communityModelId("pollinations-router", name)),
+            ).toBeNull();
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-router", name),
+                ),
+            ).toBeNull();
+            const current = registry.resolve(
+                communityModelId("pollinations-ai", name),
             );
-            for (const [, name] of listings) {
-                const canonical = communityModelId(owner, name);
-                const entry = registry.resolve(canonical);
-                expect(entry?.id).toBe(canonical);
-                expect(entry?.communityEndpoint?.ownerUserId).toBe(
-                    expectedUserId,
-                );
-                for (const aliasOwner of [
-                    "pollinations-router",
-                    "pollinations-ai",
-                ]) {
-                    for (const alias of [
-                        communityModelId(aliasOwner, name),
-                        legacyCommunityModelId(aliasOwner, name),
-                    ]) {
-                        expect(registry.resolve(alias)).toBe(entry);
-                    }
-                }
-            }
+            expect(current?.communityEndpoint?.ownerUserId).toBe(
+                destinationUserId,
+            );
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-ai", name),
+                ),
+            ).toBe(current);
         }
+        expect(await catalogIdsFor(oldKey.key)).not.toContain(newPolli);
+        const newKey = await createTestApiKey({ allowedModels: [newPolli] });
+        expect(await catalogIdsFor(newKey.key)).toContain(newPolli);
     },
 );
 

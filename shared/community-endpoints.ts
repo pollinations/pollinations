@@ -938,34 +938,6 @@ export function legacyCommunityModelId(
     return `${ownerGithubUsername}/${modelName}`;
 }
 
-// These three existing listings keep their old callable names after ownership
-// moves from pollinations-router to pollinations-ai. Listing UUIDs are stable.
-export const OFFICIAL_AGENT_MODEL_RENAMES = [
-    ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
-    ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
-    ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
-].map(([listingId, name]) => ({
-    listingId,
-    previous: communityModelId("pollinations-router", name),
-    current: communityModelId("pollinations-ai", name),
-}));
-
-export function officialAgentModelAliases(
-    listingId: string,
-    canonicalId: string,
-): string[] {
-    const rename = OFFICIAL_AGENT_MODEL_RENAMES.find(
-        (candidate) => candidate.listingId === listingId,
-    );
-    if (!rename) return [];
-    return [
-        rename.previous,
-        rename.previous.slice(COMMUNITY_MODEL_PREFIX.length),
-        rename.current,
-        rename.current.slice(COMMUNITY_MODEL_PREFIX.length),
-    ].filter((id) => id !== canonicalId);
-}
-
 export function normalizeCommunityEndpointBearerToken(value: string): string {
     const token = value.trim().replace(BEARER_PREFIX, "").trim();
     if (!token) throw new Error("API bearer token is required");

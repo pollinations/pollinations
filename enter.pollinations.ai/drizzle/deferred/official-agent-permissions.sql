@@ -1,4 +1,5 @@
--- Run only after alias-aware permission checks are live and the owner transfer is verified.
+-- Run immediately after the owner transfer is verified. Old-scoped keys cannot
+-- call the renamed agents until this rewrite completes.
 
 -- Safe to retry: each statement changes only exact old canonical IDs and deduplicates old/new pairs.
 

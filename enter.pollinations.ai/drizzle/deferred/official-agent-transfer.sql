@@ -1,4 +1,5 @@
--- Run only after the compatibility code is live in Enter and Gen.
+-- Run only after the pollinations-ai publisher allowlist is live in production.
+-- Coordinate with the official workflow consumer update because old model names stop resolving.
 -- Preserve listing UUIDs, payloads, upstream routes, and historical events.
 UPDATE user
 SET community_provider_name = (SELECT community_provider_name FROM user WHERE id = 'ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh'),

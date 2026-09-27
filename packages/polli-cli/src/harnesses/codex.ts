@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { gen } from "../lib/api.js";
 import { commandExists, readTextIfExists } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";

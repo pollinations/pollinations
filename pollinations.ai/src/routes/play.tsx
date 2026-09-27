@@ -1,7 +1,8 @@
 import { PolliProvider } from "@pollinations/sdk/react";
-import { ContentHeader, useColorMode } from "@pollinations/ui";
+import { ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
+import { useArt } from "../art";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
@@ -31,19 +32,17 @@ function AccountAction() {
 }
 
 function PlaygroundSky() {
-    const { isDark } = useColorMode();
+    const sky = useArt("play", "sky");
 
     return (
         <img
-            src={
-                isDark
-                    ? "/heroes/play-controls-night.webp"
-                    : "/heroes/play-controls-day.webp"
-            }
+            src={sky.src}
+            srcSet={sky.srcSet}
+            sizes="(max-width: 1440px) 100vw, 1440px"
             alt=""
             aria-hidden="true"
-            width={1915}
-            height={821}
+            width={2048}
+            height={854}
             loading="lazy"
             decoding="async"
             className="playground-top-scene pointer-events-none absolute inset-x-0 top-0 h-40 w-full select-none object-cover object-top"
@@ -72,11 +71,7 @@ function PlayPage() {
         >
             <PageCard className="pb-0 sm:pb-0">
                 {/* The monitor robot, showing off something it just made. */}
-                <HeroScene
-                    scene="/heroes/play.webp"
-                    nightScene="/heroes/play-top-night.webp"
-                    compactBottom
-                >
+                <HeroScene page="play" compactBottom>
                     <ContentHeader
                         eyebrow="Models and agents, in the browser"
                         title="Try it out."
@@ -89,10 +84,7 @@ function PlayPage() {
             <PageCard className="relative isolate pt-6 sm:pt-8">
                 <PlaygroundSky />
                 <Playground />
-                <BottomScene
-                    dayScene="/heroes/play-bottom-day.webp"
-                    nightScene="/heroes/play-bottom-night.webp"
-                />
+                <BottomScene page="play" />
             </PageCard>
         </PolliProvider>
     );

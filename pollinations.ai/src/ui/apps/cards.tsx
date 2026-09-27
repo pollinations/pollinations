@@ -10,6 +10,7 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import { type ReactNode, useState } from "react";
+import { useArt } from "../../art";
 import {
     appIdentity,
     type DirectoryApp,
@@ -20,7 +21,6 @@ import {
     isPollen,
     platformsOf,
 } from "../../data/publicStats";
-import { appCover, isAppScreenshot, MISSING_SCREENSHOT } from "./cover";
 
 /**
  * The app tile and compact directory row share their signals, cover fallback,
@@ -53,6 +53,11 @@ function AppSignals({ app }: { app: DirectoryApp }) {
 
 const appHref = (app: DirectoryApp) => app.web_url || app.github_repository_url;
 
+/**
+ * Real product screenshots come from the public app directory. A missing or
+ * broken one shows the art set's placeholder, which never pretends to be the
+ * app itself.
+ */
 function AppCoverImage({
     src,
     className,
@@ -60,26 +65,23 @@ function AppCoverImage({
     src: string | null;
     className: string;
 }) {
-    const requested = src || MISSING_SCREENSHOT;
+    const placeholder = useArt("apps", "placeholder");
     const [failedSource, setFailedSource] = useState<string | null>(null);
-    const resolved =
-        failedSource === requested ? MISSING_SCREENSHOT : requested;
+    const screenshot = src && src !== failedSource ? src : null;
 
     return (
         <img
-            src={resolved}
+            src={screenshot ?? placeholder.src}
+            srcSet={screenshot ? undefined : placeholder.srcSet}
+            sizes={screenshot ? undefined : "(max-width: 640px) 100vw, 600px"}
             alt=""
             aria-hidden="true"
             loading="lazy"
             decoding="async"
             width={1200}
             height={600}
-            onError={
-                resolved === MISSING_SCREENSHOT
-                    ? undefined
-                    : () => setFailedSource(requested)
-            }
-            className={`block w-full bg-theme-bg-subtle object-cover ${isAppScreenshot(resolved) ? "object-top" : "object-center"} ${className}`}
+            onError={screenshot ? () => setFailedSource(screenshot) : undefined}
+            className={`block w-full bg-theme-bg-subtle object-cover ${screenshot?.startsWith("https://media.pollinations.ai/") ? "object-top" : "object-center"} ${className}`}
         />
     );
 }
@@ -96,8 +98,6 @@ export function AppTile({
     className?: string;
     tabIndex?: number;
 }) {
-    const cover = appCover(app.screenshot_url);
-
     return (
         <LinkCard
             href={appHref(app)}
@@ -106,7 +106,10 @@ export function AppTile({
             className={className}
             surfaceClassName="overflow-hidden rounded-2xl p-0"
         >
-            <AppCoverImage src={cover} className={imageClassName} />
+            <AppCoverImage
+                src={app.screenshot_url}
+                className={imageClassName}
+            />
             <div className="flex flex-col gap-1.5 px-5 py-4">
                 <span className="font-body text-lg font-semibold text-theme-text-strong">
                     {app.name}
@@ -129,13 +132,15 @@ export function SpotlightTile({
     direction?: "forward" | "back";
 }) {
     const href = appHref(app);
-    const cover = appCover(app.screenshot_url);
     const slideClassName = cn(
         "apps-spotlight-slide",
         direction === "back" && "apps-spotlight-slide-back",
     );
     const image = (
-        <AppCoverImage src={cover} className="aspect-[16/7] sm:aspect-[18/7]" />
+        <AppCoverImage
+            src={app.screenshot_url}
+            className="aspect-[16/7] sm:aspect-[18/7]"
+        />
     );
 
     return (
@@ -197,7 +202,6 @@ export function AppRow({ app }: { app: DirectoryApp }) {
     const profile = githubProfileUrl(app.github_username);
     const platform = platformsOf(app)[0];
     const href = appHref(app);
-    const cover = appCover(app.screenshot_url);
 
     return (
         <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
@@ -207,7 +211,10 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     aria-label={`Open ${app.name}`}
                     className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
                 >
-                    <AppCoverImage src={cover} className="aspect-[16/10]" />
+                    <AppCoverImage
+                        src={app.screenshot_url}
+                        className="aspect-[16/10]"
+                    />
                 </a>
             )}
             <div className="flex min-h-full min-w-0 flex-col gap-1.5">

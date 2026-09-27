@@ -365,11 +365,20 @@ main > * {
    the text's ground. Full opacity returns by 62%, right of every character.
    The same mask applies at every width because the composition itself no
    longer changes position—the scene simply scales with the page. */
+/* Phones show the scene as a banner above the copy, so it only fades out at
+   the bottom. From sm up it sits behind the copy and also fades in from the
+   left. */
 .hero-scene {
-    mask-image:
-        linear-gradient(to right, transparent 38%, black 62%),
-        linear-gradient(to bottom, black 55%, transparent 100%);
-    mask-composite: intersect;
+    mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+
+@media (min-width: 40rem) {
+    .hero-scene {
+        mask-image:
+            linear-gradient(to right, transparent 38%, black 62%),
+            linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-composite: intersect;
+    }
 }
 
 /* Closing scenes use the full card width. Their quiet sky dissolves into the

@@ -23,10 +23,10 @@ import {
     MegaphoneIcon,
     Surface,
     TabButton,
-    useColorMode,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useArt } from "../art";
 import {
     DISCORD_URL,
     REPO_URL,
@@ -146,8 +146,7 @@ function FeedState({
 }
 
 function CommunityParticipation() {
-    const { isDark } = useColorMode();
-    const votesScene = `/heroes/community-votes-${isDark ? "night" : "day"}`;
+    const votesScene = useArt("community", "votes");
     const { data: issues, loading, failed } = useVotingIssues();
     const {
         data: online,
@@ -231,10 +230,7 @@ function CommunityParticipation() {
 
     return (
         <>
-            <HeroScene
-                scene="/heroes/community.webp"
-                nightScene="/heroes/community-top-night.webp"
-            >
+            <HeroScene page="community">
                 <ContentHeader
                     eyebrow="Open source, open roadmap"
                     title="Community"
@@ -328,8 +324,8 @@ function CommunityParticipation() {
                     className="relative isolate flex flex-col gap-5 overflow-hidden p-5 pb-40 sm:p-6 sm:pb-56"
                 >
                     <img
-                        src={`${votesScene}.webp`}
-                        srcSet={`${votesScene}-1024.webp 1024w, ${votesScene}.webp 2048w`}
+                        src={votesScene.src}
+                        srcSet={votesScene.srcSet}
                         sizes="(max-width: 1440px) 100vw, 1200px"
                         alt=""
                         aria-hidden="true"
@@ -1012,10 +1008,7 @@ function CommunityPage() {
                     Browse the repo
                 </InlineLink>
             </Callout>
-            <BottomScene
-                dayScene="/heroes/community-bottom-day.webp"
-                nightScene="/heroes/community-bottom-night.webp"
-            />
+            <BottomScene page="community" />
         </>
     );
 }

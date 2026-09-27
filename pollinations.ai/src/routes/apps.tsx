@@ -434,10 +434,7 @@ function AppsPage() {
 
     return (
         <>
-            <HeroScene
-                scene="/heroes/apps.webp"
-                nightScene="/heroes/apps-top-night.webp"
-            >
+            <HeroScene page="apps">
                 <ContentHeader
                     eyebrow="Community catalog"
                     title="Apps"
@@ -691,10 +688,7 @@ function AppsPage() {
                     </>
                 )}
             </section>
-            <BottomScene
-                dayScene="/heroes/apps-bottom-day.webp"
-                nightScene="/heroes/apps-bottom-night.webp"
-            />
+            <BottomScene page="apps" />
         </>
     );
 }

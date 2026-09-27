@@ -15,10 +15,10 @@ import {
     Surface,
     TerminalIcon,
     Text,
-    useColorMode,
     WalletIcon,
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
+import { useArt } from "../../art";
 import { usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
@@ -187,8 +187,7 @@ function FeatureGroup({
 }
 
 export function DevKit({ className }: { className?: string }) {
-    const { isDark } = useColorMode();
-    const scene = `/tool-scenes/earn-pollen-magic-${isDark ? "night" : "day"}`;
+    const scene = useArt("home", "quests");
     const { data } = usePlatformStats();
     const modelCount = data?.models ?? null;
 
@@ -242,8 +241,8 @@ export function DevKit({ className }: { className?: string }) {
                     </div>
                 </div>
                 <img
-                    src={`${scene}.webp`}
-                    srcSet={`${scene}-1024.webp 1024w, ${scene}.webp 2048w`}
+                    src={scene.src}
+                    srcSet={scene.srcSet}
                     sizes="(max-width: 1240px) 100vw, 1100px"
                     alt=""
                     aria-hidden="true"

@@ -47,9 +47,8 @@ function HelloPage() {
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
             <HeroScene
-                scene="/heroes/home.webp"
-                nightScene="/heroes/home-top-night.webp"
-                contentClassName="px-6 pt-20 sm:max-w-[90%] lg:max-w-[72%]"
+                page="home"
+                contentClassName="px-6 sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
             >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
@@ -86,10 +85,7 @@ function HelloPage() {
             <LiveApps />
             <OnTheWay />
             <StartBuilding />
-            <BottomScene
-                dayScene="/heroes/home-bottom-day.webp"
-                nightScene="/heroes/home-bottom-night.webp"
-            />
+            <BottomScene page="home" />
         </>
     );
 }

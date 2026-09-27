@@ -1,5 +1,5 @@
 import { Button } from "../../primitives/Button.tsx";
-import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
+import { useColorMode } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
 import { AuthFlowLayout } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
@@ -47,6 +47,8 @@ export function DashboardSignIn({
     description?: string;
     authError?: string | null;
 }) {
+    // Auth modals carry no theme switch; they follow the saved or system mode.
+    useColorMode();
     const error = sessionError
         ? { title: "Couldn’t check your session", message: sessionError }
         : authError && Object.hasOwn(signInErrors, authError)
@@ -55,7 +57,6 @@ export function DashboardSignIn({
     const shownError = isPending ? null : error;
     return (
         <AuthFlowLayout
-            headerAction={<ColorModeToggle />}
             title={shownError ? shownError.title : `Sign in to ${appName}`}
             description={shownError ? undefined : description}
             error={shownError?.message}

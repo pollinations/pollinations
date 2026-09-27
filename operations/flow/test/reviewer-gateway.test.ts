@@ -602,10 +602,10 @@ test("built sign-in renders shared themes and errors, and preserves the canonica
                         .count(),
                 ).toBe(0);
                 expect(
-                    await page
-                        .getByRole("switch", { name: "Toggle dark mode" })
-                        .getAttribute("aria-checked"),
-                ).toBe(String(colorScheme === "dark"));
+                    await page.evaluate(() =>
+                        document.documentElement.classList.contains("dark"),
+                    ),
+                ).toBe(colorScheme === "dark");
                 await page.evaluate(() => document.fonts.ready);
                 const metrics = await page
                     .getByRole("dialog")
@@ -629,12 +629,6 @@ test("built sign-in renders shared themes and errors, and preserves the canonica
                 expect(bounds.y + bounds.height).toBeLessThanOrEqual(800);
             }
         }
-        const toggle = page.getByRole("switch", { name: "Toggle dark mode" });
-        await toggle.click();
-        expect(await toggle.getAttribute("aria-checked")).toBe("false");
-        await page.reload();
-        await toggle.waitFor({ state: "visible" });
-        expect(await toggle.getAttribute("aria-checked")).toBe("false");
         for (const [code, message] of Object.entries({
             cancelled: "Sign-in was cancelled. You can try again.",
             invalid_state:

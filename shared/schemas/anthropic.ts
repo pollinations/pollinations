@@ -93,7 +93,9 @@ export const AnthropicContentBlockSchema = z
 
 export const AnthropicMessageParamSchema = z
     .object({
-        role: z.enum(["user", "assistant"]),
+        // Claude Code emits a `system` role inside `messages` for some
+        // injected reminders, so accept it alongside the standard two.
+        role: z.enum(["user", "assistant", "system"]),
         content: z.union([
             z.string(),
             z.array(AnthropicContentBlockParamSchema),
@@ -121,7 +123,10 @@ export const AnthropicToolChoiceSchema = z
 export const AnthropicThinkingSchema = z
     .object({
         budget_tokens: z.number().int().positive().optional(),
-        type: z.enum(["enabled", "disabled"]).optional(),
+        // Claude Code sends `type: "adaptive"`; other clients send
+        // "enabled"/"disabled". Accept any string so a new mode never 400s.
+        type: z.string().optional(),
+        display: z.string().optional(),
     })
     .passthrough()
     .meta({ $id: "AnthropicThinking" });

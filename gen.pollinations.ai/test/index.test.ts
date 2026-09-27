@@ -223,6 +223,17 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
+    it("answers the /api/hello liveness probe Claude Code sends before /v1/messages", async () => {
+        const head = await fetchWorker("/api/hello", undefined, {
+            method: "HEAD",
+        });
+        expect(head.status).toBe(200);
+
+        const get = await fetchWorker("/api/hello");
+        expect(get.status).toBe(200);
+        await expect(get.json()).resolves.toEqual({ status: "ok" });
+    });
+
     it("proxies public account api routes to enter", async () => {
         let proxiedUrl: string | undefined;
         const env = envWithEnter(async (request) => {

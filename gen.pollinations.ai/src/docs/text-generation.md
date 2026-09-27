@@ -23,6 +23,8 @@ export ANTHROPIC_AUTH_TOKEN=sk_...          # your Pollinations secret key
 export ANTHROPIC_MODEL=<a text model id>    # e.g. openai
 ```
 
+Before its first request, Claude Code probes `HEAD /api/hello` on the base URL and gives up silently if it is missing; gen answers it with `200 {"status":"ok"}`.
+
 The official SDKs use the same base URL with `base_url` and `auth_token`:
 
 ```python

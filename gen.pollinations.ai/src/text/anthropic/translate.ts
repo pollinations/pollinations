@@ -99,6 +99,18 @@ export function anthropicToChatRequest(
     for (const message of request.messages) {
         const parts = contentToParts(message.content);
 
+        // Claude Code injects `system`-role turns inside `messages` for some
+        // reminders; carry them through as system messages.
+        if (message.role === "system") {
+            const text = parts
+                .filter((part) => part.type === "text")
+                .map((part) => String(part.text ?? ""))
+                .join("\n");
+            if (text.length > 0)
+                messages.push({ role: "system", content: text });
+            continue;
+        }
+
         if (message.role === "assistant") {
             const toolUses = parts.filter((part) => part.type === "tool_use");
             const text = parts

@@ -249,7 +249,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-Issues and PRs share one label list, defined in `operations/github/project-manager.md`: one kind (`MODEL`, `ECONOMICS`, `MONITORING`, `APPS`, `INFRA`, `UI-UX`, `API`, `DOCS`), at most one type (`BUG`, `FEATURE`, `QUESTION`, `TRACKING`), and flags (`BILLING`, `SECURITY`, `AUTOMATED`, `POLLEN-QUEST` on PRs only). Workflow labels (`APP-*`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
+Issues and PRs share one label list, defined in `operations/github/project-manager.md`: one kind (`MODEL`, `ECONOMICS`, `MONITORING`, `APPS`, `INFRA`, `UI-UX`, `API`, `DOCS`), at most one type (`BUG`, `FEATURE`, `QUESTION`, `TRACKING`), and flags (`BILLING`, `SECURITY`, `AUTOMATED`, `POLLEN-QUEST` on PRs only). A bot applies these to every new issue and PR and replaces any set at creation (an issue's `TRACKING` type is kept), so don't add them yourself. Workflow labels (`APP-*`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
 
 ## Contributor Attribution
 

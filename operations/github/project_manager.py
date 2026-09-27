@@ -40,8 +40,6 @@ POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 AI_MODEL = "openai/gpt-6-luna"
 # Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
-# Re-classify items that already have labels, replacing the classifier's older labels.
-RELABEL = os.getenv("RELABEL") == "1"
 
 # Validate required tokens at startup
 if not GITHUB_TOKEN:
@@ -182,7 +180,7 @@ PR_TYPES = ["BUG"]
 ISSUE_FLAGS = {"BILLING", "SECURITY", "AUTOMATED"}
 # POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
 PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
-# Labels the classifier owns per item type; a relabel replaces these and leaves workflow labels alone.
+# Labels the classifier owns per item type; it replaces these and leaves workflow labels alone.
 ISSUE_LABELS = set(KINDS) | set(ISSUE_TYPES) | ISSUE_FLAGS
 PR_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
 # Types a person set on an issue that the classifier keeps.
@@ -477,11 +475,10 @@ def remove_label(label: str):
 
 
 def set_labels(labels: list):
-    """Apply the classifier's labels; a relabel first drops its older ones."""
-    if RELABEL:
-        owned = PR_LABELS if IS_PULL_REQUEST else ISSUE_LABELS
-        for stale in sorted((set(get_existing_labels()) & owned) - set(labels)):
-            remove_label(stale)
+    """Apply the classifier's labels, replacing the owned labels already on the item."""
+    owned = PR_LABELS if IS_PULL_REQUEST else ISSUE_LABELS
+    for stale in sorted((set(get_existing_labels()) & owned) - set(labels)):
+        remove_label(stale)
     add_labels(labels)
 
 
@@ -561,9 +558,6 @@ def fetch_linked_issues() -> list:
 def label_pull_request():
     # Every open PR sits next to the issues in Dev, where views separate them.
     add_to_project(CONFIG["projects"]["dev"]["id"])
-    if not RELABEL and set(get_existing_labels()) & set(KINDS):
-        log_debug(f"PR #{ISSUE_NUMBER} already has a kind label; keeping its labels")
-        return
 
     files = fetch_pr_files()
     linked = "\n".join(fetch_linked_issues()) or "none"
@@ -626,10 +620,7 @@ def main():
     set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
     if priority:
         set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
-    if RELABEL or not set(existing_labels) & set(KINDS):
-        set_labels(labels)
-    else:
-        log_debug(f"Issue #{ISSUE_NUMBER} already has a kind label; keeping its labels")
+    set_labels(labels)
 
     # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
     is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels

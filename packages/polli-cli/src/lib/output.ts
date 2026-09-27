@@ -136,14 +136,26 @@ export const printError = (msg: string) => {
     process.stderr.write(`${chalk.red.bold("error:")} ${chalk.red(msg)}\n`);
 };
 
-/** Print a fatal command error and terminate with the CLI's standard exit code. */
+/**
+ * Thrown to unwind the CLI with a specific exit code. Callers must not call
+ * `process.exit()` directly: on Windows with Node >= 23, exiting while undici
+ * keep-alive sockets are still open aborts libuv (nodejs/node#56645) and the
+ * abort discards the intended exit code (the shell observes 127).
+ */
+export class ExitSignal extends Error {
+    constructor(readonly code: number) {
+        super(`exit ${code}`);
+    }
+}
+
+/** Print a fatal command error and unwind with the CLI's standard exit code. */
 export const fail = (message: string, error?: unknown): never => {
     const detail =
         error === undefined
             ? ""
             : `: ${error instanceof Error ? error.message : "unknown"}`;
     printError(`${message}${detail}`);
-    process.exit(1);
+    throw new ExitSignal(1);
 };
 
 /** Warning message — always shown, always stderr */

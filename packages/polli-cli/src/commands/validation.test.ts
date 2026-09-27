@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import { createChatCommand } from "./gen/chat.js";
 import { createTextCommand } from "./gen/text.js";
 import { modelsCommand } from "./models.js";
@@ -27,9 +27,6 @@ function prepare() {
     setOutputMode("json");
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("CLI exited");
-    });
     const fetch = vi.fn(async (_url: string, _init: RequestInit) =>
         Response.json({
             choices: [{ message: { content: "ok" } }],
@@ -49,7 +46,7 @@ describe("CLI argument validation", () => {
         const fetch = prepare();
         await expect(
             modelsCommand.parseAsync(["--type", type], { from: "user" }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -59,7 +56,7 @@ describe("CLI argument validation", () => {
             modelsCommand.parseAsync(["--stats", "--type", "bogus"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -77,7 +74,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", flag, value], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -87,7 +84,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", "--image", "./photo.jpg"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -97,7 +94,7 @@ describe("CLI argument validation", () => {
             createChatCommand().parseAsync(["--temperature", "abc"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 

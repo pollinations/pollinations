@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -38,7 +39,7 @@ export function createAudioCommand() {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
                 );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
 
             const params = new URLSearchParams({ voice: opts.voice });

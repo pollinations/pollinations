@@ -3,6 +3,7 @@ import { Command } from "commander";
 import open from "open";
 import { BASE_URL } from "../lib/config.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -60,7 +61,7 @@ export const docsCommand = new Command("docs")
                         printInfo(
                             `Available endpoints can be found with: polli docs`,
                         );
-                        process.exit(1);
+                        throw new ExitSignal(1);
                     }
 
                     content = matches.join("\n");
@@ -73,6 +74,7 @@ export const docsCommand = new Command("docs")
                     process.stdout.write("\n");
                 }
             } catch (err) {
+                if (err instanceof ExitSignal) throw err;
                 fail("Failed to fetch docs", err);
             }
             return;

@@ -1,0 +1,29 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "docker": true,
+  "install": "npm ci --prefix ../..",
+  "deploy": "npm run deploy",
+  "verify": [
+    "https://flow.pollinations.ai/flow-reviewer",
+    "https://admin.flow.pollinations.ai/flow-reviewer"
+  ],
+  "watch": [
+    "enter.pollinations.ai/",
+    "gen.pollinations.ai/",
+    "shared/",
+    "packages/auth/",
+    "packages/sdk/",
+    "packages/ui/",
+    "apps/react/package.json",
+    "operations/economics/web/package.json",
+    "packages/polli-cli/README.md",
+    "package.json",
+    "package-lock.json",
+    ".dockerignore",
+    "BRING_YOUR_OWN_MODEL.md",
+    "BRING_YOUR_OWN_POLLEN.md",
+    "BUILD_YOUR_OWN_AGENT.md",
+    "CODING_HARNESSES.md"
+  ]
+}

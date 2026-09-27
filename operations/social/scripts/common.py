@@ -20,7 +20,7 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
-MODEL = "gpt-5.6-terra"  # Text generation model
+MODEL = "openai/gpt-6-sol"  # Text generation model
 IMAGE_MODEL = "nanobanana-2-lite"  # Image generation model
 
 # Limits and retry settings

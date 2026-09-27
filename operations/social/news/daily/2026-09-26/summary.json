@@ -1,0 +1,67 @@
+{
+  "date": "2026-09-26",
+  "period_start": "2026-09-26",
+  "period_end": "2026-09-26",
+  "title": "More models for video, speech, music, and text",
+  "summary": "New models across video, audio, and text; a less surprising CLI; and fewer ways for long-running jobs or fresh dashboards to fail.\n\nMiniMax H3 Max adds video generation with synchronized audio, Gemini 3.8 adds speech in 30 voices, and Azure routing brings GPT-6 Sol and Luna alongside Astra. Lyria 3.5 was also added for MP3 music generation, with deployment and live billing checks still open.\n\nText streaming now respects explicit flags and reports available model and token metadata. Invalid options fail before network requests, audio filenames match their selected formats, and Windows playback failures return an error instead of hanging.\n\nTTA is registered with Pollinations’ BYOP authorization flow. Contributors whose newly reported issues lead to merged fixes can now claim 4 Pollen through the GitHub quest.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 15392,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15395,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15457,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15458,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15470,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15472,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15473,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15475,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15478,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15479,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15480,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15484,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15491,
+      "date": "2026-09-26"
+    },
+    {
+      "number": 15496,
+      "date": "2026-09-26"
+    }
+  ],
+  "generated_at": "2026-09-27T06:29:23.006194+00:00"
+}

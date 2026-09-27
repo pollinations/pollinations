@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { afterEach, expect, test, vi } from "vitest";
+import deployment from "../deploy.json";
 import { createReviewerGateway, REVIEWER_AUTH_PATH } from "../reviewer-gateway";
 import workerConfig from "../wrangler.json";
 
@@ -191,6 +192,13 @@ test("protects every origin and route before starting a review environment", asy
         }),
     );
     expect(await entry.text()).toContain("Sign in with Pollinations");
+    for (const url of deployment.verify) {
+        const health = await gateway(
+            new Request(url, { headers: { Accept: "*/*" } }),
+        );
+        expect(health.status).toBe(200);
+        expect(await health.text()).toContain("Sign in with Pollinations");
+    }
     expect(forward).not.toHaveBeenCalled();
 });
 

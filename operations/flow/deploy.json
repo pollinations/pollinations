@@ -5,8 +5,8 @@
   "install": "npm ci --prefix ../..",
   "deploy": "npm run deploy",
   "verify": [
-    "https://flow.pollinations.ai/flow",
-    "https://admin.flow.pollinations.ai/flow"
+    "https://flow.pollinations.ai/flow-reviewer",
+    "https://admin.flow.pollinations.ai/flow-reviewer"
   ],
   "watch": [
     "enter.pollinations.ai/",

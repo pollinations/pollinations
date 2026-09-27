@@ -55,7 +55,7 @@ curl https://gen.pollinations.ai/v1/messages \
   }'
 ```
 
-Streaming follows the standard Messages event order with keepalive pings during long silent reasoning. Tool use, system prompts, images, `stop_sequences`, `cache_control` prompt caching, and provider reasoning (`thinking` blocks) all translate both ways; client fields Claude Code sends (`thinking`, `output_config`, `metadata`, `anthropic-beta`) are accepted, never rejected.
+Streaming follows the standard Messages event order with keepalive pings during long silent reasoning. Tool use, system prompts, images, `stop_sequences`, `cache_control` prompt caching, and provider reasoning (`thinking` blocks) all translate both ways; client fields Claude Code sends (`thinking`, `output_config`, `metadata`, `anthropic-beta`) are accepted, never rejected. Two translation notes: prior-turn `thinking` blocks from conversation history are not replayed to providers (reasoning applies to the current assistant turn only); any enabled `thinking` mode, including `thinking.type: "adaptive"`, maps to high reasoning effort upstream.
 
 ### Media models in conversations
 

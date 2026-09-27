@@ -199,10 +199,21 @@ export const stripeRoutes = new Hono<Env>()
                 payment_intent_data: {
                     metadata: packMetadata,
                 },
+                // EU consumers keep a 14-day right of withdrawal on digital
+                // content unless they ask for immediate delivery and
+                // acknowledge losing it. The invoice footer is the written
+                // confirmation of that consent.
+                consent_collection: { terms_of_service: "required" },
+                custom_text: {
+                    terms_of_service_acceptance: {
+                        message: `I agree to the [Terms](${PUBLIC_URLS.root}/terms) and [Refund Policy](${PUBLIC_URLS.root}/refunds). I ask for my Pollen to be credited immediately and understand that I lose my 14-day right of withdrawal once it is.`,
+                    },
+                },
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
                     invoice_data: {
+                        footer: "You agreed to our Terms and asked for your Pollen to be credited immediately, acknowledging that you lose your 14-day right of withdrawal once it is credited.",
                         rendering_options: {
                             amount_tax_display: "exclude_tax",
                         },

@@ -466,6 +466,16 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
         "any",
     );
+
+    // EU withdrawal waiver: consent is required at checkout and confirmed
+    // on the invoice.
+    expect(body?.["consent_collection[terms_of_service]"]).toBe("required");
+    expect(
+        body?.["custom_text[terms_of_service_acceptance][message]"],
+    ).toContain("right of withdrawal");
+    expect(body?.["invoice_creation[invoice_data][footer]"]).toContain(
+        "right of withdrawal",
+    );
 });
 
 test("GET /api/stripe/checkout marks new-card gate locked after four distinct failed cards in 24h", async ({

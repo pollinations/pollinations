@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-09-16**
+**Updated: 2026-09-27**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -41,7 +41,7 @@ If you purchase as a consumer in the EEA, you may have a 14-day right of withdra
 - expressly request immediate access, and
 - acknowledge that you lose the withdrawal right once performance begins.
 
-We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
+When you buy a Pollen pack at checkout, you ask for immediate delivery and acknowledge that you lose the withdrawal right once your Pollen is credited. Your invoice confirms this. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
 
 This policy does not limit any non-waivable statutory rights for non-conforming digital services.
 

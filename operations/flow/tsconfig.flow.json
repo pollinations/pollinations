@@ -15,9 +15,7 @@
         "worker.ts",
         "../../enter.pollinations.ai/worker-runtime.d.ts",
         "../../enter.pollinations.ai/worker-bindings.d.ts",
-        "../../enter.pollinations.ai/src/code-agent-sdk.d.ts",
-        "../../enter.pollinations.ai/frontend/src/**/*.ts",
-        "../../enter.pollinations.ai/frontend/src/**/*.tsx"
+        "../../enter.pollinations.ai/src/code-agent-sdk.d.ts"
     ],
     "compilerOptions": {
         "baseUrl": ".",
@@ -33,8 +31,6 @@
             "@pollinations/ui/app-user-menu/sdk": ["../../packages/ui/src/modules/app-user-menu/sdk.ts"],
             "@pollinations/ui/gen": ["../../packages/ui/src/modules/gen/index.ts"],
             "@pollinations/ui/wallet": ["../../packages/ui/src/modules/wallet/index.ts"]
-        },
-        "noUnusedLocals": true,
-        "noUnusedParameters": true
+        }
     }
 }

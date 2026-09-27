@@ -14,13 +14,10 @@
   },
   "dependencies": {
     "@cloudflare/containers": "0.3.7",
-    "@cloudflare/vitest-pool-workers": "^0.10.10",
-    "@cloudflare/workers-types": "^4.20260426.1",
     "@hono/node-server": "^1.19.6",
     "@pollinations/auth": "*",
     "@pollinations/sdk": "*",
     "@pollinations/ui": "*",
-    "@tanstack/react-router": "^1.139.3",
     "better-call": "^1.4.0",
     "esbuild": "^0.27.3",
     "hono": "^4.10.6",
@@ -30,6 +27,8 @@
     "tsx": "^4.20.6"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.10",
+    "@cloudflare/workers-types": "^4.20260426.1",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/router-plugin": "^1.139.3",
     "@types/node": "^24.10.1",

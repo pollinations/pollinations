@@ -149,31 +149,9 @@ export default defineConfig(({ command }) => ({
         {
             name: "flow-live-entries",
             buildStart: buildSourceStyles,
-            async generateBundle() {
-                this.emitFile({
-                    type: "asset",
-                    fileName: "flow-preview/moss.png",
-                    source: await readFile(
-                        `${here}public/flow-preview/moss.png`,
-                    ),
-                });
-            },
             configureServer(server) {
                 server.middlewares.use(async (request, response, next) => {
                     const path = request.url?.split("?")[0];
-                    if (path === "/flow-preview/moss.png") {
-                        try {
-                            response.setHeader("Content-Type", "image/png");
-                            response.end(
-                                await readFile(
-                                    `${here}public/flow-preview/moss.png`,
-                                ),
-                            );
-                        } catch (error) {
-                            next(error);
-                        }
-                        return;
-                    }
                     const file =
                         path === "/flow"
                             ? "flow-flows.html"

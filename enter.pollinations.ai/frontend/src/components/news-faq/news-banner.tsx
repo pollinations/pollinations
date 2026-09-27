@@ -8,8 +8,6 @@ import {
     parseHighlights,
 } from "./highlights";
 
-export { HIGHLIGHTS_GITHUB_URL } from "./highlights";
-
 /**
  * Pinned news items that stay visible regardless of daily updates.
  * Edit this array to add/remove pinned announcements.

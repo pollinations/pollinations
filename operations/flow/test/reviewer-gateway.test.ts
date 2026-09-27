@@ -695,3 +695,42 @@ test("built sign-in renders shared themes and errors, and preserves the canonica
         await browser.close();
     }
 }, 30_000);
+
+test("hosted homepage opens Flow while iframe and Admin roots keep their product routes", async () => {
+    const forward = vi.fn(async () => new Response("Enter fixture"));
+    const gateway = createReviewerGateway(
+        { ...config, authFetch: identityIssuer() },
+        forward,
+    );
+    const session = await signIn(gateway, "alice");
+    for (const cookieValue of ["", session]) {
+        const response = await gateway(
+            new Request(`${origins.enter}/?theme=dark`, {
+                headers: { Cookie: cookieValue, "Sec-Fetch-Dest": "document" },
+            }),
+        );
+        expect(response.status).toBe(302);
+        expect(response.headers.get("Location")).toBe(
+            `${origins.enter}/flow?theme=dark`,
+        );
+    }
+    expect(forward).not.toHaveBeenCalled();
+    for (const [origin, destination] of [
+        [origins.enter, "iframe"],
+        [origins.admin, "document"],
+    ]) {
+        const response = await gateway(
+            new Request(`${origin}/`, {
+                headers: { Cookie: session, "Sec-Fetch-Dest": destination },
+            }),
+        );
+        expect(await response.text()).toBe("Enter fixture");
+    }
+    const sessionResponse = await gateway(
+        new Request(`${origins.enter}${REVIEWER_AUTH_PATH}/session`, {
+            headers: { Cookie: session },
+        }),
+    );
+    expect((await sessionResponse.json()).user.sub).toBe("alice");
+    expect(forward).toHaveBeenCalledTimes(2);
+});

@@ -78,6 +78,21 @@ export function createReviewerGateway(
         )
             return new Response(null, { status: 403 });
 
+        // Keep Enter's root route in embedded product journeys. The hosted
+        // top-level homepage belongs to Flow, not the dashboard fixture.
+        if (
+            url.origin === config.origins.enter &&
+            url.pathname === "/" &&
+            ["GET", "HEAD"].includes(request.method) &&
+            request.headers.get("Sec-Fetch-Dest") !== "iframe"
+        ) {
+            url.pathname = "/flow";
+            return new Response(null, {
+                status: 302,
+                headers: { Location: url.href },
+            });
+        }
+
         // Only the gateway's built sign-in assets are public. Product assets
         // still require a reviewer session and belong to its container.
         if (url.pathname.startsWith(`/${namespace}/assets/`))

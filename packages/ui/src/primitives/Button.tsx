@@ -14,7 +14,7 @@ const pillSizes = {
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
     sm: "polli:min-h-7 polli:px-2 polli:pt-0.5 polli:pb-1",
     md: "polli:min-h-9 polli:px-4 polli:pt-1.5 polli:pb-2",
-    lg: "polli:min-h-12 polli:px-6 polli:py-3",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3 polli:text-base",
 } as const;
 
 const raisedSizes = {

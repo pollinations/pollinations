@@ -53,7 +53,7 @@
     background: linear-gradient(
         to bottom,
         transparent,
-        var(--polli-color-bg-pale) 40%
+        var(--polli-color-surface-block) 40%
     );
 }
 
@@ -171,11 +171,6 @@
 }
 
 .polli-slider {
-    --polli-slider-thumb-shadow-fallback: color-mix(
-        in oklab,
-        var(--polli-color-text-strong) 35%,
-        transparent
-    );
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(
         --polli-slider-fill,
@@ -188,10 +183,6 @@
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,
         var(--polli-color-text-strong)
-    );
-    --polli-slider-thumb-shadow-value: var(
-        --polli-slider-thumb-shadow,
-        var(--polli-slider-thumb-shadow-fallback)
     );
 
     width: 100%;
@@ -244,7 +235,6 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
 
@@ -254,7 +244,6 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
 

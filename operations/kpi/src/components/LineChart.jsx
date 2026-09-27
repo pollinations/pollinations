@@ -416,7 +416,7 @@ export function LineChart({
 
                 {hover != null && points[hover] && (
                     <div
-                        className="pointer-events-none absolute top-2 z-10 w-64 max-w-full rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-well"
+                        className="pointer-events-none absolute top-2 z-10 w-64 max-w-full rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-lg"
                         style={{
                             left: Math.min(
                                 Math.max(xAt(hover) - 128, 0),

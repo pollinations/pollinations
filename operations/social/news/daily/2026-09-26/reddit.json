@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-26",
+  "period_start": "2026-09-26",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:29:23.006194+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-26/images/reddit.jpg"
+    }
+  ],
+  "title": "14 PRs merged: model routes, queue jobs, and CLI fixes",
+  "text": "Today's 14 merged PRs cover model routes, queue jobs, the CLI, and docs.\n\nModel additions include [MiniMax H3 Max video](https://github.com/pollinations/pollinations/pull/15392), [Gemini 3.8 text-to-speech](https://github.com/pollinations/pollinations/pull/15395), and [Lyria 3.5 music generation](https://github.com/pollinations/pollinations/pull/15491). Lyria's deployment checks are still open, so the merge isn't a production-availability signal. [Azure routing for GPT-6 Sol and Luna](https://github.com/pollinations/pollinations/pull/15457) also landed.\n\nFor longer-running requests, [fal queue jobs can now finish, and Stable Audio uses the queue](https://github.com/pollinations/pollinations/pull/15458). [TTA joined video_audio with BYOP authorization](https://github.com/pollinations/pollinations/pull/15470). If you use those paths, existing polling and auth behavior are worth checking.\n\nThe polli CLI now [keeps text streaming and output metadata consistent](https://github.com/pollinations/pollinations/pull/15478), [validates options before making network requests](https://github.com/pollinations/pollinations/pull/15479), and [handles audio filenames and Windows playback failures](https://github.com/pollinations/pollinations/pull/15480). A typo should no longer need a round trip to reveal itself.\n\nThe [API reference was regenerated from the live specification](https://github.com/pollinations/pollinations/pull/15475), and [advance guidance for upcoming model ID changes](https://github.com/pollinations/pollinations/pull/15496) is published. We also refreshed README news and star history, removed Grafana's post-boot dashboard access delay, and raised the fixed-issue contribution quest reward to 4 Pollen. Quests are still in alpha, so rewards and availability may change.\n\nCode and discussion are in the [repo](https://github.com/pollinations/pollinations). Repro cases on the relevant PRs are welcome."
+}

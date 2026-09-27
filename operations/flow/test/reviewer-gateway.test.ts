@@ -1,11 +1,11 @@
 import { chromium } from "playwright";
 import { afterEach, expect, test, vi } from "vitest";
 import { createReviewerGateway, REVIEWER_AUTH_PATH } from "../reviewer-gateway";
-import preview from "../wrangler.preview.json";
+import workerConfig from "../wrangler.json";
 
 const origins = {
-    enter: preview.vars.FLOW_ENTER_ORIGIN,
-    admin: preview.vars.FLOW_ADMIN_ORIGIN,
+    enter: workerConfig.vars.FLOW_ENTER_ORIGIN,
+    admin: workerConfig.vars.FLOW_ADMIN_ORIGIN,
 };
 const config = {
     origins,
@@ -72,7 +72,7 @@ async function signIn(gateway: Gateway, id: string) {
                 (value) =>
                     value.startsWith(`${sessionName}=`) &&
                     value.includes("HttpOnly; Secure; SameSite=Lax") &&
-                    value.endsWith("Domain=flow-preview.pollinations.ai"),
+                    value.endsWith("Domain=flow.pollinations.ai"),
             ),
     ).toBe(true);
     return cookie(callback, sessionName);
@@ -243,9 +243,9 @@ test("one ordinary-account login selects the same reviewer on both origins and n
     }
     const count = calls.length;
     for (const origin of [
-        "https://other.flow-preview.pollinations.ai",
+        "https://other.flow.pollinations.ai",
         "https://pollinations.ai",
-        "http://flow-preview.pollinations.ai",
+        "http://flow.pollinations.ai",
     ]) {
         expect(
             (
@@ -309,7 +309,7 @@ test("revalidates from either host and rejects revoked sessions without entering
     expect(response.status).toBe(200);
     expect(cookie(response, sessionName)).toBeTruthy();
     expect(response.headers.getSetCookie()[0]).toContain(
-        "Domain=flow-preview.pollinations.ai",
+        "Domain=flow.pollinations.ai",
     );
     upstream.mockResolvedValueOnce(new Response(null, { status: 401 }));
     expect(
@@ -412,7 +412,7 @@ test("a browser shares one HttpOnly session across exactly the configured gatewa
             {
                 name: sessionName,
                 value: session.slice(sessionName.length + 1),
-                domain: ".flow-preview.pollinations.ai",
+                domain: ".flow.pollinations.ai",
                 path: "/",
                 httpOnly: true,
                 secure: true,

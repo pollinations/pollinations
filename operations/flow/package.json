@@ -10,7 +10,8 @@
     "reset": "tsx reset.ts",
     "build": "npm run typecheck && vite build --config vite.live.config.ts",
     "typecheck": "tsc --noEmit --project tsconfig.flow.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "tsx --tsconfig tsconfig.flow.json deploy.ts"
   },
   "dependencies": {
     "@cloudflare/containers": "0.3.7",

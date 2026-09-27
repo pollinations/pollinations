@@ -1,0 +1,37 @@
+{
+  "pr_number": 15602,
+  "title": "fix: use the full phone screen in full-screen modals",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15602",
+  "merged_at": "2026-09-27T23:34:44Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "On phones, full-screen modals (create/edit key, app key, agent, model, top-up, authorize, sign-in, device) floated with a gutter, extra padding and inset cards, leaving the controls about 322px of a 430px screen.\n\n- Full-screen modals now fill the phone screen in the modal colour with a 20px gutter; their cards run edge to edge with rounded corners\n- Cards in modals are 12px apart at every width, matching page spacing\n- The created-key result opens as a compact centred dialog, like the delete confirmation, instead of a mostly empty screen\n- Copy and close uses the default button: copying writes nothing, like other export actions\n- Dialog side padding is one shared variable (24px, 20px in phone full-screen modals); the Economics vendor-source dialog uses it so its body stays aligned with the title\n\nDashboard pages, compact confirmation dialogs and desktop layouts are unchanged apart from the 12px card gap in modals. Checked at 430px, 639/640px, landscape and desktop, in dark and light mode.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The phone gets its pixels back",
+    "blurb": "Full-screen dialogs on phones now use the screen instead of politely avoiding its edges. There’s room for the controls, and newly created keys get a compact dialog of their own.",
+    "summary": "Phone-sized full-screen modals now fill the display with 20px side gutters and 12px card spacing, while the created-key result opens in a compact centred dialog.",
+    "impact": "On a 430px phone, key, agent, model, top-up and sign-in dialogs give their controls more room; dashboard pages and desktop layouts remain otherwise unchanged.",
+    "keywords": [
+      "mobile",
+      "modals",
+      "dialogs",
+      "API keys",
+      "UI",
+      "spacing"
+    ],
+    "visual_concept": "A phone displays a roomy modal with edge-to-edge cards and a small key-result dialog. Polli, wearing a tiny tailor’s measuring tape, checks the 20px gutter beside it; pixel flowers frame the cozy scene.",
+    "image_prompt": "In a cozy pixel art garden workspace, a phone glows with a roomy lime green (#ecf874) modal and neatly spaced cards while Polli measures its side gutter with a tiny tailor’s tape. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or elongated, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers, warm cream surroundings, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15602.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a phone glows with a roomy lime green (#ecf874) modal and neatly spaced cards while Polli measures its side gutter with a tiny tailor’s tape. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or elongated, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers, warm cream surroundings, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-27T23:35:46.235789+00:00"
+}

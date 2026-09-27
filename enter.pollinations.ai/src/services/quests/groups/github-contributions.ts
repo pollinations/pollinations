@@ -38,6 +38,7 @@ const REPO = `${REPO_OWNER}/${REPO_NAME}`;
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 // An approved app submission can close a quest. The bot opens that catalog PR
 // on an auto/app-<issue>- branch and credits the submitter as commit co-author.
+// A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
 const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
@@ -98,7 +99,7 @@ type ClosingPullRequest = {
     number: number;
     mergedAt: string | null;
     headRefName: string;
-    author: (GitHubUser & { login: string }) | null;
+    author: (GitHubUser & { __typename: string; login: string }) | null;
 };
 
 type CommitAuthorsData = {
@@ -162,7 +163,7 @@ query($query:String!){
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt headRefName author{ login ... on User{ databaseId } } }
+          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
         }
       }
     }
@@ -261,7 +262,8 @@ function mergedClosers(issue: GitHubIssueNode) {
 
 function isAppPublishPr(pr: ClosingPullRequest): boolean {
     return (
-        pr.author?.login === APP_PUBLISH_BOT &&
+        pr.author?.__typename === "Bot" &&
+        pr.author.login === APP_PUBLISH_BOT &&
         APP_PUBLISH_BRANCH.test(pr.headRefName)
     );
 }

@@ -1941,7 +1941,8 @@ test("two lazy GitHub issue bounties each record independently", async ({
 });
 
 // An approved app submission closes a quest through the bot's catalog PR, which
-// credits the submitter as commit co-author. Co-authors on other PRs earn nothing.
+// credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
+// even when a GitHub user with the bot's login opens one on a catalog branch.
 test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only their author", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -1979,7 +1980,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
                 number: 5001,
                 mergedAt,
                 headRefName: "auto/app-4001-123-1",
-                author: { login: "pollinations-ai" },
+                author: { __typename: "Bot", login: "pollinations-ai" },
             },
         ],
         [
@@ -1988,7 +1989,11 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
                 number: 5002,
                 mergedAt,
                 headRefName: "auto/app-4002-123-1",
-                author: { login: "someone-else", databaseId: 616161 },
+                author: {
+                    __typename: "User",
+                    login: "pollinations-ai",
+                    databaseId: 616161,
+                },
             },
         ],
     ] as const) {

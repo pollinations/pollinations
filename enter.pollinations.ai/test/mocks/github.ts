@@ -34,7 +34,11 @@ export type MockGithubState = {
             number: number;
             mergedAt: string | null;
             headRefName?: string;
-            author: { login?: string; databaseId?: number | null } | null;
+            author: {
+                __typename?: string;
+                login?: string;
+                databaseId?: number | null;
+            } | null;
         }>;
     }>;
     mergedPullRequests: Array<{

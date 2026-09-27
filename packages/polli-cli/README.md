@@ -49,8 +49,8 @@ Interactive commands show an occasional update notice without waiting for the ne
 
 ```bash
 polli gen text "Explain quantum tunneling in one sentence"
-polli gen text "Summarize this" < notes.md          # stdin becomes context
-echo "context" | polli gen text "question"
+polli gen text "Summarize this" --context-stdin < notes.md
+echo "context" | polli gen text "question" --context-stdin
 
 polli gen image "cyberpunk city at night" --model flux --output city.png
 polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage

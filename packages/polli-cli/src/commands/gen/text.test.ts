@@ -4,7 +4,10 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
 import { setOutputMode } from "../../lib/output.js";
+import { readStdin } from "../../lib/stdin.js";
 import { createTextCommand } from "./text.js";
+
+vi.mock("../../lib/stdin.js", () => ({ readStdin: vi.fn() }));
 
 const completion = {
     choices: [{ message: { content: "hello" } }],
@@ -24,6 +27,7 @@ const folders: string[] = [];
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(readStdin).mockReset();
     vi.unstubAllGlobals();
     setOutputMode("human");
     setKeyOverride(undefined);
@@ -38,7 +42,7 @@ afterEach(() => {
     for (const folder of folders.splice(0)) rmSync(folder, { recursive: true });
 });
 
-async function run(args: string[], tty: boolean, json = true) {
+async function run(args: string[], tty: boolean, json = true, prompt = "hi") {
     Object.defineProperty(process.stdout, "isTTY", {
         configurable: true,
         value: tty,
@@ -65,11 +69,38 @@ async function run(args: string[], tty: boolean, json = true) {
               })
             : Response.json(completion);
     });
-    await createTextCommand().parseAsync(["hi", ...args], { from: "user" });
+    await createTextCommand().parseAsync(
+        [...(prompt ? [prompt] : []), ...args],
+        { from: "user" },
+    );
     return { request: requests[0], output: output.join("") };
 }
 
 describe("gen text output", () => {
+    it("does not wait for stdin when a prompt is provided", async () => {
+        const { request } = await run([], false);
+        expect(readStdin).not.toHaveBeenCalled();
+        expect(request.messages).toEqual([{ role: "user", content: "hi" }]);
+    });
+
+    it("reads stdin as context only when requested", async () => {
+        vi.mocked(readStdin).mockResolvedValue("context");
+        const { request } = await run(["--context-stdin"], false);
+        expect(readStdin).toHaveBeenCalledOnce();
+        expect(request.messages).toEqual([
+            { role: "system", content: "context" },
+            { role: "user", content: "hi" },
+        ]);
+    });
+
+    it("still accepts a prompt from stdin", async () => {
+        vi.mocked(readStdin).mockResolvedValue("piped prompt");
+        const { request } = await run([], false, true, "");
+        expect(request.messages).toEqual([
+            { role: "user", content: "piped prompt" },
+        ]);
+    });
+
     it("buffers JSON by default when stdout is piped", async () => {
         const { request, output } = await run([], false);
         expect(request.stream).toBeUndefined();

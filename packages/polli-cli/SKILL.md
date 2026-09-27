@@ -28,7 +28,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
-| Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
+| Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>" --context-stdin` |
 | Describe an image (vision) | `polli gen text "what is this?" --image <url>` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
@@ -84,7 +84,7 @@ polli gen text "turn this person into a cartoon pet in one playful sentence" --i
 
 ### Pipe stdin as context into text generation
 ```bash
-cat README.md | polli gen text "what does this project do?"
+cat README.md | polli gen text "what does this project do?" --context-stdin
 ```
 stdin becomes context; the positional argument is the question.
 
@@ -250,7 +250,7 @@ polli docs --open                   # open in browser
 3. **Don't hardcode model IDs.** Fetch the live list with `polli models --type <type>`. Model availability changes.
 4. **Before picking a model for production use, check `polli models --stats`.** Rule of thumb for "healthy": `err%` ≤ 5, `avg` latency in a reasonable range for the modality (standard text <5s, image <10s, video <60s), and `requests` high enough to be statistically meaningful (ignore rows with <10 requests — noise). **Filter by capability first, then optimize by health** — e.g. for a reasoning task, narrow to models where `reasoning: true` (via `polli models --type text --json`), *then* cross-reference against `--stats` output. The healthiest model overall may not support the capability you need. **Reasoning models are inherently slower — expect 5–50s, not <5s**; when picking among them, prioritize low `err%` and request count over raw latency, and compare latency only within the reasoning-capable subset.
 5. **Always pass `--output <path>`** for `gen image`, `gen audio`, `gen video` — otherwise the file lands in the current directory with a default name.
-6. **For stdin-as-context** on `gen text`, pipe the context and pass the question as the positional argument: `cat file | polli gen text "question about the file"`.
+6. **For stdin-as-context** on `gen text`, pipe the context and pass the question as the positional argument: `cat file | polli gen text "question about the file" --context-stdin`.
 7. **For exact flag lists, run `polli <cmd> --help` or `polli gen <cmd> --help`.** This skill's recipes cover the common path; the CLI's own help is always the source of truth.
 8. **Use `polli docs [endpoint]` over guessing API shapes.** It prints the canonical `llm.txt` reference from the live API.
 

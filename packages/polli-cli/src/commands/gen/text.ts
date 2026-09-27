@@ -27,6 +27,7 @@ export function createTextCommand() {
             "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
         )
         .argument("[prompt]", "Text prompt (or pipe via stdin)")
+        .option("--context-stdin", "Read stdin as context for the prompt")
         .option("--model <model>", "Text model")
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")
@@ -51,7 +52,8 @@ export function createTextCommand() {
             "Wait for full response instead of streaming tokens",
         )
         .action(async (promptArg, opts, command: Command) => {
-            const stdinText = await readStdin();
+            const stdinText =
+                !promptArg || opts.contextStdin ? await readStdin() : "";
             const prompt = promptArg || stdinText;
 
             if (!prompt) {

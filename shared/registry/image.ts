@@ -1791,7 +1791,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         // fal published post-promotion rates (promotion ends 2026-09-30).
-        // Activate only after confirming these rates with fal; keep multiplier 1.
+        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
         cost: {
             completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
         },

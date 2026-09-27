@@ -30,7 +30,9 @@ export const ActivityToolbar: FC<{
                     onChange={onPeriodChange}
                 />
             </div>
-            <div className="shrink-0">{download}</div>
+            <div data-theme="neutral" className="shrink-0">
+                {download}
+            </div>
         </div>
         {children && (
             <div className="grid min-w-0 grid-cols-1 items-start gap-3 @[36rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_14rem]">

@@ -344,7 +344,6 @@ export const LastEventsPanel: FC = () => {
                                 setVisibleCount((count) => count + PAGE_SIZE)
                             }
                             disabled={state.loading}
-                            intent="neutral"
                             className="self-start sm:self-auto"
                         >
                             {loadingMore ? "Loading…" : "Show older"}

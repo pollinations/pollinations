@@ -108,7 +108,7 @@ function AccountPage() {
                     </div>
                     <Button
                         type="button"
-                        intent="neutral"
+                        intent="commit"
                         icon={<SignOutIcon />}
                         disabled={isSigningOut}
                         className="shrink-0 self-start sm:self-center"

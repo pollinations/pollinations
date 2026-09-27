@@ -595,7 +595,7 @@ const DashboardSupport: FC<{
                     value={action.copyValue}
                     copiedTimeoutMs={1500}
                     tooltip={null}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-solid/20 px-2.5 py-1 text-xs font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-solid/30"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-active px-2.5 py-1 text-xs font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
                 >
                     {(copied) => (
                         <>

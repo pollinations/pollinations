@@ -78,7 +78,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         <Button
                             type="button"
                             size="sm"
-                            intent="neutral"
+                            data-theme="neutral"
                             className="polli:shrink-0"
                             aria-label={`Remove redirect URL ${index + 1}`}
                             onClick={() => remove(index)}
@@ -91,7 +91,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <Button
                     type="button"
                     size="sm"
-                    intent="neutral"
+                    data-theme="neutral"
                     onClick={add}
                     disabled={disabled}
                 >

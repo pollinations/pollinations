@@ -80,7 +80,6 @@ export const ActivityPeriodNavigation: FC<{
                     trigger={() => (
                         <Button
                             type="button"
-                            intent="neutral"
                             size="md"
                             aria-label={`Choose ${label.toLowerCase()} ${value.granularity}`}
                             className="w-24 whitespace-nowrap text-center tabular-nums sm:w-36"

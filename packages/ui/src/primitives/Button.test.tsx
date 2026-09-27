@@ -59,7 +59,7 @@ describe("Button appearances", () => {
         expect(footer).toContain(standalone);
     });
 
-    test("keeps primary footer actions pill-shaped and solid", () => {
+    test("keeps primary footer actions pill-shaped and outlined", () => {
         const button = (
             <Button intent="commit" type="submit">
                 Save changes
@@ -72,8 +72,7 @@ describe("Button appearances", () => {
 
         expect(footer).toContain(standalone);
         expect(standalone).toContain("polli:rounded-full");
-        expect(standalone).toContain("polli:bg-theme-bg-solid");
-        expect(standalone).toContain("polli:text-theme-text-on-solid");
+        expect(standalone).toContain("polli:border-theme-text-soft");
         expect(standalone).toContain('type="submit"');
     });
 

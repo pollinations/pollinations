@@ -32,25 +32,33 @@ const appearanceClasses: Record<ButtonAppearance, string> = {
         "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",
 };
 
-// Flat fills only — no outlines. Primary actions (the default, `brand`,
-// `commit`) are the solid accent: the one bright fill on the page, identical
-// in both modes. Everything else is a tint that steps up one notch on hover.
-const solid =
-    "polli:bg-theme-bg-solid polli:text-theme-text-on-solid polli:transition-[filter,background-color]";
-const themeClasses = solid;
+// Cascade-driven base — reads [data-theme] vars.
+const themeClasses =
+    "polli:bg-theme-bg-active polli:text-theme-text-strong " +
+    "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
+
+// Primary actions have a soft accent fill in light mode and an outline in dark.
+// `brand` keeps a calm hover; `commit` strengthens the fill on hover and focus.
+const outlined =
+    "polli:border polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:text-theme-text-strong " +
+    "polli:transition-colors polli:[.dark_&]:bg-transparent";
 const intentClasses: Record<ButtonIntent, string> = {
-    brand: solid,
-    commit: solid,
+    brand: `${outlined} polli:hover:bg-theme-bg-active/50 polli:[.dark_&]:hover:bg-theme-text-soft/10`,
+    commit:
+        `${outlined} polli:hover:border-theme-bg-active polli:hover:bg-theme-bg-active ` +
+        "polli:focus-visible:border-theme-bg-active polli:focus-visible:bg-theme-bg-active " +
+        "polli:[.dark_&]:hover:bg-theme-bg-active polli:[.dark_&]:focus-visible:bg-theme-bg-active",
     danger:
-        "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
-        "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors",
+        "polli:border polli:border-intent-danger-text polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
+        "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors " +
+        "polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-intent-danger-bg-hover polli:[.dark_&]:focus-visible:bg-intent-danger-bg-hover",
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
-    // Secondary actions never take the accent: one step stronger ink on hover.
+    // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
-        "polli:bg-control polli:text-theme-text-strong " +
-        "polli:hover:bg-control-strong polli:transition-colors",
+        "polli:bg-theme-bg-subtle polli:text-theme-text-base " +
+        "polli:hover:bg-theme-text-muted/25 polli:hover:text-theme-text-strong polli:transition-colors",
 };
 
 type BaseButtonProps = {

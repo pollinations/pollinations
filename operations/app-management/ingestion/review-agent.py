@@ -378,9 +378,15 @@ def main():
         questions.extend(sanitize_ai_lines(item, max_lines=1, max_line_length=200))
     questions = questions[:4]
     if review["status"] == "ready":
+        quest = submission.get("quest")
+        quest_note = (
+            f" This also closes quest #{quest} and pays its reward to the submitter, so check that the app completes the quest."
+            if quest
+            else ""
+        )
         body = (
             f"{COMMENT_MARKER}\n## App pre-review: ready for human review\n\n{mention}{summary}\n\n"
-            "A maintainer can verify the app and add `APP-APPROVED` to publish it."
+            f"A maintainer can verify the app and add `APP-APPROVED` to publish it.{quest_note}"
         )
         label = "APP-REVIEW"
     else:

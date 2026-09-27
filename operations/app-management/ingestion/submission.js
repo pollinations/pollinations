@@ -58,6 +58,17 @@ function normalizeUrl(value) {
     }
 }
 
+// Accepts "#123", "123" or the issue URL; keeps other text so validation can
+// report it.
+function parseQuest(value) {
+    const input = clean(value, 120);
+    return (
+        input.match(
+            /^(?:#|https:\/\/github\.com\/pollinations\/pollinations\/issues\/)?(\d+)$/i,
+        )?.[1] ?? input
+    );
+}
+
 function normalizeLanguage(value) {
     const language = clean(value, 15) || "en";
     return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(language) ? language : "";
@@ -100,6 +111,7 @@ function parseSubmission(body) {
     const category = clean(section(body, "App Category"), 30).toLowerCase();
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
+    const quest = parseQuest(section(body, "Quest"));
 
     return {
         name,
@@ -109,6 +121,7 @@ function parseSubmission(body) {
         category,
         language,
         discord,
+        quest,
         platform: inferPlatform(name, appUrl || repoUrl, description),
         emoji: CATEGORY_EMOJI[category] || "🚀",
     };
@@ -134,6 +147,8 @@ function validateSubmission(submission) {
         !/^https:\/\/github\.com\/[^/]+\/[^/]+/i.test(submission.repoUrl)
     )
         errors.push("GitHub Repository URL must point to a GitHub repository.");
+    if (submission.quest && !/^\d+$/.test(submission.quest))
+        errors.push("Quest must be a quest issue number such as #15600.");
     return errors;
 }
 

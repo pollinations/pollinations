@@ -74,3 +74,10 @@ body:
     attributes:
       label: Discord Username
       description: Optional contact username.
+
+  - type: input
+    id: quest
+    attributes:
+      label: Quest
+      description: Optional. The number of an open POLLEN-QUEST issue this app completes. Approval closes the quest and pays you its reward.
+      placeholder: "#15600"

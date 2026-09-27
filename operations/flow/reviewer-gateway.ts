@@ -7,6 +7,7 @@ import type { FlowOrigins } from "./flow-environment";
 
 const namespace = "flow-reviewer";
 export const REVIEWER_AUTH_PATH = `/${namespace}/auth`;
+const flowPaths = new Set(["/screens", "/map", "/journey"]);
 
 type Config = {
     origins: FlowOrigins;
@@ -45,9 +46,9 @@ export function createReviewerGateway(
         );
         login.searchParams.set(
             "return_to",
-            url.origin === config.origins.enter && url.pathname === "/flow"
+            url.origin === config.origins.enter && flowPaths.has(url.pathname)
                 ? `${url.pathname}${url.search}`
-                : "/flow",
+                : "/screens",
         );
         const page = await config.assets.fetch(
             new Request(new URL(`/${namespace}/index.html`, url)),
@@ -86,7 +87,7 @@ export function createReviewerGateway(
             ["GET", "HEAD"].includes(request.method) &&
             request.headers.get("Sec-Fetch-Dest") !== "iframe"
         ) {
-            url.pathname = "/flow";
+            url.pathname = "/screens";
             return new Response(null, {
                 status: 302,
                 headers: { Location: url.href },

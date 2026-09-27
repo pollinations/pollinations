@@ -615,9 +615,16 @@ export function createCaptureService(options: {
                     : "/flow-screen.html",
                 finalRoute: finalPath,
             };
-        } catch {
+        } catch (error) {
             if (!current(job)) return;
             // Never expose browser errors or OAuth callback query strings.
+            console.error("Flow capture failed", {
+                flow: job.selection.flow,
+                section: job.selection.section,
+                caseId: recipe.id,
+                stage,
+                reason: error instanceof Error ? error.name : "UnknownError",
+            });
             job.result = {
                 status: "error",
                 source: job.source,
@@ -761,6 +768,7 @@ export function createCaptureService(options: {
                     { status: 400 },
                 );
             const selection: Selection = { flow, section, theme, size };
+            const retry = url.searchParams.get("retry") === "true";
             const selectedJobs: Job[] = [];
             const cases: Record<string, PreviewCaseResult> = {};
             for (const recipe of recipes) {
@@ -774,6 +782,10 @@ export function createCaptureService(options: {
                 }
                 const key = captureIdentity(recipe, selection);
                 let job = jobs.get(key);
+                if (retry && job?.result.status === "error") {
+                    jobs.delete(key);
+                    job = undefined;
+                }
                 if (!job) {
                     job = {
                         key,

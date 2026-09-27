@@ -152,16 +152,17 @@ export default defineConfig(({ command }) => ({
             configureServer(server) {
                 server.middlewares.use(async (request, response, next) => {
                     const path = request.url?.split("?")[0];
-                    const file =
-                        path === "/flow"
-                            ? "flow-flows.html"
-                            : path === "/flow-example.html"
-                              ? "flow-example.html"
-                              : path === "/flow-admin.html"
-                                ? "flow-admin.html"
-                                : path === "/flow-screen.html"
-                                  ? "flow-screen.html"
-                                  : undefined;
+                    const file = ["/screens", "/map", "/journey"].includes(
+                        path ?? "",
+                    )
+                        ? "flow-flows.html"
+                        : path === "/flow-example.html"
+                          ? "flow-example.html"
+                          : path === "/flow-admin.html"
+                            ? "flow-admin.html"
+                            : path === "/flow-screen.html"
+                              ? "flow-screen.html"
+                              : undefined;
                     if (!file) return next();
                     try {
                         let html = await readFile(`${here}${file}`, "utf8");
@@ -172,7 +173,7 @@ export default defineConfig(({ command }) => ({
                         response.setHeader("Content-Type", "text/html");
                         response.end(
                             await server.transformIndexHtml(
-                                request.url ?? "/flow",
+                                request.url ?? "/screens",
                                 html,
                             ),
                         );

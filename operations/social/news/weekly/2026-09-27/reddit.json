@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-09-27",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:31:15.384563+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: 97 PRs across models, routes, and tools",
+  "text": "97 PRs merged this week. The short version:\n\n- **Models:** Grok 4.7, GLM-5.3 FlashX, Claude Opus 5.5, GPT-6 Sol and Luna, and several others joined the catalog. Ling 3.0 Flash VL now accepts video input. Sol and Luna also got Azure routing and Quest access ([PR #15457](https://github.com/pollinations/pollinations/pull/15457)).\n- **Media:** New image options include MAI Image 2.6, Qwen Image 2.1 for generation and reference edits, and Recraft V4.1 Flash. MiniMax H3 Max video and Gemini 3.8 Flash TTS landed. Lyria 3.5 music integration is in, but live checks are still pending. Image safety blocks now return useful error details instead of leaving callers to guess ([PR #15441](https://github.com/pollinations/pollinations/pull/15441)).\n- **Routing:** Vertex-first Gemini routes were restored; Mistral, Qwen/Wan, and Grok gained direct-provider paths or fallbacks. Sonar moved to Perplexity's Agent API without changing caller endpoints ([PR #15362](https://github.com/pollinations/pollinations/pull/15362)). The point is fewer provider surprises without making everyone rename model IDs.\n- **Tools and community:** `polli mcp` can discover and install integrations for 13 coding clients ([PR #15032](https://github.com/pollinations/pollinations/pull/15032)). Ask Jev joined the hosted MCP catalog. Community additions include image apps, routing agents, a shared-canvas painter, and an Arabic RTL TTS app. Enter's catalog and account flows got less fragmented.\n\nThe issue-reporting Quest is in alpha; eligibility and rewards may still change. If a route behaves differently than its model ID suggests, a reproducible request in the [repo](https://github.com/pollinations/pollinations) is especially useful."
+}

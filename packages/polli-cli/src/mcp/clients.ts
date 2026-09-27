@@ -1,6 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { parseDocument } from "yaml";
+import {
+    commandExists,
+    readTextIfExists,
+    writeTextAtomic,
+} from "../harnesses/fs.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -214,6 +219,96 @@ const urlEntry = (server: McpServer, key: string): JsonObject => ({
     headers: bearerHeader(key),
 });
 
+// ---------------------------------------------------------------------------
+// Hermes Agent (YAML config.yaml, mcp_servers table)
+// ---------------------------------------------------------------------------
+
+interface YamlTarget {
+    file: (ctx: McpContext) => string;
+    table: string;
+}
+
+const yamlClient = (adapter: {
+    id: string;
+    label: string;
+    description: string;
+    target: YamlTarget;
+}): McpClientAdapter => {
+    const { id, label, description, target } = adapter;
+
+    const readTable = (ctx: McpContext): JsonObject => {
+        const doc = parseDocument(readTextIfExists(target.file(ctx)) ?? "");
+        if (doc.contents === null) return {};
+        const table = doc.toJS()?.[target.table];
+        return table && typeof table === "object" ? (table as JsonObject) : {};
+    };
+
+    const update = (
+        ctx: McpContext,
+        mutate: (table: JsonObject) => string[],
+    ): { installed: string[]; removed: string[]; file: string } => {
+        const file = target.file(ctx);
+        const doc = parseDocument(readTextIfExists(file) ?? "");
+        if (doc.contents === null) doc.contents = doc.createNode({}) as never;
+        const table = readTable(ctx);
+        const removed = mutate(table);
+        doc.set(target.table, table);
+        writeTextAtomic(file, doc.toString({ lineWidth: 0 }), 0o600);
+        return { installed: ownedEntryNames(table), removed, file };
+    };
+
+    return {
+        id,
+        label,
+        description,
+        install: (ctx, servers, key) => {
+            const skipped: string[] = [];
+            const { installed, file } = update(ctx, (table) => {
+                for (const server of servers) {
+                    const existing = table[server.id];
+                    if (existing !== undefined && !isOwnedEntry(existing)) {
+                        skipped.push(server.id);
+                        continue;
+                    }
+                    table[server.id] = urlEntry(server, key);
+                }
+                return [];
+            });
+            return {
+                client: id,
+                label,
+                installed,
+                files: [file],
+                notes: skipped.map(
+                    (serverId) =>
+                        `Kept existing non-Pollinations server "${serverId}" - not overwritten.`,
+                ),
+            };
+        },
+        remove: (ctx, serverIds) => {
+            const { installed, removed, file } = update(ctx, (table) => {
+                const names = serverIds?.length
+                    ? serverIds.filter((name) => isOwnedEntry(table[name]))
+                    : ownedEntryNames(table);
+                for (const name of names) delete table[name];
+                return names;
+            });
+            return {
+                client: id,
+                label,
+                installed,
+                removed,
+                files: [file],
+                notes: [],
+            };
+        },
+        status: (ctx) => ({
+            installed: ownedEntryNames(readTable(ctx)),
+        }),
+        existingKey: (ctx) => recoverKeyFromTable(readTable(ctx)),
+    };
+};
+
 const vscodeUserDir = (ctx: McpContext): string => {
     if (process.platform === "win32") {
         return join(
@@ -349,6 +444,20 @@ const jsonClients: McpClientAdapter[] = [
                 ),
             table: "context_servers",
             entry: urlEntry,
+        },
+    }),
+    yamlClient({
+        id: "hermes",
+        label: "Hermes Agent",
+        description:
+            "Hermes Agent (mcp_servers in ~/.hermes/config.yaml, Bearer auth)",
+        target: {
+            file: (ctx) =>
+                join(
+                    ctx.env.HERMES_HOME?.trim() || join(ctx.home, ".hermes"),
+                    "config.yaml",
+                ),
+            table: "mcp_servers",
         },
     }),
 ];
@@ -709,6 +818,7 @@ const PRIORITY = [
     "kiro",
     "zed",
     "warp",
+    "hermes",
 ];
 
 const byId = new Map(

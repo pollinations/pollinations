@@ -148,6 +148,7 @@ polli harness openclaw on         # adds the Pollinations provider + Polli skill
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
 polli harness tgpt on             # authenticated Pollinations text models in tgpt
+polli harness hermes on           # provider, key, skill, and MCP in Hermes Agent
 polli harness <harness> status
 polli harness <harness> off
 ```

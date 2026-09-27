@@ -48,6 +48,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
 | [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, the Polli skill, and the hosted Pollinations MCP server. Defaults to `qwen/qwen3.8-flash`. |
 
 ## Bloom CLI
 
@@ -70,6 +71,15 @@ tgpt "Hello"
 tgpt already includes a Pollinations provider. `on` selects it for text generation and writes a dedicated key and model to `~/.config/tgpt/config.conf`, making tgpt use the authenticated `gen.pollinations.ai` endpoint. Choose another model with `--model <id>`; `off` restores the previous file or removes only the Pollinations values if the file changed later.
 
 The default model is `openai/gpt-5.4-nano`. Polli clears any generic `AI_API_KEY` from this file so it cannot override the dedicated `POLLINATIONS_API_KEY`; the original file is backed up. Exported environment variables, a local `config.conf`, or `--config` can override this user-level setup. `off` does not revoke the account key.
+
+## Hermes Agent
+
+```bash
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+polli harness hermes on
+```
+
+`on` requires Hermes Agent to be installed. It adds a `pollinations` provider under `providers` in `~/.hermes/config.yaml` (or `$HERMES_HOME/config.yaml`), stores a dedicated Pollinations key in Hermes' own `.env` referenced by `key_env`, sets `model.provider`/`model.default`, installs the Polli skill under `skills/polli/`, and registers the hosted Pollinations MCP server under `mcp_servers` with Bearer auth. Your other providers, models, MCP servers, memories, and skills are preserved. Choose another model with `--model <id>`; `off` restores the touched files byte-for-byte, or removes only the Pollinations provider, key, skill, and MCP entry after outside edits.
 
 ## DeepSeek Harness
 

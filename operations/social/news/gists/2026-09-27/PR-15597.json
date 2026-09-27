@@ -1,0 +1,38 @@
+{
+  "pr_number": 15597,
+  "title": "fix(flow): unblock captures and simplify review navigation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15597",
+  "merged_at": "2026-09-27T23:03:38Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Fix capture queues blocking later screens: Screens and Map capture only the selected situation, stop polling completed or failed captures, and provide an explicit retry.\n- Add `/screens`, `/map`, and `/journey` routes; default to Screens and preserve the selected route through reviewer login.\n- Allow entering Journey before fixture preparation, applying the selected situation on entry. Add capture failure diagnostics without exposing OAuth URLs.\n- Validated locally: 261 tests passed; production build, typecheck and Biome passed; native Linux containers passed real journeys, captures, two-reviewer isolation, restart and replacement at 0.5 CPU / 4 GiB. Exact Linux/amd64 container verification remains required in CI before merge.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One screen at a time",
+    "blurb": "Flow reviews no longer wait on a capture that has already finished—or failed. Reviewers can retry a capture and move between Screens, Map, and Journey without losing their place.",
+    "summary": "Flow now captures only the selected situation, stops polling finished or failed captures, offers an explicit retry, and adds /screens, /map, and /journey routes that survive reviewer login.",
+    "impact": "Reviewers can continue past a failed capture, open Journey before fixture preparation, and return from login to their selected review view.",
+    "keywords": [
+      "Flow",
+      "review",
+      "captures",
+      "Screens",
+      "Map",
+      "Journey",
+      "routing"
+    ],
+    "visual_concept": "Depict Flow as a cozy review desk with three clearly marked paths—Screens, Map, and Journey. Polli guides a CRT monitor robot from a stalled picture frame to a fresh capture, with a small retry button, a route signpost, and code-plants nearby.",
+    "image_prompt": "In a cozy pixel art review room, a CRT monitor robot with curious square eyes holds a fresh screen capture beside a small retry button, while signposts marked 'Screens', 'Map', and 'Journey' wind through lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and helps the robot choose a path, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and an emotionally warm, lo-fi atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15597.jpg",
+    "prompt": "In a cozy pixel art review room, a CRT monitor robot with curious square eyes holds a fresh screen capture beside a small retry button, while signposts marked 'Screens', 'Map', and 'Journey' wind through lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and helps the robot choose a path, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and an emotionally warm, lo-fi atmosphere."
+  },
+  "generated_at": "2026-09-27T23:04:35.609767+00:00"
+}

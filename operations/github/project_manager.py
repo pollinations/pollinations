@@ -5,6 +5,7 @@ import re
 import requests
 import time
 from typing import Optional
+from urllib.parse import quote
 
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -36,6 +37,11 @@ PR_HEAD_REF = ITEM_DATA.get("head", {}).get("ref", "") if IS_PULL_REQUEST else "
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
+AI_MODEL = "openai/gpt-6-luna"
+# Log what would change instead of writing to GitHub (used by the manual dispatch).
+DRY_RUN = os.getenv("DRY_RUN") == "1"
+# Re-classify items that already have labels, replacing the classifier's older labels.
+RELABEL = os.getenv("RELABEL") == "1"
 
 # Validate required tokens at startup
 if not GITHUB_TOKEN:
@@ -60,38 +66,31 @@ def log_error(msg: str):
     print(f"[ERROR] {msg}", file=sys.stderr)
 
 
+def fail(msg: str):
+    """Log and exit non-zero so a broken run shows up red in Actions."""
+    log_error(msg)
+    sys.exit(1)
+
+
 CONFIG = {
     "projects": {
         "dev": {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
-            "internal_only": True,
+            # Team vs Community; the SUPPORT view lists Community issues.
+            "source_field_id": "PVTSSF_lADOBS76fs4AwCAMzhjSPy4",
+            "source_options": {"Team": "00bb2074", "Community": "55f6f20d"},
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
-                "Urgent": "0f53228f",
                 "High": "dc7fa85f",
-                "Medium": "15fd4fac",
+                "Medium": "e874fe65",
                 "Low": "7495a981",
             },
         },
-        "support": {
-            "id": "PVT_kwDOBS76fs4BLr1H",
-            "name": "Support",
-            "internal_only": False,
-            "priority_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7NAkI",
-            "priority_options": {
-                "Urgent": "5b4c403c",
-                "High": "509f6cf1",
-                "Low": "ca5161be",
-            },
-        },
-        "apps": {
-            "id": "PVT_kwDOBS76fs4BLtE_",
-            "name": "Apps",
-            "internal_only": False,
-        },
     },
     "discord_relay_bot_id": 247793354,
+    # CI bots whose issues report our own failures (github-actions[bot]).
+    "ci_bot_ids": {41898282},
     "org_member_ids": {5099901, 36901823, 74301576, 158852059, 34513273},
     "discord_uid_to_github": {
         "304378879705874432": {"id": 5099901, "login": "voodoohop"},
@@ -101,11 +100,16 @@ CONFIG = {
     },
 }
 
+# The relay bot appends "**Author:** `name` (UID: `123`)" after the relayed message,
+# so only whole Author lines count and the last one is the relay's own.
+RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?(\d+)`?\)\s*$", re.MULTILINE)
+
+
 def get_real_author() -> tuple[str, Optional[int]]:
     if ISSUE_AUTHOR_ID == CONFIG["discord_relay_bot_id"]:
-        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
-        if uid_match:
-            discord_uid = uid_match.group(1)
+        uids = RELAY_AUTHOR_LINE.findall(ISSUE_BODY)
+        if uids:
+            discord_uid = uids[-1]
             log_debug(f"Extracted Discord UID: {discord_uid}")
             github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
@@ -166,206 +170,139 @@ def get_script_dir() -> str:
 
 
 def read_prompt_file() -> str:
-    prompt_path = os.path.join(get_script_dir(), "project-manager.md")
-    try:
-        with open(prompt_path, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        log_error(f"Prompt file not found at {prompt_path}")
-        return ""
+    with open(os.path.join(get_script_dir(), "project-manager.md"), "r") as f:
+        return f.read()
 
 
-VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-APP", "DEV-UI-UX"},
-    "support": {
-        ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
-        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
-    },
-}
-
-SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
-SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
-
-PROTECTED_LABELS = {
-    "dev": {"DEV-TRACKING", "DEV-VOTING"},
-}
-
-
-def normalize_labels(project: str, labels: list) -> list:
-    project = project.lower()
-    valid_labels = VALID_LABELS.get(project, set())
-    
-    if not valid_labels:
-        return []
-    
-    incoming = [l.upper() for l in labels]
-    
-    if project == "dev":
-        label = next((l for l in incoming if l in valid_labels), None)
-        return [label] if label else []
-    
-    if project == "support":
-        type_label = next((l for l in incoming if l in SUPPORT_TYPE_LABELS), None)
-        service_label = next((l for l in incoming if l in SUPPORT_SERVICE_LABELS), None)
-        return [l for l in (type_label, service_label) if l]
-
-    return []
+# One label list for issues and pull requests; definitions live in project-manager.md.
+# Kinds are listed in tie-break order.
+KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
+ISSUE_TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
+PR_TYPES = ["BUG"]
+ISSUE_FLAGS = {"BILLING", "SECURITY", "AUTOMATED"}
+# POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
+PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
+# Labels the classifier owns per item type; a relabel replaces these and leaves workflow labels alone.
+ISSUE_LABELS = set(KINDS) | set(ISSUE_TYPES) | ISSUE_FLAGS
+PR_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
+# Types a person set on an issue that the classifier keeps.
+PINNED_TYPES = {"TRACKING", "VOTING"}
 
 
-def get_fallback_classification(_: bool) -> dict:
-    return {
-        "project": None,
-        "priority": None,
-        "labels": [],
-        "tracking_issue": None,
-        "reasoning": "AI classification failed; skipping automation"
-    }
+def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
+    """The model's kind, type and flags as labels; None when the kind is invalid."""
+    kind = str(raw.get("kind", "")).upper()
+    if kind not in KINDS:
+        log_error(f"AI returned invalid kind: {raw.get('kind')!r}")
+        return None
+    item_type = str(raw.get("type") or "").upper()
+    raw_flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
+    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in flags]
+    return list(dict.fromkeys([kind, *([item_type] if item_type in types else []), *picked]))
 
 
-def classify_with_ai(
-    is_internal: bool,
-    tracking_issues: Optional[list] = None,
-    *,
-    title: Optional[str] = None,
-    body: Optional[str] = None,
-    author: Optional[str] = None,
-    is_pull_request: Optional[bool] = None,
-) -> dict:
-    title = ISSUE_TITLE if title is None else title
-    body = ISSUE_BODY if body is None else body
-    author = ISSUE_AUTHOR if author is None else author
-    is_pull_request = IS_PULL_REQUEST if is_pull_request is None else is_pull_request
-    base_prompt = read_prompt_file()
-    item_kind = "pull request" if is_pull_request else "issue"
-
-    tracking_block = ""
-    if tracking_issues:
-        tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
-        tracking_block = (
-            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for dev issues)\n"
-            f"{tracking_lines}\n"
-        )
-
-    system_prompt = f"""{base_prompt}
-{tracking_block}
----
-**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
-"""
-
-    user_prompt = f"""
-Item Type: {item_kind}
-Author: {author}
-Author Type: {"Internal" if is_internal else "External"}
-Title: {title}
-Body: {body[:2000]}
-"""
-
+def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
+    """Ask the model for a JSON object, retrying transport and parse errors."""
     for attempt in range(3):
         try:
             r = requests.post(
                 POLLINATIONS_API,
                 headers={
                     "content-type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
-                    },
+                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}",
+                },
                 json={
-                    "model": "openai-large",
+                    "model": AI_MODEL,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
                     "response_format": {"type": "json_object"},
-                    "max_tokens": 400,
+                    # Reasoning tokens count toward max_tokens; keep headroom for the answer.
+                    "reasoning_effort": "low",
+                    "max_tokens": 2000,
                 },
                 timeout=120,
             )
-
             if r.status_code != 200:
-                log_error(f"AI HTTP {r.status_code}: {r.text}")
-                time.sleep(2 ** attempt)
-                continue
-            try:
-                resp_json = r.json()
-                if not isinstance(resp_json, dict) or "choices" not in resp_json:
-                    log_error(f"AI response missing 'choices' key: {resp_json}")
-                    time.sleep(2 ** attempt)
-                    continue
-                if not resp_json["choices"] or not isinstance(resp_json["choices"][0], dict):
-                    log_error(f"AI response 'choices' is empty or malformed")
-                    time.sleep(2 ** attempt)
-                    continue
-                if "message" not in resp_json["choices"][0]:
-                    log_error(f"AI response missing 'message' in choice: {resp_json['choices'][0]}")
-                    time.sleep(2 ** attempt)
-                    continue
-                if "content" not in resp_json["choices"][0]["message"]:
-                    log_error(f"AI response missing 'content' in message")
-                    time.sleep(2 ** attempt)
-                    continue
-                content = resp_json["choices"][0]["message"]["content"]
-            except (KeyError, TypeError, IndexError) as e:
-                log_error(f"AI response structure error: {e}")
-                time.sleep(2 ** attempt)
-                continue
-            
-            log_debug(f"AI raw response: {content}")
-
-            raw = json.loads(content)
-
-            is_app_submission = raw.get("is_app_submission", False)
-
-            project = raw.get("project", "").lower()
-            if project not in ["dev", "support"]:
-                log_error(f"AI returned invalid project: {project}")
-                return get_fallback_classification(is_internal)
-
-            priority = raw.get("priority")
-            if project == "support":
-                valid_priorities = {"High", "Low"}
-                if priority not in valid_priorities:
-                    log_error(f"AI returned invalid priority: {priority}")
-                    priority = "Low"
+                log_error(f"AI HTTP {r.status_code}: {r.text[:500]}")
             else:
-                priority = None
+                content = r.json()["choices"][0]["message"]["content"]
+                log_debug(f"AI raw response: {content}")
+                parsed = json.loads(content)
+                if isinstance(parsed, dict):
+                    return parsed
+                log_error(f"AI returned non-object JSON: {content[:200]}")
+        except (
+            requests.RequestException,
+            KeyError,
+            IndexError,
+            TypeError,
+            ValueError,
+        ) as e:
+            log_error(f"AI request failed: {e}")
+        time.sleep(2**attempt)
+    return None
 
-            labels = raw.get("labels", [])
-            if not isinstance(labels, list):
-                labels = []
 
-            valid_labels_by_project = VALID_LABELS
+def describe_author() -> str:
+    """How the model sees the author; issues relayed from Discord come from people."""
+    user = ITEM_DATA.get("user", {})
+    if user.get("id") == CONFIG["discord_relay_bot_id"]:
+        return f"{user.get('login', '')} (a person, relayed from Discord)"
+    return f"{user.get('login', '')} (account type: {user.get('type', 'User')})"
 
-            valid_for_project = valid_labels_by_project.get(project, set())
-            filtered_labels = [l.upper() for l in labels if l.upper() in valid_for_project]
-            if len(filtered_labels) < len(labels):
-                invalid = [l for l in labels if l.upper() not in valid_for_project]
-                log_error(f"AI returned invalid labels for {project}: {invalid}")
 
-            tracking_raw = raw.get("tracking_issue")
-            tracking_number = None
-            if isinstance(tracking_raw, bool):
-                tracking_number = None
-            elif isinstance(tracking_raw, int):
-                tracking_number = tracking_raw
-            elif isinstance(tracking_raw, str) and tracking_raw.strip().lstrip("#").isdigit():
-                tracking_number = int(tracking_raw.strip().lstrip("#"))
+def classify(facts: str, tracking_issues: Optional[list] = None) -> Optional[dict]:
+    """Labels for the current issue or PR, plus priority and tracking parent for issues."""
+    tracking_block = ""
+    if tracking_issues:
+        tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
+        tracking_block = (
+            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for team issues)\n"
+            f"{tracking_lines}\n"
+        )
+    item = "a pull request" if IS_PULL_REQUEST else "an issue"
+    system_prompt = f"""{read_prompt_file()}
+{tracking_block}
+---
+**Context:** This is {item}.
+"""
+    user_prompt = f"""
+Author: {describe_author()}
+Title: {ISSUE_TITLE}
+Body: {ISSUE_BODY[:2000]}
+{facts}
+"""
+    raw = ask_ai(system_prompt, user_prompt)
+    if raw is None:
+        return None
 
-            classification = {
-                "project": project,
-                "priority": priority,
-                "labels": filtered_labels,
-                "tracking_issue": tracking_number,
-                "reasoning": raw.get("reasoning", ""),
-                "is_app_submission": is_app_submission,
-            }
+    types, flags = (PR_TYPES, PR_FLAGS) if IS_PULL_REQUEST else (ISSUE_TYPES, ISSUE_FLAGS)
+    labels = parse_labels(raw, types, flags)
+    if labels is None:
+        return None
 
-            log_debug(f"AI parsed classification: {classification}")
-            return classification
+    priority = raw.get("priority")
+    if not IS_PULL_REQUEST and priority not in {"High", "Medium", "Low"}:
+        log_error(f"AI returned invalid priority: {priority}")
+        priority = "Medium"
 
-        except Exception as e:
-            log_error(f"AI exception: {e}")
-            time.sleep(2 ** attempt)
+    tracking_raw = raw.get("tracking_issue")
+    tracking_number = None
+    if isinstance(tracking_raw, int) and not isinstance(tracking_raw, bool):
+        tracking_number = tracking_raw
+    elif isinstance(tracking_raw, str) and tracking_raw.strip().lstrip("#").isdigit():
+        tracking_number = int(tracking_raw.strip().lstrip("#"))
 
-    return get_fallback_classification(is_internal)
+    classification = {
+        "labels": labels,
+        "priority": priority,
+        "tracking_issue": tracking_number,
+        "reasoning": raw.get("reasoning", ""),
+    }
+    log_debug(f"AI parsed classification: {classification}")
+    return classification
 
 
 def graphql_request(query: str, variables: dict = None) -> dict:
@@ -400,15 +337,17 @@ def add_to_project(project_id: str) -> Optional[str]:
         }
     }
     """
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would add #{ISSUE_NUMBER} to project {project_id}")
+        return "dry-run"
     data = graphql_request(mutation, {
         "projectId": project_id,
         "contentId": ISSUE_NODE_ID
     })
     item_id = data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
-    if item_id:
-        log_debug(f"Added to project {project_id}: item_id={item_id}")
-    else:
-        log_error(f"Failed to add to project {project_id}")
+    if not item_id:
+        fail(f"Failed to add #{ISSUE_NUMBER} to project {project_id}")
+    log_debug(f"Added to project {project_id}: item_id={item_id}")
     return item_id
 
 
@@ -416,8 +355,10 @@ _TRACKING_ISSUES: Optional[list] = None
 
 
 def fetch_tracking_issues() -> list:
-    """Open Dev tracking issues (labelled DEV-TRACKING). Returns [{number, title}] so the
-    AI can pick the best-fit parent. Cached for the lifetime of the process."""
+    """Open Dev tracking issues (labelled TRACKING, opened by the team). Returns
+    [{number, title}] so the AI can pick the best-fit parent. Community epics also
+    carry TRACKING but live in Support, so they are never parents for Dev issues.
+    Cached for the lifetime of the process."""
     global _TRACKING_ISSUES
     if _TRACKING_ISSUES is not None:
         return _TRACKING_ISSUES
@@ -425,7 +366,7 @@ def fetch_tracking_issues() -> list:
         r = requests.get(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues",
             headers=GITHUB_HEADERS,
-            params={"labels": "DEV-TRACKING", "state": "open", "per_page": 100},
+            params={"labels": "TRACKING", "state": "open", "per_page": 100},
             timeout=15,
         )
         if r.status_code != 200:
@@ -435,7 +376,9 @@ def fetch_tracking_issues() -> list:
         _TRACKING_ISSUES = [
             {"number": i["number"], "title": i.get("title", "")}
             for i in r.json()
-            if "pull_request" not in i and i.get("number") != ISSUE_NUMBER
+            if "pull_request" not in i
+            and i.get("number") != ISSUE_NUMBER
+            and i.get("user", {}).get("id") in CONFIG["org_member_ids"]
         ]
         log_debug(f"Loaded {len(_TRACKING_ISSUES)} open tracking issues")
         return _TRACKING_ISSUES
@@ -447,6 +390,9 @@ def fetch_tracking_issues() -> list:
 
 def assign_to_tracking_issue(parent_number: int, child_db_id: int) -> bool:
     """Link the current issue as a native sub-issue of tracking issue #parent_number."""
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would link #{ISSUE_NUMBER} under tracking issue #{parent_number}")
+        return True
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
@@ -477,6 +423,9 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         }
     }
     """
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would set project field {field_id} to {option_id}")
+        return
     data = graphql_request(mutation, {
         "projectId": project_id,
         "itemId": item_id,
@@ -493,6 +442,9 @@ def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
         return
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would add labels: {labels}")
+        return
     try:
         r = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
@@ -500,16 +452,41 @@ def add_labels(labels: list):
             json={"labels": labels},
             timeout=10,
         )
-        if r.status_code == 200:
-            log_debug(f"Added labels: {labels}")
-        else:
-            log_error(f"Failed to add labels: {r.status_code} - {r.text}")
     except requests.RequestException as e:
-        log_error(f"Exception adding labels: {e}")
+        fail(f"Exception adding labels to #{ISSUE_NUMBER}: {e}")
+    if r.status_code != 200:
+        fail(f"Failed to add labels to #{ISSUE_NUMBER}: {r.status_code} - {r.text}")
+    log_debug(f"Added labels: {labels}")
+
+
+def remove_label(label: str):
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would remove label: {label}")
+        return
+    try:
+        r = requests.delete(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels/{quote(label)}",
+            headers=GITHUB_HEADERS,
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        fail(f"Exception removing label {label} from #{ISSUE_NUMBER}: {e}")
+    if r.status_code not in (200, 404):
+        fail(f"Failed to remove label {label} from #{ISSUE_NUMBER}: {r.status_code} - {r.text}")
+    log_debug(f"Removed label: {label}")
+
+
+def set_labels(labels: list):
+    """Apply the classifier's labels; a relabel first drops its older ones."""
+    if RELABEL:
+        owned = PR_LABELS if IS_PULL_REQUEST else ISSUE_LABELS
+        for stale in sorted((set(get_existing_labels()) & owned) - set(labels)):
+            remove_label(stale)
+    add_labels(labels)
 
 
 def assign_issue(assignee: str):
-    if not assignee:
+    if not assignee or DRY_RUN:
         return
     try:
         r = requests.post(
@@ -531,116 +508,132 @@ def get_existing_labels() -> list:
     return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
 
 
+def fetch_pr_files() -> list:
+    files = []
+    page = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{ISSUE_NUMBER}/files",
+                headers=GITHUB_HEADERS,
+                params={"per_page": 100, "page": page},
+                timeout=15,
+            )
+        except requests.RequestException as e:
+            fail(f"Exception fetching files for PR #{ISSUE_NUMBER}: {e}")
+        if r.status_code != 200:
+            fail(
+                f"Failed to fetch files for PR #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}"
+            )
+        batch = [f["filename"] for f in r.json()]
+        files.extend(batch)
+        if len(batch) < 100:
+            return files
+        page += 1
+
+
+def fetch_linked_issues() -> list:
+    """Title and labels of issues the PR title or body references, for the model."""
+    refs = set(re.findall(r"(?:#|/issues/)(\d+)", f"{ISSUE_TITLE}\n{ISSUE_BODY}"))
+    refs.discard(str(ISSUE_NUMBER))
+    linked = []
+    for number in sorted(refs, key=int, reverse=True)[:10]:
+        try:
+            r = requests.get(
+                f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{number}",
+                headers=GITHUB_HEADERS,
+                timeout=10,
+            )
+        except requests.RequestException as e:
+            fail(f"Exception fetching referenced issue #{number}: {e}")
+        if r.status_code == 404:
+            continue
+        if r.status_code != 200:
+            fail(
+                f"Failed to fetch referenced issue #{number}: {r.status_code} - {r.text[:200]}"
+            )
+        issue = r.json()
+        labels = ", ".join(l.get("name", "") for l in issue.get("labels", []))
+        linked.append(f"#{number} {issue.get('title', '')} (labels: {labels or 'none'})")
+    return linked
+
+
+def label_pull_request():
+    # Every open PR sits next to the issues in Dev, where views separate them.
+    add_to_project(CONFIG["projects"]["dev"]["id"])
+    if not RELABEL and set(get_existing_labels()) & set(KINDS):
+        log_debug(f"PR #{ISSUE_NUMBER} already has a kind label; keeping its labels")
+        return
+
+    files = fetch_pr_files()
+    linked = "\n".join(fetch_linked_issues()) or "none"
+    listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
+    classification = classify(f"Linked issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
+    if classification is None:
+        fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
+    labels = classification["labels"]
+    log_debug(f"PR #{ISSUE_NUMBER} labels: {labels} ({classification['reasoning']})")
+    if DRY_RUN:
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
+
+    set_labels(labels)
+
+
 def main():
     log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
         return
-    
+
+    if IS_PULL_REQUEST:
+        label_pull_request()
+        return
+
     existing_labels = get_existing_labels()
     if "APP-SUBMISSION" in existing_labels:
-        log_debug("Found APP-SUBMISSION label, routing to Apps project")
-        project = CONFIG["projects"].get("apps")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug(f"Added to Apps project successfully")
-            return
-        else:
-            log_error("Apps project not configured")
-            return
-    if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
-        log_debug("Found quest label; not project-manager's responsibility, skipping")
+        log_debug("Found APP-SUBMISSION label, routing to Dev project")
+        add_to_project(CONFIG["projects"]["dev"]["id"])
         return
-
-    if "NEWS" in existing_labels:
-        log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
-        return
-
-    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+(?:-|$)", PR_HEAD_REF):
-        log_debug(f"App-submission PR (branch {PR_HEAD_REF}), routing to Apps project")
-        project = CONFIG["projects"].get("apps")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to Apps project successfully")
-        else:
-            log_error("Apps project not configured")
-        return
-
     real_author, real_author_id = get_real_author()
-    is_internal = is_org_member(real_author_id)
+    is_internal = ISSUE_AUTHOR_ID in CONFIG["ci_bot_ids"] or is_org_member(real_author_id)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
     
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
 
-    tracking_issues = [] if IS_PULL_REQUEST else fetch_tracking_issues()
-    classification = classify_with_ai(is_internal, tracking_issues)
-    
-    if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Apps project")
-        project = CONFIG["projects"].get("apps")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to Apps project successfully")
-            else:
-                log_error("Failed to add app submission to Apps project")
-            return
-        else:
-            log_error("Apps project not configured")
-            return
+    tracking_issues = fetch_tracking_issues()
+    classification = classify(f"Author type: {'Internal' if is_internal else 'External'}", tracking_issues)
+    if classification is None:
+        fail(f"AI classification failed for issue #{ISSUE_NUMBER}")
 
-    if not classification.get("project"):
-        log_debug("AI did not classify project, skipping")
-        return
-    
-    project_key = classification["project"].lower()
+    source = "Team" if is_internal else "Community"
+    priority = classification["priority"]
+    if source == "Community" and is_paid_customer(real_author_id):
+        log_debug(f"Author {real_author} (id={real_author_id}) is a paying customer; raising priority to High")
+        priority = "High"
+    log_debug(f"Classified: source={source}, priority={priority}")
+    project = CONFIG["projects"]["dev"]
 
-    if IS_PULL_REQUEST:
-        if project_key != "dev":
-            log_debug(f"PR #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (PRs always route to dev)")
-        project_key = "dev"
-    elif project_key == "dev" and not is_internal:
-        log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
-        project_key = "support"
-    
-    priority = classification.get("priority", "Low")
-    if project_key == "support" and is_paid_customer(real_author_id):
-        log_debug(f"Author {real_author} (id={real_author_id}) is a paid customer; overriding priority to Urgent")
-        priority = "Urgent"
-    log_debug(f"Classified: project={project_key}, priority={priority}")
-    project = CONFIG["projects"].get(project_key)
-    if not project:
-        log_error(f"Unknown project key: {project_key}")
-        return
-    
-    labels = normalize_labels(project_key, classification.get("labels", []))
-    log_debug(f"Normalized labels: {labels}")
+    labels = classification["labels"]
+    pinned = set(existing_labels) & PINNED_TYPES
+    if pinned:
+        labels = [l for l in labels if l not in ISSUE_TYPES] + sorted(pinned)
+    log_debug(f"Labels: {labels}")
+    if DRY_RUN:
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     item_id = add_to_project(project["id"])
-    if not item_id:
-        return
-    
-    if project_key == "support":
-        priority_option = project.get("priority_options", {}).get(priority)
-        if priority_option and project.get("priority_field_id"):
-            set_project_field(
-                project["id"],
-                item_id,
-                project["priority_field_id"],
-                priority_option,
-            )
-    protected = PROTECTED_LABELS.get(project_key, set())
-    if protected & set(existing_labels):
-        log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")
+    set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
+    if priority:
+        set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
+    if RELABEL or not set(existing_labels) & set(KINDS):
+        set_labels(labels)
     else:
-        add_labels(labels)
+        log_debug(f"Issue #{ISSUE_NUMBER} already has a kind label; keeping its labels")
 
-    # Parent new Dev issues under the best-fit tracking issue (skip PRs and tracking issues themselves)
-    is_tracking_issue = "DEV-TRACKING" in existing_labels or "DEV-TRACKING" in labels
-    if project_key == "dev" and not IS_PULL_REQUEST and ISSUE_DB_ID and not is_tracking_issue:
+    # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
+    is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels
+    if source == "Team" and ISSUE_DB_ID and not is_tracking_issue:
         parent = classification.get("tracking_issue")
         valid_parents = {e["number"] for e in tracking_issues}
         if parent in valid_parents:

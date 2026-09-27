@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { InlineLink } from "../primitives/InlineLink.tsx";
 import {
     CheckIcon,
     ClockIcon,
@@ -45,15 +46,9 @@ function linkedValue(value: unknown): ReactNode[] {
         const key = `${offset}:${segment}`;
         offset += segment.length;
         return segment.startsWith("https://") ? (
-            <a
-                key={key}
-                href={segment}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="polli:underline"
-            >
+            <InlineLink key={key} href={segment}>
                 {segment}
-            </a>
+            </InlineLink>
         ) : (
             segment
         );

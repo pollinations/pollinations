@@ -4411,15 +4411,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const textResponse = await fetchGen(
-            "https://gen.pollinations.ai/text/models",
-        );
-        const allResponse = await fetchGen(
-            "https://gen.pollinations.ai/models",
-        );
-        const openaiResponse = await fetchGen(
-            "https://gen.pollinations.ai/v1/models",
-        );
+        const [textResponse, allResponse, openaiResponse] = await Promise.all([
+            fetchGen("https://gen.pollinations.ai/text/models"),
+            fetchGen("https://gen.pollinations.ai/models"),
+            fetchGen("https://gen.pollinations.ai/v1/models"),
+        ]);
 
         expect(textResponse.status).toBe(200);
         expect(allResponse.status).toBe(200);

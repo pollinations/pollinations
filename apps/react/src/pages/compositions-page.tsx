@@ -60,7 +60,7 @@ export function CompositionsPage() {
                 <div className="grid gap-3">
                     <PrimitiveExample
                         name="ExternalLinkButton"
-                        description="Button-styled link for leaving the current app surface."
+                        description="Reserved for important flow actions such as checkout or authorization. Use InlineLink for navigation, documentation, and other destinations."
                     >
                         <div className="flex flex-wrap gap-2">
                             {CONTROL_SIZES.map((size) => (
@@ -69,7 +69,7 @@ export function CompositionsPage() {
                                     href="https://pollinations.ai"
                                     size={size}
                                 >
-                                    {size}
+                                    Continue to checkout
                                 </ExternalLinkButton>
                             ))}
                         </div>

@@ -164,6 +164,11 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   operation through an explicit endpoint or request field. Do not create a
   second canonical model or make an alias select behavior.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
+- Bill from the usage the provider reports with each response: its usage block
+  or a billing header such as fal's `x-fal-billable-units`. Do not rebuild the
+  provider's formula (rounding, minimums, per-reference units, parameter
+  multipliers) from the request. When the route reports nothing, derive usage
+  from the request and reconcile it against the provider's billing records.
 - Implement only the explicitly approved fallback decision. Use the shared generic fallback system for an approved pair; do not add a model-specific retry layer or an unapproved fallback.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
 - Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.
@@ -243,7 +248,8 @@ A model change is not complete until all applicable statements are true:
 - Direct-provider and local E2E requests passed for every declared surface.
 - The best fallback candidate and use/decline decision are documented; every configured fallback passed direct and forced-fallback E2E verification.
 - No existing capability disappeared unless explicitly approved.
-- Every non-zero usage field is accounted for and billed at the confirmed rate.
+- Every non-zero usage field is accounted for and billed at the confirmed rate,
+  from the provider's reported usage whenever the route reports it.
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
 - Capacity and media latency fit the expected production load.
 - The catalog description is developer-facing, does not repeat the title, and the publisher logo resolves.

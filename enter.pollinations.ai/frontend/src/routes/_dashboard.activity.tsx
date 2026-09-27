@@ -157,12 +157,12 @@ function ActivityPage() {
                     }
                 />
             </Section>
-            <p className="text-micro text-theme-text-muted">
-                Updated hourly · All times UTC
-            </p>
             <Section title="Last events" framed>
                 <LastEventsPanel />
             </Section>
+            <p className="text-micro text-theme-text-muted">
+                Times shown in UTC.
+            </p>
         </div>
     );
 }

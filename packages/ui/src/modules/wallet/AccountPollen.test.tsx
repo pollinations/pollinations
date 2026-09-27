@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountPollen } from "./AccountPollen.tsx";
+import { WalletBalanceCard } from "./wallet-display.tsx";
 
 describe("account Pollen", () => {
     it("shows the app budget as an amount or an Unlimited badge", () => {
@@ -85,9 +86,50 @@ describe("account Pollen", () => {
         expect(menu).not.toContain("<a ");
     });
 
+    it("keeps the top-up return destination in the same tab", () => {
+        const href = "/top-up?redirect=%2Fauthorize%3Fclient_id%3Dexample";
+        const markup = renderToStaticMarkup(
+            <AccountPollen
+                source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
+                topUpHref={href}
+            />,
+        );
+        expect(markup).toContain(`href="${href}"`);
+        expect(markup).not.toContain('target="_blank"');
+    });
+
     it("renders nothing while the wallet is unavailable", () => {
         expect(
             renderToStaticMarkup(<AccountPollen source={{ type: "wallet" }} />),
         ).toBe("");
+    });
+});
+
+describe("wallet card colors", () => {
+    it("keeps the balance palette as the default", () => {
+        for (const kind of ["paid", "tier"] as const) {
+            const html = renderToStaticMarkup(
+                <WalletBalanceCard kind={kind} label="Balance" value={5} />,
+            );
+            expect(html).toContain(`polli-wallet-panel-${kind}`);
+            expect(html).toContain(`polli-wallet-text-${kind}`);
+        }
+    });
+
+    it("uses neutral colors for totals without changing the card layout", () => {
+        const html = renderToStaticMarkup(
+            <WalletBalanceCard
+                tone="neutral"
+                kind="tier"
+                label="Pollen"
+                value={27.5}
+            />,
+        );
+        expect(html).not.toContain("polli-wallet-panel-tier");
+        expect(html).not.toContain("polli-wallet-text-tier");
+        expect(html).toContain("polli:bg-surface-opaque");
+        expect(html).toContain("polli:rounded-xl polli:p-4");
+        expect(html).toContain("polli-wallet-balance-value");
+        expect(html).toContain("27.5");
     });
 });

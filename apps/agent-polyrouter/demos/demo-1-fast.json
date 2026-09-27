@@ -1,0 +1,57 @@
+{
+  "created_at": 1789632548,
+  "id": "resp_ae3f91749695da4c",
+  "max_output_tokens": 130995,
+  "model": "gpt-oss-20b",
+  "object": "response",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_a15f99b3911a1704",
+      "summary": [],
+      "content": [
+        {
+          "type": "reasoning_text",
+          "text": "The user asks: \"Name the capital of Portugal in a single word.\" The capital of Portugal is Lisbon. So answer: Lisbon."
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "id": "msg_add62480846bcd31",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Lisbon",
+          "annotations": []
+        }
+      ]
+    }
+  ],
+  "parallel_tool_calls": true,
+  "status": "completed",
+  "temperature": 1,
+  "tool_choice": "none",
+  "tools": [],
+  "top_p": 1,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 77,
+    "input_tokens_details": {
+      "cached_tokens": 64
+    },
+    "output_tokens": 39,
+    "output_tokens_details": {
+      "reasoning_tokens": 28
+    },
+    "total_tokens": 116
+  },
+  "service_tier": "auto",
+  "polyrouter_trace": {
+    "model": "openai/gpt-oss-20b",
+    "tier": "fast",
+    "why": "score 0; simple prompt; picked cheapest eligible of 31; skipped 106 no responses endpoint, 54 not a text model, 18 community agent"
+  }
+}

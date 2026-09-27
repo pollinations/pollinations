@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
+import { InlineLink } from "@pollinations/ui";
 
 export const OPEN_WEBUI_URL =
     import.meta.env.MODE === "staging"
@@ -29,50 +29,21 @@ export function isOpenWebUiChattable(model: {
     return model.supportedEndpoints?.includes("/v1/chat/completions") ?? false;
 }
 
-type OpenWebUiLinkProps = {
-    modelId: string;
-    /** icon: sits inline beside a model name. text: a standalone row action. */
-    variant?: "icon" | "text";
-};
-
+/** The same title link for catalog models and managed models or agents. */
 export function OpenWebUiLink({
     modelId,
-    variant = "icon",
-}: OpenWebUiLinkProps) {
-    const href = openWebUiChatUrl(modelId);
-
-    if (variant === "text") {
-        return (
-            <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
-            >
-                Test in Open WebUI
-                <ExternalLinkIcon className="h-3 w-3" />
-            </a>
-        );
-    }
-
+    title,
+}: {
+    modelId: string;
+    title: string;
+}) {
     return (
-        <Tooltip
-            content="Test in Open WebUI"
-            ariaLabel={`Test ${modelId} in Open WebUI`}
-            tapEnabled
-            displayContents
+        <InlineLink
+            href={openWebUiChatUrl(modelId)}
+            className="inline-flex min-w-0 max-w-full items-baseline"
+            aria-label={`Open ${title} in Open WebUI`}
         >
-            <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
-            >
-                {/* ChatIcon and BotIcon already mean "text modality" and
-                    "agent" in a model row (see model-icons.tsx), so a launcher
-                    has to be something else. */}
-                <ExternalLinkIcon className="h-4 w-4" />
-            </a>
-        </Tooltip>
+            <span className="min-w-0 truncate">{title}</span>
+        </InlineLink>
     );
 }

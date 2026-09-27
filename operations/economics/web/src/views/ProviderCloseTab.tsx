@@ -137,12 +137,12 @@ function EvidenceListDialog({
             title={`Vendor source · ${selection.vendor} · ${monthName(selection.month)}`}
             size="md"
         >
-            <div className="flex max-h-[70vh] flex-col px-6 pb-6 pt-3">
-                <p className="pb-3 text-sm text-theme-text-soft">
+            <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-3">
+                <p className="shrink-0 pb-3 text-sm text-theme-text-soft">
                     Statements, invoices, dashboard exports, or usage records
                     collected from the vendor.
                 </p>
-                <ol className="min-h-0 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
+                <ol className="min-h-0 flex-1 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
                     {selection.items.map((item, index) => (
                         <li
                             key={item.evidence}
@@ -169,7 +169,7 @@ function EvidenceListDialog({
                         </li>
                     ))}
                 </ol>
-                <div className="flex justify-end pt-4">
+                <div className="flex shrink-0 justify-end pt-4">
                     <Button type="button" size="sm" onClick={onClose}>
                         Close
                     </Button>

@@ -24,6 +24,7 @@ import { createMediaAssets, type MediaService } from "./assets.ts";
 import { COLLECTIVE_REPO_URL, collectiveCredentials } from "./collective.ts";
 import { createJustGitClient } from "./git.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
+import { shellBytesFix } from "./shell.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
 
@@ -129,8 +130,10 @@ export class Computer extends withWorkspace(
                                 };
                             }
                         ).exports.Egress({}),
-                        // Stable, so the loaded shell isolate is reused.
-                        revision: "user-agent",
+                        // Part of the loader id: stable, so the loaded shell
+                        // isolate is reused. Change it when the shell code
+                        // changes, or a cached isolate keeps the old code.
+                        revision: "bytes",
                     },
                     commands: [
                         jqModules,
@@ -138,6 +141,7 @@ export class Computer extends withWorkspace(
                         xanModules,
                         htmlToMarkdownModules,
                         fileModules,
+                        shellBytesFix,
                     ],
                 }),
             ],

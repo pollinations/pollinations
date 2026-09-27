@@ -114,6 +114,53 @@ describe("computer MCP worker", () => {
         await again.close();
     });
 
+    it("stores UTF-8 and binary bytes unchanged on every write path", async () => {
+        const client = await connect("user-bytes");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const writes = [
+            ["cat > stdin.txt", `${line}\n`],
+            [`cat > heredoc.txt <<'EOF'\n${line}\nEOF`],
+            [`printf '%s\\n' '${line}' > printf.txt`],
+            ["cat stdin.txt | tee tee.txt > /dev/null"],
+            ["cat < heredoc.txt > redirect.txt"],
+            [
+                `printf 'Notes — ' > append.txt; printf 'café · ✓\\n' >> append.txt`,
+            ],
+            ["echo iVBORw0KGgoA/w== | base64 -d > image.bin"],
+        ];
+        for (const [command, stdin] of writes) {
+            const write = await bash(
+                client,
+                command,
+                stdin,
+                "/workspace/bytes",
+            );
+            expect(write.isError, command).toBe(false);
+        }
+        const sizes = await bash(
+            client,
+            "for f in stdin heredoc printf tee redirect append; do wc -c < $f.txt; done; wc -c < image.bin; base64 image.bin; cat heredoc.txt",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(sizes.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(6).fill("23"),
+            "10",
+            "iVBORw0KGgoA/w==",
+            line,
+            "",
+        ]);
+        // git reads the stored bytes directly, as a push to GitHub would.
+        const git = await bash(
+            client,
+            "git init . >/dev/null && git add . && git commit -m bytes >/dev/null && git show HEAD:heredoc.txt | wc -c",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(git.text.trim()).toBe("23");
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(

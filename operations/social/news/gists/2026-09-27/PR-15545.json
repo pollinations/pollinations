@@ -1,0 +1,34 @@
+{
+  "pr_number": 15545,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15545",
+  "merged_at": "2026-09-27T12:54:58Z",
+  "labels": [
+    "DOCS"
+  ],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The API map catches up",
+    "blurb": "The API reference has caught up with the deployed OpenAPI spec. Even maps of the garden need tending.",
+    "summary": "Regenerated APIDOCS.md from the OpenAPI spec after a production deploy, bringing the published API reference in line with the deployed spec.",
+    "impact": "Developers reading APIDOCS.md now have a reference synchronized with the production OpenAPI spec.",
+    "keywords": [
+      "API docs",
+      "OpenAPI",
+      "reference",
+      "documentation"
+    ],
+    "visual_concept": "Polli tends an open API reference book beside a glowing terminal, with small code-plants growing around the pages; a friendly CRT monitor robot helps compare the book with the deployed spec. The scene represents documentation catching up with what is running, without implying a particular endpoint changed.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wearing tiny reading glasses checks an open API reference book against a lime green (#ecf874) CRT screen while a friendly monitor robot holds the pages and code-plants bloom nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients on a warm cream background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and a soft prominent #ecf874 glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15545.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wearing tiny reading glasses checks an open API reference book against a lime green (#ecf874) CRT screen while a friendly monitor robot holds the pages and code-plants bloom nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients on a warm cream background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and a soft prominent #ecf874 glow."
+  },
+  "generated_at": "2026-09-27T12:55:54.969776+00:00"
+}

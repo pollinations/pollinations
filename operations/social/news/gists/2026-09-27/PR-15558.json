@@ -1,0 +1,37 @@
+{
+  "pr_number": 15558,
+  "title": "feat: flat design for the enter dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15558",
+  "merged_at": "2026-09-27T19:33:07Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Flattens the Enter dashboard and the shared `@pollinations/ui` surfaces. Depth comes from tint steps instead of shadows; only floating layers (menus, tooltips) keep one.\n\n- Removes resting shadows: desk → block → card are one tint step apart, with `rounded-block` / `rounded-card` radius tokens. Light mode stays close to main (cream blocks, white cards); dark mode goes near-black\n- Keeps main's component colours and button rule (filled buttons navigate, outlined buttons write); large buttons carry 16px text, which also applies to Playground and Websim\n- One 12px shell gap sets the page rhythm, the sidebar drops its outer rule, and on phones blocks run edge to edge\n- Top-up: the slider picks the pack and the fee-inclusive total shows once, on the Buy button, with the fee and tax note under it (no hover tooltip); Buy and Save share one row so both sliders match\n- Info badges centre on their line; Delete account aligns left on phones\n\nEvery `@pollinations/ui` consumer (playground, websim, react showcase, economics, kpi, model-monitor, observability, flow) picks up the flat surfaces. The pollinations.ai website doesn't import these styles.\n\nPreview on staging data: https://flat1.enter.pollinations.ai\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Less shadow, more garden",
+    "blurb": "Enter got a flatter coat of paint: tinted surfaces do the work shadows used to do. The top-up button now shows the fee-inclusive total right where you buy.",
+    "summary": "The Enter dashboard and shared @pollinations/ui surfaces now use tint steps instead of resting shadows, with a 12px shell gap, edge-to-edge mobile blocks, and a top-up Buy button that shows the fee-inclusive total.",
+    "impact": "Enter and other @pollinations/ui apps, including Playground and Websim, get the flatter layout; top-up users can see the full total on Buy, with the fee and tax note directly below.",
+    "keywords": [
+      "Enter",
+      "dashboard",
+      "UI",
+      "design tokens",
+      "top-up",
+      "mobile",
+      "@pollinations/ui"
+    ],
+    "visual_concept": "Show the Enter dashboard as a cozy pixel-art workbench: cream desk, lightly tinted blocks, and white cards stacked by color rather than shadows. Polli adjusts a top-up slider beside a prominent Buy button showing a total; a small code-plant and the CRT monitor robot make the shared interface feel like part of a growing garden.",
+    "image_prompt": "A cozy pixel art scene shows the Enter dashboard as a tidy workbench with cream and pastel-tinted panels, a lime green (#ecf874) top-up slider, a Buy button showing a simple total, and a small code-plant; a chunky CRT monitor robot watches as Polli adjusts the slider. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny designer glasses, stays small-to-medium within the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and no resting shadows."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15558.jpg",
+    "prompt": "A cozy pixel art scene shows the Enter dashboard as a tidy workbench with cream and pastel-tinted panels, a lime green (#ecf874) top-up slider, a Buy button showing a simple total, and a small code-plant; a chunky CRT monitor robot watches as Polli adjusts the slider. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny designer glasses, stays small-to-medium within the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and no resting shadows."
+  },
+  "generated_at": "2026-09-27T19:34:13.229002+00:00"
+}

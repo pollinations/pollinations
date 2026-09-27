@@ -5,16 +5,12 @@
     text-decoration: none;
 }
 
-.resource-dialog {
-    /* Keep controls stationary when expandable content changes height. */
-    margin-block: 0;
-    height: auto;
-    max-height: calc(100dvh - 2rem);
-}
-
+/* Phones get the full screen; from `sm` up the dialog floats, top-aligned so
+   controls stay stationary when expandable content changes height. */
 @media (min-width: 40rem) {
     .resource-dialog {
-        margin-block-start: 1rem;
+        margin-block: 1rem 0;
+        height: auto;
         max-height: calc(100dvh - 3rem);
     }
 }

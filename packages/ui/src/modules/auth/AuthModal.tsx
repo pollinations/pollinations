@@ -119,7 +119,7 @@ export function AuthFlowLayout({
                 bodyClassName="polli:space-y-0 polli:p-0"
             >
                 <AuthModalHeader>{headerAction}</AuthModalHeader>
-                <div className="polli:space-y-4 polli:px-6 polli:py-4">
+                <div className="polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4">
                     {title && (
                         <div className="polli:space-y-3">
                             <Heading as="h1" size="section" id={headingId}>
@@ -149,7 +149,7 @@ export function AuthModalFootnote({ children }: { children: ReactNode }) {
         <Text
             size="xs"
             tone="muted"
-            className="polli:shrink-0 polli:px-6 polli:pb-5 polli:text-center polli:text-[13px]"
+            className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pb-5 polli:text-center polli:text-[13px]"
         >
             {children}
         </Text>
@@ -174,7 +174,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
         </a>
     );
     return (
-        <div className="polli:shrink-0 polli:p-6 polli:pb-4">
+        <div className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pt-4 polli:pb-4 polli:sm:pt-6">
             <div className="polli:flex polli:min-h-10 polli:items-start polli:justify-between polli:gap-3">
                 {logo}
                 {children}

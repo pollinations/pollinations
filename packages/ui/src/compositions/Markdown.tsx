@@ -99,7 +99,7 @@ const components: Components = {
     ),
     code: ({ node, ...props }) => (
         <code
-            className="polli:break-words polli:rounded polli:bg-theme-bg-subtle polli:px-1 polli:py-0.5 polli:font-mono polli:text-xs"
+            className="polli:break-words polli:rounded polli:bg-control-strong polli:px-1 polli:py-0.5 polli:font-mono polli:text-xs"
             {...props}
         />
     ),

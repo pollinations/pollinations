@@ -17,12 +17,12 @@ const intentHoverClasses: Record<IconButtonIntent, string> = {
 };
 
 const variantClasses: Record<IconButtonVariant, string> = {
-    tile: "polli:bg-theme-bg-active polli:text-theme-text-soft",
+    tile: "polli:bg-control polli:text-theme-text-soft",
     ghost: "polli:bg-transparent polli:text-theme-text-muted",
 };
 
 const variantHoverClasses: Record<IconButtonVariant, string> = {
-    tile: "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+    tile: "polli:hover:bg-control-strong polli:hover:text-theme-text-hover",
     ghost: "polli:hover:bg-transparent polli:hover:text-theme-text-soft",
 };
 

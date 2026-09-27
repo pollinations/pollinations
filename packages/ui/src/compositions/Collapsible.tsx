@@ -14,7 +14,7 @@ export type CollapsibleProps = {
     wrapperClassName?: string;
     /** Trigger/header base classes (e.g. a selected background). */
     triggerClassName?: string;
-    /** Trigger hover classes. Defaults to `polli:hover:bg-theme-bg-active`. */
+    /** Trigger hover classes. Defaults to `polli:hover:bg-control`. */
     hoverClassName?: string;
     /** Trigger focus classes. */
     focusClassName?: string;
@@ -40,7 +40,7 @@ export const Collapsible: FC<CollapsibleProps> = ({
     disabled = false,
     wrapperClassName,
     triggerClassName,
-    hoverClassName = "polli:hover:bg-theme-bg-active",
+    hoverClassName = "polli:hover:bg-control",
     focusClassName,
     panelClassName = "polli:border-t polli:border-theme-border polli:px-3 polli:pt-3 polli:pb-3",
     ariaLabel,

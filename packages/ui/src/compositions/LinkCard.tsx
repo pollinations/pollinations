@@ -37,9 +37,9 @@ export function LinkCard<T extends React.ElementType = "a">({
             rel={isExternal ? "noopener noreferrer" : undefined}
             {...linkProps}
             className={cn(
-                "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-surface-opaque/80 polli:p-5 polli:outline-none",
+                "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:p-5 polli:outline-none",
                 showIcon && isExternal && "polli:pr-10",
-                "polli:transition-colors polli:hover:bg-surface-opaque/95",
+                "polli:transition-colors polli:hover:bg-control-strong",
                 "polli:focus-visible:ring-2 polli:focus-visible:ring-theme-border",
                 className,
                 surfaceClassName,

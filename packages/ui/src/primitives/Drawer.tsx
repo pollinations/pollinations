@@ -37,10 +37,8 @@ export const Drawer: FC<DrawerProps> = ({
                         ref={contentRef}
                         aria-label={ariaLabel}
                         className={cn(
-                            "polli:pointer-events-auto polli:flex polli:h-dvh polli:w-[min(20rem,86vw)] polli:flex-col polli:overflow-hidden polli:border-theme-text-strong/10 polli:bg-app-bg polli:shadow-xl polli:outline-none",
-                            side === "right"
-                                ? "polli:ml-auto polli:border-l"
-                                : "polli:border-r",
+                            "polli:pointer-events-auto polli:flex polli:h-dvh polli:w-[min(20rem,86vw)] polli:flex-col polli:overflow-hidden polli:bg-app-bg polli:outline-none",
+                            side === "right" && "polli:ml-auto",
                             contentClassName,
                         )}
                     >

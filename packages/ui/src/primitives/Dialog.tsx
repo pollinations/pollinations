@@ -91,10 +91,10 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
                             fullscreenOnMobile
-                                ? "polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container"
-                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-2xl polli:shadow-container",
+                                ? "polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-[1.75rem]"
+                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-[1.75rem]",
                             sizeClasses[size],
                             contentClassName,
                         )}

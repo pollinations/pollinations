@@ -63,11 +63,12 @@ export async function generatePalette() {
     );
     if (!active) throw new Error("bg-active recipe not found in tokens.css");
 
-    // neutral bg-pale === light surface-opaque (first/`:root` occurrence).
+    // neutral = the near-white no-hue surface: light surface-menu (first/`:root`
+    // occurrence). Page surfaces are tinted steps; icon fields stay near-white.
     const surf = css.match(
-        /--polli-color-surface-opaque:\s*oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/,
+        /--polli-color-surface-menu:\s*oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/,
     );
-    if (!surf) throw new Error("surface-opaque not found in tokens.css");
+    if (!surf) throw new Error("surface-menu not found in tokens.css");
 
     const brand = css.match(/--polli-color-brand-dark:\s*(#[0-9a-fA-F]{6})/);
     if (!brand) throw new Error("brand-dark not found in tokens.css");

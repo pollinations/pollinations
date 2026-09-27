@@ -134,7 +134,7 @@ export function ToolCallDetails({
         <div
             data-tool-status={status}
             className={cn(
-                "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque polli:shadow-well",
+                "polli:overflow-hidden polli:rounded-xl polli:bg-surface-opaque",
                 className,
             )}
         >

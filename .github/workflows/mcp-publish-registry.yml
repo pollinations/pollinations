@@ -1,0 +1,50 @@
+name: MCP / Publish registry entries
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish for every server.json entry (semver)"
+        required: false
+        default: "1.0.0"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate server.json entries from shared/registry/mcp.ts
+        run: |
+          npx tsx operations/mcp-registry/generate-server-json.ts \
+            "$RUNNER_TEMP/mcp-registry" \
+            "${{ inputs.version }}"
+
+      - name: Install mcp-publisher
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Login to the MCP registry via GitHub OIDC
+        working-directory: ${{ runner.temp }}
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server entries
+        working-directory: ${{ runner.temp }}
+        run: |
+          for file in mcp-registry/*.server.json; do
+            echo "Publishing $file"
+            ./mcp-publisher publish "$file"
+          done

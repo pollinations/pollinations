@@ -451,7 +451,7 @@ export async function startRuntime(
                         await Promise.all(
                             entries.keys.map(({ name }) => kv.delete(name)),
                         );
-                        await seedFixtures(db, kv, origins);
+                        await seedFixtures(db, origins);
                         reviewRequests.reset();
                         reviewServices.configure({});
                         establishSession = true;

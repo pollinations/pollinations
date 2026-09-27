@@ -2,11 +2,27 @@ import { fileURLToPath } from "node:url";
 import { readD1Migrations } from "@cloudflare/vitest-pool-workers/config";
 import { Miniflare } from "miniflare";
 import { describe, expect, it } from "vitest";
+import { TINYBIRD_MODEL_STATS_URL } from "../../../shared/utils/model-stats";
 import { localIdentity, USER_ID } from "../fixtures";
 import { createReviewServices } from "../review-services";
 import { parseReviewSetup, prepareReviewData } from "../review-setup";
 
 describe("local external-service review conditions", () => {
+    it("supplies model estimates through the real provider endpoint, without seeding private cache data", async () => {
+        const service = createReviewServices();
+        const response = await service.outbound(
+            new Request(TINYBIRD_MODEL_STATS_URL),
+        );
+        expect(await response?.json()).toEqual({
+            data: [{ model: "openai", avg_cost_usd: 0.01 }],
+        });
+        expect(
+            await service.outbound(
+                new Request(TINYBIRD_MODEL_STATS_URL, { method: "POST" }),
+            ),
+        ).toBeUndefined();
+    });
+
     it("keeps app lists available by default and resets connected fixtures without accepting writes", async () => {
         const service = createReviewServices();
         const request = (path: string, method = "GET") =>
@@ -184,7 +200,9 @@ describe("local external-service review conditions", () => {
     });
     it("keeps the quest catalog available independently of reward preparation, never a GitHub mutation", async () => {
         const service = createReviewServices();
-        const request = (query = "query($query:String!){ search { nodes } }") =>
+        const request = (
+            query = "query($query:String!){ search(query:$query,type:ISSUE,first:100) { nodes } }",
+        ) =>
             new Request("https://api.github.com/graphql", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -225,7 +243,7 @@ describe("local external-service review conditions", () => {
             },
         });
     });
-    it("covers current quest profile and paginated report queries without accepting unrelated GitHub calls", async () => {
+    it("serves search fixtures independently of product filters and dates without accepting writes", async () => {
         const service = createReviewServices();
         const profile = await service.outbound(
             new Request(`https://api.github.com/user/${localIdentity.id}`),
@@ -236,13 +254,13 @@ describe("local external-service review conditions", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    query: "query($query:String!,$after:String){ search { nodes pageInfo } }",
+                    query: "query($query:String!,$after:String){ search(query:$query,type:ISSUE,first:100) { nodes pageInfo } }",
                     variables: { query: search, after: null },
                 }),
             });
         const reports = await service.outbound(
             query(
-                `repo:pollinations/pollinations is:issue is:closed author:${localIdentity.login} updated:>=2026-06-25`,
+                `repo:pollinations/pollinations is:issue is:closed author:${localIdentity.login} updated:>=2027-01-01`,
             ),
         );
         expect(await reports?.json()).toEqual({
@@ -255,7 +273,7 @@ describe("local external-service review conditions", () => {
         });
         expect(
             await service.outbound(query("repo:unrelated/repository is:issue")),
-        ).toBeUndefined();
+        ).toBeDefined();
         expect(
             await service.outbound(
                 new Request(`https://api.github.com/user/${localIdentity.id}`, {

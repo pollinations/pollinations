@@ -1,3 +1,7 @@
+import {
+    TINYBIRD_MODEL_STATS_URL,
+    type TinybirdModelStats,
+} from "../../shared/utils/model-stats";
 import { localIdentity } from "./fixtures";
 import type { ReviewSetup } from "./review-setup";
 
@@ -21,12 +25,9 @@ export function createReviewServices() {
                     variables?: { query?: string };
                 };
                 if (
-                    body.query?.trimStart().startsWith("query(") &&
-                    [
-                        "repo:pollinations/pollinations label:POLLEN-QUEST is:issue",
-                        `repo:pollinations/pollinations is:pr is:merged author:${localIdentity.login}`,
-                        `repo:pollinations/pollinations is:issue is:closed author:${localIdentity.login} updated:>=2026-06-25`,
-                    ].includes(body.variables?.query ?? "")
+                    /^query\b/.test(body.query?.trimStart() ?? "") &&
+                    /\bsearch\s*\(/.test(body.query ?? "") &&
+                    typeof body.variables?.query === "string"
                 )
                     return Response.json({
                         data: {
@@ -83,6 +84,11 @@ export function createReviewServices() {
                     : Response.json(response);
             }
             if (request.method !== "GET") return;
+            // Fixture the provider response. Shared product code owns caching.
+            if (url.href === TINYBIRD_MODEL_STATS_URL)
+                return Response.json({
+                    data: [{ model: "openai", avg_cost_usd: 0.01 }],
+                } satisfies TinybirdModelStats);
             if (
                 setup.catalog === "available" &&
                 url.origin === "https://api.europe-west2.gcp.tinybird.co" &&

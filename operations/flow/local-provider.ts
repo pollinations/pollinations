@@ -217,7 +217,12 @@ export function createLocalProvider(origin = ENTER_ORIGIN) {
                         },
                     ]);
             }
-            return unavailable();
+            return Response.json(
+                {
+                    error: `Flow has no external-service fixture for ${request.method} ${url.origin}${url.pathname}.`,
+                },
+                { status: 503 },
+            );
         },
     };
 }

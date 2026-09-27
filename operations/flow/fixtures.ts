@@ -28,11 +28,7 @@ export const localIdentity = {
     email: "pollinations-agent@flow.test",
 } as const;
 
-export async function seedFixtures(
-    db: D1Database,
-    kv: { put(key: string, value: string): Promise<unknown> },
-    origins = ORIGINS,
-) {
+export async function seedFixtures(db: D1Database, origins = ORIGINS) {
     const now = Math.floor(Date.now() / 1000);
     await db.batch([
         db.prepare("DELETE FROM flow_device"),
@@ -148,15 +144,6 @@ export async function seedFixtures(
     ]);
     await syncLocalIdentity(db);
     await setConditions(db, defaultConditions);
-    // Token-priced preflight requires a historical estimate. Seed the real
-    // cache shape for the one text model exercised by this local fixture.
-    await kv.put(
-        "model-stats-v3",
-        JSON.stringify({
-            ttl: 3600,
-            value: { data: [{ model: "openai", avg_cost_usd: 0.01 }] },
-        }),
-    );
 }
 
 export async function syncLocalIdentity(db: D1Database) {

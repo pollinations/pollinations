@@ -94,5 +94,8 @@ describe("local provider boundary", () => {
             new Request("https://api.stripe.com/v1/balance"),
         );
         expect(response.status).toBe(503);
+        expect(await response.json()).toEqual({
+            error: "Flow has no external-service fixture for GET https://api.stripe.com/v1/balance.",
+        });
     });
 });

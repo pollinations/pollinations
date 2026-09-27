@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-09-27",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:31:15.384563+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/instagram-3.jpg"
+    }
+  ],
+  "text": "97 PRs merged this week. Grok 4.7, Claude Opus 5.5, GPT-6 Sol and Luna, and several other models moved into the garden. Qwen Image 2.1 brought reference edits; Gemini 3.8 Flash TTS and MiniMax H3 Max video joined too. Routes got sturdier without making callers rename things.\n\n`polli mcp` can now discover and install tools for 13 coding clients. People kept adding apps and agents, Enter got a little calmer, and newly qualifying issue reports earn 4 Pollen. Software gardening, mostly. 🌱\n\nCode and updates: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #aiimages #aiaudio #aivideo #mcp",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

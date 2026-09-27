@@ -1,0 +1,36 @@
+{
+  "pr_number": 14650,
+  "title": "feat: make quest badge actionable",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14650",
+  "merged_at": "2026-09-27T07:10:56Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Replaces the static quest badge with live account counts.\n- Shows unclaimed rewards as `X claimable!`, otherwise incomplete available quests as `X new!`, and hides the badge when nothing needs attention.\n- Loads quest state after render and refreshes after automatic quest checks and claims; adds focused status-priority tests.\n\nTests: 3 focused tests, Biome, diff check, and Enter frontend production build.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The quest badge has plans",
+    "blurb": "The quest badge now checks your account before speaking up. Claimable Pollen comes first; unfinished quests get a nudge when there’s nothing to claim.",
+    "summary": "Replaced the static dashboard quest badge with live account counts: it shows `X claimable!` for unclaimed rewards, otherwise `X new!` for incomplete available quests, and disappears when neither needs attention.",
+    "impact": "Users can spot rewards ready to claim or quests ready to complete from the dashboard navigation, with the count refreshed after automatic quest checks and claims.",
+    "keywords": [
+      "quests",
+      "dashboard",
+      "badge",
+      "Pollen",
+      "rewards",
+      "frontend"
+    ],
+    "visual_concept": "Depict the Pollinations quest dashboard as a cozy garden noticeboard: a small badge highlights claimable Pollen, with unfinished quests represented by nearby seed packets. Polli, wearing a tiny tool belt, updates the badge while a friendly CRT robot watches; flowers and code-plants tie the scene to the garden.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli adjusts a lime green (#ecf874) quest badge reading '2 claimable!' on a little dashboard noticeboard while a friendly CRT robot looks on beside flower pots and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny tool belt, and shares the frame with the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, soft lime green (#ecf874) glow, and dark purple (#110518) outlines; nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-14650.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli adjusts a lime green (#ecf874) quest badge reading '2 claimable!' on a little dashboard noticeboard while a friendly CRT robot looks on beside flower pots and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny tool belt, and shares the frame with the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, soft lime green (#ecf874) glow, and dark purple (#110518) outlines; nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-27T07:11:51.797294+00:00"
+}

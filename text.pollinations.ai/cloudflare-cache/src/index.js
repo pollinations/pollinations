@@ -389,6 +389,12 @@ const worker = {
                 return cachedResponse;
             }
 
+            // Cached responses stay free. A paid cache miss reaches the origin,
+            // but its settlement headers and body must not enter the public cache.
+            if (request.headers.has("payment-signature") || request.headers.has("x-payment")) {
+                return await proxyRequest(request, env);
+            }
+
             log("cache", "Cache miss, proxying to origin...");
             // Store the request body if present (for POST/PUT requests)
             const hasRequestBody = await storeRequestBody(env, request, key);
@@ -686,7 +692,10 @@ async function proxyRequest(request, env) {
     // Prepare forwarded headers
     const headers = prepareForwardedHeaders(request.headers, url);
 
-    log("headers", "Request headers:", Object.fromEntries(headers));
+    const loggedHeaders = new Headers(headers);
+    loggedHeaders.delete("payment-signature");
+    loggedHeaders.delete("x-payment");
+    log("headers", "Request headers:", Object.fromEntries(loggedHeaders));
 
     // Create origin request
     const originRequest = new Request(originUrl.toString(), {
@@ -804,7 +813,7 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
     if (!headers.has("Access-Control-Allow-Headers")) {
         headers.set(
             "Access-Control-Allow-Headers",
-            "Content-Type, X-Turnstile-Token",
+            "Content-Type, X-Turnstile-Token, Payment-Signature, X-PAYMENT",
         );
     }
 

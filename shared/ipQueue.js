@@ -97,9 +97,10 @@ if (specialModelPriorityUsers.size > 0) {
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
  * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of tier-based cap
+ * @param {boolean} [options.rejectWhenQueued=false] - Reject anonymous cap-1 requests that would wait for the next slot
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false } = {}) {
+export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false, rejectWhenQueued = false } = {}) {
     // Extract useful request info for logging
     const url = req.url || "no-url";
     const method = req.method || "no-method";
@@ -191,6 +192,18 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
 	log("Queue info captured: %O", queueInfo);
 
+    // The paid legacy routes challenge only when the free request would wait.
+    // PQueue's interval counter is private, so record its next cap-1 slot
+    // when a job actually starts rather than keeping a separate IP clock.
+    const queue = queues.get(ip);
+    if (rejectWhenQueued && cap === 1 &&
+        (totalInQueue >= 1 || (queue?.nextAvailableAt ?? 0) > Date.now())) {
+        throw createError("Free request would wait for the next queue slot", 429, {
+            paymentEligible: true,
+            queueInfo,
+        });
+    }
+
 	// Check if adding to queue would exceed maxQueueSize
 	if (maxQueueSize && totalInQueue >= maxQueueSize) {
 		const userContext = authResult.username ? `user: ${authResult.username} (${authResult.userId})` : `IP: ${ip}`;
@@ -231,7 +244,11 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 			queueOptions.intervalCap = cap;
 		}
 		log("Creating queue for IP: %s (interval: %dms, cap: %d)", ip, interval, cap);
-		queues.set(ip, new PQueue(queueOptions));
+		const newQueue = new PQueue(queueOptions);
+        newQueue.on("active", () => {
+            newQueue.nextAvailableAt = Date.now() + interval;
+        });
+		queues.set(ip, newQueue);
 	}
 
 	// Add to queue and return

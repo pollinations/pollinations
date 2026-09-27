@@ -130,7 +130,8 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     await next();
 
     // Skip storing if response has X-Error-Type header (error images should not be cached)
-    if (c.res?.ok && !c.res.headers.get("x-error-type")) {
+    if (c.res?.ok && !c.res.headers.get("x-error-type") &&
+        !c.req.header("payment-signature") && !c.req.header("x-payment")) {
         // Store the embedding with a link to the generated image
         c.executionCtx.waitUntil(
             (async () => {

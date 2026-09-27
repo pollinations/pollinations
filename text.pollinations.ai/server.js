@@ -7,6 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { Transform } from "stream";
+import { weftTextEnabled, weftTextPayment } from "./weftX402.js";
 import { availableModels } from "./availableModels.js";
 import { getProviderByModelId } from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
@@ -106,7 +107,7 @@ app.use((req, res, next) => {
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
-app.use(cors());
+app.use(cors({ exposedHeaders: ["Payment-Required", "Payment-Response"] }));
 // New route handler for root path
 app.get("/", (req, res) => {
     res.redirect(
@@ -719,9 +720,23 @@ async function processRequest(req, res, requestData) {
     }
 
     // Use shared queue for rate limiting with max queue size
-    await enqueue(req, () => handleRequest(req, res, requestData), {
-        ...queueConfig,
-    });
+    try {
+        await enqueue(req, () => handleRequest(req, res, requestData), {
+            ...queueConfig,
+            // The Express payment middleware buffers output until settlement.
+            // Keep the existing queue for streams so they remain live.
+            rejectWhenQueued: weftTextEnabled() && !isTokenAuthenticated &&
+                !hasReferrer && !isFromEnter && !requestData.stream,
+        });
+    } catch (error) {
+        if (!error.paymentEligible) throw error;
+        return weftTextPayment(req, res, () => {
+            res.setHeader("Cache-Control", "private, no-store");
+            handleRequest(req, res, requestData).catch((generationError) => {
+                sendErrorResponse(res, req, generationError, requestData);
+            });
+        });
+    }
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
     // The shared enqueue function above now handles all queue logic, including authentication status

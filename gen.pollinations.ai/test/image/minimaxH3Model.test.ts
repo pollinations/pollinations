@@ -202,7 +202,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             },
         );
 
-        expect(requests[0]).toEqual({
+        expect(requests.find((request) => request.body)).toEqual({
             url: H3_MAX_TURBO_TEXT_ENDPOINT,
             body: {
                 prompt: "a paper windmill turning gently",
@@ -241,7 +241,9 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             height,
         });
 
-        expect(requests[0]?.body?.aspect_ratio).toBe(expectedAspectRatio);
+        expect(
+            requests.find((request) => request.body)?.body?.aspect_ratio,
+        ).toBe(expectedAspectRatio);
     });
 
     it.each([
@@ -261,7 +263,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             image: [start, end],
         });
 
-        expect(requests[0]).toEqual({
+        expect(requests.find((request) => request.body)).toEqual({
             url: H3_MAX_TURBO_IMAGE_ENDPOINT,
             body: {
                 prompt: "a seamless camera move",
@@ -274,6 +276,76 @@ describe("callMinimaxH3MaxTurboAPI", () => {
                 end_image_url: end,
             },
         });
+    });
+
+    it.each([
+        [5, "480p", "5", 0.0125, 0.0625, 0.125],
+        [10, "768p", "16", 0.0125, 0.2, 0.4],
+        [15, "1080p", "48", 0.0125, 0.6, 1.2],
+        [5, "480p", "6.25", 0.0125, 0.078125, 0.125],
+        [10, "768p", "16", 0.025, 0.4, 0.4],
+    ] as const)("records fal cost separately from the customer price for %ss at %s", async (duration, resolution, units, rate, cost, price) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", units, rate);
+        const result = await callMinimaxH3MaxTurboAPI("billing regression", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
+            duration,
+            resolution,
+        });
+        expect(requests[0]?.url).toBe(
+            "https://api.fal.ai/v1/models/pricing?endpoint_id=minimax%2Fh3-max-turbo%2Ftext-to-video",
+        );
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
+        expect(result.trackingData.providerBilling).toEqual({
+            units: Number(units),
+            unitCost: rate,
+        });
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-h3-max-turbo",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+            input: {
+                resolution,
+                providerBilling: result.trackingData.providerBilling,
+            },
+        });
+        expect(Object.keys(billing.cost)).toEqual(["totalCost"]);
+        expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(price);
+        expect(billing.servedPrice).toBeCloseTo(price);
+    });
+
+    it("rejects missing provider billing units before downloading the video", async () => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", null);
+        await expect(
+            callMinimaxH3MaxTurboAPI("invalid receipt", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "MiniMax H3 Max Turbo returned invalid billing units",
+        });
+        expect(requests.some((request) => request.url === VIDEO_URL)).toBe(
+            false,
+        );
+    });
+
+    it("rejects invalid provider pricing before submitting a billable job", async () => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", "5", 0);
+        await expect(
+            callMinimaxH3MaxTurboAPI("invalid price", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "MiniMax H3 Max Turbo returned invalid pricing",
+        });
+        expect(requests.some((request) => request.body)).toBe(false);
     });
 
     it("surfaces a terminal provider failure", async () => {

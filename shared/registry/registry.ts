@@ -481,10 +481,9 @@ function rateAgainst(
 /**
  * What the generation cost us, and what the caller pays for it.
  *
- * These come apart exactly when a fallback served: the caller is charged the
- * listing they asked for, while cost — and the serving owner's reward — follow
- * the model that actually ran. Charging the server's price instead would let
- * the amount on the invoice depend on which upstream happened to be up.
+ * A trusted provider receipt takes precedence over estimated cost. Customer
+ * pricing still follows the requested listing, including when a fallback
+ * serves the request.
  */
 export function calculateUsageBilling({
     model,
@@ -495,8 +494,16 @@ export function calculateUsageBilling({
     input,
 }: UsageBillingInput): UsageBilling {
     const served = rateAgainst(model, usage, servedBy, output, input);
+    // Provider units need not match public usage units (e.g. weighted video
+    // seconds), so the receipt gives a total, not a per-usage-type breakdown.
+    const cost = input?.providerBilling
+        ? {
+              totalCost:
+                  input.providerBilling.units * input.providerBilling.unitCost,
+          }
+        : served.cost;
     if (quotedBy === servedBy) {
-        return { ...served, servedPrice: served.price.totalPrice };
+        return { ...served, cost, servedPrice: served.price.totalPrice };
     }
     // Rated independently rather than rescaled: see rateAgainst.
     const quoted = rateAgainst(model, usage, quotedBy, output, input);
@@ -510,7 +517,7 @@ export function calculateUsageBilling({
           ? "unknown"
           : quoted.costVariantStatus;
     return {
-        cost: served.cost,
+        cost,
         adjustments: served.adjustments,
         price: quoted.price,
         servedPrice: served.price.totalPrice,

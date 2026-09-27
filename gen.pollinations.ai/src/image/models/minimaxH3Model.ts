@@ -83,7 +83,7 @@ async function callFalH3API(
     body: Record<string, unknown>,
     durationSeconds: number,
     actualModel: string,
-    billFromProvider = false,
+    readProviderBilling = false,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey)
@@ -94,7 +94,7 @@ async function callFalH3API(
     const deadline = Date.now() + H3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
     let unitCost: number | undefined;
-    if (billFromProvider) {
+    if (readProviderBilling) {
         const endpointId = new URL(endpoint).pathname.slice(1);
         const pricingResponse = await fetchUpstream(
             `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpointId)}`,
@@ -180,7 +180,7 @@ async function callFalH3API(
         resultResponse.headers.get("x-fal-billable-units"),
     );
     if (
-        billFromProvider &&
+        readProviderBilling &&
         (!Number.isFinite(billableUnits) || billableUnits <= 0)
     ) {
         throw UpstreamError.fromProvider(502, {
@@ -369,7 +369,7 @@ async function callFalMinimaxMaxVariant(
         },
         duration,
         modelId,
-        modelId === H3_MAX_MODEL,
+        true,
     );
 }
 

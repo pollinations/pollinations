@@ -174,7 +174,7 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
     ) : href ? (
         <InlineLink
             href={href}
-            className="inline-flex min-w-0 max-w-full items-baseline"
+            className="model-title-link inline-flex min-w-0 max-w-full items-baseline"
             aria-label={`Open ${title} in Play`}
         >
             <span className="min-w-0 truncate">{title}</span>

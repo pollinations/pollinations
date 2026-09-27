@@ -1,0 +1,37 @@
+{
+  "pr_number": 15586,
+  "title": "fix: models page bugs (community publisher filter, show all statuses by default)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15586",
+  "merged_at": "2026-09-27T20:25:37Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Fix the `publisher:` filter for community models. Since the `community/` ID prefix (#14621), every community model's owner parsed as \"community\", so `publisher:<owner>` matched nothing and suggestions listed only \"community\". Reproduced on production: `source:community publisher:marcosfrg` shows \"No community models match\"; with this fix the live catalog returns 18 models.\n- Fix the catalog hiding official models that have no recent traffic. The default filter is now `status:all` instead of `status:reliable`, so models with unknown health (e.g. `minimax/minimax-h3`) show again: 196 official models instead of 169. `status:reliable` and `status:healthy` are still available in the search bar. Addresses #15377. This reverses the default from #14940/#15279; the second commit can be dropped on its own if you'd rather keep that default.\n\nNot fixed:\n- Paid-only switch: this was the 12h pricing delay (#13807). At the time the UI didn't show that a change was waiting. Queued changes have been shown since 953dae9865, and the delay is now 3h (#14407). The existing integration test covers queued `paidOnly`.\n- Plain-text community search: works on production today (`deepseek` returns the matching community models).\n- Embeddings publish: the Discord report is #14203, fixed in #14215. Transcription publish: that report (Aug 9) came before transcription support was added (#13416, Aug 18). Publishing now works once the test passes for both.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The missing models return",
+    "blurb": "The model catalog remembers who published community models again. It also shows the whole official shelf by default, including models without recent traffic.",
+    "summary": "Fixed `publisher:<owner>` for `community/`-prefixed model IDs and changed the catalog default from `status:reliable` to `status:all`, restoring publisher matches and showing 196 official models instead of 169.",
+    "impact": "A search for `source:community publisher:marcosfrg` now finds 18 models, and official models with unknown health appear by default; `status:reliable` and `status:healthy` remain available.",
+    "keywords": [
+      "models",
+      "catalog",
+      "community models",
+      "publisher filter",
+      "status filter",
+      "search"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy library of labeled model cards. Polli fixes an owner label on the community shelf while a CRT monitor robot opens a curtain to reveal the full official shelf; small code-plants and flowers make the newly visible models feel discovered rather than added.",
+    "image_prompt": "In a cozy pixel art library, Polli wears tiny librarian glasses and fixes a publisher label on a community model shelf while a friendly CRT monitor robot reveals more model cards beside blooming code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, with a prominent soft lime green (#ecf874) glow, pastel gradients, dark purple (#110518) outlines, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15586.jpg",
+    "prompt": "In a cozy pixel art library, Polli wears tiny librarian glasses and fixes a publisher label on a community model shelf while a friendly CRT monitor robot reveals more model cards beside blooming code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, with a prominent soft lime green (#ecf874) glow, pastel gradients, dark purple (#110518) outlines, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-27T20:26:35.353237+00:00"
+}

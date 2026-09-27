@@ -1,3 +1,6 @@
+- **2026-09-26** – **🎨 MiniMax H3 Max makes longer videos** Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-09-26** – **🎵 Gemini 3.8 finds its voice** Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs).
+- **2026-09-26** – **🤖 GPT-6 Sol and Luna join the lineup** Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models).
 - **2026-09-25** – **🚀 Polli meets tgpt** Connect tgpt to Pollinations with `polli harness tgpt on`, using `openai/gpt-5.4-nano` by default—and turn it back off without trampling your existing setup. [View repo](https://github.com/pollinations/pollinations)
 - **2026-09-25** – **🎨 Qwen Image 2.1 arrives** Generate images or guide edits with up to 10 reference images using `qwen/qwen-image-2.1`. The model has brought its own collage scissors. [Try it](https://pollinations.ai/play)
 - **2026-09-25** – **✨ Recraft V4.1 Flash** Generate crisp text-to-image work with `recraft/recraft-v4.1-flash`, including aspect ratios from square to 9:16. [Check the API Docs](https://gen.pollinations.ai/docs)

@@ -161,7 +161,7 @@ const CreateApiKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .max(365 * SECONDS_PER_DAY, "Expiry cannot be more than 365 days")
         .optional()
         .describe("Expiry in seconds from now (max 365 days)"),
     allowedModels: z

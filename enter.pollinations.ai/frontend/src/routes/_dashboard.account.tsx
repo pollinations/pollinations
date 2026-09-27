@@ -209,7 +209,7 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
                 <span>© 2026 Myceli.AI OÜ</span>
                 <InlineLink
                     href="https://pollinations.ai/terms"

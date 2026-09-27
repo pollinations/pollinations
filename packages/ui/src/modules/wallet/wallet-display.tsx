@@ -71,7 +71,7 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
     return (
         <div
             className={cn(
-                "polli:min-w-0 polli:rounded-[1.25rem] polli:p-4 polli:sm:p-5",
+                "polli:min-w-0 polli:rounded-[1.25rem] polli:p-3.5 polli:sm:p-5",
                 tone === "neutral"
                     ? "polli:bg-surface-opaque"
                     : walletPanelClasses[kind],

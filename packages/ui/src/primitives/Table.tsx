@@ -74,7 +74,7 @@ export const TableRow: FC<TableRowProps> = ({
     <tr
         {...rest}
         className={cn(
-            "polli:transition-colors polli:hover:bg-control",
+            "polli:transition-colors polli:hover:bg-theme-bg-subtle",
             rowIntentClasses[intent],
             className,
         )}

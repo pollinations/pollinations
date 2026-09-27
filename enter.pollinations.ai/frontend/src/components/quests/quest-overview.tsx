@@ -353,10 +353,10 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 aria-valuemin={0}
                 aria-valuemax={progress.target}
                 aria-valuenow={Math.min(progress.current, progress.target)}
-                className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-control-strong"
+                className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-theme-bg-active"
             >
                 <div
-                    className="h-full rounded-full bg-theme-bg-solid"
+                    className="h-full rounded-full bg-theme-text-soft"
                     style={{ width: `${percentage}%` }}
                 />
             </div>
@@ -394,8 +394,9 @@ function QuestMarker({
     // coming_soon, which always renders claimed) → no tile, muted glyph.
     function resolveTile(): string {
         if (!comingSoon && status === "open")
-            return "bg-theme-bg-solid/20 text-theme-text-soft";
-        if (status === "claimable") return "bg-control text-theme-text-muted";
+            return "bg-theme-bg-active text-theme-text-strong";
+        if (status === "claimable")
+            return "bg-theme-bg-subtle text-theme-text-muted";
         return "text-theme-text-muted";
     }
     const MarkerIcon = resolveIcon();

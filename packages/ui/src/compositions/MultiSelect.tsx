@@ -100,7 +100,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
-                            "polli:cursor-not-allowed polli:bg-control polli:opacity-50",
+                            "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
                         )}
                     >
                         <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
@@ -135,8 +135,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             TRIGGER_BASE,
                             fullWidth && "polli:w-full polli:min-w-0",
                             open
-                                ? "polli:bg-control-strong"
-                                : "polli:bg-control polli:hover:bg-control-strong",
+                                ? "polli:bg-theme-bg-hover"
+                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
                         )}
                     >
                         <span
@@ -169,8 +169,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             ROW_BASE,
                             isAllSelected
-                                ? "polli:bg-control-strong polli:font-medium polli:text-theme-text-strong"
-                                : "polli:text-theme-text-base polli:hover:bg-control",
+                                ? "polli:bg-theme-bg-active polli:font-medium polli:text-theme-text-strong"
+                                : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
                         )}
                     >
                         <span
@@ -178,7 +178,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
-                                    "polli:bg-theme-bg-solid polli:text-theme-text-on-solid",
+                                    "polli:bg-theme-bg-active polli:text-theme-text-strong",
                             )}
                         >
                             {isAllSelected && "✓"}
@@ -196,8 +196,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 className={cn(
                                     ROW_BASE,
                                     isChecked
-                                        ? "polli:bg-control-strong polli:text-theme-text-strong"
-                                        : "polli:text-theme-text-base polli:hover:bg-control",
+                                        ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
+                                        : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
                                 )}
                             >
                                 <span
@@ -205,7 +205,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
-                                            "polli:bg-theme-bg-solid polli:text-theme-text-on-solid",
+                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
                                     )}
                                 >
                                     {isChecked && "✓"}

@@ -23,9 +23,9 @@ describe("TabButton", () => {
             </TabButton>,
         );
 
-        expect(active).toContain("polli:bg-theme-text-strong");
-        expect(active).toContain("polli:text-app-bg");
-        expect(inactive).toContain("polli:bg-control");
+        expect(active).toContain("polli:bg-theme-bg-active");
+        expect(active).toContain("polli:text-theme-text-strong");
+        expect(inactive).toContain("polli:bg-theme-bg-subtle");
         expect(inactive).toContain("polli:text-theme-text-base");
     });
 

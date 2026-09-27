@@ -22,8 +22,6 @@
 
     --color-app-bg: var(--polli-color-app-bg);
     --color-divider: var(--polli-color-divider);
-    --color-control: var(--polli-color-control);
-    --color-control-strong: var(--polli-color-control-strong);
 
     --color-ink-50: var(--polli-color-ink-50);
     --color-ink-100: var(--polli-color-ink-100);
@@ -47,8 +45,6 @@
     --color-theme-bg-active: var(--polli-color-bg-active);
     --color-theme-bg-hover: var(--polli-color-bg-hover);
     --color-theme-bg-pale: var(--polli-color-bg-pale);
-    --color-theme-bg-solid: var(--polli-color-bg-solid);
-    --color-theme-text-on-solid: var(--polli-color-text-on-solid);
 
     --color-paid-pale: var(--polli-color-paid-pale);
     --color-paid-soft: var(--polli-color-paid-soft);

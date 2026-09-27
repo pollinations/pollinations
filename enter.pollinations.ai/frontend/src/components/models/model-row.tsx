@@ -219,7 +219,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const pricing = useModelPricingSelection(model);
 
     return (
-        <Surface className="flex items-center">
+        <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
                 <ModelBrandIcon model={model} />

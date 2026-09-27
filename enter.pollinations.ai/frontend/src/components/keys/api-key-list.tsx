@@ -93,7 +93,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const accountPermissions = apiKey.permissions?.account ?? [];
 
         return (
-            <Surface key={apiKey.id}>
+            <Surface
+                key={apiKey.id}
+                className="transition-colors hover:bg-surface-opaque/90"
+            >
                 <ResourceCardHeader
                     icon={
                         <>
@@ -224,7 +227,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             className={
                                 earningsEnabled
                                     ? "text-intent-success-text"
-                                    : "text-theme-text-muted"
+                                    : "bg-ink-100 text-theme-text-muted"
                             }
                         >
                             Earnings {earningsEnabled ? "on" : "off"}

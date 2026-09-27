@@ -1,7 +1,7 @@
 {
     "bgPale": {
         "accent": "#fef8eb",
-        "neutral": "#fefdfc"
+        "neutral": "#fffefb"
     },
     "bgActive": {
         "accent": "#ffd76d"

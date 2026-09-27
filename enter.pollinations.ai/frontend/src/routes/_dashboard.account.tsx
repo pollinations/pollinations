@@ -88,7 +88,7 @@ function AccountPage() {
                             />
                         ) : (
                             <div
-                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-control text-theme-text-muted"
+                                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-theme-bg-subtle text-theme-text-muted"
                                 aria-hidden="true"
                             >
                                 <GitHubIcon className="h-7 w-7" />

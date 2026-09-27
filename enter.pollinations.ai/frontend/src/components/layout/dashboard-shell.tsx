@@ -10,7 +10,6 @@ import {
     CopyButton,
     cn,
     DiscordIcon,
-    DropdownItem,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -349,7 +348,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                             <BrandMark size="drawer" />
                             <button
                                 type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-control text-theme-text-strong hover:bg-control-strong"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                                 onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
@@ -565,12 +564,12 @@ const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full bg-control py-1 pr-2.5 pl-2 text-micro font-medium leading-none text-theme-text-base transition-colors hover:bg-control-strong hover:text-theme-text-strong"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 font-mono text-micro text-theme-text-muted">
+            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
                 {count}
             </span>
         )}
@@ -585,7 +584,7 @@ const DashboardSupport: FC<{
         {/* "Docs" header on the left; a small labelled copy button on the right
             (no tooltip — the visible label says what it does). */}
         <div className="flex items-center justify-between gap-2 px-3 py-1">
-            <span className="flex items-center gap-2.5 text-sm font-medium text-theme-text-base">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
                 {action.icon}
                 {action.label}
             </span>
@@ -619,7 +618,7 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-theme-text-muted transition-colors hover:bg-control hover:text-theme-text-strong"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
     >
         <span className="flex items-center gap-2">
             {icon}
@@ -681,32 +680,34 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 {links.length > 0 && (
                     <div className="my-1 border-t border-divider" />
                 )}
-                <DropdownItem
-                    as={Link}
+                <Link
                     to="/account"
                     onClick={() => {
                         close();
                         onNavigate?.();
                     }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     <AccountIcon
                         className="h-4 w-4 shrink-0"
                         aria-hidden="true"
                     />
                     <span>Account</span>
-                </DropdownItem>
-                <DropdownItem
+                </Link>
+                <button
+                    type="button"
                     onClick={() => {
                         close();
                         onSignOut?.();
                     }}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
                     <SignOutIcon
                         className="h-4 w-4 shrink-0"
                         aria-hidden="true"
                     />
                     <span>Sign Out</span>
-                </DropdownItem>
+                </button>
             </>
         )}
     </AccountMenu>
@@ -718,16 +719,16 @@ const AccountMenuLinkRow: FC<AccountMenuLink> = ({
     icon,
     ariaLabel,
 }) => (
-    <DropdownItem
-        as="a"
+    <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}
         </span>
         <span>{label}</span>
-    </DropdownItem>
+    </a>
 );

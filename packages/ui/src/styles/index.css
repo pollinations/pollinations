@@ -69,8 +69,8 @@
 
 .polli-input,
 .polli-textarea {
-    background-color: var(--polli-color-control);
-    border-color: transparent;
+    background-color: var(--polli-color-bg-pale);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -85,8 +85,8 @@
 }
 
 .polli-input-shell {
-    background-color: var(--polli-color-control);
-    border-color: transparent;
+    background-color: var(--polli-color-bg-pale);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -174,11 +174,11 @@
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(
         --polli-slider-fill,
-        var(--polli-color-bg-solid)
+        var(--polli-color-bg-active)
     );
     --polli-slider-track-value: var(
         --polli-slider-track,
-        var(--polli-color-control)
+        var(--polli-color-bg-pale)
     );
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,

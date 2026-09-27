@@ -25,7 +25,7 @@ const intentClasses: Record<ChipIntent, string> = {
     new: "polli:bg-intent-new-bg-light polli:text-intent-new-text",
     free: "polli:bg-intent-free-bg-light polli:text-intent-free-text",
     alpha: "polli:bg-intent-alpha-bg-light polli:text-intent-alpha-text",
-    neutral: "polli:bg-control-strong polli:text-theme-text-base",
+    neutral: "polli:bg-ink-100/80 polli:text-ink-900",
     success:
         "polli:bg-intent-success-bg-bright/15 polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
@@ -40,8 +40,8 @@ export type ChipProps = ComponentPropsWithoutRef<"span"> & {
 };
 
 // Static, rectangular colored container. Round shapes are reserved for buttons.
-// Without `intent` it is an accent tint (accent text on a wash of the solid
-// accent), read from the cascade; `intent` is semantic and theme-independent.
+// Reads `bg-theme-bg-active` / `text-theme-text-strong` from the cascade unless
+// `intent` is set (semantic, theme-independent).
 export const Chip: FC<ChipProps> = ({
     intent,
     size = "md",
@@ -51,7 +51,7 @@ export const Chip: FC<ChipProps> = ({
 }) => {
     const intentClass = intent
         ? intentClasses[intent]
-        : "polli:bg-theme-bg-solid/20 polli:text-theme-text-soft";
+        : "polli:bg-theme-bg-active polli:text-theme-text-strong";
     return (
         <span
             {...rest}

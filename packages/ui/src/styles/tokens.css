@@ -2,22 +2,13 @@
 /* ============================================================================
    Pollinations UI — color tokens. Flat depth + dark mode.
 
-   FLAT DEPTH MODEL — no shadows, no outlines. Every level adds one notch of
-   ink over the one below it, in BOTH modes (light: each level a little darker;
-   dark: each level a little lighter), so hierarchy reads from tint alone.
+   FLAT DEPTH MODEL — no shadows. Deeper = darker, forward = lighter in BOTH
+   modes, with each step wide enough to read from tint alone.
      Level 0  Desk     --polli-color-app-bg          page background
      Level 1  Block    --polli-color-surface-block   sections, dialogs
      Level 2  Card     --polli-color-surface-opaque  cards inside a block
-     Level 3  Control  --polli-color-control(-strong) translucent ink fill for
-                       inputs, neutral buttons and selected nav/tabs — it adds
-                       the same notch on whatever level it sits on
+              Accents  --polli-color-bg-active / bg-hover(=border)  THEMED
      Floating layers (menus, tooltips) are the only elements that keep a shadow.
-
-   ACCENT ROLES
-     Solid    --polli-color-bg-solid + text-on-solid   primary actions only —
-              the brightest thing on the page, same honey in both modes
-     Soft     --polli-color-text-soft                  accent text/icons
-     Tint     --polli-color-bg-active / bg-hover(=border)  accent tints
 
    SINGLE-ACCENT ARCHITECTURE
      - All chrome uses ONE app accent, defined once on :root via the recipe
@@ -50,17 +41,18 @@
     --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 
     /* Level 0 — Desk (neutral, identical on every page) */
-    --polli-color-app-bg:              oklch(0.99 0.002 80);
+    --polli-color-app-bg:              oklch(0.902 0.013 80);
 
-    /* Level 1 — Block, Level 2 — Card (neutral, warm low-chroma) */
-    --polli-color-surface-block:       oklch(0.962 0.005 80);
-    --polli-color-surface-opaque:      oklch(0.93 0.007 80);
-    --polli-color-surface-translucent: oklch(0.93 0.007 80 / 0.8);
+    /* Level 1 — Block: the accent-tinted cream container, one notch darker
+       than bg-pale so white cards separate without a shadow.
+       Level 2 — Card: neutral white. */
+    --polli-color-surface-block:       oklch(0.96 0.02 var(--polli-hue));
+    --polli-color-surface-opaque:      oklch(0.996 0.004 85);
+    --polli-color-surface-translucent: oklch(0.996 0.004 85 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
-    /* Floating layers (menus, popovers, tooltips) sit above the page, so they
-       lift to the desk tone and keep the only shadow in the system. */
-    --polli-color-surface-menu:        oklch(0.995 0.002 80);
+    /* Floating layers (menus, popovers, tooltips) keep the only shadow. */
+    --polli-color-surface-menu:        oklch(0.96 0.008 85);
 
     /* Neutral text (theme-independent, warm low-chroma) */
     --polli-color-text-strong:         oklch(0.25 0.02 80);
@@ -72,13 +64,8 @@
        Calibrated to stay visible-but-quiet on every surface in BOTH modes
        (a plain ink shade can't: it inverts and vanishes on the desk in dark).
        Distinct from theme-border (themed element outline) by design. */
-    --polli-color-divider:             oklch(0.895 0.006 80);
+    --polli-color-divider:             oklch(0.835 0.007 80);
 
-    /* Level 3 — Control: translucent ink, so it adds one notch on any level.
-       Declared once; `.dark` flips text-strong on the same element, so these
-       resolve to light ink in dark mode without a second declaration. */
-    --polli-color-control:        color-mix(in oklab, var(--polli-color-text-strong) 6%, transparent);
-    --polli-color-control-strong: color-mix(in oklab, var(--polli-color-text-strong) 11%, transparent);
 
     /* Neutral ink ramp */
     --polli-color-ink-50:  oklch(0.985 0.002 247.839);
@@ -121,8 +108,6 @@
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
     --polli-color-text-hover:      var(--polli-color-text-strong);
-    --polli-color-bg-solid:        oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
-    --polli-color-text-on-solid:   oklch(0.22 0.03 var(--polli-hue));
 }
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
@@ -138,9 +123,6 @@
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);
     --polli-color-text-hover:      var(--polli-color-text-strong);
-    /* Neutral primary action = an ink pill (inverted), still no hue. */
-    --polli-color-bg-solid:        var(--polli-color-text-strong);
-    --polli-color-text-on-solid:   var(--polli-color-app-bg);
 }
 
 /* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
@@ -314,8 +296,4 @@
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
-    /* Solid stays bright honey with dark ink in dark mode — a CTA must be the
-       brightest thing on a dark page, never the muted bg-active tint. */
-    --polli-color-bg-solid:        oklch(calc(0.846 + var(--polli-nudge)) 0.14 var(--polli-hue));
-    --polli-color-text-on-solid:   oklch(0.2 0.03 var(--polli-hue));
 }

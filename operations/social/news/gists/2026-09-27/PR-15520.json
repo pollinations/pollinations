@@ -1,0 +1,38 @@
+{
+  "pr_number": 15520,
+  "title": "feat: move official agents to pollinations-ai",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15520",
+  "merged_at": "2026-09-27T16:05:19Z",
+  "labels": [
+    "MODEL",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "Moving Floret, MIDI Journey, and Polli from Elliot's `pollinations-router` account to `pollinations-ai` changes their callable model IDs while preserving their listing UUIDs and historical records. As agreed for this beta, the old names will stop resolving after transfer; callers must use the new names.\n\n- Allows the destination GitHub account to publish community models.\n- Updates Pollinations-owned Polli workflows and the Floret example to the new names.\n- Adds deferred, guarded D1 scripts to copy the provider profile, transfer only the three existing listings, and rewrite exact old API-key model scopes. Normal deployment does not run these scripts.\n- Tests the canonical-name switch, restricted-key catalog behavior, workflow routing, and D1 transfer and scope-rewrite safety.\n\nRollout after review: merge to `main`, promote through the separate `production` PR, verify the publisher allowlist is live, then run the owner transfer followed immediately by the key-scope rewrite. Workflows merged to `main` may fail until the D1 transfer. No production data has changed.\n\nLocal validation: focused Gen and Enter D1 tests, Polli workflow tests, Biome, and Enter/Gen typechecks passed. Both staging workers deployed and returned HTTP 200. The authenticated staging check was explicitly waived for this PR.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Three agents change gardens",
+    "blurb": "Floret, MIDI Journey, and Polli are moving to the pollinations-ai account. Their listing histories come along; after the transfer, callers will need their new model names.",
+    "summary": "Added pollinations-ai as a community-model publisher and prepared guarded D1 scripts to transfer Floret, MIDI Journey, and Polli from pollinations-router while preserving listing UUIDs and rewriting exact API-key model scopes.",
+    "impact": "After the separate production rollout and D1 transfer, callers will use pollinations-ai model IDs instead of pollinations-router IDs; existing listings and historical records remain intact.",
+    "keywords": [
+      "community models",
+      "official agents",
+      "model IDs",
+      "Floret",
+      "MIDI Journey",
+      "Polli",
+      "D1 migration"
+    ],
+    "visual_concept": "Depict three recognizable agent stations moving into a garden labeled pollinations-ai: a flower for Floret, musical notes for MIDI Journey, and a chat terminal for Polli. Polli the bee carries a tiny moving box while the CRT robot carefully carries a ledger representing preserved listing history.",
+    "image_prompt": "In a cozy pixel-art garden, three little stations—a flower, a music player, and a chat terminal—are being moved beside a sign reading 'pollinations-ai'; a chunky CRT robot carries their history ledger. Polli, a small cute pixel-art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny moving cap and carries a box beside them. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, and dark purple #110518 details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15520.jpg",
+    "prompt": "In a cozy pixel-art garden, three little stations—a flower, a music player, and a chat terminal—are being moved beside a sign reading 'pollinations-ai'; a chunky CRT robot carries their history ledger. Polli, a small cute pixel-art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny moving cap and carries a box beside them. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, and dark purple #110518 details."
+  },
+  "generated_at": "2026-09-27T16:06:20.298344+00:00"
+}

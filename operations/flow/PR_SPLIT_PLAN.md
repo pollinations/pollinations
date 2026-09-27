@@ -2,24 +2,24 @@
 
 ## Current scope
 
-- PR [#15503](https://github.com/pollinations/pollinations/pull/15503), branch `codex/connect-review-workspace`, targets `main`. Keep it draft and unmerged until the hosted gates below pass.
+- PR [#15503](https://github.com/pollinations/pollinations/pull/15503), branch `codex/connect-review-workspace`, targets `main`. Keep it draft until the release configuration, required approvals and pre-merge checks are ready.
 - Source: `operations/flow`. Historical source branch: `origin/codex/pollen-connect-ux` at `27e396e48b1`. Preserve accepted main simplifications; never restore historical product files wholesale.
-- Integrated main: `d52d28252c`, through merge `14f6b538fe`. Earlier evidence retains its original revision.
+- Integrated main: `b02de198e2`, through merge `b44c38e2f9`. Earlier evidence retains its original revision.
 - Completed extractions: #14936, #14949, #14951, #15269–#15271 and #15273. #15060 was superseded by those UI extractions.
 - Flow runs the real Enter, Gen, SDK, UI and shared code. Fixture providers, disposable databases and injected errors are explicit. Product bugs belong in separate PRs, not replacement product logic inside Flow.
 - Everyone with a Pollinations account can enter Flow through one identity-only login. Each reviewer receives an isolated container. The simulated Admin app still enforces its product role checks; no production admin data enters the fixture environment.
 
 The full historical extraction plan and session log remain available in Git at `b9a3546502:operations/flow/PR_SPLIT_PLAN.md`. This file keeps the active delivery plan and the evidence IDs referenced by `scenario-audit.csv`.
 
-## Preview and deployment
+## Deployment
 
-- Entry: https://flow-preview.pollinations.ai/flow. The technical Admin origin is https://admin.flow-preview.pollinations.ai and shares the reviewer login. The intended final entry remains `flow.pollinations.ai`.
-- Worker: `pollinations-flow-preview`; ten `standard-1` containers maximum, sleeping after ten minutes without activity. Active sessions may occupy all ten slots: this is a bounded preview, not a promise of unlimited concurrent availability. The Cloudflare container client handles capacity/startup responses; Flow preserves them. Returning 503 does not prevent deliberate saturation.
-- The public identity-only PKCE client and preview-only signing secret were provisioned after scoped approval. `preview-client.sql` records the one-time registration; do not rerun against an existing client. Managed TLS is configured for both preview hosts. No production data bindings or reviewer identity tokens enter the containers.
-- `.github/workflows/ci-flow.yml` tests the Linux image, captures and two-container isolation before offering deployment. CI and Wrangler use the root `.dockerignore`; the Dockerfile explicitly copies only required product workspaces and two sibling workspace manifests. Harmless exclusion sentinels verify that local credentials/state and unrelated apps are absent from the image.
-- The `flow-preview` GitHub environment requires approval from `ElliotEtag`, disallows administrator bypass, and restricts deployment to `refs/pull/15503/merge`. The existing same-repository branch gate remains. No merge or deployment approval is implied by a push.
-- Deployment requires `CLOUDFLARE_API_TOKEN_FLOW_PREVIEW` in the protected `flow-preview` environment. Before creating it, verify resource permissions and obtain scoped approval under AGENTS.md. The workflow does not reuse the Observability token. If Cloudflare cannot restrict the required Worker/container permissions sufficiently, stop and resolve the access design before provisioning.
-- The two existing custom-domain mappings are managed in Cloudflare, outside routine CI deployment. `wrangler.preview.json` deliberately omits `routes`: Wrangler leaves existing mappings untouched, so the deployment token does not need zone-wide route permissions. Worker editing can be restricted to `pollinations-flow-preview`; Cloudflare currently offers Workers Containers editing only at account scope, which requires explicit acceptance before provisioning.
+- Public entry: https://flow.pollinations.ai/flow. The technical Admin origin is https://admin.flow.pollinations.ai and shares the same reviewer login.
+- Flow uses the existing `Deploy / Applications` workflow and `deploy.json`, exactly like other container applications: merge to `main`, then promote `main` to `production`. A merge to `main` alone does not deploy. There is no PR deployment job or new deployment token.
+- The manifest uses the existing `myceli` credential and watches the product code Flow executes. Full Git history in the shared deployment checkout preserves the source revisions shown in Flow. The deploy command requires a clean production Actions checkout and verifies HTTPS and anonymous access boundaries after uploading.
+- Reuse the existing Worker `pollinations-flow-preview`, its Durable Object namespace and `POLLINATIONS_AUTH_SESSION_SECRET`. Its internal name and public OAuth client ID remain stable; they do not determine the public URL. No secrets are copied, replaced or synchronized.
+- `wrangler.json` owns the permanent domains, as for other deployed Workers. Before promotion, obtain scoped approval for their managed certificates and run `release-client.sql` once to add the permanent callback to the existing identity-only PKCE client. The old callback keeps the live preview usable until promotion. No production data bindings or reviewer identity tokens enter containers.
+- Ten `standard-1` containers maximum, sleeping after ten minutes without activity. Every Pollinations account can sign in; capacity is bounded and accounts may occupy all ten slots. The container client handles capacity/startup responses; Flow preserves them. Returning 503 does not prevent deliberate saturation.
+- `ci-flow.yml` tests the Linux image, captures and two-container isolation. CI and Wrangler use the root `.dockerignore` and explicit Dockerfile inputs; harmless sentinels verify exclusion of local credentials and unrelated applications.
 
 ## Runtime boundaries
 
@@ -32,10 +32,10 @@ The full historical extraction plan and session log remain available in Git at `
 ## Verification and release gates
 
 - Before merging, verify the shared-auth and Flow suites, typecheck/build, formatting, Docker exclusions and the packaged Linux/browser/isolation proof against the proposed code.
-- Hosted checks must cover real-account callback/session, cold-start, signed-in Admin/reset recovery, an error/recovery capture and two signed-in reviewers. Verify trusted HTTPS, anonymous/forged-session denial and cross-origin write rejection on both preview hosts. Fixture-auth checks do not replace real hosted sign-in.
+- After production deployment, hosted checks must cover real-account callback/session, cold-start, signed-in Admin/reset recovery, an error/recovery capture and two signed-in reviewers. Verify trusted HTTPS, anonymous/forged-session denial and cross-origin write rejection on both permanent hosts. Fixture-auth checks do not replace real hosted sign-in.
 - Record the tested head, deployed revision, CI links and outstanding approvals in the PR body. Keep scenario evidence in the ledger with its original revision; the plan describes requirements rather than current execution status.
 - Use existing authorized access for authenticated checks. If required access is unavailable, ask for its secure location or configuration; do not waive required checks. Tests that issue new credentials stay opt-in and require separate scoped approval under AGENTS.md.
-- After review and merge, rebuild Flow against main, then extract granular product fixes from the backlog with tests in the owning service. Never silently relabel older evidence as current-main results.
+- After review, merge and production promotion, extract granular product fixes from the backlog with tests in the owning service. Never silently relabel older evidence as current-main results.
 
 ## Local use
 

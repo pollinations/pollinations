@@ -8,6 +8,16 @@
   ],
   "workers_dev": false,
   "preview_urls": false,
+  "build": {
+    "command": "npm run build:reviewer"
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
   "vars": {
     "FLOW_ENTER_ORIGIN": "https://flow.pollinations.ai",
     "FLOW_ADMIN_ORIGIN": "https://admin.flow.pollinations.ai",

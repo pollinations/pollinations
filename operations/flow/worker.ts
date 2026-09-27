@@ -2,6 +2,7 @@ import { Container } from "@cloudflare/containers";
 import { createReviewerGateway } from "./reviewer-gateway";
 
 type Bindings = {
+    ASSETS: Fetcher;
     FLOW_RUNTIME: DurableObjectNamespace<FlowRuntime>;
     FLOW_ENTER_ORIGIN: string;
     FLOW_ADMIN_ORIGIN: string;
@@ -48,6 +49,7 @@ export default {
                 },
                 clientId: env.POLLINATIONS_OAUTH_CLIENT_ID,
                 sessionSecret: env.POLLINATIONS_AUTH_SESSION_SECRET,
+                assets: env.ASSETS,
             },
             async (reviewerId, verifiedRequest) => {
                 const runtime = env.FLOW_RUNTIME.getByName(reviewerId);

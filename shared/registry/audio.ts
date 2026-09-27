@@ -385,6 +385,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-09-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        flatRate: true,
         cost: {
             // Gemini Developer API bills $0.08 per generated song, including input.
             completionAudioTokens: 0.08,

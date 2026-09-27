@@ -72,6 +72,7 @@ import {
     type RoutingChoice,
     type RoutingSelection,
     routingChoices,
+    selectedAgentChoice,
 } from "./chat-models";
 import {
     PollinationsChatTransport,
@@ -104,7 +105,7 @@ const ATTACHMENT_ACCEPT: Record<ChatAttachmentKind, string> = {
     file: ".pdf,.txt,.md,.csv,.json,.doc,.docx",
 };
 
-function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
+export function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     return {
         id: `${agent.id}-welcome`,
         role: "assistant",
@@ -121,7 +122,7 @@ function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     };
 }
 
-function attachmentKinds(agent: AgentChoice | undefined) {
+export function attachmentKinds(agent: AgentChoice | undefined) {
     if (!agent) return new Set<ChatAttachmentKind>();
     if (agent.id === FLORET_MODEL_ID)
         return new Set<ChatAttachmentKind>(["image", "video", "audio", "file"]);
@@ -452,6 +453,11 @@ function AgentPicker({
     onClearChat?: () => void;
 }) {
     const selected = agents.find((agent) => agent.id === selectedAgentId);
+    const label =
+        isLoading && agents.length === 0
+            ? "Loading agents…"
+            : (selected?.title ??
+              (agents.length > 0 ? "Choose an agent" : "No agents available"));
 
     return (
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
@@ -466,13 +472,9 @@ function AgentPicker({
                         type="button"
                         disabled={disabled || agents.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
-                        aria-label={`Agent: ${selected?.title ?? "Unavailable"}`}
+                        aria-label={`Agent: ${label}`}
                     >
-                        <span className="truncate">
-                            {isLoading && agents.length === 0
-                                ? "Loading agents…"
-                                : (selected?.title ?? "No agents available")}
-                        </span>
+                        <span className="truncate">{label}</span>
                         <ChevronIcon expanded={open} />
                     </Button>
                 )}
@@ -661,8 +663,7 @@ export function Chat({
     const followOutputRef = useRef(true);
     const composerRef = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const selectedAgent =
-        agents.find((agent) => agent.id === selectedAgentId) ?? agents[0];
+    const selectedAgent = selectedAgentChoice(agents, selectedAgentId);
     const assistantName = selectedAgent?.title ?? "Agent";
     const acceptedAttachmentKinds = attachmentKinds(selectedAgent);
     const attachmentAccept = [...acceptedAttachmentKinds]
@@ -725,8 +726,12 @@ export function Chat({
         [stop],
     );
     useEffect(() => {
-        if (!selectedAgent || activeAgentRef.current === selectedAgent.id)
+        if (!selectedAgent) {
+            uploadAbortRef.current?.abort();
+            void stop();
             return;
+        }
+        if (activeAgentRef.current === selectedAgent.id) return;
         activeAgentRef.current = selectedAgent.id;
         uploadAbortRef.current?.abort();
         void stop();
@@ -916,7 +921,7 @@ export function Chat({
                         agents={agents}
                         selectedAgentId={null}
                         isLoading={catalog.isLoading}
-                        disabled
+                        disabled={sending}
                         onSelectAgent={selectAgent}
                     />
                 </div>
@@ -929,7 +934,12 @@ export function Chat({
                             ? "Loading agents…"
                             : catalog.error
                               ? "Agents could not be loaded right now."
-                              : "No agents are available right now."}
+                              : agents.length === 0
+                                ? "No agents are available right now."
+                                : selectedAgentId === null ||
+                                    selectedAgentId === FLORET_MODEL_ID
+                                  ? "Floret is unavailable. Choose another agent to continue."
+                                  : "Your selected agent is unavailable. Choose another agent to continue."}
                     </Text>
                     {catalog.error && (
                         <Button

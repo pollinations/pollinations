@@ -11,6 +11,7 @@ import {
     fileKind,
     parseAgentMessage,
     routingChoices,
+    selectedAgentChoice,
     supportsRoutingField,
 } from "./chat-models";
 
@@ -31,7 +32,7 @@ describe("chat agents", () => {
         const choices = agentChoices([
             model({
                 id: undefined,
-                name: "community/pollinations-router/floret",
+                name: "community/pollinations-ai/floret",
                 title: "Floret",
                 agent: true,
             }),
@@ -46,6 +47,65 @@ describe("chat agents", () => {
             FLORET_MODEL_ID,
             "community/pollinations-router/polli",
         ]);
+    });
+
+    it("defaults to Floret regardless of catalog order", () => {
+        const agents = agentChoices([
+            model({ id: "another-agent", agent: true }),
+            model({
+                id: "community/pollinations-ai/floret",
+                title: "Floret",
+                agent: true,
+            }),
+        ]);
+        expect(selectedAgentChoice(agents, null)?.id).toBe(FLORET_MODEL_ID);
+        expect(selectedAgentChoice([...agents].reverse(), null)?.id).toBe(
+            FLORET_MODEL_ID,
+        );
+    });
+
+    it("preserves an explicit choice when Floret arrives or the catalog reorders", () => {
+        const other = agentChoices([
+            model({ id: "chosen-agent", agent: true }),
+        ]);
+        const floret = agentChoices([
+            model({ id: FLORET_MODEL_ID, agent: true }),
+        ]);
+        for (const agents of [
+            other,
+            [...other, ...floret],
+            [...floret, ...other],
+        ]) {
+            expect(selectedAgentChoice(agents, "chosen-agent")?.id).toBe(
+                "chosen-agent",
+            );
+        }
+    });
+
+    it("requires a new selection when the preferred or explicitly selected agent is absent", () => {
+        const other = agentChoices([
+            model({ id: "another-agent", agent: true }),
+        ]);
+        expect(selectedAgentChoice([], null)).toBeUndefined();
+        expect(selectedAgentChoice(other, null)).toBeUndefined();
+        expect(
+            selectedAgentChoice(
+                agentChoices([model({ id: FLORET_MODEL_ID, agent: true })]),
+                "removed-agent",
+            ),
+        ).toBeUndefined();
+    });
+
+    it("does not mistake an old Floret ID or a matching title for the canonical agent", () => {
+        const agents = agentChoices([
+            model({
+                id: "community/pollinations-router/floret",
+                title: "Floret",
+                agent: true,
+            }),
+            model({ id: "unrelated/floret", title: "Floret", agent: true }),
+        ]);
+        expect(selectedAgentChoice(agents, null)).toBeUndefined();
     });
     it("lists only catalog models explicitly marked as agents", () => {
         const choices = agentChoices([

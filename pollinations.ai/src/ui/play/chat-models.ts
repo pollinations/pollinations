@@ -9,7 +9,7 @@ import {
     PollinationsError,
 } from "@pollinations/sdk";
 
-export const FLORET_MODEL_ID = "community/pollinations-router/floret";
+export const FLORET_MODEL_ID = "community/pollinations-ai/floret";
 
 export function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -43,6 +43,14 @@ export interface AgentChoice {
     id: string;
     title: string;
     inputModalities: string[];
+}
+
+/** Never replace an explicit choice with whichever agent happens to be first. */
+export function selectedAgentChoice(
+    agents: AgentChoice[],
+    selectedId: string | null,
+): AgentChoice | undefined {
+    return agents.find((agent) => agent.id === (selectedId ?? FLORET_MODEL_ID));
 }
 
 export type ChatAttachmentKind = "image" | "video" | "audio" | "file";

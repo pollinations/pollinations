@@ -72,9 +72,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         setIsSubmitting(true);
         setError(null);
         try {
-            // Metadata must post before onUpdate: onUpdate ends in
-            // router.invalidate(), which would refetch the key list before this
-            // write lands and close the dialog onto a stale card.
+            // Save metadata before onUpdate refreshes and waits for the key list.
             const cleaned = cleanRedirectUris(redirectUris);
             if (
                 shouldPostKeyMetadata(apiKey, {

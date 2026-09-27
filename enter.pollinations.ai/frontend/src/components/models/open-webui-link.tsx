@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, InlineLink, Tooltip } from "@pollinations/ui";
+import { InlineLink } from "@pollinations/ui";
 
 export const OPEN_WEBUI_URL =
     import.meta.env.MODE === "staging"
@@ -29,45 +29,21 @@ export function isOpenWebUiChattable(model: {
     return model.supportedEndpoints?.includes("/v1/chat/completions") ?? false;
 }
 
-type OpenWebUiLinkProps = {
-    modelId: string;
-    /** icon: sits inline beside a model name. text: a standalone row action. */
-    variant?: "icon" | "text";
-};
-
+/** The same title link for catalog models and managed models or agents. */
 export function OpenWebUiLink({
     modelId,
-    variant = "icon",
-}: OpenWebUiLinkProps) {
-    const href = openWebUiChatUrl(modelId);
-
-    if (variant === "text") {
-        return (
-            <InlineLink href={href} size="footer">
-                Test in Open WebUI
-            </InlineLink>
-        );
-    }
-
+    title,
+}: {
+    modelId: string;
+    title: string;
+}) {
     return (
-        <Tooltip
-            content="Test in Open WebUI"
-            triggerAs="span"
-            className="polli:cursor-pointer"
-            displayContents
+        <InlineLink
+            href={openWebUiChatUrl(modelId)}
+            className="inline-flex min-w-0 max-w-full items-baseline"
+            aria-label={`Open ${title} in Open WebUI`}
         >
-            <a
-                aria-label={`Test ${modelId} in Open WebUI`}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
-            >
-                {/* ChatIcon and BotIcon already mean "text modality" and
-                    "agent" in a model row (see model-icons.tsx), so a launcher
-                    has to be something else. */}
-                <ExternalLinkIcon className="h-4 w-4" />
-            </a>
-        </Tooltip>
+            <span className="min-w-0 truncate">{title}</span>
+        </InlineLink>
     );
 }

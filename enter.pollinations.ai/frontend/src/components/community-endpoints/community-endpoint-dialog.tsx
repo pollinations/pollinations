@@ -992,11 +992,11 @@ export function CommunityEndpointDialog({
                             </ModelFormRow>
                         </AuthInfoCard>
                     )}
-                    {testableModelId && (
+                    {endpoint && testableModelId && (
                         <div className="mr-auto">
                             <OpenWebUiLink
                                 modelId={testableModelId}
-                                variant="text"
+                                title={endpoint.title}
                             />
                         </div>
                     )}

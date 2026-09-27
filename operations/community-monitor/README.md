@@ -33,7 +33,7 @@ Live-only on the box, never committed:
   Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
   the service environment. Never place the token in MCP command-line arguments.
 - `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
-  probe backoff and billing flags). Preserve it during deployments to retain cooldowns and
+  probe backoff and protocol alerts). Preserve it during deployments to retain cooldowns and
   prevent duplicate posts.
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
@@ -49,8 +49,9 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
-(see `.env.example`), install `community-monitor.service`, then run
+Install Node and Claude Code 2.1.280 or newer (required for Opus 5.5),
+clone/copy this directory, populate `.env` (see `.env.example`),
+install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
 Moving credentials requires the separate, scoped approval in AGENTS.md's
@@ -185,7 +186,7 @@ message limits and cooldowns remain unchanged.
 
 ## Model/effort
 
-The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+The deployed agent is pinned to `claude-opus-5-5` at medium effort in
 `loop.sh`. Every cycle starts with a fresh context containing the complete
 current `CYCLE.md`. Medium effort is intentional: routine checks are
 mechanical, but owner replies and billing diagnostics require controlled
@@ -217,7 +218,7 @@ Health data is edge-cached for 60 seconds. `reliability=all` (or the
 This is discovery only: exact-ID calls and fallback targets remain available.
 Manual hiding, privacy, key permissions and paid access remain unchanged.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
-The monitor retains diagnostics, billing/protocol warnings, served-model and
+The monitor retains requested diagnostics, protocol warnings, served-model and
 fallback notices, official-model alerts and daily leaderboards. After a daily
 leaderboard posts, it reports only community models newly filtered from
 discovery and those back in listings since the previous check, with their

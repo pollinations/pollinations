@@ -413,13 +413,12 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful billed generation consumption from generation_usage_hourly, split by the meter selected for the request. Paid is revenue-bearing consumed value; Quest is free Pollen consumption and is not revenue.",
+      "description": "Daily successful billed consumption by funding bucket and by who serves the model. Community models are hosted by their owners, and 75% of their price is credited back to the owner in the payer's bucket (Paid to Paid, Quest to Quest). BYOP app markup is also credited to app owners. Paid is therefore consumed value, not cash or Pollinations revenue; Quest is free Pollen. Excludes legacy bridge traffic.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic-by-name"
           },
-          "displayName": "${__field.labels.metric}",
           "custom": {
             "barAlignment": 0,
             "drawStyle": "bars",
@@ -431,15 +430,20 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "paid"
+              "options": "paid_pollinations"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid · Pollinations models"
+              },
               {
                 "id": "color",
                 "value": {
@@ -452,13 +456,55 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "quest"
+              "options": "paid_community"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Paid · Community models"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_pollinations"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest · Pollinations models"
+              },
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "quest_community"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Quest · Community models"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-orange",
                   "mode": "fixed"
                 }
               }
@@ -495,7 +541,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  funding_source AS metric,\n  sumMerge(gross_consumption) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND funding_source IN ('paid', 'quest')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(gross_consumption, funding_source = 'paid' AND is_community = 0) AS paid_pollinations,\n  sumMergeIf(gross_consumption, funding_source = 'paid' AND is_community = 1) AS paid_community,\n  sumMergeIf(gross_consumption, funding_source = 'quest' AND is_community = 0) AS quest_pollinations,\n  sumMergeIf(gross_consumption, funding_source = 'quest' AND is_community = 1) AS quest_community\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group != 'legacy'\n  AND funding_source IN ('paid', 'quest')\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -995,7 +1041,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY day\nORDER BY day",
+          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n          AND traffic_group != 'legacy'\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group != 'legacy'\nGROUP BY day\nORDER BY day",
           "refId": "A"
         }
       ],

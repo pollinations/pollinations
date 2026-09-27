@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 COMPLEXITY_MODELS = {
-    "low": "openai/gpt-5.6-luna",
-    "mid": "openai/gpt-5.6-terra",
-    "high": "openai/gpt-5.6-sol",
+    "low": "openai/gpt-6-luna",
+    "mid": "openai/gpt-6-sol",
+    "high": "openai/gpt-6-sol",
 }
 
 

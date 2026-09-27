@@ -1,6 +1,6 @@
 import { cn, Dialog, type DialogProps } from "@pollinations/ui";
 
-/** Contained, scrollable shell for dashboard forms and confirmations. */
+/** Top-aligned, scrollable shell for dashboard forms. */
 export function ResourceDialog({
     contentClassName,
     ...props

@@ -6,7 +6,7 @@ const logPerf = debug("pollinations:perf");
 export async function writeExifMetadata(
     buffer: Buffer,
     safeParams: object,
-    maturity: object,
+    resultMetadata: object,
 ): Promise<Buffer> {
     const startTime = Date.now();
     try {
@@ -25,7 +25,7 @@ export async function writeExifMetadata(
             Exif: {
                 [TagValues.ExifIFD.UserComment]: JSON.stringify({
                     ...safeParams,
-                    ...maturity,
+                    ...resultMetadata,
                 }),
             },
         };

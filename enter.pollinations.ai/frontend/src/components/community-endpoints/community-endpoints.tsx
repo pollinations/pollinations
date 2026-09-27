@@ -28,7 +28,7 @@ import {
 } from "react";
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -92,6 +92,30 @@ function ProviderProfileField({
     );
 }
 
+export function DeploymentsPlaceholder({
+    canPublish = false,
+    error,
+    onRetry,
+}: {
+    canPublish?: boolean;
+    error?: string | null;
+    onRetry?: () => void;
+}) {
+    if (!error) return null;
+    const titles = canPublish
+        ? ["Publisher info", "Agents", "Models"]
+        : ["Agents", "Models"];
+    return (
+        <>
+            {titles.map((title) => (
+                <Section key={title} title={title}>
+                    <LoadError onRetry={onRetry}>{error}</LoadError>
+                </Section>
+            ))}
+        </>
+    );
+}
+
 export function CommunityEndpoints({
     onChange,
     canPublish,
@@ -100,6 +124,7 @@ export function CommunityEndpoints({
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
@@ -128,33 +153,38 @@ export function CommunityEndpoints({
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
-        const [endpointResponse, agentResponse] = await Promise.all([
-            apiClient.account["my-models"].$get(),
-            apiClient.account.agents.$get(),
-        ]);
-        if (!endpointResponse.ok || !agentResponse.ok) {
-            setError(
-                await readError(
-                    endpointResponse.ok ? agentResponse : endpointResponse,
-                ),
-            );
+        try {
+            const [endpointResponse, agentResponse] = await Promise.all([
+                apiClient.account["my-models"].$get(),
+                apiClient.account.agents.$get(),
+            ]);
+            if (!endpointResponse.ok || !agentResponse.ok) {
+                setError(
+                    await readError(
+                        endpointResponse.ok ? agentResponse : endpointResponse,
+                    ),
+                );
+                return;
+            }
+            const endpointBody = (await endpointResponse.json()) as {
+                data: CommunityEndpoint[];
+                provider: CommunityProviderProfile;
+            };
+            const agentBody = (await agentResponse.json()) as {
+                data: ManagedAgent[];
+            };
+            setEndpoints(endpointBody.data);
+            setAgents(agentBody.data);
+            setProviderName(endpointBody.provider.name ?? "");
+            setProviderUrl(endpointBody.provider.url ?? "");
+            setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
+            setSavedProvider(endpointBody.provider);
+            setHasLoaded(true);
+        } catch {
+            setError("Couldn’t load models and agents.");
+        } finally {
             setIsLoading(false);
-            return;
         }
-        const endpointBody = (await endpointResponse.json()) as {
-            data: CommunityEndpoint[];
-            provider: CommunityProviderProfile;
-        };
-        const agentBody = (await agentResponse.json()) as {
-            data: ManagedAgent[];
-        };
-        setEndpoints(endpointBody.data);
-        setAgents(agentBody.data);
-        setProviderName(endpointBody.provider.name ?? "");
-        setProviderUrl(endpointBody.provider.url ?? "");
-        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
-        setSavedProvider(endpointBody.provider);
-        setIsLoading(false);
     }, []);
 
     useEffect(() => {
@@ -436,174 +466,178 @@ export function CommunityEndpoints({
         </Button>
     );
 
-    if (isLoading)
-        return <DashboardLoading label="Loading models and agents…" />;
+    if (isLoading || (error && !hasLoaded)) {
+        return (
+            <DeploymentsPlaceholder
+                canPublish={canPublish}
+                error={isLoading ? null : error}
+                onRetry={() => {
+                    setIsLoading(true);
+                    void loadEndpoints();
+                }}
+            />
+        );
+    }
 
     return (
         <>
-            <div className="flex flex-col gap-6">
-                {canPublish && (
-                    <Section title="Publisher info">
-                        <form
-                            className="flex flex-col gap-4"
-                            onSubmit={(event) =>
-                                void handleProviderSubmit(event)
-                            }
-                        >
-                            <div className="space-y-3">
-                                <ProviderProfileField
-                                    icon={<AccountIcon />}
-                                    label="Publisher name"
-                                    help="Shown as the publisher on all your public models."
+            {canPublish && (
+                <Section title="Publisher info">
+                    <form
+                        className="flex flex-col gap-4"
+                        onSubmit={(event) => void handleProviderSubmit(event)}
+                    >
+                        <div className="space-y-3">
+                            <ProviderProfileField
+                                icon={<AccountIcon />}
+                                label="Publisher name"
+                                help="Shown as the publisher on all your public models."
+                            >
+                                <Input
+                                    name="community-provider-name"
+                                    value={providerName}
+                                    placeholder="Your service"
+                                    autoComplete="organization"
+                                    className="w-full min-w-0"
+                                    required={Boolean(providerUrl.trim())}
+                                    maxLength={
+                                        COMMUNITY_PROVIDER_NAME_MAX_LENGTH
+                                    }
+                                    onChange={(event) =>
+                                        setProviderName(event.target.value)
+                                    }
+                                />
+                            </ProviderProfileField>
+                            <ProviderProfileField
+                                icon={<GlobeIcon />}
+                                label="Website or privacy policy"
+                                help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
+                            >
+                                <Input
+                                    type="url"
+                                    name="community-provider-url"
+                                    value={providerUrl}
+                                    placeholder="https://example.com"
+                                    autoComplete="url"
+                                    className="w-full min-w-0"
+                                    required={Boolean(providerName.trim())}
+                                    maxLength={
+                                        COMMUNITY_PROVIDER_URL_MAX_LENGTH
+                                    }
+                                    onChange={(event) =>
+                                        setProviderUrl(event.target.value)
+                                    }
+                                />
+                            </ProviderProfileField>
+                            <ProviderProfileField
+                                icon={<ImageIcon />}
+                                label="Brand icon URL"
+                                help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                            >
+                                <Input
+                                    type="url"
+                                    name="community-provider-icon-url"
+                                    value={providerIconUrl}
+                                    placeholder="https://media.pollinations.ai/…"
+                                    autoComplete="url"
+                                    className="w-full min-w-0"
+                                    onChange={(event) =>
+                                        setProviderIconUrl(event.target.value)
+                                    }
+                                />
+                            </ProviderProfileField>
+                        </div>
+                        {!providerIsSaved && (
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    type="button"
+                                    intent="neutral"
+                                    disabled={isSavingProvider}
+                                    onClick={resetProviderChanges}
                                 >
-                                    <Input
-                                        name="community-provider-name"
-                                        value={providerName}
-                                        placeholder="Your service"
-                                        autoComplete="organization"
-                                        className="w-full min-w-0"
-                                        required={Boolean(providerUrl.trim())}
-                                        maxLength={
-                                            COMMUNITY_PROVIDER_NAME_MAX_LENGTH
-                                        }
-                                        onChange={(event) =>
-                                            setProviderName(event.target.value)
-                                        }
-                                    />
-                                </ProviderProfileField>
-                                <ProviderProfileField
-                                    icon={<GlobeIcon />}
-                                    label="Website or privacy policy"
-                                    help="Shown with your public models. Use one HTTPS link to your website or privacy policy; set it together with Publisher name."
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    intent="commit"
+                                    disabled={isSavingProvider}
                                 >
-                                    <Input
-                                        type="url"
-                                        name="community-provider-url"
-                                        value={providerUrl}
-                                        placeholder="https://example.com"
-                                        autoComplete="url"
-                                        className="w-full min-w-0"
-                                        required={Boolean(providerName.trim())}
-                                        maxLength={
-                                            COMMUNITY_PROVIDER_URL_MAX_LENGTH
-                                        }
-                                        onChange={(event) =>
-                                            setProviderUrl(event.target.value)
-                                        }
-                                    />
-                                </ProviderProfileField>
-                                <ProviderProfileField
-                                    icon={<ImageIcon />}
-                                    label="Brand icon URL"
-                                    help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
-                                >
-                                    <Input
-                                        type="url"
-                                        name="community-provider-icon-url"
-                                        value={providerIconUrl}
-                                        placeholder="https://media.pollinations.ai/…"
-                                        autoComplete="url"
-                                        className="w-full min-w-0"
-                                        onChange={(event) =>
-                                            setProviderIconUrl(
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                </ProviderProfileField>
+                                    {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
                             </div>
-                            {!providerIsSaved && (
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        type="button"
-                                        intent="neutral"
-                                        disabled={isSavingProvider}
-                                        onClick={resetProviderChanges}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        intent="commit"
-                                        disabled={isSavingProvider}
-                                    >
-                                        {isSavingProvider ? "Saving…" : "Save"}
-                                    </Button>
-                                </div>
-                            )}
-                        </form>
-                    </Section>
+                        )}
+                    </form>
+                </Section>
+            )}
+            {error && <Alert intent="danger">{error}</Alert>}
+            <Section
+                title="Agents"
+                id="agents"
+                action={agentEndpoints.length > 0 && agentAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {agentEndpoints.length === 0 ? (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{agentAction}</div>
+                            <p className="text-sm text-theme-text-muted">
+                                Build from a prompt and model, or deploy
+                                agent.ts from GitHub.
+                            </p>
+                        </Surface>
+                    ) : (
+                        agentEndpoints.map(renderEndpointCard)
+                    )}
+                </div>
+                {!canPublish && (
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Private agents do not need approval. Public agents
+                            require publishing access. Request it through the{" "}
+                            {publisherAccessRequestLink}.
+                        </span>
+                    </p>
                 )}
-                {error && <Alert intent="danger">{error}</Alert>}
-                <Section
-                    title="Agents"
-                    id="agents"
-                    action={agentEndpoints.length > 0 && agentAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {agentEndpoints.length === 0 ? (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{agentAction}</div>
-                                <p className="text-sm text-theme-text-muted">
-                                    Build from a prompt and model, or deploy
-                                    agent.ts from GitHub.
-                                </p>
-                            </Surface>
-                        ) : (
-                            agentEndpoints.map(renderEndpointCard)
-                        )}
-                    </div>
-                    {!canPublish && (
-                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Private agents do not need approval. Public
-                                agents require publishing access. Request it
-                                through the {publisherAccessRequestLink}.
-                            </span>
-                        </p>
-                    )}
-                </Section>
+            </Section>
 
-                <Section
-                    title="Models"
-                    id="models"
-                    action={modelEndpoints.length > 0 && modelAction}
-                >
-                    <div className="flex flex-col gap-3">
-                        {modelEndpoints.length === 0 ? (
-                            <Surface className="p-6 text-center">
-                                <div className="mb-2">{modelAction}</div>
-                                {canPublish && (
-                                    <p className="text-sm text-theme-text-muted">
-                                        Register an OpenAI-compatible endpoint.
-                                    </p>
-                                )}
-                            </Surface>
-                        ) : (
-                            modelEndpoints.map(renderEndpointCard)
-                        )}
-                    </div>
-                    {(modelEndpoints.length > 0 || !canPublish) && (
-                        <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                {canPublish ? (
-                                    <>
-                                        Private models are callable only by you
-                                        and shown only when model lists use your
-                                        key. Make one public to list it for
-                                        everyone in <strong>/models</strong> and
-                                        bill callers at your configured pricing.
-                                    </>
-                                ) : (
-                                    privateModelGuidance
-                                )}
-                            </span>
-                        </p>
+            <Section
+                title="Models"
+                id="models"
+                action={modelEndpoints.length > 0 && modelAction}
+            >
+                <div className="flex flex-col gap-3">
+                    {modelEndpoints.length === 0 ? (
+                        <Surface className="p-6 text-center">
+                            <div className="mb-2">{modelAction}</div>
+                            {canPublish && (
+                                <p className="text-sm text-theme-text-muted">
+                                    Register an OpenAI-compatible endpoint.
+                                </p>
+                            )}
+                        </Surface>
+                    ) : (
+                        modelEndpoints.map(renderEndpointCard)
                     )}
-                </Section>
-            </div>
+                </div>
+                {(modelEndpoints.length > 0 || !canPublish) && (
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {canPublish ? (
+                                <>
+                                    Private models are callable only by you and
+                                    shown only when model lists use your key.
+                                    Make one public to list it for everyone in{" "}
+                                    <strong>/models</strong> and bill callers at
+                                    your configured pricing.
+                                </>
+                            ) : (
+                                privateModelGuidance
+                            )}
+                        </span>
+                    </p>
+                )}
+            </Section>
 
             {editing && (
                 <CommunityEndpointDialog

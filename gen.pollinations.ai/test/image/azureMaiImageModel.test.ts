@@ -53,14 +53,17 @@ afterEach(() => {
 });
 
 describe("callAzureMaiImage", () => {
-    it("routes 2.6 Flash to its exact Azure deployment", async () => {
+    it.each([
+        ["microsoft/mai-image-2.6-flash", "MAI-Image-2.6-Flash"],
+        ["microsoft/mai-image-2.6", "MAI-Image-2.6"],
+    ] as const)("routes %s to its exact Azure deployment", async (model, deployment) => {
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
             expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
             expect(init?.headers).toMatchObject({
                 "api-key": "test-azure-key",
             });
             expect(JSON.parse(init?.body as string)).toEqual({
-                model: "MAI-Image-2.6-Flash",
+                model: deployment,
                 prompt: "a red bicycle",
                 width: 1024,
                 height: 1024,
@@ -74,11 +77,11 @@ describe("callAzureMaiImage", () => {
 
         const result = await callAzureMaiImage(
             "a red bicycle",
-            { ...baseParams, model: "microsoft/mai-image-2.6-flash" },
+            { ...baseParams, model },
             USER_INFO,
         );
         expect(result.trackingData).toEqual({
-            actualModel: "microsoft/mai-image-2.6-flash",
+            actualModel: model,
             usage: { promptTextTokens: 24, completionImageTokens: 1024 },
         });
     });

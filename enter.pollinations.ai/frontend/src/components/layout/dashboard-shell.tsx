@@ -34,7 +34,12 @@ import type {
     RefObject,
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import {
+    QUEST_STATUS_UPDATED_EVENT,
+    questNavLabel,
+} from "../quests/quest-nav-status.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
@@ -63,6 +68,7 @@ type DashboardShellProps = PropsWithChildren<{
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     showFooterLinks?: boolean;
+    showQuestStatus?: boolean;
 }>;
 
 type BrandLink = {
@@ -146,6 +152,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountArea,
     walletArea,
     showFooterLinks = true,
+    showQuestStatus = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -161,6 +168,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         location.pathname === "/account"
             ? "Account"
             : (activeNavItem?.label ?? "Dashboard");
+    const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -298,6 +306,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
@@ -329,7 +338,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -360,9 +369,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
                         {children}
                     </main>
                 </ScrollArea>
@@ -370,6 +379,54 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         </div>
     );
 };
+
+function useQuestNavStatus(enabled: boolean): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) {
+            setLabel(null);
+            return;
+        }
+
+        let cancelled = false;
+        let requestId = 0;
+        const refresh = async () => {
+            const currentRequest = ++requestId;
+            try {
+                const [catalogResponse, rewardsResponse] = await Promise.all([
+                    apiClient.quests.catalog.$get(),
+                    apiClient.quests.rewards.$get(),
+                ]);
+                if (!catalogResponse.ok || !rewardsResponse.ok) {
+                    throw new Error("Quest status unavailable");
+                }
+                const [catalog, rewards] = await Promise.all([
+                    catalogResponse.json(),
+                    rewardsResponse.json(),
+                ]);
+                if (!cancelled && currentRequest === requestId) {
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                }
+            } catch {
+                if (!cancelled && currentRequest === requestId) setLabel(null);
+            }
+        };
+        const handleUpdate = () => void refresh();
+
+        void refresh();
+        window.addEventListener(QUEST_STATUS_UPDATED_EVENT, handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(
+                QUEST_STATUS_UPDATED_EVENT,
+                handleUpdate,
+            );
+        };
+    }, [enabled]);
+
+    return label;
+}
 
 function useDashboardShellBodyClass(): void {
     useEffect(() => {
@@ -389,6 +446,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
 };
@@ -400,12 +458,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    questStatus,
     showFooterLinks,
     onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
@@ -433,13 +492,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" || item.id === "quests") && (
+                        {(item.id === "my-models" ||
+                            (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                {item.id === "quests" ? "3 new!" : "New!"}
+                                {item.id === "quests" ? questStatus : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -462,7 +522,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >

@@ -1,4 +1,5 @@
 import {
+    AccountIcon,
     AppIcon,
     Button,
     CheckIcon,
@@ -276,6 +277,17 @@ export function KeyDialogContent({
                                 value={permissions}
                                 accessContext={accessContext}
                                 disabled={isSubmitting}
+                                lead={
+                                    <AuthAccessItem icon={<AccountIcon />}>
+                                        <span className="inline-flex items-center">
+                                            Username and picture
+                                            <InfoTip
+                                                text="Anyone using this key can see your username and profile picture."
+                                                label="Username and picture information"
+                                            />
+                                        </span>
+                                    </AuthAccessItem>
+                                }
                             />
                         )}
                     </div>

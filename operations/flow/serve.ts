@@ -38,7 +38,7 @@ const server = serve({
 });
 try {
     await once(server, "listening");
-    console.log(`Flow built pages: ${ENTER_ORIGIN}/flow`);
+    console.log(`Flow built pages: ${ENTER_ORIGIN}/screens`);
 } catch (error) {
     await runtime.close();
     throw error;

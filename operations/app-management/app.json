@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "image2gpt",
+    "url": "https://image2gpt.vercel.app",
+    "description": "Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "18074148384",
+    "githubUserId": "334084026",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15477",
+    "approvedDate": "2026-09-27",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎬",
     "name": "TTA",
     "url": "https://mahmoudtracy641-hub.github.io/GLM234",

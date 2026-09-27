@@ -324,6 +324,32 @@ test("revalidates from either host and rejects revoked sessions without entering
     expect(forward).toHaveBeenCalledTimes(1);
 });
 
+test("preserves capacity responses and lets the same non-admin reviewer retry", async () => {
+    let available = false;
+    const gateway = createReviewerGateway(
+        { ...config, authFetch: identityIssuer() },
+        async (id) => {
+            expect(id).toBe("alice");
+            return available
+                ? new Response("Review ready")
+                : new Response("No container instance is available.", {
+                      status: 503,
+                  });
+        },
+    );
+    const session = await signIn(gateway, "alice");
+    const request = () =>
+        new Request(`${origins.enter}/flow`, { headers: { Cookie: session } });
+    const busy = await gateway(request());
+    expect(busy.status).toBe(503);
+    expect(await busy.text()).toBe("No container instance is available.");
+    expect(busy.headers.getSetCookie()).toEqual([]);
+    available = true;
+    const retry = await gateway(request());
+    expect(retry.status).toBe(200);
+    expect(await retry.text()).toBe("Review ready");
+});
+
 test("reviewer callback errors stay out of the simulated Admin callback route", async () => {
     const gateway = createReviewerGateway(
         { ...config, authFetch: identityIssuer() },

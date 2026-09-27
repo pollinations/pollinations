@@ -51,7 +51,6 @@ export default {
             },
             async (reviewerId, verifiedRequest) => {
                 const runtime = env.FLOW_RUNTIME.getByName(reviewerId);
-                await runtime.startAndWaitForPorts();
                 const port =
                     new URL(verifiedRequest.url).origin ===
                     env.FLOW_ADMIN_ORIGIN

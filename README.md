@@ -87,7 +87,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🎙️ **Real-time API** — OpenAI-compatible WebSocket for streaming conversations
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
-- 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
+- 📦 _Easy-to-use Packages_ ([Packages](packages/))
 
 <!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
      Regenerate locally with:

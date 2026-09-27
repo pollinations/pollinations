@@ -68,6 +68,39 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
+it("rejects ambiguous or overbroad shared-session configuration", () => {
+    const parent = "https://review.example.com";
+    const child = "https://admin.review.example.com";
+    const valid = {
+        ...config,
+        namespace: "reviewer",
+        sharedSession: {
+            origins: [parent, child],
+            cookieDomain: "review.example.com",
+        },
+    };
+    expect(() => createPollinationsAuth(valid)).not.toThrow();
+    expect(() =>
+        createPollinationsAuth({ ...valid, namespace: undefined }),
+    ).toThrow();
+    for (const origins of [
+        [parent],
+        [parent, parent],
+        [child, parent],
+        [parent, "https://untrusted.example.com"],
+        [parent, "http://admin.review.example.com"],
+        [parent, `${child}:8443`],
+        [parent, `${child}/path`],
+    ]) {
+        expect(() =>
+            createPollinationsAuth({
+                ...valid,
+                sharedSession: { ...valid.sharedSession, origins },
+            }),
+        ).toThrow();
+    }
+});
+
 describe("Pollinations OAuth", () => {
     it("starts an identity-only authorization-code flow with PKCE", async () => {
         const auth = createPollinationsAuth(config);
@@ -91,6 +124,7 @@ describe("Pollinations OAuth", () => {
         expect(response.headers.get("Set-Cookie")).toContain(
             "HttpOnly; Secure; SameSite=Lax",
         );
+        expect(response.headers.get("Set-Cookie")).not.toContain("Domain=");
         expect(flowFromCookie(flow).returnTo).toBe(
             "https://kpi.pollinations.ai/weekly?x=1",
         );
@@ -239,6 +273,142 @@ describe("Pollinations OAuth", () => {
         expect(cookieFrom(response as Response, "pollinations_session")).toBe(
             undefined,
         );
+    });
+
+    it("admits ordinary users only with the authenticated-account policy", async () => {
+        const upstream = userUpstream().mockImplementation(async (input) =>
+            String(input).endsWith("/token")
+                ? Response.json({ access_token: "inert-flow-test-token" })
+                : Response.json({
+                      sub: "reviewer-1",
+                      email: "reviewer@example.com",
+                      role: "user",
+                  }),
+        );
+        const auth = createPollinationsAuth({
+            ...config,
+            access: "authenticated",
+            fetch: upstream,
+        });
+        const session = await authenticatedSession(auth);
+        const request = new Request(
+            "https://kpi.pollinations.ai/auth/session",
+            {
+                headers: { Cookie: `pollinations_session=${session}` },
+            },
+        );
+        expect(await auth.getUser(request)).toMatchObject({
+            sub: "reviewer-1",
+        });
+        // Even the same signing key and host cannot turn an ordinary session into admin access.
+        const admin = createPollinationsAuth({ ...config, fetch: upstream });
+        expect(await admin.getUser(request)).toBeNull();
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(Date.now() + 60_000);
+        upstream.mockResolvedValueOnce(new Response(null, { status: 401 }));
+        expect(await auth.getUser(request)).toBeNull();
+    });
+
+    it("applies each policy after a shared in-flight UserInfo check", async () => {
+        const upstream = userUpstream();
+        const admin = createPollinationsAuth({ ...config, fetch: upstream });
+        const auth = createPollinationsAuth({
+            ...config,
+            access: "authenticated",
+            fetch: upstream,
+        });
+        const session = await authenticatedSession(admin);
+        const request = new Request(
+            "https://kpi.pollinations.ai/auth/session",
+            {
+                headers: { Cookie: `pollinations_session=${session}` },
+            },
+        );
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(Date.now() + 60_000);
+        upstream.mockResolvedValue(
+            Response.json({
+                sub: "user-1",
+                email: "alice@example.com",
+                role: "user",
+            }),
+        );
+        const [ordinary, restricted] = await Promise.all([
+            auth.getUser(request),
+            admin.getUser(request),
+        ]);
+        expect(ordinary).toMatchObject({ sub: "user-1" });
+        expect(restricted).toBeNull();
+    });
+
+    it("keeps the reviewer's routes and cookies separate from the previewed app", async () => {
+        const auth = createPollinationsAuth({
+            ...config,
+            namespace: "flow-reviewer",
+            access: "authenticated",
+            fetch: userUpstream(),
+        });
+        const origin = "https://flow.example.com";
+        const login = await auth.handle(
+            new Request(`${origin}/flow-reviewer/auth/login?return_to=%2Fflow`),
+        );
+        if (!login) throw new Error("Expected login");
+        const location = new URL(login.headers.get("Location") || "");
+        expect(location.searchParams.get("redirect_uri")).toBe(
+            `${origin}/flow-reviewer/auth/callback`,
+        );
+        const flow = cookieFrom(login, "flow-reviewer_pollinations_oauth_flow");
+        const callback = await auth.handle(
+            new Request(
+                `${origin}/flow-reviewer/auth/callback?code=inert&state=${location.searchParams.get("state")}`,
+                {
+                    headers: {
+                        Cookie: `flow-reviewer_pollinations_oauth_flow=${flow}`,
+                    },
+                },
+            ),
+        );
+        if (!callback) throw new Error("Expected callback");
+        const session = cookieFrom(
+            callback,
+            "flow-reviewer_pollinations_session",
+        );
+        expect(session).toBeTruthy();
+        const fixture = createPollinationsAuth({
+            ...config,
+            fetch: userUpstream(),
+        });
+        const request = new Request(`${origin}/auth/session`, {
+            headers: {
+                Cookie: `flow-reviewer_pollinations_session=${session}`,
+            },
+        });
+        expect(await auth.handle(request)).toBeNull();
+        expect(await fixture.getUser(request)).toBeNull();
+        expect(await auth.getUser(request)).toMatchObject({ sub: "user-1" });
+        expect(
+            await auth.getUser(
+                new Request(`${origin}/flow-reviewer/auth/session`, {
+                    headers: { Cookie: `pollinations_session=${session}` },
+                }),
+            ),
+        ).toBeNull();
+        const logout = await auth.handle(
+            new Request(`${origin}/flow-reviewer/auth/logout`, {
+                method: "POST",
+                headers: { Origin: origin },
+            }),
+        );
+        expect(logout?.status).toBe(204);
+        expect(
+            logout?.headers
+                .getSetCookie()
+                .every(
+                    (value) =>
+                        value.startsWith("flow-reviewer_") &&
+                        value.includes("Max-Age=0"),
+                ),
+        ).toBe(true);
     });
 
     it("rejects a mismatched OAuth state before the token exchange", async () => {

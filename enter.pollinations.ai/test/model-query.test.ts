@@ -89,15 +89,16 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe(
-            "source:official status:reliable",
-        );
+    it("preselects official models of every status without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe("source:official status:all");
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:reliable capability:reasoning",
+            "source:official status:all capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:reliable source:community",
+            "status:all source:community",
+        );
+        expect(ensureModelQueryDefaults("status:reliable")).toBe(
+            "source:official status:reliable",
         );
         expect(ensureModelQueryDefaults("source: status:")).toBe(
             "source: status:",
@@ -135,7 +136,9 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             "status:reliable",
         ),
     ).toBe(false);
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    // Official models without recent traffic stay listed by default (#15377).
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
+    expect(matches(official, ensureModelQueryDefaults(""))).toBe(true);
     expect(
         matches(
             model({

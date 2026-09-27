@@ -377,9 +377,10 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    // Per-unit Pollen price sheet actually applied (effective cost ×
-    // multiplier). Telemetry must record THIS sheet, not the request-time
-    // base sheet, so recorded rates always reproduce the billed totals.
+    // Effective per-unit Pollen price sheet (cost variant × multiplier), not
+    // the request-time base sheet. Provider-reported billing units can differ
+    // from public usage units, so this sheet alone may not reproduce totals
+    // overridden by providerBilling; those use its units and unitCost.
     priceDefinition: PriceDefinition;
     // Name of the applied cost variant, if any (financial identity — distinct
     // from modelUsed, which stays observational).

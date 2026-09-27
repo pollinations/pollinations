@@ -202,7 +202,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             },
         );
 
-        expect(requests.find((request) => request.body)).toEqual({
+        expect(requests[0]).toEqual({
             url: H3_MAX_TURBO_TEXT_ENDPOINT,
             body: {
                 prompt: "a paper windmill turning gently",
@@ -241,9 +241,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             height,
         });
 
-        expect(
-            requests.find((request) => request.body)?.body?.aspect_ratio,
-        ).toBe(expectedAspectRatio);
+        expect(requests[0]?.body?.aspect_ratio).toBe(expectedAspectRatio);
     });
 
     it.each([
@@ -263,7 +261,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             image: [start, end],
         });
 
-        expect(requests.find((request) => request.body)).toEqual({
+        expect(requests[0]).toEqual({
             url: H3_MAX_TURBO_IMAGE_ENDPOINT,
             body: {
                 prompt: "a seamless camera move",

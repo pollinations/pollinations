@@ -84,7 +84,7 @@ async function callFalH3API(
     body: Record<string, unknown>,
     durationSeconds: number,
     actualModel: string,
-    readProviderBilling = false,
+    providerUnitCost?: number | "lookup",
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey)
@@ -94,13 +94,8 @@ async function callFalH3API(
 
     const deadline = Date.now() + H3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
-    let unitCost: number | undefined;
-    if (actualModel === H3_MAX_TURBO_MODEL) {
-        // Turbo rates change through reviewed registry updates, not a live
-        // pricing lookup. fal reports resolution-weighted billing units.
-        unitCost =
-            IMAGE_SERVICES[H3_MAX_TURBO_MODEL].cost.completionVideoSeconds;
-    } else if (readProviderBilling) {
+    let unitCost = providerUnitCost;
+    if (unitCost === "lookup") {
         const endpointId = new URL(endpoint).pathname.slice(1);
         const pricingResponse = await fetchUpstream(
             `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpointId)}`,
@@ -186,7 +181,7 @@ async function callFalH3API(
         resultResponse.headers.get("x-fal-billable-units"),
     );
     if (
-        readProviderBilling &&
+        unitCost !== undefined &&
         (!Number.isFinite(billableUnits) || billableUnits <= 0)
     ) {
         throw UpstreamError.fromProvider(502, {
@@ -260,6 +255,7 @@ async function callFalMinimaxMaxVariant(
     r2vEndpoint: string | undefined,
     prompt: string,
     safeParams: ImageParams,
+    providerUnitCost: number | "lookup",
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? H3_MAX_DURATIONS[0];
     if (!(H3_MAX_DURATIONS as readonly number[]).includes(duration)) {
@@ -375,7 +371,7 @@ async function callFalMinimaxMaxVariant(
         },
         duration,
         modelId,
-        true,
+        providerUnitCost,
     );
 }
 
@@ -391,6 +387,7 @@ export async function callMinimaxH3MaxAPI(
         H3_MAX_R2V_ENDPOINT,
         prompt,
         safeParams,
+        "lookup",
     );
 }
 
@@ -406,5 +403,7 @@ export async function callMinimaxH3MaxTurboAPI(
         undefined,
         prompt,
         safeParams,
+        // Turbo's reviewed registry rate applies to fal's weighted units.
+        IMAGE_SERVICES[H3_MAX_TURBO_MODEL].cost.completionVideoSeconds,
     );
 }

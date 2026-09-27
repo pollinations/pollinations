@@ -431,7 +431,11 @@ function renderStatusMessage(
     issue: AutoTopUpIssue | null,
     billingReady: boolean,
 ): ReactNode {
-    if (status === "off") return "Off";
+    if (status === "off") {
+        return issue?.kind === "failed"
+            ? "Off — last charge failed. Check your payment method and re-enable auto top-up."
+            : "Off";
+    }
     if (status === "draft") {
         return billingReady
             ? "Choose amount, then click Save to enable"

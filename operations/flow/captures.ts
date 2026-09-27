@@ -666,13 +666,14 @@ export function createCaptureService(options: {
                 !url.pathname.startsWith(`${endpoint}/document/`)
             )
                 return null;
-            if (request.method !== "GET")
+            const method = url.pathname === endpoint ? "POST" : "GET";
+            if (request.method !== method)
                 return new Response(null, {
                     status: 405,
-                    headers: { Allow: "GET" },
+                    headers: { Allow: method },
                 });
             if (
-                request.headers.get("origin") &&
+                (method === "POST" || request.headers.has("origin")) &&
                 request.headers.get("origin") !== url.origin
             ) {
                 return Response.json(

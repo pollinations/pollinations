@@ -200,6 +200,7 @@ export function ReviewProvider({
         async function poll() {
             try {
                 const response = await fetch(`/__flow/previews?${query}`, {
+                    method: "POST",
                     signal: controller.signal,
                 });
                 if (!response.ok)

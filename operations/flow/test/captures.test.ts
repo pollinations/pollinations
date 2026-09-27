@@ -24,6 +24,7 @@ async function capture(
             cases: id,
             ...presentation,
         })}`,
+        { method: "POST", headers: { Origin: "http://localhost:4180" } },
     );
     for (;;) {
         const response = await service.fetch(request);
@@ -1215,6 +1216,42 @@ describe("preview capture reuse", () => {
 });
 
 describe("capture request selection", () => {
+    it("requires a same-origin POST before loading or queuing a capture", async () => {
+        const loadCases = vi.fn(async () => ({ reviewCasesForFlow }));
+        const loadRuntime = vi.fn();
+        const service = createCaptureService({
+            source: () => source,
+            loadCases,
+            loadRuntime,
+        });
+        const url =
+            "http://localhost:4180/__flow/previews?flow=app&section=main";
+        try {
+            const get = await service.fetch(new Request(url));
+            expect(get?.status).toBe(405);
+            expect(get?.headers.get("Allow")).toBe("POST");
+            for (const headers of [
+                {},
+                { Origin: "https://untrusted.invalid" },
+            ]) {
+                const response = await service.fetch(
+                    new Request(url, { method: "POST", headers }),
+                );
+                expect(response?.status).toBe(403);
+            }
+            expect(loadCases).not.toHaveBeenCalled();
+            expect(loadRuntime).not.toHaveBeenCalled();
+            const asset = await service.fetch(
+                new Request(
+                    "http://localhost:4180/__flow/previews/image/missing",
+                ),
+            );
+            expect(asset?.status).toBe(404);
+        } finally {
+            await service.close();
+        }
+    });
+
     it("returns external references without creating a runtime", async () => {
         let runtimeLoads = 0;
         const service = createCaptureService({
@@ -1231,6 +1268,10 @@ describe("capture request selection", () => {
                     const response = await service.fetch(
                         new Request(
                             `http://localhost:4180/__flow/previews?${new URLSearchParams({ flow, section, cases: recipe.id })}`,
+                            {
+                                method: "POST",
+                                headers: { Origin: "http://localhost:4180" },
+                            },
                         ),
                     );
                     expect(await response?.json()).toMatchObject({
@@ -1266,6 +1307,10 @@ describe("capture request selection", () => {
                 service.fetch(
                     new Request(
                         `http://localhost:4180/__flow/previews?flow=app&section=main&cases=${cases}`,
+                        {
+                            method: "POST",
+                            headers: { Origin: "http://localhost:4180" },
+                        },
                     ),
                 );
             expect((await request("missing-case"))?.status).toBe(400);

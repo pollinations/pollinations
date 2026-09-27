@@ -175,7 +175,10 @@ const params = new URLSearchParams({
 });
 let captured = false;
 for (let attempt = 0; attempt < 120; attempt++) {
-    const response = await fetch(`${origin}/__flow/previews?${params}`);
+    const response = await fetch(`${origin}/__flow/previews?${params}`, {
+        method: "POST",
+        headers: { Origin: origin },
+    });
     assert.equal(response.status, 200);
     const result = await response.json();
     assert.deepEqual(result.source, source);

@@ -1,0 +1,38 @@
+{
+  "pr_number": 15522,
+  "title": "Add image2gpt to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15522",
+  "merged_at": "2026-09-27T03:37:33Z",
+  "labels": [
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [image2gpt](https://image2gpt.vercel.app) to image\n- Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three\n\nFixes #15477",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new image in the garden",
+    "blurb": "image2gpt joins the app garden. Bring a prompt and your own Pollinations account; the images are yours, and so is the Pollen tab.",
+    "summary": "Added image2gpt to the app directory, where visitors can generate images with openai/gpt-image-2 after signing in through Pollinations OAuth.",
+    "impact": "Visitors can discover image2gpt, enter a prompt, and use their own Pollen to generate images.",
+    "keywords": [
+      "community",
+      "app directory",
+      "image2gpt",
+      "gpt-image-2",
+      "OAuth",
+      "Pollen"
+    ],
+    "visual_concept": "Depict image2gpt as a friendly image-making station in a garden: a prompt box feeds a small framed picture, with an OAuth sign-in doorway and a Pollen token nearby. Polli helps tend the station; no separate app mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden studio, Polli wears a tiny painter's beret and taps a prompt into a retro image-making station, where a framed picture blooms beside a prominent lime green (#ecf874) flower pot. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and warm cream background, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15522.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears a tiny painter's beret and taps a prompt into a retro image-making station, where a framed picture blooms beside a prominent lime green (#ecf874) flower pot. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and warm cream background, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-27T03:38:33.219096+00:00",
+  "app_name": "image2gpt",
+  "app_url": "https://image2gpt.vercel.app"
+}

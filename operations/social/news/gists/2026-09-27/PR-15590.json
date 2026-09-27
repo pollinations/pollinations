@@ -1,0 +1,37 @@
+{
+  "pr_number": 15590,
+  "title": "fix: let the classifier label every new issue and PR",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15590",
+  "merged_at": "2026-09-27T21:54:27Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Agent sessions open PRs with `gh pr create --label …`, and the classifier skipped any item that already had a kind label, so those guesses stuck. That hit 32 of 142 PRs since Sep 24, e.g. #15555 (MiniMax rates) got ECONOMICS + BILLING instead of MODEL.\n\n- The classifier now labels every new issue and PR and replaces kind, type and flag labels set at creation. Workflow labels (`APP-*`, `NEWS`, quest labels) and an issue's `TRACKING` type stay. Removes the `RELABEL` switch.\n- Issues and PRs use the same types and rules, so PRs can now get `FEATURE`. Only differences left: `POLLEN-QUEST` is a PR flag (on an issue it publishes a quest), and priority/parent are issue-only.\n- `BILLING` is client payments; setting a model's price is `MODEL`, a report of wrong charges stays `BILLING`.\n- `POLLEN-QUEST` needs the PR to close the quest. #15546 got it for \"Reported in #15075…\", which also hid it from the Dev PR tab.\n- AGENTS.md points to `project-manager.md` instead of repeating the label list, which read as an invitation to label.\n\nChecks: dry run on 35 open items agreed with a manual review on 33 (run 36350039374). Branch dry runs 36351940781 and 36353146475: #15555 → `MODEL`, #15546 → `APPS,BUG`, quest PRs #15567/#15578 keep `POLLEN-QUEST`, balance report #15468 → `API,BUG,BILLING`.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Labels get a second look",
+    "blurb": "The repo classifier now checks every new issue and PR, even when an agent arrived with labels already attached. Workflow and quest labels stay put; the filing system gets a little less imaginative.",
+    "summary": "The GitHub classifier now replaces kind, type, and flag labels on every new issue and PR, preserves workflow labels and issue TRACKING types, and applies shared rules that distinguish model pricing from BILLING and require quest-closing PRs for POLLEN-QUEST.",
+    "impact": "Maintainers get more accurate labels and Dev PR tab results: model-pricing PRs can receive MODEL, PRs can receive FEATURE, and unrelated quest mentions no longer add POLLEN-QUEST.",
+    "keywords": [
+      "GitHub",
+      "issue classification",
+      "PR labels",
+      "MODEL",
+      "BILLING",
+      "POLLEN-QUEST"
+    ],
+    "visual_concept": "A cozy garden-shed filing desk represents the GitHub classifier. Polli, wearing tiny librarian glasses, checks labels on new issue and PR cards while the CRT monitor robot helps sort MODEL, BILLING, and quest cards into flower-decorated trays; a lime-green glow makes the corrected organization visible.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny librarian glasses and checks labels on issue and PR cards while a friendly CRT monitor robot sorts them into flower-decorated trays marked MODEL, BILLING, and QUEST, beside a softly glowing lime green (#ecf874) terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15590.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny librarian glasses and checks labels on issue and PR cards while a friendly CRT monitor robot sorts them into flower-decorated trays marked MODEL, BILLING, and QUEST, beside a softly glowing lime green (#ecf874) terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "generated_at": "2026-09-27T21:55:29.403911+00:00"
+}

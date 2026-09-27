@@ -1,10 +1,10 @@
-import { Chip, cn, Slider } from "@pollinations/ui";
+import { cn, Slider } from "@pollinations/ui";
 import {
     formatPollenPackValue,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { CSSProperties, FC } from "react";
+import type { CSSProperties, FC, ReactNode } from "react";
 
 const pollenPackSliderStyle = {
     "--polli-slider-fill": "var(--polli-color-paid-soft)",
@@ -12,26 +12,21 @@ const pollenPackSliderStyle = {
     "--polli-slider-thumb-border": "var(--polli-color-paid-deep)",
 } as CSSProperties;
 
-const formatPackAriaLabel = (pack: PollenPack): string =>
-    `$${pack.amountUsd} to ${formatPollenPackValue(pack.amountUsd)} pollen`;
-
 type PollenPackSliderProps = {
     value: number;
     onChange: (value: number) => void;
     packs?: ReadonlyArray<PollenPack>;
     label?: string;
-    selectedBadgeLabel?: string;
-    selectedBadgeDetail?: string;
     disabled?: boolean;
 };
 
+/** Pack slider with its stops underneath; the chosen stop is highlighted in
+ * place. Prices live with the action that charges them, not on the slider. */
 export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     value,
     onChange,
     packs = POLLEN_PACKS,
     label = "Select amount",
-    selectedBadgeLabel,
-    selectedBadgeDetail,
     disabled = false,
 }) => {
     const selectedIndex = Math.max(
@@ -44,7 +39,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
         lastIndex > 0 ? (selectedIndex / lastIndex) * 100 : 100;
 
     return (
-        <div className="relative">
+        <div>
             <div className="flex h-8 items-center">
                 <Slider
                     min={0}
@@ -59,85 +54,54 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     aria-label={label}
                     aria-valuetext={
                         selectedPack
-                            ? formatPackAriaLabel(selectedPack)
+                            ? `${formatPollenPackValue(selectedPack.amountUsd)} pollen`
                             : undefined
                     }
                     progress={progressPercent}
                     style={pollenPackSliderStyle}
                 />
             </div>
-            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-theme-text-muted tabular-nums">
-                <div className="relative">
-                    {packs.map((pack, index) => {
-                        const isSelected =
-                            pack.amountUsd === selectedPack?.amountUsd;
-                        const isFirst = index === 0;
-                        const isLast = lastIndex > 0 && index === lastIndex;
-                        return (
-                            <span
-                                key={pack.amountUsd}
-                                style={{
-                                    left:
-                                        lastIndex > 0
-                                            ? `${(index / lastIndex) * 100}%`
-                                            : "0%",
-                                }}
-                                className={cn(
-                                    "absolute top-0 whitespace-nowrap",
-                                    isFirst
-                                        ? "-ml-[11px] translate-x-0 text-left"
-                                        : isLast
-                                          ? "ml-[11px] -translate-x-full text-right"
-                                          : "-translate-x-1/2 text-center",
-                                    isSelected &&
-                                        "font-bold text-theme-text-soft",
-                                )}
-                            >
-                                <span className="relative inline-block">
-                                    <span
-                                        className={cn(
-                                            "inline-block",
-                                            isSelected &&
-                                                "text-2xl leading-none text-paid-deep",
-                                        )}
-                                    >
-                                        {formatPollenPackValue(pack.amountUsd)}
-                                        {isSelected && (
-                                            <span className="block text-base font-normal leading-tight text-paid-deep">
-                                                pollen
-                                            </span>
-                                        )}
-                                    </span>
-                                    {isSelected && (
-                                        <span
-                                            className={cn(
-                                                "absolute top-full mt-1 inline-flex flex-col whitespace-nowrap",
-                                                isFirst
-                                                    ? "left-0 items-start text-left"
-                                                    : isLast
-                                                      ? "right-0 items-end text-right"
-                                                      : "left-1/2 -translate-x-1/2 items-center text-center",
-                                            )}
-                                        >
-                                            <Chip size="sm">
-                                                <span className="text-sm">
-                                                    {selectedBadgeLabel ??
-                                                        `$${pack.amountUsd}`}
-                                                </span>
-                                            </Chip>
-                                            {selectedBadgeDetail && (
-                                                <span className="mt-0.5 text-xs font-normal leading-none text-theme-text-muted">
-                                                    {selectedBadgeDetail}
-                                                </span>
-                                            )}
-                                        </span>
-                                    )}
-                                </span>
-                            </span>
-                        );
-                    })}
-                </div>
+            <div
+                aria-hidden="true"
+                className="relative mx-[11px] mt-1.5 h-5 text-sm font-bold tracking-tight text-theme-text-muted tabular-nums"
+            >
+                {packs.map((pack, index) => (
+                    <span
+                        key={pack.amountUsd}
+                        style={{
+                            left:
+                                lastIndex > 0
+                                    ? `${(index / lastIndex) * 100}%`
+                                    : "0%",
+                        }}
+                        className={cn(
+                            "absolute top-0 whitespace-nowrap transition-colors",
+                            index === 0
+                                ? "-ml-[11px]"
+                                : lastIndex > 0 && index === lastIndex
+                                  ? "ml-[11px] -translate-x-full"
+                                  : "-translate-x-1/2",
+                            index === selectedIndex && "text-paid-deep",
+                        )}
+                    >
+                        {formatPollenPackValue(pack.amountUsd)}
+                    </span>
+                ))}
             </div>
         </div>
     );
 };
+
+/** A pack slider with its action (Buy, Save) in a fixed-width column on the
+ * right, so every pack slider in the top-up block has the same width and its
+ * action sits in the same place. Stacks on phones, action below. */
+export const PackSliderRow: FC<{ slider: ReactNode; action: ReactNode }> = ({
+    slider,
+    action,
+}) => (
+    <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_14rem] sm:items-start sm:gap-x-6">
+        {/* pt lines the slider track up with the centre of the action */}
+        <div className="min-w-0 sm:pt-2">{slider}</div>
+        <div className="flex">{action}</div>
+    </div>
+);

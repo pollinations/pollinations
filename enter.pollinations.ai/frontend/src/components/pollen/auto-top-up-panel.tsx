@@ -20,6 +20,7 @@ import {
     calculateServiceFeeCents,
     formatUsdCentsCompact,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import {
     type FC,
@@ -29,7 +30,7 @@ import {
     useState,
 } from "react";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { PackSliderRow, PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
     | {
@@ -364,33 +365,38 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             {showConfig && (
                 <div className="space-y-4">
                     {showSliderAndSave && (
-                        <div className="flex flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                            <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
-                                <PollenPackSlider
-                                    value={packAmountUsd}
-                                    onChange={setPackAmountUsd}
-                                    packs={AUTO_TOP_UP_PACKS}
-                                    selectedBadgeLabel={
-                                        selectedPack
-                                            ? formatUsdCentsCompact(
-                                                  selectedPack.amountUsd * 100 +
-                                                      serviceFeeCents,
-                                              )
-                                            : "$0"
-                                    }
-                                    selectedBadgeDetail={
-                                        selectedPack
-                                            ? `incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`
-                                            : undefined
-                                    }
-                                    disabled={isSaving}
-                                />
-                            </div>
-                            <AutoTopUpSaveButton
-                                hasUnsavedChanges={hasUnsavedChanges}
-                                setup={setup}
-                                onSave={handleSave}
+                        <div className="space-y-3">
+                            <PackSliderRow
+                                slider={
+                                    <PollenPackSlider
+                                        value={packAmountUsd}
+                                        onChange={setPackAmountUsd}
+                                        packs={AUTO_TOP_UP_PACKS}
+                                        disabled={isSaving}
+                                    />
+                                }
+                                action={
+                                    <AutoTopUpSaveButton
+                                        hasUnsavedChanges={hasUnsavedChanges}
+                                        setup={setup}
+                                        onSave={handleSave}
+                                    />
+                                }
                             />
+                            {selectedPack && (
+                                <p className="text-[13px] leading-snug text-theme-text-muted">
+                                    <span className="text-sm font-bold text-theme-text-strong tabular-nums">
+                                        {formatUsdCentsCompact(
+                                            selectedPack.amountUsd * 100 +
+                                                serviceFeeCents,
+                                        )}
+                                    </span>{" "}
+                                    per top-up · Includes{" "}
+                                    {formatUsdCentsCompact(serviceFeeCents)}{" "}
+                                    {SERVICE_FEE_NAME.toLowerCase()} · Tax added
+                                    when charged
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -493,17 +499,18 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     return (
         <DisabledControlTooltip
             content={saveDisabled ? disabledReason : null}
-            className="self-start sm:shrink-0 sm:self-center"
+            className="flex"
         >
             <Button
                 as="button"
                 type="button"
                 onClick={onSave}
                 intent="commit"
+                size="lg"
+                icon={<CheckIcon />}
                 disabled={saveDisabled}
-                className="w-28 min-w-0 gap-1.5 self-start text-center sm:self-center"
+                className="text-base"
             >
-                <CheckIcon className="h-4 w-4 shrink-0" />
                 Save
             </Button>
         </DisabledControlTooltip>
@@ -528,6 +535,7 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
             triggerAs="span"
             content={content}
             className={cn("polli:cursor-not-allowed", className)}
+            displayContents
         >
             {children}
         </Tooltip>

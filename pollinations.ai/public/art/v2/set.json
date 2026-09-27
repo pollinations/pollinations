@@ -145,8 +145,8 @@
             "page": "community",
             "slot": "hero",
             "frame": "hero",
-            "seed": 5401,
-            "prompt": "At the noticeboard on the green, {polli}, wearing a mint scarf, pins a sprout-drawing idea card; {robot} hands up the next card; {nomnom} sits by a basket of seed packets nibbling an old crumpled card. The bulb string on its posts is just switching on. {hive} glows small in the valley below."
+            "seed": 5411,
+            "prompt": "At the noticeboard on the green, {polli}, wearing a mint scarf, pins a sprout-drawing idea card; {robot} hands up the next card; {nomnom} sits by a basket of seed packets nibbling an old crumpled card. The bulb string on its posts is just switching on. {hive} sits small on a far violet hill in the right third. The whole scene, characters included, sits in the upper 60% of the frame; the bottom 40% is only soft grass fading to cream, because page cards overlap it."
         },
         {
             "page": "community",

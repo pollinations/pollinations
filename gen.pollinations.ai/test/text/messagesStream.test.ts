@@ -293,8 +293,8 @@ describe("chatStreamToMessagesStream", () => {
         expect(events.map((entry) => entry.event).at(-1)).toBe("message_stop");
     });
 
-    it("uses a 30s default ping interval, well under the 300s abort", () => {
-        expect(MESSAGES_PING_INTERVAL_MS).toBe(30_000);
+    it("uses a 15s default ping interval, well under the 300s abort", () => {
+        expect(MESSAGES_PING_INTERVAL_MS).toBe(15_000);
         expect(MESSAGES_PING_INTERVAL_MS).toBeLessThan(300_000);
     });
 });

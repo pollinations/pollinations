@@ -27,9 +27,10 @@ describe("translateMessagesRequest", () => {
         });
     });
 
-    it("passes system block cache_control through", () => {
+    it("passes system block cache_control through for caching providers", () => {
         const chat = translate({
             ...base,
+            model: "anthropic/claude-sonnet-4",
             system: [
                 { type: "text", text: "prefix", cache_control: { type: "ephemeral" } },
                 { type: "text", text: "suffix" },
@@ -46,6 +47,40 @@ describe("translateMessagesRequest", () => {
                 { type: "text", text: "suffix" },
             ],
         });
+    });
+
+    it("strips cache_control for models without prompt caching", () => {
+        for (const model of ["openai", "deepseek/deepseek-chat", "qwen/qwen3"]) {
+            const chat = translate({
+                ...base,
+                model,
+                system: [
+                    {
+                        type: "text",
+                        text: "prefix",
+                        cache_control: { type: "ephemeral" },
+                    },
+                ],
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "hi",
+                                cache_control: { type: "ephemeral" },
+                            },
+                        ],
+                    },
+                ],
+            });
+            for (const message of chat.messages) {
+                const content = (message as { content?: unknown }).content;
+                if (!Array.isArray(content)) continue;
+                for (const part of content)
+                    expect(part).not.toHaveProperty("cache_control");
+            }
+        }
     });
 
     it("maps base64 and url images to image_url parts", () => {
@@ -225,13 +260,35 @@ describe("translateMessagesRequest", () => {
         });
         expect(chat).toMatchObject({
             stop: ["END"],
-            reasoning_effort: "high",
+            reasoning_effort: "medium",
             user: "user_1",
             temperature: 0.5,
             top_p: 0.9,
             stream: true,
             stream_options: { include_usage: true },
         });
+    });
+
+    it("honors output_config.effort and maps adaptive thinking to high", () => {
+        const low = translate({
+            ...base,
+            thinking: { type: "enabled" },
+            output_config: { effort: "low" },
+        });
+        expect(low).toMatchObject({ reasoning_effort: "low" });
+
+        const adaptive = translate({
+            ...base,
+            thinking: { type: "adaptive" },
+        });
+        expect(adaptive).toMatchObject({ reasoning_effort: "high" });
+
+        const bogus = translate({
+            ...base,
+            thinking: { type: "enabled" },
+            output_config: { effort: "ultra" },
+        });
+        expect(bogus).toMatchObject({ reasoning_effort: "medium" });
     });
 
     it("accepts adaptive thinking and Claude Code extras without failing", () => {

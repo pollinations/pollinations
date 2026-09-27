@@ -315,11 +315,53 @@ function translateToolChoice(toolChoice: CreateMessagesRequest["tool_choice"]) {
     }
 }
 
-function translateThinking(thinking: CreateMessagesRequest["thinking"]) {
+const REASONING_EFFORTS = [
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+] as const;
+type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
+function isReasoningEffort(value: unknown): value is ReasoningEffort {
+    return (
+        typeof value === "string" &&
+        (REASONING_EFFORTS as readonly string[]).includes(value)
+    );
+}
+
+function translateThinking(
+    thinking: CreateMessagesRequest["thinking"],
+    outputConfig: unknown,
+): { reasoning_effort?: ReasoningEffort } {
     if (!thinking || thinking.type === "disabled") return {};
-    // Any enabled-style mode (including future ones like `adaptive`) requests
-    // reasoning; the provider decides the depth.
-    return { reasoning_effort: "high" as const };
+    // Claude Code may request an explicit effort via output_config; honor it
+    // when it names a supported reasoning depth.
+    const effort = asRecord(outputConfig).effort;
+    if (isReasoningEffort(effort)) return { reasoning_effort: effort };
+    // `enabled` is the standard mode; anything else (e.g. `adaptive`) asks
+    // for deeper reasoning than the default.
+    return {
+        reasoning_effort: thinking.type === "enabled" ? "medium" : "high",
+    };
+}
+
+// Models whose providers reject prompt-caching directives (GLM, DeepSeek,
+// community models, ...) fail the request when cache_control is present.
+// Only providers with native prompt caching keep it.
+const CACHE_CONTROL_MODELS = /^(anthropic|google|amazon)\//;
+
+function stripCacheControl(messages: ChatMessages): void {
+    for (const message of messages) {
+        const content = asRecord(message).content;
+        if (!Array.isArray(content)) continue;
+        for (const part of content) {
+            if (isRecord(part)) delete part.cache_control;
+        }
+    }
 }
 
 /**
@@ -335,6 +377,7 @@ export function translateMessagesRequest(
         ...(system ? [system] : []),
         ...body.messages.flatMap(translateMessage),
     ];
+    if (!CACHE_CONTROL_MODELS.test(body.model)) stripCacheControl(messages);
     return {
         messages,
         model: body.model,
@@ -360,6 +403,9 @@ export function translateMessagesRequest(
             : {}),
         ...translateTools(body.tools),
         ...translateToolChoice(body.tool_choice),
-        ...translateThinking(body.thinking),
+        ...translateThinking(
+            body.thinking,
+            (body as unknown as JsonRecord).output_config,
+        ),
     };
 }

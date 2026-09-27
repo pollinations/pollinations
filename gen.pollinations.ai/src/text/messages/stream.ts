@@ -15,7 +15,7 @@
 import { CompletionUsageSchema } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
 
-export const MESSAGES_PING_INTERVAL_MS = 30_000;
+export const MESSAGES_PING_INTERVAL_MS = 15_000;
 
 type StreamToolCallDelta = {
     index?: unknown;

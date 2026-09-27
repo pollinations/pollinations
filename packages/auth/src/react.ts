@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PollinationsUser } from "./server";
 
-export function useDashboardSession() {
+export function useDashboardSession(authPath = "/auth") {
     const [session, setSession] = useState<{
         user: PollinationsUser | null;
         isPending: boolean;
@@ -11,7 +11,7 @@ export function useDashboardSession() {
     useEffect(() => {
         const controller = new AbortController();
         const refresh = () =>
-            fetch("/auth/session", {
+            fetch(`${authPath}/session`, {
                 credentials: "same-origin",
                 signal: controller.signal,
             })
@@ -50,7 +50,7 @@ export function useDashboardSession() {
             window.removeEventListener("focus", refresh);
             window.clearInterval(interval);
         };
-    }, []);
+    }, [authPath]);
 
     return session;
 }
@@ -66,8 +66,8 @@ export function signIn() {
     window.location.assign(url);
 }
 
-export async function signOut() {
-    const response = await fetch("/auth/logout", {
+export async function signOut(authPath = "/auth") {
+    const response = await fetch(`${authPath}/logout`, {
         method: "POST",
         credentials: "same-origin",
     });

@@ -122,12 +122,9 @@ try {
     await page.waitForFunction(() =>
         document.getElementById("canvas-root")?.textContent.includes("Models"),
     );
-    assert(
-        (
-            await page
-                .getByRole("navigation", { name: "Source revisions" })
-                .textContent()
-        ).includes(source.revision.slice(0, 10)),
+    assert.equal(
+        await page.evaluate(() => window.__FLOW_ENVIRONMENT__.source.revision),
+        source.revision,
     );
     assert.equal(
         await page.evaluate(() => window.__FLOW_ENVIRONMENT__.enter),

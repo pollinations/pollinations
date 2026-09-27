@@ -5,7 +5,7 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .flow-lab { --flow-canvas-bg: var(--polli-color-app-bg); --flow-canvas-dot: color-mix(in srgb, var(--polli-color-text-muted) 18%, transparent); height: 100%; min-height: 0; display: flex; flex-direction: column; }
 .flow-lab .journey-view, .flow-lab .screen-canvas { background-color: var(--flow-canvas-bg); background-image: radial-gradient(var(--flow-canvas-dot) 1px, transparent 1px); background-size: 20px 20px; }
 .flow-header { flex: none; padding: 12px 24px; background: color-mix(in srgb, var(--polli-color-surface-opaque) 50%, var(--polli-color-app-bg)); }
-.flow-header-main { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.flow-header-main { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
 .flow-header-controls { display: flex; align-items: center; flex: none; gap: 16px; }
 .flow-header-secondary { display: flex; justify-content: center; margin-top: 8px; }
 .flow-brand { display: flex; align-items: center; gap: 8px; font: 500 20px/1 var(--polli-font-subheading); white-space: nowrap; }
@@ -23,7 +23,6 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 }
 @media (max-width: 600px) {
     .flow-header-main, .flow-header-controls { gap: 8px; }
-    .flow-brand > span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .flow-header-secondary { justify-content: flex-start; }
 }
 .screen-canvas { flex: 1; min-height: 0; cursor: grab; }
@@ -137,10 +136,7 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .canvas-inspector-overlay .canvas-inspector:not(.canvas-inspector-desktop) { --status-width: clamp(112px, 24cqw, 220px); --phone-width: min(375px, calc(100cqw - var(--status-width) - 26px), calc((100cqh - 10px) * 1206 / 2622)); }
 .canvas-inspector:not(.canvas-inspector-desktop) .canvas-inspector-title { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
 .canvas-inspector-overlay .canvas-inspector-desktop { --phone-width: min(1120px, calc(100cqw - 32px), calc((100cqh - 32px) * 1.6)); }
-.flow-source {
-    padding: 0.25rem 1rem;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    opacity: 0.75;
-    overflow-wrap: anywhere;
+.flow-reviewer-account { max-width: min(240px, calc(100% - 90px)); }
+@media (max-width: 700px) {
+    .flow-header-controls { order: 1; width: 100%; justify-content: space-between; }
 }

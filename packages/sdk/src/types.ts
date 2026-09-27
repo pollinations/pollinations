@@ -475,6 +475,16 @@ export interface AudioGenerateOptions extends RequestOptions {
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
+    /** Public audio URL for models that support reference-audio input. */
+    referenceAudio?: string;
+}
+
+/** File-based voice conversion or speech isolation. */
+export interface AudioTransformOptions extends RequestOptions {
+    operation: "voice-changer" | "voice-isolator";
+    model?: AudioModel;
+    /** Target voice for voice-changer. */
+    voice?: AudioVoice;
 }
 
 /** Response from dedicated audio endpoints (binary audio data) */

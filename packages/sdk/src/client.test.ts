@@ -261,6 +261,82 @@ describe("Pollinations media upload", () => {
     });
 });
 
+describe("audio inputs", () => {
+    it("sends reference audio in both audio generation endpoints", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { contentType: "audio/mpeg" }),
+        );
+        const client = newClient();
+        const referenceAudio = "https://media.pollinations.ai/reference.wav";
+        const options = {
+            model: "music-model",
+            referenceAudio,
+            duration: 3,
+            seed: 42,
+        };
+        await client.audio("a melody", options);
+        await client.audioSpeech("a melody", options);
+        const url = new URL(fetchMock.mock.calls[0][0]);
+        expect(url.searchParams.get("reference_audio")).toBe(referenceAudio);
+        expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+            input: "a melody",
+            model: "music-model",
+            reference_audio: referenceAudio,
+            duration: 3,
+            seed: 42,
+        });
+    });
+
+    it.each([
+        "voice-changer",
+        "voice-isolator",
+    ] as const)("posts the original file to %s without a text prompt", async (operation) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { contentType: "audio/wav" }),
+        );
+        const file = new File(["sample audio"], "sample.wav", {
+            type: "audio/wav",
+        });
+        const result = await newClient().audioTransform(file, {
+            operation,
+            model: "catalog-model",
+            voice: "alloy",
+        });
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(`https://example.test/v1/audio/${operation}`);
+        expect(init.method).toBe("POST");
+        expect(init.headers["Content-Type"]).toBeUndefined();
+        expect(init.body.get("model")).toBe("catalog-model");
+        expect(init.body.get("voice")).toBe(
+            operation === "voice-changer" ? "alloy" : null,
+        );
+        const uploaded = init.body.get("audio") as File;
+        expect(uploaded.name).toBe("sample.wav");
+        expect(uploaded.type).toBe("audio/wav");
+        expect(await uploaded.text()).toBe("sample audio");
+        expect(result.contentType).toBe("audio/wav");
+    });
+
+    it("surfaces transformation API errors", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                {
+                    error: {
+                        message: "Unsupported media",
+                        code: "INVALID_INPUT",
+                    },
+                },
+                { ok: false, status: 400 },
+            ),
+        );
+        await expect(
+            newClient().audioTransform(new Blob(["sample"]), {
+                operation: "voice-isolator",
+            }),
+        ).rejects.toThrow("Unsupported media");
+    });
+});
+
 describe("Pollinations server-owned defaults", () => {
     it("omits unset models from URL requests", async () => {
         const client = newClient();

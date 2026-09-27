@@ -39,6 +39,11 @@ import { API_BASE_URL } from "../../config";
 import { Chat } from "./Chat";
 import { errorMessage } from "./chat-models";
 import { MediaDownloadButton } from "./MediaDownloadButton";
+import {
+    audioEndpoint,
+    audioInputError,
+    generatePlaygroundAudio,
+} from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
 type PlaygroundModel = {
@@ -48,7 +53,7 @@ type PlaygroundModel = {
     category: ModelCategory;
     community: boolean;
     inputModalities: string[];
-    outputModalities: string[];
+    supportedEndpoints: string[];
     videoCapabilities: string[];
     resolutions: string[];
     minDuration?: number;
@@ -64,12 +69,14 @@ type PlaygroundModel = {
 const AUDIO_TASK_ORDER = [
     "transcription",
     "speech-generation",
+    "audio-processing",
     "music-and-sound-effects",
 ] as const;
 type AudioTask = (typeof AUDIO_TASK_ORDER)[number];
 const AUDIO_TASK_LABEL: Record<AudioTask, string> = {
     transcription: "Transcription",
     "speech-generation": "Speech generation",
+    "audio-processing": "Voice & cleanup",
     "music-and-sound-effects": "Music & sound effects",
 };
 
@@ -84,7 +91,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         category: model.category,
         community: model.community ?? false,
         inputModalities: model.input_modalities ?? [],
-        outputModalities: model.output_modalities ?? [],
+        supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
         resolutions: model.resolutions ?? [],
         minDuration: model.min_duration,
@@ -182,24 +189,6 @@ function randomGenerationSeed(): number {
     return value[0] & 0x7fffffff;
 }
 
-function isAudioTranscriptionModel(
-    model: PlaygroundModel | undefined,
-): boolean {
-    return (
-        model?.category === "audio" &&
-        model.inputModalities.includes("audio") &&
-        model.outputModalities.includes("text")
-    );
-}
-
-function isTextToAudioModel(model: PlaygroundModel | undefined): boolean {
-    return (
-        model?.category === "audio" &&
-        model.inputModalities.includes("text") &&
-        model.outputModalities.includes("audio")
-    );
-}
-
 function referenceImageLimit(model: PlaygroundModel | undefined): number {
     if (!model?.inputModalities.includes("image")) return 0;
     return model.maxReferenceImages ?? 0;
@@ -225,11 +214,13 @@ function mediaList(modalities: UploadMedia[]): string {
 }
 
 function audioTaskForModel(model: PlaygroundModel): AudioTask {
+    const endpoint = audioEndpoint(model);
+    if (endpoint === "/v1/audio/transcriptions") return "transcription";
     if (
-        model.inputModalities.includes("audio") &&
-        model.outputModalities.includes("text")
+        endpoint === "/v1/audio/voice-changer" ||
+        endpoint === "/v1/audio/voice-isolator"
     )
-        return "transcription";
+        return "audio-processing";
     const audioPurpose = `${model.title} ${model.description}`.toLowerCase();
     if (
         audioPurpose.includes("music") ||
@@ -737,8 +728,16 @@ export function Playground() {
         maxReferenceImages >= 2;
     const firstFrameFiles = referenceImages[0] ? [referenceImages[0]] : [];
     const lastFrameFiles = referenceImages[1] ? [referenceImages[1]] : [];
-    const isAudioTranscription = isAudioTranscriptionModel(currentModel);
-    const isTextToAudio = isTextToAudioModel(currentModel);
+    const currentAudioEndpoint =
+        currentModel?.category === "audio"
+            ? audioEndpoint(currentModel)
+            : undefined;
+    const isAudioTranscription =
+        currentAudioEndpoint === "/v1/audio/transcriptions";
+    const audioError =
+        currentModel?.category === "audio"
+            ? audioInputError(currentModel, prompt, audioFiles[0])
+            : null;
     const uploadMedia =
         currentModel?.category === "audio"
             ? uploadMediaForModel(currentModel)
@@ -855,7 +854,6 @@ export function Playground() {
 
     async function generate() {
         const trimmedPrompt = prompt.trim();
-        const audioFile = audioFiles[0];
 
         if (!apiKey) {
             setError(
@@ -873,11 +871,11 @@ export function Playground() {
             setError("This key cannot use the selected model.");
             return;
         }
-        if (isAudioTranscription && !audioFile) {
-            setError("Upload an audio file first.");
+        if (audioError) {
+            setError(audioError);
             return;
         }
-        if (!isAudioTranscription && !trimmedPrompt) {
+        if (currentModel.category !== "audio" && !trimmedPrompt) {
             setError(`Add ${promptLabel.toLowerCase()} first.`);
             return;
         }
@@ -939,37 +937,27 @@ export function Playground() {
             }
 
             if (currentModel.category === "audio") {
-                if (isAudioTranscription && audioFile) {
-                    const response = await client.transcribe(audioFile, {
-                        model: currentModel.id,
-                        prompt: trimmedPrompt || undefined,
-                    });
-                    setResult({
-                        type: "text",
-                        text: response.text || "No transcript",
-                    });
-                    return;
-                }
-
-                if (!isTextToAudio) {
-                    setError(
-                        "This audio model is not supported in the playground yet.",
-                    );
-                    return;
-                }
-
-                const response = await client.audio(trimmedPrompt, {
-                    model: currentModel.id,
-                    voice: selectedVoice || undefined,
-                });
-                setResult({
-                    type: "audio",
-                    url: bytesToObjectUrl(
-                        response.buffer,
-                        response.contentType,
-                    ),
-                    contentType: response.contentType,
-                });
+                const response = await generatePlaygroundAudio(
+                    client,
+                    currentModel,
+                    {
+                        prompt: trimmedPrompt,
+                        file: audioFiles[0],
+                        voice: selectedVoice || undefined,
+                    },
+                );
+                setResult(
+                    response.type === "text"
+                        ? response
+                        : {
+                              type: "audio",
+                              url: bytesToObjectUrl(
+                                  response.buffer,
+                                  response.contentType,
+                              ),
+                              contentType: response.contentType,
+                          },
+                );
                 return;
             }
 
@@ -1003,7 +991,11 @@ export function Playground() {
             : currentModel?.category === "audio"
               ? isAudioTranscription
                   ? "Transcribe audio"
-                  : "Generate audio"
+                  : currentAudioEndpoint === "/v1/audio/voice-changer"
+                    ? "Change voice"
+                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                      ? "Isolate speech"
+                      : "Generate audio"
               : currentModel?.category === "text"
                 ? "Generate text"
                 : "Generate image";
@@ -1030,18 +1022,24 @@ export function Playground() {
     /** Why the button cannot fire, or null when it can. Drives the tooltip. */
     const blockedReason = needsSignIn
         ? null
-        : missingInput
-          ? requiresMediaUpload
-              ? `Upload ${mediaUploadLabel} first`
-              : `Add ${promptLabel.toLowerCase()} first`
-          : !selectedModelAllowed
-            ? "This key cannot use the selected model"
-            : null;
+        : audioError
+          ? audioError
+          : missingInput
+            ? requiresMediaUpload
+                ? `Upload ${mediaUploadLabel} first`
+                : `Add ${promptLabel.toLowerCase()} first`
+            : !selectedModelAllowed
+              ? "This key cannot use the selected model"
+              : null;
 
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
-                label={`${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`}
+                label={
+                    requiresMediaUpload
+                        ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
+                        : "Reference audio (optional)"
+                }
             >
                 <FileUpload
                     value={audioFiles}
@@ -1075,6 +1073,9 @@ export function Playground() {
                     <Text size="xs" tone="muted">
                         Audio is sent to the selected model for transcription.
                     </Text>
+                )}
+                {!requiresMediaUpload && audioFiles.length > 0 && (
+                    <UploadPrivacyNote />
                 )}
             </FieldStack>
         ) : null;

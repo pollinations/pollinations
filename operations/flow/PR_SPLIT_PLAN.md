@@ -4,7 +4,7 @@
 
 - PR [#15503](https://github.com/pollinations/pollinations/pull/15503), branch `codex/connect-review-workspace`, targets `main`. Keep it draft until the release configuration, required approvals and pre-merge checks are ready.
 - Source: `operations/flow`. Historical source branch: `origin/codex/pollen-connect-ux` at `27e396e48b1`. Preserve accepted main simplifications; never restore historical product files wholesale.
-- Integrated main: `b02de198e2`, through merge `b44c38e2f9`. Earlier evidence retains its original revision.
+- Flow and the PR body identify the integrated main revision. Earlier evidence retains its original revision.
 - Completed extractions: #14936, #14949, #14951, #15269–#15271 and #15273. #15060 was superseded by those UI extractions.
 - Flow runs the real Enter, Gen, SDK, UI and shared code. Fixture providers, disposable databases and injected errors are explicit. Product bugs belong in separate PRs, not replacement product logic inside Flow.
 - Everyone with a Pollinations account can enter Flow through one identity-only login. Each reviewer receives an isolated container. The simulated Admin app still enforces its product role checks; no production admin data enters the fixture environment.

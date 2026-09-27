@@ -95,6 +95,46 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
+    it("advertises /v1/messages on text models that use the default endpoint set", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        // Models that declare their own supportedEndpoints (e.g. decisions
+        // models) opt out deliberately and are not covered by the default
+        // text endpoint set this route is added to.
+        const chatModels = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    entry.definition.category === "text" &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions") &&
+                    entry.definition.supportedEndpoints === undefined,
+            )
+            .map((entry) => entry.id);
+
+        expect(chatModels.length).toBeGreaterThan(0);
+        for (const model of chatModels) {
+            expect(
+                registry.resolve(model)?.info.supported_endpoints,
+                `${model} should advertise /v1/messages`,
+            ).toContain("/v1/messages");
+        }
+    });
+
+    it("does not advertise /v1/messages on media models", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const mediaModels = registry
+            .visibleEntries()
+            .filter((entry) => entry.definition.category !== "text")
+            .map((entry) => entry.id);
+
+        expect(mediaModels.length).toBeGreaterThan(0);
+        for (const model of mediaModels) {
+            expect(
+                registry.resolve(model)?.info.supported_endpoints ?? [],
+                `${model} should not advertise /v1/messages`,
+            ).not.toContain("/v1/messages");
+        }
+    });
+
     it("advertises every configured direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels

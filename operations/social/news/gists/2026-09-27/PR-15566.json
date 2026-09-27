@@ -1,0 +1,39 @@
+{
+  "pr_number": 15566,
+  "title": "feat: let an approved app submission close and pay a quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15566",
+  "merged_at": "2026-09-27T17:59:22Z",
+  "labels": [
+    "FEATURE",
+    "BILLING",
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Addresses #15527\n\n- Adds an optional **Quest** field to the app submission form (`#123` or `123`); its description tells everyone else to leave it empty\n- Validation (at review and at approval) requires an open POLLEN-QUEST issue; otherwise the submission moves to `APP-NEEDS-INFO`\n- The catalog PR says `Fixes #<submission>, fixes #<quest>`\n- The quest check pays the commit co-author of PRs by the `pollinations-ai[bot]` app (a Bot, not the same-named user) on `auto/app-<n>-` branches; other PRs still pay only their author\n- CONTRIBUTING, the Pollen FAQ, the social brand prompt and AGENTS.md explain app quests\n\n| | Before | After |\n|---|---|---|\n| Quest closed by an approved app | Closes, pays nobody (bot author) | Pays the submitter |\n| Quest search cost | 3 points | 3 points + 1 per catalog PR closing a quest |\n\nTests: enter `test/quests.test.ts` 41/41 (new test fails on old code); `submission.test.js` 7/7. Both GraphQL queries checked against live GitHub.\n\nNeeds an enter production deploy before the first such quest pays.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Apps can finish quests now",
+    "blurb": "Built an app for a Quest? Put its number on the submission form. Once the app is approved, the Quest closes and its Pollen reward goes to the submitter—not the publishing bot.",
+    "summary": "App submissions now accept an optional Quest number (#123 or 123), validate that it points to an open POLLEN-QUEST issue, and close the Quest on approval while attributing the reward to the submitter.",
+    "impact": "App builders can submit an app for an open Quest and claim its Pollen reward after approval, even though the catalog PR is opened by pollinations-ai[bot].",
+    "keywords": [
+      "Pollen",
+      "Quests",
+      "app submissions",
+      "catalog",
+      "rewards",
+      "GitHub"
+    ],
+    "visual_concept": "An app submission card marked with a Quest number becomes a blooming flower in the app catalog; a small Pollen token reaches Polli rather than the friendly publishing robot. Show Polli placing the card and the robot helping tend the catalog garden.",
+    "image_prompt": "In a cozy pixel art garden beside a glowing retro catalog terminal, a cute chunky CRT monitor robot with square pixel eyes holds an app submission card marked 'QUEST #123' while Polli places it beside a blooming flower and receives a small Pollen token. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium beside the robot and flowers, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15566.jpg",
+    "prompt": "In a cozy pixel art garden beside a glowing retro catalog terminal, a cute chunky CRT monitor robot with square pixel eyes holds an app submission card marked 'QUEST #123' while Polli places it beside a blooming flower and receives a small Pollen token. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium beside the robot and flowers, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-27T18:00:22.083846+00:00"
+}

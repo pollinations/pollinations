@@ -1,16 +1,15 @@
 import { writeFileSync } from "node:fs";
+import { join, parse } from "node:path";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    fail,
     getOutputMode,
     printError,
     printInfo,
     printMeta,
-    printWarn,
 } from "../../lib/output.js";
-import { playAudio, playerMissingHint } from "../../lib/play.js";
+import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
 export function createAudioCommand() {
@@ -30,17 +29,78 @@ export function createAudioCommand() {
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--seed <n>", "Seed for deterministic output")
-        .option("--output <path>", "Save to file", "speech.mp3")
+        .option("--output <path>", "Save to file")
         .option("--play", "Play the audio after saving (platform player)")
+        .option(
+            "--timestamps",
+            "Also save character-level timing as JSON next to the audio",
+        )
         .action(async (textArg, opts) => {
-            const key = requireKey();
             const isHuman = getOutputMode() === "human";
+            const output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin());
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
                 );
                 process.exit(1);
+            }
+
+            if (opts.timestamps) {
+                if (isHuman) printInfo("Generating audio with timestamps...");
+
+                try {
+                    const body: Record<string, unknown> = {
+                        input: inputText,
+                        voice: opts.voice,
+                    };
+                    if (opts.format !== "mp3")
+                        body.response_format = opts.format;
+                    if (opts.model) body.model = opts.model;
+                    if (opts.seed) body.seed = Number(opts.seed);
+
+                    const res = await fetchGen(
+                        "/v1/audio/speech/with-timestamps",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(body),
+                        },
+                    );
+
+                    const data = (await res.json()) as {
+                        audio_base64: string;
+                        alignment: unknown;
+                        normalized_alignment: unknown;
+                    };
+
+                    const buffer = Buffer.from(data.audio_base64, "base64");
+                    writeFileSync(output, buffer);
+
+                    const { dir, name } = parse(output);
+                    const timestampsPath = join(dir, `${name}.json`);
+                    writeFileSync(
+                        timestampsPath,
+                        JSON.stringify(
+                            {
+                                alignment: data.alignment,
+                                normalized_alignment: data.normalized_alignment,
+                            },
+                            null,
+                            2,
+                        ),
+                    );
+
+                    printMeta({
+                        path: output,
+                        size: buffer.length,
+                        voice: opts.voice,
+                        timestamps: timestampsPath,
+                    });
+                } catch (error) {
+                    exitWithError(error);
+                }
+                return;
             }
 
             const params = new URLSearchParams({ voice: opts.voice });
@@ -53,44 +113,31 @@ export function createAudioCommand() {
             if (opts.seed) params.set("seed", opts.seed);
 
             const encodedText = encodeURIComponent(inputText);
-            const url = `${BASE_URL}/audio/${encodedText}?${params}`;
+            const path = `/audio/${encodedText}?${params}`;
 
             if (isHuman) printInfo("Generating audio...");
 
             try {
-                const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${key}` },
-                });
-                if (!res.ok) {
-                    const errText = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, errText);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(
-                        `${res.status} ${res.statusText}: ${errText}`,
-                    );
-                }
+                const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
-                writeFileSync(opts.output, buffer);
+                writeFileSync(output, buffer);
                 printMeta({
-                    path: opts.output,
+                    path: output,
                     size: buffer.length,
                     voice: opts.voice,
                 });
 
                 if (opts.play) {
                     if (isHuman) printInfo("Playing...");
-                    const ok = await playAudio(opts.output);
-                    if (!ok) printWarn(playerMissingHint());
+                    const ok = await playAudio(output);
+                    if (!ok)
+                        fail(
+                            "Audio playback failed. Check the saved file and player installation.",
+                        );
                 }
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

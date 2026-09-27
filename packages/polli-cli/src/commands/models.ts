@@ -1,12 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen } from "../lib/api.js";
-import {
-    getOutputMode,
-    printError,
-    printResult,
-    printTable,
-} from "../lib/output.js";
+import { fail, getOutputMode, printResult, printTable } from "../lib/output.js";
 import { fetchModelStats } from "./stats.js";
 
 const MAX_STATS_WINDOW_MINUTES = 7 * 24 * 60;
@@ -67,11 +62,24 @@ function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
     return row;
 }
 
+async function listModel3d(verbose: boolean) {
+    const model3dModels = await gen<ModelEntry[]>("/3d/models");
+    if (getOutputMode() === "json") {
+        printResult(model3dModels.map((m) => ({ ...m, type: "3d" })));
+        return;
+    }
+    const rows = model3dModels.map((m) => buildRow(m, "3d", verbose));
+    const cols = verbose
+        ? ["name", "type", "capabilities", "context", "pricing", "description"]
+        : ["name", "type", "capabilities", "description"];
+    printTable(rows, cols);
+}
+
 export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option(
         "--type <type>",
-        "Filter: text, image, audio, video, embedding, all",
+        "Filter: text, image, audio, video, embedding, 3d, all",
         "all",
     )
     .option("--verbose", "Show additional details (context length)")
@@ -81,7 +89,26 @@ export const modelsCommand = new Command("models")
         `Stats window in minutes (1-${MAX_STATS_WINDOW_MINUTES})`,
         "60",
     )
+    .hook("preAction", async (thisCommand) => {
+        const opts = thisCommand.opts();
+        if (opts.type !== "3d" || opts.stats) return;
+        try {
+            await listModel3d(!!opts.verbose);
+        } catch (err) {
+            fail("Failed to fetch models", err);
+        }
+        process.exit(0);
+    })
     .action(async (opts) => {
+        if (
+            !["text", "image", "audio", "video", "embedding", "all"].includes(
+                opts.type,
+            )
+        ) {
+            fail(
+                "--type must be one of: text, image, audio, video, embedding, all",
+            );
+        }
         if (opts.stats) {
             try {
                 const windowMinutes = Number(opts.window);
@@ -90,10 +117,9 @@ export const modelsCommand = new Command("models")
                     windowMinutes < 1 ||
                     windowMinutes > MAX_STATS_WINDOW_MINUTES
                 ) {
-                    printError(
+                    fail(
                         `--window must be an integer between 1 and ${MAX_STATS_WINDOW_MINUTES}`,
                     );
-                    process.exit(1);
                 }
 
                 const rows = await fetchModelStats(windowMinutes);
@@ -133,10 +159,7 @@ export const modelsCommand = new Command("models")
                     printTable(curated);
                 }
             } catch (err) {
-                printError(
-                    `Failed to fetch stats: ${err instanceof Error ? err.message : "unknown"}`,
-                );
-                process.exit(1);
+                fail("Failed to fetch stats", err);
             }
             return;
         }
@@ -170,6 +193,11 @@ export const modelsCommand = new Command("models")
                 for (const m of embeddingModels)
                     raw.push({ model: m, type: "embedding" });
             }
+            if (type === "all") {
+                const model3dModels = await gen<ModelEntry[]>("/3d/models");
+                for (const m of model3dModels)
+                    raw.push({ model: m, type: "3d" });
+            }
 
             if (getOutputMode() === "json") {
                 printResult(
@@ -193,9 +221,6 @@ export const modelsCommand = new Command("models")
                 : ["name", "type", "capabilities", "description"];
             printTable(rows, cols);
         } catch (err) {
-            printError(
-                `Failed to fetch models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch models", err);
         }
     });

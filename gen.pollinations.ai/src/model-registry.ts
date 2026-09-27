@@ -40,6 +40,7 @@ const REGISTRY_TTL_MS = 60_000;
 const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/messages",
     "/text",
     "/text/{prompt}",
 ];
@@ -149,6 +150,11 @@ function communityEntryToGenerationEntry(
         entry.communityEndpoint.api === "responses"
     ) {
         supportedEndpoints.push("/v1/responses");
+    }
+    // Messages reuses the Chat Completions pipeline (translated upstream),
+    // so every community text model serves it, however it is registered.
+    if (entry.communityEndpoint.modality === "text") {
+        supportedEndpoints.push("/v1/messages");
     }
     return {
         id: entry.id,

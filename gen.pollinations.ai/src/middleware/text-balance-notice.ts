@@ -13,6 +13,7 @@ import {
 } from "../media/response-output.ts";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { requestsJson } from "../text/requestUtils.ts";
+import { messagesErrorBody, messagesErrorEventText } from "../text/messages/errors.ts";
 import {
     responsesToChatCompletion,
     responsesToChatStream,
@@ -98,6 +99,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     );
 
     const isResponses = c.req.path === "/v1/responses";
+    const isMessages = c.req.path === "/v1/messages";
     const request = c.req.valid(
         (c.req.method === "POST" ? "json" : "query") as never,
     ) as GenerateTextRequestQueryParams &
@@ -124,6 +126,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     if (
         !request.stream &&
         !isResponses &&
+        !isMessages &&
         c.req.path !== "/v1/chat/completions"
     ) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
@@ -142,7 +145,11 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
         headers.set("Content-Type", "text/event-stream; charset=utf-8");
         const stream = textResponseStream(response);
         c.res = new Response(
-            isResponses ? stream : responsesToChatStream(stream, model),
+            isResponses
+                ? stream
+                : isMessages
+                  ? messagesErrorEventText(message)
+                  : responsesToChatStream(stream, model),
             { headers },
         );
     } else {
@@ -150,11 +157,13 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
         c.res = Response.json(
             isResponses
                 ? response
-                : responsesToChatCompletion(
-                      response,
-                      model,
-                      new URL(c.req.url),
-                  ),
+                : isMessages
+                  ? messagesErrorBody(message)
+                  : responsesToChatCompletion(
+                        response,
+                        model,
+                        new URL(c.req.url),
+                    ),
             { headers },
         );
     }

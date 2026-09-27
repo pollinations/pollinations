@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import type { CreateMessagesRequest } from "@shared/schemas/anthropic.ts";
 import {
     type CreateChatCompletionRequest,
     type CreateChatCompletionResponse,
@@ -24,6 +25,8 @@ import {
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
+import { handleMessagesLocal } from "@/text/messages/handler.ts";
+import { translateMessagesRequest } from "@/text/messages/request.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../utils/upstream-response.ts";
@@ -214,6 +217,25 @@ export async function generateChatCompletion(
             },
         }),
     );
+}
+
+export async function generateMessage(c: Context<Env>): Promise<Response> {
+    const messagesBody = {
+        ...(c.req.valid("json" as never) as CreateMessagesRequest),
+        model: c.var.model.resolved,
+    };
+    // Translate before safety so the content scan sees the same chat shape
+    // every other text endpoint is checked against.
+    const chatBody = await applySafetyToInput(c, {
+        ...translateMessagesRequest(messagesBody),
+        model: c.var.model.resolved,
+    });
+    const response = await handleMessagesLocal(c, messagesBody, chatBody);
+    if (!response.ok) return response;
+
+    assertStreamContentType(c, response, c.var.upstreamRequestUrl);
+
+    return withSafetyHeaders(c, response);
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {

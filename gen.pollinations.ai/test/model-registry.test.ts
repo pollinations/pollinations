@@ -128,6 +128,36 @@ describe("getGenerationModelRegistry", () => {
         expect(advertised).not.toContain("midijourney-large");
     });
 
+    it("advertises /v1/messages on every text model that serves chat", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const chatEntries = registry
+            .visibleEntries()
+            .filter((entry) =>
+                entry.supportedEndpoints.includes("/v1/chat/completions"),
+            );
+        expect(chatEntries.length).toBeGreaterThan(0);
+        for (const entry of chatEntries) {
+            expect(
+                entry.supportedEndpoints,
+                `${entry.id}: supportedEndpoints`,
+            ).toContain("/v1/messages");
+            expect(
+                entry.info.supported_endpoints,
+                `${entry.id}: info.supported_endpoints`,
+            ).toContain("/v1/messages");
+        }
+        // Media models stay off the endpoint: they 400 instead of generating.
+        const mediaEntries = registry
+            .visibleEntries()
+            .filter((entry) => entry.eventType !== "generate.text");
+        for (const entry of mediaEntries) {
+            expect(
+                entry.supportedEndpoints,
+                `${entry.id}: supportedEndpoints`,
+            ).not.toContain("/v1/messages");
+        }
+    });
+
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);

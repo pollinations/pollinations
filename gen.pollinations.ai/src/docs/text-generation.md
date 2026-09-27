@@ -6,6 +6,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
+| `POST /v1/messages` | Anthropic Messages API — Claude Code and the official Anthropic SDKs with no router in between |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
@@ -34,6 +35,27 @@ Community text models and endpoint agents declare one upstream API and one exact
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
+
+### Anthropic Messages API
+
+`POST /v1/messages` serves Anthropic's Messages API on every text model that advertises `/v1/messages` in `supported_endpoints` (media models return HTTP 400). Requests are translated to the Chat Completions pipeline — no second provider path — so billing (one charge, Anthropic usage fields), rate limits, key permissions, and caching match Chat Completions. A response without provider usage fails instead of going unbilled, and errors use Anthropic's shape with matching status codes.
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=$POLLINATIONS_API_KEY
+export ANTHROPIC_MODEL=openai
+
+curl https://gen.pollinations.ai/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "max_tokens": 256,
+    "messages": [{"role": "user", "content": "Explain why the sky is blue in two sentences."}]
+  }'
+```
+
+Streaming follows the standard Messages event order with keepalive pings during long silent reasoning. Tool use, system prompts, images, `stop_sequences`, `cache_control` prompt caching, and provider reasoning (`thinking` blocks) all translate both ways; client fields Claude Code sends (`thinking`, `output_config`, `metadata`, `anthropic-beta`) are accepted, never rejected.
 
 ### Media models in conversations
 

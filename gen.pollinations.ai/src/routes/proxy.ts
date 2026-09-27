@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { messagesErrorEnvelope } from "../text/messages/errors.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
@@ -57,6 +58,11 @@ import {
     CreateDecisionResponseSchema,
     DEFAULT_DECISION_MODEL,
 } from "@shared/schemas/decisions.ts";
+import {
+    CreateMessagesRequestSchema,
+    CreateMessagesResponseSchema,
+    MessagesErrorSchema,
+} from "@shared/schemas/anthropic.ts";
 import {
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
@@ -109,6 +115,7 @@ import {
     generateChatCompletion,
     generateEmbeddingsResponse,
     generateImageVideo,
+    generateMessage,
     generateModel3d,
     generateSimpleText,
     generateTextContent,
@@ -252,6 +259,23 @@ const responsesHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateCreateResponse,
+);
+
+// Anthropic Messages reuses the Chat Completions pipeline end to end: the
+// same auth, balance, rate-limit, allowlist, caching, and billing middleware
+// applies unchanged. Media models are not diverged to image generation here;
+// resolveModel's supportedEndpoint check returns a clear 400 for them.
+const messagesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateMessagesRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateMessage,
 );
 
 // Helper to filter models by API key permissions and paid balance.
@@ -649,6 +673,10 @@ export const proxyRoutes = new Hono<Env>()
     )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)
+    // Anthropic error envelope for /v1/messages only: everything thrown
+    // downstream (auth, balance, rate limits, validation, generation)
+    // renders in Anthropic's shape with the original status code.
+    .use("/v1/messages", messagesErrorEnvelope)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
     .use(frontendKeyRateLimit)
@@ -792,6 +820,52 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...responsesHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Message (Anthropic)",
+            description: [
+                "Generate a message through any text model that advertises `/v1/messages` in `supported_endpoints`, using Anthropic's Messages API. Fully compatible with Claude Code and the official Anthropic SDKs — point them at `https://gen.pollinations.ai`.",
+                "",
+                "Requests are translated to the Chat Completions pipeline, so auth, balance checks, key permissions, model allowlists, rate limits, and response caching behave exactly as on `/v1/chat/completions`. There is one charge per request with correct input, output, cache-read, and cache-write tokens, reported in Anthropic's usage fields.",
+                "",
+                "Supports streaming (standard Messages event order, live with keepalive pings), tool use, system prompts, images, stop sequences, prompt caching via `cache_control`, and provider reasoning as `thinking` blocks. Unknown fields and headers Claude Code sends (`thinking`, `output_config`, `metadata`, `anthropic-beta`) are accepted, never rejected.",
+                "",
+                "Successful text JSON responses contain usage. Text streams contain a `message_delta` with usage before `message_stop`; missing provider usage fails the response instead of going unbilled. Errors use Anthropic's shape (`{type:\"error\",error:{type,message}}`) with matching status codes and an integer `retry-after` on 429s.",
+                "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Messages JSON or Messages SSE stream",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateMessagesResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Anthropic Messages SSE events (event: message_start, content_block_start/delta/stop, message_delta, message_stop, ping, error) ending with message_stop, or with an error event when provider usage is missing.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                400: {
+                    description: "Anthropic invalid_request_error",
+                    content: {
+                        "application/json": {
+                            schema: resolver(MessagesErrorSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...messagesHandlers,
     )
     .post(
         "/v1/embeddings",

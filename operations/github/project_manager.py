@@ -175,19 +175,16 @@ def read_prompt_file() -> str:
 # One label list for issues and pull requests; definitions live in project-manager.md.
 # Kinds are listed in tie-break order.
 KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-ISSUE_TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
-PR_TYPES = ["BUG"]
-ISSUE_FLAGS = {"BILLING", "SECURITY", "AUTOMATED"}
+TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
 # POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
-PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
-# Labels the classifier owns per item type; it replaces these and leaves workflow labels alone.
-ISSUE_LABELS = set(KINDS) | set(ISSUE_TYPES) | ISSUE_FLAGS
-PR_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
+FLAGS = {"BILLING", "SECURITY", "AUTOMATED"} | ({"POLLEN-QUEST"} if IS_PULL_REQUEST else set())
+# Labels the classifier owns; it replaces these and leaves workflow labels alone.
+OWNED_LABELS = set(KINDS) | set(TYPES) | FLAGS
 # Types a person set on an issue that the classifier keeps.
 PINNED_TYPES = {"TRACKING", "VOTING"}
 
 
-def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
+def parse_labels(raw: dict) -> Optional[list]:
     """The model's kind, type and flags as labels; None when the kind is invalid."""
     kind = str(raw.get("kind", "")).upper()
     if kind not in KINDS:
@@ -195,8 +192,8 @@ def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
         return None
     item_type = str(raw.get("type") or "").upper()
     raw_flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
-    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in flags]
-    return list(dict.fromkeys([kind, *([item_type] if item_type in types else []), *picked]))
+    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in FLAGS]
+    return list(dict.fromkeys([kind, *([item_type] if item_type in TYPES else []), *picked]))
 
 
 def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
@@ -276,8 +273,7 @@ Body: {ISSUE_BODY[:2000]}
     if raw is None:
         return None
 
-    types, flags = (PR_TYPES, PR_FLAGS) if IS_PULL_REQUEST else (ISSUE_TYPES, ISSUE_FLAGS)
-    labels = parse_labels(raw, types, flags)
+    labels = parse_labels(raw)
     if labels is None:
         return None
 
@@ -476,8 +472,7 @@ def remove_label(label: str):
 
 def set_labels(labels: list):
     """Apply the classifier's labels, replacing the owned labels already on the item."""
-    owned = PR_LABELS if IS_PULL_REQUEST else ISSUE_LABELS
-    for stale in sorted((set(get_existing_labels()) & owned) - set(labels)):
+    for stale in sorted((set(get_existing_labels()) & OWNED_LABELS) - set(labels)):
         remove_label(stale)
     add_labels(labels)
 
@@ -611,7 +606,7 @@ def main():
     labels = classification["labels"]
     pinned = set(existing_labels) & PINNED_TYPES
     if pinned:
-        labels = [l for l in labels if l not in ISSUE_TYPES] + sorted(pinned)
+        labels = [l for l in labels if l not in TYPES] + sorted(pinned)
     log_debug(f"Labels: {labels}")
     if DRY_RUN:
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")

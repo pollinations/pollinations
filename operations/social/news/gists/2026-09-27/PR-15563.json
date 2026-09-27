@@ -1,0 +1,36 @@
+{
+  "pr_number": 15563,
+  "title": "fix(flow): use the shared dashboard sign-in UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15563",
+  "merged_at": "2026-09-27T17:40:46Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Replaces Flow’s plain HTML login with the shared `DashboardSignIn` used by KPI, Observability and Economics: matching layout, logo, fonts, theme toggle, button and error messages.\n- Serves sign-in assets from the Worker before any reviewer container starts. Keeps ordinary-account access and sends embedded Admin recovery to the canonical top-level login.\n- Adds browser coverage for light/dark layouts at 320, 375 and 1280px, error recovery, preserved Flow selections, shared-session logout and iframe navigation.\n- Validation: 88 UI tests, 32 shared-auth tests and 9 Flow gateway tests; UI/Flow typechecks and builds; visual inspection; Wrangler/Docker packaging dry-run.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Flow joins the same front door",
+    "blurb": "Flow’s sign-in now looks like the rest of the dashboard family, down to the theme toggle and error messages. Even the login screen arrives before the reviewer container wakes up.",
+    "summary": "Flow replaces its plain HTML login with the shared DashboardSignIn used by KPI, Observability and Economics, and serves sign-in assets directly from the Worker before a reviewer container starts.",
+    "impact": "Flow reviewers get a consistent sign-in screen across light and dark themes, while ordinary-account access remains available and embedded Admin recovery opens the canonical top-level login.",
+    "keywords": [
+      "Flow",
+      "sign-in",
+      "DashboardSignIn",
+      "reviewer",
+      "dashboard",
+      "shared auth"
+    ],
+    "visual_concept": "Depict Flow as a cozy retro dashboard with a welcoming shared sign-in screen, a small theme-toggle icon, and neighboring dashboard windows that match its look. Polli, wearing a tiny keyring, opens the dashboard door; code-plants and lime-green light keep the scene warm. No separate Flow mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli opens a little dashboard door onto a glowing Flow sign-in screen that matches the neighboring dashboard windows, with a tiny theme-toggle icon and code-plants nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny keyring, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15563.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli opens a little dashboard door onto a glowing Flow sign-in screen that matches the neighboring dashboard windows, with a tiny theme-toggle icon and code-plants nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny keyring, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-27T17:41:47.855149+00:00"
+}

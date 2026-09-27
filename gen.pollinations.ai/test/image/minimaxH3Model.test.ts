@@ -279,27 +279,24 @@ describe("callMinimaxH3MaxTurboAPI", () => {
     });
 
     it.each([
-        [5, "480p", "5", 0.0125, 0.0625, 0.125],
-        [10, "768p", "16", 0.0125, 0.2, 0.4],
-        [15, "1080p", "48", 0.0125, 0.6, 1.2],
-        [5, "480p", "6.25", 0.0125, 0.078125, 0.125],
-        [10, "768p", "16", 0.025, 0.4, 0.4],
-    ] as const)("records fal cost separately from the customer price for %ss at %s", async (duration, resolution, units, rate, cost, price) => {
+        [5, "480p", "5", 0.0625],
+        [10, "768p", "16", 0.2],
+        [15, "1080p", "48", 0.6],
+        [5, "480p", "6.25", 0.078125],
+    ] as const)("charges provider cost at multiplier 1 for %ss at %s", async (duration, resolution, units, cost) => {
         const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", units, rate);
+        mockH3Fetch(requests, "COMPLETED", units);
         const result = await callMinimaxH3MaxTurboAPI("billing regression", {
             ...baseParams,
             model: "minimax/minimax-h3-max-turbo",
             duration,
             resolution,
         });
-        expect(requests[0]?.url).toBe(
-            "https://api.fal.ai/v1/models/pricing?endpoint_id=minimax%2Fh3-max-turbo%2Ftext-to-video",
-        );
+        expect(requests[0]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
         expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
         expect(result.trackingData.providerBilling).toEqual({
             units: Number(units),
-            unitCost: rate,
+            unitCost: 0.0125,
         });
         const billing = calculateUsageBilling({
             model: "minimax/minimax-h3-max-turbo",
@@ -312,8 +309,8 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         });
         expect(Object.keys(billing.cost)).toEqual(["totalCost"]);
         expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(price);
-        expect(billing.servedPrice).toBeCloseTo(price);
+        expect(billing.price.totalPrice).toBeCloseTo(cost);
+        expect(billing.servedPrice).toBeCloseTo(cost);
     });
 
     it("rejects missing provider billing units before downloading the video", async () => {
@@ -333,19 +330,20 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         );
     });
 
-    it("rejects invalid provider pricing before submitting a billable job", async () => {
+    it("keeps the reviewed registry rate when fal's pricing API changes", async () => {
         const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", "5", 0);
-        await expect(
-            callMinimaxH3MaxTurboAPI("invalid price", {
-                ...baseParams,
-                model: "minimax/minimax-h3-max-turbo",
-            }),
-        ).rejects.toMatchObject({
-            status: 502,
-            message: "MiniMax H3 Max Turbo returned invalid pricing",
+        mockH3Fetch(requests, "COMPLETED", "5", 0.025);
+        const result = await callMinimaxH3MaxTurboAPI("reviewed pricing", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
         });
-        expect(requests.some((request) => request.body)).toBe(false);
+        expect(
+            requests.some((request) => request.url.includes("/models/pricing")),
+        ).toBe(false);
+        expect(result.trackingData.providerBilling).toEqual({
+            units: 5,
+            unitCost: 0.0125,
+        });
     });
 
     it("surfaces a terminal provider failure", async () => {

@@ -481,9 +481,9 @@ function rateAgainst(
 /**
  * What the generation cost us, and what the caller pays for it.
  *
- * A trusted provider receipt takes precedence over estimated cost. Customer
- * pricing still follows the requested listing, including when a fallback
- * serves the request.
+ * Trusted provider billing units and their rate replace estimated cost;
+ * price is that cost times the serving model's multiplier. A fallback still
+ * charges the requested listing's price.
  */
 export function calculateUsageBilling({
     model,
@@ -496,14 +496,18 @@ export function calculateUsageBilling({
     const served = rateAgainst(model, usage, servedBy, output, input);
     // Provider units need not match public usage units (e.g. weighted video
     // seconds), so the receipt gives a total, not a per-usage-type breakdown.
-    const cost = input?.providerBilling
-        ? {
-              totalCost:
-                  input.providerBilling.units * input.providerBilling.unitCost,
-          }
-        : served.cost;
+    if (input?.providerBilling) {
+        const totalCost =
+            input.providerBilling.units * input.providerBilling.unitCost;
+        served.cost = { totalCost };
+        served.price = {
+            totalPrice: roundPollenLedgerAmount(
+                totalCost * servedBy.priceMultiplier,
+            ),
+        };
+    }
     if (quotedBy === servedBy) {
-        return { ...served, cost, servedPrice: served.price.totalPrice };
+        return { ...served, servedPrice: served.price.totalPrice };
     }
     // Rated independently rather than rescaled: see rateAgainst.
     const quoted = rateAgainst(model, usage, quotedBy, output, input);
@@ -517,7 +521,7 @@ export function calculateUsageBilling({
           ? "unknown"
           : quoted.costVariantStatus;
     return {
-        cost,
+        cost: served.cost,
         adjustments: served.adjustments,
         price: quoted.price,
         servedPrice: served.price.totalPrice,

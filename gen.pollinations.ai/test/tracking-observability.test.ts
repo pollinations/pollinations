@@ -2312,9 +2312,9 @@ describe("tracking observability", () => {
     });
 
     it.each([
-        [0.0125, 0.0625],
-        [0.025, 0.125],
-    ])("records MiniMax Turbo provider cost at rate %s without changing the wallet charge", async (unitCost, totalCost) => {
+        [5, 0.0625],
+        [6.25, 0.078125],
+    ])("charges MiniMax Turbo at provider cost for %s reported units", async (units, totalCost) => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -2332,7 +2332,7 @@ describe("tracking observability", () => {
                 ...buildTrackingHeaders(model, {
                     actualModel: model,
                     usage: { completionVideoSeconds: 5 },
-                    providerBilling: { units: 5, unitCost },
+                    providerBilling: { units, unitCost: 0.0125 },
                 }),
             },
         });
@@ -2369,18 +2369,18 @@ describe("tracking observability", () => {
             modelUsed: model,
             isBilledUsage: true,
             tokenCountCompletionVideoSeconds: 5,
-            tokenPriceCompletionVideoSeconds: 0.025,
+            tokenPriceCompletionVideoSeconds: 0.0125,
             totalCost,
-            totalPrice: 0.125,
+            totalPrice: totalCost,
         });
-        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.125);
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(totalCost);
         const balanceAfter = await getUserBalance(
             drizzle(env.DB),
             trackingUser.id,
         );
         expect(balanceAfter.tierBalance).toBe(balanceBefore.tierBalance);
         expect(balanceAfter.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - 0.125,
+            balanceBefore.packBalance - totalCost,
         );
     });
 

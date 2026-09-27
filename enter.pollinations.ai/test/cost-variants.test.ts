@@ -745,13 +745,13 @@ describe("selection safety and composition", () => {
         expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
     });
 
-    it("uses a provider receipt for fallback cost without changing either price", () => {
+    it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {
         const billing = calculateUsageBilling({
             model: "quoted-model",
             usage: { completionVideoSeconds: 5 },
             servedBy: fakeModel({
                 cost: { completionVideoSeconds: 0.025 },
-                priceMultiplier: 1,
+                priceMultiplier: 2,
             }),
             quotedBy: fakeModel({
                 cost: { completionVideoSeconds: 0.08 },
@@ -760,7 +760,7 @@ describe("selection safety and composition", () => {
             input: { providerBilling: { units: 8, unitCost: 0.0125 } },
         });
         expect(billing.cost).toEqual({ totalCost: 0.1 });
-        expect(billing.servedPrice).toBe(0.125);
+        expect(billing.servedPrice).toBe(0.2);
         expect(billing.price.totalPrice).toBe(0.8);
         expect(billing.priceDefinition.completionVideoSeconds).toBe(0.16);
     });

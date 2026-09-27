@@ -17,7 +17,7 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .flow-navigation-buttons { display: flex; align-items: center; gap: 4px; }
 .flow-journey-view, .flow-map-view { flex: 1; min-height: 0; }
 .flow-map-view { position: relative; display: flex; flex-direction: column; overflow: hidden; }
-.flow-view-tools { position: absolute; bottom: 20px; left: 20px; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 24px; background: var(--polli-color-surface-opaque); box-shadow: var(--polli-shadow-well); }
+.flow-view-tools { position: absolute; bottom: 20px; left: 20px; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 24px; background: var(--polli-color-surface-opaque); }
 @media (max-width: 1100px) {
     .flow-header { padding: 10px 12px; }
 }

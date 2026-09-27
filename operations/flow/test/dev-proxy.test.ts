@@ -32,7 +32,7 @@ describe("Flow service routing", () => {
         "/authorize?client_id=pk_public_app",
         "/device",
         "/sign-in",
-        "/flow?view=screens",
+        "/screens",
         "/edit-key",
     ])("serves Enter's frontend for %s", (url) => {
         expect(isProxied(url)).toBe(false);
@@ -170,7 +170,9 @@ it("serves built product routes and assets without exposing source or returning 
         await writeFile(path.join(directory, "private.txt"), "outside build");
         const app = createBuiltPages(root);
         for (const [route, body] of Object.entries({
-            "/flow": "Flow page",
+            "/screens": "Flow page",
+            "/map": "Flow page",
+            "/journey": "Flow page",
             "/flow-example.html": "App example",
             "/flow-admin.html": "Admin example",
             "/flow-screen.html": "Screen launcher",

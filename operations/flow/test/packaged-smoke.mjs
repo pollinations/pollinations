@@ -13,7 +13,7 @@ for (
     Date.now() < deadline;
 ) {
     try {
-        const response = await fetch(`${origin}/flow`);
+        const response = await fetch(`${origin}/screens`);
         ready = response.ok;
         startupFailure = `HTTP ${response.status}`;
         await response.body?.cancel();
@@ -52,7 +52,7 @@ try {
     if (process.argv[2] !== "empty") {
         const freshPage = await context.newPage();
         await freshPage.goto(
-            `${origin}/flow?view=journey&flow=app&section=main&situation=app-connect`,
+            `${origin}/journey?flow=app&section=main&situation=app-connect`,
         );
         const prepare = freshPage.getByRole("button", {
             name: "Prepare review",
@@ -117,9 +117,7 @@ try {
         await page.evaluate(() => window.__FLOW_ENVIRONMENT__.admin),
         adminOrigin,
     );
-    await page.goto(
-        `${origin}/flow?theme=dark&view=map&flow=account&section=catalog`,
-    );
+    await page.goto(`${origin}/map?theme=dark&flow=account&section=catalog`);
     await page.waitForFunction(() =>
         document.getElementById("canvas-root")?.textContent.includes("Models"),
     );
@@ -132,7 +130,7 @@ try {
         origin,
     );
     await page.goto(
-        `${origin}/flow?theme=dark&view=screens&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
+        `${origin}/screens?theme=dark&flow=account&section=catalog&situation=dashboard-catalog--model_catalog%3Derror`,
     );
     // Opening Journey applies the selected situation; a direct Journey URL
     // preserves the current review instead of silently resetting its data.

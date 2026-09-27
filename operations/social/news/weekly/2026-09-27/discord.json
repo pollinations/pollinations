@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-09-27",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:31:15.384563+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-09-27\nHey <@&1424461167883194418> — 97 PRs merged this week. Here’s what you can use.\n\n🧠 **Models:** Grok 4.7, GLM-5.3 FlashX, Claude Opus 5.5, GPT-5.3 Codex, and MiMo V2.6 Flash/Pro joined the catalog. GPT-6 Sol and Luna also gained [Azure routing and Quest access](https://github.com/pollinations/pollinations/pull/15457). Ling 3.0 Flash VL now takes video input.\n\n🎨 **Media:** MAI Image 2.6 and 2.6 Flash, FLUX 1.1 Pro, Qwen Image 2.1 (including reference edits), and Recraft V4.1 Flash landed. There’s also MiniMax H3 Max video and Gemini 3.8 Flash TTS. Image safety blocks now return useful error details instead of making you guess.\n\n🔀 **Routes:** Gemini, Mistral, Qwen, Wan, Grok, and Sonar got routing updates. Sonar moved to Perplexity’s Agent API; your existing endpoint stays the same.\n\n🛠️ **Tools & community:** `polli mcp` can discover and install MCP for 13 coding clients; `polli whoami` is here. Jev has native `POST /alpha/decisions`, and Ask Jev is in the hosted MCP catalog. New community builds include Bilingual Atelier, GATEKEEPER, and The Memory Gazette. Floret can now produce [downloadable 3D output](https://github.com/pollinations/pollinations/pull/15298).\n\n🌱 **Enter & Quests:** Catalog tabs are back, the dashboard loads progressively, and the earnings API covers 365 days. The issue-reporting Quest is here; newly qualifying reports earn [4 Pollen](https://github.com/pollinations/pollinations/pull/15473)."
+}

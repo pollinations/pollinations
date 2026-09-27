@@ -1,10 +1,4 @@
 const DEFAULT_AUTH_BASE_URL = "https://enter.pollinations.ai";
-const LOGIN_PATH = "/auth/login";
-const CALLBACK_PATH = "/auth/callback";
-const LOGOUT_PATH = "/auth/logout";
-const SESSION_PATH = "/auth/session";
-const FLOW_COOKIE = "pollinations_oauth_flow";
-const SESSION_COOKIE = "pollinations_session";
 const FLOW_MAX_AGE_SECONDS = 600;
 const SESSION_MAX_AGE_SECONDS = 43_200;
 const REVALIDATE_SECONDS = 60;
@@ -21,13 +15,13 @@ export type PollinationsUser = {
 };
 
 type Userinfo = PollinationsUser & {
-    role?: string;
+    role: string;
 };
 
 type Session = PollinationsUser & {
     aud: string;
     exp: number;
-    role: "admin";
+    role: string;
     accessToken: string;
     checkedAt: number;
 };
@@ -67,6 +61,12 @@ export type PollinationsAuthConfig = {
     sessionSecret: string;
     baseUrl?: string;
     fetch?: typeof fetch;
+    /** Existing dashboards remain admin-only unless they explicitly opt in. */
+    access?: "admin" | "authenticated";
+    /** Keep the host's login separate from the product auth it previews. */
+    namespace?: string;
+    /** Share only a namespaced session across explicitly trusted HTTPS hosts. */
+    sharedSession?: { origins: readonly string[]; cookieDomain: string };
 };
 
 function base64Url(bytes: Uint8Array) {
@@ -130,9 +130,10 @@ function cookie(
     value: string,
     maxAge: number,
     path = "/",
+    domain?: string,
 ) {
     const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
-    return `${name}=${encodeURIComponent(value)}; HttpOnly${secure}; SameSite=Lax; Path=${path}; Max-Age=${maxAge}`;
+    return `${name}=${encodeURIComponent(value)}; HttpOnly${secure}; SameSite=Lax; Path=${path}; Max-Age=${maxAge}${domain ? `; Domain=${domain}` : ""}`;
 }
 
 function redirect(location: string, cookies: string[] = []) {
@@ -169,6 +170,49 @@ async function hmacKey(secret: string) {
 }
 
 export function createPollinationsAuth(config: PollinationsAuthConfig) {
+    if (config.namespace && !/^[a-z][a-z0-9-]{0,31}$/.test(config.namespace))
+        throw new Error("Invalid auth namespace");
+    const prefix = config.namespace ? `/${config.namespace}` : "";
+    const cookiePrefix = config.namespace ? `${config.namespace}_` : "";
+    const LOGIN_PATH = `${prefix}/auth/login`;
+    const CALLBACK_PATH = `${prefix}/auth/callback`;
+    const LOGOUT_PATH = `${prefix}/auth/logout`;
+    const SESSION_PATH = `${prefix}/auth/session`;
+    const FLOW_COOKIE = `${cookiePrefix}pollinations_oauth_flow`;
+    const SESSION_COOKIE = `${cookiePrefix}pollinations_session`;
+    const sharedSession = config.sharedSession;
+    if (sharedSession) {
+        const { origins, cookieDomain } = sharedSession;
+        if (
+            !config.namespace ||
+            !/^[a-z0-9]+(?:[.-][a-z0-9]+)+$/.test(cookieDomain) ||
+            origins.length < 2 ||
+            new Set(origins).size !== origins.length ||
+            origins[0] !== `https://${cookieDomain}` ||
+            origins.some((origin) => {
+                const url = new URL(origin);
+                return (
+                    url.origin !== origin ||
+                    url.protocol !== "https:" ||
+                    url.port !== "" ||
+                    !(
+                        url.hostname === cookieDomain ||
+                        url.hostname.endsWith(`.${cookieDomain}`)
+                    )
+                );
+            })
+        )
+            throw new Error(
+                "Shared sessions require a namespace and trusted HTTPS origins within the cookie domain",
+            );
+    }
+    const allowedOrigin = (request: Request) =>
+        !sharedSession ||
+        sharedSession.origins.includes(new URL(request.url).origin);
+    const audience = (request: Request) =>
+        sharedSession?.origins[0] ?? new URL(request.url).origin;
+    const allowedRole = (role: string) =>
+        config.access === "authenticated" || role === "admin";
     if (!config.clientId?.startsWith("pk_")) {
         throw new Error("POLLINATIONS_OAUTH_CLIENT_ID must be a pk_ client");
     }
@@ -232,7 +276,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             const user = (await response.json()) as Userinfo;
             if (!user?.sub || !user.email || typeof user.role !== "string")
                 throw new AuthUnavailableError();
-            return user.role === "admin" ? user : null;
+            return user;
         } catch (error) {
             if (error instanceof AuthUnavailableError) throw error;
             throw new AuthUnavailableError();
@@ -305,11 +349,16 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             status: number,
             clearCookie: string,
         ) {
-            const target = new URL("/", requestUrl.origin);
+            const target = new URL(
+                prefix ? `${prefix}/auth/error` : "/",
+                requestUrl.origin,
+            );
             target.searchParams.set(
                 "auth_error",
                 status === 403
-                    ? "admin_required"
+                    ? config.access === "authenticated"
+                        ? "access_denied"
+                        : "admin_required"
                     : message === "Login cancelled"
                       ? "cancelled"
                       : status === 400
@@ -363,7 +412,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         }
 
         const user = await currentUser(token.access_token);
-        if (!user) return authError("Forbidden", 403, clearFlow);
+        if (!user || !allowedRole(user.role))
+            return authError("Forbidden", 403, clearFlow);
         const maxAge = Math.min(
             SESSION_MAX_AGE_SECONDS,
             typeof token.expires_in === "number" &&
@@ -375,13 +425,13 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const session: Session = {
             ...user,
             email: normalizeEmail(user.email),
-            role: "admin",
-            aud: requestUrl.origin,
+            role: user.role,
+            aud: audience(request),
             exp: Math.floor(Date.now() / 1000) + maxAge,
             checkedAt: Math.floor(Date.now() / 1000),
             accessToken: await encryptToken(
                 token.access_token,
-                requestUrl.origin,
+                audience(request),
             ),
         };
         const payload = encodeJson(session);
@@ -393,6 +443,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 requestCookieName(request, SESSION_COOKIE),
                 sessionCookie,
                 maxAge,
+                "/",
+                sharedSession?.cookieDomain,
             ),
         ]);
     }
@@ -401,6 +453,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         request: Request,
         onSessionRefresh?: (value: string) => void,
     ): Promise<PollinationsUser | null> {
+        if (!allowedOrigin(request)) return null;
         const value = cookieValue(
             request,
             requestCookieName(request, SESSION_COOKIE),
@@ -419,10 +472,11 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             if (
                 !session.sub ||
                 !session.email ||
-                session.aud !== new URL(request.url).origin ||
+                session.aud !== audience(request) ||
                 !Number.isInteger(session.exp) ||
                 session.exp <= Math.floor(Date.now() / 1000) ||
-                session.role !== "admin"
+                typeof session.role !== "string" ||
+                !allowedRole(session.role)
             ) {
                 return null;
             }
@@ -445,11 +499,17 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                     pendingChecks.set(checkKey, pending);
                 }
                 const current = await pending;
-                if (!current || current.sub !== session.sub) return null;
+                if (
+                    !current ||
+                    current.sub !== session.sub ||
+                    !allowedRole(current.role)
+                )
+                    return null;
                 session.email = normalizeEmail(current.email);
                 session.name = current.name;
                 session.picture = current.picture;
                 session.preferred_username = current.preferred_username;
+                session.role = current.role;
                 session.checkedAt = now;
                 // Revalidation never extends the original session's lifetime.
                 const renewed = encodeJson(session);
@@ -459,6 +519,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                         requestCookieName(request, SESSION_COOKIE),
                         `${renewed}.${await sign(renewed)}`,
                         session.exp - now,
+                        "/",
+                        sharedSession?.cookieDomain,
                     ),
                 );
             }
@@ -476,12 +538,16 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
     }
 
     async function handle(request: Request): Promise<Response | null> {
+        if (!allowedOrigin(request)) return new Response(null, { status: 403 });
         const url = new URL(request.url);
         if (url.pathname === LOGIN_PATH && request.method === "GET")
             return startLogin(request);
         if (url.pathname === CALLBACK_PATH && request.method === "GET")
             return finishLogin(request).catch(() => {
-                const target = new URL("/", url.origin);
+                const target = new URL(
+                    prefix ? `${prefix}/auth/error` : "/",
+                    url.origin,
+                );
                 target.searchParams.set("auth_error", "unavailable");
                 return redirect(target.toString(), [
                     cookie(
@@ -526,6 +592,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                     requestCookieName(request, SESSION_COOKIE),
                     "",
                     0,
+                    "/",
+                    sharedSession?.cookieDomain,
                 ),
             );
             headers.append(

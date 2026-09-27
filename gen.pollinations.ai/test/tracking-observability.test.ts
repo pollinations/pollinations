@@ -54,6 +54,7 @@ import {
     track,
     trackResponse,
 } from "@/middleware/track.ts";
+import { buildTrackingHeaders } from "../src/image/utils/trackingHeaders.ts";
 import worker from "../src/index.ts";
 import {
     type GenerationModelEntry,
@@ -2308,6 +2309,79 @@ describe("tracking observability", () => {
             totalPrice: 0.544,
         });
         expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.544);
+    });
+
+    it.each([
+        [5, 0.0625],
+        [6.25, 0.078125],
+    ])("charges MiniMax Turbo at provider cost for %s reported units", async (units, totalCost) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const model = "minimax/minimax-h3-max-turbo";
+        const upstream = new Response("video", {
+            headers: {
+                "content-type": "video/mp4",
+                ...buildTrackingHeaders(model, {
+                    actualModel: model,
+                    usage: { completionVideoSeconds: 5 },
+                    providerBilling: { units, unitCost: 0.0125 },
+                }),
+            },
+        });
+        const balanceBefore = await getUserBalance(
+            drizzle(env.DB),
+            trackingUser.id,
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.image",
+            upstream,
+            model,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            modelUsed: model,
+            isBilledUsage: true,
+            tokenCountCompletionVideoSeconds: 5,
+            tokenPriceCompletionVideoSeconds: 0.0125,
+            totalCost,
+            totalPrice: totalCost,
+        });
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(totalCost);
+        const balanceAfter = await getUserBalance(
+            drizzle(env.DB),
+            trackingUser.id,
+        );
+        expect(balanceAfter.tierBalance).toBe(balanceBefore.tierBalance);
+        expect(balanceAfter.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - totalCost,
+        );
     });
 
     it("bills a failed video for the usage the provider charged", async () => {

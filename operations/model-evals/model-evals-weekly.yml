@@ -1,0 +1,101 @@
+# Move this file to .github/workflows/model-evals-weekly.yml on merge — it
+# lives here because the PR's push credentials lack the `workflow` OAuth
+# scope needed to add files under .github/workflows/ directly.
+name: Model Evals / Weekly leaderboard
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Comma-separated model names to score (default: all text models)'
+        required: false
+        type: string
+      community:
+        description: 'Score community models only'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  weekly-eval:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.pollinations-ai.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Configure git
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+      - name: Run weekly eval
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLEN_EVALS_KEY }}
+        run: |
+          node operations/model-evals/src/run-evals.js \
+            ${{ github.event.inputs.models && format('--models={0}', github.event.inputs.models) || '' }} \
+            ${{ github.event.inputs.community == 'true' && '--community' || '' }}
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet operations/model-evals/results/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create branch and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          BRANCH="auto/model-evals-$(date -u +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git add operations/model-evals/results/
+          git commit -m "chore: weekly model evals $(date -u +%Y-%m-%d)"
+          git push -f origin "$BRANCH"
+
+      - name: Create or update PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          BRANCH="auto/model-evals-$(date -u +%Y-%m-%d)"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url' || true)
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR already exists: $EXISTING_PR"
+            PR_URL="$EXISTING_PR"
+          else
+            PR_URL=$(gh pr create \
+              --title "chore: weekly model evals $(date -u +%Y-%m-%d)" \
+              --body "Automated weekly run of the Alice-in-Wonderland eval leaderboard.")
+            echo "Created PR: $PR_URL"
+          fi
+
+          gh pr merge "$PR_URL" --auto --squash --delete-branch
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

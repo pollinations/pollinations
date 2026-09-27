@@ -30,8 +30,8 @@ export function LiveApps({ className }: { className?: string }) {
             <Button
                 as={Link}
                 to="/apps"
-                appearance="raised"
-                size="sm"
+                intent="neutral"
+                size="md"
                 className="self-start gap-2"
             >
                 See all apps

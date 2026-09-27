@@ -89,7 +89,7 @@ const MARK_STYLE = maskStyle(markUrl, 32, 32);
 const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
 const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
 const DESKTOP_ACTION_CLASS =
-    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong shadow-well min-[780px]:inline-flex";
+    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong min-[780px]:inline-flex";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -369,7 +369,7 @@ export function SiteHeader() {
                                     className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto"
                                 >
                                     <div
-                                        className={`site-drawer-card flex flex-col gap-1.5 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                        className={`site-drawer-card flex flex-col gap-1.5 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""
@@ -399,7 +399,7 @@ export function SiteHeader() {
                                         })}
                                     </div>
                                     <div
-                                        className={`site-drawer-card site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                        className={`site-drawer-card site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""
@@ -433,7 +433,7 @@ export function SiteHeader() {
                                         </Button>
                                     </div>
                                     <div
-                                        className={`site-drawer-card site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                        className={`site-drawer-card site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""

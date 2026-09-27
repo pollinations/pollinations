@@ -70,8 +70,8 @@ export function MoneyMoves() {
                     return (
                         <li key={item.title}>
                             <Surface
-                                variant="card-themed"
-                                className="flex flex-col gap-3 rounded-2xl p-5"
+                                variant="card"
+                                className="flex flex-col gap-3 p-5"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">

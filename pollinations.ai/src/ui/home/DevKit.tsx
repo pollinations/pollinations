@@ -141,8 +141,8 @@ function FeatureCard({
             {feature.href && feature.linkLabel ? (
                 <ExternalLinkButton
                     href={feature.href}
-                    size="sm"
-                    appearance="raised"
+                    size="md"
+                    intent="neutral"
                     icon={
                         feature.href.startsWith(
                             "https://gen.pollinations.ai/docs",
@@ -225,16 +225,16 @@ export function DevKit({ className }: { className?: string }) {
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/quests"
-                            size="sm"
-                            appearance="raised"
+                            size="md"
+                            intent="brand"
                             className="whitespace-nowrap"
                         >
                             Browse Quests
                         </ExternalLinkButton>
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/keys"
-                            size="sm"
-                            appearance="raised"
+                            size="md"
+                            intent="neutral"
                             className="whitespace-nowrap"
                         >
                             Create a secret key
@@ -288,7 +288,7 @@ export function DevKit({ className }: { className?: string }) {
                 <ExternalLinkButton
                     href="https://enter.pollinations.ai"
                     size="lg"
-                    appearance="raised"
+                    intent="brand"
                     className="self-start whitespace-nowrap"
                 >
                     Open dashboard

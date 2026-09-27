@@ -57,11 +57,7 @@ function isLeaderboardData(value: unknown): value is QuestLeaderboardData {
 
 function LeaderboardAction() {
     return (
-        <ExternalLinkButton
-            href={QUESTS_PAGE_URL}
-            size="sm"
-            appearance="raised"
-        >
+        <ExternalLinkButton href={QUESTS_PAGE_URL} size="md" intent="brand">
             Browse open quests
         </ExternalLinkButton>
     );

@@ -417,7 +417,7 @@ function ResultDownloadButton({
             label={`Download ${result.type}`}
             onError={onError}
             className={cn(
-                "h-10 w-10 shrink-0 self-auto rounded-full p-0 shadow-sm",
+                "h-10 w-10 shrink-0 self-auto rounded-full p-0",
                 className,
             )}
         />

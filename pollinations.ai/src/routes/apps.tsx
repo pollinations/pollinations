@@ -460,7 +460,8 @@ function AppsPage() {
                     </span>
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
-                        appearance="raised"
+                        intent="brand"
+                        size="lg"
                         icon={<PlusIcon className="size-4 shrink-0" />}
                         className="self-start"
                     >
@@ -676,9 +677,9 @@ function AppsPage() {
                         {filtered.length > visible.length && (
                             <div className="flex flex-col items-center gap-2">
                                 <Button
-                                    appearance="raised"
+                                    intent="neutral"
+                                    size="lg"
                                     onClick={() => setShown((n) => n + PAGE)}
-                                    className="bg-surface-opaque"
                                 >
                                     Show more
                                 </Button>

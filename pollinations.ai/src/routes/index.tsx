@@ -61,17 +61,17 @@ function HelloPage() {
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
-                        appearance="raised"
+                        intent="brand"
+                        size="lg"
                         icon={<RocketIcon className="size-4 shrink-0" />}
-                        className="max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Start for free
                     </ExternalLinkButton>
                     <ExternalLinkButton
                         href="https://gen.pollinations.ai/docs"
-                        appearance="raised"
+                        intent="neutral"
+                        size="lg"
                         icon={<BookIcon className="size-4 shrink-0" />}
-                        className="bg-surface-opaque max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Read the docs
                     </ExternalLinkButton>

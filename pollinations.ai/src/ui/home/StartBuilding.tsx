@@ -13,15 +13,15 @@ export function StartBuilding() {
         >
             <ExternalLinkButton
                 href="https://enter.pollinations.ai/keys"
-                appearance="raised"
-                className="bg-brand-accent text-brand-dark"
+                intent="brand"
+                size="lg"
             >
                 Get an API key
             </ExternalLinkButton>
             <ExternalLinkButton
                 href="https://discord.gg/pollinations-ai-885844321461485618"
-                appearance="raised"
-                className="bg-surface-opaque"
+                intent="neutral"
+                size="lg"
             >
                 Join the Discord
             </ExternalLinkButton>

@@ -306,8 +306,8 @@ function CommunityParticipation() {
                                                     <ExternalLinkButton
                                                         key={link.label}
                                                         href={link.href}
-                                                        size="sm"
-                                                        appearance="raised"
+                                                        size="md"
+                                                        intent="brand"
                                                         showIcon
                                                         className="whitespace-nowrap"
                                                     >
@@ -371,7 +371,7 @@ function CommunityParticipation() {
                                         href={issue.url}
                                         showIcon={false}
                                         aria-label={`Open “${issue.title}” and add your vote`}
-                                        className="group gap-5 rounded-2xl bg-surface-opaque p-5 transition-[background-color,transform] hover:-translate-y-0.5"
+                                        className="group gap-5 rounded-card bg-surface-opaque p-5"
                                     >
                                         <span className="flex items-start gap-3">
                                             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-soft">
@@ -842,7 +842,7 @@ function BuildDiary() {
                                         }
                                         aria-label={`Previous ${zoom === "all" ? "month" : "diary entry"}`}
                                         title={`Previous ${zoom === "all" ? "month" : "day"}`}
-                                        className="h-9 w-9 p-0 shadow-well"
+                                        className="h-9 w-9 p-0"
                                     >
                                         <ArrowRightIcon className="h-4 w-4 rotate-180" />
                                     </Button>
@@ -855,7 +855,7 @@ function BuildDiary() {
                                         }
                                         aria-label={`Next ${zoom === "all" ? "month" : "diary entry"}`}
                                         title={`Next ${zoom === "all" ? "month" : "day"}`}
-                                        className="h-9 w-9 p-0 shadow-well"
+                                        className="h-9 w-9 p-0"
                                     >
                                         <ArrowRightIcon className="h-4 w-4" />
                                     </Button>
@@ -1005,11 +1005,7 @@ function CommunityPage() {
                 title="Join the conversation"
                 body="Builders are in there swapping prompts, debugging each other's apps, and telling us what to build next."
             >
-                <ExternalLinkButton
-                    href={DISCORD_URL}
-                    appearance="raised"
-                    className="bg-brand-accent text-brand-dark"
-                >
+                <ExternalLinkButton href={DISCORD_URL} intent="brand" size="lg">
                     Join Discord
                 </ExternalLinkButton>
                 <InlineLink href={REPO_URL} className="px-2 text-base">

@@ -1,5 +1,5 @@
 /* Full token adoption — same entry point as enter's frontend, so the site and
-   the dashboard resolve every colour, font and shadow from the same
+   the dashboard resolve every colour, font and flat surface from the same
    `--polli-*` tokens. Brings Tailwind v4 with it; there is no tailwind.config.
    It also ships the app-wide prefers-reduced-motion reset, so this file does
    not repeat one.
@@ -101,8 +101,6 @@
 
 .site-github-stars:hover {
     background-color: #010409;
-    box-shadow: 0 0.2rem 0.65rem rgb(0 0 0 / 24%);
-    transform: translateY(-0.0625rem);
 }
 
 .site-home-nav-group:has(.site-home-logo:hover)

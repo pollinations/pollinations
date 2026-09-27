@@ -27,7 +27,7 @@ function NotFoundPage() {
                 variant="page"
             />
             <div>
-                <Button as="a" href="/" appearance="raised">
+                <Button as="a" href="/" intent="brand" size="lg">
                     Back to Pollinations
                 </Button>
             </div>

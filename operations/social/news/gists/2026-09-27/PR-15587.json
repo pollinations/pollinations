@@ -1,0 +1,36 @@
+{
+  "pr_number": 15587,
+  "title": "fix: remove underline from model title links",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15587",
+  "merged_at": "2026-09-27T20:30:31Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Removes the underline from model names in the Enter model list.\n- Keeps titles clickable in Open WebUI and Play; other links are unchanged.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Titles lose the underline",
+    "blurb": "The Enter model list looks a little tidier. Model titles still open Open WebUI or Play; they’ve just stopped dressing like links.",
+    "summary": "Removed underlines from model titles in the Enter model list while keeping Open WebUI and Play titles clickable and leaving other links unchanged.",
+    "impact": "Users get cleaner model rows without losing the title shortcuts to Open WebUI and Play.",
+    "keywords": [
+      "Enter",
+      "model list",
+      "UI",
+      "Open WebUI",
+      "Play",
+      "links"
+    ],
+    "visual_concept": "Depict Enter’s model list as a cozy retro screen with clean, clickable model titles and small Open WebUI and Play signposts. Polli, wearing tiny reading glasses, checks the tidier list beside a few code-plants; the scene is about visual polish, not removing links.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro screen displays neat model titles beside tiny Open WebUI and Play signposts, while code-plants grow around its lime green (#ecf874) frame. Polli wears tiny reading glasses and points at the screen: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a warm cream background with a soft lime green (#ecf874) glow; nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15587.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro screen displays neat model titles beside tiny Open WebUI and Play signposts, while code-plants grow around its lime green (#ecf874) frame. Polli wears tiny reading glasses and points at the screen: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a warm cream background with a soft lime green (#ecf874) glow; nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-27T20:31:40.798424+00:00"
+}

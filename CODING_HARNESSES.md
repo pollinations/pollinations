@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -29,6 +29,7 @@ Polli configures harnesses; it does not update their installations. Use the harn
 npm install -g @pollinations/cli@latest
 uv tool upgrade bloom-cli
 npx @deepseek-ai/dsh@latest web
+hermes update
 opencode upgrade
 openclaw update
 pi update self
@@ -43,6 +44,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes`. Defaults to `deepseek/deepseek-v4-flash`. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
@@ -80,6 +82,16 @@ polli harness dsh off
 ```
 
 DeepSeek Harness is officially run with `npx @deepseek-ai/dsh@latest web`. The explicit `@latest` selects the current release rather than a local installation. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
+
+## Hermes Agent
+
+```bash
+npx @pollinations/cli@latest harness hermes on
+polli harness hermes status
+polli harness hermes off
+```
+
+`on` requires Hermes Agent to be installed with its official installer (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash` on Linux/macOS/WSL, or `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` on native Windows). It registers a `pollinations` provider in `$HERMES_HOME/config.yaml` (`~/.hermes/config.yaml`, or `%LOCALAPPDATA%\hermes\config.yaml` on native Windows), stores a dedicated key in `$HERMES_HOME/.env` as `POLLI_HERMES_API_KEY`, and installs the Polli skill under `skills/polli/`. Hermes discovers the current Pollinations models from the provider endpoint rather than a bundled list, so there is no second model catalog to keep in sync. Choose the default with `--model <id>` and switch later with `hermes model`. To add the hosted Pollinations MCP servers, run `polli mcp install hermes --all` (or pick server ids from `polli mcp list`). `off` restores the previous files byte-for-byte, or (if you edited them) removes only the Pollinations provider, key, and skill, leaving your other providers, fallbacks, memories, and skills untouched.
 
 ## OpenCode
 

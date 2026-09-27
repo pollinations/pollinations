@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on

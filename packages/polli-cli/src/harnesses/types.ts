@@ -22,6 +22,8 @@ export type OffOutcome = "restored" | "stripped" | "unchanged";
 export interface HarnessResult {
     harness: string;
     label: string;
+    /** Whether the harness binary is present; adapters that can check report it. */
+    installed?: boolean;
     configured: boolean;
     model?: string;
     mcp?: boolean;

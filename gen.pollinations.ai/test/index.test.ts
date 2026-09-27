@@ -246,7 +246,7 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
-    it("answers the /api/hello liveness probe Claude Code sends before /v1/messages", async () => {
+    it("answers the /api/hello endpoint (HEAD and GET)", async () => {
         const head = await fetchWorker("/api/hello", undefined, {
             method: "HEAD",
         });

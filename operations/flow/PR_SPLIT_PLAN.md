@@ -17,24 +17,23 @@ The full historical extraction plan and session log remain available in Git at `
 - Worker: `pollinations-flow-preview`; ten `standard-1` containers maximum, sleeping after ten minutes without activity. Active sessions may occupy all ten slots: this is a bounded preview, not a promise of unlimited concurrent availability. The Cloudflare container client handles capacity/startup responses; Flow preserves them. Returning 503 does not prevent deliberate saturation.
 - The public identity-only PKCE client and preview-only signing secret were provisioned after scoped approval. `preview-client.sql` records the one-time registration; do not rerun against an existing client. Managed TLS is configured for both preview hosts. No production data bindings or reviewer identity tokens enter the containers.
 - `.github/workflows/ci-flow.yml` tests the Linux image, captures and two-container isolation before offering deployment. CI and Wrangler use the root `.dockerignore`; the Dockerfile explicitly copies only required product workspaces and two sibling workspace manifests. Harmless exclusion sentinels verify that local credentials/state and unrelated apps are absent from the image.
-- The `flow-preview` GitHub environment now requires approval from `ElliotEtag`, disallows administrator bypass, and restricts deployment to `refs/pull/15503/merge`. The existing same-repository branch gate remains. No merge or deployment approval is implied by a push.
-- The workflow now references only the dedicated preview environment credential, with no Observability fallback. Provisioning the dedicated `CLOUDFLARE_API_TOKEN_FLOW_PREVIEW` credential is pending separate scoped approval and a resource-permission check. Store it only in the protected `flow-preview` environment; do not reuse the Observability token. If Cloudflare cannot restrict the required Worker/container permissions sufficiently, stop and resolve the access design before provisioning.
+- The `flow-preview` GitHub environment requires approval from `ElliotEtag`, disallows administrator bypass, and restricts deployment to `refs/pull/15503/merge`. The existing same-repository branch gate remains. No merge or deployment approval is implied by a push.
+- Deployment requires `CLOUDFLARE_API_TOKEN_FLOW_PREVIEW` in the protected `flow-preview` environment. Before creating it, verify resource permissions and obtain scoped approval under AGENTS.md. The workflow does not reuse the Observability token. If Cloudflare cannot restrict the required Worker/container permissions sufficiently, stop and resolve the access design before provisioning.
 
-## Review follow-up — 27 September 2026
+## Runtime boundaries
 
-- Remove the extra container startup RPC; use the library's existing capacity/rate-limit responses and preserve one login for every account.
+- The container library owns startup and capacity/rate-limit responses; the gateway preserves them and accepts every authenticated account.
 - Capture generation uses same-origin POST; document/image retrieval remains GET. GET and cross-origin requests cannot enqueue captures.
 - Model estimates are provider-response fixtures using the shared endpoint/type. Product code fills its own cache; Flow no longer seeds a private cache key or TTL. GitHub search fixtures represent an empty search result independently of product query filters/dates. Unknown external-service requests return a diagnostic without query strings or headers.
-- Flow inherits Enter's compiler rules and checks the product modules it imports. Remove the unused image/serving code, direct router dependency and news re-export; retain runtime dependencies used by the packaged Node service.
+- Flow inherits Enter's compiler rules and checks the product modules it imports. Keep only dependencies and assets used by the packaged service or its checks.
 - Keep the scenario ledger and product backlog below. A scenario is not dead code merely because it records an unresolved product defect.
 
 ## Verification and release gates
 
-- Previous [CI run 36281411092](https://github.com/pollinations/pollinations/actions/runs/36281411092) passed at `b9a3546502`: 32 shared-auth tests, 256 default Flow tests, build, packaged browser recovery/captures and two-container restart/replacement isolation. This is historical evidence, not validation of subsequent edits.
-- Previous live checks passed trusted HTTPS, anonymous/forged-session denial and cross-origin write rejection on both preview hosts. Enter accepts the dedicated public registration. These checks did not create a real reviewer session.
-- This follow-up passes 259 default Flow tests (136 credential/capture opt-ins skipped), typecheck/build and Biome locally. The sandboxed test attempt could not bind ports; the rerun with local port access passed. The local Linux build reached npm installation but failed on a registry `EIDLETIMEOUT`; CI must finish the Docker exclusion and packaged browser/isolation proof. Record the resulting head and CI run in the PR.
-- Remaining hosted gates: real-account callback/session, cold-start, signed-in Admin/reset recovery, an error/recovery capture and two signed-in reviewers. Do not substitute fixture-auth tests for these checks.
-- Keep credential-issuing tests opt-in. Completed approvals for earlier disposable batches do not authorize new credentials. New deployment/session/key mutations follow AGENTS.md's separate approval rules.
+- Before merging, verify the shared-auth and Flow suites, typecheck/build, formatting, Docker exclusions and the packaged Linux/browser/isolation proof against the proposed code.
+- Hosted checks must cover real-account callback/session, cold-start, signed-in Admin/reset recovery, an error/recovery capture and two signed-in reviewers. Verify trusted HTTPS, anonymous/forged-session denial and cross-origin write rejection on both preview hosts. Fixture-auth checks do not replace real hosted sign-in.
+- Record the tested head, deployed revision, CI links and outstanding approvals in the PR body. Keep scenario evidence in the ledger with its original revision; the plan describes requirements rather than current execution status.
+- Use existing authorized access for authenticated checks. If required access is unavailable, ask for its secure location or configuration; do not waive required checks. Tests that issue new credentials stay opt-in and require separate scoped approval under AGENTS.md.
 - After review and merge, rebuild Flow against main, then extract granular product fixes from the backlog with tests in the owning service. Never silently relabel older evidence as current-main results.
 
 ## Local use

@@ -70,9 +70,12 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it("resolves the canonical name and the jev alias", () => {
-        expect(findModelByName("typesafe/jev")?.name).toBe("typesafe/jev");
-        expect(findModelByName("jev")?.name).toBe("typesafe/jev");
+    it.each([
+        "typesafe/jev-1.13",
+        "typesafe/jev",
+        "jev",
+    ])("resolves %s to the versioned canonical model", (name) => {
+        expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
     });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
@@ -136,7 +139,7 @@ describe("System One adapter", () => {
         );
     });
 
-    it("routes typesafe/jev directly with the configured upstream model", async () => {
+    it("routes typesafe/jev-1.13 directly with the configured upstream model", async () => {
         const payloadWithModel = JSON.stringify({
             model: "inner-model-must-not-route",
             state: nativeState,
@@ -166,7 +169,7 @@ describe("System One adapter", () => {
         await generateTextPortkey(
             [{ role: "user", content: payloadWithModel }],
             {
-                model: "typesafe/jev",
+                model: "typesafe/jev-1.13",
                 modelConfig: { ...modelConfig, model: "jev-1.13.0" },
             },
             portkeyFetcher,
@@ -308,7 +311,8 @@ describe("System One adapter", () => {
             callSystemOne([{ role: "user", content: nativeContent }], {}),
         ).rejects.toMatchObject({
             status: 500,
-            message: "The decisions route is not configured for typesafe/jev.",
+            message:
+                "The decisions route is not configured for typesafe/jev-1.13.",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

@@ -81,21 +81,12 @@ describe("getGenerationModelRegistry", () => {
             ["anthropic/claude-fable-5.1", "tool_choice", false],
             ["google/gemini-3.7-flash", "temperature", false],
             ["google/gemini-3.7-flash", "stop", true],
-            [
-                "google/gemini-3.7-flash:openrouter:ai-studio-priority",
-                "stop",
-                false,
-            ],
+            ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
             ["nvidia/nemotron-3-ultra", "top_k", true],
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
-            [
-                "perplexity/sonar:openrouter:perplexity",
-                "search_domain_filter",
-                false,
-            ],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(

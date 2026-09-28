@@ -362,15 +362,15 @@ function githubProfileSyncPlugin(
 }
 
 /**
- * Sync github_username on every login.
- * GitHub usernames are mutable — users can rename their account.
- * We fetch the current username from GitHub API using the immutable github_id
+ * Sync platform name and github_username on every login.
+ * GitHub usernames and display names are mutable — users can rename their account.
+ * We fetch the current profile from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
  * GitHub is the only auth provider, so every user row has a github_id; we skip
  * the sync defensively if it is ever missing.
  */
-function onAfterSessionCreate(
+export function onAfterSessionCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
@@ -387,6 +387,7 @@ function onAfterSessionCreate(
                     const db = drizzle(env.DB);
                     const [user] = await db
                         .select({
+                            name: userTable.name,
                             githubId: userTable.githubId,
                             githubUsername: userTable.githubUsername,
                         })
@@ -418,24 +419,33 @@ function onAfterSessionCreate(
                     );
                     if (!res.ok) {
                         console.error(
-                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                            `[github-profile-sync] GitHub API ${res.status} for user ${githubId}`,
                         );
                         return;
                     }
 
-                    const profile = (await res.json()) as { login: string };
+                    const profile = (await res.json()) as {
+                        login: string;
+                        name?: string | null;
+                    };
+                    const githubName = profile.name || profile.login;
+
                     if (
                         profile.login &&
-                        profile.login !== user?.githubUsername
+                        (profile.login !== user?.githubUsername ||
+                            githubName !== user?.name)
                     ) {
                         await db
                             .update(userTable)
-                            .set({ githubUsername: profile.login })
+                            .set({
+                                githubUsername: profile.login,
+                                name: githubName,
+                            })
                             .where(eq(userTable.id, session.userId));
                     }
                 } catch (e) {
                     console.error(
-                        "[username-sync] failed for session",
+                        "[github-profile-sync] failed for session",
                         session.userId,
                         e,
                     );

@@ -10,6 +10,7 @@
 @import "tailwindcss/theme.css" layer(theme) prefix(polli);
 @import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
 @import "./fonts.css";
+@import "./links.css";
 @import "./tokens.css";
 @import "../modules/wallet/styles.css";
 @import "./theme.css";
@@ -44,6 +45,40 @@
     background-color: var(--polli-color-scrollbar-thumb);
 }
 
+.polli-dialog-floating-controls::before {
+    content: "";
+    position: absolute;
+    inset: -2rem 0 0;
+    z-index: -1;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--polli-color-surface-block) 40%
+    );
+}
+
+/* Side padding shared by every dialog part. */
+:root {
+    --polli-dialog-gutter: 1.5rem;
+}
+
+/* On phones a full-screen modal fills the screen in its own block colour with
+   a 20px gutter; its top-level cards run edge to edge like page sections.
+   Nested cards and compact dialogs are untouched. */
+@media (width < 40rem) {
+    .polli-dialog-mobile-page {
+        --polli-dialog-gutter: 1.25rem;
+        border-radius: 0;
+    }
+
+    .polli-dialog-mobile-page
+        .polli-surface-card:not(.polli-surface-card .polli-surface-card) {
+        margin-inline: calc(-1 * var(--polli-dialog-gutter));
+        padding: 1rem var(--polli-dialog-gutter);
+        border-radius: 1.5rem;
+    }
+}
+
 .polli-input-number-clean::-webkit-inner-spin-button,
 .polli-input-number-clean::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -57,7 +92,7 @@
 .polli-input,
 .polli-textarea {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -73,12 +108,13 @@
 
 .polli-input-shell {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
 
 .polli-input-shell:focus-within {
+    border-color: var(--polli-color-border);
     box-shadow: 0 0 0 1px var(--polli-color-border);
 }
 
@@ -90,22 +126,30 @@
     box-shadow: none;
 }
 
+/* `data-error` is set by the primitive; `data-invalid` by an invalid Field.Root
+   (Ark), so a field with an error text also paints its control red. */
 .polli-input[data-error="true"],
-.polli-textarea[data-error="true"] {
+.polli-input[data-invalid],
+.polli-textarea[data-error="true"],
+.polli-textarea[data-invalid] {
     border-color: var(--polli-color-danger-border);
 }
 
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
+.polli-input[data-invalid]:focus,
+.polli-input[data-invalid]:focus-visible,
 .polli-textarea[data-error="true"]:focus,
-.polli-textarea[data-error="true"]:focus-visible {
+.polli-textarea[data-error="true"]:focus-visible,
+.polli-textarea[data-invalid]:focus,
+.polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
     box-shadow: 0 0 0 1px var(--polli-color-danger-border);
 }
 
 .polli-textarea {
-    --polli-textarea-resizer-color: var(--polli-color-border);
-    scrollbar-color: var(--polli-color-border) transparent;
+    --polli-textarea-resizer-color: var(--polli-color-divider);
+    scrollbar-color: var(--polli-color-divider) transparent;
 }
 
 .polli-textarea:focus {
@@ -149,11 +193,6 @@
 }
 
 .polli-slider {
-    --polli-slider-thumb-shadow-fallback: color-mix(
-        in oklab,
-        var(--polli-color-text-strong) 35%,
-        transparent
-    );
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(
         --polli-slider-fill,
@@ -166,10 +205,6 @@
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,
         var(--polli-color-text-strong)
-    );
-    --polli-slider-thumb-shadow-value: var(
-        --polli-slider-thumb-shadow,
-        var(--polli-slider-thumb-shadow-fallback)
     );
 
     width: 100%;
@@ -222,7 +257,6 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
 
@@ -232,7 +266,6 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
 
@@ -255,7 +288,7 @@
  * AppHeader innerClassName) live in app source, which this build never
  * scans — polli:* utilities used that way must be listed here.
  */
-@source inline("polli:max-w-6xl polli:flex-row");
+@source inline("polli:max-w-6xl polli:flex-row polli:hover:bg-theme-text-muted/15 polli:focus-visible:bg-theme-text-muted/15");
 
 /* Respect the OS "reduce motion" setting app-wide: collapse transitions and
    animations to near-instant (the drawer slide, slider transforms, etc.). */

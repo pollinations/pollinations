@@ -63,6 +63,15 @@ function requestsStructuredOutput(format: unknown): boolean {
     );
 }
 
+function requestsJsonMode(format: unknown): boolean {
+    return (
+        !!format &&
+        typeof format === "object" &&
+        "type" in format &&
+        format.type === "json_object"
+    );
+}
+
 /** Validate declared text capabilities before any provider attempt. */
 export function textCapabilityError(
     definition: ModelDefinition | undefined,
@@ -87,6 +96,12 @@ export function textCapabilityError(
             requestsStructuredOutput(text?.format))
     )
         return "This model does not support structured output; use text format";
+    if (
+        definition.supportsJsonMode === false &&
+        (requestsJsonMode(request.response_format) ||
+            requestsJsonMode(text?.format))
+    )
+        return "This model does not support JSON mode; use a json_schema response format";
     if (
         definition.maxCompletionTokens !== undefined &&
         requestedCompletionTokens(request) > definition.maxCompletionTokens

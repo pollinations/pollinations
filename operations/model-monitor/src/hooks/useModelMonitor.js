@@ -7,7 +7,7 @@ import {
 } from "../model-data.js";
 
 const MODEL_ROUTE_HEALTH_URL = "https://gen.pollinations.ai/models/status";
-const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
+const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models?reliability=all";
 
 // Minutes parameter for the parameterized model_route_health pipe
 const WINDOW_MINUTES = {

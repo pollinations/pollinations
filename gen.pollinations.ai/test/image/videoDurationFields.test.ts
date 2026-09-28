@@ -52,6 +52,14 @@ describe("video duration registry fields", () => {
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 
+    it("MiniMax H3 Max exposes allowed_durations", () => {
+        const info = modelInfoFromDefinition(
+            "minimax/minimax-h3-max",
+            IMAGE_SERVICES["minimax/minimax-h3-max"],
+        );
+        expect(info.allowed_durations).toEqual([5, 10, 15]);
+    });
+
     it("MiniMax H3 Max Turbo exposes allowed_durations", () => {
         const info = modelInfoFromDefinition(
             "minimax/minimax-h3-max-turbo",

@@ -39,6 +39,8 @@ Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effor
 
 Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
 
+Text models with `video` under `input_modalities` (for example `inclusionai/ling-3.0-flash-vl`) accept `video_url` parts the same way they accept `image_url`: a public `https://` URL or a `data:video/...;base64,...` data URI (Gemini models also accept YouTube and `gs://` URLs). Video usage is metered from the provider's reported `video_tokens` detail and billed against the model's video prompt rate.
+
 Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
 
 Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. Community speech models available only through `/v1/audio/speech` are not included.
@@ -122,23 +124,47 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`typesafe/jev`)
+### Typed decisions (`typesafe/jev-1.13`)
 
-`typesafe/jev` (alias `jev`) returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Only the last `user` message is used; its `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Earlier turns, system instructions and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk.
+`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`.
 
 ```json
 {
-  "model": "typesafe/jev",
-  "messages": [
-    {
-      "role": "user",
-      "content": "{\"state\":\"My payouts have been failing for 3 days.\",\"questions\":{\"department\":{\"type\":\"choice\",\"instructions\":\"Which team should handle this?\",\"criteria\":{\"billing\":\"Payment issues\",\"technical\":\"Product failures\"}},\"is_urgent\":{\"type\":\"noul\",\"instructions\":\"Does this convey urgency?\"}}}"
-    }
-  ]
+  "state": "My payouts have been failing for 3 days.",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": { "billing": "Payment issues", "technical": "Product failures" }
+    },
+    "is_urgent": { "type": "noul", "instructions": "Does this convey urgency?" }
+  }
 }
 ```
 
-`message.content` returns the native TypeSafe `answers` object unchanged: one field per question, each carrying `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`). See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
+The response carries `answers`, one field per question, each with `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`), plus `usage` with `input_tokens` and `output_tokens`. See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
+
+```json
+{
+  "id": "dec-…",
+  "model": "typesafe/jev-1.13",
+  "provider": "TypeSafe",
+  "answers": {
+    "department": {
+      "type": "choice",
+      "choice": "billing",
+      "confidence": 0.82,
+      "probabilities": { "billing": 0.91, "technical": 0.09 }
+    },
+    "is_urgent": { "type": "noul", "noul": 0.87 }
+  },
+  "usage": { "input_tokens": 312, "output_tokens": 48 }
+}
+```
+
+`state`, `instructions`, and criteria values accept a string or arbitrary JSON. There is no streaming; the answers arrive in one response.
+
+The same model is also reachable from an OpenAI client on `/v1/chat/completions`: put the identical request JSON in the last `user` message as a string, and the answers come back as `message.content`. Earlier turns, system instructions, and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk. Prefer `/alpha/decisions` where you can post the native shape.
 
 Supply relevant facts in `state`; Jev can be confident even when facts are missing. Interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
 

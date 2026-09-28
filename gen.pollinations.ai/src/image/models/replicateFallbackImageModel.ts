@@ -249,8 +249,6 @@ export async function callReplicateFallbackImage(
 
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: {

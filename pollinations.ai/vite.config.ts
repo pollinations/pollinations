@@ -12,6 +12,17 @@ const uiBrand = fileURLToPath(
     new URL("../packages/ui/src/brand", import.meta.url),
 );
 
+// Resolve the website's public UI entry points to their original modules.
+// This preserves route-level splitting and avoids duplicate primitives across
+// the package's independently bundled entries. CSS remains the shared build.
+const uiSources = {
+    "@pollinations/ui": "index.ts",
+    "@pollinations/ui/app-user-menu/sdk": "modules/app-user-menu/sdk.ts",
+    "@pollinations/ui/gen": "modules/gen/index.ts",
+    "@pollinations/ui/markdown": "markdown.ts",
+    "@pollinations/ui/wallet": "modules/wallet/index.ts",
+};
+
 export default defineConfig({
     test: {
         server: {
@@ -44,9 +55,15 @@ export default defineConfig({
         cloudflare(),
     ],
     resolve: {
-        alias: {
-            "@pollinations/ui/brand": uiBrand,
-        },
+        alias: [
+            ...Object.entries(uiSources).map(([name, source]) => ({
+                find: new RegExp(`^${name}$`),
+                replacement: fileURLToPath(
+                    new URL(`../packages/ui/src/${source}`, import.meta.url),
+                ),
+            })),
+            { find: "@pollinations/ui/brand", replacement: uiBrand },
+        ],
         // Linked UI packages must share the app's SDK auth context.
         dedupe: ["react", "react-dom", "@pollinations/sdk"],
     },

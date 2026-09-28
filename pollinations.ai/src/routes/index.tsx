@@ -59,7 +59,7 @@ function HelloPage() {
                 />
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                     <ExternalLinkButton
-                        href="https://enter.pollinations.ai/quests"
+                        href="https://enter.pollinations.ai/keys"
                         intent="brand"
                         size="lg"
                         icon={<RocketIcon className="size-4 shrink-0" />}

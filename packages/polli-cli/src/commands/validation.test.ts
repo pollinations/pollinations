@@ -78,16 +78,17 @@ describe("CLI argument validation", () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
-    it.each(["bogus", "Text", ""])(
-        "rejects unknown model type %j before fetching",
-        async (type) => {
-            const fetch = prepare();
-            await expect(
-                modelsCommand.parseAsync(["--type", type], { from: "user" }),
-            ).rejects.toThrow(ExitSignal);
-            expect(fetch).not.toHaveBeenCalled();
-        },
-    );
+    it.each([
+        "bogus",
+        "Text",
+        "",
+    ])("rejects unknown model type %j before fetching", async (type) => {
+        const fetch = prepare();
+        await expect(
+            modelsCommand.parseAsync(["--type", type], { from: "user" }),
+        ).rejects.toThrow(ExitSignal);
+        expect(fetch).not.toHaveBeenCalled();
+    });
 
     it("rejects an unknown model type in stats mode too", async () => {
         const fetch = prepare();

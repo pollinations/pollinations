@@ -8,6 +8,7 @@ import {
     Text,
 } from "@pollinations/ui";
 import { useEffect, useState } from "react";
+import { cachePublic } from "../../data/cachePublic";
 
 export type QuestLeaderboardEntry = {
     githubLogin: string;
@@ -54,6 +55,16 @@ function isLeaderboardData(value: unknown): value is QuestLeaderboardData {
         typeof candidate.totals.totalPollen === "number"
     );
 }
+
+export const loadQuestLeaderboard = cachePublic(async () => {
+    const response = await fetch(LEADERBOARD_API, {
+        headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("Quest leaderboard failed");
+    const body: unknown = await response.json();
+    if (!isLeaderboardData(body)) throw new Error("Invalid quest leaderboard");
+    return body;
+});
 
 function LeaderboardAction() {
     return (
@@ -195,34 +206,20 @@ export function QuestLeaderboard() {
     });
 
     useEffect(() => {
-        const controller = new AbortController();
+        let cancelled = false;
 
-        fetch(LEADERBOARD_API, {
-            headers: { Accept: "application/json" },
-            signal: controller.signal,
-        })
-            .then(async (response) => {
-                if (!response.ok) throw new Error("Quest leaderboard failed");
-                return response.json() as Promise<unknown>;
-            })
+        loadQuestLeaderboard()
             .then((body) => {
-                setState(
-                    isLeaderboardData(body)
-                        ? { status: "ready", data: body }
-                        : { status: "failed" },
-                );
+                if (!cancelled) setState({ status: "ready", data: body });
             })
-            .catch((error: unknown) => {
-                if (
-                    error instanceof DOMException &&
-                    error.name === "AbortError"
-                ) {
-                    return;
-                }
-                setState({ status: "failed" });
+            .catch(() => {
+                if (!cancelled) setState({ status: "failed" });
             });
 
-        return () => controller.abort();
+        // A route unmount must not cancel a load shared with the next mount.
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     if (state.status === "ready") {

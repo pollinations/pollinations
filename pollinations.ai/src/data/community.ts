@@ -7,6 +7,7 @@
  * rather than showing a stale hardcoded number. The diary labels its archive
  * timestamp and explicitly identifies the bundled snapshot during an outage.
  */
+import { cachePublic } from "./cachePublic";
 import { type UseAsyncOptions, useAsync } from "./useAsync";
 
 const REPO = "pollinations/pollinations";
@@ -15,30 +16,32 @@ export const REPO_URL = `https://github.com/${REPO}`;
 export const DISCORD_URL =
     "https://discord.gg/pollinations-ai-885844321461485618";
 
-async function github<T>(path: string): Promise<T> {
+const loadGithub = cachePublic(async (path: string): Promise<unknown> => {
     const response = await fetch(`${GITHUB}${path}`, {
         headers: { Accept: "application/vnd.github+json" },
     });
     if (!response.ok) throw new Error(`github ${path}: ${response.status}`);
-    return response.json() as Promise<T>;
+    return response.json();
+});
+
+async function github<T>(path: string): Promise<T> {
+    return (await loadGithub(path)) as T;
 }
 
 /* ── Stars ──────────────────────────────────────────────────────────────── */
 
+export const loadRepoStars = cachePublic(async () => {
+    const response = await fetch("/api/github-stars");
+    if (!response.ok) throw new Error(`github: ${response.status}`);
+    const repo = (await response.json()) as {
+        stargazers_count?: number;
+    };
+    if (typeof repo.stargazers_count !== "number") return null;
+    return repo.stargazers_count;
+});
+
 export function useRepoStars(options?: UseAsyncOptions) {
-    return useAsync<number | null>(
-        async () => {
-            const response = await fetch("/api/github-stars");
-            if (!response.ok) throw new Error(`github: ${response.status}`);
-            const repo = (await response.json()) as {
-                stargazers_count?: number;
-            };
-            if (typeof repo.stargazers_count !== "number") return null;
-            return repo.stargazers_count;
-        },
-        null,
-        options,
-    );
+    return useAsync(loadRepoStars, null, options);
 }
 
 /* ── Discord ────────────────────────────────────────────────────────────── */
@@ -48,19 +51,17 @@ export function useRepoStars(options?: UseAsyncOptions) {
  * total membership, which needs a bot token. The website worker proxies this
  * public value because Discord's widget response does not allow browser CORS.
  */
+export const loadDiscordPresence = cachePublic(async () => {
+    const response = await fetch("/api/discord-presence");
+    if (!response.ok) throw new Error(`discord: ${response.status}`);
+    const widget = (await response.json()) as {
+        presence_count?: number;
+    };
+    return widget.presence_count ?? null;
+});
+
 export function useDiscordPresence(options?: UseAsyncOptions) {
-    return useAsync<number | null>(
-        async () => {
-            const response = await fetch("/api/discord-presence");
-            if (!response.ok) throw new Error(`discord: ${response.status}`);
-            const widget = (await response.json()) as {
-                presence_count?: number;
-            };
-            return widget.presence_count ?? null;
-        },
-        null,
-        options,
-    );
+    return useAsync(loadDiscordPresence, null, options);
 }
 
 /* ── Contributors ───────────────────────────────────────────────────────── */

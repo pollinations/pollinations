@@ -5,6 +5,7 @@
  *
  * Nothing on this site is hardcoded that these can measure.
  */
+import { cachePublic } from "./cachePublic";
 import { useAsync } from "./useAsync";
 
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co/v0/pipes";
@@ -98,20 +99,8 @@ export const isFresh = (app: DirectoryApp, now = Date.now()) => {
     return Number.isFinite(approved) && approved >= now - THIRTY_DAYS_MS;
 };
 
-/** Shared across routes; a failed load is dropped so the next mount retries. */
-function cached<T>(load: () => Promise<T>) {
-    let promise: Promise<T> | null = null;
-    return () => {
-        promise ??= load().catch((error) => {
-            promise = null;
-            throw error;
-        });
-        return promise;
-    };
-}
-
 /** The community app directory; exact duplicates collapse, same-named apps stay. */
-const loadDirectory = cached(async () => {
+const loadDirectory = cachePublic(async () => {
     const rows = await tinybird<DirectoryApp>(
         "app_directory_public",
         "&limit=1000",
@@ -163,7 +152,7 @@ export function selectWeeklyApps(
         .slice(0, 8);
 }
 
-export const loadWeeklyApps = cached(async () => {
+export const loadWeeklyApps = cachePublic(async () => {
     const [catalog, ranking] = await Promise.all([
         loadDirectory(),
         tinybird<WeeklyAppUsage>("app_top_weekly", "&limit=8"),
@@ -197,16 +186,10 @@ export function selectShowcaseApps(apps: DirectoryApp[]): DirectoryApp[] {
 }
 
 type PlatformStats = {
-    /** Requests in the most recent week. */
-    requestsWeek: number;
-    /** 2xx / (2xx + 5xx), cache excluded. */
-    availability: number | null;
     /** Callable models excluding agents; official and community entries included. */
     models: number;
     /** Callable agents, counted separately from models. */
     agents: number;
-    /** Public MCP servers, not the individual tools they expose. */
-    mcpServers: number | null;
     /** Count per category, e.g. { text: 141, image: 51 }. */
     byCategory: Record<string, number>;
     /** Models and agents explicitly marked as community-published by the catalog. */
@@ -257,26 +240,6 @@ export function describeModelKinds(
     return list.charAt(0).toUpperCase() + list.slice(1);
 }
 
-type WeeklyHealthRow = {
-    week: string;
-    total_requests: number;
-    availability: number;
-    official_availability: number;
-};
-
-/**
- * Monday of the current week, UTC — the bucket key `weekly_health_stats`
- * produces via toStartOfWeek(start_time, 1).
- */
-function currentWeekStart(now = new Date()): string {
-    const day = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    );
-    // getUTCDay is 0=Sunday; on a Monday-start week Sunday is six days in.
-    day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
-    return day.toISOString().slice(0, 10);
-}
-
 /**
  * Shared across the dev kit and Community so each mount reuses the cached
  * catalog and platform statistics instead of repeating their requests.
@@ -285,62 +248,21 @@ export function usePlatformStats() {
     return useAsync<PlatformStats | null>(loadPlatformStats, null);
 }
 
-/**
- * Scale and reliability come from `weekly_health_stats` — 948 bytes for both,
- * versus 81 KB to sum `models/status`. Breadth still needs `/models`, which is
- * 113 KB; that's the one genuinely expensive number here, and it loads after
- * paint.
- *
- * The pipe buckets by calendar week, so the newest row is the week *in
- * progress*. Reading that made the hero collapse every Monday — measured at
- * 01:30 on Mon 27 Jul it said 1,608 requests and 100.0% availability, against
- * 7.3M and 99.48% for the week that had just ended. We report the last
- * complete week instead, which is also what "requests last week" claims.
- *
- * (Related trap already fixed: the param on models/status is `minutes`, not
- * `window`. An unknown param is ignored and silently returns the 60-minute
- * default — plausibly how "1.5M daily requests" survived, an hour of traffic
- * read as a day.)
- */
-export const loadPlatformStats = cached(async (): Promise<PlatformStats> => {
-    const [weeks, models, mcpServers] = await Promise.all([
-        // 3, not 2: the window is relative to `now`, so the oldest bucket
-        // is left-truncated. Three guarantees a whole one in the middle.
-        tinybird<WeeklyHealthRow>("weekly_health_stats", "&weeks_back=3"),
-        fetch("https://gen.pollinations.ai/models").then(async (response) => {
-            if (!response.ok) throw new Error(`models: ${response.status}`);
-            const catalog = await response.json();
-            if (!Array.isArray(catalog))
-                throw new Error("models: invalid catalog");
-            return catalog as CatalogModel[];
-        }),
-        fetch("https://gen.pollinations.ai/mcp")
-            .then(async (response) => {
-                if (!response.ok) return null;
-                const body = await response.json();
-                return Array.isArray(body.data) ? body.data.length : null;
-            })
-            .catch(() => null),
-    ]);
-
-    // Rows come back oldest-first; drop the week still in progress.
-    const thisWeek = currentWeekStart();
-    const complete = weeks.filter((row) => row.week !== thisWeek);
-    const latest = complete[complete.length - 1];
-    if (!latest || !Number.isFinite(latest.total_requests)) {
-        throw new Error("weekly health: no complete week available");
-    }
-
-    const catalog = models;
-    return {
-        requestsWeek: latest.total_requests,
-        availability: latest.official_availability ?? null,
-        models: catalog.filter((model) => model.agent !== true).length,
-        agents: catalog.filter((model) => model.agent === true).length,
-        mcpServers,
-        ...summariseCatalog(catalog),
-    };
-});
+/** Only request the catalog used by the visible counts and model categories. */
+export const loadPlatformStats = cachePublic(
+    async (): Promise<PlatformStats> => {
+        const response = await fetch("https://gen.pollinations.ai/models");
+        if (!response.ok) throw new Error(`models: ${response.status}`);
+        const body = await response.json();
+        if (!Array.isArray(body)) throw new Error("models: invalid catalog");
+        const catalog = body as CatalogModel[];
+        return {
+            models: catalog.filter((model) => model.agent !== true).length,
+            agents: catalog.filter((model) => model.agent === true).length,
+            ...summariseCatalog(catalog),
+        };
+    },
+);
 
 /**
  * 984868 → "985K", 1204000 → "1.2M".

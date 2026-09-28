@@ -298,8 +298,6 @@ describe("platform stats", () => {
             models: 5,
             agents: 1,
             byCategory: { text: 3, image: 3 },
-            // Do not substitute a differently scoped availability metric.
-            availability: null,
         });
     });
 
@@ -340,9 +338,9 @@ describe("platform stats", () => {
             models: 1,
             agents: 1,
         });
-        expect(fetchMock).toHaveBeenCalledTimes(6);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
         await loadPlatformStats();
-        expect(fetchMock).toHaveBeenCalledTimes(6);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it("rejects malformed catalog responses", async () => {
@@ -357,18 +355,23 @@ describe("platform stats", () => {
         );
     });
 
-    it("does not turn missing health data into zero weekly requests", async () => {
+    it("only loads the catalog, without unused health or MCP requests", async () => {
         vi.resetModules();
         const { loadPlatformStats } = await import("./publicStats");
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (url: string) =>
-                Response.json(url.endsWith("/models") ? [] : { data: [] }),
-            ),
-        );
-        await expect(loadPlatformStats()).rejects.toThrow(
-            "weekly health: no complete week available",
-        );
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url !== "https://gen.pollinations.ai/models")
+                throw new Error("Unexpected unused request");
+            return Response.json([]);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        await expect(loadPlatformStats()).resolves.toEqual({
+            models: 0,
+            agents: 0,
+            community: 0,
+            byCategory: {},
+        });
+        await loadPlatformStats();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });
 

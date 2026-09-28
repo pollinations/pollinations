@@ -1,0 +1,34 @@
+{
+  "pr_number": 15213,
+  "title": "feat(agent-frugal): cost-first, health-aware model router code agent",
+  "author": "fadyabohamza-netizen",
+  "url": "https://github.com/pollinations/pollinations/pull/15213",
+  "merged_at": "2026-09-28T14:41:32Z",
+  "labels": [],
+  "pr_body_excerpt": "> Maintainer update (September 28): preserves structured tool history; excludes agent/unknown-price entries; checks context and capabilities; no unchecked fallback. Estimates request cost, not exact usage. 29 tests, TypeScript, formatting and three live routing tiers verified. Published name: community/fadyabohamza-netizen/frugal. Standalone deployment still needs the author to copy/sync these changes.\n\n## frugal — cost-first, health-aware model router (code agent)\n\nA code agent that routes each request to the **cheapest healthy model that can actually serve it**, then forwards the conversation unchanged. Routing costs zero tokens: the tier decision is pure code, and the pick is a live ranking of true per-request cost.\n\n- **Source repository:** https://github.com/fadyabohamza-netizen/frugal\n- **Callable model:** `fadyabohamza-netizen/frugal` (deployed, verified live)\n\n## How it routes\n\n1. **Classify (zero-LM)**: prompt length, code fences, reasoning/long-form keywords, conversation continuation, images, tools → `FAST` / `BALANCED` / `DEEP`. No classifier model call ⇒ no extra tokens or latency spent on routing.\n2. **Live data in parallel** via `pollinations()`: `/v1/models` (pricing, capabilities, modality) + `/models/status?minutes=30` (per-model rollup: requests, 5xx, failure shares).\n3. **True per-request cost, not unit price**: `input_tokens × prompt_price + tier_scaled_output_tokens × completion_price`, using the *actual measured input length*.\n4. **Continuous health penalty** instead of a hard ban: recent 5xx inflates estimated cost up to 5×, so briefly-flaky models stay available but healthy models of similar price always win. Only genuinely dead models (≥15% 5xx, or zero 2xx with real traffic) are dropped.\n5. **Foundation models only**: `community` entries (games/agents/tests) and unpriced entries are excluded, so the router never routes to itself or to unpredictable test agents.\n6. **Tier slices from the live ranked catalog**: sorted candidates split into t",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A thrifty little router",
+    "blurb": "Community contributor fadyabohamza-netizen built frugal, a code agent that shops the live model catalog before sending your request along. It checks price, health, context, and capabilities without spending tokens on the decision.",
+    "summary": "Added the community code agent `community/fadyabohamza-netizen/frugal`, which classifies requests in code and ranks live foundation models by estimated per-request cost, recent health, and ability to handle the conversation.",
+    "impact": "Developers can call frugal to route code-agent requests to a low-cost healthy model that supports their context, images, and tools while preserving structured tool history; its cost estimate is not an exact usage bill.",
+    "keywords": [
+      "community",
+      "code agent",
+      "model routing",
+      "cost estimation",
+      "model health",
+      "tool calls"
+    ],
+    "visual_concept": "Frugal is a community-built code agent, with no mascot indicated. Depict Polli and the CRT monitor robot at a cozy garden workbench, sorting model-labeled seed packets by small price tags and health indicators before placing a conversation scroll on the chosen route. The bee's tiny accountant glasses make the cost-first idea legible.",
+    "image_prompt": "In a cozy pixel art garden workshop, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny accountant glasses, and helps a chunky CRT monitor robot sort model seed packets by price and health beside a glowing lime green (#ecf874) code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, and a nostalgic, emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15213.jpg",
+    "prompt": "In a cozy pixel art garden workshop, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny accountant glasses, and helps a chunky CRT monitor robot sort model seed packets by price and health beside a glowing lime green (#ecf874) code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, and a nostalgic, emotionally warm atmosphere."
+  },
+  "generated_at": "2026-09-28T14:42:49.367047+00:00"
+}

@@ -11,6 +11,7 @@ import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
+import { QuestsCard } from "../ui/home/QuestsCard";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
@@ -61,6 +62,7 @@ function HelloPage() {
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
+            <QuestsCard />
             <LiveApps />
             <OnTheWay />
             <StartBuilding />

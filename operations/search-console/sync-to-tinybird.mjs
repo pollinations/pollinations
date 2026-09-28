@@ -76,11 +76,11 @@ const PAGES = {
 };
 PAGES["www.pollinations.ai"] = PAGES["pollinations.ai"];
 
-const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const OWN_PAGES = Object.entries(PAGES)
     .map(
         ([host, paths]) =>
-            `^https://${escape(host)}(${paths.map(escape).join("|")})/?$`,
+            `^https://${escapeRegex(host)}(${paths.map(escapeRegex).join("|")})/?$`,
     )
     .join("|");
 

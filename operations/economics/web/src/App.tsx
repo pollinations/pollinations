@@ -296,7 +296,7 @@ function NavMenuButton({
             ref={buttonRef}
             size="md"
             className={cn(
-                "fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque",
+                "fixed left-3 top-3 z-30 bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu",
                 !desktopVisible && "md:hidden",
             )}
             onClick={onOpen}

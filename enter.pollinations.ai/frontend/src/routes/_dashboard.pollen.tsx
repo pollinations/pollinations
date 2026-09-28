@@ -16,7 +16,7 @@ import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
 import {
     LoadError,
-    PageSpinner,
+    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
@@ -65,7 +65,7 @@ function PollenPage() {
     return (
         <>
             <Section title="Wallet">
-                <Await promise={balance} fallback={<PageSpinner />}>
+                <Await promise={balance} fallback={<PageStatus />}>
                     {(balances) =>
                         balances ? (
                             <Await

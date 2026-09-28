@@ -33,7 +33,7 @@ import type {
     ReactNode,
     RefObject,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
@@ -45,6 +45,9 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
+
+/** Where the page-level loading status renders, above the page's cards. */
+export const PageStatusSlot = createContext<HTMLElement | null>(null);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -156,6 +159,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [pageStatusSlot, setPageStatusSlot] = useState<HTMLElement | null>(
+        null,
+    );
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -369,11 +375,19 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-3 pb-8 sm:px-4 lg:px-6 lg:pt-0"
                 >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-3">
-                        {children}
-                    </main>
+                    {/* Page status sits in the top gutter, level with the menu
+                        button, so it never moves the cards. */}
+                    <div
+                        ref={setPageStatusSlot}
+                        className="mx-auto mb-3 flex h-10 max-w-[800px] items-center pl-16 sm:pl-12 lg:mb-0 lg:pl-7"
+                    />
+                    <PageStatusSlot.Provider value={pageStatusSlot}>
+                        <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {children}
+                        </main>
+                    </PageStatusSlot.Provider>
                 </ScrollArea>
             </div>
         </div>

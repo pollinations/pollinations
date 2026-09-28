@@ -5,34 +5,42 @@ import {
     RefreshIcon,
     Section,
 } from "@pollinations/ui";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useContext, useState } from "react";
+import { createPortal } from "react-dom";
+import { PageStatusSlot } from "./dashboard-shell.tsx";
 
-/** One spinner per page: only the top card shows it, the rest wait empty. */
-export function PageSpinner() {
-    return <LoadingStatus>Loading…</LoadingStatus>;
+/** The page's single loading status, shown above its cards. */
+export function PageStatus() {
+    const slot = useContext(PageStatusSlot);
+    return slot && createPortal(<LoadingStatus>Loading…</LoadingStatus>, slot);
 }
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
     loading,
-    spinner = false,
+    pageStatus = false,
     children,
 }: {
     loading: boolean;
-    spinner?: boolean;
+    pageStatus?: boolean;
     children?: ReactNode;
 }) {
     if (!loading) return children;
-    return spinner ? <PageSpinner /> : null;
+    return pageStatus ? <PageStatus /> : null;
 }
 
-/** Every card title of a page that is still loading, spinner in the top card. */
+/** Every card title of a page that is still loading, with the page status. */
 export function PageLoading({ titles }: { titles: readonly string[] }) {
-    return titles.map((title, index) => (
-        <Section key={title} title={title}>
-            {index === 0 && <PageSpinner />}
-        </Section>
-    ));
+    return (
+        <>
+            <PageStatus />
+            {titles.map((title) => (
+                <Section key={title} title={title}>
+                    {null}
+                </Section>
+            ))}
+        </>
+    );
 }
 
 export function LoadError({

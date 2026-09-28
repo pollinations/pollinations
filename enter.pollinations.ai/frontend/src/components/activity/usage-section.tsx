@@ -174,7 +174,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 }) => {
     return (
         <>
-            <SectionContent loading={loading} spinner>
+            <SectionContent loading={loading} pageStatus>
                 {error && (
                     <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}

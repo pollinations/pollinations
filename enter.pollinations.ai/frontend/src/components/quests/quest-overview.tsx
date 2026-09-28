@@ -895,10 +895,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {state.loading && (
-                    <LoadingStatus>Loading quests…</LoadingStatus>
-                )}
-                <SectionContent loading={state.loading}>
+                <SectionContent loading={state.loading} pageStatus>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
                     {showSummary && !state.anonymous && (

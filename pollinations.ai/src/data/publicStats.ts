@@ -253,10 +253,8 @@ function currentWeekStart(now = new Date()): string {
 }
 
 /**
- * Shared across callers. The hero and the dev kit both want these numbers, and
- * without this each mount fires its own 113 KB /models request — two in
- * flight at once, and the second came back empty, which showed up as a
- * catalog of 0 models.
+ * Shared across the dev kit and Community so each mount reuses the cached
+ * catalog and platform statistics instead of repeating their requests.
  */
 export function usePlatformStats() {
     return useAsync<PlatformStats | null>(loadPlatformStats, null);

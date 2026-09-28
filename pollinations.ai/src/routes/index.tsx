@@ -5,10 +5,8 @@ import {
     RocketIcon,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { compact, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
-import { HeroStats } from "../ui/home/HeroStats";
 import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
@@ -21,28 +19,7 @@ export const Route = createFileRoute("/")({
     component: HelloPage,
 });
 
-function useHeroStats() {
-    const { data } = usePlatformStats();
-    if (!data) return [];
-    return [
-        { value: compact(data.requestsWeek), label: "requests last week" },
-        { value: String(data.models), label: "models" },
-        { value: String(data.agents), label: "agents" },
-        data.mcpServers === null
-            ? null
-            : { value: String(data.mcpServers), label: "MCP servers" },
-        data.availability === null
-            ? null
-            : {
-                  value: `${data.availability.toFixed(1)}%`,
-                  label: "official model availability",
-              },
-    ].filter((stat): stat is { value: string; label: string } => stat !== null);
-}
-
 function HelloPage() {
-    const stats = useHeroStats();
-
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
@@ -75,7 +52,6 @@ function HelloPage() {
                         Read the docs
                     </ExternalLinkButton>
                 </div>
-                <HeroStats stats={stats} />
             </HeroScene>
 
             <DevKit className={postHeroSpacingClassName} />

@@ -23,7 +23,8 @@ import { usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
     title: string;
-    body: string | ((modelCount: number | null) => string);
+    body: string;
+    catalogCount?: "models" | "agents";
     linkLabel?: string;
     href?: string;
     icon: ComponentType<IconProps>;
@@ -32,25 +33,15 @@ type Feature = {
 const BUILD_FOUNDATIONS: Feature[] = [
     {
         title: "One API, every model",
-        body: (modelCount) => {
-            const threshold = modelCount
-                ? Math.floor((modelCount - 1) / 50) * 50
-                : 0;
-            const catalogSize =
-                modelCount === null
-                    ? "hundreds of models"
-                    : threshold > 0
-                      ? `more than ${threshold.toLocaleString()} models`
-                      : `${modelCount.toLocaleString()} models`;
-
-            return `Add text, image, video, audio and multimodal features with ${catalogSize}, through one OpenAI-compatible API.`;
-        },
+        body: "Add text, image, video, audio and multimodal features through one OpenAI-compatible API.",
+        catalogCount: "models",
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
         icon: GenApiIcon,
     },
     {
         title: "Ready-made agents",
+        catalogCount: "agents",
         body: "Call ready-made agents through the same API. Their instructions, models and tools are already connected.",
         linkLabel: "Explore agents",
         href: "https://enter.pollinations.ai/models?category=agent",
@@ -109,18 +100,8 @@ const PUBLISH_FEATURES: Feature[] = [
     },
 ];
 
-function FeatureCard({
-    feature,
-    modelCount,
-}: {
-    feature: Feature;
-    modelCount: number | null;
-}) {
+function FeatureCard({ feature, count }: { feature: Feature; count?: number }) {
     const Icon = feature.icon;
-    const body =
-        typeof feature.body === "function"
-            ? feature.body(modelCount)
-            : feature.body;
 
     return (
         <Surface
@@ -131,12 +112,25 @@ function FeatureCard({
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
                     <Icon className="size-6" />
                 </div>
-                <Heading as="h3" size="card">
-                    {feature.title}
-                </Heading>
+                <div className="flex min-w-0 flex-col gap-1">
+                    <Heading as="h3" size="card">
+                        {feature.title}
+                    </Heading>
+                    {feature.catalogCount ? (
+                        <Text
+                            size="xs"
+                            tone="muted"
+                            className="min-h-4 tabular-nums"
+                        >
+                            {count === undefined
+                                ? null
+                                : `${count.toLocaleString()} ${feature.catalogCount}`}
+                        </Text>
+                    ) : null}
+                </div>
             </div>
 
-            <Text size="sm">{body}</Text>
+            <Text size="sm">{feature.body}</Text>
 
             {feature.href && feature.linkLabel ? (
                 <ExternalLinkButton
@@ -189,7 +183,6 @@ function FeatureGroup({
 export function DevKit({ className }: { className?: string }) {
     const scene = useArt("home", "quests");
     const { data } = usePlatformStats();
-    const modelCount = data?.models ?? null;
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
@@ -264,7 +257,11 @@ export function DevKit({ className }: { className?: string }) {
                         <FeatureCard
                             key={feature.title}
                             feature={feature}
-                            modelCount={modelCount}
+                            count={
+                                feature.catalogCount
+                                    ? data?.[feature.catalogCount]
+                                    : undefined
+                            }
                         />
                     ))}
                 </div>
@@ -277,11 +274,7 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
-                        <FeatureCard
-                            key={feature.title}
-                            feature={feature}
-                            modelCount={modelCount}
-                        />
+                        <FeatureCard key={feature.title} feature={feature} />
                     ))}
                 </div>
                 <ExternalLinkButton

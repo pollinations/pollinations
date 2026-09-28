@@ -12,7 +12,16 @@ import { PageStatusSlot } from "./dashboard-shell.tsx";
 /** The page's single loading status, shown above its cards. */
 export function PageStatus() {
     const slot = useContext(PageStatusSlot);
-    return slot && createPortal(<LoadingStatus>Loading…</LoadingStatus>, slot);
+    return (
+        slot &&
+        createPortal(
+            // Same surface as the mobile menu button it faces.
+            <div className="flex h-10 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:h-8 lg:px-3">
+                <LoadingStatus>Loading…</LoadingStatus>
+            </div>,
+            slot,
+        )
+    );
 }
 
 /** Keep section headings and controls outside the content that waits for data. */

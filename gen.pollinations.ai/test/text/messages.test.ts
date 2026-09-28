@@ -222,12 +222,15 @@ describe("messagesToChatRequest", () => {
         [{ type: "adaptive" }, { effort: "high" }, "high"],
         [{ type: "enabled", budget_tokens: 2000 }, undefined, "medium"],
         [{ type: "disabled" }, { effort: "high" }, undefined],
-    ])("maps thinking %j and %j to reasoning effort", (thinking, config, effort) => {
-        expect(
-            translate(request({ thinking, output_config: config }))
-                .reasoning_effort,
-        ).toBe(effort);
-    });
+    ])(
+        "maps thinking %j and %j to reasoning effort",
+        (thinking, config, effort) => {
+            expect(
+                translate(request({ thinking, output_config: config }))
+                    .reasoning_effort,
+            ).toBe(effort);
+        },
+    );
 });
 
 describe("chatToMessage", () => {

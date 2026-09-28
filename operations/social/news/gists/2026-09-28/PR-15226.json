@@ -1,0 +1,34 @@
+{
+  "pr_number": 15226,
+  "title": "feat: add prism code-review model router",
+  "author": "cesus-agent",
+  "url": "https://github.com/pollinations/pollinations/pull/15226",
+  "merged_at": "2026-09-28T14:33:52Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15017\n\n**Repository:** https://github.com/cesus-agent/prism-code-review-router\n**Callable model name:** `cesus-agent/prism-code-review-router`\n\n## What\n\nAdds `apps/agent-prism-code-review-router/` — `agent.ts` (the deployed code agent) plus a README documenting the routing policy. Prism picks which model answers each request, then answers as that model.\n\n## How it routes\n\nOrder of operations per request:\n\n1. **Read the wallet first.** `GET /account/balance` (forwarded with the caller's own delegated credentials) → per-request spend cap = `balance / 2`. The cap is derived from the balance, never the other way around. A budgeted key with 2 pollen cannot have a flagship deep pick silently drain it. Invisible balances (unbudgeted keys without `account:usage` get 403) route uncapped — a private wallet never breaks routing.\n2. **Classify locally, deterministically.** Regex signal families (security, review, architecture, ops, planning, data, writing) + payload features (unified-diff hunk counts, `+`/`-` line counts, request size, image parts) → `fast` / `balanced` / `deep`. No router LLM call: zero added cost/latency, and the request payload (possibly an unreleased diff) is never sent to a second model just to decide who should answer it. Escalation is deliberately asymmetric: security vocabulary always goes deep, because over-escalating costs pennies and under-escalating costs trust.\n3. **Select from live data.** `GET /v1/models` + `GET /models/status?minutes=30` (60 s isolate cache) with hard gates:\n   - health: catalog `success_rate < 95%` or >10% 5xx in 30 min dropped; status rows under 10 requests ignored as noise\n   - Responses-API support (`supported_endpoints`) — discovered by live testing: many community/proxy models 400 on `/v1/responses` with `unsupported_parameter: model`\n   - context fit (chars/3 + 4k margin), input modality (image detection), `tool_calling` when the request needs tools\n   - wallet cap: models whose estimated cost (prompt tokens from a",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A prism for code reviews",
+    "blurb": "cesus-agent built a code-review router that picks a model before the review begins. It checks the wallet first, so a small budget doesn't accidentally take the scenic route.",
+    "summary": "cesus-agent added `cesus-agent/prism-code-review-router`, a callable agent that classifies review requests locally into fast, balanced, or deep tiers, then selects a compatible model using live health data and a spend cap of half the visible wallet balance.",
+    "impact": "Review requests can reach a model suited to their diff, tools, and budget without sending the request to a second model just to make the routing decision; requests with private balances can still be routed.",
+    "keywords": [
+      "community",
+      "code review",
+      "model routing",
+      "Pollen",
+      "budget",
+      "model health"
+    ],
+    "visual_concept": "Depict cesus-agent's Prism as a small glass prism beside a retro terminal showing a code diff. Polli guides three soft beams toward fast, balanced, and deep model stations, with a tiny wallet and a healthy green status light nearby; the monitor robot helps inspect the diff.",
+    "image_prompt": "In a cozy pixel art garden workspace, a small glass prism beside a retro code-diff terminal splits soft lime green (#ecf874) light toward three model stations while a chunky CRT-headed robot studies the screen. Polli, wearing tiny reviewer glasses, points the way: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and never dominates the scene, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15226.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a small glass prism beside a retro code-diff terminal splits soft lime green (#ecf874) light toward three model stations while a chunky CRT-headed robot studies the screen. Polli, wearing tiny reviewer glasses, points the way: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and never dominates the scene, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-28T14:35:10.788715+00:00"
+}

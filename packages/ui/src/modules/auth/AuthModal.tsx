@@ -140,7 +140,11 @@ export function AuthFlowLayout({
                             {description && (
                                 // The step instruction: body tone, so it reads as
                                 // the sentence's second half rather than a caption.
-                                <Text size="body" tone="base">
+                                <Text
+                                    size="body"
+                                    tone="base"
+                                    className="polli:text-pretty"
+                                >
                                     {description}
                                 </Text>
                             )}

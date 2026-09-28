@@ -16,6 +16,10 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionContent,
+    DecisionOptions,
+    DecisionQuestion,
+    DecisionResponse,
     DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
@@ -1250,6 +1254,132 @@ export class Pollinations {
         }
 
         return response.json() as Promise<EmbeddingsResponse>;
+    }
+
+    // ============================================================================
+    // Decisions (TypeSafe / Jev)
+    // ============================================================================
+
+    /**
+     * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.decision({
+     *   state: "My payouts have been failing for 3 days.",
+     *   questions: {
+     *     department: choice("Which team should handle this?", {
+     *       billing: "Payment issues",
+     *       technical: "Product failures"
+     *     }),
+     *     is_urgent: noul("Does this convey urgency?")
+     *   }
+     * });
+     * console.log(result.answers.department.choice);
+     * ```
+     */
+    async decision(options: DecisionOptions): Promise<DecisionResponse>;
+    async decision(
+        state: DecisionContent,
+        questions: Record<string, DecisionQuestion>,
+        options?: RequestOptions & { model?: string },
+    ): Promise<DecisionResponse>;
+    async decision(
+        stateOrOptions: DecisionContent | DecisionOptions,
+        questionsArg?: Record<string, DecisionQuestion>,
+        optionsArg?: RequestOptions & { model?: string },
+    ): Promise<DecisionResponse> {
+        let state: DecisionContent;
+        let questions: Record<string, DecisionQuestion>;
+        let model: string | undefined;
+        let signal: AbortSignal | undefined;
+
+        if (
+            typeof stateOrOptions === "object" &&
+            stateOrOptions !== null &&
+            !Array.isArray(stateOrOptions) &&
+            "questions" in stateOrOptions &&
+            "state" in stateOrOptions
+        ) {
+            const opts = stateOrOptions as DecisionOptions;
+            state = opts.state;
+            questions = opts.questions;
+            model = opts.model;
+            signal = opts.signal;
+        } else {
+            state = stateOrOptions as DecisionContent;
+            questions = questionsArg as Record<string, DecisionQuestion>;
+            model = optionsArg?.model;
+            signal = optionsArg?.signal;
+        }
+
+        if (state === undefined || state === null) {
+            throw new PollinationsError(
+                "State is required for a decision request",
+                "INVALID_STATE",
+                400,
+            );
+        }
+
+        if (
+            !questions ||
+            typeof questions !== "object" ||
+            Object.keys(questions).length === 0
+        ) {
+            throw new PollinationsError(
+                "Questions map is required and cannot be empty",
+                "INVALID_QUESTIONS",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            state,
+            questions,
+        };
+        if (model) {
+            body.model = model;
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/alpha/decisions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<DecisionResponse>;
+    }
+
+    /**
+     * Alias for `decision`
+     */
+    async decisions(options: DecisionOptions): Promise<DecisionResponse>;
+    async decisions(
+        state: DecisionContent,
+        questions: Record<string, DecisionQuestion>,
+        options?: RequestOptions & { model?: string },
+    ): Promise<DecisionResponse>;
+    async decisions(
+        stateOrOptions: DecisionContent | DecisionOptions,
+        questionsArg?: Record<string, DecisionQuestion>,
+        optionsArg?: RequestOptions & { model?: string },
+    ): Promise<DecisionResponse> {
+        return (
+            this.decision as (
+                stateOrOptions: DecisionContent | DecisionOptions,
+                questionsArg?: Record<string, DecisionQuestion>,
+                optionsArg?: RequestOptions & { model?: string },
+            ) => Promise<DecisionResponse>
+        )(stateOrOptions, questionsArg, optionsArg);
     }
 
     // ============================================================================

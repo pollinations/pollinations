@@ -649,6 +649,118 @@ export interface UploadResponse {
 }
 
 // ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/** Decision model identifier (defaults to 'typesafe/jev-1.13' / 'jev') */
+export type DecisionModel = string;
+
+/**
+ * State, instructions, and criteria all accept any JSON:
+ * a string, a record, or an array of records/values.
+ */
+export type DecisionContent = string | Record<string, unknown> | unknown[];
+
+/** A choice question between named options */
+export interface ChoiceQuestion {
+    type: "choice";
+    /** What to decide */
+    instructions: DecisionContent;
+    /** Selectable options mapped to what each one means (or null) */
+    criteria: Record<string, DecisionContent | null>;
+}
+
+/** A score question on an ordered scale */
+export interface ScoreQuestion {
+    type: "score";
+    /** What to rate */
+    instructions: DecisionContent;
+    /** Ordered rungs from lowest to highest (at least 2 levels) */
+    criteria: DecisionContent[];
+}
+
+/** A yes/no proposition question evaluating probability (0 to 1) */
+export interface NoulQuestion {
+    type: "noul";
+    /** The yes/no proposition to evaluate */
+    instructions: DecisionContent;
+    /** Optional descriptions of what true and false mean */
+    criteria?: {
+        true?: DecisionContent;
+        false?: DecisionContent;
+    };
+}
+
+/** A typed decision question: choice, score, or noul */
+export type DecisionQuestion = ChoiceQuestion | ScoreQuestion | NoulQuestion;
+
+/** Answer for a choice question */
+export interface ChoiceAnswer {
+    type: "choice";
+    /** The selected criteria key */
+    choice: string;
+    /** Probability assigned to each option */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a score question */
+export interface ScoreAnswer {
+    type: "score";
+    /** Position on the criteria scale (can be fractional) */
+    score: number;
+    /** Maps each scale index back to its criteria entry */
+    legend: Record<string, unknown>;
+    /** Probability assigned to each scale index */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a noul question */
+export interface NoulAnswer {
+    type: "noul";
+    /** Probability that the proposition is true, 0 to 1 */
+    noul: number;
+}
+
+/** Typed answer matching the question type */
+export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
+
+/** Token usage for a decision request */
+export interface DecisionUsage {
+    input_tokens: number;
+    output_tokens: number;
+}
+
+/** Options for requesting a decision (POST /alpha/decisions) */
+export interface DecisionOptions extends RequestOptions {
+    /** Decision model to use (default: 'typesafe/jev-1.13') */
+    model?: DecisionModel;
+    /** The facts/context to decide on */
+    state: DecisionContent;
+    /** Questions to answer about the state, keyed by custom names */
+    questions: Record<string, DecisionQuestion>;
+}
+
+/** Wire request payload sent to the decisions endpoint */
+export interface DecisionRequest {
+    model?: string;
+    state: DecisionContent;
+    questions: Record<string, DecisionQuestion>;
+}
+
+/** Response from the decisions endpoint */
+export interface DecisionResponse {
+    id: string;
+    model: string;
+    provider: string;
+    answers: Record<string, DecisionAnswer>;
+    usage: DecisionUsage;
+}
+
+// ============================================================================
 // BYOP (Bring Your Own Pollen)
 // ============================================================================
 

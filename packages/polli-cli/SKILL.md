@@ -34,6 +34,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
+| Evaluate decisions (Jev) | `polli gen decision --state "<text>" --questions '<json>'` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
 | Filter models by type | `polli models --type image` |

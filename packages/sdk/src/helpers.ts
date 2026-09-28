@@ -35,10 +35,15 @@ import type {
     AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
+    ChoiceQuestion,
     CreatedKey,
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionContent,
+    DecisionOptions,
+    DecisionQuestion,
+    DecisionResponse,
     DeviceAuthorization,
     EmbeddingInput,
     EmbeddingsOptions,
@@ -50,6 +55,9 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    NoulQuestion,
+    RequestOptions,
+    ScoreQuestion,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -447,6 +455,134 @@ export async function upload(
     options?: UploadOptions,
 ): Promise<UploadResponse> {
     return getClient().upload(data, options);
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev) Functions & Builders
+// ============================================================================
+
+/**
+ * Helper to construct a ChoiceQuestion
+ *
+ * @example
+ * ```ts
+ * const question = choice("Which department should handle this?", {
+ *   billing: "Payment and refund issues",
+ *   technical: "Product bugs and outages"
+ * });
+ * ```
+ */
+export function choice(
+    instructions: DecisionContent,
+    criteria: Record<string, DecisionContent | null>,
+): ChoiceQuestion {
+    return { type: "choice", instructions, criteria };
+}
+
+/**
+ * Helper to construct a ScoreQuestion
+ *
+ * @example
+ * ```ts
+ * const question = score("How urgent is this issue?", [
+ *   "Low", "Medium", "High", "Critical"
+ * ]);
+ * ```
+ */
+export function score(
+    instructions: DecisionContent,
+    criteria: DecisionContent[],
+): ScoreQuestion {
+    return { type: "score", instructions, criteria };
+}
+
+/**
+ * Helper to construct a NoulQuestion (yes/no probability)
+ *
+ * @example
+ * ```ts
+ * const question = noul("Does this message express urgency?", {
+ *   true: "Time-sensitive issue requiring prompt attention",
+ *   false: "Routine inquiry"
+ * });
+ * ```
+ */
+export function noul(
+    instructions: DecisionContent,
+    criteria?: { true?: DecisionContent; false?: DecisionContent },
+): NoulQuestion {
+    return {
+        type: "noul",
+        instructions,
+        ...(criteria ? { criteria } : {}),
+    };
+}
+
+/**
+ * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+ *
+ * @example
+ * ```ts
+ * import { decision, choice, noul } from '@pollinations/sdk';
+ *
+ * const res = await decision({
+ *   state: "User message: I was double billed for my subscription.",
+ *   questions: {
+ *     department: choice("Which team should handle this?", {
+ *       billing: "Payment issues",
+ *       support: "General queries"
+ *     }),
+ *     is_urgent: noul("Does this convey urgency?")
+ *   }
+ * });
+ * console.log(res.answers.department.choice);
+ * ```
+ */
+export async function decision(
+    options: DecisionOptions,
+): Promise<DecisionResponse>;
+export async function decision(
+    state: DecisionContent,
+    questions: Record<string, DecisionQuestion>,
+    options?: RequestOptions & { model?: string },
+): Promise<DecisionResponse>;
+export async function decision(
+    stateOrOptions: DecisionContent | DecisionOptions,
+    questionsArg?: Record<string, DecisionQuestion>,
+    optionsArg?: RequestOptions & { model?: string },
+): Promise<DecisionResponse> {
+    return (
+        getClient().decision as (
+            stateOrOptions: DecisionContent | DecisionOptions,
+            questionsArg?: Record<string, DecisionQuestion>,
+            optionsArg?: RequestOptions & { model?: string },
+        ) => Promise<DecisionResponse>
+    )(stateOrOptions, questionsArg, optionsArg);
+}
+
+/**
+ * Alias for `decision`
+ */
+export async function decisions(
+    options: DecisionOptions,
+): Promise<DecisionResponse>;
+export async function decisions(
+    state: DecisionContent,
+    questions: Record<string, DecisionQuestion>,
+    options?: RequestOptions & { model?: string },
+): Promise<DecisionResponse>;
+export async function decisions(
+    stateOrOptions: DecisionContent | DecisionOptions,
+    questionsArg?: Record<string, DecisionQuestion>,
+    optionsArg?: RequestOptions & { model?: string },
+): Promise<DecisionResponse> {
+    return (
+        getClient().decision as (
+            stateOrOptions: DecisionContent | DecisionOptions,
+            questionsArg?: Record<string, DecisionQuestion>,
+            optionsArg?: RequestOptions & { model?: string },
+        ) => Promise<DecisionResponse>
+    )(stateOrOptions, questionsArg, optionsArg);
 }
 
 // ============================================================================

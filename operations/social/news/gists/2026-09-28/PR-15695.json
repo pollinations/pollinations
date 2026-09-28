@@ -1,0 +1,35 @@
+{
+  "pr_number": 15695,
+  "title": "chore: remove unavailable community apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15695",
+  "merged_at": "2026-09-28T22:31:20Z",
+  "labels": [
+    "APPS"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- Removes 30 catalog rows representing 30 approved review targets.\n- Keeps 60 apps whose checks were inconclusive (timeouts, 5xx, 403/429); only definite markers count as dead.\n- Does not change retained-app metadata or screenshots.\n\n| App | Reviewed target | Reason | Evidence |\n| --- | --- | --- | --- |\n| TTA | https://mahmoudtracy641-hub.github.io/GLM234 | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA-256) on 2026-09-28. |\n| What TTS | https://bloodtubes6-cmyk.github.io/Blood | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA-256) on 2026-09-28. |\n| Aizen (TTS) | https://fantasyvvillain-pixel.github.io/Aizen- | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA-256) on 2026-09-28. |\n| aaarraaa | https://aaarraaarr990-rgb.github.io/Monster | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA-256) on 2026-09-28. |\n| Text to speech | https://thinglover21-ux.github.io/My-app-mod | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA-256) on 2026-09-28. |\n| baboolharech | https://baboolharech-lgtm.github.io/Fith | Duplicate listing: the same Arabic sign-in template was submitted as six separate apps from six new accounts between 2026-09-18 and 2026-09-26. | All six pages render pixel-identical captures (same SHA",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A little catalog pruning",
+    "blurb": "The app catalog got a careful trim: 30 unavailable or duplicate listings are out, while 60 apps with inconclusive checks stay put. No guessing based on a timeout.",
+    "summary": "Removed 30 app catalog rows with definite evidence of unavailable or duplicate targets, while retaining 60 apps whose checks returned timeouts, 5xx, or 403/429 responses.",
+    "impact": "People browsing the catalog will encounter fewer dead or duplicate listings; apps with inconclusive checks keep their listings, metadata, and screenshots.",
+    "keywords": [
+      "community apps",
+      "app catalog",
+      "listing cleanup",
+      "availability checks",
+      "duplicates"
+    ],
+    "visual_concept": "Depict the community app catalog as a cozy garden of distinct app tiles. Polli, wearing a tiny gardener's hat, gently prunes duplicate and unavailable tiles while leaving uncertain ones growing; a lime-green glow marks the garden.",
+    "image_prompt": "In a cozy pixel art app garden, Polli gently tends distinct app tiles and sets duplicate tiles aside, leaving uncertain sprouts untouched; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream with prominent lime green (#ecf874), warm lighting, retro gaming vibes, chunky sprites and gentle CRT glow, with dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15695.jpg",
+    "prompt": "In a cozy pixel art app garden, Polli gently tends distinct app tiles and sets duplicate tiles aside, leaving uncertain sprouts untouched; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream with prominent lime green (#ecf874), warm lighting, retro gaming vibes, chunky sprites and gentle CRT glow, with dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-28T22:32:24.613304+00:00"
+}

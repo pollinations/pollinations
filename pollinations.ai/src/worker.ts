@@ -96,6 +96,10 @@ export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
 
+        if (url.hostname === "old.pollinations.ai") {
+            return Response.redirect("https://pollinations.ai/", 301);
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
 

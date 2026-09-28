@@ -1,0 +1,90 @@
+name: Model Evals / Weekly leaderboard
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Optional comma-separated model IDs'
+        required: false
+        type: string
+      community:
+        description: 'Evaluate community models only'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  weekly-eval:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.pollinations-ai.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Configure git
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+      - name: Run weekly eval
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.POLLEN_EVALS_KEY }}
+          INPUT_MODELS: ${{ inputs.models }}
+          INPUT_COMMUNITY: ${{ inputs.community }}
+        run: |
+          ARGS=()
+          if [ -n "$INPUT_MODELS" ]; then ARGS+=("--models=$INPUT_MODELS"); fi
+          if [ "$INPUT_COMMUNITY" = "true" ]; then ARGS+=("--community"); fi
+          node operations/model-evals/src/run-evals.js "${ARGS[@]}"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet operations/model-evals/results/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create branch and push results
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          BRANCH="auto/model-evals-$(date -u +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git add operations/model-evals/results/
+          git commit -m "chore: weekly model evals $(date -u +%Y-%m-%d)"
+          git push -f origin "$BRANCH"
+
+      - name: Open or update result PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          BRANCH="auto/model-evals-$(date -u +%Y-%m-%d)"
+          PR_URL=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url' || true)
+          if [ -z "$PR_URL" ]; then
+            PR_URL=$(gh pr create \
+              --title "chore: weekly model evals $(date -u +%Y-%m-%d)" \
+              --body "Automated weekly model-eval leaderboard update." \
+              --base main --head "$BRANCH")
+          fi
+          gh pr merge "$PR_URL" --auto --squash --delete-branch

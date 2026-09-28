@@ -1,0 +1,194 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2001:
+---
+!u!29 &ood
+OCInclusionForTrees: 0
+OcclusionCulling: 0
+m_ObjectHideFlags: 0
+serializedVersion: 11
+info: 
+  - id: 0
+    x: -50
+    y: 0
+    z: 0
+    intensity: 0.25
+    range: 10000
+    angle: 0.1
+    color: 0.375, 0.5625, 1, 1
+    useEmissionColor: false
+    useAO: true
+    resolution: 1
+    nearClipPlane: 0.5
+    shadowDistance: 1000
+    shadowResolution: 0
+    shadowProjection: 0
+    shadowCascadeCount: 1
+    shadowMask: 0
+    shadowNearPlane: 8
+    shadowCascades: 1
+    shadowDistanceFade: 0, 0, 0
+    shadowNormalBias: 0
+  - id: 1
+    x: 0
+    y: 0
+    z: 0
+    intensity: 0.25
+    range: 10000
+    angle: 0.1
+    color: 0.375, 0.5625, 1, 1
+    useEmissionColor: false
+    useAO: true
+    resolution: 1
+    nearClipPlane: 0.5
+    shadowDistance: 1000
+    shadowResolution: 0
+    shadowProjection: 0
+    shadowCascadeCount: 1
+    shadowMask: 0
+    shadowNearPlane: 8
+    shadowCascades: 1
+    shadowDistanceFade: 0, 0, 0
+    shadowNormalBias: 0
+
+!u!1004 &mainCamera
+m_Father: {fileID: 0}
+m_RootCoordinateSystem: 0
+m_Position: {fileID: 0}
+m_LocalPosition: {x: 0, y: 1.5, z: -10}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_WorldPositionSteady: 0
+m_RootSortingID: 
+m_DrawMode: 0
+m_Range: 1
+m_Distance: 0
+m_EnableFrustumCulling: 0
+m_Dithering: 
+m_RenderingPath: -1
+m_Flags: 0
+m_ObsoleteLayerCullDistances: 
+m_TargetingMode: 0
+m_ClickWhenIgnored: 0
+m_BlockingObjects: 0
+m_ContactFilter: 
+  m_LayerMask: 0
+  m_UseTriggers: 0
+  m_SceneStatic: 0
+m_FreezeRotation: 0
+Terrain: 0
+
+!u!1004 &uiCamera
+m_Father: {fileID: 0}
+m_Position: {fileID: 0}
+m_LocalPosition: {x: 0, y: 0, z: -10}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_RenderingPath: -1
+m_RendererSettings: {fileID: 0}
+m_RenderingPathDefault: -1
+
+!u!1005 &mainLight
+m_Father: {fileID: 0}
+m_Position: {fileID: 0}
+m_LocalPosition: {x: 5, y: 10, z: 5}
+m_LocalRotation: {x: 55, y: 30, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+
+!u!1006 &aud
+AudioSettings: 
+  m_Settings: 
+...
+
+!u!1007 &prefab
+m_Name: PollinationsSample
+m_Path: Packages/com.pollinations.unity/Samples/SampleScene.unity
+m_EditorExtensionSelector: {fileID: 0}
+m_ComponentOverrides: 
+  m_ShowInHierachy: 1
+
+!u!1008 &go
+m_Father: {fileID: 0}
+m_RootOrder: 0
+m_IsActive: 1
+m_Name: PollinationsManager
+m_TagString: Untagged
+m_Layer: 0
+m_Icon: {fileID: 0}
+m_NavMeshLod: 0
+m_StaticEditorFlags: 0
+m_IsActive: 1
+m_AnchoredJointsCache: 0
+
+!u!1009 &behaviour
+m_Father: 
+  {fileID: 8905358, guid: 6a0c9a9d9a9d9a9d9a9d9a9d9a9d9a9d, type: 3}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_PhysShape: 
+  m_Compound: 
+    m_ReferencePoints: 
+      m_PointCount: 0
+
+!u!1010 &pollinations
+m_Father: {fileID: 8905358}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+
+!u!1011 &canvas
+m_Father: {fileID: 0}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_UIAlpha: 1
+m_PixelPerfect: 0
+
+!u!1012 &button
+m_Father: {fileID: 0}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_Text: Generate Text
+m_FontSize: 16
+
+!u!1013 &textarea
+m_Father: {fileID: 0}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_Text: Waiting for generation...
+
+!u!1014 &rawimage
+m_Father: {fileID: 0}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_Texture: {fileID: 0}
+
+!u!1015 &audiosource
+m_Father: {fileID: 8905358}
+m_LocalPosition: {x: 0, y: 0, z: 0}
+m_LocalRotation: {x: 0, y: 0, z: 0}
+m_LocalScale: {x: 1, y: 1, z: 1}
+m_PlayOnAwake: 0
+m_AudioClip: {fileID: 0}
+
+!u!1024 &editor
+m_Father: {fileID: 0}
+m_ObjectHideFlags: 0
+serializedVersion: 2
+m_BuildingAABB: 
+  min: {x: -50, y: -50, z: -50}
+  max: {x: 50, y: 50, z: 50}
+
+!u!1025 &input
+m_Father: {fileID: 0}
+m_ObjectHideFlags: 0
+serializedVersion: 2
+m_AddComponentMenu: 
+
+m_EditorVersion: 2022.3.34f1
+EnableWritableIdPath: 1
+EnableThreadSafeAssetBuilding: 1
+EscapeID: 0

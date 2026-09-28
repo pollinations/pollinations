@@ -4,7 +4,8 @@ import { generateQuestion, gradeQuestion } from "./questions.js";
 import { attachOfficialMatches } from "./model-match.js";
 import { wilsonMargin } from "./stats.js";
 
-export const MODELS_URL = "https://gen.pollinations.ai/text/models";
+export const MODELS_URL =
+    "https://gen.pollinations.ai/text/models?reliability=all";
 export const CHAT_URL = "https://gen.pollinations.ai/v1/chat/completions";
 
 export function seededRng(seed) {

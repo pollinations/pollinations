@@ -36,22 +36,13 @@ export function selectedAgentChoice(
 
 export type ChatAttachmentKind = "image" | "video" | "audio" | "file";
 
-type JsonValue =
-    | string
-    | number
-    | boolean
-    | null
-    | JsonValue[]
-    | { [key: string]: JsonValue };
-
-export type AgentMessagePart =
+type AgentMessagePart =
     | { type: "text"; text: string }
     | {
           type: "tool-call";
           toolCallId: string;
           toolName: string;
-          args: { [key: string]: JsonValue };
-          argsText: string;
+          args: Record<string, unknown>;
           result: unknown;
           isError: boolean;
       };
@@ -82,11 +73,11 @@ function detailsAttributes(source: string): Record<string, string> {
     return attributes;
 }
 
-function jsonObject(source: string): { [key: string]: JsonValue } {
+function jsonObject(source: string): Record<string, unknown> {
     try {
-        const parsed = JSON.parse(source) as JsonValue;
+        const parsed = JSON.parse(source) as unknown;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
-            return parsed;
+            return parsed as Record<string, unknown>;
         return { value: parsed };
     } catch {
         return {};
@@ -126,7 +117,6 @@ export function parseAgentMessage(content: string): AgentMessagePart[] {
                 toolCallId: attributes.id,
                 toolName: attributes.name,
                 args: jsonObject(argsText),
-                argsText,
                 result: toolResult(match[3]),
                 isError: decodeAgentHtml(match[2]) === "Tool Failed",
             });

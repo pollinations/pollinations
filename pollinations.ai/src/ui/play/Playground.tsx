@@ -486,22 +486,9 @@ function Lightbox({
     );
 }
 
-function ResultPanel({
-    result,
-    className,
-}: {
-    result: PlaygroundResult;
-    className?: string;
-}) {
+function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
     const [downloadError, setDownloadError] = useState<string | null>(null);
-
-    // A new result is a new picture — never inherit the previous zoom.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: runs off the result changing, not its value
-    useEffect(() => {
-        setExpanded(false);
-        setDownloadError(null);
-    }, [result]);
 
     const zoomButtonClass =
         "flex h-full w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0";
@@ -509,12 +496,7 @@ function ResultPanel({
     if (result.type === "audio") {
         return (
             <>
-                <div
-                    className={cn(
-                        "flex items-center gap-3 bg-surface-white p-4",
-                        className,
-                    )}
-                >
+                <div className="flex items-center gap-3 bg-surface-white p-4">
                     {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
                     <audio
                         src={result.url}
@@ -538,7 +520,7 @@ function ResultPanel({
     }
 
     return (
-        <div className={cn("flex min-h-[360px] flex-col p-4", className)}>
+        <div className="flex min-h-[360px] flex-col p-4">
             {result.type === "text" ? (
                 <div className="relative min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 pr-16 text-theme-text-strong">
                     <ResultDownloadButton
@@ -622,12 +604,7 @@ async function uploadReferenceImages(
     files: File[],
 ): Promise<string[]> {
     const uploads = await Promise.all(
-        files.map((file) =>
-            client.upload(file, {
-                name: file.name,
-                contentType: file.type || undefined,
-            }),
-        ),
+        files.map((file) => client.upload(file, { name: file.name })),
     );
     return uploads.map((upload) => upload.url);
 }
@@ -913,30 +890,7 @@ export function Playground() {
     async function generate() {
         const trimmedPrompt = prompt.trim();
 
-        if (!apiKey) {
-            setError(
-                isAudioTranscription
-                    ? "Connect before transcribing."
-                    : "Connect before generating.",
-            );
-            return;
-        }
-        if (!currentModel) {
-            setError("Select a model first.");
-            return;
-        }
-        if (!selectedModelAllowed) {
-            setError("This key cannot use the selected model.");
-            return;
-        }
-        if (audioError) {
-            setError(audioError);
-            return;
-        }
-        if (currentModel.category !== "audio" && !trimmedPrompt) {
-            setError(`Add ${promptLabel.toLowerCase()} first.`);
-            return;
-        }
+        if (!apiKey || !currentModel || blockedReason) return;
 
         setIsGenerating(true);
         setError(null);
@@ -1015,24 +969,6 @@ export function Playground() {
                 );
                 return;
             }
-
-            const content =
-                referenceUrls.length > 0
-                    ? [
-                          { type: "text" as const, text: trimmedPrompt },
-                          ...referenceUrls.map((url) => ({
-                              type: "image_url" as const,
-                              image_url: { url },
-                          })),
-                      ]
-                    : trimmedPrompt;
-            const response = await client.chat([{ role: "user", content }], {
-                model: currentModel.id,
-            });
-            setResult({
-                type: "text",
-                text: response.choices[0]?.message.content || "No response",
-            });
         } catch (err) {
             setError(errorMessage(err));
         } finally {
@@ -1051,9 +987,7 @@ export function Playground() {
                     : currentAudioEndpoint === "/v1/audio/voice-isolator"
                       ? "Isolate speech"
                       : "Generate audio"
-              : currentModel?.category === "text"
-                ? "Generate text"
-                : "Generate image";
+              : "Generate image";
     const GenerateIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[activeCategory];
@@ -1064,9 +998,7 @@ export function Playground() {
               ? isAudioTranscription
                   ? "Connect to transcribe audio"
                   : "Connect to create audio"
-              : currentModel?.category === "text"
-                ? "Connect to chat"
-                : "Connect to generate image";
+              : "Connect to generate image";
 
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;

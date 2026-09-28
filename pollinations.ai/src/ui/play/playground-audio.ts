@@ -75,7 +75,7 @@ export async function generatePlaygroundAudio(
         return { type: "audio", ...result };
     }
     const upload = file
-        ? await client.upload(file, { name: file.name, contentType: file.type })
+        ? await client.upload(file, { name: file.name })
         : undefined;
     const options = { model: model.id, voice, referenceAudio: upload?.url };
     const result =

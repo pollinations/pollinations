@@ -46,28 +46,6 @@ describe("Play session drafts", () => {
         expect(readPlayDraft("chat", defaults).prompt).toBe("");
     });
 
-    it("ignores obsolete Floret routing overrides while keeping the chat draft", () => {
-        savePlayDraft("chat", {
-            selectedAgentId: "community/pollinations-ai/floret",
-            draft: "Keep this text",
-            hadAttachments: false,
-            advancedOpen: true,
-            text: "old-explicit-model",
-            web_search: "old-search-model",
-        });
-        expect(
-            readPlayDraft("chat", {
-                selectedAgentId: null as string | null,
-                draft: "",
-                hadAttachments: false,
-            }),
-        ).toEqual({
-            selectedAgentId: "community/pollinations-ai/floret",
-            draft: "Keep this text",
-            hadAttachments: false,
-        });
-    });
-
     it("expires drafts after 30 minutes", () => {
         vi.useFakeTimers();
         savePlayDraft("media", { ...defaults, prompt: "Temporary draft" });

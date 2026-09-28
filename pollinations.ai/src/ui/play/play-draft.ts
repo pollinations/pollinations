@@ -69,14 +69,7 @@ export function useRememberPlayDraft(part: DraftPart, values: DraftValues) {
         setSaveFailed(!save());
         // Covers every Connect entry point, including the shared account menu.
         window.addEventListener("pagehide", save);
-        const expiry = window.setTimeout(
-            () => clearPlayDraft(part),
-            PLAY_DRAFT_TTL_MS,
-        );
-        return () => {
-            window.clearTimeout(expiry);
-            window.removeEventListener("pagehide", save);
-        };
+        return () => window.removeEventListener("pagehide", save);
     }, [part, serialized]);
     return saveFailed;
 }

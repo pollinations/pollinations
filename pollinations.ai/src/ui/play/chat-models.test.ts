@@ -201,7 +201,6 @@ describe("agent tool-call rendering", () => {
                 toolCallId: "call-1",
                 toolName: "SEARCH_WEB",
                 args: { query: "pollinations" },
-                argsText: '{"query":"pollinations"}',
                 result: {
                     results: [{ title: "Pollinations & friends" }],
                 },
@@ -223,7 +222,6 @@ describe("agent tool-call rendering", () => {
                 toolCallId: "call-2",
                 toolName: "SEND_EMAIL",
                 args: {},
-                argsText: "{}",
                 result: "Mailbox unavailable",
                 isError: true,
             },

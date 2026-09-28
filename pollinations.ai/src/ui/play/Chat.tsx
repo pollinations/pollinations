@@ -127,7 +127,6 @@ async function prepareAttachment(
     const [upload, audioBuffer] = await Promise.all([
         client.upload(file, {
             name: file.name,
-            contentType: file.type || undefined,
             signal,
         }),
         kind === "audio" ? file.arrayBuffer() : Promise.resolve(null),
@@ -136,7 +135,6 @@ async function prepareAttachment(
     return {
         id: upload.id,
         name: file.name,
-        mimeType,
         kind,
         url: upload.url,
         contentPart: attachmentPart(
@@ -257,16 +255,10 @@ function ToolPart({ part }: { part: DynamicToolUIPart }) {
 }
 
 function activeTool(message: PollinationsUIMessage): string | undefined {
-    const activities = message.parts.flatMap((part) =>
-        part.type === "data-activity" && part.data.status !== "complete"
-            ? [part.data]
-            : [],
+    const names = message.parts.flatMap((part) =>
+        part.type === "data-activity" ? [part.data.name] : [],
     );
-    const activity = activities[activities.length - 1];
-    if (!activity) return undefined;
-    return activity.status === "failed"
-        ? `${activity.name} failed`
-        : activity.name;
+    return names[names.length - 1];
 }
 
 export function MessageCard({
@@ -615,17 +607,13 @@ export function Chat({
         ) ?? [])
             media.pause();
     }, [isLoggedIn, active, stop]);
-    async function send(messageText = draft) {
+    async function send() {
         if (sending || !isHydrated || !active) return;
         if (!isLoggedIn || !client) {
             login();
             return;
         }
-        if (!selectedAgent) {
-            setLocalError("Select an agent first.");
-            return;
-        }
-        if (!messageText.trim() && files.length === 0) return;
+        if (!draft.trim() && files.length === 0) return;
         const controller = new AbortController();
         uploadAbortRef.current = controller;
         setUploading(true);
@@ -647,8 +635,8 @@ export function Chat({
             await sendMessage({
                 role: "user",
                 metadata: { attachments },
-                parts: messageText.trim()
-                    ? [{ type: "text", text: messageText.trim() }]
+                parts: draft.trim()
+                    ? [{ type: "text", text: draft.trim() }]
                     : [],
             });
             composerRef.current?.focus();
@@ -796,7 +784,7 @@ export function Chat({
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-6 pb-3">
                     <AgentPicker
                         agents={agents}
-                        selectedAgentId={selectedAgent?.id ?? null}
+                        selectedAgentId={selectedAgent.id}
                         isLoading={catalog.isLoading}
                         disabled={sending}
                         onSelectAgent={selectAgent}
@@ -931,18 +919,6 @@ export function Chat({
                             <FileUpload
                                 value={files}
                                 onChange={handleFiles}
-                                onReject={(rejected) => {
-                                    const problems = new Set(
-                                        rejected.map(({ file, reason }) => {
-                                            if (reason === "count")
-                                                return `You can attach up to ${MAX_ATTACHMENTS} files.`;
-                                            if (reason === "size")
-                                                return `${file.name} is larger than 20 MB.`;
-                                            return `${file.name} is not a supported file type.`;
-                                        }),
-                                    );
-                                    setLocalError([...problems].join(" "));
-                                }}
                                 maxFiles={MAX_ATTACHMENTS}
                                 maxSizeBytes={MAX_ATTACHMENT_BYTES}
                                 accept={attachmentAccept}
@@ -971,11 +947,6 @@ export function Chat({
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    aria-describedby={
-                                        files.length > 0
-                                            ? "play-chat-upload-privacy"
-                                            : undefined
-                                    }
                                     accept={attachmentAccept}
                                     multiple
                                     hidden
@@ -1055,9 +1026,7 @@ export function Chat({
                                         size="lg"
                                         type="submit"
                                         disabled={
-                                            !selectedAgent ||
-                                            (!draft.trim() &&
-                                                files.length === 0)
+                                            !draft.trim() && files.length === 0
                                         }
                                     >
                                         <RocketIcon className="mr-2 h-4 w-4" />

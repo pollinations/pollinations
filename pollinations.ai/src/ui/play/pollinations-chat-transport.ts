@@ -1,5 +1,4 @@
 import type {
-    ChatStreamChunk,
     Message,
     MessageContentPart,
     Pollinations,
@@ -7,12 +6,12 @@ import type {
 import type {
     ChatTransport,
     DynamicToolUIPart,
-    FinishReason,
     UIMessage,
     UIMessageChunk,
 } from "ai";
 import {
     buildUserContent,
+    type ChatAttachmentKind,
     errorMessage,
     isCancellation,
     parseAgentMessage,
@@ -21,23 +20,18 @@ import {
 export interface PreparedAttachment {
     id: string;
     name: string;
-    mimeType: string;
-    kind: "image" | "video" | "audio" | "file";
+    kind: ChatAttachmentKind;
     url: string;
     contentPart: MessageContentPart;
 }
 
-export interface PollinationsMessageMetadata {
+interface PollinationsMessageMetadata {
     attachments?: PreparedAttachment[];
     localOnly?: boolean;
 }
 
-export type PollinationsChatData = {
-    activity: {
-        callId: string;
-        name: string;
-        status: "running" | "complete" | "failed";
-    };
+type PollinationsChatData = {
+    activity: { name: string };
     responseStatus: { status: "cancelled" };
 };
 
@@ -129,24 +123,6 @@ export function messagesForPollinations(
     });
 }
 
-function finishReason(chunk: ChatStreamChunk): FinishReason | undefined {
-    switch (chunk.choices[0]?.finish_reason) {
-        case "stop":
-        case "length":
-        case "tool_calls":
-            return chunk.choices[0].finish_reason.replace(
-                "_",
-                "-",
-            ) as FinishReason;
-        case "content_filter":
-            return "content-filter";
-        case "function_call":
-            return "tool-calls";
-        default:
-            return undefined;
-    }
-}
-
 /**
  * Vercel AI SDK transport for the current Pollinations chat stream.
  * A future Responses API adapter only needs to emit the same UIMessageChunks.
@@ -167,7 +143,6 @@ export class PollinationsChatTransport
             async start(controller) {
                 const messageId = crypto.randomUUID();
                 let textId: string | null = null;
-                let finalReason: FinishReason = "stop";
                 let contentBuffer = "";
                 let linePrefix = "";
                 let codeFence: string | null = null;
@@ -381,7 +356,6 @@ export class PollinationsChatTransport
                         messagesForPollinations(messages),
                         { model, signal: abortSignal },
                     )) {
-                        finalReason = finishReason(chunk) ?? finalReason;
                         const delta = chunk.choices[0]?.delta;
                         for (const toolCall of delta?.tool_calls ?? []) {
                             const name = toolCall.function?.name?.trim();
@@ -392,11 +366,7 @@ export class PollinationsChatTransport
                             controller.enqueue({
                                 type: "data-activity",
                                 id: callId,
-                                data: {
-                                    callId,
-                                    name,
-                                    status: "running",
-                                },
+                                data: { name },
                             });
                         }
                         if (delta?.content) {
@@ -407,10 +377,7 @@ export class PollinationsChatTransport
                     flushContent(true);
                     endText();
                     controller.enqueue({ type: "finish-step" });
-                    controller.enqueue({
-                        type: "finish",
-                        finishReason: finalReason,
-                    });
+                    controller.enqueue({ type: "finish" });
                     controller.close();
                 } catch (error) {
                     endText();

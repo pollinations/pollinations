@@ -72,7 +72,6 @@ describe("messagesForPollinations", () => {
                         {
                             id: "upload-1",
                             name: "photo.png",
-                            mimeType: "image/png",
                             kind: "image",
                             url: "https://example.test/photo.png",
                             contentPart: {
@@ -123,7 +122,7 @@ describe("messagesForPollinations", () => {
 });
 
 describe("PollinationsChatTransport", () => {
-    it("always leaves routing to the agent, even when given obsolete overrides", async () => {
+    it("passes only model and signal to chatStream", async () => {
         let sentOptions: Parameters<Pollinations["chatStream"]>[1];
         const client: Pick<Pollinations, "chatStream"> = {
             async *chatStream(_messages, options) {
@@ -134,7 +133,6 @@ describe("PollinationsChatTransport", () => {
         const options = {
             client,
             model: "community/pollinations-ai/floret",
-            routing: { text: "old-explicit-model" },
         };
         const transport = new PollinationsChatTransport(options);
         const stream = await transport.sendMessages({

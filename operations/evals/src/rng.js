@@ -5,6 +5,8 @@
 // fresh random seed, and repeats within a run vary it too. The seed is printed
 // so a run is reproducible from its report.
 
+import { randomInt } from "node:crypto";
+
 /** Small, fast, seeded PRNG (mulberry32). */
 export function makeRng(seed) {
     let a = seed >>> 0;
@@ -24,17 +26,12 @@ export function makeRng(seed) {
 // The API rejects seeds outside the signed 32-bit range (a uint32 seed returns
 // "JSON body validation failed"), so every seed we send is kept in [0, 2^31).
 const SEED_MAX = 0x7fffffff;
+const SEED_MASK = 0x7fffffff;
 
-/** Random int in [min, max] using the platform CSPRNG. */
-function randomInt(min, max) {
-    const float = crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
-    return min + Math.floor(float * (max - min + 1));
-}
-
-/** A fresh run seed (unless an explicit one is given), in [1, 2^31). */
+/** A fresh run seed (unless an explicit one is given), in [0, 2^31). */
 export function runSeed(explicit) {
     if (explicit !== undefined) return clampSeed(Number(explicit));
-    return randomInt(1, SEED_MAX);
+    return randomInt(0, SEED_MAX - 1);
 }
 
 /** Per-repeat seed derived from the run seed: keeps each request uncached. */
@@ -42,6 +39,7 @@ export function repeatSeed(seed, index) {
     return clampSeed(seed + Math.imul(index, 0x9e3779b1));
 }
 
+/** Fold any integer into [0, 2^31) with a bit mask (not modulo/division). */
 export function clampSeed(n) {
-    return (((n | 0) % SEED_MAX) + SEED_MAX) % SEED_MAX;
+    return n & SEED_MASK;
 }

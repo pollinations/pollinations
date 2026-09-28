@@ -45,6 +45,12 @@ export function Device({ prefilledCode }: DeviceProps) {
                     query: { user_code: code },
                 });
                 if (!res.ok) {
+                    // A 400 is the server's answer about this code (invalid or
+                    // expired). Anything else is temporary, so it can be retried.
+                    if (res.status !== 400) {
+                        setError("Couldn’t verify the code. Try again.");
+                        return;
+                    }
                     const data = (await res.json().catch(() => null)) as {
                         error_description?: string;
                     } | null;

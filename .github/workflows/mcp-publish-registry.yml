@@ -1,0 +1,43 @@
+name: MCP / Publish registry entries
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "shared/registry/mcp.ts"
+      - "operations/mcp-registry/**"
+      - ".github/workflows/mcp-publish-registry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # GitHub OIDC login for the io.github.pollinations namespace
+
+concurrency:
+  group: mcp-publish-registry
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Generate server.json files
+        run: node operations/mcp-registry/server-json.ts "$RUNNER_TEMP/mcp" "1.0.$GITHUB_RUN_NUMBER"
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz -C "$RUNNER_TEMP" mcp-publisher
+
+      - name: Publish
+        run: |
+          "$RUNNER_TEMP/mcp-publisher" login github-oidc
+          for file in "$RUNNER_TEMP"/mcp/*.json; do
+            "$RUNNER_TEMP/mcp-publisher" publish "$file"
+          done

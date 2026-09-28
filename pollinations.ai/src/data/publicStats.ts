@@ -27,7 +27,7 @@ export type DirectoryApp = {
     submitted_date: string;
     approved_date: string;
     byop: boolean | number | string;
-    requests_24h: number;
+    requests_24h: number | string | null;
 };
 
 /** Match the directory's deduplication rule; app names alone are not unique. */
@@ -67,10 +67,31 @@ export const githubProfileUrl = (username: string): string => {
     return handle ? `https://github.com/${handle}` : "";
 };
 
-/** Automatic card signals derived from traffic, BYOP support, and recency. */
-export const isBuzz = (app: DirectoryApp) => Number(app.requests_24h) >= 100;
 export const isPollen = (app: DirectoryApp) =>
     app.byop === true || app.byop === 1 || app.byop === "true";
+
+/** Non-BYOP counts belong to the developer, not the app; never rank by them. */
+export function byopRequests24h(app: DirectoryApp): number | null {
+    if (
+        !isPollen(app) ||
+        app.requests_24h == null ||
+        String(app.requests_24h).trim() === ""
+    ) {
+        return null;
+    }
+    const requests = Number(app.requests_24h);
+    return Number.isFinite(requests) && requests >= 0 ? requests : null;
+}
+
+/** Measured usage first, including zero; unknown usage stays unranked at the end. */
+export const compareAppUsage = (a: DirectoryApp, b: DirectoryApp) =>
+    (byopRequests24h(b) ?? -1) - (byopRequests24h(a) ?? -1);
+
+/** Automatic card signals derived from BYOP traffic, wallet support, and recency. */
+export const isBuzz = (app: DirectoryApp) => {
+    const requests = byopRequests24h(app);
+    return requests !== null && requests >= 100;
+};
 export const isFresh = (app: DirectoryApp, now = Date.now()) => {
     if (!app.approved_date) return false;
     const approved = new Date(app.approved_date).getTime();
@@ -109,6 +130,51 @@ export function useAppDirectory() {
     return useAsync<DirectoryApp[]>(loadDirectory, []);
 }
 
+export type WeeklyAppUsage = {
+    app_url: string;
+    app_name: string;
+    owner: string;
+    request_count: number;
+};
+
+/** Ranking is already filtered and aggregated per catalog listing on the server. */
+export function selectWeeklyApps(
+    catalog: DirectoryApp[],
+    ranking: WeeklyAppUsage[],
+): DirectoryApp[] {
+    const seen = new Set<string>();
+    return ranking
+        .flatMap((row) => {
+            const app = catalog.find(
+                (candidate) =>
+                    candidate.web_url === row.app_url &&
+                    candidate.name === row.app_name &&
+                    candidate.github_username.toLowerCase() ===
+                        row.owner.toLowerCase(),
+            );
+            if (!app || !(row.request_count > 0)) return [];
+            const identity = appIdentity(app);
+            if (seen.has(identity)) return [];
+            seen.add(identity);
+            // Verified BYOP traffic is stronger evidence than the daily catalog flag.
+            // Do not relabel a stale developer-wide daily count as BYOP usage.
+            return [{ ...app, requests_24h: byopRequests24h(app), byop: true }];
+        })
+        .slice(0, 8);
+}
+
+export const loadWeeklyApps = cached(async () => {
+    const [catalog, ranking] = await Promise.all([
+        loadDirectory(),
+        tinybird<WeeklyAppUsage>("app_top_weekly", "&limit=8"),
+    ]);
+    return selectWeeklyApps(catalog, ranking);
+});
+
+export function useWeeklyApps() {
+    return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
+}
+
 /** The same cached catalog serves discovery, the active showcase, and counts. */
 export function useAppShowcase() {
     const directory = useAppDirectory();
@@ -124,7 +190,7 @@ export function selectShowcaseApps(apps: DirectoryApp[]): DirectoryApp[] {
         .filter((app) => app.description && isBuzz(app))
         .sort(
             (left, right) =>
-                Number(right.requests_24h) - Number(left.requests_24h) ||
+                compareAppUsage(left, right) ||
                 right.approved_date.localeCompare(left.approved_date),
         )
         .slice(0, 8);
@@ -143,11 +209,15 @@ type PlatformStats = {
     mcpServers: number | null;
     /** Count per category, e.g. { text: 141, image: 51 }. */
     byCategory: Record<string, number>;
-    /** Community models, which carry an owner/model name. */
+    /** Models and agents explicitly marked as community-published by the catalog. */
     community: number;
 };
 
-type CatalogModel = { name?: string; category?: string; agent?: boolean };
+type CatalogModel = {
+    category?: string;
+    agent?: boolean;
+    community?: boolean;
+};
 
 function summariseCatalog(models: CatalogModel[]) {
     const byCategory: Record<string, number> = {};
@@ -155,8 +225,7 @@ function summariseCatalog(models: CatalogModel[]) {
     for (const model of models) {
         const category = model.category ?? "other";
         byCategory[category] = (byCategory[category] ?? 0) + 1;
-        // BYOM models are published as owner/model.
-        if (typeof model.name === "string" && model.name.includes("/")) {
+        if (model.community === true) {
             community += 1;
         }
     }

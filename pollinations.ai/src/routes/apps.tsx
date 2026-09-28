@@ -20,15 +20,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { type KeyboardEvent, useMemo, useState } from "react";
 import {
     appIdentity,
+    compareAppUsage,
     type DirectoryApp,
     isPollen,
     platformsOf,
     useAppDirectory,
+    useWeeklyApps,
 } from "../data/publicStats";
-// Hand-picked, and the only editorial thing on the page — every badge in
-// app.json is computed from traffic or recency, so none of them can say "we
-// think this is good".
-import SPOTLIGHT from "../data/spotlight.json";
 import { routeHead } from "../routeMeta";
 import { SpotlightCarousel } from "../ui/apps/AppCarousel";
 import { AppRow } from "../ui/apps/cards";
@@ -69,7 +67,7 @@ const newestFirst = (a: DirectoryApp, b: DirectoryApp) =>
 function compareApps(sort: AppSort) {
     return (a: DirectoryApp, b: DirectoryApp) => {
         if (sort === "buzz") {
-            const traffic = Number(b.requests_24h) - Number(a.requests_24h);
+            const traffic = compareAppUsage(a, b);
             if (traffic) return traffic;
         }
         return newestFirst(a, b) || a.name.localeCompare(b.name);
@@ -367,15 +365,7 @@ function AppsPage() {
     const navigate = useNavigate({ from: Route.fullPath });
     const { data: apps, loading, failed } = useAppDirectory();
 
-    const spotlight = useMemo(
-        () =>
-            SPOTLIGHT.map((name) =>
-                apps.find(
-                    (app) => app.name.toLowerCase() === name.toLowerCase(),
-                ),
-            ).filter((app): app is DirectoryApp => app !== undefined),
-        [apps],
-    );
+    const { data: spotlight, loading: spotlightLoading } = useWeeklyApps();
 
     /** Within an axis it's OR; across axes it's AND. An empty axis is no constraint. */
     const filtered = useMemo(() => {
@@ -467,7 +457,7 @@ function AppsPage() {
                 </div>
             </HeroScene>
 
-            {(loading || spotlight.length > 0) && (
+            {(spotlightLoading || spotlight.length > 0) && (
                 <Surface
                     as="section"
                     variant="card"
@@ -476,35 +466,26 @@ function AppsPage() {
                         postHeroSpacingClassName,
                     )}
                 >
-                    {loading ? (
-                        <>
-                            <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-                                <ContentHeader
-                                    eyebrow="Spotlight"
-                                    title="Featured apps"
-                                />
+                    <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
+                        <ContentHeader
+                            eyebrow="Last 7 days"
+                            title="Most-used Pollen Pay apps"
+                            subtitle="Ranked by successful, billable requests through Pollen Pay."
+                        />
+                    </div>
+                    {spotlightLoading ? (
+                        <div
+                            aria-hidden="true"
+                            className="flex flex-col border-theme-text-strong/10 border-t"
+                        >
+                            <div className="aspect-[16/7] animate-pulse bg-theme-bg-subtle sm:aspect-[18/7]" />
+                            <div className="flex flex-col gap-2 px-5 py-4">
+                                <div className="h-6 w-48 max-w-full animate-pulse rounded bg-theme-bg-subtle" />
+                                <div className="h-10 animate-pulse rounded bg-theme-bg-subtle" />
                             </div>
-                            <div
-                                aria-hidden="true"
-                                className="flex flex-col border-theme-text-strong/10 border-t"
-                            >
-                                <div className="aspect-[16/7] animate-pulse bg-theme-bg-subtle sm:aspect-[18/7]" />
-                                <div className="flex flex-col gap-2 px-5 py-4">
-                                    <div className="h-6 w-48 max-w-full animate-pulse rounded bg-theme-bg-subtle" />
-                                    <div className="h-10 animate-pulse rounded bg-theme-bg-subtle" />
-                                </div>
-                            </div>
-                        </>
+                        </div>
                     ) : (
-                        <>
-                            <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-                                <ContentHeader
-                                    eyebrow="Spotlight"
-                                    title="Featured apps"
-                                />
-                            </div>
-                            <SpotlightCarousel apps={spotlight} />
-                        </>
+                        <SpotlightCarousel apps={spotlight} />
                     )}
                 </Surface>
             )}
@@ -512,7 +493,7 @@ function AppsPage() {
             <section
                 className={cn(
                     "flex flex-col gap-5",
-                    !loading &&
+                    !spotlightLoading &&
                         spotlight.length === 0 &&
                         postHeroSpacingClassName,
                 )}

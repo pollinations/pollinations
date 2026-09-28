@@ -191,7 +191,7 @@ function CommunityParticipation() {
                               platformLoading || platform === null
                                   ? null
                                   : compact(platform.community),
-                          label: "models and agents listed",
+                          label: "community models and agents",
                       },
                   ],
         },

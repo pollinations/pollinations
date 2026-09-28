@@ -24,12 +24,12 @@
   <h1>Pollinations AI</h1>
 
   <div class="form-group">
-    <label>API Key (optional — enables device flow / higher limits)</label>
+    <label for="apiKey">API Key (optional — enables device flow / higher limits)</label>
     <input type="text" id="apiKey" placeholder="sk_..." />
   </div>
 
   <div class="form-group">
-    <label>Action</label>
+    <label for="action">Action</label>
     <select id="action">
       <option value="generate">Generate image in selected frame</option>
       <option value="edit">Edit selected image</option>
@@ -37,17 +37,17 @@
   </div>
 
   <div class="form-group">
-    <label>Prompt</label>
+    <label for="prompt">Prompt</label>
     <textarea id="prompt" placeholder="A cyberpunk city at night..."></textarea>
   </div>
 
   <div class="form-row">
     <div class="form-group">
-      <label>Model</label>
+      <label for="model">Model</label>
       <input type="text" id="model" value="gptimage" />
     </div>
     <div class="form-group">
-      <label>Dimensions</label>
+      <label for="dimensions">Dimensions</label>
       <select id="dimensions">
         <option value="512x512">512×512</option>
         <option value="1024x1024" selected>1024×1024</option>
@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  <button id="runBtn" disabled>Generate Image</button>
+  <button type="button" id="runBtn" disabled>Generate Image</button>
   <div class="status" id="status"></div>
 
   <script>

@@ -369,7 +369,7 @@ export function SiteHeader() {
                                     className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto"
                                 >
                                     <div
-                                        className={`site-drawer-card flex flex-col gap-1.5 rounded-card bg-surface-opaque p-2.5 ${
+                                        className={`flex flex-col gap-1.5 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""
@@ -399,7 +399,7 @@ export function SiteHeader() {
                                         })}
                                     </div>
                                     <div
-                                        className={`site-drawer-card site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-card bg-surface-opaque p-2.5 ${
+                                        className={`site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""
@@ -433,7 +433,7 @@ export function SiteHeader() {
                                         </Button>
                                     </div>
                                     <div
-                                        className={`site-drawer-card site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-card bg-surface-opaque p-2.5 ${
+                                        className={`site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-card bg-surface-opaque p-2.5 ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""

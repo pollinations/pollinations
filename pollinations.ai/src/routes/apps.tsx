@@ -81,7 +81,6 @@ function FilterAxis<T extends string>({
     selected,
     onClear,
     onSelect,
-    size = "lg",
 }: {
     ariaLabel: string;
     values: readonly T[];
@@ -89,7 +88,6 @@ function FilterAxis<T extends string>({
     selected: T | undefined;
     onClear: () => void;
     onSelect: (value: T) => void;
-    size?: "lg" | "md" | "sm";
 }) {
     return (
         <fieldset
@@ -97,7 +95,7 @@ function FilterAxis<T extends string>({
             aria-label={ariaLabel}
         >
             <TabButton
-                size={size}
+                size="lg"
                 active={selected === undefined}
                 onClick={onClear}
             >
@@ -106,7 +104,7 @@ function FilterAxis<T extends string>({
             {values.map((value) => (
                 <TabButton
                     key={value}
-                    size={size}
+                    size="lg"
                     active={selected === value}
                     onClick={() => onSelect(value)}
                 >
@@ -394,7 +392,6 @@ function AppsPage() {
                 }
                 return true;
             })
-            .slice()
             .sort(compareApps(sort));
     }, [apps, category, platform, pollenPay, q, sort]);
 
@@ -513,46 +510,44 @@ function AppsPage() {
 
                     <div className="flex w-full flex-wrap items-center justify-between gap-3">
                         <div className="min-w-0 max-w-md flex-1 basis-[280px]">
-                            <div className="w-full max-w-md">
-                                <AppSearchInput
-                                    query={q ?? ""}
-                                    platforms={platform}
-                                    pollenPay={pollenPay}
-                                    onQueryChange={(next) =>
-                                        navigate({
-                                            replace: true,
-                                            resetScroll: false,
-                                            search: (prev) => ({
-                                                ...prev,
-                                                q: next.trim() || undefined,
-                                            }),
-                                        })
-                                    }
-                                    onPlatformsChange={(next) =>
-                                        navigate({
-                                            replace: true,
-                                            resetScroll: false,
-                                            search: (prev) => ({
-                                                ...prev,
-                                                platform:
-                                                    next.length > 0
-                                                        ? next.join(",")
-                                                        : undefined,
-                                            }),
-                                        })
-                                    }
-                                    onPollenPayChange={(next) =>
-                                        navigate({
-                                            replace: true,
-                                            resetScroll: false,
-                                            search: (prev) => ({
-                                                ...prev,
-                                                pollen: next,
-                                            }),
-                                        })
-                                    }
-                                />
-                            </div>
+                            <AppSearchInput
+                                query={q ?? ""}
+                                platforms={platform}
+                                pollenPay={pollenPay}
+                                onQueryChange={(next) =>
+                                    navigate({
+                                        replace: true,
+                                        resetScroll: false,
+                                        search: (prev) => ({
+                                            ...prev,
+                                            q: next.trim() || undefined,
+                                        }),
+                                    })
+                                }
+                                onPlatformsChange={(next) =>
+                                    navigate({
+                                        replace: true,
+                                        resetScroll: false,
+                                        search: (prev) => ({
+                                            ...prev,
+                                            platform:
+                                                next.length > 0
+                                                    ? next.join(",")
+                                                    : undefined,
+                                        }),
+                                    })
+                                }
+                                onPollenPayChange={(next) =>
+                                    navigate({
+                                        replace: true,
+                                        resetScroll: false,
+                                        search: (prev) => ({
+                                            ...prev,
+                                            pollen: next,
+                                        }),
+                                    })
+                                }
+                            />
                         </div>
 
                         <div className="flex min-h-11 items-center gap-3">

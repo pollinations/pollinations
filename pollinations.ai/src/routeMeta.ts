@@ -1,4 +1,4 @@
-export type RouteMeta = { title: string; description: string };
+type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
@@ -41,11 +41,11 @@ export const NOT_FOUND_META: RouteMeta = {
 };
 
 export function routeHead(path?: string) {
-    const meta = (path && ROUTE_META[path]) || NOT_FOUND_META;
-    const canonical =
-        path && ROUTE_META[path]
-            ? `https://pollinations.ai${path === "/" ? "" : path}`
-            : null;
+    const known = path ? ROUTE_META[path] : undefined;
+    const meta = known ?? NOT_FOUND_META;
+    const canonical = known
+        ? `https://pollinations.ai${path === "/" ? "" : path}`
+        : null;
     const jsonLd = path ? getJsonLd(path) : null;
     return {
         meta: [

@@ -246,17 +246,7 @@ describe("platform stats", () => {
             "fetch",
             vi.fn(async (url: string) => {
                 if (url.endsWith("/models")) return Response.json(catalog);
-                return Response.json({
-                    data: url.includes("weekly_health_stats")
-                        ? [
-                              {
-                                  week: "2026-01-05",
-                                  total_requests: 1234,
-                                  availability: 99.7,
-                              },
-                          ]
-                        : [],
-                });
+                return Response.json({ data: [] });
             }),
         );
 
@@ -285,17 +275,7 @@ describe("platform stats", () => {
                       ])
                     : new Response("Unavailable", { status: 503 });
             }
-            return Response.json({
-                data: url.includes("weekly_health_stats")
-                    ? [
-                          {
-                              week: "2026-01-05",
-                              total_requests: 1234,
-                              official_availability: 99.9,
-                          },
-                      ]
-                    : [],
-            });
+            return Response.json({ data: [] });
         });
         vi.stubGlobal("fetch", fetchMock);
 

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 type Async<T> = { data: T; loading: boolean; failed: boolean };
 
 export type UseAsyncOptions = {
-    enabled?: boolean;
     refreshMs?: number;
     /** Re-run the loader when a caller-controlled range or filter changes. */
     key?: string | number;
@@ -18,7 +17,7 @@ export function useAsync<T>(
     initial: T,
     options: UseAsyncOptions = {},
 ): Async<T> {
-    const { enabled = true, refreshMs, key } = options;
+    const { refreshMs, key } = options;
     const [state, setState] = useState<Async<T>>({
         data: initial,
         loading: true,
@@ -27,8 +26,6 @@ export function useAsync<T>(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: callers pass inline loaders; only scheduling options should restart the feed
     useEffect(() => {
-        if (!enabled) return;
-
         let cancelled = false;
         let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -60,7 +57,7 @@ export function useAsync<T>(
             cancelled = true;
             if (timer) clearTimeout(timer);
         };
-    }, [enabled, refreshMs, key]);
+    }, [refreshMs, key]);
 
     return state;
 }

@@ -1,6 +1,6 @@
 import { cn } from "@pollinations/ui";
 import type { ReactNode } from "react";
-import { useArt } from "../../art";
+import { type ArtPage, useArt } from "../../art";
 import { HERO_IMAGE_SIZES } from "../../art-config";
 
 export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
@@ -16,7 +16,7 @@ export function HeroScene({
     contentClassName,
     children,
 }: {
-    page: "home" | "play" | "apps" | "community";
+    page: ArtPage;
     compactBottom?: boolean;
     contentClassName?: string;
     children: ReactNode;

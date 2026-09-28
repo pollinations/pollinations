@@ -12,10 +12,6 @@ export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
     const [paused, setPaused] = useState(false);
 
     useEffect(() => {
-        setActiveIndex((index) => (apps.length ? index % apps.length : 0));
-    }, [apps.length]);
-
-    useEffect(() => {
         if (
             paused ||
             apps.length < 2 ||

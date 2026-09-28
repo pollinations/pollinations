@@ -187,7 +187,7 @@ export default {
             return response;
         }
 
-        const path = url.pathname === "" ? "/" : url.pathname;
+        const path = url.pathname;
         // Normalize: strip trailing slash (except root). The router matches
         // paths case-insensitively, so the meta lookup must too.
         const normalizedPath = (

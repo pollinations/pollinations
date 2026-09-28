@@ -20,10 +20,6 @@
     padding-inline: 1.25rem;
 }
 
-.site-gutter {
-    padding-inline: 0;
-}
-
 /* Match Enter's phone layout: full-width page surfaces, with their existing
    inner padding and rounded corners. Header and footer retain their gutters. */
 @media (width < 40rem) {
@@ -228,19 +224,12 @@
     animation-name: apps-spotlight-slide-in-back;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .apps-spotlight-slide {
-        animation: none;
-    }
-}
-
 .play-chat-window {
     height: min(50rem, 72dvh);
 }
 
 .play-chat-conversation > button {
     background-color: var(--polli-color-bg-active);
-    color: var(--polli-color-text-strong);
 }
 
 .play-chat-composer-field {
@@ -264,7 +253,6 @@
 }
 
 .play-chat-transcript {
-    min-height: 0;
     scrollbar-width: auto;
 }
 
@@ -274,15 +262,6 @@
 
 .play-chat-transcript::-webkit-scrollbar-thumb {
     min-height: 64px;
-    border-width: 3px;
-}
-
-.play-chat-transcript[data-scrollbar-active="true"] {
-    scrollbar-color: var(--polli-color-scrollbar-thumb) transparent;
-}
-
-.play-chat-transcript[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
-    background-color: var(--polli-color-scrollbar-thumb);
 }
 
 .play-chat-message {
@@ -303,26 +282,14 @@
     object-fit: contain;
 }
 
-.play-chat-media-preview {
-    display: block;
-    width: 100%;
-    max-height: 13rem;
-    object-fit: contain;
-}
-
 @media (max-width: 639px) {
     .play-chat-window {
         height: min(44rem, 74dvh);
     }
 
-    .play-chat-transcript {
-        min-height: 0;
-    }
-
     .play-chat-message {
         max-width: 96%;
     }
-
 }
 
 /* The hero scene is positioned and dips below its section, so every later
@@ -379,21 +346,7 @@ main > * {
     }
 }
 
-/* ── /play ─────────────────────────────────────────────────────────────
-   Layout that needs container queries or sticky positioning, which is
-   clearer as CSS than as a wall of arbitrary variants. */
-body.polli-ui-shell {
-    height: auto;
-    min-height: 100dvh;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-body.polli-ui-shell #root {
-    height: auto;
-    min-height: 100dvh;
-}
-
+/* ── /play ───────────────────────────────────────────────────────────── */
 .polli-playground-audio {
     height: 2.5rem;
     border-radius: 9999px;

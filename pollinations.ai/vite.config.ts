@@ -68,7 +68,6 @@ export default defineConfig({
         dedupe: ["react", "react-dom", "@pollinations/sdk"],
     },
     build: {
-        reportCompressedSize: true,
         rollupOptions: {
             output: {
                 // Markdown needs no manual chunk: it is reachable only from

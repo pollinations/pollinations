@@ -100,7 +100,7 @@ const WAYS_IN = [
     },
 ];
 
-const FEED_SKELETON_KEYS = ["first", "second", "third", "fourth"];
+const FEED_SKELETON_KEYS = ["first", "second"];
 
 function voteIconFor(title: string) {
     if (/login|account|auth/i.test(title)) return LogInIcon;
@@ -119,7 +119,7 @@ function FeedState({
     loading,
     failed,
     what,
-    rows = 3,
+    rows = 2,
 }: {
     loading: boolean;
     failed: boolean;
@@ -446,16 +446,13 @@ function BuildDiary() {
         zoom === "all" && representativeIndex >= 0
             ? entries[representativeIndex]
             : entries[entries.length - 1];
-    const anchorDate = selectedDate ?? fallbackSelected?.date ?? latestDay;
     const {
         data: allDiary,
         loading: allLoading,
         failed: allFailed,
     } = useBuildDiaryAll();
     const selected =
-        days.find((day) => day.date === selectedDate) ??
-        days.find((day) => day.date === anchorDate) ??
-        fallbackSelected;
+        days.find((day) => day.date === selectedDate) ?? fallbackSelected;
     const selectedIndex = selected
         ? entries.findIndex((day) => day.date === selected.date)
         : -1;
@@ -520,7 +517,6 @@ function BuildDiary() {
                       year: "2-digit",
                       timeZone: "UTC",
                   }),
-                  available: item.prCount > 0,
                   active: item.month === month,
                   ariaLabel: `${formatMonth(item.month)}: ${item.prCount} pull request${item.prCount === 1 ? "" : "s"} merged`,
                   onSelect: () => {
@@ -532,7 +528,6 @@ function BuildDiary() {
                   key: day.date,
                   value: day.prCount,
                   label: formatDate(day.date),
-                  available: day.title !== null,
                   active: day.date === selected?.date,
                   ariaLabel: `${formatDate(day.date, true)}: ${day.prCount} pull request${day.prCount === 1 ? "" : "s"} merged`,
                   onSelect: () => setSelectedDate(day.date),
@@ -607,7 +602,6 @@ function BuildDiary() {
                     loading={loading}
                     failed={failed}
                     what="The build diary"
-                    rows={2}
                 />
             ) : (
                 <Surface variant="card" className="overflow-hidden p-0">
@@ -746,7 +740,6 @@ function BuildDiary() {
                                 loading={zoomLoading}
                                 failed={zoomFailed}
                                 what={`${zoom[0].toUpperCase()}${zoom.slice(1)} view`}
-                                rows={2}
                             />
                         ) : (
                             <div className="relative h-44 min-w-0 pl-9 sm:h-52">
@@ -794,12 +787,11 @@ function BuildDiary() {
                                             <button
                                                 key={item.key}
                                                 type="button"
-                                                disabled={!item.available}
                                                 onClick={item.onSelect}
                                                 aria-label={item.ariaLabel}
                                                 aria-pressed={item.active}
                                                 title={`${item.label} · ${item.value} PR${item.value === 1 ? "" : "s"}`}
-                                                className="group absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full disabled:cursor-default"
+                                                className="group absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
                                                 style={{
                                                     left: `${x}%`,
                                                     top: `${y}%`,
@@ -902,7 +894,6 @@ function BuildDiary() {
 
 function Contributors() {
     const { data: people, loading, failed } = useContributors();
-    const bare = loading || people.length === 0;
 
     return (
         <section className="flex flex-col gap-5">
@@ -914,12 +905,11 @@ function Contributors() {
                     <InlineLink href={REPO_URL}>Open the repository</InlineLink>
                 }
             />
-            {bare && (
+            {people.length === 0 && (
                 <FeedState
                     loading={loading}
-                    failed={failed && people.length === 0}
+                    failed={failed}
                     what="Contributors"
-                    rows={2}
                 />
             )}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3.5">

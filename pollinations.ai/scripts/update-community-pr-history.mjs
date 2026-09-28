@@ -18,7 +18,6 @@ const query = `
                     number
                     mergedAt
                     title
-                    url
                     author {
                         login
                     }
@@ -45,7 +44,6 @@ const pullRequests = pages
         number: pullRequest.number,
         mergedAt: pullRequest.mergedAt,
         title: pullRequest.title,
-        url: pullRequest.url,
         author: pullRequest.author?.login ?? "community contributor",
     }))
     .sort((left, right) => left.mergedAt.localeCompare(right.mergedAt));

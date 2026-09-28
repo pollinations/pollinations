@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { cachePublic } from "../../data/cachePublic";
 
-export type QuestLeaderboardEntry = {
+type QuestLeaderboardEntry = {
     githubLogin: string;
     completedQuests: number; // API wire name for earned reward entries.
     totalPollen: number;

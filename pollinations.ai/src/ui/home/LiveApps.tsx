@@ -2,7 +2,6 @@ import {
     ArrowRightIcon,
     Button,
     ContentHeader,
-    cn,
     ScrollArea,
 } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
@@ -14,7 +13,7 @@ import { AppCarousel } from "../apps/AppCarousel";
  * Missing screenshots use the shared Polli fallback, so the shelf remains
  * visual without pretending generated art is the real app.
  */
-export function LiveApps({ className }: { className?: string }) {
+export function LiveApps() {
     const { data: featured, loading, failed } = useWeeklyApps();
 
     // Only disappears when the ranking loaded fine and genuinely had
@@ -22,7 +21,7 @@ export function LiveApps({ className }: { className?: string }) {
     if (!loading && !failed && featured.length === 0) return null;
 
     return (
-        <section className={cn("flex flex-col gap-5", className)}>
+        <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Live now"
                 title="Apps from the community."

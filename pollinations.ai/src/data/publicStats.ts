@@ -14,18 +14,15 @@ const PUBLIC_READ_TOKEN =
 
 /** One row of the community app directory synced from app.json. */
 export type DirectoryApp = {
-    emoji: string;
     name: string;
     web_url: string;
     screenshot_url: string;
     description: string;
-    language: string;
     category: string;
     platform: string;
     github_username: string;
     github_repository_url: string;
     github_repository_stars: string;
-    submitted_date: string;
     approved_date: string;
     byop: boolean | number | string;
     requests_24h: number | string | null;
@@ -93,10 +90,10 @@ export const isBuzz = (app: DirectoryApp) => {
     const requests = byopRequests24h(app);
     return requests !== null && requests >= 100;
 };
-export const isFresh = (app: DirectoryApp, now = Date.now()) => {
+export const isFresh = (app: DirectoryApp) => {
     if (!app.approved_date) return false;
     const approved = new Date(app.approved_date).getTime();
-    return Number.isFinite(approved) && approved >= now - THIRTY_DAYS_MS;
+    return Number.isFinite(approved) && approved >= Date.now() - THIRTY_DAYS_MS;
 };
 
 /** The community app directory; exact duplicates collapse, same-named apps stay. */

@@ -107,13 +107,7 @@ describe("build diary stories", () => {
         summary: "Merged two PRs.",
         imageUrl: null,
     };
-    const month = {
-        month: "2026-09",
-        prCount: 30,
-        title: null,
-        summary: null,
-        imageUrl: null,
-    };
+    const month = { month: "2026-09", prCount: 30 };
 
     it("fetches only the selected monthly summary", async () => {
         vi.resetModules();

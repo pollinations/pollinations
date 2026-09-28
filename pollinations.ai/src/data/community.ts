@@ -30,7 +30,7 @@ async function github<T>(path: string): Promise<T> {
 
 /* ── Stars ──────────────────────────────────────────────────────────────── */
 
-export const loadRepoStars = cachePublic(async () => {
+const loadRepoStars = cachePublic(async () => {
     const response = await fetch("/api/github-stars");
     if (!response.ok) throw new Error(`github: ${response.status}`);
     const repo = (await response.json()) as {
@@ -40,8 +40,8 @@ export const loadRepoStars = cachePublic(async () => {
     return repo.stargazers_count;
 });
 
-export function useRepoStars(options?: UseAsyncOptions) {
-    return useAsync(loadRepoStars, null, options);
+export function useRepoStars() {
+    return useAsync(loadRepoStars, null);
 }
 
 /* ── Discord ────────────────────────────────────────────────────────────── */
@@ -73,12 +73,6 @@ type Contributor = {
     commits: number;
 };
 
-/** Apps and CI accounts commit constantly and would otherwise take the top. */
-const isBot = (login: string) =>
-    login.includes("[bot]") ||
-    login.endsWith("-bot") ||
-    login.toLowerCase().includes("copilot");
-
 type GhContributor = {
     login: string;
     avatar_url: string;
@@ -87,15 +81,15 @@ type GhContributor = {
     type?: string;
 };
 
-export function useContributors(limit = 12) {
+export function useContributors() {
     return useAsync<Contributor[]>(async () => {
         // One request, already ranked by commit count.
         const rows = await github<GhContributor[]>(
-            `/repos/${REPO}/contributors?per_page=${limit + 8}`,
+            `/repos/${REPO}/contributors?per_page=20`,
         );
         return rows
-            .filter((row) => row.type !== "Bot" && !isBot(row.login))
-            .slice(0, limit)
+            .filter((row) => row.type !== "Bot")
+            .slice(0, 12)
             .map((row) => ({
                 login: row.login,
                 avatarUrl: row.avatar_url,
@@ -145,8 +139,8 @@ export async function loadVotingIssues(limit = 3): Promise<VotingIssue[]> {
     }));
 }
 
-export function useVotingIssues(limit = 3) {
-    return useAsync(() => loadVotingIssues(limit), []);
+export function useVotingIssues() {
+    return useAsync(loadVotingIssues, []);
 }
 
 /* ── Build diary ────────────────────────────────────────────────────────── */
@@ -155,7 +149,6 @@ const NEWS_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily";
 const NEWS_MONTHLY_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/monthly";
-const NEWS_START_DAY = "2025-01-01";
 const FALLBACK_DIARY_IMAGES = [
     "2026-08-03",
     "2026-08-05",
@@ -164,7 +157,7 @@ const FALLBACK_DIARY_IMAGES = [
     "2026-08-28",
 ].map((date) => `${NEWS_RAW}/${date}/images/twitter.jpg`);
 
-export type DiaryDay = {
+type DiaryDay = {
     date: string;
     prCount: number;
     title: string | null;
@@ -203,12 +196,9 @@ type DiaryRange = {
     fallback: boolean;
 };
 
-export type DiaryMonth = {
+type DiaryMonth = {
     month: string;
     prCount: number;
-    title: string | null;
-    summary: string | null;
-    imageUrl: string | null;
 };
 
 type DiaryAll = {
@@ -226,7 +216,6 @@ type MonthlySummary = {
     summary: string;
 };
 
-const ISO_MONTH = /^\d{4}-\d{2}$/;
 const summaryCache = new Map<string, Promise<DailySummary | null>>();
 const monthlySummaryCache = new Map<string, Promise<MonthlySummary | null>>();
 let historyCache: Promise<DiaryHistory> | null = null;
@@ -268,19 +257,11 @@ export function loadPullRequestHistory() {
             fallback = true;
             return fetchHistory("/data/community-pr-history.json");
         });
-        const uniquePullRequests = new Map(
-            payload.pullRequests.map((pullRequest) => [
-                pullRequest.number,
-                pullRequest,
-            ]),
+        const pullRequests = [...payload.pullRequests].sort(
+            (left, right) =>
+                left.date.localeCompare(right.date) ||
+                left.number - right.number,
         );
-        const pullRequests = [...uniquePullRequests.values()]
-            .filter((pullRequest) => pullRequest.date >= NEWS_START_DAY)
-            .sort(
-                (left, right) =>
-                    left.date.localeCompare(right.date) ||
-                    left.number - right.number,
-            );
         const firstDay = pullRequests[0]?.date;
         const latestDay = pullRequests[pullRequests.length - 1]?.date;
         if (!firstDay || !latestDay) {
@@ -328,7 +309,6 @@ function addDays(iso: string, amount: number): string {
 }
 
 function loadDailySummary(date: string) {
-    if (date < NEWS_START_DAY) return Promise.resolve(null);
     const existing = summaryCache.get(date);
     if (existing) return existing;
     const request = fetch(`${NEWS_RAW}/${date}/summary.json`)
@@ -394,11 +374,7 @@ export function useBuildDiary(requestedMonth?: string) {
     return useAsync<DiaryRange>(
         async () => {
             const history = await loadPullRequestHistory();
-            const newestMonth = history.latestDay.slice(0, 7);
-            const month =
-                requestedMonth && ISO_MONTH.test(requestedMonth)
-                    ? requestedMonth
-                    : newestMonth;
+            const month = requestedMonth || history.latestDay.slice(0, 7);
             const range = monthRange(month, history.latestDay);
             return {
                 month,
@@ -415,16 +391,14 @@ export function useBuildDiary(requestedMonth?: string) {
     );
 }
 
-export function useBuildDiaryAll(options?: UseAsyncOptions) {
+export function useBuildDiaryAll() {
     return useAsync<DiaryAll>(
         async () => {
             const history = await loadPullRequestHistory();
-            const byMonth = new Map<string, DiaryPr[]>();
-            for (const pullRequest of history.pullRequests) {
-                const month = pullRequest.date.slice(0, 7);
-                const pullRequests = byMonth.get(month) ?? [];
-                pullRequests.push(pullRequest);
-                byMonth.set(month, pullRequests);
+            const counts = new Map<string, number>();
+            for (const { date } of history.pullRequests) {
+                const month = date.slice(0, 7);
+                counts.set(month, (counts.get(month) ?? 0) + 1);
             }
 
             const firstMonth = history.firstDay.slice(0, 7);
@@ -433,26 +407,24 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
             const cursor = new Date(`${firstMonth}-01T00:00:00Z`);
             while (cursor.toISOString().slice(0, 7) <= latestMonth) {
                 const month = cursor.toISOString().slice(0, 7);
-                months.push({
-                    month,
-                    prCount: byMonth.get(month)?.length ?? 0,
-                    title: null,
-                    summary: null,
-                    imageUrl: null,
-                });
+                months.push({ month, prCount: counts.get(month) ?? 0 });
                 cursor.setUTCMonth(cursor.getUTCMonth() + 1);
             }
 
             return { months };
         },
         { months: [] },
-        options,
     );
 }
 
 type DiaryStory =
     | (DiaryDay & { period: "day" })
-    | (DiaryMonth & { period: "month" });
+    | (DiaryMonth & {
+          title: string;
+          summary: string;
+          imageUrl: string;
+          period: "month";
+      });
 
 /** Load only the story on screen, after its counts and navigation are ready. */
 export async function loadBuildDiaryStory(
@@ -490,7 +462,6 @@ export function useBuildDiaryStory(
     day: DiaryDay | undefined,
 ) {
     return useAsync(() => loadBuildDiaryStory(month, day), null, {
-        enabled: Boolean(month || day),
         key: `${month?.month ?? ""}:${day?.date ?? ""}`,
     });
 }

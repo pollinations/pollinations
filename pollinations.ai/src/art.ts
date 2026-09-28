@@ -7,7 +7,7 @@ import { ART_SET } from "./art-config";
  * with ART_SET in art-config.ts.
  */
 
-type ArtPage = "home" | "play" | "apps" | "community";
+export type ArtPage = "home" | "play" | "apps" | "community";
 type ArtSlot = "hero" | "quests" | "votes" | "placeholder" | "closing";
 
 /** One illustration in the current light: day in light mode, night in dark mode. */

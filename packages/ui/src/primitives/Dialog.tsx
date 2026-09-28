@@ -91,9 +91,7 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            // A size container, so parts can adapt to the dialog's width
-                            // rather than the screen's.
-                            "polli:@container polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
                             fullscreenOnMobile
                                 ? "polli-dialog-mobile-page polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-block"
                                 : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-block",
@@ -203,7 +201,10 @@ export function DialogBody({
                 {children}
             </div>
             {(actions || footnote) && (
-                <div className="polli-dialog-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                // The size container lets the footer follow the dialog's width.
+                // It sits on the footer alone so pickers and tooltips in the
+                // body keep their positioning.
+                <div className="polli-dialog-floating-controls polli:@container polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
                     {actions && (
                         <DialogFooter className="polli:pointer-events-auto">
                             {actions}

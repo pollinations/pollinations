@@ -15,7 +15,9 @@
  *            source, medium, campaign, country and device
  *   hosts    sessions, users, page views by day, site and country
  *
- * The range ends two days before today: GA takes 24–48 hours to process a day.
+ * A day is included once 48 hours have passed since it ended in any timezone
+ * (GA takes 24–48 hours to process a day): run the final copy after the last
+ * collected day has cleared that.
  * No page path or title is requested: the old site put prompts in URLs.
  *
  * Usage: node operations/google-analytics/export-to-tinybird.mjs [--from 2021-01] [--dry-run]
@@ -33,7 +35,10 @@ const DATASOURCE = "ga_raw";
 // A traffic row is ~600 bytes of JSON; 10,000 rows (~6 MB) stay under
 // Tinybird's 10 MB per Events request. The largest month so far is 18,405 rows.
 const ROW_LIMIT = 10000;
-const SETTLED_DAYS = 2;
+// A day ends at most 12 hours after its UTC midnight (UTC-12); adding GA's
+// 48-hour processing gives 60 hours after the next UTC midnight, so the last
+// settled day is the UTC date 84 hours ago.
+const SETTLED_HOURS = 84;
 const MAX_RETRIES = 3;
 
 const DATASETS = {
@@ -86,7 +91,9 @@ async function fetchWithRetry(url, options) {
 
 // Calendar months from `from` (YYYY-MM) up to the last settled day.
 function months(from) {
-    const last = new Date(Date.now() - SETTLED_DAYS * 86_400_000);
+    const last = new Date(
+        `${toDate(new Date(Date.now() - SETTLED_HOURS * 3_600_000))}T00:00:00Z`,
+    );
     const ranges = [];
     for (
         let d = new Date(`${from}-01T00:00:00Z`);
@@ -132,6 +139,8 @@ function warnOnDataLoss(label, { metadata = {} }) {
         metadata.dataLossFromOtherRow && "rows collapsed into (other)",
         metadata.samplingMetadatas?.length && "sampled",
         metadata.subjectToThresholding && "thresholded",
+        metadata.dataTruncationReasons?.length &&
+            `truncated (${metadata.dataTruncationReasons.join(", ")})`,
     ].filter(Boolean);
     if (reasons.length > 0) {
         console.log(`::warning::${label}: ${reasons.join(", ")}`);

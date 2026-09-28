@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
+import { agentsCommand } from "./agents.js";
 import { createChatCommand } from "./gen/chat.js";
 import { createTextCommand } from "./gen/text.js";
+import { keysCommand } from "./keys.js";
 import { modelsCommand } from "./models.js";
 
 const originalStdinTTY = process.stdin.isTTY;
@@ -38,17 +40,54 @@ function prepare() {
 }
 
 describe("CLI argument validation", () => {
-    it.each([
-        "bogus",
-        "Text",
-        "",
-    ])("rejects unknown model type %j before fetching", async (type) => {
+    it("prints an invalid key budget only once", async () => {
         const fetch = prepare();
         await expect(
-            modelsCommand.parseAsync(["--type", type], { from: "user" }),
+            keysCommand.parseAsync(
+                ["create", "--name", "test", "--budget", "-1"],
+                { from: "user" },
+            ),
         ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("--budget must be a non-negative number")],
+        ]);
         expect(fetch).not.toHaveBeenCalled();
     });
+
+    it("prints an invalid agent option only once", async () => {
+        const fetch = prepare();
+        await expect(
+            agentsCommand.parseAsync(
+                [
+                    "create",
+                    "--config",
+                    "unused.json",
+                    "--visibility",
+                    "invalid",
+                ],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [
+                expect.stringContaining(
+                    "--visibility must be 'private' or 'public'",
+                ),
+            ],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it.each(["bogus", "Text", ""])(
+        "rejects unknown model type %j before fetching",
+        async (type) => {
+            const fetch = prepare();
+            await expect(
+                modelsCommand.parseAsync(["--type", type], { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
 
     it("rejects an unknown model type in stats mode too", async () => {
         const fetch = prepare();

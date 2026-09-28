@@ -150,6 +150,7 @@ export class ExitSignal extends Error {
 
 /** Print a fatal command error and unwind with the CLI's standard exit code. */
 export const fail = (message: string, error?: unknown): never => {
+    if (error instanceof ExitSignal) throw error;
     const detail =
         error === undefined
             ? ""

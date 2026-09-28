@@ -158,11 +158,12 @@ const create = new Command("create")
     )
     .action(async (opts) => {
         const key = requireKey();
+        const body = agentBody(opts.config, opts);
         try {
             const agent = await gen<Agent>("/account/agents", {
                 apiKey: key,
                 method: "POST",
-                body: agentBody(opts.config, opts),
+                body,
             });
             if (getOutputMode() === "json") printResult(agent);
             else {
@@ -190,13 +191,14 @@ const update = new Command("update")
     .option("--visibility <visibility>", "Agent visibility: private or public")
     .action(async (id, opts) => {
         const key = requireKey();
+        const body = agentBody(opts.config, opts);
         try {
             const agent = await gen<Agent>(
                 `/account/agents/${encodeURIComponent(id)}`,
                 {
                     apiKey: key,
                     method: "PATCH",
-                    body: agentBody(opts.config, opts),
+                    body,
                 },
             );
             if (getOutputMode() === "json") printResult(agent);

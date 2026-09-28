@@ -1,0 +1,37 @@
+{
+  "pr_number": 15537,
+  "title": "fix(polli-cli): exit via exitCode/ExitSignal instead of process.exit (wrong exit code + libuv abort on Windows)",
+  "author": "rekty",
+  "url": "https://github.com/pollinations/pollinations/pull/15537",
+  "merged_at": "2026-09-28T17:57:48Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n\nFixes #15535 — on Windows with Node >= 23, every `polli` error path that called `process.exit(1)` after a `fetch` round-trip aborted libuv (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`, upstream nodejs/node#56645) and the shell observed exit code **127 instead of 1**. Scripts and CI jobs checking the exit status got garbage.\n\nRoot cause: `process.exit()` while undici's keep-alive sockets are still open trips the libuv assertion on Windows (Node 23.x+); because the abort happens inside `process.exit(1)`, the intended exit code is lost.\n\n## Changes\n\n- Add an `ExitSignal` error class in `lib/output.ts`; `fail()` and `exitWithError()` now throw it instead of calling `process.exit(1)`.\n- The top-level `parseAsync().catch()` in `src/index.ts` converts `ExitSignal` to `process.exitCode = n` and returns, so the event loop unwinds cleanly (sockets close, then the process exits with the right code).\n- All 26 inline `process.exit(1)` call sites in commands now `throw new ExitSignal(1)`.\n- `gen chat` readline paths (`/exit`, close handler, fatal budget hint) set `process.exitCode` directly — throwing there would only produce an unhandled rejection.\n- `docs.ts` rethrows `ExitSignal` from its local `catch` so the error is not double-reported by the surrounding `fail()`.\n\n## Verification (Windows 11, Node v24.18.0)\n\n| Command | Before | After |\n| --- | --- | --- |\n| `polli docs /nope` | assertion + exit **127** | exit **1**, no assertion |\n| `polli gen image \"test\" --width 0` | assertion + exit **127** | exit **1**, no assertion |\n| `polli gen transcribe missing.mp3` | assertion + exit **127** | exit **1**, no assertion |\n| `polli models --type bogus` | exit 1 (no I/O) | exit **1** |\n| `polli models --type embedding` | exit 0 | exit **0** |\n\nMinimal repro from the issue (`node -e \"fetch(...).then(...); process.exit(1)\"`) still aborts — this is a Node runtime bug — but the CLI no longer calls `process.exit()` on any code path, so it is unaffected.\n\n- `vitest",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Exit one, not 127",
+    "blurb": "Polli CLI errors now leave quietly and return the exit code scripts expect. Windows and Node had been making quite a production of it.",
+    "summary": "Polli CLI replaces process.exit(1) with ExitSignal and process.exitCode, so error paths after a fetch exit with code 1 instead of triggering a libuv assertion and returning 127 on Windows with Node 23+.",
+    "impact": "Windows scripts and CI jobs can reliably detect Polli CLI failures by exit code 1, without the libuv abort; successful commands still return 0.",
+    "keywords": [
+      "polli-cli",
+      "Windows",
+      "Node.js",
+      "exit codes",
+      "CI",
+      "libuv"
+    ],
+    "visual_concept": "Show Polli at a cozy CLI terminal watching an error exit take a clean path to a large pixel-font '1', while a small '127' sits crossed out on a discarded printout. A code-plant beside the terminal adds the garden motif; Polli wears a tiny tool belt.",
+    "image_prompt": "In a cozy pixel art garden workstation, Polli tends a terminal showing a clean 'EXIT 1' beside a sprouting code-plant, with a discarded '127' printout nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) terminal text keep the scene soft and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15537.jpg",
+    "prompt": "In a cozy pixel art garden workstation, Polli tends a terminal showing a clean 'EXIT 1' beside a sprouting code-plant, with a discarded '127' printout nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) terminal text keep the scene soft and inviting."
+  },
+  "generated_at": "2026-09-28T17:59:04.098179+00:00"
+}

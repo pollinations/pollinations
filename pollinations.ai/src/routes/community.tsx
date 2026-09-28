@@ -338,7 +338,7 @@ function CommunityParticipation() {
                         })}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-theme-text-muted/20 pt-5">
+                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-5">
                         <div className="min-w-0 flex-1 basis-80">
                             {loading || failed ? (
                                 <FeedState

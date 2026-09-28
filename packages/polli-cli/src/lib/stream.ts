@@ -4,6 +4,10 @@
  */
 export async function* streamSSE(
     response: Response,
+    onEvent?: (event: {
+        model?: string;
+        usage?: { total_tokens?: number };
+    }) => void,
 ): AsyncGenerator<string, void> {
     const reader = response.body?.getReader();
     if (!reader) throw new Error("No response body");
@@ -27,6 +31,8 @@ export async function* streamSSE(
             let parsed: {
                 error?: { message?: string };
                 choices?: { delta?: { content?: string } }[];
+                model?: string;
+                usage?: { total_tokens?: number };
             };
             try {
                 parsed = JSON.parse(data);
@@ -38,6 +44,7 @@ export async function* streamSSE(
                     parsed.error.message ?? JSON.stringify(parsed.error),
                 );
             }
+            onEvent?.(parsed);
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) yield delta;
         }

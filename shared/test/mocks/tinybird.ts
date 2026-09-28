@@ -22,6 +22,7 @@ export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
     referralEvents: Record<string, unknown>[];
+    productEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
@@ -39,6 +40,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         events: [],
         errorEvents: [],
         referralEvents: [],
+        productEvents: [],
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
@@ -82,6 +84,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.referralEvents.push(...rows);
             } else if (eventName === "stripe_event") {
                 state.stripeEvents.push(...rows);
+            } else if (eventName === "product_event") {
+                state.productEvents.push(...rows);
             }
 
             return c.json(
@@ -136,6 +140,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.events = [];
         state.errorEvents = [];
         state.referralEvents = [];
+        state.productEvents = [];
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];

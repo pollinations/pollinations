@@ -1,6 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { ModelHealthSchema } from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -88,8 +89,9 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
-// Video URL content type - currently supported by Gemini models only
-// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+// Video URL content type. Gemini models accept YouTube/gs:// URLs natively;
+// OpenRouter video-capable models (e.g. inclusionai/ling-3.0-flash-vl) accept
+// https:// and data: URIs.
 const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
     type: z.literal("video_url"),
     video_url: z.object({
@@ -353,7 +355,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
+                "Perplexity Sonar search context size: how much page content each web search reads. Larger sizes use more input tokens.",
             )
             .optional(),
         temperature: z
@@ -758,6 +760,7 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: ModelHealthSchema.optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

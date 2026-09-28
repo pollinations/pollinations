@@ -77,6 +77,15 @@ export const modelsCommand = new Command("models")
         "60",
     )
     .action(async (opts) => {
+        if (
+            !["text", "image", "audio", "video", "embedding", "all"].includes(
+                opts.type,
+            )
+        ) {
+            fail(
+                "--type must be one of: text, image, audio, video, embedding, all",
+            );
+        }
         if (opts.stats) {
             try {
                 const windowMinutes = Number(opts.window);

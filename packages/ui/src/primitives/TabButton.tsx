@@ -42,7 +42,7 @@ const tabButtonBaseClass =
     "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200";
 
 const tabButtonSizeClass = {
-    xs: "polli:px-3 polli:py-1.5 polli:text-xs",
+    xs: "polli:px-2.5 polli:py-1 polli:text-xs",
     lg: "polli:px-5 polli:py-2 polli:text-lg",
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",

@@ -32,6 +32,10 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import {
+    captureProductEvent,
+    referringSource,
+} from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -119,14 +123,33 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
+                if (authContext.path === "/sign-in/social") {
+                    if (authContext.body.provider === "discord")
+                        throw new APIError("BAD_REQUEST", {
+                            message:
+                                "Discord can only be connected to an existing Pollinations account.",
+                        });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_started", "", {
+                            ...referringSource(
+                                authContext.headers,
+                                env.BETTER_AUTH_URL,
+                            ),
+                        }),
+                    );
+                }
+                // The path is the route pattern, not the resolved URL, so the
+                // provider comes from params. Only with a code: a denial at
+                // GitHub comes back without one and is a loss on their side,
+                // not a failure of our callback.
                 if (
-                    authContext.path === "/sign-in/social" &&
-                    authContext.body.provider === "discord"
+                    authContext.path === "/callback/:id" &&
+                    authContext.params?.id === "github" &&
+                    authContext.query?.code
                 ) {
-                    throw new APIError("BAD_REQUEST", {
-                        message:
-                            "Discord can only be connected to an existing Pollinations account.",
-                    });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_returned", ""),
+                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -136,6 +159,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     if (session && (await hasDiscordAccount(session.user.id))) {
                         throw discordAccountAlreadyConnected();
                     }
+                    if (session)
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "link_started",
+                                session.user.id,
+                            ),
+                        );
                 }
                 if (authContext.path !== "/delete-user") return;
 
@@ -162,6 +193,19 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             provider: "sqlite",
         }),
         databaseHooks: {
+            user: {
+                create: {
+                    after: async (user) => {
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "signup_completed",
+                                user.id,
+                            ),
+                        );
+                    },
+                },
+            },
             account: {
                 create: {
                     before: async (account) => {
@@ -173,6 +217,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         }
                     },
                     after: async (account) => {
+                        if (account.providerId === "discord")
+                            ctx?.waitUntil(
+                                captureProductEvent(
+                                    env,
+                                    "link_completed",
+                                    account.userId,
+                                ),
+                            );
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
@@ -310,15 +362,15 @@ function githubProfileSyncPlugin(
 }
 
 /**
- * Sync github_username on every login.
- * GitHub usernames are mutable — users can rename their account.
- * We fetch the current username from GitHub API using the immutable github_id
+ * Sync platform name and github_username on every login.
+ * GitHub usernames and display names are mutable — users can rename their account.
+ * We fetch the current profile from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
  * GitHub is the only auth provider, so every user row has a github_id; we skip
  * the sync defensively if it is ever missing.
  */
-function onAfterSessionCreate(
+export function onAfterSessionCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
@@ -327,11 +379,15 @@ function onAfterSessionCreate(
         _ctx?: GenericEndpointContext | null,
     ) => {
         executionCtx?.waitUntil(
+            captureProductEvent(env, "sign_in_completed", session.userId),
+        );
+        executionCtx?.waitUntil(
             (async () => {
                 try {
                     const db = drizzle(env.DB);
                     const [user] = await db
                         .select({
+                            name: userTable.name,
                             githubId: userTable.githubId,
                             githubUsername: userTable.githubUsername,
                         })
@@ -363,24 +419,33 @@ function onAfterSessionCreate(
                     );
                     if (!res.ok) {
                         console.error(
-                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                            `[github-profile-sync] GitHub API ${res.status} for user ${githubId}`,
                         );
                         return;
                     }
 
-                    const profile = (await res.json()) as { login: string };
+                    const profile = (await res.json()) as {
+                        login: string;
+                        name?: string | null;
+                    };
+                    const githubName = profile.name || profile.login;
+
                     if (
                         profile.login &&
-                        profile.login !== user?.githubUsername
+                        (profile.login !== user?.githubUsername ||
+                            githubName !== user?.name)
                     ) {
                         await db
                             .update(userTable)
-                            .set({ githubUsername: profile.login })
+                            .set({
+                                githubUsername: profile.login,
+                                name: githubName,
+                            })
                             .where(eq(userTable.id, session.userId));
                     }
                 } catch (e) {
                     console.error(
-                        "[username-sync] failed for session",
+                        "[github-profile-sync] failed for session",
                         session.userId,
                         e,
                     );

@@ -1,15 +1,15 @@
 import {
     BeakerIcon,
-    CopyButton,
-    cn,
     InlineLink,
     KeyIcon,
     McpIcon,
+    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config, genDocsUrl } from "../../config.ts";
+import { CopyValue } from "./copy-value.tsx";
 import { UsagePriceRows } from "./price-badge.tsx";
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
@@ -34,17 +34,17 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
     }
 
     return (
-        <div>
-            <div className="@container flex flex-col gap-2 pb-1">
+        <div className="flex flex-col gap-4">
+            <div className="@container flex flex-col gap-3">
                 {servers.map((server) => {
                     const endpoint = `${config.genBaseUrl}/mcp/${server.id}`;
                     const pricing = getMcpPricingInfo(server);
                     return (
-                        <div
+                        <Surface
                             key={server.id}
-                            className="rounded-xl bg-surface-opaque shadow-sm [--mcp-card-gap:0.625rem] [--mcp-icon-width:2rem] @2xl:flex @2xl:items-center @2xl:shadow-well"
+                            className="[--mcp-card-gap:0.625rem] [--mcp-icon-width:2rem] transition-colors hover:bg-surface-opaque/90 @2xl:flex @2xl:items-center"
                         >
-                            <div className="flex items-center gap-[var(--mcp-card-gap)] p-4 @2xl:min-w-0 @2xl:flex-1">
+                            <div className="flex items-center gap-[var(--mcp-card-gap)] @2xl:min-w-0 @2xl:flex-1">
                                 <McpIcon className="h-8 w-[var(--mcp-icon-width)] shrink-0 text-ink-900 opacity-55" />
                                 <span
                                     aria-hidden="true"
@@ -60,46 +60,17 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             <InlineLink
                                                 href={`${config.baseUrl}${server.accountPath}`}
                                             >
-                                                Manage connectors
+                                                Connect apps
                                             </InlineLink>
                                         )}
                                     </p>
-                                    <CopyButton
+                                    <CopyValue
                                         value={endpoint}
-                                        tooltip={
-                                            <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                                                Click to copy
-                                            </span>
-                                        }
-                                        copiedTooltip={
-                                            <span className="font-sans text-xs font-semibold text-intent-success-text">
-                                                Copied
-                                            </span>
-                                        }
-                                        aria-label={`Copy ${server.name} MCP endpoint`}
-                                        tooltipAlign="start"
-                                        tooltipMaxWidth={520}
-                                        tooltipClassName="min-w-0 max-w-full"
-                                        className={(copied) =>
-                                            cn(
-                                                "pointer-events-auto flex min-w-0 max-w-full cursor-pointer text-left font-mono text-xs font-medium transition-colors",
-                                                copied
-                                                    ? "text-intent-success-text"
-                                                    : "text-theme-text-muted hover:text-theme-text-soft",
-                                            )
-                                        }
-                                    >
-                                        {() => (
-                                            <span className="inline-flex min-w-0 items-center gap-1.5">
-                                                <span className="min-w-0 truncate">
-                                                    {endpoint}
-                                                </span>
-                                            </span>
-                                        )}
-                                    </CopyButton>
+                                        label={`Copy ${server.name} MCP endpoint`}
+                                    />
                                 </div>
                             </div>
-                            <div className="flex px-4 pb-4 pt-0 @2xl:w-[clamp(312px,calc(32%_-_8px),352px)] @2xl:shrink-0 @2xl:py-3 @2xl:pl-3 @2xl:pr-1">
+                            <div className="mt-3 flex @2xl:mt-0 @2xl:w-[clamp(312px,calc(32%_-_8px),352px)] @2xl:shrink-0 @2xl:pl-3">
                                 <span
                                     aria-hidden="true"
                                     className="hidden w-[calc(var(--mcp-icon-width)+1px+var(--mcp-card-gap)+var(--mcp-card-gap))] shrink-0 min-[480px]:block @2xl:hidden"
@@ -110,7 +81,6 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             <UsagePriceRows
                                                 adjustments={pricing.rates}
                                                 align="left"
-                                                fractionDigits={8}
                                             />
                                         </div>
                                     )}
@@ -143,11 +113,11 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </Surface>
                     );
                 })}
             </div>
-            <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+            <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                 <KeyIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
                     Connect with your Pollinations API key. See the{" "}

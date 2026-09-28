@@ -217,7 +217,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             <Dropdown
                 open={open}
                 onOpenChange={setOpen}
-                className="polli:w-[320px] polli:max-w-[calc(100vw-2rem)] polli:rounded-xl polli:border polli:border-divider polli:bg-surface-opaque polli:p-3.5 polli:shadow-container"
+                className="polli:w-[320px] polli:max-w-[calc(100vw-2rem)] polli:rounded-xl polli:border polli:border-divider polli:bg-surface-opaque polli:p-3.5 polli:shadow-lg"
                 trigger={
                     trigger ??
                     ((isOpen) => (
@@ -303,6 +303,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                     type="button"
                                     key={label}
                                     aria-label={ariaLabel}
+                                    aria-pressed={selected}
                                     disabled={!selectable}
                                     onClick={() => selectDate(date)}
                                     className={cn(
@@ -359,6 +360,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         type="button"
                                         key={date.toISOString()}
                                         aria-label={ariaLabel}
+                                        aria-pressed={selected}
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(

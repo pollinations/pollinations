@@ -1,4 +1,18 @@
 import chalk from "chalk";
+import type { Command } from "commander";
+
+/** Apply the same help styles to separately constructed subcommands, too. */
+export const configureHelp = (command: Command) => {
+    command.configureHelp({
+        styleTitle: (s) => chalk.hex("#a78bfa").bold(s),
+        styleCommandText: (s) => chalk.bold(s),
+        styleSubcommandText: (s) => chalk.bold(s),
+        styleOptionText: (s) => chalk.cyan(s),
+        styleArgumentText: (s) => chalk.yellow(s),
+        styleDescriptionText: (s) => chalk.dim(s),
+    });
+    command.commands.forEach(configureHelp);
+};
 
 export type OutputMode = "human" | "json";
 

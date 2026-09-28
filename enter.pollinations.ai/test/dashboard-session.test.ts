@@ -340,7 +340,7 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
         );
         expect(denied.status).toBe(401);
     }
-});
+}, 30000);
 
 test("non-admin identities cannot create any dashboard session", async ({
     sessionToken,

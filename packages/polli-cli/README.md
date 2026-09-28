@@ -25,7 +25,7 @@ Every command is agent-friendly:
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
 - When a call runs out of pollen, the first line of the error is the top-up link.
-- `polli auth status --json` exposes everything about the current session.
+- `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
 ## Get started
 
@@ -100,6 +100,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
@@ -146,11 +147,13 @@ polli harness opencode on         # enables the Pollinations OpenCode plugin + d
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
+polli harness tgpt on             # authenticated Pollinations text models in tgpt
 polli harness <harness> status
 polli harness <harness> off
 ```
 
 Bloom stores its dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`).
+tgpt stores its provider, dedicated key, and model in `~/.config/tgpt/config.conf`.
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use

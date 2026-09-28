@@ -1,0 +1,19 @@
+DESCRIPTION >
+    generation_event_v2 plus traffic_group: 'legacy' for the two legacy public
+    API bridge keys, 'everything_else' for all other keys. Exact key IDs, so
+    renamed keys keep their group. Changing the list requires repopulating
+    generation_usage_hourly.
+
+NODE classified_events
+SQL >
+    SELECT
+        *,
+        if(
+            api_key_id IN (
+                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image bridge
+                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text bridge
+            ),
+            'legacy',
+            'everything_else'
+        ) AS traffic_group
+    FROM generation_event_v2

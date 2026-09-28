@@ -102,6 +102,11 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 align={tooltipAlign}
                 clampToViewport={tooltipClampToViewport}
                 tapEnabled={false}
+                className={
+                    disabled
+                        ? "polli:cursor-not-allowed"
+                        : "polli:cursor-pointer"
+                }
             >
                 {button}
             </Tooltip>

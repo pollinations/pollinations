@@ -213,7 +213,10 @@ export function AuthModalLoading({
 }) {
     return (
         <AuthFlowLayout title={title} subject={subject}>
-            <LoadingStatus>{message}</LoadingStatus>
+            {/* Centred with room around it, so a short wait reads as one. */}
+            <div className="polli:flex polli:justify-center polli:py-10">
+                <LoadingStatus>{message}</LoadingStatus>
+            </div>
         </AuthFlowLayout>
     );
 }

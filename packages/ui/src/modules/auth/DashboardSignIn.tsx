@@ -62,7 +62,9 @@ export function DashboardSignIn({
             error={shownError?.message}
             actions={
                 isPending ? (
-                    <output>Checking sign-in…</output>
+                    <PollinationsSignInButton isPending>
+                        Checking sign-in…
+                    </PollinationsSignInButton>
                 ) : sessionError ? (
                     <Button
                         icon={<RefreshIcon />}

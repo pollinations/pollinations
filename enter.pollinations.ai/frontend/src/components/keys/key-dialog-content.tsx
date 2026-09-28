@@ -113,7 +113,6 @@ export function KeyDialogContent({
             <CopyButton
                 value={createdKey}
                 variant="button"
-                intent="commit"
                 copiedTimeoutMs={500}
                 tooltip={null}
                 onCopied={onCopied}
@@ -173,7 +172,11 @@ export function KeyDialogContent({
                     )
                 }
             >
-                {header && <div className="-mx-6 -mt-4">{header}</div>}
+                {header && (
+                    <div className="-mx-(--polli-dialog-gutter) -mt-4">
+                        {header}
+                    </div>
+                )}
                 <DialogHeader
                     inBody
                     title={title}
@@ -236,7 +239,7 @@ export function KeyDialogContent({
                         </FieldStack>
                     </AuthInfoCard>
                 ) : showFields ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <AuthInfoCard>
                             <ul className="space-y-3 text-sm">
                                 <KeyNameField

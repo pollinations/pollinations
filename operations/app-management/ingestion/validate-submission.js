@@ -15,6 +15,29 @@ function gh(args) {
     return execFileSync("gh", args, { encoding: "utf8" }).trim();
 }
 
+function isOpenQuest(number) {
+    let issue;
+    try {
+        issue = JSON.parse(
+            gh([
+                "issue",
+                "view",
+                number,
+                "--repo",
+                "pollinations/pollinations",
+                "--json",
+                "state,labels",
+            ]),
+        );
+    } catch {
+        return false;
+    }
+    return (
+        issue.state === "OPEN" &&
+        issue.labels.some((label) => label.name === "POLLEN-QUEST")
+    );
+}
+
 function main() {
     if (!/^\d+$/.test(ISSUE_NUMBER || ""))
         throw new Error("ISSUE_NUMBER must be numeric");
@@ -91,6 +114,12 @@ function main() {
     if (pendingDuplicate) {
         errors.push(
             `This app appears to duplicate open submission #${pendingDuplicate.number}: ${pendingDuplicate.url}`,
+        );
+    }
+
+    if (/^\d+$/.test(submission.quest) && !isOpenQuest(submission.quest)) {
+        errors.push(
+            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
         );
     }
 

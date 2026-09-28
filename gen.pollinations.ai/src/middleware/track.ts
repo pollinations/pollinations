@@ -51,6 +51,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     PROMPT_CACHE_TYPE_HEADER,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -365,6 +366,7 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
+                    c.get("error"),
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -672,6 +674,7 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
+    error?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -698,9 +701,32 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({
+        // A failure is billed only when the provider charged for it, which the
+        // handler reports on the error (an xAI video rejected after generation).
+        const usage =
+            error instanceof UpstreamError ? error.billedUsage : undefined;
+        if (!usage) {
+            return notBilled({
+                modelUsed,
+            });
+        }
+        return {
+            responseStatus: response.status,
+            cacheHit,
+            isBilledUsage: true,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                input: pricingInput,
+            }),
             modelUsed,
-        });
+            modelProviderUsed,
+            usage,
+        };
     }
 
     // Verify the response content-type matches the expected output before
@@ -1280,11 +1306,30 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
             "Failed to determine model: x-model-used header was missing",
         );
     }
+    const unitsHeader = response.headers.get(PROVIDER_BILLING_HEADERS.units);
+    const unitCostHeader = response.headers.get(
+        PROVIDER_BILLING_HEADERS.unitCost,
+    );
+    let providerBilling: PricingInput["providerBilling"];
+    if (unitsHeader !== null || unitCostHeader !== null) {
+        const units = Number(unitsHeader);
+        const unitCost = Number(unitCostHeader);
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(unitCost) ||
+            unitCost <= 0
+        ) {
+            throw new Error("Invalid provider billing receipt");
+        }
+        providerBilling = { units, unitCost };
+    }
     const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed,
         usage,
         pricingInput: {
+            providerBilling,
             hasExplicitCacheHit:
                 response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
         },

@@ -355,7 +355,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
+                "Perplexity Sonar search context size: how much page content each web search reads. Larger sizes use more input tokens.",
             )
             .optional(),
         temperature: z

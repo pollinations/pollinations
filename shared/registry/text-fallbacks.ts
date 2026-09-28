@@ -5,11 +5,6 @@ import {
 } from "./cost-variants";
 import { openRouterGeminiBilling } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
-import {
-    PERPLEXITY_PRO_BILLING,
-    PERPLEXITY_REASONING_BILLING,
-    PERPLEXITY_SONAR_BILLING,
-} from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
@@ -28,75 +23,6 @@ export const TEXT_FALLBACKS = {
                 promptImageTokens: perMillion(2) * 1.055,
                 promptVideoTokens: perMillion(2) * 1.055,
                 completionTextTokens: perMillion(6) * 1.055,
-            },
-        },
-    },
-    "perplexity/sonar": {
-        "perplexity/sonar:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(1.0) * 1.055,
-                completionTextTokens: perMillion(1.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_SONAR_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
-            },
-        },
-    },
-    "perplexity/sonar-pro": {
-        "perplexity/sonar-pro:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(3.0) * 1.055,
-                completionTextTokens: perMillion(15.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_PRO_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
-            },
-        },
-    },
-    "perplexity/sonar-reasoning-pro": {
-        "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonarReasoning,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(2.0) * 1.055,
-                completionTextTokens: perMillion(8.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_REASONING_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
             },
         },
     },
@@ -127,6 +53,12 @@ export const TEXT_FALLBACKS = {
                 },
             },
         },
+    },
+    "openai/gpt-6-sol": {
+        "openai/gpt-6-sol:openai": { provider: "openai" },
+    },
+    "openai/gpt-6-luna": {
+        "openai/gpt-6-luna:openai": { provider: "openai" },
     },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:azure:sweden": {

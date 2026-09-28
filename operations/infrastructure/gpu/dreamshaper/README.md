@@ -28,8 +28,19 @@ Three things fail **silently** if changed — no exception, just bad images:
 | **3** | **clean** | **6.18** | **3.88** |
 | 4 | marginally crisper | 5.06 | 3.01 |
 
-Demand is 4.80 img/s average and **5.72 img/s peak hour**, so a single RTX 3090
-at 3 steps covers peak with ~8% headroom. 4 steps does not (5.06 img/s).
+These are historical single-client measurements, not production capacity.
+Historical demand reached **5.72 img/s peak hour**; the production deployment
+uses two GPUs with three Uvicorn processes each. A single-client benchmark
+previously overstated usable capacity and led to a growing production queue.
+
+The September 26 RTX 3060 candidate on machine `35285` was qualified with
+open-loop traffic through its named Cloudflare hostname: **207/210 successes
+at 210 offered RPM**, three queue-full 503s, **1.107s p50 / 1.676s p95**,
+and **203.14 successful RPM** including response completion time. This is a
+measured single-worker sample, not a zero-error capacity guarantee. Public
+fixed-seed output matched the local worker, and model plus four tunnel
+connections recovered in 29 seconds after restart. Keep cross-worker retry
+and both production replicas; do not infer that one card covers the fleet.
 
 Bigger cards do not help at batch 1: an RTX 4090 measured 4.99 img/s at 3 steps
 — *slower than the 3090* — because its shared 64-core EPYC host is CPU-dispatch
@@ -104,6 +115,23 @@ Python process in the dedicated DreamShaper venv before clearing port 8766 and
 relaunching Uvicorn. Killing only the listener is insufficient: spawned
 workers and the resource tracker can survive their parent and cause an
 `Address already in use` loop.
+
+For replacement drains, verify the **running processes**, not only the saved
+`HEARTBEAT_ENABLED=false` setting. Older deployed startup scripts may lack
+the cleanup above and leave a Python process heartbeating with its old
+environment. Stop that stale supervisor/process tree, restore the old endpoint
+with registration disabled, and wait until its URL disappears from `/register`
+before destruction. The registry excludes heartbeats after 180 seconds; its
+KV entry has a 240-second TTL. Keep the replacement registered throughout.
+
+Before destroying the old GPU, verify final API outcomes as well as backend
+logs. In Tinybird, filter `model_requested IN ('dreamshaper', 'sana')` and
+`is_final`; `resolved_model_requested` currently contains the canonical
+`lykon/dreamshaper-8-lcm`, not those public slugs. An empty query is not evidence
+of zero failures. Compare completed before/after windows, separate client
+4xxs from final 5xxs, and include representative bursts: the September 26
+replacement passed a 210-RPM canary yet later shed user requests during a
+484-request/minute fleet burst. Backend 200s alone are not a retirement gate.
 
 **Ordering matters when replacing sana.** Before this change `sana` was reached
 through a hardcoded backend URL that bypassed the registry pool. Deploy and

@@ -36,6 +36,11 @@ const REPO = `${REPO_OWNER}/${REPO_NAME}`;
 // Matches `### Reward\n<number>` in an issue body. Kept identical to the legacy
 // GitHub Actions parser so already-parsed bounties keep their reward amount.
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
+// An approved app submission can close a quest. The bot opens that catalog PR
+// on an auto/app-<issue>- branch and credits the submitter as commit co-author.
+// A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
+const APP_PUBLISH_BOT = "pollinations-ai";
+const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
 
@@ -54,10 +59,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 2 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 4,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -90,6 +95,27 @@ type GitHubUser = {
     databaseId?: number | null;
 };
 
+type ClosingPullRequest = {
+    number: number;
+    mergedAt: string | null;
+    headRefName: string;
+    author: (GitHubUser & { __typename: string; login: string }) | null;
+};
+
+type CommitAuthorsData = {
+    repository: {
+        pullRequest: {
+            commits: {
+                nodes: {
+                    commit: {
+                        authors: { nodes: { user: GitHubUser | null }[] };
+                    };
+                }[];
+            };
+        };
+    };
+};
+
 type GitHubIssueNode = {
     number: number;
     state: "OPEN" | "CLOSED";
@@ -98,13 +124,7 @@ type GitHubIssueNode = {
     body: string | null;
     labels: { nodes: { name: string }[] };
     assignees: { nodes: GitHubUser[] };
-    closedByPullRequestsReferences: {
-        nodes: {
-            number: number;
-            mergedAt: string | null;
-            author: GitHubUser | null;
-        }[];
-    };
+    closedByPullRequestsReferences: { nodes: ClosingPullRequest[] };
 };
 
 type GitHubPullRequestNode = {
@@ -133,8 +153,7 @@ type PaginatedSearchData<TNode> = {
     };
 };
 
-// Reads at most 10 linked PRs per quest on purpose: close losing PRs before
-// merging winners so every paid PR stays within the first 10.
+// Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:100){
@@ -143,10 +162,21 @@ query($query:String!){
         number state title url body
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
-        closedByPullRequestsReferences(first:10){
-          nodes{ number mergedAt author{ ... on User{ databaseId } } }
+        closedByPullRequestsReferences(first:100){
+          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
         }
       }
+    }
+  }
+}`;
+
+// Asked only for app-publish PRs: adding commit authors to the issue search
+// multiplies its rate-limit cost about 200 times.
+const COMMIT_AUTHORS_QUERY = `
+query($number:Int!){
+  repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
+    pullRequest(number:$number){
+      commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } }
     }
   }
 }`;
@@ -230,7 +260,40 @@ function mergedClosers(issue: GitHubIssueNode) {
     );
 }
 
-function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
+function isAppPublishPr(pr: ClosingPullRequest): boolean {
+    return (
+        pr.author?.__typename === "Bot" &&
+        pr.author.login === APP_PUBLISH_BOT &&
+        APP_PUBLISH_BRANCH.test(pr.headRefName)
+    );
+}
+
+function githubIds(users: (GitHubUser | null)[]): number[] {
+    return users.flatMap((user) =>
+        typeof user?.databaseId === "number" ? [user.databaseId] : [],
+    );
+}
+
+// The commit authors of an app-publish PR are the bot and the submitter; the
+// bot has no Pollinations account, so only the submitter can be paid.
+async function commitAuthorIds(
+    token: string,
+    number: number,
+): Promise<number[]> {
+    const data = await graphql<CommitAuthorsData>(token, COMMIT_AUTHORS_QUERY, {
+        number,
+    });
+    return githubIds(
+        data.repository.pullRequest.commits.nodes.flatMap((node) =>
+            node.commit.authors.nodes.map((author) => author.user),
+        ),
+    );
+}
+
+function toDerivedQuestIssue(
+    issue: GitHubIssueNode,
+    appPublishPayees: Map<number, number[]>,
+): DerivedQuestIssue {
     const body = issue.body ?? "";
     const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
@@ -245,9 +308,9 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
         rewardAmount: parseReward(body),
         state,
         completedByGithubIds: closers.flatMap((pr) =>
-            typeof pr.author?.databaseId === "number"
-                ? [pr.author.databaseId]
-                : [],
+            isAppPublishPr(pr)
+                ? (appPublishPayees.get(pr.number) ?? [])
+                : githubIds([pr.author]),
         ),
     };
 }
@@ -259,13 +322,26 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         { query: `repo:${REPO} label:${QUEST_LABEL} is:issue` },
     );
 
-    return data.search.nodes
+    const issues = data.search.nodes
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
-        )
-        .map(toDerivedQuestIssue)
+        );
+    const appPublishPrs = issues
+        .flatMap(mergedClosers)
+        .filter(isAppPublishPr)
+        .map((pr) => pr.number);
+    const appPublishPayees = new Map(
+        await Promise.all(
+            appPublishPrs.map(
+                async (number) =>
+                    [number, await commitAuthorIds(token, number)] as const,
+            ),
+        ),
+    );
+    return issues
+        .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);
 }
 

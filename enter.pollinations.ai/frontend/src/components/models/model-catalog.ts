@@ -204,7 +204,8 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
             !model.agent &&
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
-            outputSortPrice === undefined,
+            outputSortPrice === undefined &&
+            !model.pricing_adjustments?.some(({ price }) => Number(price) > 0),
         alpha: model.alpha,
         addedDate: model.added_date,
         inputSortPrice,

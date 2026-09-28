@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import { textEnvironmentValue } from "../environment.js";
+import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -11,7 +12,7 @@ import {
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
-    createPerplexityModelConfig,
+    createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -172,15 +173,27 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6-luna": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
 
     // -- OpenAI direct (GPT-6) -------------------------------------------------
-    "gpt-6-sol": () => ({
+    "gpt-6-sol-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         model: "gpt-6-sol",
     }),
-    "gpt-6-luna": () => ({
+    "gpt-6-luna-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
@@ -796,22 +809,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Perplexity -----------------------------------------------------------
-    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
-    "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
-    "perplexity/sonar": createPinnedOpenRouterConfig(
-        "perplexity/sonar",
-        "perplexity",
-    ),
-    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-pro",
-        "perplexity",
-    ),
-    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ),
+    // The Sonar transform turns the caller's search options into web_search
+    // tool settings.
+    "perplexity/sonar": (options?: TransformOptions) =>
+        createPerplexityAgentConfig(
+            "perplexity/sonar",
+            options?.perplexityWebSearch,
+        ),
 
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({

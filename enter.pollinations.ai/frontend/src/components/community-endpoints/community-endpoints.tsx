@@ -28,7 +28,7 @@ import {
 } from "react";
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -101,10 +101,10 @@ export function DeploymentsPlaceholder({
     error?: string | null;
     onRetry?: () => void;
 }) {
-    if (!error) return null;
     const titles = canPublish
         ? ["Publisher info", "Agents", "Models"]
         : ["Agents", "Models"];
+    if (!error) return <PageLoading titles={titles} />;
     return (
         <>
             {titles.map((title) => (

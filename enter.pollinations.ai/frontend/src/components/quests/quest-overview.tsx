@@ -9,7 +9,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    LoadingStatus,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -36,7 +35,11 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -895,9 +898,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {state.loading && (
-                    <LoadingStatus>Loading quests…</LoadingStatus>
-                )}
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
@@ -908,9 +908,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             claimable={claimable}
                         />
                     )}
-                    {state.checking && (
-                        <LoadingStatus>Refreshing quests…</LoadingStatus>
-                    )}
+                    {state.checking && <PageStatus />}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (
                         <QuestSummary

@@ -3,16 +3,19 @@ TOKEN tinybird_read READ
 DESCRIPTION >
     Google Analytics Data API responses for the retired pollinations.ai GA4 property 277369924
     (tag G-LPZ9GEJVHR), copied by .github/workflows/data-export-ga-history-tinybird.yml before
-    the old Google Workspace goes away. One row per dataset, calendar month and start_row, body as
-    returned. Datasets: traffic (day, source, medium, campaign, country, device), hosts (day,
-    site, country). No page paths. Re-runs re-send every month: use the latest fetch per
-    dataset, month and start_row.
+    the old Google Workspace goes away. One row per dataset, calendar month and start_row, body
+    as returned; ranges end two days before the run, once GA has processed them. Datasets:
+    traffic (day, source, medium, campaign, country, device), hosts (day, site, country). No
+    page paths. Every response of a run shares fetched_at; row_count is GA's total for the
+    report, so the latest fetched_at per dataset and month is complete when its bodies hold
+    row_count rows.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,
     `start_date` Date `json:$.start_date`,
     `end_date` Date `json:$.end_date`,
     `start_row` UInt32 `json:$.start_row`,
+    `row_count` UInt32 `json:$.row_count`,
     `fetched_at` DateTime `json:$.fetched_at`,
     `body` String `json:$.body`
 

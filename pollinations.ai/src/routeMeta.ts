@@ -4,7 +4,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
         title: "pollinations.ai — Every model, one wallet.",
         description:
-            "Build with AI models and ready-made agents through one platform, one API and a shared Pollen wallet.",
+            "Build AI apps with models, ready-made agents, and shared infrastructure. Pay for usage with Pollen, our platform credit—buy it or earn it through Quests.",
     },
     "/play": {
         title: "Play | pollinations.ai",

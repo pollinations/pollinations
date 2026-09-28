@@ -156,7 +156,7 @@ function AppSearchInput({
     const options = draft
         ? draft.key === "platform"
             ? availablePlatforms.map((value) => PLATFORM_LABELS[value])
-            : ["true", "false"]
+            : ["Yes", "No"]
         : (() => {
               const tokenStart = query.lastIndexOf(" ") + 1;
               const prefix = query.slice(0, tokenStart);
@@ -197,8 +197,9 @@ function AppSearchInput({
             onPlatformsChange(next);
         } else {
             const normalized = value.trim().toLowerCase();
-            if (normalized !== "true" && normalized !== "false") return false;
-            onPollenPayChange(normalized === "true");
+            if (!["yes", "no", "true", "false"].includes(normalized))
+                return false;
+            onPollenPayChange(normalized === "yes" || normalized === "true");
         }
         resetDraft();
         return true;
@@ -330,11 +331,11 @@ function AppSearchInput({
                             draft?.key !== "pollen-pay" && (
                                 <EditableComboboxToken
                                     label="Pollen Pay"
-                                    value={pollenPay ? "true" : "false"}
+                                    value={pollenPay ? "Yes" : "No"}
                                     highlighted={
                                         pendingRemoval === "pollen-pay"
                                     }
-                                    aria-label={`Change Pollen Pay filter: ${pollenPay}`}
+                                    aria-label={`Change Pollen Pay filter: ${pollenPay ? "Yes" : "No"}`}
                                     onClick={editPollenPay}
                                 />
                             )}

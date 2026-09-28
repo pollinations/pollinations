@@ -316,12 +316,12 @@ export function SiteHeader() {
                             as="a"
                             href="https://enter.pollinations.ai"
                             size="sm"
-                            aria-label="Login"
-                            title="Login"
+                            aria-label="Sign in"
+                            title="Sign in"
                             className={DESKTOP_ACTION_CLASS}
                         >
                             <LogInIcon className="h-4 w-4" />
-                            <span>Login</span>
+                            <span>Sign in</span>
                             <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
                         </Button>
                         <div className="hidden h-9 items-center min-[780px]:flex">
@@ -428,7 +428,7 @@ export function SiteHeader() {
                                             className="w-full gap-2 px-3"
                                         >
                                             <LogInIcon className="h-4 w-4 shrink-0" />
-                                            Login
+                                            Sign in
                                             <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
                                         </Button>
                                     </div>

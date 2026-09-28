@@ -1,0 +1,204 @@
+# Website V2 — finalization roadmap
+
+> Keep the personality. Make the promises precise. Make the first experience dependable.
+
+**Updated:** 27 September 2026
+
+**Branch / PR:** `feat/website-v2` · [#14472](https://github.com/pollinations/pollinations/pull/14472)
+
+**Reviewed baseline:** `ee4739669c11cb67367767983706a2e3b71799f2`
+
+**Status:** Planned. This document changes no product behavior and authorizes no deployment or moderation action.
+
+## 1. What we are finishing
+
+Pollinations.ai should explain a coherent platform: models and ready-made agents, developer tools, connected user wallets, and a community that builds on them. The website should make it easy to understand the offer, try it, build with it, and contribute.
+
+This is a focused finalization pass—not another redesign. Keep the illustrations, day/night identity, existing page structure, and shared UI language. Fix inaccurate promises, broken journeys, misleading data, and distracting presentation.
+
+| Page | Primary job | The visitor should leave understanding… |
+| --- | --- | --- |
+| Hello | Explain the platform and its value | What Pollinations provides, what Pollen is, how to start, and which earning paths exist today. |
+| Play | Demonstrate the product reliably | What they can generate, which agent/model is selected, what access or payment is required, and what happens to uploads. |
+| Apps | Show credible community-built examples | What each app does, where it runs, whether it connects their wallet, and how to list their own app. |
+| Community | Turn interest into participation | How to contribute, which decisions are open, and how the project is progressing. |
+
+Enter is the reference for shared controls and product terminology, not a reason to turn the marketing website into a dashboard. Shared-package changes must also be checked in Enter and affected consumers.
+
+## 2. How to read this roadmap
+
+- **Verified:** checked against the current source or public endpoint while preparing this roadmap. Source verification is not the same as an end-to-end test.
+- **Reported:** observed in the supplied reviews; reproduce before implementing. Counts, availability, and catalog order are snapshots, not permanent requirements.
+- **Decision:** needs an explicit product/design/maintainer choice. Recommendations below are not approvals.
+
+Leave a task unchecked until its acceptance criteria pass. Record the commit and validation evidence beside its ID when completed. Use one cohesive commit per task where practical; do not mix unrelated fixes or repository-wide formatting.
+
+**Working agreement (28 September 2026):** keep this work on `feat/website-v2` and push each validated step in granular commits. Preserve other agents' work. Do not split supporting changes into separate PRs unless requested. Pushing does not authorize analytics or production deployments, secret changes, or merging the website PR.
+
+### Important corrections to the reviews
+
+| Topic | Final direction |
+| --- | --- |
+| Headline | Keep the shared wallet as a differentiator. Do not replace the headline with a generic “One platform” message. |
+| Model earnings | Keep **75% of the model’s listed price**. It is not necessarily 75% of everything the user pays, because app earnings can add a markup. |
+| App earnings | Conditional on the integration and earnings setting. Explain the existing 1 → 1.25 → 0.25 example; do not imply that merely listing an app earns usage revenue. |
+| Agent earnings | Do not promise publisher revenue today. The managed-agent wrapper has no owner-set price; underlying model/tool calls can still cost Pollen. |
+| Earned balances | Explain Paid versus Quest Pollen without implying either can currently be cashed out. Verify wording against billing behavior and current docs. |
+| History archive | Treat the missing archive as a launch dependency, not proof that no pipeline exists. The job exists but currently excludes manual runs. |
+| App popularity | The developer-total fallback applies to **non-BYOP apps**; BYOP apps already use hostname-based attribution. Fix the distinction, not an imagined universal failure. |
+| Catalog sync | It runs on matching pushes to `main`, daily, and manually—not only daily. Branch-only catalog edits do not change the public feed. |
+| Local styling | Website layout and artwork wrappers are legitimate. Audit overrides of shared control behavior; do not delete every local class. |
+| “Pollen Pay” | This name was previously chosen. Do not automatically rename it to “Connect User Wallets”; decide consumer wording separately from developer documentation terminology. |
+| App quality | Similar listings warrant evidence-based review, not an accusation of reward farming. Language, account age, or a numeric username alone proves nothing. |
+
+## 3. Decisions to settle
+
+These should not block independent correctness fixes.
+
+| ID | Decision | Recommendation | Status |
+| --- | --- | --- | --- |
+| D1 | Keep “Every model, one wallet”? | Consider **“Hundreds of models. One wallet.”** Avoid a universal claim, retain the differentiator, and check wrapping rather than retaining the `9ch` constraint blindly. | Pending |
+| D2 | What should Apps show first? | Use a maintained, representative featured selection; retain New as a deliberate choice. Do not make Popular the default until attribution is trustworthy. | Pending |
+| D3 | Consumer name for connected-wallet apps | Retain **Pollen Pay** provisionally; explain it briefly and replace raw true/false labels with readable choices. Keep **Connect user wallets** in developer copy. | Pending |
+| D4 | Shared primary-button treatment in dark mode | Measure current states, then agree on an accessible shared treatment before changing package-wide colors. | Pending |
+| D5 | Who belongs in Supporters? | Have the relationship owner approve names, category, and links. A paid provider is not automatically a supporter; absence from README is not proof of an error. | Pending |
+| D6 | Questionable listings and outdated votes | Maintainer reviews the evidence and decides corrections, removal, or issue closure. No automatic deletions or reward changes. | Pending |
+
+## 4. Execution checklist
+
+### Phase A — product correctness and trustworthy claims
+
+Fix these before calling V2 ready for production. Removing an unsupported claim or temporarily hiding an unsupported control is preferable to displaying misleading behavior.
+
+**A1 completed — 27 September 2026:** User validated the local result. Updated Floret's canonical ID and made it the deliberate default without replacing explicit choices. Missing selections offer the existing, enabled agent picker instead of silently changing agents. Validation: 85 website tests, formatting, type-check/production build, desktop/mobile browser checks, and an authenticated production Floret response through the website's real chat transport passed. Pushed to `feat/website-v2` as `418244f377` on 28 September; no deployment requested.
+
+- [x] **A1 · Restore Floret and choose a dependable initial agent.** **Completed and user-validated.** The website now uses `community/pollinations-ai/floret` as the deliberate default and preserves explicit selections. If the chosen/default agent is absent, it offers an enabled selector rather than silently picking the first catalog entry. Welcome text, attachment support, and routing controls use the corrected identity. Validation evidence is recorded above. [Play sources][play-models] · [Live catalog][catalog]
+
+- [ ] **A2 · Do not accept audio that generation ignores.** **Implemented and pushed — awaiting user validation (28 September 2026).** Keep controls driven by the live catalog's modalities and supported endpoints, not model-name allowlists. Reference-audio generation now uploads and forwards the file URL through the shared SDK; voice changing and isolation send multipart files to their declared endpoints without requiring a text prompt. Existing speech and transcription remain supported. Reference uploads use the shared temporary/public-upload notice. Validation: 96 SDK tests and 95 website tests, type-check/build, desktop/mobile UI checks, and authenticated live speech, transcription, voice-changing, isolation, and reference-music requests passed. Live test media was synthetic; the music reference needed at least 10 seconds. No catalog/backend changes. Pushed as `3448da6f6d`; no deployment requested. [Playground][playground]
+
+- [ ] **A3 · Preserve the intended action across sign-in.** **Implemented locally — awaiting user validation (28 September 2026).** Same-tab session drafts retain the agent, media tab/task, model, prompt, routing, and generation settings for 30 minutes after the last save. No draft state goes into URLs or telemetry; files, credentials, and conversation history are not saved. Pending files get a reattach notice. Catalog loading no longer replaces restored models or resets their settings, and chat initialization preserves restored text. Validation: 107 website tests, formatting, type-check/build, a real Enter authorization round trip (user completed consent), media and routing reload checks, and mobile layout passed. The selected Pen agent and unsent text survived sign-in; video model, portrait format, 1080P resolution, 10-second duration, and Floret routing survived reload. No request was automatically sent. Not committed, pushed, or deployed. [Chat][chat] · [Playground][playground]
+
+- [ ] **A4 · Correct catalog classification and availability scope.** **Community count fixed locally — awaiting user validation; availability deferred (28 September 2026).** The count now uses the catalog's explicit `community: true` flag and is labeled “community models and agents.” Desktop/mobile checks matched the live catalog (111 community entries; 196 official entries excluded). Regression coverage includes provider-qualified official IDs, community models and agents, and absent classification. All 108 website tests, formatting, and type-check/build passed. The live statistics endpoint does not return `official_availability`, so the website already hides it; the proposed local slash-based query remains undeployed and must be corrected before any future analytics deployment. No analytics changes or deployment in this step. **Remaining:** validate the count with the user; document and verify availability's population, time window, and denominator in staging before any separately approved production deployment. Keep the availability claim hidden until trustworthy. [Catalog stats][stats] · [Health query][health]
+
+- [ ] **A5 · Make paid access and agent capabilities visible before generation.** **Reported UI gap.** Reuse Enter/SDK metadata for Paid-Pollen requirements, capability limits, and available health information. Distinguish a free agent wrapper from paid underlying calls; do not invent a fixed cost for variable multi-step agent work. **Done when:** users can understand why a selection needs Paid Pollen before submitting, and failed/degraded agents are not presented as a dependable default.
+
+- [ ] **A6 · Repair first-party entry links.** **Implemented locally — awaiting user validation (28 September 2026).** Apps and Community now link to `app-submission.yml`. Browser verification opened the actual “Submit an app” form with the `APP-SUBMISSION` label; no issue was submitted. `/docs` and `/docs/` redirect GET/HEAD requests to the API documentation with HTTP 301. Live local-worker checks confirmed the redirect, including query strings, while `/docs/missing` and unrelated unknown URLs remain 404. Browser redirect verification, all 122 website tests, formatting, and the production build passed. No visual changes, commit, push, or deployment in this step. [Community links][community-page] · [Template][submission-template] · [Worker][worker]
+
+### Phase B — discovery, community data, and launch dependencies
+
+- [ ] **B1 · Make the Apps first impression representative.** **Reported content issue; D2 required.** Review the initial visible listings and existing featured selection for useful variety and clear descriptions. Inspect duplicate-looking apps by behavior, provenance, and submission evidence. **Done when:** the default view follows the agreed selection policy; New remains available; maintenance ownership is clear. Listing removal or reward action requires a separate maintainer decision.
+
+- [ ] **B3 · Use only BYOP traffic for app popularity.** **Implemented locally — awaiting user validation (28 September 2026).** BYOP-only was already agreed. Popular ordering, popularity badges, and the Hello showcase now ignore non-BYOP developer totals. Other apps remain listed, with unknown usage sorted after measured usage rather than treated as zero. Weekly featured cards cannot relabel stale developer-wide daily totals as BYOP usage. The producer and shared analytics endpoints are unchanged; the separate weekly endpoint deployment remains deferred. All 139 website tests, formatting, and the production build passed; desktop/mobile browser checks confirmed non-BYOP listings remain accessible without popularity badges and no horizontal overflow. **Data caveat:** the current live directory has no BYOP app meeting the unchanged 100-requests/day showcase threshold, so Hello hides the shelf using its existing empty-state behavior; its position is unchanged. No commit, push, or deployment in this step. [Metrics producer][app-metrics] · [Showcase selection][stats]
+
+- [ ] **B4 · Verify automatic history refresh after merge.** **Launch dependency, not a confirmed automation failure (28 September 2026).** GitHub's default `main` branch already schedules daily/weekly/monthly summary generation, but the separate PR-history refresh job exists only on website-v2. Once merged, it is configured to refresh `community-pr-history.json` on `news` daily at 06:00 UTC. The archive currently returns 404, so the website uses its bundled August 30 snapshot; summaries and images are separate news-branch data. **Done when:** the scheduled job succeeds after merge, the website reads the published archive, and coverage, dates, monthly totals, and freshness are verified. A manual archive-only action is optional recovery tooling, not required routine operation; no implementation agreed. Keep generated monthly backfill out of the website PR and leave Buffer/Discord/Reddit publishing unchanged. [History workflow][history-workflow] · [Archive URL][history-archive]
+
+- [ ] **B5 · Refresh the contribution and voting journeys.** **Verified stale link; current issue status needs rechecking.** Replace the empty “good first issue” destination with a useful existing contribution route, such as open `POLLEN-QUEST` issues, and name it honestly—not every quest is beginner-friendly. Have a maintainer review vote #5321 and other displayed questions before removing or replacing them. **Done when:** contribution links lead to actionable work; open votes still represent undecided questions; zero votes has an intentional empty state. Do not create replacement labels ad hoc. [Community page][community-page]
+
+- [ ] **B6 · Verify app destinations and public attribution.** **Reported sweep, not independently repeated here.** Recheck malformed URLs, persistent failures, and author display names. Distinguish bot protection and transient outages from dead apps. **Done when:** external links use valid destinations and cannot resolve accidentally as on-site paths; confirmed failures have an owner-approved correction; missing attribution does not expose an unexplained internal ID. Do not bulk-delete from the reported failure count.
+
+- [ ] **B7 · Reconcile Supporters with actual relationships.** **Reported discrepancy; D5 required.** Compare the website, README, and current relationship records. **Done when:** the owner-approved list uses accurate supporter/partner/provider distinctions and valid destinations. Counts alone are not acceptance criteria. [Community data][community-data]
+
+### Phase C — copy, positioning, and reading order
+
+Preserve working copy. Make surgical changes, not a second blanket rewrite.
+
+- [ ] **C1 · Explain Pollen at first mention.** Put a short definition in the hero or directly adjacent supporting copy: **“Pollen is the credit used to pay for AI usage.”** Keep approximate dollar equivalence in supporting explanation, not as a fixed purchase/cash-redemption promise. Align hero, metadata, and wallet language. **Done when:** a first-time visitor understands both the platform and the credit before reaching the next section. Headline wording remains D1. [Hello][hello]
+
+- [ ] **C2 · Make the two hero actions match their destinations.** Retain two clear actions. If the first opens Quests, name or qualify that path—for example, **“Earn Pollen with Quests”**—without suggesting unlimited anonymous generation. Link docs to the actual Quick Start anchor after verifying it. **Done when:** free access, sign-in, and Paid-Pollen limits are understandable without extra marketing buttons.
+
+- [ ] **C3 · Explain the platform without implying app hosting exists today.** Scope infrastructure claims to what is provided: model access, generation, authentication, connected wallets, billing, SDKs, and tools. Distinguish ready-made agents in Build from creating/publishing agents in Publish. Replace “caller’s Pollen” with “the user’s Pollen.” **Done when:** current features and “On the way” promises do not contradict one another. [Build and publishing cards][devkit]
+
+- [ ] **C4 · Give each publishing path its own next step.** App: list it in the catalog. Model: read publishing requirements and follow the real setup/access flow. Agent: learn how to publish a prompt/code agent. Reuse existing destinations and shared link components. **Done when:** users do not have to infer three different workflows from one generic “Open dashboard” button; listing is not described as hosting or deploying an app.
+
+- [ ] **C5 · Make earnings understandable without changing their meaning.** Keep separate model/app/agent rows and nearby documentation links. Elevate the existing example: **“With app earnings enabled, 1 Pollen of base usage costs the user 1.25 Pollen; the app receives 0.25.”** Keep model earnings tied to listed price. Explain that Paid-funded usage credits Paid Pollen and Quest-funded usage credits Quest Pollen; Quest Pollen cannot pay for Paid-only models, and cashouts are not currently available for either balance. Remove the opaque “separate calculations” sentence once the example and labels do the work. **Done when:** prerequisites are clear and no claim promises agent earnings today, cash redemption, app self-usage rewards, or 75% of a marked-up total. Verify the bucket wording and final copy against billing and publishing docs. [Earnings section][money]
+
+- [ ] **C6 · Keep privacy notices short and correctly linked.** Retain two quiet, readable lines covering third-party models/tools and public, temporary uploads. Link upload retention/privacy details to Privacy; use Terms for contractual conditions if needed. **Done when:** warnings remain visible near the action without becoming another card or repeated tooltip, and neither copy nor placement makes public URLs sound private.
+
+- [ ] **C7 · Finish a terminology and copy-layout pass.** Use Pollinations.ai consistently; keep “model publisher,” “app developer,” and “agent publisher” meaningful; distinguish listing, publishing, and hosting. Resolve D3 before renaming Pollen Pay. Use readable filter states instead of true/false. **Done when:** CTA labels, icons, descriptions, headings, metadata, and destinations agree across Hello, Play, Apps, Community, and Enter. Avoid unsupported “all/every/free” claims and hardcoded live counts.
+
+### Phase D — quiet, consistent visual polish
+
+- [ ] **V1 · Keep earnings documentation icons beside their text.** **Reported visual defect; source composition inspected.** Make the document icon and external arrow an intentional inline unit with an accessible name and adequate hit area. **Done when:** neither icon becomes an accidental standalone line at supported widths, zoom levels, or font sizes. Preserve white earning text and the distinct link treatment. [Earnings section][money]
+
+- [ ] **V2 · Fix CTA contrast through the shared UI contract.** **Reported contrast value; remeasure first; D4 required.** Check normal, hover, focus, active, and disabled states in both themes. Separate website layout classes from local overrides fighting shared control colors. **Done when:** enabled normal-size text meets 4.5:1 contrast, large text meets 3:1, focus is visible, and shared changes are verified in Enter and affected apps. Preserve the shared authentication button’s behavior and naming; no one-off auth redesign.
+
+- [ ] **V3 · Make votes and voice selection fit their content.** The votes layout has fixed three-column tracks from 700px; adapt it to zero, one, two, and three items. Replace large voice-chip walls with a constrained selector using the existing dropdown pattern; preserve valid choices and keyboard behavior. **Done when:** a single vote does not occupy a narrow third of empty space, and selecting a voice does not require tabbing through dozens of chips. [Community page][community-page] · [Playground][playground]
+
+- [ ] **V4 · Rebalance mobile branding and illustration weight.** **Reported observations; visual decision required.** Test whether a compact wordmark improves orientation without crowding mobile navigation. Reduce the Quests illustration’s dominance if it delays the Build message excessively. Preserve distinct page worlds and coherent day/night scenes; do not regenerate all assets as a prerequisite to launch. **Done when:** the product remains recognizable, copy is legible over art, and the first useful action is easy to find at narrow and medium widths.
+
+- [ ] **V5 · Run the final layout and performance pass.** Check card spacing, clipping, long titles, featured-app height stability, carousel controls, chat growth, menus, overlays, and reduced motion. Measure current asset/bundle/network costs before optimizing; remove only proven unused assets. **Done when:** no unintended horizontal scroll or layout jumps; responsive images and loading priority are appropriate; comparisons use the same build/device conditions. Keep the Live Now shelf in its approved position and do not reintroduce the reverted participation-card layout.
+
+## 5. Validation gates
+
+### Before calling an implementation task done
+
+- [ ] Reproduce the issue against the current PR head; distinguish source evidence from runtime evidence.
+- [ ] Run relevant existing tests and add targeted coverage for the real contract, not only fixtures preserving old IDs.
+- [ ] Run formatting checks on changed source files and a production build. From the repository root, the website commands are `npm test --prefix pollinations.ai` and `npm run build --prefix pollinations.ai`.
+- [ ] For shared UI/SDK changes, run the owning package’s checks and inspect affected Enter screens. Do not broaden a website fix into an unreviewed shared redesign.
+- [ ] Complete required authenticated/end-to-end checks with existing authorized test access. Keep credentials out of output; ask for a secure access location if missing rather than silently skipping tests.
+
+### Final browser matrix
+
+| Surface | Required checks |
+| --- | --- |
+| Every public page | Light/dark; roughly 375px, 768px, and 1280px; keyboard navigation; focus; 200% zoom; reduced motion; loading/empty/error states. |
+| Hello | First-visit comprehension; CTA destinations; real count definitions; earnings links/math; section order; above-the-fold visual balance. |
+| Play | Logged out/in; authorization return; insufficient/Paid-only balance; curated default absent/unavailable; every supported media path; attachments; inline media; copy/clear/download controls; privacy notices. |
+| Apps | Default, New, Popular; search; single category; platform/Pollen Pay filters; URL/back-button state; empty results; valid external links; carousel height and keyboard controls. |
+| Community | Zero/one/multiple votes; contribution links; live/stale/unavailable counters; month selection; all-time monthly points; month-view daily points; journal sizing and images; archive coverage. |
+| Enter / shared consumers | Connect/sign-in, menus, buttons, dropdowns, theme states, and any screen touched by a shared-component change. |
+| Worker / public URLs | Direct route loads, `/docs`, legal links, intentional 404s, metadata/canonical URLs, cache behavior, and preview-versus-production differences. |
+
+## 6. Release order and scope boundaries
+
+1. **Implement and validate Phase A**, then data/discovery work in Phase B. Copy and isolated layout fixes can proceed while product decisions are pending.
+2. **Validate the complete branch locally and at the fixed preview URL.** Record results and unresolved items; do not equate a successful build with approval to merge.
+3. **Merge only with the requested approval.** Do not assume this roadmap authorizes a merge, push, new PR, secret mutation, or production deployment.
+4. **Complete launch prerequisites after merge:** publish the history archive once; verify the catalog sync picked up approved changes; validate/deploy any required analytics change through the permitted staging-first process. If a data dependency is not ready, omit the dependent claim instead of fabricating a fallback value.
+5. **Promote through the normal release path.** Production Cloudflare deployments run through approved GitHub Actions from `production`, following the separate promotion PR. No local production Worker deployment.
+6. **Smoke-test the public site and dependencies.** Confirm the expected build, links, feed freshness, count scopes, auth flow, and core generation paths. Have a rollback plan for the website and any separately deployed data change.
+
+Out of scope without a separate decision: bulk catalog deletion, reward revocation, supporter/endorsement claims, closing votes, changing social publishing behavior, secret rotation, and generating replacement artwork kits. Generated monthly backfill must not be bundled into the website PR.
+
+## 7. Definition of done
+
+- [ ] Phase A blockers are fixed and tested; no misleading claim or silently ignored input remains.
+- [ ] Every Phase B–D task is completed or explicitly deferred with an owner and reason.
+- [ ] Decisions D1–D6 and the mobile-branding choice are recorded; the implemented result matches them.
+- [ ] Earnings, wallet, access, privacy, and hosting copy match the product—not an aspirational future version.
+- [ ] The browser matrix and affected shared consumers pass, with evidence attached to the relevant task/PR.
+- [ ] Launch prerequisites are verified independently from frontend deployment.
+- [ ] Final diff contains only intended changes; commits are cohesive; no secrets or generated backfill are included.
+- [ ] Maintainer signs off on merge and release separately.
+
+## Deferred — reconsider after all other fixes and validation
+
+- [ ] **B2 · Review catalog description truncation.** **Deferred by the website owner (28 September 2026).** Submission ingestion slices descriptions at 200 characters, allowing mid-word endings. Revisit only after the rest of the website is corrected and validated; this is not a current launch blocker. Discuss explicit length validation and a separate cleanup of existing clipped descriptions, then agree on scope before implementing. No catalog or ingestion changes are approved in this step. Any eventual fix must be checked in the public feed after sync. [Ingestion][submission] · [Catalog sync][catalog-sync]
+
+## Evidence and limitations
+
+This roadmap reconciles the original website review with the supplied review-of-the-review. Source checks were repeated at the baseline above; public checks confirmed the new Floret identity and the missing history archive. It is **not** a fresh full-browser certification, paid-generation test, or repeated audit of every external app URL.
+
+The second review’s exact traffic totals, model counts, failed-link totals, contrast measurement, and listing-quality judgments remain dated observations to recheck. Its introductory statement that the earnings icons “wrap correctly” conflicts with its final confirmed-defect table; use the explicit visual reproduction gate in V1 rather than treating both as facts.
+
+The Pollinations app-review guidelines informed the shared SDK/UI, theme, and validation gates. Marketing-page layout is intentionally not forced into the compact app-shell pattern.
+
+[play-models]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/ui/play/chat-models.ts
+[catalog]: https://gen.pollinations.ai/models
+[chat]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/ui/play/Chat.tsx
+[playground]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/ui/play/Playground.tsx
+[stats]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/data/publicStats.ts
+[health]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe
+[community-page]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/routes/community.tsx
+[community-data]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/data/community.ts
+[submission-template]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/.github/ISSUE_TEMPLATE/app-submission.yml
+[worker]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/worker.ts
+[submission]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/operations/app-management/ingestion/submission.js
+[catalog-sync]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/.github/workflows/data-sync-app-catalog-tinybird.yml
+[app-metrics]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/operations/app-management/performance/update-metrics.js
+[history-workflow]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/.github/workflows/news-generate-summary.yml
+[history-archive]: https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/community-pr-history.json
+[hello]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/routes/index.tsx
+[devkit]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/ui/home/DevKit.tsx
+[money]: https://github.com/pollinations/pollinations/blob/ee4739669c11cb67367767983706a2e3b71799f2/pollinations.ai/src/ui/home/MoneyMoves.tsx

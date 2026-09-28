@@ -1,0 +1,37 @@
+{
+  "pr_number": 15649,
+  "title": "fix(enter): dashboard black screen and one loading status per page",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15649",
+  "merged_at": "2026-09-28T15:48:18Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Follow-up to #15436. Opening a dashboard page, especially on mobile, showed a black screen until the balance request finished.\n\n- Fix: the sidebar wallet's `<Await fallback={null}>` had no Suspense boundary (TanStack's `Await` only adds one for a truthy fallback), so the whole dashboard suspended on the balance request while the route pending screen rendered nothing. The wallet and Top-up now have their own `<Suspense>`.\n- The session check renders the dashboard frame instead of a blank screen.\n- One loading indicator per page: a quiet \"Loading…\" pill floats at the bottom centre of the content column. The pill appears as soon as the page starts loading and stays until every pending section finishes. Sections register by rendering `<PageStatus />`; the shell counts them and shows one pill while the count is above zero.\n- The pill replaces the separate loading UIs: per-card spinners, Quests' \"Loading quests…\" and \"Refreshing quests…\". Cards show their titles with empty bodies while they wait.\n- The page layout is unchanged: the pill floats, so nothing shifts when it appears or disappears.\n\n| | Before | After |\n|---|---|---|\n| Cold load of any dashboard page | Black screen until the balance loads | Frame, card titles and one loading pill |\n| Sections that load at different times (Pollen, Activity, Account, My Models) | Some blank with no indicator | One pill until the last section finishes |\n\nChecked on phone and desktop widths against a stub API with per-request delays. Sampling every 20 ms showed exactly one pill from first paint until the last request, with no gaps. Typecheck and Biome pass.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dashboard, now with a first frame",
+    "blurb": "The dashboard no longer waits in the dark for your balance. Its frame and card titles appear right away, with one quiet loading pill keeping watch until every section is ready.",
+    "summary": "Added Suspense boundaries around the sidebar wallet and Top-up, kept the dashboard frame visible during session checks, and replaced separate section spinners with one page-wide loading pill.",
+    "impact": "On mobile and desktop, dashboard pages now show their frame and card titles immediately instead of a black screen; one floating pill stays visible until the last pending section finishes without shifting the layout.",
+    "keywords": [
+      "dashboard",
+      "loading",
+      "Suspense",
+      "mobile",
+      "wallet",
+      "UI"
+    ],
+    "visual_concept": "A cozy dashboard on a small phone-shaped screen is already visible, with titled cards and a single small Loading… pill below them. Polli watches the cards fill in while tending a little code-plant beside the screen; the scene emphasizes one steady status indicator rather than a collection of spinners.",
+    "image_prompt": "A cozy pixel art scene shows a phone-shaped dashboard with visible card titles and a single small pixel-font 'Loading…' pill floating below the cards; a code-plant grows beside it against a prominent lime green (#ecf874) and soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing tiny reading glasses and warmly watching the dashboard fill in, strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15649.jpg",
+    "prompt": "A cozy pixel art scene shows a phone-shaped dashboard with visible card titles and a single small pixel-font 'Loading…' pill floating below the cards; a code-plant grows beside it against a prominent lime green (#ecf874) and soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing tiny reading glasses and warmly watching the dashboard fill in, strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-28T15:49:24.408534+00:00"
+}

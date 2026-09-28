@@ -52,9 +52,19 @@ export async function sampleModel({
         } catch (error) {
             clearTimeout(timer);
             if (error.name === "AbortError") {
-                return failed(model, "timeout", `timed out after ${timeoutMs}ms`, started);
+                return failed(
+                    model,
+                    "timeout",
+                    `timed out after ${timeoutMs}ms`,
+                    started,
+                );
             }
-            return failed(model, "network", String(error.message || error), started);
+            return failed(
+                model,
+                "network",
+                String(error.message || error),
+                started,
+            );
         }
         clearTimeout(timer);
 
@@ -66,18 +76,34 @@ export async function sampleModel({
 
         if (!res.ok) {
             const body = await safeText(res);
-            return failed(model, res.status === 429 ? "rate_limit" : "http", `HTTP ${res.status}: ${body.slice(0, 200)}`, started, res.status);
+            return failed(
+                model,
+                res.status === 429 ? "rate_limit" : "http",
+                `HTTP ${res.status}: ${body.slice(0, 200)}`,
+                started,
+                res.status,
+            );
         }
 
         let data;
         try {
             data = await res.json();
         } catch (error) {
-            return failed(model, "parse", `invalid JSON: ${error.message}`, started);
+            return failed(
+                model,
+                "parse",
+                `invalid JSON: ${error.message}`,
+                started,
+            );
         }
         const content = data?.choices?.[0]?.message?.content;
         if (typeof content !== "string") {
-            return failed(model, "parse", "no choices[0].message.content", started);
+            return failed(
+                model,
+                "parse",
+                "no choices[0].message.content",
+                started,
+            );
         }
         return {
             ok: true,
@@ -91,7 +117,14 @@ export async function sampleModel({
 }
 
 function failed(model, kind, error, started, status) {
-    return { ok: false, model, kind, error, status, latencyMs: Date.now() - started };
+    return {
+        ok: false,
+        model,
+        kind,
+        error,
+        status,
+        latencyMs: Date.now() - started,
+    };
 }
 
 async function safeText(res) {

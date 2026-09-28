@@ -10,7 +10,9 @@ export function wilson(successes, total, z = 1.96) {
     const z2 = z * z;
     const denom = 1 + z2 / total;
     const center = (p + z2 / (2 * total)) / denom;
-    const half = (z * Math.sqrt((p * (1 - p)) / total + z2 / (4 * total * total))) / denom;
+    const half =
+        (z * Math.sqrt((p * (1 - p)) / total + z2 / (4 * total * total))) /
+        denom;
     return {
         p,
         low: Math.max(0, center - half),
@@ -41,7 +43,9 @@ export function scoreModel(model, samples) {
     const { p, low, high, margin } = wilson(correct, total);
     const failureKinds = {};
     for (const s of samples) {
-        if (!s.ok) failureKinds[s.kind || "unknown"] = (failureKinds[s.kind || "unknown"] || 0) + 1;
+        if (!s.ok)
+            failureKinds[s.kind || "unknown"] =
+                (failureKinds[s.kind || "unknown"] || 0) + 1;
     }
     return {
         failureKinds,

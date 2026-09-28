@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { extractAnswer, grade, aiw, aiwPlus, bowls } from "./puzzle.js";
-import { makeRng, repeatSeed, runSeed } from "./rng.js";
 import { sampleModel } from "./client.js";
+import { aiw, aiwPlus, bowls, extractAnswer, grade } from "./puzzle.js";
+import { makeRng, repeatSeed, runSeed } from "./rng.js";
 import { impostorGaps, scoreModel, wilson } from "./score.js";
 
 test("extractAnswer reads the text after ### Answer:", () => {
@@ -73,10 +73,22 @@ test("wilson gives a margin and handles zero samples", () => {
 
 test("scoreModel counts failures as incorrect, not skipped", () => {
     const score = scoreModel("m", [
-        { ok: true, correct: true, usage: { prompt_tokens: 10, completion_tokens: 2 } },
+        {
+            ok: true,
+            correct: true,
+            usage: { prompt_tokens: 10, completion_tokens: 2 },
+        },
         { ok: false, correct: false },
-        { ok: true, correct: false, usage: { prompt_tokens: 10, completion_tokens: 1 } },
-        { ok: true, correct: true, usage: { prompt_tokens: 10, completion_tokens: 3 } },
+        {
+            ok: true,
+            correct: false,
+            usage: { prompt_tokens: 10, completion_tokens: 1 },
+        },
+        {
+            ok: true,
+            correct: true,
+            usage: { prompt_tokens: 10, completion_tokens: 3 },
+        },
     ]);
     assert.equal(score.total, 4);
     assert.equal(score.failed, 1);
@@ -87,9 +99,24 @@ test("scoreModel counts failures as incorrect, not skipped", () => {
 
 test("impostorGaps only pairs same base names and flags big gaps", () => {
     const scores = [
-        { model: "openai/gpt-6", accuracy: 0.9, margin: 0.05, community: false },
-        { model: "community/mallory/gpt-6", accuracy: 0.2, margin: 0.05, community: true },
-        { model: "community/mallory/pen", accuracy: 0.5, margin: 0.05, community: true },
+        {
+            model: "openai/gpt-6",
+            accuracy: 0.9,
+            margin: 0.05,
+            community: false,
+        },
+        {
+            model: "community/mallory/gpt-6",
+            accuracy: 0.2,
+            margin: 0.05,
+            community: true,
+        },
+        {
+            model: "community/mallory/pen",
+            accuracy: 0.5,
+            margin: 0.05,
+            community: true,
+        },
     ];
     const gaps = impostorGaps(scores);
     assert.equal(gaps.length, 1);
@@ -101,14 +128,30 @@ test("sampleModel marks a 429 as rate_limit and retries slowly", async () => {
     let calls = 0;
     const fetchImpl = async () => {
         calls += 1;
-        if (calls === 1) return { status: 429, ok: false, headers: { get: () => null }, text: async () => "slow down" };
+        if (calls === 1)
+            return {
+                status: 429,
+                ok: false,
+                headers: { get: () => null },
+                text: async () => "slow down",
+            };
         return {
             status: 200,
             ok: true,
-            json: async () => ({ choices: [{ message: { content: "### Answer: 4" } }], model: "m", usage: { prompt_tokens: 1, completion_tokens: 1 } }),
+            json: async () => ({
+                choices: [{ message: { content: "### Answer: 4" } }],
+                model: "m",
+                usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
         };
     };
-    const res = await sampleModel({ model: "m", prompt: "q", seed: 1, fetchImpl, sleep: async () => {} });
+    const res = await sampleModel({
+        model: "m",
+        prompt: "q",
+        seed: 1,
+        fetchImpl,
+        sleep: async () => {},
+    });
     assert.equal(res.ok, true);
     assert.equal(res.attempts, 2);
     assert.equal(res.content, "### Answer: 4");
@@ -123,14 +166,29 @@ test("sampleModel reports a timeout as a failed sample", async () => {
                 reject(error);
             });
         });
-    const res = await sampleModel({ model: "m", prompt: "q", seed: 1, fetchImpl, timeoutMs: 5 });
+    const res = await sampleModel({
+        model: "m",
+        prompt: "q",
+        seed: 1,
+        fetchImpl,
+        timeoutMs: 5,
+    });
     assert.equal(res.ok, false);
     assert.equal(res.kind, "timeout");
 });
 
 test("sampleModel returns no content as a parse failure it does not throw on", async () => {
-    const fetchImpl = async () => ({ status: 200, ok: true, json: async () => ({ choices: [{ message: {} }] }) });
-    const res = await sampleModel({ model: "m", prompt: "q", seed: 1, fetchImpl });
+    const fetchImpl = async () => ({
+        status: 200,
+        ok: true,
+        json: async () => ({ choices: [{ message: {} }] }),
+    });
+    const res = await sampleModel({
+        model: "m",
+        prompt: "q",
+        seed: 1,
+        fetchImpl,
+    });
     assert.equal(res.ok, false);
     assert.equal(res.kind, "parse");
 });

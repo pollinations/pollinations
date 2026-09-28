@@ -8,7 +8,13 @@
 
 import { writeFileSync } from "node:fs";
 import { sampleModel } from "./client.js";
-import { FAMILIES, FAMILY_NAMES, NAMES, grade, extractAnswer } from "./puzzle.js";
+import {
+    extractAnswer,
+    FAMILIES,
+    FAMILY_NAMES,
+    grade,
+    NAMES,
+} from "./puzzle.js";
 import { makeRng, repeatSeed, runSeed } from "./rng.js";
 import { impostorGaps, scoreModel } from "./score.js";
 
@@ -21,15 +27,24 @@ function parseArgs(argv) {
         const a = argv[i];
         const next = () => argv[++i];
         if (a === "--limit") out.limit = Number(next());
-        else if (a === "--models") out.models = next().split(",").map((s) => s.trim()).filter(Boolean);
+        else if (a === "--models")
+            out.models = next()
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
         else if (a === "--community-only") out.communityOnly = true;
         else if (a === "--official-only") out.officialOnly = true;
         else if (a === "--repeats") out.repeats = Math.max(1, Number(next()));
-        else if (a === "--families") out.families = next().split(",").map((s) => s.trim()).filter(Boolean);
+        else if (a === "--families")
+            out.families = next()
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
         else if (a === "--seed") out.seed = Number(next());
         else if (a === "--output") out.output = next();
         else if (a === "--json") out.json = true;
-        else if (a === "--concurrency") out.concurrency = Math.max(1, Number(next()));
+        else if (a === "--concurrency")
+            out.concurrency = Math.max(1, Number(next()));
         else if (a === "--help" || a === "-h") out.help = true;
     }
     return out;
@@ -65,14 +80,19 @@ async function fetchModels() {
     const body = await res.json();
     const list = Array.isArray(body) ? body : (body.data ?? body.models ?? []);
     return list
-        .map((m) => ({ name: m.name ?? m.id, pricing: m.pricing ?? null, community: m.community === true }))
+        .map((m) => ({
+            name: m.name ?? m.id,
+            pricing: m.pricing ?? null,
+            community: m.community === true,
+        }))
         .filter((m) => typeof m.name === "string" && m.name.length > 0)
         .filter((m) => m.output_modalities_ok !== false);
 }
 
 function selectModels(all, opts) {
     let models = all;
-    if (opts.models) models = models.filter((m) => opts.models.includes(m.name));
+    if (opts.models)
+        models = models.filter((m) => opts.models.includes(m.name));
     if (opts.communityOnly) models = models.filter((m) => m.community);
     if (opts.officialOnly) models = models.filter((m) => !m.community);
     if (opts.limit) models = models.slice(0, opts.limit);
@@ -126,7 +146,9 @@ function costPollen(samples, pricing) {
     for (const s of samples) {
         const u = s.usage;
         if (!u) continue;
-        cost += (u.prompt_tokens || 0) * pPrompt + (u.completion_tokens || 0) * pCompletion;
+        cost +=
+            (u.prompt_tokens || 0) * pPrompt +
+            (u.completion_tokens || 0) * pCompletion;
     }
     return cost;
 }
@@ -140,7 +162,9 @@ async function runPool(items, worker, concurrency) {
             results[i] = await worker(items[i], i);
         }
     }
-    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, lane));
+    await Promise.all(
+        Array.from({ length: Math.min(concurrency, items.length) }, lane),
+    );
     return results;
 }
 
@@ -148,12 +172,17 @@ async function main() {
     const opts = parseArgs(process.argv.slice(2));
     if (opts.help) return usage();
     if (!API_KEY) {
-        console.error("POLLINATIONS_API_KEY is required. Get one at https://enter.pollinations.ai/keys");
+        console.error(
+            "POLLINATIONS_API_KEY is required. Get one at https://enter.pollinations.ai/keys",
+        );
         process.exit(2);
     }
 
     FAMILIES_ORDER = FAMILY_NAMES.filter((f) => opts.families.includes(f));
-    if (FAMILIES_ORDER.length === 0) throw new Error(`no known families in --families (have ${FAMILY_NAMES.join(", ")})`);
+    if (FAMILIES_ORDER.length === 0)
+        throw new Error(
+            `no known families in --families (have ${FAMILY_NAMES.join(", ")})`,
+        );
 
     const seed = runSeed(opts.seed);
     const all = await fetchModels();
@@ -188,7 +217,9 @@ async function main() {
         scores.push(score);
     }
 
-    const ranking = [...scores].sort((a, b) => b.accuracy - a.accuracy || a.margin - b.margin);
+    const ranking = [...scores].sort(
+        (a, b) => b.accuracy - a.accuracy || a.margin - b.margin,
+    );
     const gaps = impostorGaps(scores);
     const report = {
         eval: "alice-in-wonderland",
@@ -213,16 +244,26 @@ async function main() {
     }
 
     console.log("");
-    console.log("Rank  Model                                Accuracy  ±MoE   Correct  Failed  Cost(🌼)");
+    console.log(
+        "Rank  Model                                Accuracy  ±MoE   Correct  Failed  Cost(🌼)",
+    );
     ranking.forEach((s, i) => {
         const rank = String(i + 1).padStart(3);
-        const name = s.model.length > 34 ? `${s.model.slice(0, 31)}...` : s.model.padEnd(34);
+        const name =
+            s.model.length > 34
+                ? `${s.model.slice(0, 31)}...`
+                : s.model.padEnd(34);
         const acc = `${(s.accuracy * 100).toFixed(0)}%`.padStart(7);
         const moe = `±${(s.margin * 100).toFixed(0)}%`.padStart(6);
         const corr = `${s.correct}/${s.total}`.padStart(8);
         const fail = String(s.failed).padStart(6);
-        const cost = s.costPollen === null ? "   n/a" : s.costPollen.toFixed(6).padStart(8);
-        console.log(`${rank}   ${name} ${acc}  ${moe} ${corr}  ${fail}  ${cost}`);
+        const cost =
+            s.costPollen === null
+                ? "   n/a"
+                : s.costPollen.toFixed(6).padStart(8);
+        console.log(
+            `${rank}   ${name} ${acc}  ${moe} ${corr}  ${fail}  ${cost}`,
+        );
     });
     if (gaps.length) {
         console.log("\nCommunity vs official (same base name):");

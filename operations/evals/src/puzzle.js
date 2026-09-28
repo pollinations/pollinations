@@ -52,7 +52,11 @@ export function aiwPlus(rng, name = "Alice") {
     const fatherKids = rng.int(0, 3);
     const cousins = motherSiblings * motherKids + fatherSiblings * fatherKids;
     const childrenLine = (n) =>
-        n === 0 ? "none of them has children" : n === 1 ? "each of them has 1 child" : `each of them has ${n} children`;
+        n === 0
+            ? "none of them has children"
+            : n === 1
+              ? "each of them has 1 child"
+              : `each of them has ${n} children`;
     return {
         family: "aiw+",
         prompt:

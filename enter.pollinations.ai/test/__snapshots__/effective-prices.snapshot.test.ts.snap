@@ -365,6 +365,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "anthropic/claude-sonnet-5.5": {
+    "cost": {
+      "completionTextTokens": 0.00001055,
+      "promptCacheWriteTokens": 0.0000026375,
+      "promptCachedTokens": 0.000000211,
+      "promptTextTokens": 0.00000211,
+    },
+    "price": {
+      "completionTextTokens": 0.00001055,
+      "promptCacheWriteTokens": 0.0000026375,
+      "promptCachedTokens": 0.000000211,
+      "promptTextTokens": 0.00000211,
+    },
+  },
   "assemblyai/universal-2": {
     "cost": {
       "promptAudioSeconds": 0.0000416666666666667,

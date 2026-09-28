@@ -1595,6 +1595,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
         isSpecialized: false,
     },
+    "anthropic/claude-sonnet-5.5": {
+        supportedParameters: CHAT_PARAMETERS.openRouterClaudeNoForcedTools,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-28").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Anthropic route (2026-09-28), including the mandatory
+            // 5.5% OpenRouter credit fee. Cache write is the 5-minute rate.
+            promptTextTokens: perMillion(2) * 1.055,
+            promptCachedTokens: perMillion(0.2) * 1.055,
+            promptCacheWriteTokens: perMillion(2.5) * 1.055,
+            completionTextTokens: perMillion(10) * 1.055,
+        },
+        title: "Claude Sonnet 5.5",
+        description:
+            "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-opus-4.6": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
         aliases: ["claude-opus-4.5", "claude-opus-4.6"],

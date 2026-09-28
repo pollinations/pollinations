@@ -119,6 +119,16 @@ export const CHAT_PARAMETERS = {
         "stop",
         "verbosity",
     ],
+    // Sonnet 5.5 rejects forced tool choice; tool_choice is left out like Bedrock.
+    openRouterClaudeNoForcedTools: [
+        ...CHAT,
+        "tools",
+        "response_format",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "stop",
+        "verbosity",
+    ],
     gemini25: [...SAMPLED_CHAT, ...OPENROUTER_REASONING, "seed"],
     gemini3: [
         ...SAMPLED_CHAT,

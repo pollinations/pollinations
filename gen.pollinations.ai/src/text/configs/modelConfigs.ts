@@ -291,6 +291,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
+    "anthropic/claude-sonnet-5.5": createPinnedOpenRouterConfig(
+        "anthropic/claude-sonnet-5.5",
+        "anthropic",
+    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",

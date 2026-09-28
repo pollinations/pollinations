@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
-import { InlineLink } from "../components/ui/inline-link";
 
 type LegalMarkdownPageProps = {
     pageTitle: string;
@@ -64,7 +63,12 @@ function LegalMarkdownPage({
                                     />
                                 ),
                                 a: ({ node: _node, ...props }) => (
-                                    <InlineLink {...props} />
+                                    <a
+                                        {...props}
+                                        className="text-dark underline hover:text-dark font-bold transition-colors"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    />
                                 ),
                                 strong: ({ node: _node, ...props }) => (
                                     <strong

@@ -4,7 +4,6 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { QuestLeaderboard } from "./QuestLeaderboard";
 import { Divider } from "./ui/divider";
-import { InlineLink } from "./ui/inline-link";
 import { Body, Heading } from "./ui/typography";
 
 interface Contributor {
@@ -127,9 +126,15 @@ export function TopContributors() {
                     {copy.topContributorsDescription}
                     <br />
                     {copy.topContributorsCta}{" "}
-                    <InlineLink href="https://github.com/pollinations/pollinations">
+                    <a
+                        href="https://github.com/pollinations/pollinations"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                    >
                         {copy.githubRepositoryLink}
-                    </InlineLink>{" "}
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>{" "}
                     {copy.overThePastYear}
                 </Body>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -149,7 +154,7 @@ export function TopContributors() {
                                 href={contributor.profile_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="polli-link-surface relative pr-6 group flex flex-col items-center text-center transition hover:translate-x-[2px] hover:translate-y-[2px]"
+                                className="group flex flex-col items-center text-center transition hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                                 <div
                                     className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition`}
@@ -167,10 +172,6 @@ export function TopContributors() {
                                 <p className="font-headline text-[10px] font-black text-dark mb-1">
                                     {contributor.login}
                                 </p>
-                                <ExternalLinkIcon
-                                    className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                    aria-hidden="true"
-                                />
                             </a>
                         );
                     })}

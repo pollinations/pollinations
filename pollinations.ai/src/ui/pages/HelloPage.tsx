@@ -6,8 +6,9 @@ import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { useTranslateAndPrettify } from "../../hooks/useTranslateAndPrettify";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
-import { InlineLink } from "../components/ui/inline-link";
 import { LazyMarkdown } from "../components/ui/lazy-markdown";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -21,6 +22,11 @@ function HelloPage() {
         "description",
     );
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
+
+    const quietLinkClass =
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2 inline-flex items-center gap-1";
+    const quietMarkdownLinkClass =
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2";
 
     const { translated: translatedWhatYouGet } = useTranslate(
         HELLO_PAGE.whatYouGetItems,
@@ -44,30 +50,42 @@ function HelloPage() {
                     </Body>
                 </div>
                 <div className="flex flex-wrap gap-3 mb-8">
-                    <InlineLink
+                    <Button
                         as="a"
                         href={LINKS.enter}
-                        size="sm"
-                        className="inline-flex items-center gap-1.5"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="primary"
+                        size="lg"
+                        className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                     >
                         {pageCopy.startBuildingButton}
-                    </InlineLink>
-                    <InlineLink
+                        <ExternalLinkIcon className="w-4 h-4" />
+                    </Button>
+                    <Button
                         as="a"
                         href={SOCIAL_LINKS.discord.url}
-                        size="sm"
-                        className="inline-flex items-center gap-1.5"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="lg"
+                        className="bg-secondary-strong text-dark"
                     >
                         {pageCopy.joinDiscordButton}
-                    </InlineLink>
-                    <InlineLink
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                    </Button>
+                    <Button
                         as="a"
                         href={LINKS.enterDocs}
-                        size="sm"
-                        className="inline-flex items-center gap-1.5"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="lg"
+                        className="bg-tertiary-strong text-dark"
                     >
                         {pageCopy.readTheDocsButton}
-                    </InlineLink>
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                    </Button>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
                     <span className="font-headline text-xs font-black text-muted">
@@ -186,8 +204,7 @@ function HelloPage() {
                                                 </div>
                                                 {item.linkText && (
                                                     <div className="mt-auto pt-3 flex justify-end">
-                                                        <InlineLink
-                                                            size="footer"
+                                                        <a
                                                             href={
                                                                 item.linkUrl
                                                                     ? LINKS[
@@ -195,9 +212,18 @@ function HelloPage() {
                                                                       ]
                                                                     : LINKS.enterModels
                                                             }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={
+                                                                quietLinkClass
+                                                            }
                                                         >
                                                             {item.linkText}
-                                                        </InlineLink>
+                                                            <ExternalLinkIcon
+                                                                className="w-2.5 h-2.5"
+                                                                strokeWidth="3"
+                                                            />
+                                                        </a>
                                                     </div>
                                                 )}
                                             </div>
@@ -235,6 +261,16 @@ function HelloPage() {
                                     <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
                                         <LazyMarkdown
                                             components={{
+                                                a: ({ node, ...props }) => (
+                                                    <a
+                                                        {...props}
+                                                        className={
+                                                            quietMarkdownLinkClass
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    />
+                                                ),
                                                 p: ({ node, ...props }) => (
                                                     <p
                                                         {...props}
@@ -262,16 +298,22 @@ function HelloPage() {
                             ))}
                         </div>
                         <div className="mt-4 flex justify-end">
-                            <InlineLink
-                                size="footer"
+                            <a
                                 href={
                                     LINKS[
                                         pageCopy.recentUpdatesMoreUrl as keyof typeof LINKS
                                     ]
                                 }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={quietLinkClass}
                             >
                                 {pageCopy.recentUpdatesMoreText}
-                            </InlineLink>
+                                <ExternalLinkIcon
+                                    className="w-2.5 h-2.5"
+                                    strokeWidth="3"
+                                />
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -318,30 +360,39 @@ function HelloPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.ctaBody}</Body>
                     <div className="flex flex-wrap gap-3">
-                        <InlineLink
+                        <Button
                             as="a"
                             href={LINKS.enter}
-                            size="sm"
-                            className="inline-flex items-center gap-1.5"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            size="lg"
+                            className="bg-[rgb(var(--primary-strong))] hover:bg-[rgb(var(--primary-strong)/0.8)] text-dark"
                         >
                             {pageCopy.startBuildingButton}
-                        </InlineLink>
-                        <InlineLink
+                            <ExternalLinkIcon className="w-4 h-4" />
+                        </Button>
+                        <Button
                             as={Link}
                             to="/community"
-                            size="sm"
-                            className="inline-flex items-center gap-1.5"
+                            variant="secondary"
+                            size="lg"
+                            className="bg-accent-light text-dark"
                         >
                             {pageCopy.communityLink}
-                        </InlineLink>
-                        <InlineLink
+                        </Button>
+                        <Button
                             as="a"
                             href={LINKS.enterDocs}
-                            size="sm"
-                            className="inline-flex items-center gap-1.5"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="secondary"
+                            size="lg"
+                            className="bg-tertiary-strong text-dark"
                         >
                             {pageCopy.readTheDocsButton}
-                        </InlineLink>
+                            <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                        </Button>
                     </div>
                 </div>
             </PageCard>

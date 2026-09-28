@@ -6,10 +6,10 @@ import { useAuthState } from "../../hooks/useAuth";
 import { useFooterVisibility } from "../../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../../hooks/useHeaderVisibility";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Logo } from "./Logo";
 import { SceneBackground } from "./SceneBackground";
 import { Button } from "./ui/button";
-import { InlineLink } from "./ui/inline-link";
 
 const tabKeys = [
     { path: "/", copyKey: "navHello" as const },
@@ -21,91 +21,120 @@ const tabKeys = [
 function SocialIcons() {
     return (
         <>
-            <InlineLink
+            <Button
                 as="a"
                 href={SOCIAL_LINKS.github.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 title={SOCIAL_LINKS.github.label}
-                showIcon={false}
-                className="inline-flex h-7 w-7 items-center justify-center"
+                variant="icon"
+                size={null}
+                className="w-7 h-7"
             >
                 <SOCIAL_LINKS.github.icon className="w-full h-full" />
-            </InlineLink>
-            <InlineLink
+            </Button>
+            <Button
                 as="a"
                 href={SOCIAL_LINKS.discord.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 title={SOCIAL_LINKS.discord.label}
-                showIcon={false}
-                className="inline-flex h-7 w-7 items-center justify-center"
+                variant="icon"
+                size={null}
+                className="w-7 h-7"
             >
                 <SOCIAL_LINKS.discord.icon className="w-full h-full" />
-            </InlineLink>
+            </Button>
             {Object.entries(SOCIAL_LINKS)
                 .filter(([key]) => key !== "github" && key !== "discord")
                 .map(([key, { url, icon: Icon, label }]) => (
-                    <InlineLink
+                    <Button
                         key={key}
                         as="a"
                         href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         title={label}
-                        showIcon={false}
-                        className="inline-flex h-7 w-7 items-center justify-center"
+                        variant="icon"
+                        size={null}
+                        className="w-7 h-7"
                     >
                         <Icon className="w-full h-full" />
-                    </InlineLink>
+                    </Button>
                 ))}
         </>
     );
 }
 
-function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
+const tertiaryBtn =
+    "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
+const labelCls = "font-body text-[11px] font-semibold";
+const desktopFooterLabelCls = "font-body text-xs font-semibold";
+
+function FooterLinks({
+    layoutCopy,
+    labelClassName = labelCls,
+}: {
+    layoutCopy: Record<string, string>;
+    labelClassName?: string;
+}) {
     return (
         <>
-            <InlineLink
+            <Button
                 as={Link}
                 to="/terms"
-                size="footer"
-                className="inline-flex items-center gap-1.5"
+                variant="iconText"
+                size={null}
+                className={tertiaryBtn}
             >
-                <span>{layoutCopy.termsLink}</span>
-            </InlineLink>
-            <InlineLink
+                <span className={labelClassName}>{layoutCopy.termsLink}</span>
+            </Button>
+            <Button
                 as={Link}
                 to="/privacy"
-                size="footer"
-                className="inline-flex items-center gap-1.5"
+                variant="iconText"
+                size={null}
+                className={tertiaryBtn}
             >
-                <span>{layoutCopy.privacyLink}</span>
-            </InlineLink>
-            <InlineLink
+                <span className={labelClassName}>{layoutCopy.privacyLink}</span>
+            </Button>
+            <Button
                 as={Link}
                 to="/refunds"
-                size="footer"
-                className="inline-flex items-center gap-1.5"
+                variant="iconText"
+                size={null}
+                className={tertiaryBtn}
             >
-                <span>{layoutCopy.refundsLink}</span>
-            </InlineLink>
+                <span className={labelClassName}>{layoutCopy.refundsLink}</span>
+            </Button>
         </>
     );
 }
 
-function EnterLink({
+function EnterButton({
     isLoggedIn,
     authCopy,
+    labelClassName = labelCls,
 }: {
     isLoggedIn: boolean;
     authCopy: Record<string, string>;
+    labelClassName?: string;
 }) {
     return (
-        <InlineLink
+        <Button
             as="a"
             href={LINKS.enter}
-            size="footer"
-            className="inline-flex items-center gap-1.5"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="iconText"
+            size={null}
+            className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
         >
-            <span>
+            <span className={labelClassName}>
                 {isLoggedIn ? authCopy.enterButton : authCopy.registerButton}
             </span>
-        </InlineLink>
+            <ExternalLinkIcon className="w-3 h-3" />
+        </Button>
     );
 }
 
@@ -167,26 +196,35 @@ function Layout() {
                                     )
                                     .map(
                                         ([key, { url, icon: Icon, label }]) => (
-                                            <InlineLink
+                                            <Button
                                                 key={key}
                                                 as="a"
                                                 href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 title={label}
-                                                showIcon={false}
-                                                className="inline-flex h-7 w-7 items-center justify-center"
+                                                variant="icon"
+                                                size={null}
+                                                className=""
                                             >
                                                 <Icon className="w-full h-full" />
-                                            </InlineLink>
+                                            </Button>
                                         ),
                                     )}
-                                <InlineLink
+                                <Button
                                     as="a"
                                     href={LINKS.enter}
-                                    size="sm"
-                                    className="inline-flex items-center gap-1.5"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="iconText"
+                                    size={null}
+                                    className="bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
                                 >
-                                    <span>{authCopy.enterButton}</span>
-                                </InlineLink>
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider">
+                                        {authCopy.enterButton}
+                                    </span>
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -217,7 +255,7 @@ function Layout() {
                             </div>
                             <div className="flex items-center justify-center gap-2">
                                 <FooterLinks layoutCopy={layoutCopy} />
-                                <EnterLink
+                                <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
                                 />
@@ -242,7 +280,10 @@ function Layout() {
 
                             {/* Center: Links */}
                             <div className="flex items-center flex-shrink-0 gap-2">
-                                <FooterLinks layoutCopy={layoutCopy} />
+                                <FooterLinks
+                                    layoutCopy={layoutCopy}
+                                    labelClassName={desktopFooterLabelCls}
+                                />
                             </div>
 
                             {/* Right: Social + Enter */}
@@ -250,9 +291,10 @@ function Layout() {
                                 <div className="flex items-center">
                                     <SocialIcons />
                                 </div>
-                                <EnterLink
+                                <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
+                                    labelClassName={desktopFooterLabelCls}
                                 />
                             </div>
                         </div>

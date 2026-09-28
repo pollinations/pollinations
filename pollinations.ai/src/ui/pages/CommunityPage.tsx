@@ -6,8 +6,8 @@ import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { BuildDiary } from "../components/BuildDiary";
 import { TopContributors } from "../components/TopContributors";
+import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
-import { InlineLink } from "../components/ui/inline-link";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
@@ -42,19 +42,29 @@ export default function CommunityPage() {
                     </Body>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
-                    <InlineLink href={SOCIAL_LINKS.discord.url}>
+                    <a
+                        href={SOCIAL_LINKS.discord.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
                         <span className="font-headline text-xs font-black text-muted">
                             {pageCopy.heroStat1}
                         </span>{" "}
                         {pageCopy.heroStat1Label}
-                    </InlineLink>
+                    </a>
                     <span className="mx-2 text-border-subtle">·</span>
-                    <InlineLink href={SOCIAL_LINKS.github.url}>
+                    <a
+                        href={SOCIAL_LINKS.github.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
                         <span className="font-headline text-xs font-black text-muted">
                             {pageCopy.heroStat2}
                         </span>{" "}
                         {pageCopy.heroStat2Label}
-                    </InlineLink>
+                    </a>
                     <span className="mx-2 text-border-subtle">·</span>
                     <span className="font-headline text-xs font-black text-muted">
                         {pageCopy.heroStat3}
@@ -75,7 +85,7 @@ export default function CommunityPage() {
                             href={LINKS.githubSubmitApp}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="polli-link-surface relative pr-6 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -87,16 +97,12 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard1Body}
                             </Body>
-                            <ExternalLinkIcon
-                                className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                aria-hidden="true"
-                            />
                         </a>
                         <a
                             href={LINKS.githubNewIssue}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="polli-link-surface relative pr-6 p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -108,16 +114,12 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard2Body}
                             </Body>
-                            <ExternalLinkIcon
-                                className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                aria-hidden="true"
-                            />
                         </a>
                         <a
                             href={SOCIAL_LINKS.discord.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="polli-link-surface relative pr-6 p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -129,10 +131,6 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="none">
                                 {pageCopy.contributeCard3Body}
                             </Body>
-                            <ExternalLinkIcon
-                                className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                aria-hidden="true"
-                            />
                         </a>
                     </div>
                     <Body
@@ -141,14 +139,25 @@ export default function CommunityPage() {
                         className="text-muted"
                     >
                         {pageCopy.contributeNotePre}
-                        <InlineLink href={SOCIAL_LINKS.discord.url}>
+                        <a
+                            href={SOCIAL_LINKS.discord.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-dark hover:underline"
+                        >
                             {pageCopy.contributeNoteLink}
-                        </InlineLink>
+                        </a>
                         {pageCopy.contributeNotePost}
                     </Body>
-                    <InlineLink href={SOCIAL_LINKS.discord.url}>
+                    <a
+                        href={SOCIAL_LINKS.discord.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-headline text-xs font-black hover:underline inline-flex items-center gap-1 text-dark bg-accent-strong px-2 py-0.5"
+                    >
                         {pageCopy.learnAboutTiersButton}
-                    </InlineLink>
+                        <ExternalLinkIcon className="w-3 h-3" strokeWidth="4" />
+                    </a>
                 </div>
 
                 <Divider />
@@ -176,20 +185,29 @@ export default function CommunityPage() {
                                     {pageCopy.discordDesc1End}
                                     <br />
                                     {pageCopy.discordDesc2Pre}
-                                    <InlineLink href={LINKS.discordPollenBeta}>
+                                    <a
+                                        href={LINKS.discordPollenBeta}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-bold hover:underline"
+                                    >
                                         {pageCopy.discordDesc2Link}
-                                    </InlineLink>
+                                    </a>
                                     {pageCopy.discordDesc2Post}
                                 </Body>
                             </div>
-                            <InlineLink
+                            <Button
                                 as="a"
                                 href={SOCIAL_LINKS.discord.url}
-                                size="sm"
-                                className="inline-flex items-center gap-1.5"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                             >
                                 {pageCopy.joinDiscordButton}
-                            </InlineLink>
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
                         </SubCard>
 
                         {/* GitHub + Submit App — 2 columns on desktop */}
@@ -212,14 +230,18 @@ export default function CommunityPage() {
                                         {pageCopy.githubDescEnd}
                                     </Body>
                                 </div>
-                                <InlineLink
+                                <Button
                                     as="a"
                                     href={SOCIAL_LINKS.github.url}
-                                    size="sm"
-                                    className="inline-flex items-center gap-1.5"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-tertiary-strong text-dark hover:bg-tertiary-strong/80 hover:text-dark"
                                 >
                                     {pageCopy.starContributeButton}
-                                </InlineLink>
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
                             </SubCard>
 
                             <SubCard>
@@ -239,14 +261,18 @@ export default function CommunityPage() {
                                         </strong>
                                     </Body>
                                 </div>
-                                <InlineLink
+                                <Button
                                     as="a"
                                     href={LINKS.githubSubmitApp}
-                                    size="sm"
-                                    className="inline-flex items-center gap-1.5"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="primary"
+                                    size="default"
+                                    className="bg-primary-strong text-dark hover:bg-primary-strong/80 hover:text-dark"
                                 >
                                     {pageCopy.submitAppButton}
-                                </InlineLink>
+                                    <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                                </Button>
                             </SubCard>
                         </div>
                     </div>
@@ -272,7 +298,7 @@ export default function CommunityPage() {
                                     href={issue.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`polli-link-surface relative pr-6 block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                 >
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
@@ -288,10 +314,6 @@ export default function CommunityPage() {
                                             {issue.title}
                                         </p>
                                     </div>
-                                    <ExternalLinkIcon
-                                        className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                        aria-hidden="true"
-                                    />
                                 </a>
                             );
                         })}
@@ -335,7 +357,7 @@ export default function CommunityPage() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         aria-label={supporter.name}
-                                        className={`polli-link-surface relative pr-6 group flex aspect-square w-full flex-col items-center justify-center gap-2 bg-white/60 rounded-sub-card border-r-2 border-b-2 p-2 text-center ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                        className={`group flex aspect-square w-full flex-col items-center justify-center gap-2 bg-white/60 rounded-sub-card border-r-2 border-b-2 p-2 text-center ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                     >
                                         <span
                                             aria-hidden="true"
@@ -354,10 +376,6 @@ export default function CommunityPage() {
                                         <span className="font-body text-[9px] font-bold text-dark leading-[1.1]">
                                             {supporter.name}
                                         </span>
-                                        <ExternalLinkIcon
-                                            className="absolute right-2 top-2 h-3.5 w-3.5 opacity-60"
-                                            aria-hidden="true"
-                                        />
                                     </a>
                                 );
                             },

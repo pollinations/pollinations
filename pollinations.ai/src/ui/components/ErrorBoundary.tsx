@@ -1,7 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ERROR_BOUNDARY } from "../../copy/content/error";
 import { Button } from "./ui/button";
-import { InlineLink } from "./ui/inline-link";
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -102,14 +101,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                             >
                                 {ERROR_BOUNDARY.tryAgainButton}
                             </Button>
-                            <InlineLink
-                                as="a"
-                                href="/"
-                                size="sm"
-                                className="inline-flex items-center gap-1.5"
-                            >
+                            <Button variant="secondary" as="a" href="/">
                                 {ERROR_BOUNDARY.goHomeButton}
-                            </InlineLink>
+                            </Button>
                         </div>
                     </div>
                 </div>

@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import { commandExists } from "../harnesses/fs.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -28,7 +29,7 @@ const freshCtx = (): McpContext => ({
 });
 
 describe("client table", () => {
-    it("covers all 13 clients in the issue's priority order", () => {
+    it("covers all 14 clients in priority order", () => {
         expect(MCP_CLIENTS.map((client) => client.id)).toEqual([
             "claude-code",
             "codex",
@@ -43,7 +44,87 @@ describe("client table", () => {
             "kiro",
             "zed",
             "warp",
+            "hermes",
         ]);
+    });
+});
+
+describe("hermes client", () => {
+    const hermesCtx = (): McpContext => {
+        const home = mkdtempSync(join(tmpdir(), "polli-mcp-home-"));
+        return { home, env: { HERMES_HOME: join(home, "hermes") } };
+    };
+    const configOf = (ctx: McpContext) =>
+        join(ctx.env.HERMES_HOME as string, "config.yaml");
+
+    it("writes url+headers entries into the snake_case mcp_servers table", async () => {
+        const ctx = hermesCtx();
+        const hermes = findClient("hermes");
+        const result = await hermes?.install(ctx, SERVERS, "sk-test");
+        expect(result?.installed.sort()).toEqual(["ffmpeg", "pollinations"]);
+        expect(parse(readFileSync(configOf(ctx), "utf-8")).mcp_servers).toEqual(
+            {
+                pollinations: {
+                    url: `${BASE_URL}/mcp/pollinations`,
+                    headers: { Authorization: "Bearer sk-test" },
+                },
+                ffmpeg: {
+                    url: `${BASE_URL}/mcp/ffmpeg`,
+                    headers: { Authorization: "Bearer sk-test" },
+                },
+            },
+        );
+        expect(hermes?.status(ctx).installed.sort()).toEqual([
+            "ffmpeg",
+            "pollinations",
+        ]);
+        expect(hermes?.existingKey?.(ctx)).toBe("sk-test");
+    });
+
+    it("keeps comments, providers, and foreign servers; removes only its own", async () => {
+        const ctx = hermesCtx();
+        mkdirSync(ctx.env.HERMES_HOME as string, { recursive: true });
+        writeFileSync(
+            configOf(ctx),
+            [
+                "# my notes",
+                "providers:",
+                "  together:",
+                "    api: https://api.together.xyz/v1",
+                "mcp_servers:",
+                "  notion:",
+                "    url: https://mcp.notion.com/mcp",
+                "  ffmpeg:",
+                "    url: https://example.com/mine",
+                "",
+            ].join("\n"),
+        );
+        const hermes = findClient("hermes");
+        const result = await hermes?.install(ctx, SERVERS, "sk-test");
+        expect(result?.installed).toEqual(["pollinations"]);
+        expect(result?.notes.join(" ")).toContain('"ffmpeg"');
+
+        await hermes?.remove(ctx);
+        const text = readFileSync(configOf(ctx), "utf-8");
+        expect(text).toContain("# my notes");
+        const config = parse(text);
+        expect(config.providers.together.api).toBe(
+            "https://api.together.xyz/v1",
+        );
+        expect(Object.keys(config.mcp_servers).sort()).toEqual([
+            "ffmpeg",
+            "notion",
+        ]);
+    });
+
+    it("drops the mcp_servers table once its last entry is removed", async () => {
+        const ctx = hermesCtx();
+        const hermes = findClient("hermes");
+        await hermes?.install(ctx, [SERVERS[0]], "sk-test");
+        await hermes?.remove(ctx);
+        expect(parse(readFileSync(configOf(ctx), "utf-8"))).not.toHaveProperty(
+            "mcp_servers",
+        );
     });
 });
 

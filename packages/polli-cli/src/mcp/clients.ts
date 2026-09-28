@@ -1,6 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    writeTextAtomic,
+} from "../harnesses/fs.js";
+import {
+    HERMES_INSTALL_HINT,
+    hermesConfigPath,
+    loadHermesYaml,
+} from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -692,9 +701,101 @@ const cliClients: McpClientAdapter[] = [
     }),
 ];
 
+// ---------------------------------------------------------------------------
+// Hermes Agent: MCP servers live in the same config.yaml as its providers, in
+// the snake_case `mcp_servers` table. Edited through the YAML document so
+// comments and unrelated entries survive.
+// ---------------------------------------------------------------------------
+
+const HERMES_TABLE = "mcp_servers";
+
+const hermesTable = (doc: ReturnType<typeof loadHermesYaml>): JsonObject => {
+    const table = (doc.toJS() as JsonObject | null)?.[HERMES_TABLE];
+    return table && typeof table === "object" ? (table as JsonObject) : {};
+};
+
+const writeHermesDoc = (
+    file: string,
+    doc: ReturnType<typeof loadHermesYaml>,
+) => {
+    if (Object.keys(hermesTable(doc)).length === 0) doc.delete(HERMES_TABLE);
+    writeTextAtomic(file, doc.toString({ lineWidth: 0 }), 0o600);
+};
+
+const hermesClient: McpClientAdapter = {
+    id: "hermes",
+    label: "Hermes Agent",
+    description: "Hermes Agent (mcp_servers in config.yaml)",
+    preflight: (ctx) => {
+        if (!commandExists("hermes", ctx.env)) {
+            throw new Error(
+                `Hermes Agent CLI "hermes" was not found on PATH. ${HERMES_INSTALL_HINT}`,
+            );
+        }
+    },
+    install: (ctx, servers, key) => {
+        const file = hermesConfigPath(ctx);
+        const doc = loadHermesYaml(file);
+        const existing = hermesTable(doc);
+        const skipped: string[] = [];
+        for (const server of servers) {
+            if (
+                existing[server.id] !== undefined &&
+                !isOwnedEntry(existing[server.id])
+            ) {
+                skipped.push(server.id);
+                continue;
+            }
+            doc.setIn(
+                [HERMES_TABLE, server.id],
+                doc.createNode(urlEntry(server, key)),
+            );
+        }
+        writeHermesDoc(file, doc);
+        return {
+            client: "hermes",
+            label: "Hermes Agent",
+            installed: ownedEntryNames(hermesTable(doc)),
+            files: [file],
+            notes: [
+                "Start a new Hermes session (or run /reload-mcp in a running one) to load the tools.",
+                ...skipped.map(
+                    (serverId) =>
+                        `Kept existing non-Pollinations server "${serverId}" - not overwritten.`,
+                ),
+            ],
+        };
+    },
+    remove: (ctx, serverIds) => {
+        const file = hermesConfigPath(ctx);
+        const doc = loadHermesYaml(file);
+        const table = hermesTable(doc);
+        const names = serverIds?.length
+            ? serverIds.filter((name) => isOwnedEntry(table[name]))
+            : ownedEntryNames(table);
+        for (const name of names) doc.deleteIn([HERMES_TABLE, name]);
+        if (names.length > 0) writeHermesDoc(file, doc);
+        return {
+            client: "hermes",
+            label: "Hermes Agent",
+            installed: ownedEntryNames(hermesTable(doc)),
+            removed: names,
+            files: [file],
+            notes: [],
+        };
+    },
+    status: (ctx) => ({
+        installed: ownedEntryNames(
+            hermesTable(loadHermesYaml(hermesConfigPath(ctx))),
+        ),
+    }),
+    existingKey: (ctx) =>
+        recoverKeyFromTable(hermesTable(loadHermesYaml(hermesConfigPath(ctx)))),
+};
+
 // Exported table matches the issue's priority list:
 // claude-code, codex, vscode, cursor, opencode, gemini, copilot, windsurf,
-// cline, amp, kiro, zed, warp.
+// cline, amp, kiro, zed, warp, then hermes.
 const PRIORITY = [
     "claude-code",
     "codex",
@@ -709,10 +810,14 @@ const PRIORITY = [
     "kiro",
     "zed",
     "warp",
+    "hermes",
 ];
 
 const byId = new Map(
-    [...cliClients, ...jsonClients].map((client) => [client.id, client]),
+    [...cliClients, ...jsonClients, hermesClient].map((client) => [
+        client.id,
+        client,
+    ]),
 );
 
 export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.flatMap((id) => {

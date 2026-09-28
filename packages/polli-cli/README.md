@@ -143,6 +143,8 @@ polli harness bloom on            # creates a dedicated key for Bloom CLI
 polli harness dsh on              # DeepSeek Harness → Pollinations
 polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
+polli harness hermes on           # named custom provider + dedicated key + Polli skill in Hermes Agent
+polli mcp install hermes          # hosted Pollinations MCP servers in Hermes
 polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill

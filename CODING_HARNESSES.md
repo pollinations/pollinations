@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -43,6 +43,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds Pollinations as a named custom provider with a dedicated key and the Polli skill, and `polli mcp install hermes` adds the hosted MCP servers. Defaults to `deepseek/deepseek-v4-flash`. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
@@ -80,6 +81,25 @@ polli harness dsh off
 ```
 
 DeepSeek Harness is officially run with `npx @deepseek-ai/dsh@latest web`. The explicit `@latest` selects the current release rather than a local installation. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
+
+## Hermes Agent
+
+```bash
+polli harness hermes on
+polli harness hermes status
+polli harness hermes off
+polli mcp install hermes   # optional: hosted Pollinations MCP servers
+```
+
+`on` requires Hermes to be installed with its [official installer](https://hermes-agent.nousresearch.com/docs/getting-started/installation) (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, or `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` in PowerShell on Windows). It works in Hermes' data directory: `$HERMES_HOME` if set, otherwise `%LOCALAPPDATA%\hermes` on Windows and `~/.hermes` elsewhere. There it:
+
+- adds a `pollinations` entry under `providers:` in `config.yaml` (the endpoint, the name of the key variable, and each current tool-calling model's context window and vision support, all read from the live catalog) and selects it with `model.provider: custom:pollinations`;
+- stores a dedicated key in `.env` as `POLLI_HERMES_API_KEY`, referenced from the provider by name;
+- installs the Polli skill under `skills/polli/`.
+
+Choose another default with `--model <id>` (default `deepseek/deepseek-v4-flash`), or switch later inside Hermes with `/model custom:pollinations:<id>`. `status` reports whether the provider, key, skill, and selected model are in place. Your other providers, fallbacks, memories, and skills are left alone. `off` restores the previous files byte-for-byte, or, if you edited them since, removes only the Pollinations provider, key, default model, and skill.
+
+`polli mcp install hermes` adds the hosted Pollinations MCP servers to the `mcp_servers` table in the same `config.yaml`; start a new Hermes session or run `/reload-mcp` to load them. `polli mcp remove hermes` removes only those entries.
 
 ## OpenCode
 

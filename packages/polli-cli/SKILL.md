@@ -44,7 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
-| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -216,6 +216,9 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+polli harness hermes on             # login if needed, mint key "polli-harness-hermes", add the custom:pollinations provider + Polli skill to Hermes Agent
+polli harness hermes off            # restore the Hermes config backed up before "on"
+polli mcp install hermes            # add the hosted Pollinations MCP servers to Hermes (mcp_servers in config.yaml)
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
@@ -226,9 +229,9 @@ polli harness openclaw off          # remove the Pollinations provider, key, and
 polli harness tgpt on               # use tgpt's Pollinations provider with a dedicated key
 polli harness tgpt off              # restore tgpt's previous configuration
 ```
-Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
 
-Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). Hermes registers a `pollinations` entry under `providers:` in its `config.yaml` (`$HERMES_HOME`, default `%LOCALAPPDATA%\hermes` on Windows and `~/.hermes` elsewhere), selects it with `model.provider: custom:pollinations`, stores a dedicated key in its `.env`, and installs this skill under `skills/polli/`. OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

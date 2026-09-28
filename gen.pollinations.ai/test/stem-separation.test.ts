@@ -151,6 +151,62 @@ test("requires purchased balance", async ({ apiKey }) => {
     expect(response.status).toBe(402);
 });
 
+test("rejects a non-ZIP upstream response without billing or caching it", async () => {
+    const tinybird = createMockTinybird();
+    let calls = 0;
+    const mocks = createFetchMock({
+        tinybird,
+        elevenlabs: {
+            state: {},
+            reset() {},
+            handlerMap: {
+                "api.elevenlabs.io": async () => {
+                    calls++;
+                    return new Response(new Uint8Array([255, 251]), {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                },
+            },
+        },
+    });
+    await mocks.enable("elevenlabs", "tinybird");
+    const { key, userId } = await createTestApiKey({
+        user: { packBalance: 1 },
+        allowedModels: ["elevenlabs/stem-separation"],
+    });
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        ELEVENLABS_API_KEY: "test",
+    });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        const form = new FormData();
+        form.set("file", input());
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/alpha/audio/stem-separation",
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${key}` },
+                    body: form,
+                },
+            ),
+            bindings,
+            ctx,
+        );
+        expect(response.status).toBe(502);
+        await response.arrayBuffer();
+        await waitOnExecutionContext(ctx);
+        // A cached audio body would be served without a second upstream call.
+        expect(calls).toBe(attempt);
+    }
+    expect(tinybird.state.events.filter((e) => e.isBilledUsage)).toHaveLength(
+        0,
+    );
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.packBalance).toBe(1);
+});
+
 test("enforces model permissions", async () => {
     const { key } = await createTestApiKey({
         user: { packBalance: 1 },

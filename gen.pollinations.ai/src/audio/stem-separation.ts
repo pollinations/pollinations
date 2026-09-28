@@ -145,12 +145,18 @@ export async function handleStemSeparation(c: Context<Env>): Promise<Response> {
         }),
         endpoint,
     );
+    // audio/* would otherwise pass audio billing and caching.
+    if (!response.headers.get("content-type")?.startsWith("application/zip")) {
+        await response.body?.cancel();
+        throw new UpstreamError(502, {
+            message: "Stem separation returned an invalid archive response.",
+        });
+    }
     // No usage headers are returned; bill the decoded input duration, which
     // matches workspace analytics.
     return new Response(response.body, {
         headers: {
-            "Content-Type":
-                response.headers.get("content-type") || "application/zip",
+            "Content-Type": "application/zip",
             "Content-Disposition": 'attachment; filename="stems.zip"',
             ...buildUsageHeaders(
                 c.var.model.resolved,

@@ -48,7 +48,7 @@ function HelloPage() {
             {/* Polli herself opens the site — the one the brand already had. */}
             <HeroScene
                 page="home"
-                contentClassName="px-6 sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
+                contentClassName="sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
             >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"

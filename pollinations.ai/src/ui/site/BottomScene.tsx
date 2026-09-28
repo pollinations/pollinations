@@ -17,7 +17,7 @@ export function BottomScene({ page, className, ...props }: BottomSceneProps) {
         <div
             aria-hidden="true"
             className={cn(
-                "-mx-4 -mt-8 -mb-10 relative aspect-[12/5] shrink-0 overflow-hidden sm:-mx-8 sm:-mt-12 sm:-mb-16 sm:aspect-auto sm:h-[clamp(13rem,36vw,28rem)] md:-mx-18",
+                "-mx-5 -mt-8 -mb-10 relative aspect-[12/5] shrink-0 overflow-hidden sm:-mx-8 sm:-mt-12 sm:-mb-16 sm:aspect-auto sm:h-[clamp(13rem,36vw,28rem)] md:-mx-18",
                 className,
             )}
             {...props}

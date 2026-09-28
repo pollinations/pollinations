@@ -2,6 +2,7 @@ import {
     BookIcon,
     ContentHeader,
     ExternalLinkButton,
+    InlineLink,
     RocketIcon,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
@@ -29,12 +30,12 @@ function HelloPage() {
             >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
-                    title="Every model, one wallet."
-                    subtitle="Build AI apps with models, ready-made agents, and shared infrastructure. Pay for usage with Pollen, our platform credit—buy it or earn it through Quests."
+                    title="Build with AI. Everything connected."
+                    subtitle="Generate text, images, video and audio through one API. Use ready-made agents and connect your users’ wallets. Usage is paid in Pollen—credits you can buy or earn."
                     variant="page"
-                    className="sm:[&_h1]:max-w-[9ch]"
+                    className="sm:[&_h1]:max-w-[16ch]"
                 />
-                <div className="flex flex-wrap gap-2 sm:gap-3">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/keys"
                         intent="brand"
@@ -43,14 +44,16 @@ function HelloPage() {
                     >
                         Start for free
                     </ExternalLinkButton>
-                    <ExternalLinkButton
+                    <InlineLink
                         href="https://gen.pollinations.ai/docs#tag/quick-start"
-                        intent="neutral"
-                        size="lg"
-                        icon={<BookIcon className="size-4 shrink-0" />}
+                        className="inline-flex min-h-11 items-center gap-2"
                     >
+                        <BookIcon
+                            aria-hidden="true"
+                            className="size-4 shrink-0"
+                        />
                         Read the docs
-                    </ExternalLinkButton>
+                    </InlineLink>
                 </div>
             </HeroScene>
 

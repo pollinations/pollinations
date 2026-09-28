@@ -2,9 +2,9 @@ export type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
-        title: "pollinations.ai — Every model, one wallet.",
+        title: "pollinations.ai — Build with AI. Everything connected.",
         description:
-            "Build AI apps with models, ready-made agents, and shared infrastructure. Pay for usage with Pollen, our platform credit—buy it or earn it through Quests.",
+            "Generate text, images, video and audio through one API. Use ready-made agents and connect your users’ wallets. Usage is paid in Pollen—credits you can buy or earn.",
     },
     "/play": {
         title: "Play | pollinations.ai",

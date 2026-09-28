@@ -1,0 +1,38 @@
+{
+  "pr_number": 15289,
+  "title": "feat(polli): add Codex and Claude Code router harnesses",
+  "author": "muhamedsohaib",
+  "url": "https://github.com/pollinations/pollinations/pull/15289",
+  "merged_at": "2026-09-28T18:45:04Z",
+  "labels": [
+    "API",
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15218\n\n## Summary\n\nAdds both required Polli CLI harness adapters:\n\n- `polli harness codex on|off|status`\n- `polli harness claude-code on|off|status`\n\nBoth integrations use the routers’ supported configuration paths rather than configuring Codex or Claude Code to call Pollinations directly.\n\n### Relevant background / verification\n\nI built and verified both integrations hands-on on Windows against real client/router installations:\n\n- Codex CLI **0.147.0**\n- Codex Router **0.6.0**\n- Claude Code **2.1.259**\n- Claude Code Router **3.1.1**\n\nThe implementation was tested with real streamed requests, tool-capable requests, dedicated Pollinations child keys, and server-side usage verification.\n\n## Quest requirements\n\n### Codex Router\n\n- Uses the router’s generic-provider, protected-credential, live model-curation and compatibility-test paths.\n- Preserves the user’s existing Codex ChatGPT login, native models, profiles, and settings.\n- Uses a dedicated Pollinations child key stored only in router-owned protected configuration.\n- Supports `--model` from the live Pollinations-compatible model catalog.\n- Fails closed on foreign provider ownership collisions.\n- `off` removes only Polli-owned provider/key/model state.\n\n### Claude Code Router\n\n- Uses CCR’s authenticated management RPC rather than direct SQLite mutation.\n- Creates an isolated `scope: \"ccr\"` Claude Code profile.\n- Preserves native Claude login/settings and unrelated CCR providers/profiles.\n- Uses a dedicated child key stored in CCR-owned configuration.\n- Supports live model selection via `--model`.\n- `off` removes only Polli-owned provider/profile state.\n\n### Prerequisites and lifecycle\n\n- Missing router/client prerequisites stop before Polli login or key creation.\n- Existing dedicated keys are reused instead of minting a second key.\n- Smoke setup rolls back on failure.\n- `status` reports installation/router/provider/key/model readiness.\n- Ownership checks prevent overwriting foreign configuration.\n\n## Real en",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two more paths through the garden",
+    "blurb": "Polli CLI can now set up Codex and Claude Code through their routers. Your existing logins and settings stay put; `off` tidies up only what Polli added.",
+    "summary": "Added `polli harness codex` and `polli harness claude-code` adapters with `on|off|status`, live `--model` selection, and reusable dedicated Pollinations child keys stored in router-owned configuration.",
+    "impact": "Codex and Claude Code users can connect through their supported routers, check setup readiness, and disconnect Polli without disturbing native logins or unrelated router configuration.",
+    "keywords": [
+      "polli-cli",
+      "Codex",
+      "Claude Code",
+      "routers",
+      "harnesses",
+      "model selection",
+      "child keys"
+    ],
+    "visual_concept": "Depict Codex and Claude Code as two labeled retro terminals connected through their own small router boxes to a shared Pollinations garden. Polli tends the connections with a tiny tool belt; the distinct paths represent router-based setup that leaves existing configurations intact.",
+    "image_prompt": "In a cozy pixel art garden workspace, two retro terminals labeled 'CODEX' and 'CLAUDE CODE' connect through separate little router boxes to a glowing lime green (#ecf874) code-plant; Polli, wearing a tiny tool belt, carefully tends the cables beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, strictly pixel art, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15289.jpg",
+    "prompt": "In a cozy pixel art garden workspace, two retro terminals labeled 'CODEX' and 'CLAUDE CODE' connect through separate little router boxes to a glowing lime green (#ecf874) code-plant; Polli, wearing a tiny tool belt, carefully tends the cables beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, strictly pixel art, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "generated_at": "2026-09-28T18:53:41.487306+00:00"
+}

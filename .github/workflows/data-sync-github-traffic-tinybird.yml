@@ -25,6 +25,9 @@ jobs:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
+          # Only what the traffic endpoints need, on this repository only.
+          repositories: pollinations
+          permission-administration: read
 
       - uses: actions/checkout@v5
 

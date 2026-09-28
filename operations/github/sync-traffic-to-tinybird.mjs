@@ -54,6 +54,19 @@ async function fetchWithRetry(url, options) {
     }
 }
 
+// Views and clones answer with {count, uniques, <endpoint>: [...]}, the
+// popular endpoints with an array. Anything else is an error, even with 200.
+function assertTraffic(endpoint, body) {
+    const data = JSON.parse(body);
+    const ok = endpoint.startsWith("popular/")
+        ? Array.isArray(data)
+        : Array.isArray(data?.[endpoint]) && Number.isInteger(data.count);
+    if (!ok)
+        throw new Error(
+            `${endpoint}: unexpected response ${body.slice(0, 200)}`,
+        );
+}
+
 async function fromApi() {
     const fetched_at = toDateTime(new Date());
     return Promise.all(
@@ -68,7 +81,9 @@ async function fromApi() {
                     },
                 },
             );
-            return { endpoint, fetched_at, body: await res.text() };
+            const body = await res.text();
+            assertTraffic(endpoint, body);
+            return { endpoint, fetched_at, body };
         }),
     );
 }

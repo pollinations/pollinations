@@ -6,8 +6,7 @@
  *
  * GitHub keeps traffic for 14 days only, so this runs daily
  * (.github/workflows/data-sync-github-traffic-tinybird.yml) and stores each
- * response body exactly as returned; pipes such as github_traffic_daily
- * interpret it.
+ * response body exactly as returned for later analysis.
  *
  * Usage:
  *   node operations/github/sync-traffic-to-tinybird.mjs [--dry-run]

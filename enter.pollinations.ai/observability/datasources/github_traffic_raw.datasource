@@ -3,7 +3,7 @@ TOKEN tinybird_read READ
 DESCRIPTION >
     Raw GitHub traffic API responses for pollinations/pollinations, appended daily by
     .github/workflows/data-sync-github-traffic-tinybird.yml. GitHub keeps traffic for 14 days
-    only, so body is stored exactly as returned and interpreted in pipes.
+    only, so body is stored exactly as returned for later analysis.
     endpoint is views, clones, popular/paths or popular/referrers. Each fetch covers the
     14 days before fetched_at, so fetches overlap: never sum across them.
 

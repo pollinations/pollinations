@@ -1011,7 +1011,7 @@ function getContentTypeGuard(
             "audio-with-timestamps";
         const isStemSeparation =
             requestTracking.modelDefinition.supportedEndpoints?.includes(
-                "/audio/stem-separation",
+                "/alpha/audio/stem-separation",
             );
         return {
             kind: "audio",

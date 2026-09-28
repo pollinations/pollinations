@@ -11,12 +11,8 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { zipSync } from "fflate";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import {
-    stemArchiveSeconds,
-    stemInputSeconds,
-} from "../src/audio/stem-separation.ts";
+import { stemInputSeconds } from "../src/audio/stem-separation.ts";
 import worker from "../src/index.ts";
 import fixture from "./fixtures/stem-input.json";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
@@ -27,9 +23,8 @@ const input = () =>
         "tone.mp3",
         { type: "audio/mpeg" },
     );
-const zip = zipSync({
-    "vocals.mp3": Uint8Array.from(atob(fixture.mp3), (c) => c.charCodeAt(0)),
-});
+// Empty ZIP: the archive is returned and cached as-is, never unpacked.
+const zip = new Uint8Array([80, 75, 5, 6, ...new Array(18).fill(0)]);
 
 afterEach(teardownFetchMock);
 beforeEach(async () => {
@@ -40,22 +35,12 @@ beforeEach(async () => {
 
 it("meters decoded MP3 samples without charging encoder padding", async () => {
     expect(await stemInputSeconds(input())).toBe(0.25);
-    expect(await stemArchiveSeconds(zip)).toBe(0.25);
 });
 
 it("rejects invalid uploaded audio before provider execution", async () => {
     await expect(
         stemInputSeconds(new File(["invalid"], "bad.mp3")),
     ).rejects.toMatchObject({ status: 400 });
-});
-
-it("rejects malformed upstream archives instead of billing guessed duration", async () => {
-    await expect(
-        stemArchiveSeconds(new Uint8Array([1, 2])),
-    ).rejects.toMatchObject({ status: 502 });
-    await expect(
-        stemArchiveSeconds(zipSync({ "vocals.mp3": new Uint8Array([1, 2]) })),
-    ).rejects.toMatchObject({ status: 502 });
 });
 
 for (const variation of ["two_stems_v1", "six_stems_v1", undefined]) {
@@ -100,7 +85,7 @@ for (const variation of ["two_stems_v1", "six_stems_v1", undefined]) {
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
-                    "https://gen.pollinations.ai/audio/stem-separation",
+                    "https://gen.pollinations.ai/alpha/audio/stem-separation",
                     {
                         method: "POST",
                         headers: { Authorization: `Bearer ${key}` },
@@ -155,7 +140,7 @@ test("requires purchased balance", async ({ apiKey }) => {
     const form = new FormData();
     form.set("file", input());
     const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/audio/stem-separation", {
+        new Request("https://gen.pollinations.ai/alpha/audio/stem-separation", {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: form,
@@ -174,7 +159,7 @@ test("enforces model permissions", async () => {
     const form = new FormData();
     form.set("file", input());
     const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/audio/stem-separation", {
+        new Request("https://gen.pollinations.ai/alpha/audio/stem-separation", {
             method: "POST",
             headers: { Authorization: `Bearer ${key}` },
             body: form,
@@ -195,7 +180,7 @@ for (const invalid of ["variation", "file", "wrong-endpoint"]) {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(
-                `https://gen.pollinations.ai/${invalid === "wrong-endpoint" ? "v1/audio/speech" : "audio/stem-separation"}`,
+                `https://gen.pollinations.ai/${invalid === "wrong-endpoint" ? "v1/audio/speech" : "alpha/audio/stem-separation"}`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${paidApiKey}` },

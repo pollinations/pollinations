@@ -24,15 +24,15 @@ import {
 } from "../utils/generation-access.ts";
 
 export const stemSeparationRoutes = new Hono<Env>()
-    .use("/audio/stem-separation", edgeRateLimit)
-    .use("/audio/stem-separation", auth(), frontendKeyRateLimit, balance)
+    .use("/alpha/audio/stem-separation", edgeRateLimit)
+    .use("/alpha/audio/stem-separation", auth(), frontendKeyRateLimit, balance)
     .post(
-        "/audio/stem-separation",
+        "/alpha/audio/stem-separation",
         describeRoute({
             tags: ["🔊 Audio"],
             summary: "Separate Audio Stems",
             description:
-                "Separate an uploaded audio file into vocals and instrumental, or vocals, drums, bass, guitar, piano, and other. Returns a ZIP of stereo 44.1 kHz MP3 files at 128 kbps. Pricing uses input duration and the selected stem variation; see /audio/models. This native endpoint has no OpenAI-compatible equivalent.",
+                "Separate an uploaded audio file into vocals and instrumental, or vocals, drums, bass, guitar, piano, and other. Returns a ZIP of stereo 44.1 kHz MP3 files at 128 kbps. Pricing uses input duration and the selected stem variation; see /audio/models. This native alpha endpoint has no OpenAI-compatible equivalent; its request and response may change.",
             requestBody: {
                 required: true,
                 content: {
@@ -76,7 +76,7 @@ export const stemSeparationRoutes = new Hono<Env>()
         }),
         resolveModel("generate.audio", {
             defaultModel: "elevenlabs/stem-separation",
-            supportedEndpoint: "/audio/stem-separation",
+            supportedEndpoint: "/alpha/audio/stem-separation",
         }),
         track("generate.audio"),
         prepareGenerationRequest,

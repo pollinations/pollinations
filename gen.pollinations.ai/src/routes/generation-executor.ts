@@ -81,10 +81,10 @@ const model3dHandlers = factory.createHandlers(
 export const generationExecutorRoutes = new Hono<Env>();
 
 generationExecutorRoutes.post(
-    "/audio/stem-separation",
+    "/alpha/audio/stem-separation",
     resolveModel("generate.audio", {
         defaultModel: "elevenlabs/stem-separation",
-        supportedEndpoint: "/audio/stem-separation",
+        supportedEndpoint: "/alpha/audio/stem-separation",
     }),
     track("generate.audio"),
     prepareGenerationRequest,

@@ -108,8 +108,8 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
-        expect(schema.paths["/audio/stem-separation"]).toBeDefined();
-        expect(schema.paths["/v1/audio/stem-separation"]).toBeUndefined();
+        expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();
+        expect(schema.paths["/audio/stem-separation"]).toBeUndefined();
         for (const path of [
             "/models",
             "/v1/models",
@@ -145,7 +145,7 @@ describe("/openapi.json", () => {
             ["/v1/audio/speech", "post"],
             ["/v1/audio/voice-changer", "post"],
             ["/v1/audio/voice-isolator", "post"],
-            ["/audio/stem-separation", "post"],
+            ["/alpha/audio/stem-separation", "post"],
         ]) {
             expect(schema).toHaveProperty(
                 ["paths", path, method, "responses", "200", "headers", "Link"],

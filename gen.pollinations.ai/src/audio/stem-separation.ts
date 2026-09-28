@@ -3,7 +3,6 @@ import {
     buildUsageHeaders,
     createAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
-import { unzipSync } from "fflate";
 import type { Context } from "hono";
 import { parseBuffer } from "music-metadata";
 import type { Env } from "../env.ts";
@@ -101,23 +100,6 @@ export async function stemInputSeconds(file: File): Promise<number> {
     }
 }
 
-export async function stemArchiveSeconds(archive: Uint8Array): Promise<number> {
-    try {
-        const bytes = unzipSync(archive, {
-            filter: (file) =>
-                file.name === "vocals.mp3" &&
-                file.originalSize <= 50 * 1024 * 1024,
-        })["vocals.mp3"];
-        if (!bytes) throw new Error("Missing vocal stem");
-        return await audioSeconds(bytes);
-    } catch {
-        throw new UpstreamError(502, {
-            message:
-                "Stem separation returned an archive without a valid audio duration.",
-        });
-    }
-}
-
 export async function handleStemSeparation(c: Context<Env>): Promise<Response> {
     const form = c.get("formData");
     const file = form?.get("file");
@@ -163,26 +145,12 @@ export async function handleStemSeparation(c: Context<Env>): Promise<Response> {
         }),
         endpoint,
     );
-    if (!response.headers.get("content-type")?.startsWith("application/zip")) {
-        await response.body?.cancel();
-        throw new UpstreamError(502, {
-            message: "Stem separation returned an invalid archive response.",
-        });
-    }
-    // No usage headers are returned. Bill decoded input duration, reconciled
-    // with workspace analytics. Cross-check against the trusted returned stem:
-    // upstream MP3s omit gapless tags and include up to three frames of padding.
-    const archive = new Uint8Array(await response.arrayBuffer());
-    const outputSeconds = await stemArchiveSeconds(archive);
-    if (Math.abs(outputSeconds - inputSeconds) > (3 * 1152) / 44100) {
-        throw new UpstreamError(400, {
-            message:
-                "Source audio duration metadata does not match the separated audio.",
-        });
-    }
-    return new Response(archive, {
+    // No usage headers are returned; bill the decoded input duration, which
+    // matches workspace analytics.
+    return new Response(response.body, {
         headers: {
-            "Content-Type": "application/zip",
+            "Content-Type":
+                response.headers.get("content-type") || "application/zip",
             "Content-Disposition": 'attachment; filename="stems.zip"',
             ...buildUsageHeaders(
                 c.var.model.resolved,

@@ -373,7 +373,7 @@ const AUDIO_BASE_SERVICES = {
             "Separate vocals and instruments into two or six downloadable audio tracks",
         inputModalities: ["audio"],
         outputModalities: ["audio"],
-        supportedEndpoints: ["/audio/stem-separation"],
+        supportedEndpoints: ["/alpha/audio/stem-separation"],
     },
     "elevenlabs/music-v2": {
         aliases: ["music", "elevenmusic"],

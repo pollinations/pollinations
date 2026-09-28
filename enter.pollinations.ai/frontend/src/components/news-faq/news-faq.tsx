@@ -1,8 +1,11 @@
 import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
-import { HIGHLIGHTS_GITHUB_URL } from "./highlights.ts";
-import { Announcements, NewsBanner } from "./news-banner.tsx";
+import {
+    Announcements,
+    HIGHLIGHTS_GITHUB_URL,
+    NewsBanner,
+} from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <>

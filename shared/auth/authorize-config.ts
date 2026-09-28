@@ -22,6 +22,14 @@ type AuthorizeDefaultsInput = {
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
+/**
+ * Upper bound for a key's expiry, shared by the dashboard dialogs, the
+ * create-key routes and the better-auth plugin so they cannot drift. A key
+ * may expire long after a year (the old 365-day cap was the bug in #15559);
+ * an empty expiry is still the only way to mean "never".
+ */
+export const MAX_KEY_EXPIRY_DAYS = 36500; // 100 years
+
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
 /**
@@ -30,13 +38,19 @@ const SECONDS_PER_DAY = 24 * 60 * 60;
  * mid-second failed validation. Rounding is the whole fix.
  *
  * An empty field is the only thing that means "no expiry". Anything invalid
- * stays invalid and the server rejects it, which the dialogs surface.
+ * stays invalid and the server rejects it, which the dialogs surface. The
+ * upper bound is MAX_KEY_EXPIRY_DAYS (the old 365-day cap was #15559).
  */
 export function expiryDaysToExpiresIn(
     expiryDays: number | null | undefined,
 ): number | undefined {
     if (expiryDays == null) return undefined;
     return Math.round(expiryDays * SECONDS_PER_DAY);
+}
+
+/** True when an expiry (in days) is above the shared maximum. */
+export function exceedsMaxExpiryDays(expiryDays: number): boolean {
+    return expiryDays > MAX_KEY_EXPIRY_DAYS;
 }
 
 /**

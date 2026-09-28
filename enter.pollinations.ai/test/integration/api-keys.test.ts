@@ -90,6 +90,51 @@ describe("API Key Management", () => {
             });
         });
 
+        // #15559: an expiry longer than 365 days must be accepted.
+        test("accepts an expiry beyond 365 days", async ({ sessionToken }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const expiresIn = 730 * 24 * 60 * 60; // two years
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ name: "long-lived", expiresIn }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.expiresAt).toBeTruthy();
+            const approx = Date.now() + expiresIn * 1000;
+            expect(
+                Math.abs(new Date(created.expiresAt).getTime() - approx),
+            ).toBeLessThan(120_000);
+        });
+
+        test("rejects an expiry beyond the sanity bound", async ({
+            sessionToken,
+        }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "absurd",
+                        expiresIn: 100_000 * 24 * 60 * 60,
+                    }),
+                },
+            );
+            expect(response.status).toBeGreaterThanOrEqual(400);
+        });
+
         test("forces publishable keys to zero direct-spend budget", async ({
             sessionToken,
         }) => {

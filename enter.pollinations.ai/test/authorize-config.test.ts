@@ -6,8 +6,10 @@ import {
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
+    exceedsMaxExpiryDays,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    MAX_KEY_EXPIRY_DAYS,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
@@ -136,6 +138,29 @@ describe("expiryDaysToExpiresIn", () => {
     it("leaves a non-positive expiry for the server to reject", () => {
         expect(expiryDaysToExpiresIn(0)).toBe(0);
         expect(expiryDaysToExpiresIn(-7)).toBe(-604800);
+    });
+
+    // #15559: an expiry longer than 365 days must convert like any other.
+    it("allows expiries longer than 365 days", () => {
+        expect(expiryDaysToExpiresIn(366)).toBe(366 * 86400);
+        expect(expiryDaysToExpiresIn(730)).toBe(730 * 86400);
+        expect(expiryDaysToExpiresIn(MAX_KEY_EXPIRY_DAYS)).toBe(
+            MAX_KEY_EXPIRY_DAYS * 86400,
+        );
+    });
+});
+
+describe("expiry upper bound", () => {
+    it("is well above the old 365-day cap", () => {
+        expect(MAX_KEY_EXPIRY_DAYS).toBeGreaterThan(365);
+    });
+
+    // The cap is a sanity bound, not a realistic limit: 100 years.
+    it("only rejects expiries beyond the shared maximum", () => {
+        expect(exceedsMaxExpiryDays(365)).toBe(false);
+        expect(exceedsMaxExpiryDays(366)).toBe(false);
+        expect(exceedsMaxExpiryDays(MAX_KEY_EXPIRY_DAYS)).toBe(false);
+        expect(exceedsMaxExpiryDays(MAX_KEY_EXPIRY_DAYS + 1)).toBe(true);
     });
 });
 

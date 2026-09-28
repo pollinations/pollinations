@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -43,6 +43,7 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek/deepseek-v4-flash` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) (`hermes`) | **Available now** — `polli harness hermes on` | Configures Hermes' custom OpenAI-compatible endpoint with a dedicated key, current Pollinations tool-calling model, hosted MCP servers, and the Polli skill while preserving unrelated settings. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-5.4-nano`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `moonshotai/kimi-k2.6`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek/deepseek-v4-flash`. |
@@ -80,6 +81,26 @@ polli harness dsh off
 ```
 
 DeepSeek Harness is officially run with `npx @deepseek-ai/dsh@latest web`. The explicit `@latest` selects the current release rather than a local installation. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
+
+## Hermes Agent
+
+```bash
+npx @pollinations/cli@latest harness hermes on
+polli harness hermes status
+polli harness hermes off
+```
+
+`on` requires the official Hermes command to be installed. On Windows use
+`iex (irm https://hermes-agent.nousresearch.com/install.ps1)`; on Linux,
+macOS, or WSL use the official shell installer. The adapter validates the
+selected tool-calling model against Pollinations' live catalog, writes a
+custom OpenAI-compatible endpoint to `~/.hermes/config.yaml`, stores the
+dedicated `POLLI_HERMES_API_KEY` in `~/.hermes/.env`, and installs the Polli
+skill under `~/.hermes/skills/polli/`. Hosted Pollinations MCP servers are
+added to `mcp_servers`; pass `--no-mcp` to skip them. `status` reports the
+model, credential, skill, and MCP state. `off` restores the original files
+byte-for-byte when untouched, or strips only Pollinations-owned entries after
+the user has edited Hermes configuration.
 
 ## OpenCode
 

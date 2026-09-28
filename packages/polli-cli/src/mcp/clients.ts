@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { hermesMcpClient } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -692,7 +693,7 @@ const cliClients: McpClientAdapter[] = [
     }),
 ];
 
-// Exported table matches the issue's priority list:
+// Exported table matches the issue's priority list, plus Hermes Agent:
 // claude-code, codex, vscode, cursor, opencode, gemini, copilot, windsurf,
 // cline, amp, kiro, zed, warp.
 const PRIORITY = [
@@ -709,10 +710,14 @@ const PRIORITY = [
     "kiro",
     "zed",
     "warp",
+    "hermes",
 ];
 
 const byId = new Map(
-    [...cliClients, ...jsonClients].map((client) => [client.id, client]),
+    [...cliClients, ...jsonClients, hermesMcpClient].map((client) => [
+        client.id,
+        client,
+    ]),
 );
 
 export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.flatMap((id) => {

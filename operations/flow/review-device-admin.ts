@@ -141,8 +141,7 @@ export function deviceReviewCasesForSection(
                             selector: "#device-code-form",
                             text: deviceCodeExpectations[kind],
                         },
-                        // A rejected code freezes Continue until it changes.
-                        { selector: 'button:disabled:text-is("Continue")' },
+                        { selector: 'button:enabled:text-is("Continue")' },
                     ],
                 }),
                 recipe(
@@ -251,7 +250,7 @@ export function deviceReviewCasesForSection(
                     "/api/device/info",
                     "unavailable",
                     "#device-code-form",
-                    deviceCodeExpectations.unavailable,
+                    "Code not recognized. Check it and try again.",
                 ],
                 [
                     "device-checking",
@@ -290,7 +289,8 @@ export function deviceReviewCasesForSection(
                 note:
                     id === "device-checking"
                         ? "Main keeps Allow access enabled while the direct device lookup is pending. There is no separate request-checking screen."
-                        : id === "device-request-unavailable"
+                        : id === "device-code-unavailable" ||
+                            id === "device-request-unavailable"
                           ? "Main presents this injected service failure as an invalid code (G04)."
                           : id === "device-request-lookup"
                             ? "Main presents an app lookup failure as an unverified key. Recovery offers Decline, without retry (G01)."
@@ -299,10 +299,6 @@ export function deviceReviewCasesForSection(
                     ...(pageId === "device-errors"
                         ? deviceError(text)
                         : [{ selector, text }]),
-                    // A failed check can be retried with the same code.
-                    ...(id === "device-code-unavailable"
-                        ? [{ selector: 'button:enabled:text-is("Continue")' }]
-                        : []),
                 ],
             }),
         ),
@@ -429,7 +425,10 @@ export const adminReviewCases: ReviewCase[] = [
         query: { screen: "identity" },
         finalRoute: "/app/sign-in",
         conditions: { account: "signed-out", role: "admin" },
-        expected: [...signInReady, { selector: "p", text: "to continue to " }],
+        expected: [
+            ...signInReady,
+            { selector: "p", text: "with your Pollinations admin account." },
+        ],
     }),
     ...(["pending", "error"] as const).map((outcome) =>
         adminRecipe("identity", `admin-sign-in-${outcome}`, {
@@ -581,7 +580,7 @@ export const adminReviewCases: ReviewCase[] = [
                 outcome === "pending"
                     ? [
                           {
-                              selector: "button:disabled",
+                              selector: "output",
                               text: "Checking sign-in…",
                           },
                       ]

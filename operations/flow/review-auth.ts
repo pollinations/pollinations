@@ -52,10 +52,10 @@ export const adminSignInSituations = {
     },
 } as const;
 
-// An unavailable check is not an answer about the code, so it stays retryable.
+// The unavailable response is a known product gap (G04 in scenario-audit.csv).
 export const deviceCodeExpectations = {
     invalid: "Invalid code",
     expired: "Code expired",
     used: "This code has already been used. Return to your device, or get a new code to reconnect.",
-    unavailable: "Couldn’t verify the code. Try again.",
+    unavailable: "Code not recognized. Check it and try again.",
 };

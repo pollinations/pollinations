@@ -1,0 +1,20 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Google Search Console performance responses for sc-domain:pollinations.ai (all subdomains,
+    web search), appended daily by .github/workflows/data-sync-search-console-tinybird.yml.
+    Search Console keeps 16 months, so each body is stored as returned for later analysis.
+    Datasets per day: totals (country, device; includes queries Google hides), queries
+    (query, country, device), pages (page, country, device). A dataset larger than 25,000 rows
+    spans responses told apart by start_row. Each run re-sends the last three final days: use
+    the latest fetch per dataset and date.
+
+SCHEMA >
+    `dataset` LowCardinality(String) `json:$.dataset`,
+    `date` Date `json:$.date`,
+    `start_row` UInt32 `json:$.start_row`,
+    `fetched_at` DateTime `json:$.fetched_at`,
+    `body` String `json:$.body`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "dataset, date, start_row, fetched_at"

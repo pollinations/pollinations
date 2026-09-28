@@ -153,29 +153,53 @@ describe("Account Key Management API", () => {
             expect(data.pollenBudget).toBe(50);
         });
 
-        test("should strip 'keys' from child account permissions", async ({
+        test("should let a key with account:keys create a child that can create keys", async ({
             sessionToken,
         }) => {
-            const response = await SELF.fetch(
+            const parentKey = await createApiKeyViaApi(sessionToken, {
+                name: "machine-parent",
+                accountPermissions: ["keys"],
+            });
+
+            const createChild = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${parentKey.key}`,
                     },
                     body: JSON.stringify({
-                        name: "escalation-attempt",
+                        name: "machine-child",
                         accountPermissions: ["profile", "keys", "usage"],
                     }),
                 },
             );
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            // "keys" should be stripped
-            expect(data.permissions.account).toEqual(["profile", "usage"]);
-            expect(data.permissions.account).not.toContain("keys");
+            expect(createChild.status).toBe(200);
+            const child = await createChild.json();
+            expect(child.permissions.account).toEqual([
+                "profile",
+                "keys",
+                "usage",
+            ]);
+
+            // The child can mint its own key in turn.
+            const createGrandchild = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${child.key}`,
+                    },
+                    body: JSON.stringify({ name: "harness-grandchild" }),
+                },
+            );
+            expect(createGrandchild.status).toBe(200);
+            const grandchild = await createGrandchild.json();
+            expect(grandchild.key.startsWith("sk_")).toBe(true);
+            expect(grandchild.permissions?.account ?? []).not.toContain("keys");
         });
 
         test("should create key via API key with account:keys permission", async ({

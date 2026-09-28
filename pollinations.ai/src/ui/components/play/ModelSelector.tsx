@@ -1,10 +1,8 @@
 import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
-import { useModelUptime } from "../../../hooks/useModelUptime";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
-import { UptimeDot } from "./UptimeDot";
 
 type ModelCategory = "image" | "text" | "audio" | "video";
 
@@ -73,8 +71,6 @@ export const ModelSelector = memo(function ModelSelector({
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
-
-    const getUptime = useModelUptime(models.some((model) => model.community));
 
     // Keep the visible category tab on the selected model (e.g. when
     // preselected via /play?model=<id>).
@@ -163,9 +159,6 @@ export const ModelSelector = memo(function ModelSelector({
                                       }`}
                                       style={{ borderColor }}
                                   >
-                                      {m.community && (
-                                          <UptimeDot status={getUptime(m)} />
-                                      )}
                                       {m.title}
                                       {isPaidOnly && (
                                           <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">

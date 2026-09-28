@@ -12,6 +12,7 @@ then choose a server:
 | Server | Endpoint | Use it for | Details |
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
+| Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connected Apps | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
@@ -28,6 +29,31 @@ Get current endpoints and pricing from the live catalog:
 ```bash
 curl https://gen.pollinations.ai/mcp
 ```
+
+### Install into coding agents with the Polli CLI
+
+The [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) wires the
+catalog into coding agents and IDEs for you. It fetches the live server list,
+mints a dedicated API key per client, and merges the entries into the client's
+config without touching your other MCP servers:
+
+```bash
+npx @pollinations/cli mcp list                  # live server catalog
+npx @pollinations/cli mcp install cursor --all  # every server into Cursor
+npx @pollinations/cli mcp install claude-code pollinations ffmpeg
+npx @pollinations/cli mcp status                # what each client has
+npx @pollinations/cli mcp remove cursor ffmpeg  # remove selected entries
+npx @pollinations/cli mcp remove cursor         # remove all Pollinations entries
+```
+
+Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
+
+Keys are stored locally in plaintext in client configs and reused on reinstall.
+Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.
+Files written by Polli use owner-only permissions on Unix. Do not share or commit
+configs containing keys. Removal only deletes Pollinations entries; other servers
+are left untouched.
 
 ### Use with hosted agents
 
@@ -100,6 +126,14 @@ clients should not rely on a hardcoded model list.
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone
 with the link can access it, and it expires after 30 days.
+
+### Ask Jev MCP
+
+`jev_decide` accepts `state` and a map of `questions`, each using `choice`,
+`score`, or `noul` (probability). It returns typed answers with confidence or
+probabilities. Include relevant facts in `state`; confidence can remain high
+when facts are missing. Calls use Jev's listed model rate with no additional
+MCP fee.
 
 ### FFmpeg MCP
 

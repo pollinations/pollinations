@@ -1,6 +1,5 @@
-// Client-side view of the public `model_route_health` Tinybird pipe, served
-// with a shared edge cache at gen `/models/status`. Rollup rows (`is_rollup` 1)
-// count what callers experienced after fallbacks; the other rows are routes.
+// Shared rollup shape for catalog reliability and time-window diagnostics.
+// Rollup rows count what callers experienced after fallbacks, not attempts.
 export type ModelHealthRow = {
     model?: string;
     event_type?: string;
@@ -18,23 +17,15 @@ export type ModelHealth = {
     successRate: number | null;
 };
 
-const WINDOW_MINUTES = 24 * 60;
-// Same thresholds as the model monitor's computeHealthStatus.
+// Diagnostic colors are independent of the >80% community discovery cutoff.
 const DEGRADED_5XX_PERCENT = 5;
 const DOWN_5XX_PERCENT = 20;
 
-/** Rows for the last 24 hours; throws on a non-2xx response. */
-export async function fetchModelHealthRows(
-    genBaseUrl: string,
-): Promise<ModelHealthRow[]> {
-    const response = await fetch(
-        `${genBaseUrl}/models/status?minutes=${WINDOW_MINUTES}`,
-    );
-    if (!response.ok) {
-        throw new Error(`Failed to fetch model status (${response.status})`);
-    }
-    const body = (await response.json()) as { data?: ModelHealthRow[] };
-    return body.data ?? [];
+/** Discovery is fail-open when there are no recent observations. */
+export function isModelReliable(
+    successRate: number | null | undefined,
+): boolean {
+    return successRate == null || successRate > 80;
 }
 
 /** Health per model id and category (`text`, `image`, ...) from rollup rows. */

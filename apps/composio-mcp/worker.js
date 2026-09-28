@@ -87,6 +87,7 @@ function connectionSummary(account, toolkit) {
         id: account.id,
         toolkit: account.toolkit?.slug,
         name: toolkit?.name || null,
+        description: toolkit?.meta?.description || "",
         logo: toolkit?.meta?.logo || null,
         alias: account.alias || null,
         status: account.status,

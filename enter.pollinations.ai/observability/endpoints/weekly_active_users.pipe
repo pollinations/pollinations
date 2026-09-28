@@ -23,8 +23,10 @@ SQL >
         countIf(response_status != 402) AS served_requests,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS total_revenue
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
         -- One row per request: a fallback attempt is part of a request, not
         -- another one, and it carries no user, price or tokens of its own.
         is_final

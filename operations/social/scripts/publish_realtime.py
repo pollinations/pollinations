@@ -18,6 +18,7 @@ from typing import Dict, Optional
 import requests
 from common import (
     DISCORD_CHAR_LIMIT,
+    post_discord_webhook,
     GISTS_BRANCH,
     GITHUB_API_BASE,
     call_pollinations_api,
@@ -202,12 +203,7 @@ def main():
         print(f"  FATAL: Could not download image for Discord: {e}")
         sys.exit(1)
 
-    # Post to Discord
-    if "?" not in discord_webhook:
-        discord_webhook += "?wait=true"
-    else:
-        discord_webhook += "&wait=true"
-
+    # Post to Discord (retries server failures)
     try:
         if image_bytes:
             files = {
@@ -218,9 +214,11 @@ def main():
                 ),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
-            resp = requests.post(discord_webhook, files=files, timeout=30)
+            resp = post_discord_webhook(discord_webhook, files=files)
         else:
-            resp = requests.post(discord_webhook, json={"content": message}, timeout=30)
+            resp = post_discord_webhook(
+                discord_webhook, json_body={"content": message}
+            )
 
         if resp.status_code in [200, 201, 204]:
             print("  Discord post sent")

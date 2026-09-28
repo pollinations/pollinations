@@ -117,8 +117,10 @@ SQL >
             ),
             2
         ) AS community_availability
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

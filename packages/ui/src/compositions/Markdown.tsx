@@ -2,6 +2,7 @@ import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
+import { InlineLink } from "../primitives/InlineLink.tsx";
 import { CodeBlock } from "./CodeBlock.tsx";
 
 export type MarkdownProps = {
@@ -122,19 +123,7 @@ const components: Components = {
     a: ({ node, href, ...props }) => {
         const media = inlineMedia(href, textContent(props.children));
         if (media) return media;
-        const external =
-            typeof href === "string" &&
-            !href.startsWith("#") &&
-            !href.startsWith("/");
-        return (
-            <a
-                href={href}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noopener noreferrer" : undefined}
-                className="polli-control polli:rounded-sm polli:font-medium polli:text-theme-text-strong polli:underline polli:underline-offset-2"
-                {...props}
-            />
-        );
+        return <InlineLink href={href} {...props} />;
     },
 };
 

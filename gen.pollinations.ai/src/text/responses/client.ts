@@ -47,6 +47,10 @@ export function responsesTargetFromConfig(
         headers: authHeader,
         model,
         defaults: {
+            // Request fields the route always sends unless the caller sets them.
+            ...(isPlainObject(config.responsesDefaults)
+                ? config.responsesDefaults
+                : {}),
             ...(chatDefaults.provider === undefined
                 ? {}
                 : { provider: chatDefaults.provider }),

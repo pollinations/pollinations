@@ -38,7 +38,7 @@ const pollinationsConfigDir = (ctx: HarnessContext) => {
     );
 };
 
-const opencodeConfigFile = (ctx: HarnessContext) => {
+export const opencodeConfigFile = (ctx: HarnessContext) => {
     if (ctx.env.OPENCODE_CONFIG?.trim()) {
         return resolveHomePath(ctx.home, ctx.env.OPENCODE_CONFIG);
     }

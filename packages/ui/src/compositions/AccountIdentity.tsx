@@ -80,7 +80,7 @@ export function AccountIdentity({
     return (
         <span
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-ink-100/80 polli:p-1 polli:pr-3",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-surface-opaque polli:p-1 polli:pr-3",
                 className,
             )}
         >

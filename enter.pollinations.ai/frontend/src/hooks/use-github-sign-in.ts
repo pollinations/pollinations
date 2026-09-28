@@ -14,7 +14,9 @@ export function useGitHubSignIn(callbackURL?: string) {
         });
         if (error) {
             setIsSigningIn(false);
-            setError("Sign in failed. Please try again.");
+            setError(
+                "We couldn’t sign you in to your Pollinations account. Please try again.",
+            );
         }
     }
 

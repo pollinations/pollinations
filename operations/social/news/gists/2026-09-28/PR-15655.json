@@ -1,0 +1,37 @@
+{
+  "pr_number": 15655,
+  "title": "feat: let prompt agents call client tools",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15655",
+  "merged_at": "2026-09-28T15:57:00Z",
+  "labels": [
+    "FEATURE",
+    "API"
+  ],
+  "pr_body_excerpt": "- Adds caller-defined function tools to prompt agents alongside their configured server-side MCP tools.\n- Reuses the existing SDK loop: MCP tools execute on the server; caller calls return for client execution. Replay calls and results, including plain-text results, to continue through Responses or Chat Completions.\n- Preserves MCP namespace ownership, usage checks and step limits. No new endpoints, storage, dependencies or custom loop; only default/auto tool selection is supported.\n- Verified 144 Gen tests, 24 code-agent regressions, 2 Worker SDK tests, Gen typecheck and Biome; independent review found no blockers. No deployment or paid requests.\n- Related #14305 (hosted/remote MCP tools remain separate); follows #14454 and #14527.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tools on both sides",
+    "blurb": "Prompt agents can now ask your app to use its own tools while MCP tools stay on the server. Everyone keeps their own toolbox.",
+    "summary": "Prompt agents now accept caller-defined function tools alongside server-side MCP tools, replaying client-executed calls and plain-text results through Responses or Chat Completions using the existing SDK loop.",
+    "impact": "Developers can execute returned tool calls in their clients and send results back to continue the agent, with MCP namespace ownership, usage checks, and step limits preserved; tool selection supports default/auto mode.",
+    "keywords": [
+      "prompt agents",
+      "function tools",
+      "MCP",
+      "SDK",
+      "Responses",
+      "Chat Completions"
+    ],
+    "visual_concept": "A friendly tool handoff: Polli passes a tiny wrench-shaped function-call card to a client-side CRT robot, while MCP tools remain on a separate server-side workbench. Code-plants connect the two without mixing their toolboxes.",
+    "image_prompt": "In a cozy pixel art garden workshop, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny tool belt and hands a function-call card to a friendly CRT robot; a separate MCP workbench sits among code-plants. Strictly pixel art, she is small-to-medium sized and shares the frame with the robot; cozy pixel art, 8-bit aesthetic, chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15655.jpg",
+    "prompt": "In a cozy pixel art garden workshop, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny tool belt and hands a function-call card to a friendly CRT robot; a separate MCP workbench sits among code-plants. Strictly pixel art, she is small-to-medium sized and shares the frame with the robot; cozy pixel art, 8-bit aesthetic, chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-28T15:58:16.395341+00:00"
+}

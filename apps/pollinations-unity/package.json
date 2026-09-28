@@ -1,0 +1,19 @@
+{
+  "name": "com.pollinations.unity",
+  "version": "1.0.0",
+  "displayName": "Pollinations for Unity",
+  "description": "Small, dependency-free async Unity client for Pollinations text, image, speech, model lists, and device flow.",
+  "unity": "2021.3",
+  "author": {
+    "name": "Pollinations community",
+    "url": "https://github.com/pollinations/pollinations"
+  },
+  "license": "MIT",
+  "samples": [
+    {
+      "displayName": "Demo Scene",
+      "description": "Minimal example that generates text, an image, and speech.",
+      "path": "Samples~/DemoScene"
+    }
+  ]
+}

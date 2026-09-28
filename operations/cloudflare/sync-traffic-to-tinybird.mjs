@@ -7,8 +7,7 @@
  * The zone is on the Free plan, where per-request detail (page, country,
  * device) is kept for 30 days only, so this runs daily
  * (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml) and stores one
- * raw GraphQL response per UTC day; the cloudflare_page_views_daily pipe
- * interprets it.
+ * raw GraphQL response per UTC day.
  *
  * Only HTML responses to real clients on our own page routes are requested:
  * people type prompts into URLs, so any other path may contain prompt text.

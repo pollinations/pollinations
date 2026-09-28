@@ -6,7 +6,7 @@
  *
  * A set is a folder in public/art/: set.json holds every prompt, and the
  * images sit beside it as <page>-<slot>-<light>.webp plus a -1024 copy.
- * ART_SET in src/art.ts picks the live set; day shows in light mode, night in
+ * ART_SET in src/art-config.ts picks the live set; day shows in light mode, night in
  * dark mode.
  *
  * Day images are drawn from their prompt with the character sheet attached.

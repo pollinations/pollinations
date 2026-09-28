@@ -1,6 +1,7 @@
 import { cn } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { useArt } from "../../art";
+import { HERO_IMAGE_SIZES } from "../../art-config";
 
 export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
 
@@ -27,7 +28,7 @@ export function HeroScene({
             <img
                 src={scene.src}
                 srcSet={scene.srcSet}
-                sizes="(max-width: 1440px) 100vw, 1440px"
+                sizes={HERO_IMAGE_SIZES}
                 alt=""
                 aria-hidden="true"
                 width={2048}

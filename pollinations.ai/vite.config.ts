@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import { ART_SET, HERO_IMAGE_SIZES } from "./src/art-config";
 
 // Brand SVGs resolve from source rather than dist, matching enter's frontend
 // so the two sites can't drift on the wordmark.
@@ -21,6 +22,16 @@ export default defineConfig({
         },
     },
     plugins: [
+        {
+            name: "hero-preload-config",
+            transformIndexHtml: {
+                order: "pre",
+                handler: (html) =>
+                    html
+                        .replace(/__ART_SET__/g, ART_SET)
+                        .replace(/__HERO_IMAGE_SIZES__/g, HERO_IMAGE_SIZES),
+            },
+        },
         // Must run before react() so the generated route tree exists.
         tanstackRouter({
             target: "react",

@@ -4,21 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- Apply the saved/system color mode before first paint. The shared UI
-         toggle becomes the source of truth after React mounts. -->
+    <!-- Resolve the theme and start its responsive hero before the app bundle.
+         Artwork constants below are injected by Vite in dev and builds. -->
     <script>
       (() => {
+        let mode;
         try {
-          let mode = localStorage.getItem("polli-color-mode");
-          if (mode !== "light" && mode !== "dark") {
-            mode = matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-          }
-          if (mode === "dark") document.documentElement.classList.add("dark");
+          mode = localStorage.getItem("polli-color-mode");
         } catch {
-          /* Ignore unavailable storage or system preference APIs. */
+          /* Storage may be blocked; the shared UI then uses the system theme. */
         }
+        if (mode !== "light" && mode !== "dark") {
+          mode = window.matchMedia?.("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        if (mode === "dark") document.documentElement.classList.add("dark");
+
+        const path = location.pathname.replace(/\/$/, "").toLowerCase() || "/";
+        const page = { "/": "home", "/play": "play", "/apps": "apps", "/community": "community" }[path];
+        if (!page) return;
+        const base = `/art/__ART_SET__/${page}-hero-${mode === "dark" ? "night" : "day"}`;
+        const preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "image";
+        preload.type = "image/webp";
+        preload.fetchPriority = "high";
+        preload.imageSrcset = `${base}-1024.webp 1024w, ${base}.webp 2048w`;
+        preload.imageSizes = "__HERO_IMAGE_SIZES__";
+        preload.href = `${base}.webp`;
+        document.head.appendChild(preload);
       })();
     </script>
     

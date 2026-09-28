@@ -1,11 +1,11 @@
 import { useColorMode } from "@pollinations/ui";
+import { ART_SET } from "./art-config";
 
 /**
  * The live illustration set: a folder in public/art/ holding set.json (every
- * prompt) and its images. scripts/art.mjs makes a new set; switching sets is
- * this one constant.
+ * prompt) and its images. scripts/art.mjs makes a new set; switch the live set
+ * with ART_SET in art-config.ts.
  */
-export const ART_SET = "v2";
 
 type ArtPage = "home" | "play" | "apps" | "community";
 type ArtSlot = "hero" | "quests" | "votes" | "placeholder" | "closing";

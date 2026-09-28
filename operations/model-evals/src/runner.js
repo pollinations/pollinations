@@ -1,7 +1,7 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { generateQuestion, gradeQuestion } from "./questions.js";
 import { attachOfficialMatches } from "./model-match.js";
+import { generateQuestion, gradeQuestion } from "./questions.js";
 import { wilsonMargin } from "./stats.js";
 
 export const MODELS_URL =
@@ -28,9 +28,15 @@ export function hashString(value) {
     return hash >>> 0;
 }
 
-export function selectModels(models, { communityOnly = false, modelFilter = null }) {
-    let selected = models.filter((model) => (model.category ?? "text") === "text");
-    if (communityOnly) selected = selected.filter((model) => Boolean(model.community));
+export function selectModels(
+    models,
+    { communityOnly = false, modelFilter = null },
+) {
+    let selected = models.filter(
+        (model) => (model.category ?? "text") === "text",
+    );
+    if (communityOnly)
+        selected = selected.filter((model) => Boolean(model.community));
     if (!modelFilter?.length) return selected;
     const wanted = new Set(modelFilter.map((name) => name.toLowerCase()));
     return selected.filter((model) =>
@@ -115,7 +121,11 @@ export async function requestCompletion({
             }
             const data = await response.json();
             const content = data.choices?.[0]?.message?.content;
-            if (typeof content !== "string" || !data.usage || accountErrorText(content)) {
+            if (
+                typeof content !== "string" ||
+                !data.usage ||
+                accountErrorText(content)
+            ) {
                 return {
                     ok: false,
                     error: accountErrorText(content ?? "")
@@ -151,7 +161,8 @@ export async function evaluateModel(model, options) {
         for (let repeat = 0; repeat < options.trials; repeat++) {
             const question = generateQuestion(family, rng);
             const requestSeed =
-                (options.runSeed + hashString(model.name) + sequence * 1009) >>> 0;
+                (options.runSeed + hashString(model.name) + sequence * 1009) >>>
+                0;
             sequence += 1;
             const response = await requestCompletion({
                 fetchFn: options.fetchFn,
@@ -164,7 +175,9 @@ export async function evaluateModel(model, options) {
                 timeoutMs: options.timeoutMs,
                 maxAttempts: options.maxAttempts,
             });
-            const cost = response.ok ? tokenCost(response.usage, model.pricing) : 0;
+            const cost = response.ok
+                ? tokenCost(response.usage, model.pricing)
+                : 0;
             trials.push({
                 family,
                 repeat,
@@ -215,7 +228,8 @@ export async function evaluateModel(model, options) {
         cost,
         averageLatencyMs:
             total > 0
-                ? trials.reduce((sum, trial) => sum + trial.latencyMs, 0) / total
+                ? trials.reduce((sum, trial) => sum + trial.latencyMs, 0) /
+                  total
                 : 0,
         families: familyRows,
         trials,
@@ -245,7 +259,9 @@ export async function writeRun(resultsDir, payload) {
     };
     const runs = [
         summary,
-        ...(previous.runs ?? []).filter((entry) => entry.runId !== payload.runId),
+        ...(previous.runs ?? []).filter(
+            (entry) => entry.runId !== payload.runId,
+        ),
     ].slice(0, 104);
     const json = `${JSON.stringify(payload, null, 2)}\n`;
     await Promise.all([

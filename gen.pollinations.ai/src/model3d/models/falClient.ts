@@ -61,22 +61,32 @@ export async function runFalJob(
     opts: RunFalJobOptions,
     apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
+    return (await runFalJobResponse(opts, apiKey)).json();
+}
+
+/** Preserve the result headers for callers that use fal's reported billing units. */
+export async function runFalJobResponse(
+    opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
+): Promise<Response> {
+    const submitted = await falFetch(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
         body: opts.input,
     });
+    const submission = (await submitted.json()) as FalQueueSubmitResponse;
 
     // Fal still runs and bills a job we stop polling, so wait until it
     // finishes. The durable generation alarm bounds the wait.
     while (true) {
         await sleep(POLL_INTERVAL_MS);
-        const status = await falFetch<FalQueueStatusResponse>(apiKey, {
+        const polled = await falFetch(apiKey, {
             method: "GET",
             url: submission.status_url,
         });
+        const status = (await polled.json()) as FalQueueStatusResponse;
         if (status.status === "COMPLETED") {
-            return falFetch<Record<string, unknown>>(apiKey, {
+            return falFetch(apiKey, {
                 method: "GET",
                 url: submission.response_url,
             });
@@ -102,14 +112,14 @@ export function extractFalModelMesh(
     return modelMesh;
 }
 
-async function falFetch<T>(
+async function falFetch(
     apiKey: string,
     args: {
         method: "GET" | "POST";
         url: string;
         body?: Record<string, unknown>;
     },
-): Promise<T> {
+): Promise<Response> {
     const headers: Record<string, string> = {
         Authorization: `Key ${apiKey}`,
     };
@@ -129,7 +139,7 @@ async function falFetch<T>(
             text,
         );
     }
-    return (await response.json()) as T;
+    return response;
 }
 
 export function classifyFalHttpStatus(httpStatus: number): number {

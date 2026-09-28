@@ -359,7 +359,7 @@ describe("static provider fallbacks", () => {
                 usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
             }),
         ).toBe("long_context");
-        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.priceMultiplier).toBe(1);
         expect(fallback.paidOnly).not.toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
@@ -368,7 +368,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
-        expect(billing.price.totalPrice).toBe(0.00027);
+        expect(billing.price.totalPrice).toBe(0.00036);
         const model = findModelByName("openai/gpt-6-astra:azure:datazone");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
@@ -376,6 +376,25 @@ describe("static provider fallbacks", () => {
             "azure-resource-name": "myceli-prod-eastus",
             responsesEndpoint:
                 "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it.each([
+        "openai/gpt-6-luna",
+        "openai/gpt-6-sol",
+    ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openai`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:openai`]);
+        expect(primary.paidOnly).toBe(false);
+        expect(fallback.provider).toBe("openai");
+        expect(fallback.paidOnly).toBe(false);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.costVariants).toEqual(primary.costVariants);
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
+            responsesEndpoint: "https://api.openai.com/v1/responses",
         });
     });
 

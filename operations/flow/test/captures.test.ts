@@ -1,9 +1,9 @@
-import { HIGHLIGHTS_RAW_URL } from "@frontend/components/news-faq/highlights";
 import { chromium } from "playwright";
 import { describe, expect, it, vi } from "vitest";
 import { getDefaultErrorMessage } from "../../../shared/error";
 import type { PreviewResult } from "../capture-types";
 import { captureIdentity, createCaptureService } from "../captures";
+import { HIGHLIGHTS_RAW_URL } from "../news-highlights";
 import type { ReviewCase } from "../review-cases";
 import { reviewCasesForFlow, reviewFlows } from "../review-inventory";
 import { readSourceInfo } from "../source-info";

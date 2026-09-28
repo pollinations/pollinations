@@ -13,7 +13,6 @@ import {
     test,
     vi,
 } from "vitest";
-import deployment from "../deploy.json";
 import { createReviewerGateway, REVIEWER_AUTH_PATH } from "../reviewer-gateway";
 
 const workerConfig = JSON.parse(
@@ -258,9 +257,11 @@ test("protects every origin and route before starting a review environment", asy
             )
         ).status,
     ).toBe(404);
-    for (const url of deployment.verify) {
+    for (const origin of Object.values(origins)) {
         const health = await gateway(
-            new Request(url, { headers: { Accept: "*/*" } }),
+            new Request(`${origin}/flow-reviewer`, {
+                headers: { Accept: "*/*" },
+            }),
         );
         expect(health.status).toBe(200);
         expect(await health.text()).toContain('name="flow-login"');

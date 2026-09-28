@@ -6,19 +6,11 @@ on:
     paths:
       - "apps/**"
       - "operations/**"
-      - "enter.pollinations.ai/**"
-      - "gen.pollinations.ai/**"
       - "shared/**"
-      - ".dockerignore"
-      - "BRING_YOUR_OWN_MODEL.md"
-      - "BRING_YOUR_OWN_POLLEN.md"
-      - "BUILD_YOUR_OWN_AGENT.md"
-      - "CODING_HARNESSES.md"
       - "packages/sdk/**"
       - "packages/auth/**"
       - "packages/ui/**"
       - "packages/mcp/**"
-      - "packages/polli-cli/README.md"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-applications.yml"
@@ -102,8 +94,6 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:

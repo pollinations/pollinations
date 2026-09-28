@@ -52,7 +52,7 @@ export const adminSignInSituations = {
     },
 } as const;
 
-// The unavailable response is a known product gap (G04 in scenario-audit.csv).
+// Device verification currently reports service failures as an unrecognized code.
 export const deviceCodeExpectations = {
     invalid: "Invalid code",
     expired: "Code expired",

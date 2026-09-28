@@ -18,9 +18,9 @@
   "dependencies": {
     "@cloudflare/containers": "0.3.7",
     "@hono/node-server": "^1.19.6",
-    "@pollinations/auth": "*",
-    "@pollinations/sdk": "*",
-    "@pollinations/ui": "*",
+    "@pollinations/auth": "file:../../packages/auth",
+    "@pollinations/sdk": "file:../../packages/sdk",
+    "@pollinations/ui": "file:../../packages/ui",
     "better-call": "^1.4.0",
     "esbuild": "^0.27.3",
     "hono": "^4.10.6",

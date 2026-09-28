@@ -1,11 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AddressInfo } from "node:net";
 import {
-    DYNAMIC_NEWS_COUNT,
-    HIGHLIGHTS_RAW_URL,
-    parseHighlights,
-} from "@frontend/components/news-faq/highlights";
-import {
     type Browser,
     type BrowserContext,
     type Response as BrowserResponse,
@@ -18,6 +13,11 @@ import type { SourceInfo } from "./flow-environment";
 import githubProfile from "./github-profile.json";
 import type { LocalState } from "./live-client";
 import { LOCAL_ORIGINS, screenOrigin } from "./local-origins";
+import {
+    DYNAMIC_NEWS_COUNT,
+    HIGHLIGHTS_RAW_URL,
+    parseHighlights,
+} from "./news-highlights";
 import type { ReviewCase } from "./review-cases";
 import { initialReviewSteps } from "./review-driver";
 import { prepareReviewCase } from "./review-prepare";

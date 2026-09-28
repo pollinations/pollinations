@@ -5,7 +5,7 @@ compatibility_date = "2023-05-18"
 # R2 bucket for text storage
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-legacy"
 
 # Environment variables
 [vars]

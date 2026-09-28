@@ -6,7 +6,7 @@ compatibility_date = "2025-08-01"
 # R2 bucket for image storage
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+bucket_name = "pollinations-images-legacy"
 
 # Vectorize index for semantic caching (DISABLED - index was deleted)
 # [[vectorize]]

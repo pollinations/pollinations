@@ -65,14 +65,14 @@ const BUILD_TOOLS: Feature[] = [
     },
     {
         title: "Pollinations CLI",
-        body: "Generate text, images, audio and video, transcribe audio, and manage keys, models and agents from your terminal.",
+        body: "Generate and manage from your terminal. Create text, images, video and audio. Manage API keys, models and agents, and track usage and earnings.",
         linkLabel: "CLI guide",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
     },
     {
-        title: "MCP tools",
-        body: "Give agents tools for generation, search, media processing and connected apps. Use them from clients that support Streamable HTTP.",
+        title: "MCP tools & connected apps",
+        body: "Give your agents tools and connected apps. Search the web, process media, and work with supported services like GitHub, Gmail and Slack—from compatible MCP clients.",
         linkLabel: "Explore MCP servers",
         href: "https://enter.pollinations.ai/models?category=mcp",
         icon: McpIcon,

@@ -218,8 +218,9 @@ async function charge(c: E2bContext, price: number, startTime: Date) {
 }
 
 // Timeout and connect end the lease at now + timeout, but connect never
-// shortens a running sandbox's lease. Either way the caller pays in advance
-// for the seconds added beyond what is already paid, and nothing is refunded.
+// shortens a running sandbox's lease. The caller pays in advance for the
+// seconds added beyond the current lease. Nothing is refunded: pausing a
+// sandbox gives up the rest of its paid lease.
 async function extendLease(
     c: E2bContext,
     sandbox: SandboxDetail,
@@ -344,6 +345,12 @@ export const e2bRoutes = new Hono<Env>()
     .post("/sandboxes/:id/timeout", async (c) => {
         const sandbox = await ownedSandbox(c);
         const { timeout } = await readJson<{ timeout: number }>(c);
+        // The lease is paid, so a timeout that would end it sooner is ignored.
+        const endsSooner =
+            sandbox.state === "running" &&
+            typeof timeout === "number" &&
+            Date.now() + timeout * 1000 <= Date.parse(sandbox.endAt);
+        if (endsSooner) return c.body(null, 204);
         return extendLease(c, sandbox, timeout);
     })
     .post("/v2/sandboxes/:id/connect", async (c) => {

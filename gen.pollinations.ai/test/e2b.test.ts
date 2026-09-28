@@ -42,11 +42,18 @@ function stubE2b() {
         );
         expect(request.headers.get("authorization")).toBeNull();
         const body = (await request.json().catch(() => ({}))) as {
+            templateID?: string;
             timeout?: number;
             metadata?: Record<string, string>;
         };
 
         if (url.pathname === "/v2/sandboxes" && request.method === "POST") {
+            if (body.templateID === "missing") {
+                return Response.json(
+                    { code: 400, message: "Template not found" },
+                    { status: 400 },
+                );
+            }
             const sandbox: Sandbox = {
                 sandboxID: `sbx${++created}`,
                 startedAt: inSeconds(0),
@@ -92,6 +99,13 @@ function stubE2b() {
             return new Response(null, { status: 204 });
         }
         if (call === "POST /timeout") {
+            // Like E2B, refuse a lease longer than the plan allows.
+            if ((body.timeout ?? 0) > 86_400) {
+                return Response.json(
+                    { code: 400, message: "Timeout too long" },
+                    { status: 400 },
+                );
+            }
             sandbox.endAt = inSeconds(body.timeout ?? 0);
             return new Response(null, { status: 204 });
         }
@@ -206,6 +220,14 @@ test("timeout and connect pay only for the seconds they add", async () => {
         timeout: 600,
     });
     expect(extended.status).toBe(204);
+    // A shorter timeout keeps the paid lease and costs nothing.
+    const shortened = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+        timeout: 60,
+    });
+    expect(shortened.status).toBe(204);
+    expect(Date.parse(e2b.sandboxes[0].endAt)).toBeGreaterThan(
+        Date.now() + 500_000,
+    );
     // Connecting within the paid lease is free and does not shorten it.
     const connected = await post(
         owner.key,
@@ -224,6 +246,29 @@ test("timeout and connect pay only for the seconds they add", async () => {
         expect(lease.totalPrice).toBeCloseTo(LEASE_300S, 5);
     }
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 5);
+});
+
+test("E2B errors reach the caller and cost nothing", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+
+    const refused = await createSandbox(owner.key, { templateID: "missing" });
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toEqual({
+        code: 400,
+        message: "Template not found",
+    });
+
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+        timeout: 100_000,
+    });
+    expect(extended.status).toBe(400);
+
+    // Only the lease E2B actually granted is paid for.
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - LEASE_300S, 8);
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
 });
 
 test("refuses keys without the scope, unpaid leases and closed endpoints", async () => {

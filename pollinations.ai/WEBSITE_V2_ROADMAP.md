@@ -118,7 +118,7 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 ### Phase D — quiet, consistent visual polish
 
-- [ ] **V1 · Keep earnings documentation icons beside their text.** **Reported visual defect; source composition inspected.** Make the document icon and external arrow an intentional inline unit with an accessible name and adequate hit area. **Done when:** neither icon becomes an accidental standalone line at supported widths, zoom levels, or font sizes. Preserve white earning text and the distinct link treatment. [Earnings section][money]
+- [x] **V1 · Keep earnings documentation icons beside their text.** **Implemented and verified (28 September 2026).** Each shared documentation link is a non-shrinking inline-flex unit beside wrapping earnings text. The book and external arrow stay together, with a 24px-high hit area, descriptive accessible name, and visible keyboard focus. Verified desktop, tablet, and 320/390px mobile widths. Existing white earnings text, link colors, and destinations are unchanged. [Earnings section][money]
 
 - [ ] **V2 · Fix CTA contrast through the shared UI contract.** **Reported contrast value; remeasure first; D4 required.** Check normal, hover, focus, active, and disabled states in both themes. Separate website layout classes from local overrides fighting shared control colors. **Done when:** enabled normal-size text meets 4.5:1 contrast, large text meets 3:1, focus is visible, and shared changes are verified in Enter and affected apps. Preserve the shared authentication button’s behavior and naming; no one-off auth redesign.
 

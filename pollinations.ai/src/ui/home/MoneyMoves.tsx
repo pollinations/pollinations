@@ -104,8 +104,10 @@ export function MoneyMoves() {
                                                         aria-hidden="true"
                                                         className="mt-0.5 size-4.5 shrink-0"
                                                     />
-                                                    <span className="min-w-0">
-                                                        {earning.text}{" "}
+                                                    <span className="flex min-w-0 items-start gap-1">
+                                                        <span className="min-w-0">
+                                                            {earning.text}
+                                                        </span>
                                                         <InlineLink
                                                             href={earning.href}
                                                             aria-label={
@@ -114,7 +116,7 @@ export function MoneyMoves() {
                                                             title={
                                                                 earning.docsLabel
                                                             }
-                                                            className="align-middle text-brand-accent"
+                                                            className="inline-flex min-h-6 shrink-0 items-center gap-1 text-brand-accent"
                                                         >
                                                             <BookIcon
                                                                 aria-hidden="true"

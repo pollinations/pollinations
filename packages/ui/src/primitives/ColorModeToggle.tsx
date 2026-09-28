@@ -36,14 +36,15 @@ function readStored(): ColorMode | null {
     }
 }
 
-function systemQuery(): MediaQueryList | undefined {
-    return typeof window === "undefined"
+// One shared MediaQueryList: matchMedia returns a new object per call, so the
+// change listener must be removed from the same object it was added to.
+const systemQuery =
+    typeof window === "undefined"
         ? undefined
         : window.matchMedia?.("(prefers-color-scheme: dark)");
-}
 
 function systemMode(): ColorMode {
-    return systemQuery()?.matches ? "dark" : "light";
+    return systemQuery?.matches ? "dark" : "light";
 }
 
 let current: ColorMode = readStored() ?? systemMode();
@@ -96,14 +97,14 @@ function subscribe(listener: () => void): () => void {
     if (listeners.size === 0 && typeof window !== "undefined") {
         apply(); // safety-net sync once a consumer mounts
         window.addEventListener("storage", handleStorage);
-        systemQuery()?.addEventListener("change", handleSystemChange);
+        systemQuery?.addEventListener("change", handleSystemChange);
     }
     listeners.add(listener);
     return () => {
         listeners.delete(listener);
         if (listeners.size === 0 && typeof window !== "undefined") {
             window.removeEventListener("storage", handleStorage);
-            systemQuery()?.removeEventListener("change", handleSystemChange);
+            systemQuery?.removeEventListener("change", handleSystemChange);
         }
     };
 }

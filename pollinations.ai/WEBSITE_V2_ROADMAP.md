@@ -2,13 +2,13 @@
 
 > Keep the personality. Make the promises precise. Make the first experience dependable.
 
-**Updated:** 27 September 2026
+**Updated:** 28 September 2026
 
 **Branch / PR:** `feat/website-v2` · [#14472](https://github.com/pollinations/pollinations/pull/14472)
 
 **Reviewed baseline:** `ee4739669c11cb67367767983706a2e3b71799f2`
 
-**Status:** Planned. This document changes no product behavior and authorizes no deployment or moderation action.
+**Status:** In progress; completed, partial, and deferred work is tracked below. This document changes no product behavior and authorizes no deployment or moderation action.
 
 ## 1. What we are finishing
 
@@ -30,10 +30,24 @@ Enter is the reference for shared controls and product terminology, not a reason
 - **Verified:** checked against the current source or public endpoint while preparing this roadmap. Source verification is not the same as an end-to-end test.
 - **Reported:** observed in the supplied reviews; reproduce before implementing. Counts, availability, and catalog order are snapshots, not permanent requirements.
 - **Decision:** needs an explicit product/design/maintainer choice. Recommendations below are not approvals.
+- **Deferred:** deliberately not being implemented now. Keep the finding, reason, and revisit condition; do not treat it as completed or silently resume it.
 
 Leave a task unchecked until its acceptance criteria pass. Record the commit and validation evidence beside its ID when completed. Use one cohesive commit per task where practical; do not mix unrelated fixes or repository-wide formatting.
 
 **Working agreement (28 September 2026):** keep this work on `feat/website-v2` and push each validated step in granular commits. Preserve other agents' work. Do not split supporting changes into separate PRs unless requested. Pushing does not authorize analytics or production deployments, secret changes, or merging the website PR.
+
+**Roadmap upkeep:** after each step, record what changed, its commit and checks, what still needs validation, and any decision to defer or decline a proposal. Keep partially completed tasks unchecked. Older entries that say “local” or “not pushed” are historical checkpoints, not a reliable current branch status; reconcile them against Git and user validation before the final readiness review.
+
+**Latest validated commits:** C6 `4c6504393b`; C7 scoped copy fixes `2e4e30c0c6`; V1 earnings-link layout `7c0b66e2e4`. Each was pushed after 139 website tests and the production build passed, with targeted browser checks. C7 remains partial; these checks do not close the final cross-site review.
+
+### Deliberately not doing now
+
+| Item | Decision / reason | Revisit condition |
+| --- | --- | --- |
+| D4 / V2 · Shared button contrast | Findings retained; no UI changes. Shared `@pollinations/ui` colors also affect Enter and other consumers after rebuild/deployment. Avoid a website-only override. | Agree on the shared treatment and validate affected consumers before implementing/pushing it. |
+| B6 · Full app-destination sweep | User deferred the full catalog audit. This is not evidence that every listing is healthy; no bulk removals. | Revisit during final readiness review if prioritized, or investigate concrete broken links separately. |
+| C4 · Publishing actions | Keep the single “Open dashboard” action. User rejected three buttons and declined creating a new publishing guide. | Reopen only if an existing suitable guide or a specific journey problem justifies changing the agreed single-action layout. |
+| B3 · Weekly analytics endpoint | Source work does not authorize deployment; user chose to keep the endpoint update local. | Separate approval for staging verification and production promotion. |
 
 ### Important corrections to the reviews
 
@@ -60,7 +74,7 @@ These should not block independent correctness fixes.
 | D1 | Keep “Every model, one wallet”? | Consider **“Hundreds of models. One wallet.”** Avoid a universal claim, retain the differentiator, and check wrapping rather than retaining the `9ch` constraint blindly. | Pending |
 | D2 | What should Apps show first? | Use a maintained, representative featured selection; retain New as a deliberate choice. Do not make Popular the default until attribution is trustworthy. | Pending |
 | D3 | Consumer name for connected-wallet apps | Retain **Pollen Pay** provisionally; explain it briefly and replace raw true/false labels with readable choices. Keep **Connect user wallets** in developer copy. | Pending |
-| D4 | Shared primary-button treatment in dark mode | Measure current states, then agree on an accessible shared treatment before changing package-wide colors. | Pending |
+| D4 | Shared button hover and keyboard-focus contrast | Preserve flat styling; review the measured dark amber hover and light focus-ring findings in V2 before any package-wide change. | Deferred; findings recorded, no color change approved |
 | D5 | Who belongs in Supporters? | Have the relationship owner approve names, category, and links. A paid provider is not automatically a supporter; absence from README is not proof of an error. | Pending |
 | D6 | Questionable listings and outdated votes | Maintainer reviews the evidence and decides corrections, removal, or issue closure. No automatic deletions or reward changes. | Pending |
 
@@ -94,7 +108,7 @@ Fix these before calling V2 ready for production. Removing an unsupported claim 
 
 - [x] **B5 · Refresh the contribution and voting journeys.** **Implemented with user approval (28 September 2026).** “Explore open quests” links to open `POLLEN-QUEST` issues instead of the empty beginner-issue list. Login and payment votes were closed on September 26; the user explicitly chose to retain model vote #5321 unchanged. “Help shape Pollinations” now groups the four contribution cards and compact voting rows in one shared panel, with “Suggest an idea” alongside and the illustration below the content. The automatic open-question feed and explicit zero-vote message remain. **Layout decision:** do not stretch a single vote into a large, mostly empty card or place it over the characters. No issues or labels were modified. Validation: desktop/mobile browser checks, 139 website tests, formatting, and production build passed. [Community page][community-page]
 
-- [ ] **B6 · Verify app destinations and public attribution.** **Reported sweep, not independently repeated here.** Recheck malformed URLs, persistent failures, and author display names. Distinguish bot protection and transient outages from dead apps. **Done when:** external links use valid destinations and cannot resolve accidentally as on-site paths; confirmed failures have an owner-approved correction; missing attribution does not expose an unexplained internal ID. Do not bulk-delete from the reported failure count.
+- [ ] **B6 · Verify app destinations and public attribution.** **Full sweep deferred by user; not independently repeated here.** Recheck malformed URLs, persistent failures, and author display names when revisited. Distinguish bot protection and transient outages from dead apps. **Done when:** external links use valid destinations and cannot resolve accidentally as on-site paths; confirmed failures have an owner-approved correction; missing attribution does not expose an unexplained internal ID. Do not bulk-delete from the reported failure count.
 
 - [ ] **B7 · Reconcile Supporters with actual relationships.** **Reported discrepancy; D5 required.** Compare the website, README, and current relationship records. **Done when:** the owner-approved list uses accurate supporter/partner/provider distinctions and valid destinations. Counts alone are not acceptance criteria. [Community data][community-data]
 
@@ -108,7 +122,7 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 - [x] **C3 · Explain the platform without implying app hosting exists today.** **Approved and implemented (28 September 2026).** Build now reads: “Build with models and agents, connect user wallets, and add tools through one platform.” Agent publishing uses “the user’s Pollen” instead of “the caller’s Pollen.” The existing distinction between ready-made and published agents remains; app listing is described as discovery and app hosting stays under “On the way.” No layout or feature changes. [Build and publishing cards][devkit]
 
-- [ ] **C4 · Give each publishing path its own next step.** App: list it in the catalog. Model: read publishing requirements and follow the real setup/access flow. Agent: learn how to publish a prompt/code agent. Reuse existing destinations and shared link components. **Done when:** users do not have to infer three different workflows from one generic “Open dashboard” button; listing is not described as hosting or deploying an app.
+- [ ] **C4 · Clarify publishing journeys without adding CTA clutter.** **Deferred; retain the single “Open dashboard” button.** User rejected three separate buttons and declined creating a new guide. The original three-action proposal is not the implementation plan. If reopened, use existing destinations to clarify app listing, model publishing, and agent publishing without implying that listing means hosting or deploying an app.
 
 - [ ] **C5 · Make earnings understandable without changing their meaning.** **Example simplified with user approval (28 September 2026):** “With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.” The user explicitly chose to omit the cashout sentence from this note. Separate model/app/agent rows and documentation links remain; model earnings stay tied to listed price. **Remaining:** review whether Paid/Quest earnings distinctions need supporting explanation, verifying any proposed wording against billing and publishing docs before adding it. Do not promise agent earnings today, cash redemption, app self-usage rewards, or 75% of a marked-up total. [Earnings section][money]
 
@@ -120,7 +134,7 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 - [x] **V1 · Keep earnings documentation icons beside their text.** **Implemented and verified (28 September 2026).** Each shared documentation link is a non-shrinking inline-flex unit beside wrapping earnings text. The book and external arrow stay together, with a 24px-high hit area, descriptive accessible name, and visible keyboard focus. Verified desktop, tablet, and 320/390px mobile widths. Existing white earnings text, link colors, and destinations are unchanged. [Earnings section][money]
 
-- [ ] **V2 · Fix CTA contrast through the shared UI contract.** **Reported contrast value; remeasure first; D4 required.** Check normal, hover, focus, active, and disabled states in both themes. Separate website layout classes from local overrides fighting shared control colors. **Done when:** enabled normal-size text meets 4.5:1 contrast, large text meets 3:1, focus is visible, and shared changes are verified in Enter and affected apps. Preserve the shared authentication button’s behavior and naming; no one-off auth redesign.
+- [ ] **V2 · Fix CTA contrast through the shared UI contract.** **Audited 28 September 2026; changes deferred, D4 required.** Homepage primary/secondary CTA text measured approximately 8–15:1 in both themes. Shared dark amber controls used by Play and Apps are approximately 4.50:1 at rest; their declared hover colors calculate to approximately 3.30:1. The light-mode keyboard ring is approximately 1.42:1 against the page surface; dark focus is stronger. These are computed-color estimates, not a complete screenshot/pixel audit of every state or consumer. Keyboard focus was inspected in the browser; hover colors were checked against shared source and resolved theme tokens. **Proposed, not implemented:** darken the shared amber hover fill and strengthen the light focus ring, preserving the flat design. A package change affects Enter and other consumers after rebuild/deployment, not just website-v2; do not add a website-only override. **Revisit:** agree on the shared treatment, check normal/hover/focus/active/disabled states in both themes, and validate Enter plus affected apps before pushing. **Done when:** enabled normal-size text meets 4.5:1 contrast, large text meets 3:1, and focus is visible. Preserve shared authentication behavior and naming; no one-off auth redesign.
 
 - [ ] **V3 · Make votes and voice selection fit their content.** **Votes completed with B5:** compact rows accommodate the active questions without empty card columns. **Remaining:** replace large voice-chip walls with a constrained selector using the existing dropdown pattern; preserve valid choices and keyboard behavior. **Done when:** selecting a voice does not require tabbing through dozens of chips. [Community page][community-page] · [Playground][playground]
 

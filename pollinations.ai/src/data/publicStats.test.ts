@@ -107,12 +107,14 @@ describe("app showcase", () => {
             approved_date: date,
         }) as DirectoryApp;
 
-    it("selects active apps by usage and recency without mutating the catalog", () => {
+    it("ranks every measured BYOP app by usage and recency without mutating the catalog", () => {
         const catalog = [
             app("Low usage", 99),
             app("Popular", 500),
             app("Newer", 100, "2026-09-11"),
             app("Older", 100),
+            app("Quiet", 0),
+            { ...app("Unmeasured", 0), requests_24h: "" },
             { ...app("No description", 1000), description: "" },
             { ...app("Developer total", 999999), byop: false },
             { ...app("Another app by that developer", 999999), byop: false },
@@ -121,6 +123,8 @@ describe("app showcase", () => {
             "Popular",
             "Newer",
             "Older",
+            "Low usage",
+            "Quiet",
         ]);
         expect(catalog[0].name).toBe("Low usage");
     });

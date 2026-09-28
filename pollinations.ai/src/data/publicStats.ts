@@ -174,9 +174,19 @@ export function useAppShowcase() {
     };
 }
 
+/**
+ * Minimum BYOP requests in 24 hours for the Hello shelf. Zero shows the eight
+ * busiest measured apps; raise it again once enough apps clear a real bar.
+ */
+const SHOWCASE_MIN_REQUESTS_24H = 0;
+
 export function selectShowcaseApps(apps: DirectoryApp[]): DirectoryApp[] {
     return apps
-        .filter((app) => app.description && isBuzz(app))
+        .filter(
+            (app) =>
+                app.description &&
+                (byopRequests24h(app) ?? -1) >= SHOWCASE_MIN_REQUESTS_24H,
+        )
         .sort(
             (left, right) =>
                 compareAppUsage(left, right) ||

@@ -10,7 +10,7 @@ import { useAppShowcase } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
 /**
- * A compact shelf of active community apps.
+ * A compact shelf of the busiest community apps that use connected wallets.
  * Missing screenshots use the shared Polli fallback, so the shelf remains
  * visual without pretending generated art is the real app.
  */

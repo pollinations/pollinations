@@ -205,4 +205,9 @@ test("all models receive identical questions while request seeds remain model-sp
         seedsByModel.get("openai/model-a"),
         seedsByModel.get("openai/model-b"),
     );
+    for (const seeds of seedsByModel.values()) {
+        for (const seed of seeds) {
+            assert.ok(seed >= 0 && seed <= 2147483647);
+        }
+    }
 });

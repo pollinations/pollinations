@@ -1,4 +1,9 @@
-import { createHash } from "node:crypto";
+import {
+    createHash,
+    randomBytes,
+    scryptSync,
+    timingSafeEqual,
+} from "node:crypto";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { isMap, isNode, isPair, isSeq, parseDocument } from "yaml";
@@ -61,11 +66,13 @@ const files = (ctx: HarnessContext) => [
 ];
 
 // The values the last `on` wrote, kept outside the config so `off` can tell
-// "still ours" apart from "edited by the user". The key is stored as a hash
-// only - the snapshot journal must not grow a second copy of the secret.
+// "still ours" apart from "edited by the user". The key is stored as a
+// salted scrypt fingerprint only - the state file must not grow a second
+// copy of the secret.
 interface WrittenState {
     model: string;
     models: string[];
+    keySalt: string;
     keyHash: string;
 }
 
@@ -89,6 +96,7 @@ const readWritten = (ctx: HarnessContext): WrittenState | null => {
         if (
             typeof parsed.model !== "string" ||
             !Array.isArray(parsed.models) ||
+            typeof parsed.keySalt !== "string" ||
             typeof parsed.keyHash !== "string"
         ) {
             return null;
@@ -108,6 +116,23 @@ const writeWritten = (ctx: HarnessContext, state: WrittenState) =>
 
 const sha256 = (content: string) =>
     createHash("sha256").update(content).digest("hex");
+
+// Ownership fingerprint for the written key: a salted memory-hard KDF, so
+// the state file never holds the secret and a leaked fingerprint is not
+// brute-forceable the way a bare fast hash would be.
+const keyFingerprint = (apiKey: string, salt: string) =>
+    scryptSync(apiKey, salt, 32).toString("hex");
+
+const keyMatches = (value: string, written: WrittenState) => {
+    const candidate = Buffer.from(
+        keyFingerprint(value, written.keySalt),
+        "hex",
+    );
+    const stored = Buffer.from(written.keyHash, "hex");
+    return (
+        candidate.length === stored.length && timingSafeEqual(candidate, stored)
+    );
+};
 
 /**
  * Quote-aware tokenizer for dotenv text. Returns logical entries in file
@@ -306,10 +331,12 @@ const writeConfig = (ctx: HarnessContext, settings: HermesSettings) => {
         writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
     }
 
+    const keySalt = randomBytes(16).toString("hex");
     writeWritten(ctx, {
         model: settings.model,
         models: settings.models.map((model) => model.id),
-        keyHash: sha256(settings.apiKey),
+        keySalt,
+        keyHash: keyFingerprint(settings.apiKey, keySalt),
     });
 };
 
@@ -437,7 +464,7 @@ const stripConfig = (ctx: HarnessContext): boolean => {
                 kept.push(...entry.lines);
                 continue;
             }
-            if (sha256(entry.value) !== written.keyHash) {
+            if (!keyMatches(entry.value, written)) {
                 survivingKey = true;
                 kept.push(...entry.lines); // foreign value, never ours
                 continue;

@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, scryptSync } from "node:crypto";
 import {
     existsSync,
     mkdirSync,
@@ -52,6 +52,7 @@ const readState = () => {
     return JSON.parse(read(path)) as {
         model: string;
         models: string[];
+        keySalt: string;
         keyHash: string;
     };
 };
@@ -110,7 +111,9 @@ describe("hermes harness", () => {
         const state = readState();
         expect(state.model).toBe("deepseek");
         expect(state.models).toEqual(["deepseek", "kimi"]);
-        expect(state.keyHash).toBe(sha256("sk_test_key"));
+        expect(state.keyHash).toBe(
+            scryptSync("sk_test_key", state.keySalt, 32).toString("hex"),
+        );
         expect(JSON.stringify(state)).not.toContain("sk_test_key");
     });
 

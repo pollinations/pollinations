@@ -168,7 +168,6 @@ function CommunityParticipation() {
         loading: appsLoading,
         failed: appsFailed,
     } = useAppShowcase();
-    const bare = loading || failed || issues.length === 0;
     const ways = [
         {
             ...WAYS_IN[0],
@@ -340,24 +339,42 @@ function CommunityParticipation() {
                         <div className="flex max-w-xl flex-col gap-2">
                             <Eyebrow>Have your say</Eyebrow>
                             <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
-                                Open votes
+                                Help shape Pollinations
                             </h3>
                             <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
-                                Community feedback shapes the roadmap. Add your
-                                vote to the ideas you want the project to build
-                                next.
+                                Vote on open questions or suggest what we should
+                                build next.
                             </p>
                         </div>
+                        <InlineLink
+                            href={`${REPO_URL}/issues/new`}
+                            size="sm"
+                            tone="quiet"
+                        >
+                            Suggest an idea
+                        </InlineLink>
                     </div>
 
-                    {bare ? (
+                    {loading || failed ? (
                         <FeedState
                             loading={loading}
                             failed={failed}
                             what="Open votes"
                         />
+                    ) : issues.length === 0 ? (
+                        <p className="text-sm text-theme-text-muted">
+                            No open votes right now. Have an idea? Share it on
+                            GitHub.
+                        </p>
                     ) : (
-                        <div className="grid grid-cols-1 gap-3 min-[700px]:grid-cols-3">
+                        <div
+                            className={cn(
+                                "grid grid-cols-1 gap-3",
+                                issues.length === 2 &&
+                                    "min-[700px]:grid-cols-2",
+                                issues.length >= 3 && "min-[700px]:grid-cols-3",
+                            )}
+                        >
                             {issues.map((issue) => {
                                 const VoteIcon = voteIconFor(issue.title);
 

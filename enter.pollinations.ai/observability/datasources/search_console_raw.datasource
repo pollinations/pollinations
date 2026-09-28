@@ -5,9 +5,11 @@ DESCRIPTION >
     web search), appended daily by .github/workflows/data-sync-search-console-tinybird.yml.
     Search Console keeps 16 months, so each body is stored as returned for later analysis.
     Datasets per day: totals (country, device; includes queries Google hides), queries
-    (query, country, device), pages (page, country, device). A dataset larger than 25,000 rows
-    spans responses told apart by start_row. Each run re-sends the last three final days: use
-    the latest fetch per dataset and date.
+    (query, country, device), pages (page, country, device; our own page routes only, since
+    Google indexes image URLs containing prompts). Days are Pacific time, countries ISO
+    alpha-3. A report over 25,000 rows spans responses told apart by start_row. Every
+    response of a run shares fetched_at: the latest fetched_at per dataset and date is one
+    complete report.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,

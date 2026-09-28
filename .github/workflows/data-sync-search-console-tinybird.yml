@@ -5,6 +5,10 @@ on:
     # Search Console keeps 16 months; sync the latest final days daily
     - cron: "45 5 * * *"
   workflow_dispatch:
+    inputs:
+      days:
+        description: "Latest final days to sync (1-486, for a missed run or backfill)"
+        default: "3"
 
 permissions: {}
 
@@ -15,7 +19,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
@@ -42,4 +46,5 @@ jobs:
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
-        run: node operations/search-console/sync-to-tinybird.mjs
+          DAYS: ${{ inputs.days || '3' }}
+        run: node operations/search-console/sync-to-tinybird.mjs --days "$DAYS"

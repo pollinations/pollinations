@@ -1,0 +1,43 @@
+name: Data / Export GA history to Tinybird
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "First month to copy (YYYY-MM)"
+        default: "2021-01"
+
+permissions: {}
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Keyless: GitHub's OIDC token is exchanged for a one-hour Google token of
+      # the data sync service account, a viewer of the GA property.
+      - name: Authenticate to Google
+        id: google
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_DATA_SYNC_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/analytics.readonly
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Export GA history
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
+          FROM: ${{ inputs.from }}
+        run: node operations/google-analytics/export-to-tinybird.mjs --from "$FROM"

@@ -168,12 +168,20 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 "Content-Type",
                 "application/json; charset=utf-8",
             );
-            return new Response(
-                JSON.stringify(
-                    chatToMessagesResponse(completion.data, request.model),
-                ),
-                { headers: responseHeaders },
-            );
+            try {
+                return new Response(
+                    JSON.stringify(
+                        chatToMessagesResponse(completion.data, request.model),
+                    ),
+                    { headers: responseHeaders },
+                );
+            } catch {
+                return errorResponse(
+                    502,
+                    "Provider returned invalid tool arguments",
+                    responseHeaders,
+                );
+            }
         },
     );
 }

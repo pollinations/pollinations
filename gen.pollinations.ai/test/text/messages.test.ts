@@ -13,6 +13,7 @@ import { chatToMessagesStream } from "@/text/messages/stream.ts";
 import {
     chatToMessagesResponse,
     messagesToChatRequest,
+    toolUseInput,
 } from "@/text/messages/translate.ts";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
@@ -365,6 +366,36 @@ describe("Messages response translation", () => {
 });
 
 describe("Messages stream translation", () => {
+    it("rejects malformed tool arguments instead of silently replacing them", async () => {
+        expect(() => toolUseInput('{"broken":')).toThrow();
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "t",
+                                    function: {
+                                        name: "Write",
+                                        arguments: '{"broken":',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [], usage },
+            "[DONE]",
+        ]);
+        expect(events.some((event) => event.type === "error")).toBe(true);
+        expect(events.some((event) => event.type === "message_stop")).toBe(
+            false,
+        );
+    });
+
     it("streams thinking and text blocks, then tool use and usage", async () => {
         const events = await translateStream([
             { choices: [{ delta: { reasoning_content: "Think" } }] },

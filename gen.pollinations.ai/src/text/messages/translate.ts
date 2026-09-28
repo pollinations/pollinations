@@ -276,11 +276,7 @@ export function stopReason(
 }
 
 export function toolUseInput(argumentsJson: string): unknown {
-    try {
-        return JSON.parse(argumentsJson || "{}");
-    } catch {
-        return {};
-    }
+    return JSON.parse(argumentsJson || "{}");
 }
 
 /** Translate a Chat Completions response into a Messages response. */

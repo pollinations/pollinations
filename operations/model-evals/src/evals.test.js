@@ -6,6 +6,7 @@ import test from "node:test";
 import { generateQuestion, gradeQuestion } from "./questions.js";
 import { matchOfficialModel } from "./model-match.js";
 import {
+    evaluateModel,
     requestCompletion,
     seededRng,
     selectModels,
@@ -136,4 +137,60 @@ test("result index preserves prior runs", async () => {
         "2026-01-08T00-00-00",
         "2026-01-01T00-00-00",
     ]);
+});
+
+
+test("all models receive identical questions while request seeds remain model-specific", async () => {
+    const promptsByModel = new Map();
+    const seedsByModel = new Map();
+
+    const makeFetch = (modelName) => async (_url, init) => {
+        const body = JSON.parse(init.body);
+        promptsByModel.set(modelName, [
+            ...(promptsByModel.get(modelName) ?? []),
+            body.messages[0].content,
+        ]);
+        seedsByModel.set(modelName, [
+            ...(seedsByModel.get(modelName) ?? []),
+            body.seed,
+        ]);
+        return {
+            status: 200,
+            ok: true,
+            headers: { get: () => null },
+            json: async () => ({
+                choices: [{ message: { content: "Final answer: 0" } }],
+                usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
+        };
+    };
+
+    const options = {
+        apiKey: "test",
+        families: ["aiw", "aiw_plus", "bowls"],
+        trials: 2,
+        runSeed: 424242,
+        maxTokens: 32,
+        timeoutMs: 5000,
+        maxAttempts: 1,
+        sleep: async () => {},
+    };
+
+    await evaluateModel(
+        { name: "openai/model-a", pricing: {} },
+        { ...options, fetchFn: makeFetch("openai/model-a") },
+    );
+    await evaluateModel(
+        { name: "openai/model-b", pricing: {} },
+        { ...options, fetchFn: makeFetch("openai/model-b") },
+    );
+
+    assert.deepEqual(
+        promptsByModel.get("openai/model-a"),
+        promptsByModel.get("openai/model-b"),
+    );
+    assert.notDeepEqual(
+        seedsByModel.get("openai/model-a"),
+        seedsByModel.get("openai/model-b"),
+    );
 });

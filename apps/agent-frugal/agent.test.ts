@@ -6,8 +6,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-    asResponses,
+import agent, {
     countImages,
     estimatedCost,
     flatText,
@@ -22,6 +21,8 @@ type Model = {
     id: string;
     category: string;
     community?: boolean;
+    agent?: boolean;
+    context_length?: number;
     input_modalities?: string[];
     supported_endpoints?: string[];
     capabilities?: string[];
@@ -74,103 +75,6 @@ const row = (model: string, over: Partial<Row> = {}): Row => ({
     fallback_rescues: 0,
     retried_503s: 0,
     ...over,
-});
-
-/* ------------------------------- asResponses ----------------------------- */
-
-test("asResponses passes a Responses body through unchanged", () => {
-    const out = asResponses({ input: "hi" });
-    assert.equal(out.input, "hi");
-});
-
-test("asResponses converts chat messages into Responses input", () => {
-    const out = asResponses({
-        messages: [{ role: "user", content: "hello" }],
-    });
-    assert.equal(out.input, "hello");
-    assert.equal(out.messages, undefined, "messages must not be forwarded");
-});
-
-test("asResponses keeps system messages as instructions", () => {
-    const out = asResponses({
-        input: [
-            { role: "developer", content: "be terse" },
-            { role: "user", content: "hi" },
-        ],
-    });
-    assert.equal(out.input, "hi");
-    assert.equal(out.instructions, "be terse");
-});
-
-test("asResponses merges body instructions and system turns", () => {
-    const out = asResponses({
-        instructions: "defaults",
-        input: [
-            { role: "system", content: "system rule" },
-            { role: "user", content: "hi" },
-        ],
-    });
-    assert.equal(out.instructions, "defaults\n\nsystem rule");
-});
-
-test("asResponses flattens multi-turn input to a role-prefixed string", () => {
-    const out = asResponses({
-        input: [
-            { role: "user", content: "What is 2+2?" },
-            { role: "assistant", content: "4" },
-            { role: "user", content: "And 3+3?" },
-        ],
-    });
-    assert.equal(out.input, "user: What is 2+2?\nassistant: 4\nuser: And 3+3?");
-});
-
-test("asResponses flattens an array input that carries no media", () => {
-    const out = asResponses({
-        input: [
-            { role: "user", content: [{ type: "input_text", text: "hi" }] },
-        ],
-    });
-    assert.equal(out.input, "hi");
-});
-
-test("asResponses keeps the structured array when the input has media", () => {
-    const out = asResponses({
-        input: [
-            {
-                role: "user",
-                content: [{ type: "input_image" }, { text: "what is this?" }],
-            },
-        ],
-    });
-    assert.ok(Array.isArray(out.input), "media input must stay an array");
-    assert.equal((out.input as unknown[]).length, 1);
-});
-
-test("asResponses converts a text prompt into input", () => {
-    const out = asResponses({ prompt: "say hi" });
-    assert.equal(out.input, "say hi");
-    assert.equal(out.prompt, undefined);
-});
-
-test("asResponses maps max_tokens to max_output_tokens", () => {
-    assert.equal(
-        asResponses({ input: "x", max_tokens: 99 }).max_output_tokens,
-        99,
-    );
-});
-
-test("asResponses keeps an explicit max_output_tokens", () => {
-    const out = asResponses({
-        input: "x",
-        max_output_tokens: 7,
-        max_tokens: 99,
-    });
-    assert.equal(out.max_output_tokens, 7);
-});
-
-test("asResponses never leaves input undefined", () => {
-    const out = asResponses({});
-    assert.equal(out.input, "");
 });
 
 /* ------------------------------- text helpers ---------------------------- */
@@ -309,7 +213,7 @@ test("select picks the cheapest eligible model", async () => {
 });
 
 test("select never routes to a community agent", async () => {
-    const agent = priced("community/x/other", { community: true });
+    const agent = priced("community/x/other", { community: true, agent: true });
     const real = priced("a/real");
     const pick = await select({ input: "hi" }, fakePollinations([agent, real]));
     assert.equal(pick.model, "a/real");
@@ -339,6 +243,21 @@ test("select skips models without a responses endpoint", async () => {
         fakePollinations([legacy, real]),
     );
     assert.equal(pick.model, "b/real");
+});
+
+test("select rejects partially missing prices", async () => {
+    const unknown = priced("unknown", {
+        pricing: { completionTextTokens: "0.000001" },
+    });
+    assert.equal(
+        (
+            await select(
+                { input: "hi" },
+                fakePollinations([unknown, priced("known")]),
+            )
+        ).model,
+        "known",
+    );
 });
 
 test("select honours an image request", async () => {
@@ -379,15 +298,89 @@ test("select skips a model that is failing 5xx", async () => {
     assert.equal(pick.model, "b/healthy");
 });
 
-test("select falls back to the default model on an empty catalog", async () => {
-    const pick = await select({ input: "hi" }, fakePollinations([]));
-    assert.equal(pick.model, "openai/gpt-5.4-nano");
+test("select fails rather than bypassing eligibility on an empty catalog", async () => {
+    await assert.rejects(
+        select({ input: "hi" }, fakePollinations([])),
+        /No compatible/,
+    );
 });
 
-test("select degrades when the catalog call fails", async () => {
-    const broken = async (): Promise<Response> => {
-        throw new Error("network");
+test("select fails when the catalog is unavailable", async () => {
+    await assert.rejects(
+        select({ input: "hi" }, async () => {
+            throw new Error("network");
+        }),
+        /No compatible/,
+    );
+});
+
+test("a deep request with one eligible model stays within the eligible pool", async () => {
+    const model = priced("a/only");
+    assert.equal(
+        (
+            await select(
+                { input: "Prove this theorem" },
+                fakePollinations([model]),
+            )
+        ).model,
+        model.id,
+    );
+});
+
+test("request instructions count toward context fit", async () => {
+    await assert.rejects(
+        select(
+            {
+                input: "hi",
+                instructions: "x".repeat(400),
+                max_output_tokens: 20,
+            },
+            fakePollinations([priced("a/tiny", { context_length: 100 })]),
+        ),
+        /No compatible/,
+    );
+});
+
+test("agent preserves roles, function calls, results and streaming bytes", async () => {
+    const body = {
+        instructions: "Keep roles",
+        input: [
+            { role: "developer", content: "Be concise" },
+            {
+                type: "function_call",
+                call_id: "call1",
+                name: "weather",
+                arguments: "{}",
+            },
+            { type: "function_call_output", call_id: "call1", output: "sunny" },
+        ],
+        tools: [
+            {
+                type: "function",
+                name: "weather",
+                parameters: { type: "object" },
+            },
+        ],
+        stream: true,
+        max_output_tokens: 100,
     };
-    const pick = await select({ input: "hi" }, broken);
-    assert.equal(pick.model, "openai/gpt-5.4-nano");
+    let forwarded: Record<string, unknown> = {};
+    const response = await agent({
+        request: new Request("https://example.com", {
+            method: "POST",
+            body: JSON.stringify(body),
+        }),
+        pollinations: async (path, init) => {
+            if (!init?.body)
+                return fakePollinations([
+                    priced("a/tools", { capabilities: ["tool_calling"] }),
+                ])(path);
+            forwarded = JSON.parse(init.body as string);
+            return new Response("data: unchanged\\n\\n", {
+                headers: { "content-type": "text/event-stream" },
+            });
+        },
+    });
+    assert.deepEqual(forwarded, { ...body, model: "a/tools" });
+    assert.equal(await response.text(), "data: unchanged\\n\\n");
 });

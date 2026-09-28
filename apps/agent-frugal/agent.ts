@@ -7,9 +7,8 @@
 // pure code: no classifier model call, no tokens spent on routing.
 //
 // The decision is logged and, for non-streaming JSON answers, attached to the
-// response body as `frugal_trace` (the gateway in front of an agent caches
-// answers and drops per-response headers, so a body trace is the reliable
-// channel). Best-effort `X-Frugal-*` headers are set as well.
+// response body as `frugal_trace`. Gateway conversions may remove custom
+// metadata, so both the trace and `X-Frugal-*` headers are best-effort.
 
 type AgentContext = {
     request: Request;
@@ -22,11 +21,8 @@ type ResponsesBody = {
     model?: string;
     instructions?: string | null;
     input?: string | Array<unknown>;
-    messages?: Array<unknown>;
-    prompt?: string;
     tools?: Array<unknown>;
     max_output_tokens?: number;
-    max_tokens?: number;
     previous_response_id?: string;
     stream?: boolean;
     [key: string]: unknown;
@@ -36,6 +32,8 @@ type CatalogModel = {
     id: string;
     category: string;
     community?: boolean;
+    agent?: boolean;
+    context_length?: number;
     input_modalities?: string[];
     supported_endpoints?: string[];
     capabilities?: string[];
@@ -61,76 +59,6 @@ type HealthRow = {
 };
 
 const MIN_SAMPLE = 10;
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
-
-/* ---------------------------------------------------------------------------
- * Input normalisation — callers reach a router as a model, so the same agent
- * can be called through the Responses, chat-completions or text endpoints.
- * The gateway usually normalises these, but it is not guaranteed for code
- * agents, so accept all three shapes and convert to a Responses body rather
- * than rejecting a chat- or text-style call.
- *
- * The conversation is then flattened to a string. Not every model accepts an
- * array `input`: openai/gpt-oss-20b — the cheapest model, and therefore the one
- * frugal reaches for most often — rejects it with a 422, while every model we
- * tested accepts a plain string. System turns move into `instructions`; the
- * structured array survives only when it carries media a string cannot.
- * ------------------------------------------------------------------------ */
-
-export function asResponses(body: ResponsesBody): ResponsesBody {
-    const { messages, prompt, max_tokens, ...rest } = body;
-    const maxOutput =
-        body.max_output_tokens !== undefined
-            ? {}
-            : max_tokens !== undefined
-              ? { max_output_tokens: max_tokens }
-              : {};
-
-    // Conversation sources, in priority order: a Responses body already has
-    // `input`; otherwise accept chat `messages` or a bare `prompt`.
-    let source: unknown = body.input;
-    if (source === undefined && Array.isArray(messages)) source = messages;
-    if (source === undefined && typeof prompt === "string") source = prompt;
-
-    const instructions: string[] = [];
-    if (typeof rest.instructions === "string" && rest.instructions) {
-        instructions.push(rest.instructions);
-    }
-
-    let input: unknown = source;
-    if (typeof source !== "string" && Array.isArray(source)) {
-        const turns: string[] = [];
-        const kept: unknown[] = [];
-        let hasMedia = false;
-        for (const item of source) {
-            if (!item || typeof item !== "object") continue;
-            const record = item as Record<string, unknown>;
-            if (record.role === "system" || record.role === "developer") {
-                const text = flatText(record.content ?? record);
-                if (text) instructions.push(text);
-                continue;
-            }
-            if (countImages(record.content) > 0) hasMedia = true;
-            kept.push(record);
-            const text = flatText(record.content ?? record);
-            if (text) {
-                const role =
-                    typeof record.role === "string" && record.role
-                        ? record.role
-                        : "user";
-                turns.push(`${role}: ${text}`);
-            }
-        }
-        if (hasMedia) input = kept;
-        else if (turns.length === 0) input = "";
-        else if (turns.length === 1) input = turns[0].replace(/^user: /, "");
-        else input = turns.join("\n");
-    }
-
-    const out: ResponsesBody = { ...rest, input: input ?? "", ...maxOutput };
-    if (instructions.length) out.instructions = instructions.join("\n\n");
-    return out;
-}
 
 /* ---------------------------------------------------------------------------
  * Classification — pure code, zero LLM spend on routing.
@@ -148,8 +76,7 @@ export function tierForBody(body: ResponsesBody): {
 
     const isContinued =
         typeof body.previous_response_id === "string" ||
-        (typeof text === "string" &&
-            (text.match(/^(?:user|assistant): /gm)?.length ?? 0) >= 2);
+        (Array.isArray(input) && input.length > 1);
     const greedy = (body.max_output_tokens ?? 0) > 1600;
     const images = countImages(body.input);
     const hasTools = Array.isArray(body.tools) && body.tools.length > 0;
@@ -184,7 +111,10 @@ export function flatText(value: unknown): string {
         const obj = value as Record<string, unknown>;
         if (typeof obj.text === "string") return obj.text;
         if (typeof obj.input_text === "string") return obj.input_text;
-        if (obj.content !== undefined) return flatText(obj.content);
+        return [obj.content, obj.output, obj.arguments]
+            .map(flatText)
+            .filter(Boolean)
+            .join(" ");
     }
     return "";
 }
@@ -213,7 +143,10 @@ export function inputTokensFor(body: ResponsesBody): number {
     const input = body.input;
     const chars =
         typeof input === "string" ? input.length : flatText(input).length;
-    return Math.max(1, Math.round(chars / 4));
+    return Math.max(
+        1,
+        Math.ceil((chars + (body.instructions?.length ?? 0)) / 4),
+    );
 }
 
 export function outputTokensFor(tier: Tier): number {
@@ -284,26 +217,36 @@ export async function select(
         if (!(m.supported_endpoints ?? []).includes("/v1/responses"))
             return false;
         if (m.id.toLowerCase().includes("frugal")) return false; // never route to yourself
-        if (m.community) return false; // foundation models only — agents are not router targets
+        if (m.agent) return false; // never route into another agent
         const { prompt, completion } = priceOf(m);
-        if (prompt + completion <= 0) return false; // unpriced entries distort cost ranking
+        if (
+            m.pricing?.promptTextTokens === undefined ||
+            m.pricing?.completionTextTokens === undefined ||
+            !Number.isFinite(prompt + completion) ||
+            prompt < 0 ||
+            completion < 0 ||
+            prompt + completion <= 0
+        )
+            return false; // unpriced entries distort cost ranking
         if (!(m.input_modalities ?? ["text"]).includes("text")) return false;
         if (hasImages && !(m.input_modalities ?? []).includes("image"))
             return false;
         if (needTools && !(m.capabilities ?? []).includes("tool_calling"))
             return false;
+        if (
+            m.context_length &&
+            inputTokens +
+                (body.max_output_tokens ?? outputTokensFor(wantTier)) >
+                m.context_length
+        )
+            return false;
         return true;
     });
 
-    if (eligible.length === 0) {
-        return {
-            model: DEFAULT_MODEL,
-            tier: wantTier,
-            reason: `${wantTier}: no eligible healthy model — fell back to ${DEFAULT_MODEL}`,
-        };
-    }
+    if (eligible.length === 0)
+        throw new Error("No compatible healthy model in catalog");
 
-    // Rank by true per-request cost (input measured, output estimated by tier)
+    // Rank by estimated request cost (input measured, output estimated by tier)
     // and adjust for health: a sick model must be remarkably cheaper to win.
     const ranked = eligible
         .map((m) => {
@@ -328,14 +271,7 @@ export async function select(
         else if (wantTier === "DEEP") slice = ranked.slice(third);
     }
 
-    const picked = slice[0];
-    if (!picked) {
-        return {
-            model: DEFAULT_MODEL,
-            tier: wantTier,
-            reason: `${wantTier}: empty candidate slice — fell back to ${DEFAULT_MODEL}`,
-        };
-    }
+    const picked = slice[0] ?? ranked[0];
     const penalty = healthPenalty(health.get(picked.m.id));
     return {
         model: picked.m.id,
@@ -353,7 +289,7 @@ async function getCatalog(
         const j = (await r.json()) as { data?: CatalogModel[] };
         return (j.data ?? []).filter((m) => m.category === "text");
     } catch {
-        // A missing catalog degrades to the default model, never an error.
+        // Selection fails explicitly when the catalog is unavailable.
         return [];
     }
 }
@@ -389,13 +325,7 @@ export default async function agent({
     request,
     pollinations,
 }: AgentContext): Promise<Response> {
-    let raw: ResponsesBody = {};
-    try {
-        raw = (await request.json()) as ResponsesBody;
-    } catch {
-        raw = {};
-    }
-    const body = asResponses(raw);
+    const body = (await request.json()) as ResponsesBody;
     const picked = await select(body, pollinations);
 
     const trace = {
@@ -414,14 +344,17 @@ export default async function agent({
     const headers = new Headers(upstream.headers);
     headers.set("X-Frugal-Tier", picked.tier);
     headers.set("X-Frugal-Model", picked.model);
-    headers.set("X-Frugal-Reason", picked.reason);
+    headers.set("X-Frugal-Reason", picked.reason.replace(/[^\x20-\x7e]/g, "?"));
 
     // Best-effort headers aside, the trace travels inside a JSON body because
     // the gateway caches answers and strips per-response headers.
     const type = upstream.headers.get("content-type") ?? "";
     if (body.stream !== true && type.includes("application/json")) {
         try {
-            const payload = (await upstream.json()) as Record<string, unknown>;
+            const payload = (await upstream.clone().json()) as Record<
+                string,
+                unknown
+            >;
             headers.delete("content-length");
             return new Response(
                 JSON.stringify({ ...payload, frugal_trace: trace }),

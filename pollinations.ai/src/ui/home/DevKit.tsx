@@ -217,7 +217,7 @@ export function DevKit({ className }: { className?: string }) {
                     />
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
-                        size="md"
+                        size="lg"
                         intent="brand"
                         className="self-start whitespace-nowrap"
                     >

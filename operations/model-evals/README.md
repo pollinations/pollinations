@@ -1,6 +1,6 @@
 # Model Evals
 
-Weekly, reproducible reasoning checks for every Pollinations text model. The runner calls the live `gen.pollinations.ai` catalog and Chat Completions API, grades answers in code, records failures instead of skipping them, and writes versioned JSON consumed by the Model Monitor **Evals** tab.
+Weekly, reproducible reasoning checks for every public Pollinations text model, including reliability-filtered community entries via `/text/models?reliability=all`. The runner calls the live `gen.pollinations.ai` catalog and Chat Completions API, grades answers in code, records failures instead of skipping them, and writes versioned JSON consumed by the Model Monitor **Evals** tab.
 
 ## Run
 
@@ -18,7 +18,7 @@ POLLINATIONS_TOKEN=sk_... node operations/model-evals/src/run-evals.js --communi
 
 Useful controls: `--trials=3`, `--families=aiw,aiw_plus,bowls`, `--concurrency=3`, `--seed=12345`, `--budget-pollen=19.5`.
 
-Every request includes a per-trial `seed` so Pollinations' response cache cannot turn repeated evals into cached answers. HTTP 429s and transient 5xx responses are retried with backoff; exhausted retries and timeouts count as failed trials. A successful response must include both completion content and provider usage, so account/balance messages cannot accidentally be scored as model answers.
+Every model in a run receives the exact same generated question instances. Every request also includes a per-trial, model-specific `seed` so Pollinations' response cache cannot turn repeated evals into cached answers. HTTP 429s and transient 5xx responses are retried with backoff; exhausted retries and timeouts count as failed trials. A successful response must include both completion content and provider usage, so account/balance messages cannot accidentally be scored as model answers.
 
 ## Results
 

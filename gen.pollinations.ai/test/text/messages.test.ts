@@ -78,6 +78,36 @@ describe("messagesToChatRequest", () => {
         expect(chat.messages[0]).toEqual({ role: "system", content: "a" });
     });
 
+    it("preserves cache_control inside tool schemas and arguments", () => {
+        const input = { cache_control: "user data" };
+        const properties = { cache_control: { type: "string" } };
+        const chat = translate(
+            request({
+                tools: [
+                    {
+                        name: "save",
+                        input_schema: { type: "object", properties },
+                    },
+                ],
+                messages: [
+                    {
+                        role: "assistant",
+                        content: [
+                            { type: "tool_use", id: "t1", name: "save", input },
+                        ],
+                    },
+                ],
+            }),
+            "z-ai/glm-5.3-flash",
+        );
+        expect(chat.tools?.[0]).toMatchObject({
+            function: { parameters: { properties } },
+        });
+        expect(chat.messages[0]).toMatchObject({
+            tool_calls: [{ function: { arguments: JSON.stringify(input) } }],
+        });
+    });
+
     it("maps tool calls, tool results and images", () => {
         const chat = translate(
             request({
@@ -319,6 +349,66 @@ async function events(stream: ReadableStream<Uint8Array>) {
 }
 
 describe("chatStreamToMessageStream", () => {
+    it("keeps interleaved parallel tool calls in two complete blocks", async () => {
+        const out = await events(
+            chatStreamToMessageStream(
+                upstream(
+                    delta({
+                        tool_calls: [
+                            {
+                                index: 0,
+                                id: "a",
+                                function: {
+                                    name: "Read",
+                                    arguments: '{"path":',
+                                },
+                            },
+                            {
+                                index: 1,
+                                id: "b",
+                                function: {
+                                    name: "Read",
+                                    arguments: '{"path":',
+                                },
+                            },
+                        ],
+                    }) +
+                        delta({
+                            tool_calls: [
+                                { index: 0, function: { arguments: '"a"}' } },
+                                { index: 1, function: { arguments: '"b"}' } },
+                            ],
+                        }) +
+                        chunk({
+                            choices: [],
+                            usage: {
+                                prompt_tokens: 10,
+                                completion_tokens: 5,
+                                total_tokens: 15,
+                            },
+                        }) +
+                        chunk("[DONE]"),
+                ),
+                "served",
+            ),
+        );
+        expect(
+            out
+                .filter(({ event }) => event === "content_block_start")
+                .map(({ data }) => data.content_block.id),
+        ).toEqual(["a", "b"]);
+        for (const [index, path] of ["a", "b"].entries()) {
+            const args = out
+                .filter(
+                    ({ event, data }) =>
+                        event === "content_block_delta" && data.index === index,
+                )
+                .map(({ data }) => data.delta.partial_json)
+                .join("");
+            expect(JSON.parse(args)).toEqual({ path });
+        }
+    });
+
     it("emits one block at a time in Anthropic order, with usage at the end", async () => {
         const sse =
             delta({ role: "assistant", reasoning_content: "hm" }) +

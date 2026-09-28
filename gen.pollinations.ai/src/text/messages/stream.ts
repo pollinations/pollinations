@@ -55,6 +55,10 @@ export function chatStreamToMessageStream(
     let open: string | undefined;
     let finishReason: string | null | undefined;
     let hasToolCalls = false;
+    const tools = new Map<
+        number,
+        { id?: string; name: string; parts: string[] }
+    >();
     let usage: CompletionUsage | undefined;
     let done = false;
 
@@ -85,7 +89,27 @@ export function chatStreamToMessageStream(
     const translate = (data: string) => {
         if (data === "[DONE]") {
             done = true;
+            // Chat providers can interleave parallel calls; Messages blocks
+            // must finish before the next one starts.
+            const toolEvents = [];
+            for (const [index, call] of tools) {
+                for (const partial_json of call.parts) {
+                    toolEvents.push(
+                        ...write(
+                            `tool:${index}`,
+                            {
+                                type: "tool_use",
+                                id: call.id,
+                                name: call.name,
+                                input: {},
+                            },
+                            { type: "input_json_delta", partial_json },
+                        ),
+                    );
+                }
+            }
             return [
+                ...toolEvents,
                 ...closeBlock(),
                 event("message_delta", {
                     delta: {
@@ -137,21 +161,15 @@ export function chatStreamToMessageStream(
         }
         for (const call of delta?.tool_calls ?? []) {
             hasToolCalls = true;
-            events.push(
-                ...write(
-                    `tool:${call.index}`,
-                    {
-                        type: "tool_use",
-                        id: call.id,
-                        name: call.function?.name,
-                        input: {},
-                    },
-                    {
-                        type: "input_json_delta",
-                        partial_json: call.function?.arguments ?? "",
-                    },
-                ),
-            );
+            const tool = tools.get(call.index) ?? {
+                id: call.id,
+                name: "",
+                parts: [] as string[],
+            };
+            tool.id = call.id ?? tool.id;
+            tool.name += call.function?.name ?? "";
+            tool.parts.push(call.function?.arguments ?? "");
+            tools.set(call.index, tool);
         }
         return events;
     };

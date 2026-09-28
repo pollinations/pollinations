@@ -138,12 +138,28 @@ const TOOL_CHOICES: Record<string, string> = {
 // every request, so it is dropped for models that cannot use it.
 const PROMPT_CACHING_MODELS = /^(anthropic|google|amazon)\//;
 
-const withoutCacheControl = (request: CreateMessageRequest) =>
-    JSON.parse(
-        JSON.stringify(request, (key, value) =>
-            key === "cache_control" ? undefined : value,
-        ),
-    ) as CreateMessageRequest;
+function withoutCacheControl(request: CreateMessageRequest) {
+    // Only protocol content blocks own cache markers. Tool inputs and schemas
+    // may legitimately contain a property named cache_control.
+    const clean = (value: string | Block[]): string | Block[] =>
+        typeof value === "string"
+            ? value
+            : value.map(({ cache_control: _, ...block }) => ({
+                  ...block,
+                  ...(block.type === "tool_result" &&
+                  block.content !== undefined
+                      ? { content: clean(block.content) }
+                      : {}),
+              }));
+    return {
+        ...request,
+        ...(request.system !== undefined && { system: clean(request.system) }),
+        messages: request.messages.map((message) => ({
+            ...message,
+            content: clean(message.content),
+        })),
+    };
+}
 
 /**
  * Translate an Anthropic Messages request into a Chat Completions request for

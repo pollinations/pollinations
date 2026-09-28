@@ -9,48 +9,34 @@ import {
     RobotIcon,
     Surface,
     Text,
-    UsageIcon,
-    WalletIcon,
 } from "@pollinations/ui";
 
-const MONEY_FLOW = [
-    {
-        title: "Users bring their Pollen",
-        body: "They buy Pollen or earn it through Quests, then use it across apps, models and agents.",
-        icon: WalletIcon,
-    },
-    {
-        title: "Users control their spending",
-        body: "Connected apps use the budget and permissions each user approves.",
-        icon: UsageIcon,
-    },
-    {
-        title: "Value flows back to builders",
-        body: "Earn Pollen when others use your published model or your app with developer earnings enabled.",
-        icon: EarningsIcon,
-        earnings: [
-            {
-                text: "Model · 75% of its listed price",
-                icon: BeakerIcon,
-                href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
-                docsLabel: "Model publishing documentation",
-            },
-            {
-                text: "App · 25% markup on usage",
-                icon: AppIcon,
-                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-                docsLabel: "App wallet integration documentation",
-            },
-            {
-                text: "Agent · Earnings coming soon",
-                icon: RobotIcon,
-                href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
-                docsLabel: "Agent publishing documentation",
-            },
-        ],
-        note: "With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.",
-    },
-];
+/** Users' side is covered by the panel intro; the card holds the rates. */
+const EARNINGS = {
+    title: "Value flows back to builders",
+    body: "Earn Pollen when others use your published model or your app with developer earnings enabled.",
+    earnings: [
+        {
+            text: "Model · 75% of its listed price",
+            icon: BeakerIcon,
+            href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
+            docsLabel: "Model publishing documentation",
+        },
+        {
+            text: "App · 25% markup on usage",
+            icon: AppIcon,
+            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+            docsLabel: "App wallet integration documentation",
+        },
+        {
+            text: "Agent · Earnings coming soon",
+            icon: RobotIcon,
+            href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
+            docsLabel: "Agent publishing documentation",
+        },
+    ],
+    note: "With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.",
+};
 
 export function MoneyMoves() {
     return (
@@ -63,82 +49,56 @@ export function MoneyMoves() {
                 />
             </div>
 
-            <ul className="flex flex-col gap-3">
-                {MONEY_FLOW.map((item) => {
-                    const Icon = item.icon;
+            <Surface variant="card" className="flex flex-col gap-3 p-5">
+                <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">
+                        <EarningsIcon className="size-5" />
+                    </div>
+                    <Heading as="h3" size="card" className="text-brand-accent">
+                        {EARNINGS.title}
+                    </Heading>
+                </div>
+                <Text size="sm">{EARNINGS.body}</Text>
+                <ul className="flex flex-col gap-2 pt-1">
+                    {EARNINGS.earnings.map((earning) => {
+                        const EarningsTypeIcon = earning.icon;
 
-                    return (
-                        <li key={item.title}>
-                            <Surface
-                                variant="card"
-                                className="flex flex-col gap-3 p-5"
+                        return (
+                            <Text
+                                as="li"
+                                key={earning.text}
+                                size="sm"
+                                weight="medium"
+                                className="flex items-start gap-2.5 text-theme-text-strong"
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">
-                                        <Icon className="size-5" />
-                                    </div>
-                                    <Heading
-                                        as="h3"
-                                        size="card"
-                                        className="text-brand-accent"
+                                <EarningsTypeIcon
+                                    aria-hidden="true"
+                                    className="mt-0.5 size-4.5 shrink-0"
+                                />
+                                <span className="flex min-w-0 items-start gap-1">
+                                    <span className="min-w-0">
+                                        {earning.text}
+                                    </span>
+                                    <InlineLink
+                                        href={earning.href}
+                                        aria-label={earning.docsLabel}
+                                        title={earning.docsLabel}
+                                        className="inline-flex min-h-6 shrink-0 items-center gap-1 text-brand-accent"
                                     >
-                                        {item.title}
-                                    </Heading>
-                                </div>
-                                <Text size="sm">{item.body}</Text>
-                                {item.earnings ? (
-                                    <ul className="flex flex-col gap-2 pt-1">
-                                        {item.earnings.map((earning) => {
-                                            const EarningsTypeIcon =
-                                                earning.icon;
-
-                                            return (
-                                                <Text
-                                                    as="li"
-                                                    key={earning.text}
-                                                    size="sm"
-                                                    weight="medium"
-                                                    className="flex items-start gap-2.5 text-theme-text-strong"
-                                                >
-                                                    <EarningsTypeIcon
-                                                        aria-hidden="true"
-                                                        className="mt-0.5 size-4.5 shrink-0"
-                                                    />
-                                                    <span className="flex min-w-0 items-start gap-1">
-                                                        <span className="min-w-0">
-                                                            {earning.text}
-                                                        </span>
-                                                        <InlineLink
-                                                            href={earning.href}
-                                                            aria-label={
-                                                                earning.docsLabel
-                                                            }
-                                                            title={
-                                                                earning.docsLabel
-                                                            }
-                                                            className="inline-flex min-h-6 shrink-0 items-center gap-1 text-brand-accent"
-                                                        >
-                                                            <BookIcon
-                                                                aria-hidden="true"
-                                                                className="size-3.5"
-                                                            />
-                                                        </InlineLink>
-                                                    </span>
-                                                </Text>
-                                            );
-                                        })}
-                                    </ul>
-                                ) : null}
-                                {item.note ? (
-                                    <Text size="xs" tone="muted">
-                                        {item.note}
-                                    </Text>
-                                ) : null}
-                            </Surface>
-                        </li>
-                    );
-                })}
-            </ul>
+                                        <BookIcon
+                                            aria-hidden="true"
+                                            className="size-3.5"
+                                        />
+                                    </InlineLink>
+                                </span>
+                            </Text>
+                        );
+                    })}
+                </ul>
+                <Text size="xs" tone="muted">
+                    {EARNINGS.note}
+                </Text>
+            </Surface>
         </section>
     );
 }

@@ -107,15 +107,12 @@ describe("gen embeddings", () => {
     it("rejects an out-of-range --dimensions before fetching", async () => {
         const fetch = vi.fn();
         vi.stubGlobal("fetch", fetch);
-        vi.spyOn(process, "exit").mockImplementation(() => {
-            throw new Error("CLI exited");
-        });
         vi.spyOn(process.stderr, "write").mockImplementation(() => true);
         await expect(
             createEmbeddingsCommand().parseAsync(["hi", "--dimensions", "5"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow("exit 1");
         expect(fetch).not.toHaveBeenCalled();
     });
 });

@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import { fail, getOutputMode, printResult } from "../../lib/output.js";
 import { readStdin } from "../../lib/stdin.js";
 
 interface EmbeddingResponse {
@@ -28,10 +28,7 @@ export function createEmbeddingsCommand() {
                 ? inputsArg
                 : (await readStdin()).split(/\r?\n/).filter(Boolean);
             if (inputs.length === 0) {
-                printError(
-                    "No input provided. Pass as arguments or pipe via stdin.",
-                );
-                process.exit(1);
+                fail("No input provided. Pass as arguments or pipe via stdin.");
             }
 
             const body: Record<string, unknown> = { input: inputs };

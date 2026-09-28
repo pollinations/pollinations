@@ -1,12 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
-import {
-    getOutputMode,
-    printError,
-    printInfo,
-    printMeta,
-} from "../../lib/output.js";
+import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
 
 // The response's Content-Type, not the model name, decides the file
 // extension: nvidia/asset-harvester returns PLY, everything else GLB.
@@ -37,14 +32,12 @@ export function createModel3dCommand() {
             const images: string[] = opts.image ?? [];
             const badImage = images.find((u) => !/^https?:\/\//i.test(u));
             if (badImage) {
-                printError(
+                fail(
                     `--image requires a public http(s) URL, not a local path: ${badImage}`,
                 );
-                process.exit(1);
             }
             if (!promptArg && images.length === 0) {
-                printError("Provide a prompt, --image, or both.");
-                process.exit(1);
+                fail("Provide a prompt, --image, or both.");
             }
 
             // microsoft/trellis-2 is image-to-3D only (rejects a bare

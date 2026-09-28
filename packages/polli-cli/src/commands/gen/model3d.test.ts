@@ -108,29 +108,23 @@ describe("gen 3d output", () => {
     it("rejects a local --image path before fetching", async () => {
         const fetch = vi.fn();
         vi.stubGlobal("fetch", fetch);
-        vi.spyOn(process, "exit").mockImplementation(() => {
-            throw new Error("CLI exited");
-        });
         vi.spyOn(process.stderr, "write").mockImplementation(() => true);
         await expect(
             createModel3dCommand().parseAsync(
                 ["a fox", "--image", "./photo.png"],
                 { from: "user" },
             ),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow("exit 1");
         expect(fetch).not.toHaveBeenCalled();
     });
 
     it("requires a prompt or --image", async () => {
         const fetch = vi.fn();
         vi.stubGlobal("fetch", fetch);
-        vi.spyOn(process, "exit").mockImplementation(() => {
-            throw new Error("CLI exited");
-        });
         vi.spyOn(process.stderr, "write").mockImplementation(() => true);
         await expect(
             createModel3dCommand().parseAsync([], { from: "user" }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow("exit 1");
         expect(fetch).not.toHaveBeenCalled();
     });
 });

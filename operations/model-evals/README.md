@@ -12,12 +12,15 @@ cached or memorized answers don't score:
   whether a model reasons about who's who or pattern-matches on sentence shape.
 - `bowls` — a state-tracking/counting task with a distractor bowl.
 
-Answers are graded by code, not by another LLM. A model that errors or times
-out counts as a failed trial, not a skip. Each model's score reports a 95%
-Wilson-interval margin of error. Community models named after an official
-model (e.g. `community/Saauf/gpt-6-luna` vs `openai/gpt-6-luna`) are compared
-against their namesake, and a gap larger than the combined margin of error is
-flagged in the results JSON.
+Answers are graded by code, not by another LLM. Every trial sends a random
+`seed`, since gen caches completions by request body and a repeated trial
+would otherwise replay a stale answer. A 429 (per-model rate limit) is
+retried with backoff rather than counted as a failure; a model that still
+errors or times out after retries counts as a failed trial, not a skip. Each
+model's score reports a 95% Wilson-interval margin of error. Community
+models named after an official model (e.g. `community/Saauf/gpt-6-luna` vs
+`openai/gpt-6-luna`) are compared against their namesake, and a gap larger
+than the combined margin of error is flagged in the results JSON.
 
 ## Usage
 

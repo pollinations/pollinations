@@ -95,11 +95,18 @@ function tokenCost(usage, pricing) {
     return promptTokens * promptRate + completionTokens * completionRate;
 }
 
-async function runTrial(model, question, apiKey, opts) {
+const RATE_LIMIT_RETRIES = 3;
+const RATE_LIMIT_DELAY_MS = 5000;
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchCompletion(model, question, apiKey, opts, seed) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
     try {
-        const res = await fetch(CHAT_URL, {
+        return await fetch(CHAT_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -109,9 +116,26 @@ async function runTrial(model, question, apiKey, opts) {
                 model: model.name,
                 messages: [{ role: "user", content: question.prompt }],
                 max_tokens: opts.maxTokens,
+                seed,
             }),
             signal: controller.signal,
         });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function runTrial(model, question, apiKey, opts) {
+    // gen caches completions by request body across all users, so each trial
+    // needs its own random seed to avoid replaying a stale cached answer.
+    const seed = Math.floor(Math.random() * 2 ** 31);
+    try {
+        let res;
+        for (let attempt = 0; ; attempt++) {
+            res = await fetchCompletion(model, question, apiKey, opts, seed);
+            if (res.status !== 429 || attempt >= RATE_LIMIT_RETRIES) break;
+            await sleep(RATE_LIMIT_DELAY_MS * (attempt + 1));
+        }
         if (!res.ok) {
             return {
                 correct: false,
@@ -127,8 +151,6 @@ async function runTrial(model, question, apiKey, opts) {
         return { correct, failed: false, cost };
     } catch (err) {
         return { correct: false, failed: true, cost: 0, error: err.message };
-    } finally {
-        clearTimeout(timer);
     }
 }
 

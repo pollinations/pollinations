@@ -66,7 +66,7 @@ export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option(
         "--type <type>",
-        "Filter: text, image, audio, video, embedding, all",
+        "Filter: text, image, audio, video, embedding, 3d, all",
         "all",
     )
     .option("--verbose", "Show additional details (context length)")
@@ -78,12 +78,18 @@ export const modelsCommand = new Command("models")
     )
     .action(async (opts) => {
         if (
-            !["text", "image", "audio", "video", "embedding", "all"].includes(
-                opts.type,
-            )
+            ![
+                "text",
+                "image",
+                "audio",
+                "video",
+                "embedding",
+                "3d",
+                "all",
+            ].includes(opts.type)
         ) {
             fail(
-                "--type must be one of: text, image, audio, video, embedding, all",
+                "--type must be one of: text, image, audio, video, embedding, 3d, all",
             );
         }
         if (opts.stats) {
@@ -169,6 +175,11 @@ export const modelsCommand = new Command("models")
                     await gen<ModelEntry[]>("/embeddings/models");
                 for (const m of embeddingModels)
                     raw.push({ model: m, type: "embedding" });
+            }
+            if (type === "all" || type === "3d") {
+                const model3dModels = await gen<ModelEntry[]>("/3d/models");
+                for (const m of model3dModels)
+                    raw.push({ model: m, type: "3d" });
             }
 
             if (getOutputMode() === "json") {

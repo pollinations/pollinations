@@ -59,6 +59,18 @@ polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
 polli gen transcribe speech.mp3
+polli gen 3d "a red fox" --output fox.glb               # 3D model (glb/ply)
+polli gen embeddings "first text" "second text"          # one vector per line
+polli gen voice-change talk.mp3 --voice nova             # re-voice an audio file
+polli gen isolate interview.mp4                          # strip music + background
+polli gen audio "Hello" --timestamps                     # audio + character timings
+polli gen 3d "a red fox" --output fox.glb              # 3D model saved to a file
+polli gen 3d --image https://media.pollinations.ai/abc  # image-only 3D models
+polli gen embeddings "first text" "second text"        # one vector per line
+cat inputs.txt | polli gen embeddings                  # one input per line via stdin
+polli gen voice-change talk.mp3 --voice nova           # same speech, another voice
+polli gen isolate interview.mp4                        # remove music and background noise
+polli gen audio "Hello" --timestamps                   # audio + character timings JSON
 
 polli gen chat --model openai                         # interactive multi-turn
 ```

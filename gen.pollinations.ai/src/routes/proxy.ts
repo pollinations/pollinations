@@ -95,6 +95,8 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { messagesErrors, messagesToChat } from "@/text/messages/middleware.ts";
+import { MessagesRequestSchema } from "@/text/messages/translate.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -240,6 +242,19 @@ const decisionHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateDecision,
+);
+
+// No balance notice: Anthropic clients expect a billing_error, not text.
+const messagesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", MessagesRequestSchema),
+    messagesToChat,
+    resolveModel("generate.text", { supportedEndpoint: "/v1/messages" }),
+    track("generate.text"),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateChatCompletion,
 );
 
 const responsesHandlers = factory.createHandlers(
@@ -397,6 +412,8 @@ async function resolveVisibleModelEntry(
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Anthropic error shape for every failure, including rate limits and auth.
+    .use("/v1/messages", messagesErrors)
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
@@ -792,6 +809,72 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...responsesHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Message",
+            description: [
+                "Anthropic Messages API for text models that list `/v1/messages` in `supported_endpoints`. Point Claude Code or an Anthropic SDK at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.",
+                "",
+                "```bash",
+                "export ANTHROPIC_BASE_URL=https://gen.pollinations.ai",
+                "export ANTHROPIC_AUTH_TOKEN=sk_...",
+                "export ANTHROPIC_MODEL=openai",
+                "```",
+                "",
+                "Requests run through the Chat Completions pipeline, so billing, caching, key permissions and rate limits match `/v1/chat/completions`. Supports system prompts, images, tool use and tool results, stop sequences, `cache_control`, and streaming; `thinking` and `output_config.effort` map to reasoning effort and provider reasoning returns as `thinking` blocks. Streams send `ping` events during long silences.",
+                "",
+                'Successful responses report usage in Anthropic fields; missing provider usage fails the request, or ends a stream with an `error` event. Errors use Anthropic\'s `{type: "error", error: {type, message}}` shape. `count_tokens`, batches, files and server tools are not supported.',
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Anthropic Message JSON or Messages SSE",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z
+                                    .object({
+                                        id: z.string(),
+                                        type: z.literal("message"),
+                                        role: z.literal("assistant"),
+                                        model: z.string().optional(),
+                                        content: z.array(
+                                            z
+                                                .object({ type: z.string() })
+                                                .passthrough(),
+                                        ),
+                                        stop_reason: z.string(),
+                                        stop_sequence: z.string().nullable(),
+                                        usage: z.object({
+                                            input_tokens: z.number().int(),
+                                            output_tokens: z.number().int(),
+                                            cache_read_input_tokens: z
+                                                .number()
+                                                .int(),
+                                            cache_creation_input_tokens: z
+                                                .number()
+                                                .int(),
+                                        }),
+                                    })
+                                    .meta({ $id: "AnthropicMessage" }),
+                            ),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Messages SSE: message_start, content_block_start/delta/stop, message_delta with usage, message_stop; ping keep-alives.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...messagesHandlers,
     )
     .post(
         "/v1/embeddings",

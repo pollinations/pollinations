@@ -8,13 +8,14 @@ DESCRIPTION >
     (query, country, device), pages (page, country, device; our own page routes only, since
     Google indexes image URLs containing prompts). Days are Pacific time, countries ISO
     alpha-3. A report over 25,000 rows spans responses told apart by start_row. Every
-    response of a run shares fetched_at: the latest fetched_at per dataset and date is one
-    complete report.
+    response of a run shares fetched_at and carries page_count: use the newest fetched_at per
+    dataset and date whose distinct start_rows number page_count.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,
     `date` Date `json:$.date`,
     `start_row` UInt32 `json:$.start_row`,
+    `page_count` UInt8 `json:$.page_count`,
     `fetched_at` DateTime `json:$.fetched_at`,
     `body` String `json:$.body`
 

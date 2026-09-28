@@ -8,8 +8,10 @@
  * (.github/workflows/data-sync-search-console-tinybird.yml) and stores the API
  * responses unchanged. Each run fetches the most recent days with final data
  * (three by default); days sent again are expected. Every response of a run
- * shares one fetched_at, and a report's pages are stored together, so the
- * latest fetched_at of a dataset and date is always one complete report.
+ * shares one fetched_at and carries the report's page_count: the newest
+ * fetched_at of a dataset and date whose distinct start_rows number page_count
+ * is one complete report. Tinybird can accept some rows of a request and
+ * quarantine others, so an upload alone does not prove completeness.
  *
  *   totals   clicks, impressions, CTR, position by country and device: the
  *            true totals, including queries Google hides for privacy
@@ -243,6 +245,7 @@ async function main() {
                         dataset,
                         date,
                         start_row,
+                        page_count: pages.length,
                         fetched_at,
                         body,
                     })),

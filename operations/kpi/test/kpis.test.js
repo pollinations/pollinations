@@ -417,7 +417,6 @@ const marginWeek = {
     week: "2026-08-10",
     pollenRevenue: 3469,
     costUsd: 3740,
-    allTrafficCostUsd: 4000,
     revenue: 2278,
 };
 
@@ -467,14 +466,12 @@ describe("gross margin row", () => {
 });
 
 describe("cash coverage row", () => {
-    it("compares Stripe cash against all traffic cost, not regular cost", () => {
-        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(56.95, 1);
+    it("compares Stripe cash against the week's compute cost", () => {
+        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
     });
 
     it("blanks a week with no cost rather than dividing by zero", () => {
-        expect(
-            kpiValue(coverage, { revenue: 100, allTrafficCostUsd: 0 }),
-        ).toBeNull();
+        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
     });
 });
 
@@ -516,26 +513,5 @@ describe("402 rejections", () => {
             (v) => v.name,
         );
         expect(names).toEqual(["WAU", "WAU · incl. rejected"]);
-    });
-});
-
-describe("separate legacy usage", () => {
-    it("rotates requests and successful requests in one row without using regular totals", () => {
-        const row = KPIS.find((item) => item.key === "legacyRequests");
-        const week = {
-            totalRequests: 900,
-            legacyRequests: 50,
-            legacySuccessfulRequests: 40,
-        };
-        expect(row.views).toHaveLength(2);
-        expect(
-            [0, 1, 2].map((index) => kpiValue(kpiView(row, index), week)),
-        ).toEqual([50, 40, 50]);
-        expect(kpiViewById(kpiViewId(row, 1)).key).toBe(
-            "legacySuccessfulRequests",
-        );
-    });
-    it("leaves missing all-traffic costs blank instead of using regular costs", () => {
-        expect(kpiValue(coverage, { revenue: 100, costUsd: 50 })).toBeNull();
     });
 });

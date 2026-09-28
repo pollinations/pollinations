@@ -209,18 +209,6 @@ kpiRoutes.get("/usage", async (c) => {
     return c.json({ data: result.data });
 });
 
-// Separate legacy reporting and inclusive financial cost.
-kpiRoutes.get("/traffic-summary", async (c) => {
-    const result = await fetchTinybirdByWeek(
-        c.env,
-        "weekly_traffic_summary",
-        parseWeeksBack(c),
-    );
-    if (result.errors.length)
-        return c.json({ error: "Traffic summary unavailable", data: [] }, 503);
-    return c.json({ data: result.data });
-});
-
 // Tinybird: Agent/MCP usage — separate from existing model KPIs.
 kpiRoutes.get("/agent-mcp-usage", async (c) => {
     const result = await fetchTinybirdByWeek(

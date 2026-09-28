@@ -3,8 +3,8 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { generateQuestion, gradeQuestion } from "./questions.js";
 import { matchOfficialModel } from "./model-match.js";
+import { generateQuestion, gradeQuestion } from "./questions.js";
 import {
     evaluateModel,
     requestCompletion,
@@ -19,8 +19,14 @@ test("question families generate integer-answer tasks", () => {
         const q = generateQuestion(family, seededRng(42));
         assert.equal(q.family, family);
         assert.ok(Number.isInteger(q.answer));
-        assert.equal(gradeQuestion(family, `Final answer: ${q.answer}`, q.answer), true);
-        assert.equal(gradeQuestion(family, "Final answer: 9999", q.answer), false);
+        assert.equal(
+            gradeQuestion(family, `Final answer: ${q.answer}`, q.answer),
+            true,
+        );
+        assert.equal(
+            gradeQuestion(family, "Final answer: 9999", q.answer),
+            false,
+        );
     }
 });
 
@@ -35,9 +41,10 @@ test("model selection supports community and explicit aliases", () => {
         { name: "community/u/a", community: true, category: "text" },
         { name: "image/x", category: "image" },
     ];
-    assert.deepEqual(selectModels(models, { communityOnly: true }).map((m) => m.name), [
-        "community/u/a",
-    ]);
+    assert.deepEqual(
+        selectModels(models, { communityOnly: true }).map((m) => m.name),
+        ["community/u/a"],
+    );
     assert.deepEqual(
         selectModels(models, { modelFilter: ["a"] }).map((m) => m.name),
         ["openai/a"],
@@ -91,7 +98,10 @@ test("429 is retried and every request carries a seed", async () => {
     });
     assert.equal(result.ok, true);
     assert.equal(calls, 2);
-    assert.deepEqual(bodies.map((body) => body.seed), [12345, 12345]);
+    assert.deepEqual(
+        bodies.map((body) => body.seed),
+        [12345, 12345],
+    );
 });
 
 test("HTTP 200 balance messages are failures, not scored answers", async () => {
@@ -104,7 +114,8 @@ test("HTTP 200 balance messages are failures, not scored answers", async () => {
                 choices: [
                     {
                         message: {
-                            content: "The account behind this API key doesn't have enough credits. Please top up Pollen.",
+                            content:
+                                "The account behind this API key doesn't have enough credits. Please top up Pollen.",
                         },
                     },
                 ],
@@ -132,13 +143,14 @@ test("result index preserves prior runs", async () => {
     });
     await writeRun(dir, make("2026-01-01T00-00-00"));
     await writeRun(dir, make("2026-01-08T00-00-00"));
-    const index = JSON.parse(await readFile(path.join(dir, "index.json"), "utf8"));
-    assert.deepEqual(index.runs.map((entry) => entry.runId), [
-        "2026-01-08T00-00-00",
-        "2026-01-01T00-00-00",
-    ]);
+    const index = JSON.parse(
+        await readFile(path.join(dir, "index.json"), "utf8"),
+    );
+    assert.deepEqual(
+        index.runs.map((entry) => entry.runId),
+        ["2026-01-08T00-00-00", "2026-01-01T00-00-00"],
+    );
 });
-
 
 test("all models receive identical questions while request seeds remain model-specific", async () => {
     const promptsByModel = new Map();

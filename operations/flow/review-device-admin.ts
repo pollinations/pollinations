@@ -425,10 +425,7 @@ export const adminReviewCases: ReviewCase[] = [
         query: { screen: "identity" },
         finalRoute: "/app/sign-in",
         conditions: { account: "signed-out", role: "admin" },
-        expected: [
-            ...signInReady,
-            { selector: "p", text: "to continue to this app." },
-        ],
+        expected: [...signInReady, { selector: "p", text: "to continue to " }],
     }),
     ...(["pending", "error"] as const).map((outcome) =>
         adminRecipe("identity", `admin-sign-in-${outcome}`, {

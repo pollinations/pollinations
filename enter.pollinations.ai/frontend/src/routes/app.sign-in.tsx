@@ -3,7 +3,6 @@ import { AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
@@ -19,9 +18,10 @@ export const Route = createFileRoute("/app/sign-in")({
     component: AppSignIn,
 });
 
-// Any OAuth app lands here, ours or a developer's: name Pollinations as the
-// account and let the app card name the app. Each app states its own
-// requirements (such as admin access) on its own screen.
+// Any OAuth app lands here, ours or a developer's. Name Pollinations as the
+// account and the app by its signed callback host, which an app cannot fake
+// the way it can pick a display name. Each app states its own requirements
+// (such as admin access) on its own screen.
 const title = "Sign in to Pollinations";
 
 function AppSignIn() {
@@ -35,7 +35,7 @@ function AppSignIn() {
     // such client (hand-typed or expired link); "unreachable" means the
     // check itself failed and can be retried.
     const [client, setClient] = useState<
-        { name: string } | "loading" | "invalid" | "unreachable"
+        "valid" | "loading" | "invalid" | "unreachable"
     >("loading");
     const [lookupAttempt, setLookupAttempt] = useState(0);
     // biome-ignore lint/correctness/useExhaustiveDependencies: lookupAttempt re-runs the check when the user selects Try again.
@@ -46,9 +46,7 @@ function AppSignIn() {
             .publicClientPrelogin({ client_id })
             .then(({ data }) => {
                 if (cancelled) return;
-                setClient(
-                    data?.client_name ? { name: data.client_name } : "invalid",
-                );
+                setClient(data?.client_name ? "valid" : "invalid");
             })
             .catch(() => {
                 if (!cancelled) setClient("unreachable");
@@ -117,20 +115,13 @@ function AppSignIn() {
         typeof window === "undefined"
             ? undefined
             : oauthSignInCallback(window.location.href);
-    const appCard = (
-        <AppAttribution
-            attribution={{ appName: client.name }}
-            redirectHostname={redirectHost}
-        />
-    );
 
     // A signed-in admin only needs to resume the dashboard's authorize request.
     if (user) {
         return (
             <AuthFlowScreen
                 title="Continue"
-                subject={appCard}
-                description={`as ${user.name || user.githubUsername || user.email}.`}
+                description={`to ${redirectHost} as ${user.name || user.githubUsername || user.email}.`}
                 actions={
                     <Button
                         as="a"
@@ -148,8 +139,8 @@ function AppSignIn() {
     return (
         <SignInScreen
             title={title}
-            subject={appCard}
-            description="to continue to this app."
+            // No full stop: after a host it reads as part of the address.
+            description={`to continue to ${redirectHost}`}
             callbackURL={callbackURL}
         />
     );

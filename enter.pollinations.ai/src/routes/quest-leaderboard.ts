@@ -1,20 +1,29 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, isNotNull, like, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 
-const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
+const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v2";
 const LEADERBOARD_CACHE_TTL = 60;
 const LEADERBOARD_LIMIT = 50;
 
+// Retain the public wire name; this now counts earned rewards, including grants.
+const rewardCountSchema = z
+    .number()
+    .int()
+    .nonnegative()
+    .describe(
+        "Number of earned reward entries, including unclaimed rewards and one-off grants. completedQuests is the legacy field name.",
+    );
+
 const leaderboardEntrySchema = z.object({
     githubLogin: z.string(),
-    completedQuests: z.number().int().nonnegative(),
+    completedQuests: rewardCountSchema,
     totalPollen: z.number().nonnegative(),
 });
 
@@ -22,7 +31,7 @@ const questLeaderboardResponseSchema = z.object({
     leaderboard: z.array(leaderboardEntrySchema),
     totals: z.object({
         contributors: z.number().int().nonnegative(),
-        completedQuests: z.number().int().nonnegative(),
+        completedQuests: rewardCountSchema,
         totalPollen: z.number().nonnegative(),
     }),
 });
@@ -38,7 +47,7 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
         summary: "Get Quest Leaderboard",
         security: [],
         description:
-            "Returns public aggregate totals and top contributors for completed GitHub POLLEN-QUEST issue rewards.",
+            "Returns totals for all recorded Quest rewards and recognition grants, claimed or unclaimed. Rankings show public GitHub usernames only; totals also include rewards without a public identity. Purchases and app/model usage earnings are excluded.",
         responses: {
             200: {
                 description: "Quest leaderboard",
@@ -66,67 +75,51 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
 );
 
 /**
- * Aggregate every completed public GitHub quest first, then cap only the
- * returned ranking. This keeps the public totals global even after the board
- * grows beyond the presentation limit.
+ * The reward ledger contains Quest rewards and grants, not purchases or usage
+ * earnings. Aggregate it independently of the public ranking so private accounts
+ * and entries beyond the ranking limit still contribute to the totals.
  */
 async function buildQuestLeaderboard(
     env: CloudflareBindings,
 ): Promise<QuestLeaderboardResponse> {
     const db = drizzle(env.DB);
-    const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
+    const githubLogin = sql<string>`lower(trim(${schema.user.githubUsername}))`;
+    const rewardCount = sql<number>`count(*)`.mapWith(Number);
+    const pollenTotal =
+        sql<number>`coalesce(sum(${rewardsTable.pollenAmount}), 0)`.mapWith(
+            Number,
+        );
+    const [totals] = await db
+        .select({
+            contributors:
+                sql<number>`count(distinct ${rewardsTable.userId})`.mapWith(
+                    Number,
+                ),
+            completedQuests: rewardCount,
+            totalPollen: pollenTotal,
+        })
+        .from(rewardsTable);
     const rows = await db
         .select({
             githubLogin,
-            completedQuests:
-                sql<number>`count(distinct ${rewardsTable.questId})`.mapWith(
-                    Number,
-                ),
-            totalPollen:
-                sql<number>`coalesce(sum(${rewardsTable.pollenAmount}), 0)`.mapWith(
-                    Number,
-                ),
+            completedQuests: rewardCount,
+            totalPollen: pollenTotal,
         })
         .from(rewardsTable)
         .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
-        .where(
-            and(
-                like(rewardsTable.questId, "github:issue:%"),
-                isNotNull(schema.user.githubUsername),
-            ),
-        )
-        .groupBy(githubLogin);
-
-    const contributors = rows
-        .flatMap((row) =>
-            row.githubLogin
-                ? [
-                      {
-                          githubLogin: row.githubLogin,
-                          completedQuests: row.completedQuests,
-                          totalPollen: roundPollenLedgerAmount(row.totalPollen),
-                      },
-                  ]
-                : [],
-        )
-        .sort(
-            (a, b) =>
-                b.totalPollen - a.totalPollen ||
-                b.completedQuests - a.completedQuests ||
-                a.githubLogin.localeCompare(b.githubLogin),
-        );
+        .where(sql`${githubLogin} <> ''`)
+        .groupBy(githubLogin)
+        .orderBy(desc(pollenTotal), desc(rewardCount), asc(githubLogin))
+        .limit(LEADERBOARD_LIMIT);
 
     return {
-        leaderboard: contributors.slice(0, LEADERBOARD_LIMIT),
+        leaderboard: rows.map((row) => ({
+            ...row,
+            totalPollen: roundPollenLedgerAmount(row.totalPollen),
+        })),
         totals: {
-            contributors: contributors.length,
-            completedQuests: contributors.reduce(
-                (sum, entry) => sum + entry.completedQuests,
-                0,
-            ),
-            totalPollen: roundPollenLedgerAmount(
-                contributors.reduce((sum, entry) => sum + entry.totalPollen, 0),
-            ),
+            ...totals,
+            totalPollen: roundPollenLedgerAmount(totals.totalPollen),
         },
     };
 }

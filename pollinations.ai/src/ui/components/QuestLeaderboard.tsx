@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 
 export type QuestLeaderboardEntry = {
     githubLogin: string;
-    completedQuests: number;
+    completedQuests: number; // API wire name for earned reward entries.
     totalPollen: number;
 };
 
@@ -74,7 +74,7 @@ export function QuestLeaderboardContent({
     return (
         <Section
             title="Quest leaderboard"
-            intro="Top earners from public GitHub Pollen Quests."
+            intro="Pollen earned by completing Quests and contributing to Pollinations."
             action={<LeaderboardAction />}
             className="gap-5"
             titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
@@ -85,7 +85,7 @@ export function QuestLeaderboardContent({
             >
                 <Surface as="div" variant="card">
                     <StatCard
-                        label="Builders"
+                        label="Participants"
                         value={formatNumber(data.totals.contributors)}
                         className="flex flex-col"
                         labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
@@ -94,7 +94,7 @@ export function QuestLeaderboardContent({
                 </Surface>
                 <Surface as="div" variant="card">
                     <StatCard
-                        label="Completed quests"
+                        label="Rewards earned"
                         value={formatNumber(data.totals.completedQuests)}
                         className="flex flex-col"
                         labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
@@ -161,8 +161,8 @@ export function QuestLeaderboardContent({
                                                 entry.completedQuests,
                                             )}{" "}
                                             {entry.completedQuests === 1
-                                                ? "quest"
-                                                : "quests"}
+                                                ? "reward"
+                                                : "rewards"}
                                         </Text>
                                         <Text
                                             as="strong"
@@ -182,7 +182,7 @@ export function QuestLeaderboardContent({
                 </ol>
             ) : (
                 <Text size="sm" tone="muted">
-                    No completed public quests yet.
+                    No public reward earners yet.
                 </Text>
             )}
         </Section>
@@ -232,7 +232,7 @@ export function QuestLeaderboard() {
     return (
         <Section
             title="Quest leaderboard"
-            intro="Builders who completed public GitHub Pollen Quests."
+            intro="Pollen earned by completing Quests and contributing to Pollinations."
             action={<LeaderboardAction />}
             className="gap-5"
             titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"

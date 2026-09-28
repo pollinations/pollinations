@@ -1,0 +1,37 @@
+{
+  "pr_number": 15603,
+  "title": "fix: tighten short auth screens and dialog footers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15603",
+  "merged_at": "2026-09-28T02:11:45Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Short auth screens (dashboard sign-in, Enter sign-in, device, errors) used the busy consent layout: a 576px card, 36px buttons, and on phones the only action sat at the bottom of an otherwise empty screen.\n\n- Dialog actions follow the content and only stick to the bottom once it scrolls. Footer buttons are 48px; they share the row in narrow dialogs (below 36rem, phones included) and a lone action spans it\n- Auth screens default to the 448px card (consent and top-up keep `lg`); loading is centred; footnote links are quiet and wrap into balanced lines\n- Sign-in titles name what you sign in to: \"Sign in to {app}\" on dashboards, \"Sign in to Pollinations, to continue to {app host}\" on the OAuth step for any OAuth app. No admin claim or colour-mode switch there; the consent text between the cards is trimmed\n- Buttons follow the button rule: a screen's single main action that doesn't write uses the filled button, busy buttons keep full strength with a spinner, and \"Back to app\" is large with a back arrow\n- Device code: Continue only for a complete code, busy while checking, frozen after a rejected code until it changes; the code length is shared with the server and dashes are ignored\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sign-in finds its footing",
+    "blurb": "Short sign-in screens no longer dress up as lengthy consent forms. The button stays close to the question, and device codes wait until they’re complete.",
+    "summary": "Auth screens now use 448px cards instead of 576px consent-sized cards, keep 48px dialog actions near their content until scrolling requires a sticky footer, and validate device codes using a length shared with the server.",
+    "impact": "On phones, sign-in actions are easier to reach; device-code Continue activates only for a complete code, ignores dashes, and waits for a changed code after a rejection.",
+    "keywords": [
+      "auth",
+      "sign-in",
+      "device-code",
+      "dialogs",
+      "mobile",
+      "UI"
+    ],
+    "visual_concept": "Depict a cozy pixel-art sign-in screen on a small phone, with one clear button directly below the form rather than stranded at the bottom. Polli, wearing tiny reading glasses, checks a completed device-code card; a small vine and flowers soften the scene.",
+    "image_prompt": "In a cozy pixel-art garden workspace, a small phone shows a compact sign-in card with a prominent button beside a completed device-code card, while lime green (#ecf874) flowers climb around the desk. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and checks the code, small-to-medium sized within the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15603.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, a small phone shows a compact sign-in card with a prominent button beside a completed device-code card, while lime green (#ecf874) flowers climb around the desk. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and checks the code, small-to-medium sized within the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "generated_at": "2026-09-28T02:12:44.088531+00:00"
+}

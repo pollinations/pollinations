@@ -1,4 +1,3 @@
-import { handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
 import { authFromSnapshot } from "@/middleware/auth.ts";
@@ -11,6 +10,7 @@ import type {
 import { logger } from "@/middleware/logger.ts";
 import { frontendKeyBilling } from "@/middleware/rate-limit-durable.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
+import { handleErrorForRoute } from "@/text/messages/handler.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -79,7 +79,7 @@ function generationExecutor(
             await next();
         })
         .route("/", generationExecutorRoutes);
-    executor.onError(handleError);
+    executor.onError(handleErrorForRoute);
     return executor;
 }
 

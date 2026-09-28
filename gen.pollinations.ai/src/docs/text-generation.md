@@ -1,10 +1,11 @@
 ## Text Generation
 
-Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs — use an OpenAI SDK by changing the base URL.
+Generate text using OpenAI-compatible Chat Completions, stateless Responses, and Anthropic-compatible Messages APIs — use an OpenAI or Anthropic SDK by changing the base URL.
 
 | Endpoint | Best for |
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
+| `POST /v1/messages` | Anthropic Messages API — Claude Code and Anthropic SDKs against the same models |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
@@ -34,6 +35,43 @@ Community text models and endpoint agents declare one upstream API and one exact
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
+
+### Anthropic Messages API
+
+`POST /v1/messages` speaks the Anthropic Messages API so Claude Code and Anthropic SDKs work without code changes. Requests are translated to Chat Completions and responses back, so models, aliases, fallbacks, prompt caching, safety, rate limits, and billing behave exactly as on `/v1/chat/completions`.
+
+Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/messages` — the same list that advertises Chat Completions.
+
+Authenticate with `Authorization: Bearer $POLLINATIONS_API_KEY` (Anthropic SDKs send this header from `auth_token`). The Anthropic `x-api-key` header is not accepted.
+
+```bash
+curl https://gen.pollinations.ai/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "max_tokens": 1024,
+    "messages": [
+      { "role": "user", "content": "Explain why the sky is blue in two sentences." }
+    ]
+  }'
+```
+
+Claude Code needs only the base URL and token — pick any model from the list:
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=$POLLINATIONS_API_KEY
+export ANTHROPIC_MODEL=openai
+export ANTHROPIC_SMALL_FAST_MODEL=openai
+claude
+```
+
+Supported request fields map to their Chat Completions equivalents: `messages` (string content or `text`/`image`/`document` blocks, `tool_use`/`tool_result` history; assistant `thinking` history is dropped on replay because its signatures are provider-verified), `system` (string or text blocks with `cache_control`), `max_tokens`, `temperature`, `top_p`, `stop_sequences`, `tools`, `tool_choice`, `stream`, and `thinking` (mapped to `reasoning_effort`). `metadata`, `top_k`, and other Anthropic-only fields are accepted and ignored.
+
+JSON responses return the Anthropic message object with usage in Anthropic fields: `input_tokens`, `output_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` (mirroring the same provider numbers as Chat Completions). Streaming emits `message_start`, `content_block_start`/`content_block_delta`/`content_block_stop` (text, thinking, and tool_use blocks), `message_delta` with the final usage, `message_stop`, and periodic `ping` events. Missing provider usage fails the request: JSON returns an `api_error` (never zero usage), and streams end with an `error` event. Errors use Anthropic's `{"type":"error"}` envelope, including rate limits with an integer `retry-after` (in seconds).
+
+Media models (image, video, audio, 3D) return HTTP 400 — use the native media endpoints for those.
 
 ### Media models in conversations
 

@@ -1,5 +1,6 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { AnthropicMessagesRequestSchema } from "@shared/schemas/anthropic.ts";
 import {
     CreateDecisionRequestSchema,
     DEFAULT_DECISION_MODEL,
@@ -34,6 +35,7 @@ import {
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { generateMessages } from "@/text/messages/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -90,6 +92,22 @@ generationExecutorRoutes.post(
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+// Replays queued non-stream /v1/messages jobs through the same translated
+// pipeline; errors are reshaped by the shared error handler in
+// execute-generation.ts.
+generationExecutorRoutes.post(
+    "/v1/messages",
+    textBodyLimit,
+    validator("json", AnthropicMessagesRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateMessages,
 );
 
 generationExecutorRoutes.post(

@@ -24,6 +24,14 @@
     padding-inline: 1rem;
 }
 
+/* Match Enter's phone layout: full-width page surfaces, with their existing
+   inner padding and rounded corners. Header and footer retain their gutters. */
+@media (width < 40rem) {
+    .site-page-shell {
+        padding-inline: 0;
+    }
+}
+
 @media (min-width: 40rem) {
     .site-shell {
         padding-inline: 1.5rem;
@@ -56,7 +64,7 @@
     translate: 0;
 }
 
-@media (max-width: 48.749rem) {
+@media (min-width: 40rem) and (max-width: 48.749rem) {
     html {
         scrollbar-gutter: stable both-edges;
     }

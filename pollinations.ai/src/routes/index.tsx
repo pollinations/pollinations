@@ -30,10 +30,10 @@ function HelloPage() {
             >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
-                    title="Build with AI. Everything connected."
-                    subtitle="Generate text, images, video and audio through one API. Use ready-made agents and connect your users’ wallets. Usage is paid in Pollen—credits you can buy or earn."
+                    title="Build, publish, and earn with AI."
+                    subtitle="Pollinations.ai brings AI models, ready-made agents, and community apps together. Build through one API, share what you create, and earn Pollen from eligible contributions and usage. Pollen is the credit that powers generation across the platform."
                     variant="page"
-                    className="sm:[&_h1]:max-w-[16ch]"
+                    className="[&_h1]:text-balance sm:[&_h1]:max-w-[18ch]"
                 />
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
                     <ExternalLinkButton

@@ -48,7 +48,7 @@ const MONEY_FLOW = [
                 docsLabel: "Agent publishing documentation",
             },
         ],
-        note: "App earnings add 25% to base usage: 1 Pollen becomes 1.25, with 0.25 credited to the app. These are separate calculations, not shares of one total. Cashouts are coming later.",
+        note: "With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.",
     },
 ];
 

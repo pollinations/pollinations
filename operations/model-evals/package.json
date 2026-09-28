@@ -1,0 +1,10 @@
+{
+  "name": "pollinations-model-evals",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/*.test.js",
+    "run": "node src/run-evals.js"
+  }
+}

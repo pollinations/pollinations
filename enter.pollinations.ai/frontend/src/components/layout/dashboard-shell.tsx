@@ -375,13 +375,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-3 pb-8 sm:px-4 lg:px-6 lg:pt-0"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-3 pb-8 sm:px-4 lg:px-6"
                 >
                     {/* Page status sits in the top gutter, opposite the menu
-                        button, so it never moves the cards. */}
+                        button, spaced like the cards so it never moves them. */}
                     <div
                         ref={setPageStatusSlot}
-                        className="mx-auto mb-3 flex h-10 max-w-[800px] items-center justify-end pr-3 sm:pr-0 lg:mb-0"
+                        className="mx-auto mb-3 flex h-10 max-w-[800px] items-center justify-end pr-3 sm:pr-0 lg:h-8"
                     />
                     <PageStatusSlot.Provider value={pageStatusSlot}>
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">

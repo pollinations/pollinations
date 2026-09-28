@@ -1,0 +1,26 @@
+DESCRIPTION >
+    GitHub views and clones per repo and UTC day from github_traffic_raw, keeping the
+    latest fetch of each day. uniques are per day: never sum them into a period total.
+    Optional 'repo' filter.
+
+TOKEN "tinybird_read" READ
+
+NODE github_traffic_daily_node
+SQL >
+    %
+    SELECT
+        repo,
+        endpoint AS metric,
+        toDate(parseDateTime64BestEffort(JSONExtractString(day, 'timestamp'))) AS date,
+        argMax(JSONExtractUInt(day, 'count'), fetched_at) AS count,
+        argMax(JSONExtractUInt(day, 'uniques'), fetched_at) AS uniques
+    FROM github_traffic_raw
+    ARRAY JOIN JSONExtractArrayRaw(body, endpoint) AS day
+    WHERE endpoint IN ('views', 'clones')
+    {% if defined(repo) %}
+        AND repo = {{ String(repo) }}
+    {% end %}
+    GROUP BY repo, metric, date
+    ORDER BY repo, metric, date
+
+TYPE endpoint

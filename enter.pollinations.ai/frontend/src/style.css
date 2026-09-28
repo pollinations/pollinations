@@ -1,5 +1,20 @@
 @import "@pollinations/ui/app.css";
 
+.model-title-link,
+.model-title-link span {
+    text-decoration: none;
+}
+
+/* Phones get the full screen; from `sm` up the dialog floats, top-aligned so
+   controls stay stationary when expandable content changes height. */
+@media (min-width: 40rem) {
+    .resource-dialog {
+        margin-block: 1rem 0;
+        height: auto;
+        max-height: calc(100dvh - 3rem);
+    }
+}
+
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);
@@ -37,4 +52,11 @@
         transparent
     );
     color: var(--polli-color-text-strong);
+}
+
+.dashboard-add-button {
+    width: 4.25rem;
+    height: 2.75rem;
+    padding-inline: 0.75rem;
+    gap: 0.25rem;
 }

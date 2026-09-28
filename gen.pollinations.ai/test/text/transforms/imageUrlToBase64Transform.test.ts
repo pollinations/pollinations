@@ -1,6 +1,8 @@
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBedrockNativeConfig } from "../../../src/text/configs/providerConfigs.js";
 import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
+import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: createBedrockNativeConfig() };
@@ -164,6 +166,42 @@ describe("imageUrlToBase64Transform", () => {
             status: 400,
             errorCode: "image_too_large",
         });
+    });
+
+    it.each([
+        "moonshotai/kimi-k2.6",
+        "moonshotai/kimi-k2.6:azure:sweden",
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+    ] as const)("converts as many image URLs as %s advertises, and no more", async (model) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+        const { options } = resolveModelConfig([], { model });
+        const limit = getRegistryModelDefinition(model).maxReferenceImages;
+        if (!limit) throw new Error(`${model} declares no image limit`);
+        const urls = (count: number) =>
+            imageMessage(
+                Array.from(
+                    { length: count },
+                    (_, index) => `https://example.com/${index}.png`,
+                ),
+            );
+
+        const result = await transform(urls(limit), options);
+        const content = result.messages[0].content as {
+            image_url: { url: string };
+        }[];
+        expect(content).toHaveLength(limit);
+        for (const part of content) {
+            expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
+        }
+
+        await expect(transform(urls(limit + 1), options)).rejects.toMatchObject(
+            { status: 400, errorCode: "image_too_large" },
+        );
     });
 
     it.each([

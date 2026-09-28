@@ -89,15 +89,16 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe(
-            "source:official status:healthy",
-        );
+    it("preselects official models of every status without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe("source:official status:all");
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:healthy capability:reasoning",
+            "source:official status:all capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:healthy source:community",
+            "status:all source:community",
+        );
+        expect(ensureModelQueryDefaults("status:reliable")).toBe(
+            "source:official status:reliable",
         );
         expect(ensureModelQueryDefaults("source: status:")).toBe(
             "source: status:",
@@ -108,23 +109,49 @@ describe("model query defaults", () => {
     });
 });
 
-it("filters by health without hiding unknown models in all mode", () => {
-    for (const status of ["healthy", "degraded", "down", "unknown"] as const) {
+it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
+    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
         const candidate = model({
-            health: { status, requests: 0, successRate: null },
+            community: true,
+            health: {
+                status: successRate == null ? "unknown" : "degraded",
+                requests: successRate == null ? 0 : 50,
+                success_rate: successRate,
+            },
         });
-        expect(matches(candidate, "status:healthy")).toBe(status === "healthy");
-        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
-            status === "healthy",
+        const visible = successRate == null || successRate > 80;
+        expect(matches(candidate, "source:community status:reliable")).toBe(
+            visible,
         );
+        expect(matches(candidate, "status:reliable")).toBe(visible);
         expect(matches(candidate, "status:all")).toBe(true);
     }
+    const official = model({
+        health: { status: "down", requests: 50, success_rate: 0 },
+    });
+    expect(matches(official, "status:reliable")).toBe(false);
+    expect(
+        matches(
+            { ...official, community: true, agent: true },
+            "status:reliable",
+        ),
+    ).toBe(false);
+    // Official models without recent traffic stay listed by default (#15377).
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
+    expect(matches(official, ensureModelQueryDefaults(""))).toBe(true);
+    expect(
+        matches(
+            model({
+                health: { status: "healthy", requests: 50, success_rate: 99 },
+            }),
+            ensureModelQueryDefaults(""),
+        ),
+    ).toBe(true);
     expect(matches(model(), "status:healthy")).toBe(false);
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
-    expect(matches(model(), "status:all")).toBe(true);
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",
         "status:healthy ",
+        "status:reliable ",
     ]);
 });
 
@@ -255,6 +282,21 @@ describe("matchesModelQuery", () => {
         expect(
             matches(model({ publisher: "NVIDIA" }), "publisher:nvidia"),
         ).toBe(true);
+    });
+
+    it("matches community owners behind the community/ model ID prefix", () => {
+        const community = model({
+            name: "community/PublicOwner/image-model",
+            aliases: ["PublicOwner/image-model"],
+            community: true,
+            publisher: "Community",
+        });
+
+        expect(matches(community, "publisher:publicowner")).toBe(true);
+        expect(matches(community, "publisher:community")).toBe(false);
+        expect(getModelQuerySuggestions("publisher:", [community])).toEqual([
+            "publisher:publicowner ",
+        ]);
     });
 
     it("filters official and community model sources", () => {

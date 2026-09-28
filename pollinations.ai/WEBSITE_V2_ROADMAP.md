@@ -132,7 +132,7 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 ### Phase D — quiet, consistent visual polish
 
-- [x] **Mobile top edge · Remove the gray strip.** **Implemented (28 September 2026).** Below 640px, the first page card starts at the viewport top with square top corners. Keep 20px content gutters, the inset floating menu, lower corners, and subsequent Play card rounding. At 640px and above, previous top spacing and corners remain. Browser measurements confirmed all four routes at 390/640px with no horizontal overflow.
+- [x] **Mobile outer edges · Remove outer gray strips and rounding.** **Implemented (28 September 2026).** Below 640px, the first page card starts at the viewport top with square top corners; the last card has square bottom corners and no trailing page-wrapper margin. Keep 20px content gutters, the inset floating menu, and the rounding between Play's two cards. At 640px and above, previous outer spacing and all corners remain. Browser measurements confirmed all four routes at 390/640px with no horizontal overflow.
 
 - [x] **Community votes · Remove the standalone divider.** **Implemented (28 September 2026).** Removed only the horizontal rule above the vote/suggestion row; retained its 20px top padding. Browser computed styles confirmed a 0px border and unchanged padding.
 

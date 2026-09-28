@@ -14,7 +14,6 @@ import {
     Dropdown,
     DropdownItem,
     ExternalLinkButton,
-    ExternalLinkIcon,
     Eyebrow,
     GitPullRequestIcon,
     InlineLink,
@@ -246,105 +245,148 @@ function CommunityParticipation() {
                 />
             </HeroScene>
 
-            <div
-                className={cn(postHeroSpacingClassName, "flex flex-col gap-7")}
+            <Surface
+                variant="panel"
+                className={cn(
+                    postHeroSpacingClassName,
+                    "overflow-hidden polli:p-0 polli:sm:p-0",
+                )}
             >
-                <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
-                    {ways.map((way) => {
-                        const WayIcon = way.icon;
+                <div className="flex flex-col gap-6 p-5 pb-0 sm:p-6 sm:pb-0">
+                    <div className="flex max-w-xl flex-col gap-2">
+                        <Eyebrow>Get involved</Eyebrow>
+                        <h2 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
+                            Help shape Pollinations
+                        </h2>
+                        <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
+                            Share your work, contribute, or help decide what we
+                            build next.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
+                        {ways.map((way) => {
+                            const WayIcon = way.icon;
 
-                        return (
-                            <Surface
-                                variant="card"
-                                key={way.label}
-                                className="p-5 sm:p-6 xl:p-5"
-                            >
-                                <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
-                                    <div className="flex flex-col gap-2.5">
-                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
-                                            <WayIcon className="size-3.5" />
-                                            <Eyebrow>{way.label}</Eyebrow>
+                            return (
+                                <Surface
+                                    variant="card"
+                                    key={way.label}
+                                    className="p-5 sm:p-6 xl:p-5"
+                                >
+                                    <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
+                                        <div className="flex flex-col gap-2.5">
+                                            <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                                <WayIcon className="size-3.5" />
+                                                <Eyebrow>{way.label}</Eyebrow>
+                                            </div>
+                                            <h3 className="font-body text-xl font-semibold text-theme-text-strong">
+                                                {way.title}
+                                            </h3>
+                                            <p className="text-sm leading-relaxed text-theme-text-base">
+                                                {way.body}
+                                            </p>
                                         </div>
-                                        <h3 className="font-body text-xl font-semibold text-theme-text-strong">
-                                            {way.title}
-                                        </h3>
-                                        <p className="text-sm leading-relaxed text-theme-text-base">
-                                            {way.body}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
-                                        {way.metrics.length > 0 && (
-                                            <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                                {way.metrics.map((metric) => (
-                                                    <div
-                                                        key={metric.label}
-                                                        className="flex flex-col gap-0.5"
-                                                    >
-                                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                            {metric.value ?? (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                                />
-                                                            )}
-                                                        </dt>
-                                                        <dd className="text-xs text-theme-text-muted">
-                                                            {metric.label}
-                                                        </dd>
-                                                    </div>
-                                                ))}
-                                            </dl>
-                                        )}
-                                        <div className="flex flex-col items-start gap-2">
-                                            <div className="flex flex-wrap gap-2">
-                                                {way.links.map((link) => (
-                                                    <ExternalLinkButton
-                                                        key={link.label}
-                                                        href={link.href}
-                                                        size="md"
-                                                        intent="brand"
-                                                        showIcon
-                                                        className="whitespace-nowrap"
-                                                    >
-                                                        {link.label}
-                                                    </ExternalLinkButton>
-                                                ))}
+                                        <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
+                                            {way.metrics.length > 0 && (
+                                                <dl className="flex flex-wrap gap-x-6 gap-y-3">
+                                                    {way.metrics.map(
+                                                        (metric) => (
+                                                            <div
+                                                                key={
+                                                                    metric.label
+                                                                }
+                                                                className="flex flex-col gap-0.5"
+                                                            >
+                                                                <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                                    {metric.value ?? (
+                                                                        <span
+                                                                            aria-hidden="true"
+                                                                            className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                                        />
+                                                                    )}
+                                                                </dt>
+                                                                <dd className="text-xs text-theme-text-muted">
+                                                                    {
+                                                                        metric.label
+                                                                    }
+                                                                </dd>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </dl>
+                                            )}
+                                            <div className="flex flex-col items-start gap-2">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {way.links.map((link) => (
+                                                        <ExternalLinkButton
+                                                            key={link.label}
+                                                            href={link.href}
+                                                            size="md"
+                                                            intent="brand"
+                                                            showIcon
+                                                            className="whitespace-nowrap"
+                                                        >
+                                                            {link.label}
+                                                        </ExternalLinkButton>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </Surface>
-                        );
-                    })}
-                </div>
+                                </Surface>
+                            );
+                        })}
+                    </div>
 
-                <Surface
-                    variant="card-themed"
-                    className="relative isolate flex flex-col gap-5 overflow-hidden p-5 pb-40 sm:p-6 sm:pb-56"
-                >
-                    <img
-                        src={votesScene.src}
-                        srcSet={votesScene.srcSet}
-                        sizes="(max-width: 1440px) 100vw, 1200px"
-                        alt=""
-                        aria-hidden="true"
-                        width={2048}
-                        height={854}
-                        loading="lazy"
-                        decoding="async"
-                        fetchPriority="low"
-                        className="bottom-scene pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[clamp(16rem,32vw,24rem)] w-full select-none object-cover object-bottom"
-                    />
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="flex max-w-xl flex-col gap-2">
-                            <Eyebrow>Have your say</Eyebrow>
-                            <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
-                                Help shape Pollinations
-                            </h3>
-                            <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
-                                Vote on open questions or suggest what we should
-                                build next.
-                            </p>
+                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-theme-text-muted/20 pt-5">
+                        <div className="min-w-0 flex-1 basis-80">
+                            {loading || failed ? (
+                                <FeedState
+                                    loading={loading}
+                                    failed={failed}
+                                    what="Open votes"
+                                    rows={1}
+                                />
+                            ) : issues.length === 0 ? (
+                                <p className="text-sm text-theme-text-muted">
+                                    No open votes right now. Have an idea? Share
+                                    it on GitHub.
+                                </p>
+                            ) : (
+                                <div className="flex flex-col gap-4">
+                                    {issues.map((issue) => {
+                                        const VoteIcon = voteIconFor(
+                                            issue.title,
+                                        );
+
+                                        return (
+                                            <InlineLink
+                                                key={issue.number}
+                                                href={issue.url}
+                                                aria-label={`Open “${issue.title}” and add your vote`}
+                                                className="flex w-fit max-w-full items-center gap-2"
+                                            >
+                                                <VoteIcon
+                                                    aria-hidden="true"
+                                                    className="size-4 shrink-0"
+                                                />
+                                                <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                                                    <span className="font-semibold leading-snug text-theme-text-strong">
+                                                        {issue.title}
+                                                    </span>
+                                                    <span className="whitespace-nowrap text-xs text-theme-text-muted tabular-nums">
+                                                        {issue.reactions}{" "}
+                                                        reaction
+                                                        {issue.reactions === 1
+                                                            ? ""
+                                                            : "s"}
+                                                    </span>
+                                                </span>
+                                            </InlineLink>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         <InlineLink
                             href={`${REPO_URL}/issues/new`}
@@ -354,72 +396,21 @@ function CommunityParticipation() {
                             Suggest an idea
                         </InlineLink>
                     </div>
-
-                    {loading || failed ? (
-                        <FeedState
-                            loading={loading}
-                            failed={failed}
-                            what="Open votes"
-                        />
-                    ) : issues.length === 0 ? (
-                        <p className="text-sm text-theme-text-muted">
-                            No open votes right now. Have an idea? Share it on
-                            GitHub.
-                        </p>
-                    ) : (
-                        <div
-                            className={cn(
-                                "grid grid-cols-1 gap-3",
-                                issues.length === 2 &&
-                                    "min-[700px]:grid-cols-2",
-                                issues.length >= 3 && "min-[700px]:grid-cols-3",
-                            )}
-                        >
-                            {issues.map((issue) => {
-                                const VoteIcon = voteIconFor(issue.title);
-
-                                return (
-                                    <LinkCard
-                                        key={issue.number}
-                                        href={issue.url}
-                                        showIcon={false}
-                                        aria-label={`Open “${issue.title}” and add your vote`}
-                                        className="group gap-5 rounded-card bg-surface-opaque p-5"
-                                    >
-                                        <span className="flex items-start gap-3">
-                                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-soft">
-                                                <VoteIcon className="size-4" />
-                                            </span>
-                                            <span className="font-semibold leading-snug text-theme-text-strong">
-                                                {issue.title}
-                                            </span>
-                                        </span>
-                                        <div className="mt-auto flex items-end justify-between gap-3">
-                                            <dl>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                        {issue.reactions}
-                                                    </dt>
-                                                    <dd className="text-xs text-theme-text-muted">
-                                                        reaction
-                                                        {issue.reactions === 1
-                                                            ? ""
-                                                            : "s"}
-                                                    </dd>
-                                                </div>
-                                            </dl>
-                                            <ExternalLinkIcon
-                                                aria-hidden="true"
-                                                className="size-7 text-theme-text-soft transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                                            />
-                                        </div>
-                                    </LinkCard>
-                                );
-                            })}
-                        </div>
-                    )}
-                </Surface>
-            </div>
+                </div>
+                <img
+                    src={votesScene.src}
+                    srcSet={votesScene.srcSet}
+                    sizes="(max-width: 1440px) 100vw, 1200px"
+                    alt=""
+                    aria-hidden="true"
+                    width={2048}
+                    height={854}
+                    loading="lazy"
+                    decoding="async"
+                    fetchPriority="low"
+                    className="bottom-scene pointer-events-none mt-4 block h-[clamp(12rem,24vw,20rem)] w-full select-none object-cover object-bottom"
+                />
+            </Surface>
         </>
     );
 }

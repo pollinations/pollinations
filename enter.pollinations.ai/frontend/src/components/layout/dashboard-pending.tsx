@@ -3,7 +3,7 @@ import { useRouterState } from "@tanstack/react-router";
 
 const authTitles: Record<string, string> = {
     "/sign-in": "Sign in",
-    "/app/sign-in": "Sign in",
+    "/app/sign-in": "Sign in to Pollinations",
     "/authorize": "Connect",
     "/device": "Allow your device",
     "/edit-key": "Edit key",

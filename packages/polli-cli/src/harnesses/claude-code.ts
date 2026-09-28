@@ -220,7 +220,9 @@ export const configureClaudeCode = async (
 
     const originalProfile = profileFor(original);
     if (originalProfile && !ownsProfile(originalProfile)) {
-        throw new Error("The CCR Polli profile id already exists with foreign settings. No changes were made.");
+        throw new Error(
+            "The CCR Polli profile id already exists with foreign settings. No changes were made.",
+        );
     }
     const next = structuredClone(original);
     const provider: CcrProvider = {
@@ -331,7 +333,9 @@ export const claudeCode: HarnessAdapter = {
 
         const profile = profileFor(config);
         if (profile && !ownsProfile(profile)) {
-            throw new Error("The CCR Polli profile id already exists with foreign settings. No changes were made.");
+            throw new Error(
+                "The CCR Polli profile id already exists with foreign settings. No changes were made.",
+            );
         }
         const apiKey = await resolveHarnessKey(
             {

@@ -192,6 +192,10 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
+    // E2B's SDKs send the key in X-API-KEY.
+    const headerKey = request.headers.get("x-api-key");
+    if (headerKey) return headerKey;
+
     // Query keys end up in access logs, referrers and browser history. Their
     // owner can rotate them; an agent run token is handed to a third party
     // mid-run and cannot be, so it is Bearer-only.

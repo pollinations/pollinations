@@ -25,7 +25,7 @@ SQL >
         sum(total_price) AS total_revenue
     FROM generation_events_classified
     WHERE
-        traffic_group = 'regular'  -- exclude legacy, automation and local tests
+        traffic_group = 'regular'  -- exclude legacy, company operations and development tests
         AND
         -- One row per request: a fallback attempt is part of a request, not
         -- another one, and it carries no user, price or tokens of its own.

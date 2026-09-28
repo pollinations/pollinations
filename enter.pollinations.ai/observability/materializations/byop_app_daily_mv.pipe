@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Regular traffic only; excludes legacy, maintenance and dev.
+    Regular traffic only; excludes legacy, operations and dev.
     Materializes cleanly attributed BYOP traffic from generation_event_v2 at
     daily app and model grain, including the isolated staging fixture.
 

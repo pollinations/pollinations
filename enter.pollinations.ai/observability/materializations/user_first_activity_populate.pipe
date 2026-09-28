@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Regular traffic only; excludes legacy, maintenance and dev.
+    Regular traffic only; excludes legacy, operations and dev.
     Incrementally maintains user_first_activity_mv from generation_event_v2.
     minState() is idempotent for deploy backfills and duplicate event delivery,
     and keeps kpi_activations on a compact per-user aggregate instead of a raw

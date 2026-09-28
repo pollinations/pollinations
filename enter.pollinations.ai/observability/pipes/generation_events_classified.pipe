@@ -1,6 +1,7 @@
 DESCRIPTION >
-    Reporting categories: regular, legacy, maintenance (automation), and dev
-    (local tests). Exact key IDs, including trusted client attribution for
+    Reporting categories: regular, legacy, operations (company workflows,
+    automated or manual), and dev (development and experiments). Classified
+    by purpose, not frequency. Exact key IDs, including trusted client attribution for
     delegated app keys. Names and account ownership never determine the group.
     Keep deleted IDs for historical reporting. Changing these rules requires
     repopulating the dependent usage, BYOP and first-activity aggregates.
@@ -24,7 +25,7 @@ SQL >
                 'kS0FWTaWOPLO9kCiFGGO7zo356bhTKeG', -- Pollinations / KPIs
                 'S30ZmRxlZ2YcR35DlMCslC4eFQBoETfr', -- Pollinations / Observability
                 'gW91jqzHRALr3ywf4hTUUd5w83H1jE95' -- Pollinations / Economics
-            ]), 'maintenance',
+            ]), 'operations',
             hasAny([api_key_id, api_key_client_id], [
                 'mjOXmaf8SPr1qF934NlXciCqRVOfL9Ut', -- DEV_ELLIOT
                 'okEg1Bb2vlXyg5o4O28UWRhtM88w2FRt', -- historical DEV_ELLIOT

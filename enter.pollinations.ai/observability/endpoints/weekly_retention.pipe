@@ -12,7 +12,7 @@ SQL >
         toStartOfWeek(min(start_time), 1) AS cohort_week
     FROM generation_events_classified
     WHERE
-        traffic_group = 'regular'  -- exclude legacy, automation and local tests
+        traffic_group = 'regular'  -- exclude legacy, company operations and development tests
         AND start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
     GROUP BY user_id
 
@@ -24,7 +24,7 @@ SQL >
         toStartOfWeek(start_time, 1) AS activity_week
     FROM generation_events_classified
     WHERE
-        traffic_group = 'regular'  -- exclude legacy, automation and local tests
+        traffic_group = 'regular'  -- exclude legacy, company operations and development tests
         AND start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
 
 NODE weekly_retention_node

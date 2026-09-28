@@ -259,7 +259,7 @@ function Dashboard({ accountUser }) {
                             Weekly KPIs for pollinations.ai. Figures are the
                             last full week ({weekLabel(currentWeek?.week)})
                             against the one before it. Usage excludes legacy
-                            APIs, automation and local tests.
+                            APIs, company operations and development tests.
                         </Text>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-theme-text-muted">

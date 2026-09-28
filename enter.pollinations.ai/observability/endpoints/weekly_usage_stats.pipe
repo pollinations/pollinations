@@ -119,7 +119,7 @@ SQL >
         ) AS community_availability
     FROM generation_events_classified
     WHERE
-        traffic_group = 'regular'  -- exclude legacy, automation and local tests
+        traffic_group = 'regular'  -- exclude legacy, company operations and development tests
         AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

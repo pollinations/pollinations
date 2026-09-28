@@ -1,5 +1,7 @@
 export {
     AccountIdentity,
+    AccountIdentityLink,
+    type AccountIdentityLinkProps,
     type AccountIdentityProps,
 } from "./compositions/AccountIdentity.tsx";
 export {

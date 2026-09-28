@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -51,14 +52,16 @@ export function createTextCommand() {
             "Wait for full response instead of streaming tokens",
         )
         .action(async (promptArg, opts, command: Command) => {
-            const stdinText = await readStdin();
+            // With a prompt argument, stdin is optional context: don't wait
+            // forever on a caller that leaves stdin open.
+            const stdinText = await readStdin(promptArg ? 3000 : undefined);
             const prompt = promptArg || stdinText;
 
             if (!prompt) {
                 printError(
                     "No prompt provided. Pass as argument or pipe via stdin.",
                 );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
 
             // If both stdin and arg are provided, use arg as prompt and stdin as context

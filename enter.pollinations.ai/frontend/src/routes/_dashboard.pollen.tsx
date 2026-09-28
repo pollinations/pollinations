@@ -12,9 +12,12 @@ import {
     redirect,
     useNavigate,
 } from "@tanstack/react-router";
-import { useDeferredValue } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageSpinner,
+} from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -62,7 +65,7 @@ function PollenPage() {
     return (
         <>
             <Section title="Wallet">
-                <Await promise={balance} fallback={null}>
+                <Await promise={balance} fallback={<PageSpinner />}>
                     {(balances) =>
                         balances ? (
                             <Await
@@ -85,15 +88,19 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <Await promise={billing} fallback={null}>
-                    {(billingState) => (
-                        <BuyPollenPanel
-                            initialBillingState={billingState}
-                            selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                            onSelectedPackAmountChange={selectPack}
-                        />
-                    )}
-                </Await>
+                <Suspense fallback={null}>
+                    <Await promise={billing}>
+                        {(billingState) => (
+                            <BuyPollenPanel
+                                initialBillingState={billingState}
+                                selectedPackAmount={
+                                    selectedPack?.amountUsd ?? 5
+                                }
+                                onSelectedPackAmountChange={selectPack}
+                            />
+                        )}
+                    </Await>
+                </Suspense>
             </Section>
         </>
     );

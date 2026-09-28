@@ -121,7 +121,10 @@ function AccountPage() {
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
 
-            <Await promise={profile} fallback={null}>
+            <Await
+                promise={profile}
+                fallback={<Section title="Community">{null}</Section>}
+            >
                 {(details) =>
                     details ? (
                         <CommunityConnections

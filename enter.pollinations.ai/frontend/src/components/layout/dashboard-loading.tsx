@@ -1,41 +1,26 @@
-import {
-    Alert,
-    Button,
-    LoadingStatus,
-    RefreshIcon,
-    Section,
-} from "@pollinations/ui";
-import { type ReactNode, useContext, useState } from "react";
-import { createPortal } from "react-dom";
-import { PageStatusSlot } from "./dashboard-shell.tsx";
+import { Alert, Button, RefreshIcon, Section } from "@pollinations/ui";
+import { type ReactNode, useContext, useEffect, useState } from "react";
+import { PendingCount } from "./dashboard-shell.tsx";
 
-/** The page's single loading status, shown above its cards. */
+/** Render while something on the page is still loading; the shell shows one status until none remain. */
 export function PageStatus() {
-    const slot = useContext(PageStatusSlot);
-    return (
-        slot &&
-        createPortal(
-            // Same surface as the mobile menu button it faces.
-            <div className="flex h-10 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:h-8 lg:px-3">
-                <LoadingStatus>Loading…</LoadingStatus>
-            </div>,
-            slot,
-        )
-    );
+    const setPendingCount = useContext(PendingCount);
+    useEffect(() => {
+        setPendingCount((count) => count + 1);
+        return () => setPendingCount((count) => count - 1);
+    }, [setPendingCount]);
+    return null;
 }
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
     loading,
-    pageStatus = false,
     children,
 }: {
     loading: boolean;
-    pageStatus?: boolean;
     children?: ReactNode;
 }) {
-    if (!loading) return children;
-    return pageStatus ? <PageStatus /> : null;
+    return loading ? <PageStatus /> : children;
 }
 
 /** Every card title of a page that is still loading, with the page status. */

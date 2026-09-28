@@ -13,6 +13,7 @@ import {
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
+    LoadingStatus,
     McpIcon,
     MenuIcon,
     NavItem,
@@ -28,10 +29,12 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
+    Dispatch,
     FC,
     PropsWithChildren,
     ReactNode,
     RefObject,
+    SetStateAction,
 } from "react";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -46,8 +49,10 @@ import {
     type DashboardPath,
 } from "./dashboard-theme.ts";
 
-/** Where the page-level loading status renders, above the page's cards. */
-export const PageStatusSlot = createContext<HTMLElement | null>(null);
+/** Counts what the page still waits for; the shell shows one status while > 0. */
+export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
+    () => {},
+);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -159,9 +164,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [pageStatusSlot, setPageStatusSlot] = useState<HTMLElement | null>(
-        null,
-    );
+    const [pendingCount, setPendingCount] = useState(0);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -319,77 +322,81 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden lg:block">{rail}</div>
-            <div
-                ref={drawerRef}
-                className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
-                    isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]",
-                )}
-                aria-hidden={!isDrawerOpen}
-                inert={!isDrawerOpen}
-            >
-                <button
-                    type="button"
-                    className={cn(
-                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "opacity-100" : "opacity-0",
-                    )}
-                    onClick={closeDrawer}
-                    aria-label="Close navigation"
-                />
+        <PendingCount.Provider value={setPendingCount}>
+            <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+                <div className="hidden lg:block">{rail}</div>
                 <div
+                    ref={drawerRef}
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                        "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                        isDrawerOpen
+                            ? "pointer-events-auto visible delay-0"
+                            : "pointer-events-none invisible delay-[420ms]",
                     )}
+                    aria-hidden={!isDrawerOpen}
+                    inert={!isDrawerOpen}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <BrandMark size="drawer" />
-                            <button
-                                type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                                onClick={closeDrawer}
-                                aria-label="Close navigation"
-                            >
-                                <XIcon className="h-5 w-5" />
-                            </button>
+                    <button
+                        type="button"
+                        className={cn(
+                            "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                            "duration-[420ms]",
+                            isDrawerOpen ? "opacity-100" : "opacity-0",
+                        )}
+                        onClick={closeDrawer}
+                        aria-label="Close navigation"
+                    />
+                    <div
+                        className={cn(
+                            "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                            "duration-[420ms]",
+                            isDrawerOpen
+                                ? "translate-x-0"
+                                : "-translate-x-full",
+                        )}
+                    >
+                        <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <BrandMark size="drawer" />
+                                <button
+                                    type="button"
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                    onClick={closeDrawer}
+                                    aria-label="Close navigation"
+                                >
+                                    <XIcon className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <BrandLinks links={brandLinks} />
                         </div>
-                        <BrandLinks links={brandLinks} />
-                    </div>
-                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {rail}
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            {rail}
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
-                <MobileMenuButton
-                    buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
-                />
-                {/* Page status floats at the bottom, centred under the content column. */}
-                <div
-                    ref={setPageStatusSlot}
-                    className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 lg:left-[calc(50%+7.5rem)]"
-                />
-                <ScrollArea
-                    ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
-                >
-                    <PageStatusSlot.Provider value={pageStatusSlot}>
+                <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                    <MobileMenuButton
+                        buttonRef={menuButtonRef}
+                        onOpen={() => setIsDrawerOpen(true)}
+                    />
+                    {/* One status for everything the page waits for, floating at
+                    the bottom centre of the content column. */}
+                    {pendingCount > 0 && (
+                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+7.5rem)] lg:h-8 lg:px-3">
+                            <LoadingStatus>Loading…</LoadingStatus>
+                        </div>
+                    )}
+                    <ScrollArea
+                        ref={mainScrollRef}
+                        className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                    >
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">
                             {children}
                         </main>
-                    </PageStatusSlot.Provider>
-                </ScrollArea>
+                    </ScrollArea>
+                </div>
             </div>
-        </div>
+        </PendingCount.Provider>
     );
 };
 

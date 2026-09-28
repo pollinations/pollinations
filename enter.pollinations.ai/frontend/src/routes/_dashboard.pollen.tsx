@@ -70,7 +70,12 @@ function PollenPage() {
                         balances ? (
                             <Await
                                 promise={earnings}
-                                fallback={<PollenBalance {...balances} />}
+                                fallback={
+                                    <>
+                                        <PollenBalance {...balances} />
+                                        <PageStatus />
+                                    </>
+                                }
                             >
                                 {(earnings) => (
                                     <PollenBalance
@@ -88,7 +93,7 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <Suspense fallback={null}>
+                <Suspense fallback={<PageStatus />}>
                     <Await promise={billing}>
                         {(billingState) => (
                             <BuyPollenPanel

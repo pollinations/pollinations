@@ -9,7 +9,10 @@ import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -127,14 +130,17 @@ function DashboardLayout() {
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
                     // the whole dashboard would wait for the balance.
-                    <Suspense fallback={null}>
+                    <Suspense fallback={<PageStatus />}>
                         <Await promise={data.balance}>
                             {(balance) =>
                                 balance ? (
                                     <Await
                                         promise={data.earnings}
                                         fallback={
-                                            <SidebarWallet {...balance} />
+                                            <>
+                                                <SidebarWallet {...balance} />
+                                                <PageStatus />
+                                            </>
                                         }
                                     >
                                         {(earnings) => (

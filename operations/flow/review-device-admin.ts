@@ -251,7 +251,7 @@ export function deviceReviewCasesForSection(
                     "/api/device/info",
                     "unavailable",
                     "#device-code-form",
-                    "Code not recognized. Check it and try again.",
+                    deviceCodeExpectations.unavailable,
                 ],
                 [
                     "device-checking",
@@ -290,8 +290,7 @@ export function deviceReviewCasesForSection(
                 note:
                     id === "device-checking"
                         ? "Main keeps Allow access enabled while the direct device lookup is pending. There is no separate request-checking screen."
-                        : id === "device-code-unavailable" ||
-                            id === "device-request-unavailable"
+                        : id === "device-request-unavailable"
                           ? "Main presents this injected service failure as an invalid code (G04)."
                           : id === "device-request-lookup"
                             ? "Main presents an app lookup failure as an unverified key. Recovery offers Decline, without retry (G01)."
@@ -300,6 +299,10 @@ export function deviceReviewCasesForSection(
                     ...(pageId === "device-errors"
                         ? deviceError(text)
                         : [{ selector, text }]),
+                    // A failed check can be retried with the same code.
+                    ...(id === "device-code-unavailable"
+                        ? [{ selector: 'button:enabled:text-is("Continue")' }]
+                        : []),
                 ],
             }),
         ),

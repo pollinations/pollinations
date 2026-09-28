@@ -34,7 +34,7 @@ SQL >
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
     FROM generation_events_classified
     WHERE
-        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        traffic_group = 'regular'  -- exclude legacy, automation and local tests
         AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

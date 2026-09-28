@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Daily BYOP app usage for app rankings and selected-app drill-downs.
+    Regular-traffic daily BYOP app usage for app rankings and selected-app drill-downs.
     Production is the live scope; debug-prod-copy is an isolated staging
     fixture. BYOP attribution requires a populated api_key_client_id.
 

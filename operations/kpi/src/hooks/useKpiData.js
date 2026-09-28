@@ -29,6 +29,11 @@ const SOURCES = [
         key: "health",
         load: (weeks) => api.weekly("health", weeks),
     },
+    {
+        label: "Traffic summary",
+        key: "trafficSummary",
+        load: (weeks) => api.weekly("traffic-summary", weeks),
+    },
     { label: "WAU", key: "wau", load: (weeks) => api.weekly("wau", weeks) },
     {
         label: "Usage stats",
@@ -61,6 +66,7 @@ const SOURCES = [
 export const SOURCE_LABELS = SOURCES.map((source) => source.label);
 
 const REQUIRED = {
+    trafficSummary: "Tinybird (legacy and all-traffic costs)",
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
@@ -163,6 +169,11 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 communityUserPctAll: row.community_user_pct,
                 communityRequestPct: row.community_request_pct,
                 communityAvailability: row.community_availability,
+            }));
+            mergeInto(weekMap, raw.trafficSummary, (row) => ({
+                legacyRequests: row.legacy_requests,
+                legacySuccessfulRequests: row.legacy_successful_requests,
+                allTrafficCostUsd: row.all_traffic_cost_usd,
             }));
             mergeInto(weekMap, raw.revenue, (row) => ({
                 revenue: row.revenue,

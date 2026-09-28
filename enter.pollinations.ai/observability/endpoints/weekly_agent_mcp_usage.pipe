@@ -16,7 +16,7 @@ SQL >
     SELECT parent_request_id
     FROM generation_events_classified
     WHERE
-        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        traffic_group = 'regular'  -- exclude legacy, automation and local tests
         AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
@@ -51,7 +51,7 @@ SQL >
         uniqIf(user_id, event_type = 'mcp.call' AND user_id NOT IN ('', 'undefined')) AS mcp_users
     FROM generation_events_classified
     WHERE
-        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        traffic_group = 'regular'  -- exclude legacy, automation and local tests
         AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})

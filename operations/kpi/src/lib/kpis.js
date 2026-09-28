@@ -8,8 +8,8 @@ const margin = (week) =>
 // Cash in against cost incurred. The two are not matched — packs are bought in
 // one week and burned over later ones — so this is a coverage ratio, not margin.
 const coverage = (week) =>
-    week.costUsd > 0 && Number.isFinite(week.revenue)
-        ? (week.revenue / week.costUsd) * 100
+    week.allTrafficCostUsd > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.allTrafficCostUsd) * 100
         : null;
 
 const failuresPerThousand = (availability) =>
@@ -32,7 +32,7 @@ export const KPIS = [
             {
                 name: "Activated (D7)",
                 tooltip:
-                    "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
+                    "Users who made their first regular API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
             },
             {
                 name: "D7 activation rate",
@@ -67,6 +67,23 @@ export const KPIS = [
         calc: (w) => w.wauAll - w.wau,
         tooltip:
             "Users whose every request this week was rejected for insufficient Pollen (WAU incl. rejected − WAU). Demand that reached the Pollen wall and got nothing.",
+    },
+    {
+        key: "legacyRequests",
+        category: "Legacy APIs",
+        views: [
+            {
+                name: "Legacy API · requests",
+                tooltip:
+                    "Final requests through the shared legacy image and text API keys. Kept separate from regular usage, including failed requests.",
+            },
+            {
+                key: "legacySuccessfulRequests",
+                name: "Legacy API · successful",
+                tooltip:
+                    "Successful (2xx) final requests through the shared legacy API keys. Excluded from regular usage.",
+            },
+        ],
     },
     {
         key: "tokens",
@@ -174,7 +191,7 @@ export const KPIS = [
         format: "percent",
         calc: coverage,
         tooltip:
-            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
+            "Platform-wide Stripe pack revenue / all-traffic compute cost × 100, including regular, legacy, maintenance and dev. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
     },
     {
         key: "availability",

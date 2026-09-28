@@ -3,7 +3,7 @@ DESCRIPTION >
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
     traffic_group comes from generation_events_classified, so dashboards can
-    show legacy bridge traffic, everything else, or both.
+    select regular usage while retaining legacy, maintenance and dev totals.
 
 NODE generation_usage_hourly_mv_node
 SQL >

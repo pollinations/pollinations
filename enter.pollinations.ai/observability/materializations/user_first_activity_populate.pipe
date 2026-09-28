@@ -1,4 +1,5 @@
 DESCRIPTION >
+    Regular traffic only; excludes legacy, maintenance and dev.
     Incrementally maintains user_first_activity_mv from generation_event_v2.
     minState() is idempotent for deploy backfills and duplicate event delivery,
     and keeps kpi_activations on a compact per-user aggregate instead of a raw
@@ -9,8 +10,8 @@ SQL >
     SELECT
         user_id,
         minState(start_time) AS first_activity_time
-    FROM generation_event_v2
-    WHERE user_id != ''
+    FROM generation_events_classified
+    WHERE traffic_group = 'regular' AND user_id != ''
       AND user_id != 'undefined'
     GROUP BY user_id
 

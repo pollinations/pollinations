@@ -1,4 +1,5 @@
 DESCRIPTION >
+    Regular traffic only; excludes legacy, maintenance and dev.
     Materializes cleanly attributed BYOP traffic from generation_event_v2 at
     daily app and model grain, including the isolated staging fixture.
 
@@ -59,8 +60,9 @@ SQL >
                 0
             )
         ) AS community_reward
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group = 'regular' AND
         environment IN ('production', 'debug-prod-copy')
         AND api_key_client_id NOT IN ('', 'undefined')
         AND start_time >= toDateTime('2026-01-09 00:00:00')

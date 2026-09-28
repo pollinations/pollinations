@@ -653,14 +653,19 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it("proxies the route health pipe with a 60 second edge cache", async () => {
+    it.each([
+        "all",
+        "regular",
+    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
         const upstream = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValueOnce(
                 Response.json({ data: [{ model: "test" }] }),
             );
 
-        const response = await fetchWorker("/models/status?minutes=15");
+        const response = await fetchWorker(
+            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
+        );
         expect(response.status).toBe(200);
         expect(response.headers.get("Cache-Control")).toBe(
             "public, max-age=60",
@@ -670,7 +675,16 @@ describe("model status", () => {
         const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
         expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
         expect(url.searchParams.get("minutes")).toBe("15");
+        expect(url.searchParams.get("traffic")).toBe(traffic);
         expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
+    });
+
+    it("rejects unsupported traffic groups before contacting Tinybird", async () => {
+        const response = await fetchWorker("/models/status?traffic=invalid");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: "traffic must be all or regular",
+        });
     });
 
     it("passes upstream errors through unchanged", async () => {

@@ -22,7 +22,7 @@ SQL >
         countIf(response_status != 402) AS served_requests
     FROM generation_events_classified
     WHERE
-        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        traffic_group = 'regular'  -- exclude legacy, automation and local tests
         AND
         -- One row per request: a fallback attempt is part of a request, not
         -- another one, and it carries no user, price or tokens of its own.

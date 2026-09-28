@@ -1,19 +1,37 @@
 DESCRIPTION >
-    generation_event_v2 plus traffic_group: 'legacy' for the two legacy public
-    API bridge keys, 'everything_else' for all other keys. Exact key IDs, so
-    renamed keys keep their group. Changing the list requires repopulating
-    generation_usage_hourly.
+    Reporting categories: regular, legacy, maintenance (automation), and dev
+    (local tests). Exact key IDs, including trusted client attribution for
+    delegated app keys. Names and account ownership never determine the group.
+    Keep deleted IDs for historical reporting. Changing these rules requires
+    repopulating the dependent usage, BYOP and first-activity aggregates.
 
 NODE classified_events
 SQL >
     SELECT
         *,
-        if(
-            api_key_id IN (
-                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image bridge
-                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text bridge
-            ),
-            'legacy',
-            'everything_else'
+        multiIf(
+            hasAny([api_key_id, api_key_client_id], [
+                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image
+                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps' -- legacy text
+            ]), 'legacy',
+            hasAny([api_key_id, api_key_client_id], [
+                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- quixotic-hare: community model monitor
+                '6jQv2VwRvCc5GbWpu1ZQqBTFAyhSuyIc', -- e2e-tests-prod
+                'I5jnMf7tp5HrkWnjHgexYya1SI6UthK4', -- POLLI VECTOR DB
+                'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE: GitHub bot
+                '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY
+                '0JUUkMirP86ZkeBs82h721NTajBv51K8', -- PLN_GITHUB_AUTOPOLLY_KEY
+                'kS0FWTaWOPLO9kCiFGGO7zo356bhTKeG', -- Pollinations / KPIs
+                'S30ZmRxlZ2YcR35DlMCslC4eFQBoETfr', -- Pollinations / Observability
+                'gW91jqzHRALr3ywf4hTUUd5w83H1jE95' -- Pollinations / Economics
+            ]), 'maintenance',
+            hasAny([api_key_id, api_key_client_id], [
+                'mjOXmaf8SPr1qF934NlXciCqRVOfL9Ut', -- DEV_ELLIOT
+                'okEg1Bb2vlXyg5o4O28UWRhtM88w2FRt', -- historical DEV_ELLIOT
+                'uQx4i6Fee3st84fJHhwDxCivNRXWji3O', -- historical TEST DEV
+                'POtjGzxhQ7BhrCJXnsc8Y9i6sb259GVh', -- ITACHI-DEV
+                'XwIJkNmGGRxhVqVUI1aV15Micb7PoYP8' -- Internal Operations (local)
+            ]), 'dev',
+            'regular'
         ) AS traffic_group
     FROM generation_event_v2

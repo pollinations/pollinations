@@ -24,6 +24,8 @@ rather than derived from the other (percentiles cannot be combined after the
 fact).
 
 Column names match `model_health` so consumers reuse one health rule for both.
+Traffic defaults to all for existing API and catalog consumers. Model Monitor
+requests regular traffic explicitly.
 Time window is controlled by the `minutes` parameter (default 60).
 
 NODE model_route_health_stats
@@ -80,7 +82,7 @@ SQL >
             -- Qualified: the SELECT aliases `fallback_used` to max(fallback_used)
             -- above, and an unqualified reference here would resolve to that
             -- aggregate, which ClickHouse rejects as a nested aggregate.
-            is_final AND generation_event_v2.fallback_used
+            is_final AND events.fallback_used
             AND response_status >= 200 AND response_status < 300
         ) as fallback_rescues,
         -- Non-final 503s retried elsewhere: capacity pressure, not a
@@ -134,8 +136,9 @@ SQL >
             ),
             NULL
         ) as tokens_per_second
-    FROM generation_event_v2
+    FROM generation_events_classified AS events
     WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 60)}}, 1), 10080) minute
+    AND ({{String(traffic, 'all')}} = 'all' OR traffic_group = {{String(traffic, 'all')}})
     -- provider is deliberately not a key: a route id already determines it, and
     -- keying on it would make it unaggregatable and leave rollup rows blank.
     GROUP BY GROUPING SETS (

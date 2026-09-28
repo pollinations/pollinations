@@ -14,7 +14,7 @@ const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not clear the cache — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "7";
+const TINYBIRD_CACHE_VERSION = "8";
 
 async function fetchTinybird(
     env: Env["Bindings"],
@@ -169,8 +169,8 @@ kpiRoutes.get("/registrations/daily", async (c) => {
     return c.json({ data: result.data });
 });
 
-// D7 Activations: users who made their first API request within 7 days of registration
-// Fully computed in Tinybird by joining d1_user with generation_event_v2
+// D7 activations: first regular request within 7 days of registration.
+// Tinybird joins d1_user with the regular-only first-activity aggregate.
 kpiRoutes.get("/activations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_activations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,
@@ -206,6 +206,18 @@ kpiRoutes.get("/usage", async (c) => {
         "weekly_usage_stats",
         parseWeeksBack(c),
     );
+    return c.json({ data: result.data });
+});
+
+// Separate legacy reporting and inclusive financial cost.
+kpiRoutes.get("/traffic-summary", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_traffic_summary",
+        parseWeeksBack(c),
+    );
+    if (result.errors.length)
+        return c.json({ error: "Traffic summary unavailable", data: [] }, 503);
     return c.json({ data: result.data });
 });
 

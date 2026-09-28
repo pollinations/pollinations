@@ -20,10 +20,7 @@ import {
     currentDashboards,
     type Dashboard,
     dashboardSrc,
-    hasTrafficSelector,
     readDashboardUid,
-    readTraffic,
-    TRAFFIC,
 } from "./dashboards.ts";
 
 function useDashboards(): Dashboard[] {
@@ -121,8 +118,7 @@ function Dashboards({
 }) {
     const dashboards = useDashboards();
     const [uid, select] = useUrlParam("d", readDashboardUid);
-    const [traffic, selectTraffic] = useUrlParam("traffic", readTraffic);
-    const src = dashboardSrc(uid, traffic);
+    const src = dashboardSrc(uid);
     return (
         <div className="flex h-dvh flex-col bg-app-bg">
             <AppHeader navLabel="Observability links">
@@ -131,24 +127,6 @@ function Dashboards({
                     selected={uid}
                     onSelect={select}
                 />
-                {hasTrafficSelector(uid) && (
-                    <fieldset
-                        aria-label="Traffic"
-                        className="m-0 flex gap-1 border-0 p-0"
-                    >
-                        {TRAFFIC.map(({ value, label }) => (
-                            <TabButton
-                                key={value}
-                                active={value === traffic}
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => selectTraffic(value)}
-                            >
-                                {label}
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                )}
                 <ColorModeToggle />
                 <DashboardAccountMenu user={user} onSignOut={signOut} />
             </AppHeader>

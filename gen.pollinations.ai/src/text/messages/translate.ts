@@ -286,11 +286,11 @@ export function chatToMessagesResponse(
 ): CreateMessageResponse {
     const choice = completion.choices[0];
     const message = choice?.message;
-    const content: MessagesContentBlock[] = [];
+    const content: CreateMessageResponse["content"] = [];
     const providerThinking = (message?.content_blocks ?? []).filter(
         (block) =>
             block.type === "thinking" || block.type === "redacted_thinking",
-    ) as MessagesContentBlock[];
+    ) as CreateMessageResponse["content"];
     if (providerThinking.length) {
         content.push(...providerThinking);
     } else if (message?.reasoning_content) {

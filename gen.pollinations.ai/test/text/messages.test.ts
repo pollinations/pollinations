@@ -16,6 +16,7 @@ import {
     toolUseInput,
 } from "@/text/messages/translate.ts";
 import worker from "../../src/index.ts";
+import { createMessagesRoutes } from "../../src/routes/messages.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 afterEach(() => vi.restoreAllMocks());
@@ -605,7 +606,9 @@ describe("POST /v1/messages", () => {
     });
 
     /** Mock the provider and Tinybird; returns what each received. */
-    function mockUpstream(options: { withUsage?: boolean } = {}): {
+    function mockUpstream(
+        options: { withUsage?: boolean; withThinking?: boolean } = {},
+    ): {
         events: TinybirdEvent[];
         providerBodies: Record<string, unknown>[];
     } {
@@ -652,7 +655,19 @@ describe("POST /v1/messages", () => {
                         {
                             index: 0,
                             finish_reason: "stop",
-                            message: { role: "assistant", content: "Hello" },
+                            message: {
+                                role: "assistant",
+                                content: "Hello",
+                                ...(options.withThinking && {
+                                    content_blocks: [
+                                        {
+                                            type: "thinking",
+                                            thinking: "A plan",
+                                            signature: "provider-signature",
+                                        },
+                                    ],
+                                }),
+                            },
                         },
                     ],
                     ...providerUsage,
@@ -664,7 +679,7 @@ describe("POST /v1/messages", () => {
 
     async function call(
         path: "/v1/messages" | "/v1/chat/completions",
-        body: Record<string, unknown>,
+        body: Record<string, unknown> | string,
         key?: string,
     ) {
         const bindings = {
@@ -673,16 +688,19 @@ describe("POST /v1/messages", () => {
                 "https://tinybird.test/v0/events?name=generation_event_v2",
         };
         const ctx = createExecutionContext();
+        const serialized =
+            typeof body === "string" ? body : JSON.stringify(body);
         const response = await worker.fetch(
             new Request(`https://gen.pollinations.ai${path}?beta=true`, {
                 method: "POST",
                 headers: {
                     ...(key && { Authorization: `Bearer ${key}` }),
                     "Content-Type": "application/json",
+                    "Content-Length": String(encoder.encode(serialized).length),
                     "anthropic-version": "2023-06-01",
                     "anthropic-beta": "interleaved-thinking-2025-05-14",
                 },
-                body: JSON.stringify(body),
+                body: serialized,
             }),
             bindings,
             ctx,
@@ -696,7 +714,9 @@ describe("POST /v1/messages", () => {
         false,
         true,
     ])("bills like Chat Completions with stream=%s", async (stream) => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100 },
+        });
         const { events, providerBodies } = mockUpstream();
         const db = drizzle(env.DB);
 
@@ -776,7 +796,9 @@ describe("POST /v1/messages", () => {
         false,
         true,
     ])("fails without provider usage and is not billed, stream=%s", async (stream) => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100 },
+        });
         const { events } = mockUpstream({ withUsage: false });
         const { response, text } = await call(
             "/v1/messages",
@@ -809,6 +831,13 @@ describe("POST /v1/messages", () => {
 
     it.each([
         {
+            name: "empty messages",
+            body: { model, messages: [] },
+            auth: true,
+            status: 400,
+            type: "invalid_request_error",
+        },
+        {
             name: "missing credentials",
             body: { model },
             auth: false,
@@ -835,7 +864,9 @@ describe("POST /v1/messages", () => {
         status,
         type,
     }) => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100 },
+        });
         mockUpstream();
         const { response, text } = await call(
             "/v1/messages",
@@ -850,6 +881,97 @@ describe("POST /v1/messages", () => {
         expect(JSON.parse(text)).toMatchObject({
             type: "error",
             error: { type },
+        });
+    });
+
+    it.each([
+        { name: "malformed JSON", body: "{", status: 400 },
+        {
+            name: "an oversized body",
+            body: "x".repeat(20 * 1024 * 1024 + 1),
+            status: 413,
+        },
+    ])("returns an Anthropic error for $name", async ({ body, status }) => {
+        const { response, text } = await call("/v1/messages", body);
+        expect(response.status).toBe(status);
+        expect(JSON.parse(text)).toMatchObject({
+            type: "error",
+            error: {
+                type:
+                    status === 413
+                        ? "request_too_large"
+                        : "invalid_request_error",
+            },
+        });
+    });
+
+    it("preserves thinking signatures through response validation", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        mockUpstream({ withThinking: true });
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [{ role: "user", content: "signed thinking" }],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text).content).toContainEqual({
+            type: "thinking",
+            thinking: "A plan",
+            signature: "provider-signature",
+        });
+    });
+
+    it("preserves the existing zero-cost empty-wallet notice", async () => {
+        const caller = await createTestApiKey();
+        const { providerBodies, events } = mockUpstream();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [{ role: "user", content: "empty wallet" }],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text)).toMatchObject({
+            type: "message",
+            usage: { input_tokens: 0, output_tokens: 0 },
+        });
+        expect(text).toContain("top up");
+        expect(providerBodies).toEqual([]);
+        expect(events.filter((event) => event.isBilledUsage)).toEqual([]);
+    });
+
+    it("preserves rate-limit status and Retry-After", async () => {
+        const routes = createMessagesRoutes(() =>
+            Response.json(
+                { error: { message: "Try again later" } },
+                { status: 429, headers: { "Retry-After": "2" } },
+            ),
+        );
+        const response = await routes.request(
+            "https://gen.pollinations.ai/v1/messages",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 32,
+                    messages: [{ role: "user", content: "hi" }],
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(429);
+        expect(response.headers.get("Retry-After")).toBe("2");
+        expect(await response.json()).toEqual({
+            type: "error",
+            error: { type: "rate_limit_error", message: "Try again later" },
         });
     });
 

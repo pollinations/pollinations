@@ -1,5 +1,6 @@
 import { CreateChatCompletionResponseSchema } from "@shared/schemas/openai.ts";
 import { type Context, Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
@@ -48,7 +49,15 @@ async function upstreamErrorMessage(response: Response): Promise<string> {
  * deduplication, tracking and billing are exactly those of chat.
  */
 export function createMessagesRoutes(dispatch: Dispatch) {
-    return new Hono<Env>().post(
+    const app = new Hono<Env>().onError((error) =>
+        errorResponse(
+            error instanceof HTTPException ? error.status : 500,
+            error instanceof HTTPException
+                ? error.message || "Request failed"
+                : "Internal server error",
+        ),
+    );
+    return app.post(
         "/v1/messages",
         describeRoute({
             tags: ["✍️ Text"],

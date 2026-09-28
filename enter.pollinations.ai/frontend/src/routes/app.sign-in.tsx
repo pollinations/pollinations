@@ -70,7 +70,6 @@ function AppSignIn() {
                 error="Couldn’t check this sign-in link."
                 actions={
                     <Button
-                        intent="neutral"
                         icon={<RefreshIcon />}
                         onClick={() =>
                             setLookupAttempt((attempt) => attempt + 1)
@@ -97,12 +96,7 @@ function AppSignIn() {
                             returnUrl={new URL(parsedRedirect).origin}
                         />
                     ) : (
-                        <Button
-                            as="a"
-                            intent="neutral"
-                            icon={<ArrowRightIcon />}
-                            href="/"
-                        >
+                        <Button as="a" icon={<ArrowRightIcon />} href="/">
                             Go to dashboard
                         </Button>
                     )
@@ -123,12 +117,7 @@ function AppSignIn() {
                 title="Continue"
                 description={`to ${redirectHost} as ${user.name || user.githubUsername || user.email}.`}
                 actions={
-                    <Button
-                        as="a"
-                        href={callbackURL}
-                        intent="neutral"
-                        icon={<ArrowRightIcon />}
-                    >
+                    <Button as="a" href={callbackURL} icon={<ArrowRightIcon />}>
                         Continue
                     </Button>
                 }

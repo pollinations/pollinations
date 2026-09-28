@@ -1,0 +1,83 @@
+{
+  "date": "2026-09-27",
+  "period_start": "2026-09-27",
+  "period_end": "2026-09-27",
+  "title": "App Quests now connect submissions to Pollen rewards",
+  "summary": "App Quests can reward approved submissions, models are easier to find and use, and a run of dashboard, Pollen, and Flow fixes clears out the small obstacles.\n\nApp builders can include an open Quest number with a submission; once the app is approved, the Quest closes and the submitter can claim the reward. The dashboard badge now shows claimable rewards or available Quests, and two more community image generators joined the app directory.\n\nThe model catalog now shows all health statuses by default and correctly filters community models by publisher. A verified Vercel AI SDK guide covers text, streaming, images, and embeddings; the API reference was refreshed; and Polli CLI no longer hangs when a caller leaves stdin open. A separate change prepares the official agents’ publisher transfer for a later rollout.\n\nEnter and shared UI surfaces have a flatter layout, while phone-sized dialogs give key, agent, model, top-up, and sign-in controls more room. Model rows are cleaner without losing their clickable shortcuts.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 14650,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15485,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15520,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15522,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15523,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15532,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15545,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15550,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15554,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15558,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15563,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15566,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15576,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15586,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15587,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15588,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15597,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15602,
+      "date": "2026-09-27"
+    }
+  ],
+  "generated_at": "2026-09-28T06:42:25.143367+00:00"
+}

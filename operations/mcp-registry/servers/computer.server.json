@@ -1,0 +1,37 @@
+{
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "io.github.pollinations/computer",
+    "title": "Computer",
+    "description": "A private persistent computer: files and a bash shell that survive between runs.",
+    "version": "1.0.0",
+    "websiteUrl": "https://gen.pollinations.ai/docs#tag/mcp-servers",
+    "repository": {
+        "id": "358226004",
+        "source": "github",
+        "url": "https://github.com/pollinations/pollinations"
+    },
+    "remotes": [
+        {
+            "type": "streamable-http",
+            "url": "https://gen.pollinations.ai/mcp/computer",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {api_key}",
+                    "description": "Pollinations API key (https://enter.pollinations.ai/keys). Billed to your own account.",
+                    "isRequired": true,
+                    "isSecret": true,
+                    "placeholder": "sk_..."
+                }
+            ],
+            "variables": {
+                "api_key": {
+                    "description": "Pollinations API key from https://enter.pollinations.ai/keys",
+                    "isRequired": true,
+                    "isSecret": true,
+                    "placeholder": "sk_..."
+                }
+            }
+        }
+    ]
+}

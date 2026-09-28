@@ -87,6 +87,8 @@ jobs:
           operations/app-management/ingestion/*.test.js
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
+          operations/model-evals/*.test.js
+          operations/model-monitor/src/*.test.js
 
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts

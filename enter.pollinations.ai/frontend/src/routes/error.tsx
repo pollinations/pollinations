@@ -22,7 +22,7 @@ function ErrorPage() {
     if (session?.user && !isBanned && !isStagingInviteOnly)
         return <Navigate to="/" replace />;
 
-    // "Sign in" opens the sentence; the error line finishes it.
+    // "Sign in to Pollinations" opens the sentence; the error line finishes it.
     const message = isBanned
         ? "Your Pollinations account is suspended."
         : isStagingInviteOnly
@@ -32,7 +32,7 @@ function ErrorPage() {
     return (
         <AuthFlowScreen
             footnote={isBanned ? "billing" : "help"}
-            title="Sign in"
+            title="Sign in to Pollinations"
             error={message}
             actions={
                 // A suspended account has nowhere to go; the footnote is the way out.

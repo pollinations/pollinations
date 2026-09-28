@@ -373,16 +373,15 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
+                {/* Page status floats at the bottom, centred under the content column. */}
+                <div
+                    ref={setPageStatusSlot}
+                    className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 lg:left-[calc(50%+7.5rem)]"
+                />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-3 pb-8 sm:px-4 lg:px-6"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
-                    {/* Page status sits in the top gutter, opposite the menu
-                        button, spaced like the cards so it never moves them. */}
-                    <div
-                        ref={setPageStatusSlot}
-                        className="mx-auto mb-3 flex h-10 max-w-[800px] items-center justify-end pr-3 sm:pr-0 lg:h-8"
-                    />
                     <PageStatusSlot.Provider value={pageStatusSlot}>
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">
                             {children}

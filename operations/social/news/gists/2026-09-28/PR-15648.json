@@ -1,0 +1,37 @@
+{
+  "pr_number": 15648,
+  "title": "fix: consent app card layout on narrow screens",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15648",
+  "merged_at": "2026-09-28T14:01:41Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "The app card on the authorize screen put the redirect host on the right with `shrink-0`, so on phones it squeezed the app name and developer link into wrapped fragments (\"Pollinations / ↵ Playground\", \"@pollinations- ↵ ai\").\n\n- Stack the card into one full-width line per field: app name, site, developer\n- Every line shares the icon column used by the consent rows below; \"by\" takes that slot on the developer line\n- Make the site clickable (opens the origin only, never the redirect URL with its OAuth params; non-http schemes stay plain text)\n- Show the developer as a compact profile pill (avatar, handle, external arrow); the whole pill links to their profile\n- Add `AccountIdentityLink` to `@pollinations/ui` so other screens can reuse the pill\n\n| Before | After |\n|---|---|\n| Host top-right, name and handle wrap mid-word | Name / site / `by` pill, one line each, aligned |\n\nChecked on the real `/authorize` page against a local Enter + D1: phone and desktop, dark and light, signed in and signed out, long app/host/handle names.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Room to read the fine print",
+    "blurb": "The authorize screen’s app card now gives the name, site, and developer their own space on phones. The site opens its origin, not an OAuth redirect full of parameters.",
+    "summary": "Reworked the /authorize app card into aligned, full-width name, site, and developer rows; the site links only to HTTP(S) origins, and a reusable AccountIdentityLink provides the developer profile pill.",
+    "impact": "On narrow screens, app names and handles are easier to read, users can inspect the app’s site without opening its redirect URL, and the developer pill links to their profile.",
+    "keywords": [
+      "authorize",
+      "OAuth",
+      "mobile",
+      "app attribution",
+      "developer profile",
+      "UI"
+    ],
+    "visual_concept": "Depict a narrow phone showing a tidy authorization card with three aligned rows: app name, site, and a small developer avatar pill. Polli, wearing tiny reading glasses, checks the site link; a flowering vine beside the phone adds a gentle growth motif.",
+    "image_prompt": "In a cozy pixel art scene, Polli wears tiny reading glasses and inspects a phone showing a neatly aligned three-row app card, a simple site link, and a developer avatar pill, with pixel flowers growing beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15648.jpg",
+    "prompt": "In a cozy pixel art scene, Polli wears tiny reading glasses and inspects a phone showing a neatly aligned three-row app card, a simple site link, and a developer avatar pill, with pixel flowers growing beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-28T14:02:48.271656+00:00"
+}

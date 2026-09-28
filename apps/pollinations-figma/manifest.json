@@ -1,0 +1,11 @@
+{
+  "name": "pollinations-figma",
+  "id": "pollinations-figma-plugin",
+  "api": "1.0.0",
+  "description": "Generate and edit images with Pollinations AI inside Figma.",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["main"],
+  "permissions": ["currentuser", "files"],
+  "network-access": true
+}

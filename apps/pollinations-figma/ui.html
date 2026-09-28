@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollinations AI</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 16px; }
+    h1 { font-size: 16px; margin: 0 0 12px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    textarea { min-height: 60px; resize: vertical; }
+    button { background: #0066ff; color: white; border: none; padding: 10px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
+    button:hover { background: #0052cc; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .status { font-size: 12px; color: #666; margin-top: 8px; min-height: 16px; }
+    .separator { height: 1px; background: #eee; margin: 12px 0; }
+    .model-row { display: flex; gap: 8px; }
+    .model-row > * { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Pollinations AI</h1>
+
+  <div class="form-group">
+    <label>API Key (optional — enables device flow / higher limits)</label>
+    <input type="text" id="apiKey" placeholder="sk_..." />
+  </div>
+
+  <div class="form-group">
+    <label>Action</label>
+    <select id="action">
+      <option value="generate">Generate image in selected frame</option>
+      <option value="edit">Edit selected image</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Prompt</label>
+    <textarea id="prompt" placeholder="A cyberpunk city at night..."></textarea>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Model</label>
+      <input type="text" id="model" value="gptimage" />
+    </div>
+    <div class="form-group">
+      <label>Dimensions</label>
+      <select id="dimensions">
+        <option value="512x512">512×512</option>
+        <option value="1024x1024" selected>1024×1024</option>
+        <option value="1024x768">1024×768</option>
+        <option value="768x1024">768×1024</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="runBtn" disabled>Generate Image</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    const POLLINATIONS_IMAGE_HOST = "https://image.pollinations.ai";
+
+    let parent = window.parent;
+    let apiKey = "";
+    let currentAction = "generate";
+
+    document.getElementById("apiKey").addEventListener("input", (e) => {
+      apiKey = e.target.value;
+      localStorage.setItem("pollinations_api_key", apiKey);
+    });
+
+    // Load saved key
+    const savedKey = localStorage.getItem("pollinations_api_key");
+    if (savedKey) {
+      apiKey = savedKey;
+      document.getElementById("apiKey").value = savedKey;
+    }
+
+    document.getElementById("action").addEventListener("change", (e) => {
+      currentAction = e.target.value;
+      document.getElementById("runBtn").textContent =
+        currentAction === "generate" ? "Generate Image" : "Edit Image";
+    });
+
+    document.getElementById("runBtn").addEventListener("click", async () => {
+      const prompt = document.getElementById("prompt").value.trim();
+      if (!prompt) { alert("Please enter a prompt"); return; }
+
+      const model = document.getElementById("model").value || "gptimage";
+      const dims = document.getElementById("dimensions").value.split("x");
+      const width = parseInt(dims[0]);
+      const height = parseInt(dims[1]);
+
+      const params = new URLSearchParams({
+        model: model,
+        width: String(width),
+        height: String(height),
+        nologo: "true"
+      });
+      if (apiKey) params.set("key", apiKey);
+
+      const imageUrl = `${POLLINATIONS_IMAGE_HOST}/${encodeURIComponent(prompt)}?${params.toString()}`;
+
+      document.getElementById("runBtn").disabled = true;
+      document.getElementById("status").textContent = "Generating… 🖼️";
+
+      try {
+        // Fetch the image as a blob
+        const resp = await fetch(imageUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const blob = await resp.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+
+        // Send the image bytes to the Figma main context
+        parent.postMessage({
+          pluginMessage: {
+            type: "image-ready",
+            imageBytes: Array.from(bytes), // Figma handles Uint8Array
+            prompt: prompt,
+          }
+        }, "*");
+
+        document.getElementById("status").textContent = "Image placed! ✅";
+      } catch (err) {
+        document.getElementById("status").textContent = `Error: ${err.message}`;
+      } finally {
+        document.getElementById("runBtn").disabled = false;
+      }
+    });
+
+    // Listen for init message
+    window.onmessage = (event) => {
+      if (event.data?.type === "init") {
+        document.getElementById("runBtn").disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

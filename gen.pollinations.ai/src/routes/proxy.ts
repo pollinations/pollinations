@@ -53,6 +53,10 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
+    AnthropicMessagesRequestSchema,
+    AnthropicMessagesResponseSchema,
+} from "@shared/schemas/anthropic.ts";
+import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,
     DEFAULT_DECISION_MODEL,
@@ -95,6 +99,7 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
+import { generateMessages } from "@/text/messages/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
@@ -226,6 +231,22 @@ const chatCompletionHandlers = factory.createHandlers(
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+// Anthropic Messages API: same pipeline as Chat Completions, translated at
+// the edges. Errors for this route are reshaped by handleErrorForRoute
+// (registered as the app error handler).
+const anthropicMessagesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", AnthropicMessagesRequestSchema),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/messages",
+    }),
+    every(textBalanceNotice, track("generate.text")),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateMessages,
 );
 
 const decisionHandlers = factory.createHandlers(
@@ -714,6 +735,45 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/messages",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Message (Anthropic-compatible)",
+            description: [
+                "Generate an Anthropic Messages-compatible response. Point Claude Code or an Anthropic SDK at this endpoint (`baseURL: https://gen.pollinations.ai`, `auth_token: <Pollinations key>`); requests are translated to Chat Completions and responses back, so models, aliases, fallbacks, prompt caching, safety, rate limits, and billing behave exactly as on `/v1/chat/completions`.",
+                "",
+                "Authenticate with `Authorization: Bearer <key>` (Anthropic SDKs send this from `auth_token`). The Anthropic `x-api-key` header is not accepted.",
+                "",
+                "Every model advertising `/v1/messages` in `supported_endpoints` works here. Supported request fields: `messages` (text, image, and document blocks; `tool_result` and `tool_use` history; assistant thinking history is dropped on replay), `system` (string or text blocks), `max_tokens`, `temperature`, `top_p`, `stop_sequences`, `tools`, `tool_choice`, `stream`, and `thinking` (mapped to `reasoning_effort`). `metadata`, `top_k`, and other Anthropic-only fields are accepted and ignored.",
+                "",
+                "JSON returns the full Anthropic message object with usage in Anthropic fields (`input_tokens`, `output_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens`). Streaming emits `message_start`, `content_block_start`/`content_block_delta`/`content_block_stop` (text, thinking, tool_use blocks), `message_delta` with usage, `message_stop`, and periodic `ping` events. Missing provider usage fails the response: JSON returns an error, streams end with an `error` event.",
+                "",
+                "Media models (image, video, audio, 3D) return HTTP 400; use the native media endpoints for those.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description:
+                        "Anthropic Messages JSON or Messages SSE stream",
+                    content: {
+                        "application/json": {
+                            schema: resolver(AnthropicMessagesResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Anthropic Messages SSE events (message_start, content_block_start, content_block_delta, content_block_stop, message_delta, message_stop, ping). A stream whose provider omitted usage ends with an error event.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...anthropicMessagesHandlers,
     )
     .post(
         "/alpha/decisions",

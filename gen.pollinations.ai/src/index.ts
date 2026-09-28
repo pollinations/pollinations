@@ -25,6 +25,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import { handleErrorForRoute } from "@/text/messages/handler.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
@@ -162,7 +163,7 @@ app.notFound(async (c: Context<Env>) => {
     return handleError(new HTTPException(404), c);
 });
 
-app.onError(handleError);
+app.onError(handleErrorForRoute);
 
 export default {
     fetch: app.fetch,

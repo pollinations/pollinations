@@ -123,284 +123,285 @@ export function messagesForPollinations(
     });
 }
 
-/**
- * Vercel AI SDK transport for the current Pollinations chat stream.
- * A future Responses API adapter only needs to emit the same UIMessageChunks.
- */
-export class PollinationsChatTransport
-    implements ChatTransport<PollinationsUIMessage>
-{
-    constructor(private readonly options: PollinationsChatTransportOptions) {}
+/** Vercel AI SDK transport for the current Pollinations chat stream. */
+export function pollinationsChatTransport({
+    client,
+    model,
+}: PollinationsChatTransportOptions): ChatTransport<PollinationsUIMessage> {
+    return {
+        async sendMessages({ messages, abortSignal }) {
+            if (!client || !model)
+                throw new Error("Select an agent and connect first.");
+            return new ReadableStream<UIMessageChunk>({
+                async start(controller) {
+                    const messageId = crypto.randomUUID();
+                    let textId: string | null = null;
+                    let contentBuffer = "";
+                    let linePrefix = "";
+                    let codeFence: string | null = null;
+                    let inlineCode: string | null = null;
 
-    async sendMessages({
-        messages,
-        abortSignal,
-    }: Parameters<ChatTransport<PollinationsUIMessage>["sendMessages"]>[0]) {
-        const { client, model } = this.options;
-        if (!client || !model)
-            throw new Error("Select an agent and connect first.");
-        return new ReadableStream<UIMessageChunk>({
-            async start(controller) {
-                const messageId = crypto.randomUUID();
-                let textId: string | null = null;
-                let contentBuffer = "";
-                let linePrefix = "";
-                let codeFence: string | null = null;
-                let inlineCode: string | null = null;
-
-                const endText = () => {
-                    if (!textId) return;
-                    controller.enqueue({ type: "text-end", id: textId });
-                    textId = null;
-                };
-                const emitText = (text: string) => {
-                    if (!text) return;
-                    if (!textId) {
-                        textId = crypto.randomUUID();
-                        controller.enqueue({ type: "text-start", id: textId });
-                    }
-                    controller.enqueue({
-                        type: "text-delta",
-                        id: textId,
-                        delta: text,
-                    });
-                };
-                const emitParsedContent = (content: string) => {
-                    const parts = parseAgentMessage(content);
-                    for (const part of parts) {
-                        if (part.type === "tool-call") {
-                            endText();
+                    const endText = () => {
+                        if (!textId) return;
+                        controller.enqueue({ type: "text-end", id: textId });
+                        textId = null;
+                    };
+                    const emitText = (text: string) => {
+                        if (!text) return;
+                        if (!textId) {
+                            textId = crypto.randomUUID();
                             controller.enqueue({
-                                type: "tool-input-available",
-                                toolCallId: part.toolCallId,
-                                toolName: part.toolName,
-                                input: part.args,
-                                dynamic: true,
-                                providerExecuted: true,
+                                type: "text-start",
+                                id: textId,
                             });
-                            if (part.isError) {
-                                controller.enqueue({
-                                    type: "tool-output-error",
-                                    toolCallId: part.toolCallId,
-                                    errorText: outputText(part.result),
-                                    dynamic: true,
-                                    providerExecuted: true,
-                                });
-                            } else {
-                                controller.enqueue({
-                                    type: "tool-output-available",
-                                    toolCallId: part.toolCallId,
-                                    output: part.result,
-                                    dynamic: true,
-                                    providerExecuted: true,
-                                });
-                            }
-                            continue;
                         }
+                        controller.enqueue({
+                            type: "text-delta",
+                            id: textId,
+                            delta: text,
+                        });
+                    };
+                    const emitParsedContent = (content: string) => {
+                        const parts = parseAgentMessage(content);
+                        for (const part of parts) {
+                            if (part.type === "tool-call") {
+                                endText();
+                                controller.enqueue({
+                                    type: "tool-input-available",
+                                    toolCallId: part.toolCallId,
+                                    toolName: part.toolName,
+                                    input: part.args,
+                                    dynamic: true,
+                                    providerExecuted: true,
+                                });
+                                if (part.isError) {
+                                    controller.enqueue({
+                                        type: "tool-output-error",
+                                        toolCallId: part.toolCallId,
+                                        errorText: outputText(part.result),
+                                        dynamic: true,
+                                        providerExecuted: true,
+                                    });
+                                } else {
+                                    controller.enqueue({
+                                        type: "tool-output-available",
+                                        toolCallId: part.toolCallId,
+                                        output: part.result,
+                                        dynamic: true,
+                                        providerExecuted: true,
+                                    });
+                                }
+                                continue;
+                            }
 
-                        emitText(part.text);
-                    }
-                };
-                const partialToolPrefix = (content: string) => {
-                    const lower = content.toLowerCase();
-                    const token = "<details";
-                    for (
-                        let length = Math.min(token.length - 1, lower.length);
-                        length > 0;
-                        length--
-                    ) {
-                        if (token.startsWith(lower.slice(-length)))
-                            return length;
-                    }
-                    return 0;
-                };
-                const consume = (length: number) => {
-                    const source = contentBuffer.slice(0, length);
-                    contentBuffer = contentBuffer.slice(length);
-                    const newline = source.lastIndexOf("\n");
-                    linePrefix =
-                        newline < 0
-                            ? linePrefix + source
-                            : source.slice(newline + 1);
-                    return source;
-                };
-                const flushContent = (final = false) => {
-                    while (contentBuffer) {
-                        // Code is literal content: do not turn example tool
-                        // markup into tool-call parts. Keep delimiters across
-                        // provider chunks, including a split closing fence.
-                        if (codeFence) {
-                            const newline = contentBuffer.indexOf("\n");
-                            if (/^ {0,3}$/.test(linePrefix)) {
-                                if (newline < 0 && !final) return;
-                                const line =
-                                    linePrefix +
-                                    contentBuffer.slice(
-                                        0,
-                                        newline < 0 ? undefined : newline,
-                                    );
-                                if (
-                                    new RegExp(
-                                        `^ {0,3}${codeFence[0]}{${codeFence.length},}[\\t \\r]*$`,
-                                    ).test(line)
-                                )
-                                    codeFence = null;
-                            }
-                            emitText(
-                                consume(
-                                    newline < 0
-                                        ? contentBuffer.length
-                                        : newline + 1,
-                                ),
-                            );
-                            continue;
+                            emitText(part.text);
                         }
-                        if (inlineCode) {
-                            const nextTick = contentBuffer.indexOf("`");
-                            if (nextTick !== 0) {
+                    };
+                    const partialToolPrefix = (content: string) => {
+                        const lower = content.toLowerCase();
+                        const token = "<details";
+                        for (
+                            let length = Math.min(
+                                token.length - 1,
+                                lower.length,
+                            );
+                            length > 0;
+                            length--
+                        ) {
+                            if (token.startsWith(lower.slice(-length)))
+                                return length;
+                        }
+                        return 0;
+                    };
+                    const consume = (length: number) => {
+                        const source = contentBuffer.slice(0, length);
+                        contentBuffer = contentBuffer.slice(length);
+                        const newline = source.lastIndexOf("\n");
+                        linePrefix =
+                            newline < 0
+                                ? linePrefix + source
+                                : source.slice(newline + 1);
+                        return source;
+                    };
+                    const flushContent = (final = false) => {
+                        while (contentBuffer) {
+                            // Code is literal content: do not turn example tool
+                            // markup into tool-call parts. Keep delimiters across
+                            // provider chunks, including a split closing fence.
+                            if (codeFence) {
+                                const newline = contentBuffer.indexOf("\n");
+                                if (/^ {0,3}$/.test(linePrefix)) {
+                                    if (newline < 0 && !final) return;
+                                    const line =
+                                        linePrefix +
+                                        contentBuffer.slice(
+                                            0,
+                                            newline < 0 ? undefined : newline,
+                                        );
+                                    if (
+                                        new RegExp(
+                                            `^ {0,3}${codeFence[0]}{${codeFence.length},}[\\t \\r]*$`,
+                                        ).test(line)
+                                    )
+                                        codeFence = null;
+                                }
                                 emitText(
                                     consume(
-                                        nextTick < 0
+                                        newline < 0
                                             ? contentBuffer.length
-                                            : nextTick,
+                                            : newline + 1,
                                     ),
                                 );
                                 continue;
                             }
-                            const delimiter = contentBuffer.match(/^`+/)?.[0];
-                            if (!delimiter) return;
-                            if (
-                                delimiter.length === contentBuffer.length &&
-                                !final
-                            )
-                                return;
-                            if (delimiter === inlineCode) inlineCode = null;
-                            emitText(consume(delimiter.length));
-                            continue;
-                        }
-                        const lower = contentBuffer.toLowerCase();
-                        const toolIndex = lower.indexOf("<details");
-                        const literalIndex = contentBuffer.search(/[`~\\]/);
-                        const starts = [toolIndex, literalIndex].filter(
-                            (index) => index >= 0,
-                        );
-                        const specialIndex =
-                            starts.length > 0 ? Math.min(...starts) : -1;
-
-                        if (specialIndex < 0) {
-                            if (!textId && contentBuffer.trim() === "") {
-                                if (final) contentBuffer = "";
-                                return;
+                            if (inlineCode) {
+                                const nextTick = contentBuffer.indexOf("`");
+                                if (nextTick !== 0) {
+                                    emitText(
+                                        consume(
+                                            nextTick < 0
+                                                ? contentBuffer.length
+                                                : nextTick,
+                                        ),
+                                    );
+                                    continue;
+                                }
+                                const delimiter =
+                                    contentBuffer.match(/^`+/)?.[0];
+                                if (!delimiter) return;
+                                if (
+                                    delimiter.length === contentBuffer.length &&
+                                    !final
+                                )
+                                    return;
+                                if (delimiter === inlineCode) inlineCode = null;
+                                emitText(consume(delimiter.length));
+                                continue;
                             }
-                            const pendingLength = final
-                                ? 0
-                                : partialToolPrefix(contentBuffer);
-                            const safeLength =
-                                contentBuffer.length - pendingLength;
-                            emitText(consume(safeLength));
-                            return;
-                        }
-
-                        if (specialIndex > 0) {
-                            const prefix = consume(specialIndex);
-                            if (textId || prefix.trim()) emitText(prefix);
-                            continue;
-                        }
-
-                        if (contentBuffer.startsWith("\\")) {
-                            if (contentBuffer.length === 1 && !final) return;
-                            emitText(
-                                consume(Math.min(2, contentBuffer.length)),
+                            const lower = contentBuffer.toLowerCase();
+                            const toolIndex = lower.indexOf("<details");
+                            const literalIndex = contentBuffer.search(/[`~\\]/);
+                            const starts = [toolIndex, literalIndex].filter(
+                                (index) => index >= 0,
                             );
-                            continue;
-                        }
-                        if (/^[`~]/.test(contentBuffer)) {
-                            const delimiter =
-                                contentBuffer.match(/^(`+|~+)/)?.[0];
-                            if (!delimiter) return;
-                            if (
-                                delimiter.length === contentBuffer.length &&
-                                !final
-                            )
-                                return;
-                            if (
-                                delimiter.length >= 3 &&
-                                /^ {0,3}$/.test(linePrefix)
-                            )
-                                codeFence = delimiter;
-                            else if (delimiter[0] === "`")
-                                inlineCode = delimiter;
-                            emitText(consume(delimiter.length));
-                            continue;
-                        }
+                            const specialIndex =
+                                starts.length > 0 ? Math.min(...starts) : -1;
 
-                        // Only remaining case at specialIndex 0: "<details".
-                        const closeIndex = contentBuffer
-                            .toLowerCase()
-                            .indexOf("</details>");
-                        if (closeIndex < 0) {
-                            if (final) {
-                                emitText(consume(contentBuffer.length));
+                            if (specialIndex < 0) {
+                                if (!textId && contentBuffer.trim() === "") {
+                                    if (final) contentBuffer = "";
+                                    return;
+                                }
+                                const pendingLength = final
+                                    ? 0
+                                    : partialToolPrefix(contentBuffer);
+                                const safeLength =
+                                    contentBuffer.length - pendingLength;
+                                emitText(consume(safeLength));
+                                return;
                             }
+
+                            if (specialIndex > 0) {
+                                const prefix = consume(specialIndex);
+                                if (textId || prefix.trim()) emitText(prefix);
+                                continue;
+                            }
+
+                            if (contentBuffer.startsWith("\\")) {
+                                if (contentBuffer.length === 1 && !final)
+                                    return;
+                                emitText(
+                                    consume(Math.min(2, contentBuffer.length)),
+                                );
+                                continue;
+                            }
+                            if (/^[`~]/.test(contentBuffer)) {
+                                const delimiter =
+                                    contentBuffer.match(/^(`+|~+)/)?.[0];
+                                if (!delimiter) return;
+                                if (
+                                    delimiter.length === contentBuffer.length &&
+                                    !final
+                                )
+                                    return;
+                                if (
+                                    delimiter.length >= 3 &&
+                                    /^ {0,3}$/.test(linePrefix)
+                                )
+                                    codeFence = delimiter;
+                                else if (delimiter[0] === "`")
+                                    inlineCode = delimiter;
+                                emitText(consume(delimiter.length));
+                                continue;
+                            }
+
+                            // Only remaining case at specialIndex 0: "<details".
+                            const closeIndex = contentBuffer
+                                .toLowerCase()
+                                .indexOf("</details>");
+                            if (closeIndex < 0) {
+                                if (final) {
+                                    emitText(consume(contentBuffer.length));
+                                }
+                                return;
+                            }
+                            const end = closeIndex + "</details>".length;
+                            emitParsedContent(consume(end));
+                        }
+                    };
+
+                    controller.enqueue({ type: "start", messageId });
+                    controller.enqueue({ type: "start-step" });
+                    try {
+                        for await (const chunk of client.chatStream(
+                            messagesForPollinations(messages),
+                            { model, signal: abortSignal },
+                        )) {
+                            const delta = chunk.choices[0]?.delta;
+                            for (const toolCall of delta?.tool_calls ?? []) {
+                                const name = toolCall.function?.name?.trim();
+                                if (!name) continue;
+                                const callId =
+                                    toolCall.id?.trim() ||
+                                    `openai-tool-${toolCall.index}`;
+                                controller.enqueue({
+                                    type: "data-activity",
+                                    id: callId,
+                                    data: { name },
+                                });
+                            }
+                            if (delta?.content) {
+                                contentBuffer += delta.content;
+                                flushContent();
+                            }
+                        }
+                        flushContent(true);
+                        endText();
+                        controller.enqueue({ type: "finish-step" });
+                        controller.enqueue({ type: "finish" });
+                        controller.close();
+                    } catch (error) {
+                        endText();
+                        if (isCancellation(error) || abortSignal?.aborted) {
+                            controller.enqueue({
+                                type: "data-responseStatus",
+                                id: "response-status",
+                                data: { status: "cancelled" },
+                            });
+                            controller.enqueue({
+                                type: "abort",
+                                reason: "cancelled",
+                            });
+                            controller.close();
                             return;
                         }
-                        const end = closeIndex + "</details>".length;
-                        emitParsedContent(consume(end));
+                        controller.error(new Error(errorMessage(error)));
                     }
-                };
-
-                controller.enqueue({ type: "start", messageId });
-                controller.enqueue({ type: "start-step" });
-                try {
-                    for await (const chunk of client.chatStream(
-                        messagesForPollinations(messages),
-                        { model, signal: abortSignal },
-                    )) {
-                        const delta = chunk.choices[0]?.delta;
-                        for (const toolCall of delta?.tool_calls ?? []) {
-                            const name = toolCall.function?.name?.trim();
-                            if (!name) continue;
-                            const callId =
-                                toolCall.id?.trim() ||
-                                `openai-tool-${toolCall.index}`;
-                            controller.enqueue({
-                                type: "data-activity",
-                                id: callId,
-                                data: { name },
-                            });
-                        }
-                        if (delta?.content) {
-                            contentBuffer += delta.content;
-                            flushContent();
-                        }
-                    }
-                    flushContent(true);
-                    endText();
-                    controller.enqueue({ type: "finish-step" });
-                    controller.enqueue({ type: "finish" });
-                    controller.close();
-                } catch (error) {
-                    endText();
-                    if (isCancellation(error) || abortSignal?.aborted) {
-                        controller.enqueue({
-                            type: "data-responseStatus",
-                            id: "response-status",
-                            data: { status: "cancelled" },
-                        });
-                        controller.enqueue({
-                            type: "abort",
-                            reason: "cancelled",
-                        });
-                        controller.close();
-                        return;
-                    }
-                    controller.error(new Error(errorMessage(error)));
-                }
-            },
-        });
-    }
-
-    async reconnectToStream() {
-        return null;
-    }
+                },
+            });
+        },
+        async reconnectToStream() {
+            return null;
+        },
+    };
 }

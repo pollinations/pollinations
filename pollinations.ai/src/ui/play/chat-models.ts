@@ -160,15 +160,10 @@ const AUDIO_FORMATS: Record<string, AudioFormat> = {
     wav: "wav",
 };
 
-function modelId(model: ModelInfo): string | null {
-    const id = (model.id ?? model.name).trim();
-    return id.length > 0 ? id : null;
-}
-
 export function agentChoices(models: ModelInfo[]): AgentChoice[] {
     return models.flatMap((model): AgentChoice[] => {
-        const id = modelId(model);
-        if (!id || model.agent !== true) return [];
+        const id = model.id ?? model.name;
+        if (model.agent !== true) return [];
         return [
             {
                 id,

@@ -17,11 +17,13 @@ import {
     ClockIcon,
     cn,
     Dialog,
+    DownloadIcon,
     Dropdown,
     EditableCombobox,
     ExpandIcon,
     FieldStack,
     FileUpload,
+    type FileUploadProps,
     ImageIcon,
     LockIcon,
     MicIcon,
@@ -46,9 +48,12 @@ import {
 import { API_BASE_URL } from "../../config";
 import { Chat } from "./Chat";
 import { errorMessage } from "./chat-models";
-import { MediaDownloadButton } from "./MediaDownloadButton";
 import { MediaFact, MediaModelOption } from "./MediaModelDetails";
-import { mediaModelSettings } from "./media-model-settings";
+import { downloadMedia } from "./media-download";
+import {
+    type MediaModelMetadata,
+    mediaModelSettings,
+} from "./media-model-settings";
 import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
     audioEndpoint,
@@ -57,22 +62,13 @@ import {
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
-type PlaygroundModel = {
+type PlaygroundModel = MediaModelMetadata & {
     id: string;
     title: string;
     description: string;
     category: ModelCategory;
-    community: boolean;
     inputModalities: string[];
     supportedEndpoints: string[];
-    videoCapabilities: string[];
-    resolutions: string[];
-    minDuration?: number;
-    maxDuration?: number;
-    defaultDuration?: number;
-    allowedDurations: number[];
-    durationStep?: number;
-    maxReferenceImages?: number;
     voices: string[];
     paidOnly?: boolean;
 };
@@ -100,7 +96,6 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         title: model.title ?? model.name,
         description: model.description ?? "",
         category: model.category,
-        community: model.community ?? false,
         inputModalities: model.input_modalities ?? [],
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
@@ -137,12 +132,12 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
 };
 const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
+const IMAGE_UPLOAD_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 type PlaygroundResult =
     | {
           type: "image" | "video" | "audio";
           url: string;
-          contentType: string;
       }
     | {
           type: "text";
@@ -164,8 +159,14 @@ function promptPlaceholder(
     return "Describe what you want…";
 }
 
-function bytesToObjectUrl(buffer: ArrayBuffer, contentType: string): string {
-    return URL.createObjectURL(new Blob([buffer], { type: contentType }));
+function mediaResult(
+    type: "image" | "video" | "audio",
+    { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
+): PlaygroundResult {
+    return {
+        type,
+        url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
+    };
 }
 
 function randomGenerationSeed(): number {
@@ -179,23 +180,10 @@ function referenceImageLimit(model: PlaygroundModel | undefined): number {
     return model.maxReferenceImages ?? 0;
 }
 
-function pluralizeImages(count: number): string {
-    return count === 1 ? "1 image" : `${count} images`;
-}
-
-function uploadMediaForModel(
-    model: PlaygroundModel | undefined,
-): UploadMedia[] {
-    if (!model) return [];
+function uploadMediaForModel(model: PlaygroundModel): UploadMedia[] {
     return model.inputModalities.filter((modality): modality is UploadMedia =>
         UPLOAD_MEDIA_ORDER.includes(modality as UploadMedia),
     );
-}
-
-function mediaList(modalities: UploadMedia[]): string {
-    if (modalities.length < 2) return modalities[0] ?? "media";
-    if (modalities.length === 2) return `${modalities[0]} or ${modalities[1]}`;
-    return `${modalities.slice(0, -1).join(", ")}, or ${modalities[modalities.length - 1]}`;
 }
 
 function audioTaskForModel(model: PlaygroundModel): AudioTask {
@@ -419,17 +407,49 @@ function ResultDownloadButton({
     className?: string;
     onError: (message: string | null) => void;
 }) {
+    const [downloading, setDownloading] = useState(false);
+    const downloadRef = useRef<AbortController | null>(null);
+    useEffect(() => () => downloadRef.current?.abort(), []);
+    const label = `Download ${result.type}`;
+
+    async function download() {
+        if (downloadRef.current) return;
+        const controller = new AbortController();
+        downloadRef.current = controller;
+        setDownloading(true);
+        onError(null);
+        try {
+            await downloadMedia(
+                downloadHref(result),
+                "pollinations-playground",
+                controller.signal,
+            );
+        } catch {
+            if (!controller.signal.aborted)
+                onError("Could not download this file. Try again.");
+        } finally {
+            downloadRef.current = null;
+            setDownloading(false);
+        }
+    }
+
     return (
-        <MediaDownloadButton
-            source={downloadHref(result)}
-            filename="pollinations-playground"
-            label={`Download ${result.type}`}
-            onError={onError}
+        <Button
+            type="button"
+            size="sm"
+            aria-label={downloading ? "Downloading…" : label}
+            title={label}
+            disabled={downloading}
             className={cn(
                 "h-10 w-10 shrink-0 self-auto rounded-full p-0",
                 className,
             )}
-        />
+            onClick={() => void download()}
+        >
+            <DownloadIcon
+                className={cn("size-4", downloading && "animate-pulse")}
+            />
+        </Button>
     );
 }
 
@@ -660,6 +680,12 @@ export function Playground() {
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const rejectWith =
+        (
+            messages: Record<"size" | "count" | "type", string>,
+        ): NonNullable<FileUploadProps["onReject"]> =>
+        (rejected) =>
+            setError(messages[rejected[0].reason]);
     const draftSaveFailed = useRememberPlayDraft("media", {
         activeCategory,
         audioTask,
@@ -684,11 +710,9 @@ export function Playground() {
     const visibleModels = useMemo(
         () =>
             catalog.models
+                .filter((model) => !model.community)
                 .map(playgroundModel)
-                .filter(
-                    (model): model is PlaygroundModel =>
-                        model !== null && !model.community,
-                ),
+                .filter((model): model is PlaygroundModel => model !== null),
         [catalog.models],
     );
 
@@ -753,15 +777,9 @@ export function Playground() {
         if (!currentModel) return;
         if (configuredModelRef.current === currentModel.id) return;
         configuredModelRef.current = currentModel.id;
-        setSelectedResolution(currentModel.resolutions[0] ?? "");
-        if (currentModel.category === "video") {
-            setDuration(
-                currentModel.defaultDuration ??
-                    currentModel.allowedDurations[0] ??
-                    currentModel.minDuration ??
-                    0,
-            );
-        }
+        // "" and 0 mean the model default; mediaModelSettings resolves them.
+        setSelectedResolution("");
+        setDuration(0);
     }, [currentModel]);
 
     useEffect(() => {
@@ -808,7 +826,7 @@ export function Playground() {
     const mediaUploadAccept = uploadMedia
         .map((modality) => UPLOAD_ACCEPT[modality])
         .join(",");
-    const mediaUploadLabel = mediaList(uploadMedia);
+    const mediaUploadLabel = uploadMedia.join(" or ");
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
@@ -915,14 +933,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult({
-                    type: "video",
-                    url: bytesToObjectUrl(
-                        response.buffer,
-                        response.contentType,
-                    ),
-                    contentType: response.contentType,
-                });
+                setResult(mediaResult("video", response));
                 return;
             }
 
@@ -934,14 +945,7 @@ export function Playground() {
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
                 });
-                setResult({
-                    type: "image",
-                    url: bytesToObjectUrl(
-                        response.buffer,
-                        response.contentType,
-                    ),
-                    contentType: response.contentType,
-                });
+                setResult(mediaResult("image", response));
                 return;
             }
 
@@ -958,14 +962,7 @@ export function Playground() {
                 setResult(
                     response.type === "text"
                         ? response
-                        : {
-                              type: "audio",
-                              url: bytesToObjectUrl(
-                                  response.buffer,
-                                  response.contentType,
-                              ),
-                              contentType: response.contentType,
-                          },
+                        : mediaResult("audio", response),
                 );
                 return;
             }
@@ -1043,18 +1040,11 @@ export function Playground() {
                             <span className="underline">browse</span>
                         </>
                     }
-                    onReject={(rejected) => {
-                        const reason = rejected[0]?.reason;
-                        if (reason === "size") {
-                            setError("Media files must be under 20 MB.");
-                        } else if (reason === "count") {
-                            setError("Use one media file.");
-                        } else if (reason === "type") {
-                            setError(
-                                `Use ${mediaUploadLabel} files for this model.`,
-                            );
-                        }
-                    }}
+                    onReject={rejectWith({
+                        size: "Media files must be under 20 MB.",
+                        count: "Use one media file.",
+                        type: `Use ${mediaUploadLabel} files for this model.`,
+                    })}
                 />
                 {isAudioTranscription && (
                     <Text size="xs" tone="muted">
@@ -1146,7 +1136,7 @@ export function Playground() {
                                             : undefined,
                                     )}
                                     className={cn(
-                                        "polli-playground-textarea",
+                                        "lg:min-h-56",
                                         isAudioTranscription
                                             ? "min-h-24"
                                             : "min-h-44",
@@ -1181,7 +1171,7 @@ export function Playground() {
                                     onChange={setReferenceImages}
                                     variant="compact"
                                     maxFiles={maxReferenceImages}
-                                    maxSizeBytes={5 * 1024 * 1024}
+                                    maxSizeBytes={IMAGE_UPLOAD_MAX_SIZE_BYTES}
                                     label={
                                         <>
                                             Drop images here or{" "}
@@ -1190,24 +1180,11 @@ export function Playground() {
                                             </span>
                                         </>
                                     }
-                                    onReject={(rejected) => {
-                                        const reason = rejected[0]?.reason;
-                                        if (reason === "size") {
-                                            setError(
-                                                "Images must be under 5 MB each.",
-                                            );
-                                        } else if (reason === "count") {
-                                            setError(
-                                                `Use up to ${pluralizeImages(
-                                                    maxReferenceImages,
-                                                )}.`,
-                                            );
-                                        } else if (reason === "type") {
-                                            setError(
-                                                "Only image files are allowed.",
-                                            );
-                                        }
-                                    }}
+                                    onReject={rejectWith({
+                                        size: "Images must be under 5 MB each.",
+                                        count: `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                        type: "Only image files are allowed.",
+                                    })}
                                 />
                                 {referenceImages.length > 0 && (
                                     <UploadPrivacyNote />
@@ -1225,7 +1202,9 @@ export function Playground() {
                                         }
                                         variant="compact"
                                         maxFiles={1}
-                                        maxSizeBytes={5 * 1024 * 1024}
+                                        maxSizeBytes={
+                                            IMAGE_UPLOAD_MAX_SIZE_BYTES
+                                        }
                                         label={
                                             <>
                                                 Drag first frame here or{" "}
@@ -1234,22 +1213,11 @@ export function Playground() {
                                                 </span>
                                             </>
                                         }
-                                        onReject={(rejected) => {
-                                            const reason = rejected[0]?.reason;
-                                            if (reason === "size") {
-                                                setError(
-                                                    "Images must be under 5 MB each.",
-                                                );
-                                            } else if (reason === "count") {
-                                                setError(
-                                                    "Use one first frame.",
-                                                );
-                                            } else if (reason === "type") {
-                                                setError(
-                                                    "Only image files are allowed.",
-                                                );
-                                            }
-                                        }}
+                                        onReject={rejectWith({
+                                            size: "Images must be under 5 MB each.",
+                                            count: "Use one first frame.",
+                                            type: "Only image files are allowed.",
+                                        })}
                                     />
                                 </FieldStack>
 
@@ -1262,7 +1230,9 @@ export function Playground() {
                                             }
                                             variant="compact"
                                             maxFiles={1}
-                                            maxSizeBytes={5 * 1024 * 1024}
+                                            maxSizeBytes={
+                                                IMAGE_UPLOAD_MAX_SIZE_BYTES
+                                            }
                                             disabled={
                                                 firstFrameFiles.length === 0
                                             }
@@ -1278,23 +1248,11 @@ export function Playground() {
                                                     </>
                                                 )
                                             }
-                                            onReject={(rejected) => {
-                                                const reason =
-                                                    rejected[0]?.reason;
-                                                if (reason === "size") {
-                                                    setError(
-                                                        "Images must be under 5 MB each.",
-                                                    );
-                                                } else if (reason === "count") {
-                                                    setError(
-                                                        "Use one last frame.",
-                                                    );
-                                                } else if (reason === "type") {
-                                                    setError(
-                                                        "Only image files are allowed.",
-                                                    );
-                                                }
-                                            }}
+                                            onReject={rejectWith({
+                                                size: "Images must be under 5 MB each.",
+                                                count: "Use one last frame.",
+                                                type: "Only image files are allowed.",
+                                            })}
                                         />
                                     </FieldStack>
                                 )}

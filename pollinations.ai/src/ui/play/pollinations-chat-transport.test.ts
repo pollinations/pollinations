@@ -2,8 +2,8 @@ import type { ChatStreamChunk, Pollinations } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
     messagesForPollinations,
-    PollinationsChatTransport,
     type PollinationsUIMessage,
+    pollinationsChatTransport,
 } from "./pollinations-chat-transport";
 
 async function chunksFrom(events: ChatStreamChunk[]) {
@@ -12,7 +12,7 @@ async function chunksFrom(events: ChatStreamChunk[]) {
             yield* events;
         },
     } as unknown as Pick<Pollinations, "chatStream">;
-    const transport = new PollinationsChatTransport({
+    const transport = pollinationsChatTransport({
         client,
         model: "floret",
     });
@@ -121,7 +121,7 @@ describe("messagesForPollinations", () => {
     });
 });
 
-describe("PollinationsChatTransport", () => {
+describe("pollinationsChatTransport", () => {
     it("passes only model and signal to chatStream", async () => {
         let sentOptions: Parameters<Pollinations["chatStream"]>[1];
         const client: Pick<Pollinations, "chatStream"> = {
@@ -134,7 +134,7 @@ describe("PollinationsChatTransport", () => {
             client,
             model: "community/pollinations-ai/floret",
         };
-        const transport = new PollinationsChatTransport(options);
+        const transport = pollinationsChatTransport(options);
         const stream = await transport.sendMessages({
             trigger: "submit-message",
             chatId: "automatic-routing",
@@ -366,7 +366,7 @@ describe("PollinationsChatTransport", () => {
                 });
             },
         } as unknown as Pick<Pollinations, "chatStream">;
-        const stream = await new PollinationsChatTransport({
+        const stream = await pollinationsChatTransport({
             client,
             model: "floret",
         }).sendMessages({

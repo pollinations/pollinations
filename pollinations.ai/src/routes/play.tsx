@@ -15,22 +15,6 @@ export const Route = createFileRoute("/play")({
 });
 
 /**
- * Play controls, including the signed-in profile, use the shared UI treatment.
- */
-function AccountAction() {
-    return (
-        <div className="self-start">
-            <AppUserMenu
-                connectSize="lg"
-                labels={{
-                    logout: "Disconnect app",
-                }}
-            />
-        </div>
-    );
-}
-
-/**
  * The playground, lifted from apps/playground with its UX intact but its own
  * page chrome removed — the heading, subtitle and sheet come from the same
  * pattern as /apps and /community so it reads as one site, not an embed.
@@ -58,7 +42,12 @@ function PlayPage() {
                         subtitle="Chat with an agent or create images, video and audio. Connect your account to use your own Pollen."
                         variant="page"
                     />
-                    <AccountAction />
+                    <div className="self-start">
+                        <AppUserMenu
+                            connectSize="lg"
+                            labels={{ logout: "Disconnect app" }}
+                        />
+                    </div>
                 </HeroScene>
             </PageCard>
             <PageCard className="pt-6 sm:pt-8">

@@ -35,7 +35,6 @@ import {
     TabButton,
     Text,
     ToolCallDetails,
-    type ToolCallStatus,
     TrashIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -66,9 +65,9 @@ import {
 } from "./chat-models";
 import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
-    PollinationsChatTransport,
     type PollinationsUIMessage,
     type PreparedAttachment,
+    pollinationsChatTransport,
 } from "./pollinations-chat-transport";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
@@ -226,30 +225,19 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
 }
 
 function ToolPart({ part }: { part: DynamicToolUIPart }) {
-    const isError = part.state === "output-error";
-    const output = part.state === "output-available" ? part.output : undefined;
-    const error = isError ? part.errorText : undefined;
-    const status: ToolCallStatus =
-        part.state === "input-streaming"
-            ? "pending"
-            : part.state === "input-available"
-              ? "running"
-              : part.state === "approval-requested"
-                ? "approval-requested"
-                : part.state === "approval-responded"
-                  ? "approval-responded"
-                  : part.state === "output-available"
-                    ? "complete"
-                    : part.state === "output-denied"
-                      ? "denied"
-                      : "error";
     return (
         <ToolCallDetails
             name={part.toolName}
-            input={"input" in part ? part.input : undefined}
-            output={output}
-            error={error}
-            status={status}
+            input={part.input}
+            output={part.state === "output-available" ? part.output : undefined}
+            error={part.state === "output-error" ? part.errorText : undefined}
+            status={
+                part.state === "output-available"
+                    ? "complete"
+                    : part.state === "output-error"
+                      ? "error"
+                      : "running"
+            }
         />
     );
 }
@@ -284,6 +272,7 @@ export function MessageCard({
     const cancelled = message.parts.some(
         (part) => part.type === "data-responseStatus",
     );
+    const retryable = canRetry && (cancelled || Boolean(responseError));
     const activity = activeTool(message);
     const copyText = message.parts
         .flatMap((part) => (part.type === "text" ? [part.text] : []))
@@ -294,8 +283,7 @@ export function MessageCard({
         attachments.length > 0 ||
         isStreaming ||
         cancelled ||
-        responseError ||
-        canRetry;
+        responseError;
 
     return (
         <div
@@ -367,7 +355,7 @@ export function MessageCard({
                             </Alert>
                         )}
                     </ChatMessageContent>
-                    {!isUser && (copyText || canRetry) && (
+                    {!isUser && (copyText || retryable) && (
                         <ChatMessageActions>
                             {copyText && (
                                 <CopyButton
@@ -388,7 +376,7 @@ export function MessageCard({
                                     )}
                                 </CopyButton>
                             )}
-                            {canRetry && (
+                            {retryable && (
                                 <Button
                                     type="button"
                                     size="xs"
@@ -536,7 +524,7 @@ export function Chat({
     );
     const transport = useMemo(
         () =>
-            new PollinationsChatTransport({
+            pollinationsChatTransport({
                 client,
                 model: selectedAgent?.id ?? null,
             }),
@@ -719,9 +707,6 @@ export function Chat({
         }
     }
 
-    const canRetryLast = (id: string) =>
-        messages[messages.length - 1]?.id === id && !sending;
-
     function selectAgent(agentId: string) {
         if (agentId === selectedAgentId) return;
         setSelectedAgentId(agentId);
@@ -840,9 +825,6 @@ export function Chat({
                     <ChatConversationContent>
                         {messages.map((message, index) => {
                             const isLast = index === messages.length - 1;
-                            const cancelled = message.parts.some(
-                                (part) => part.type === "data-responseStatus",
-                            );
                             return (
                                 <MessageCard
                                     key={message.id}
@@ -859,9 +841,9 @@ export function Chat({
                                             : undefined
                                     }
                                     canRetry={
-                                        canRetryLast(message.id) &&
+                                        isLast &&
                                         message.role === "assistant" &&
-                                        (cancelled || Boolean(responseError))
+                                        !sending
                                     }
                                     onRetry={() => void retry(message.id)}
                                 />

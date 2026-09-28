@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3 uid="pollinations-example-scene"]
+
+[ext_resource type="Script" path="res://addons/pollinations/pollinations_client.gd" id="client_script"]
+[ext_resource type="Script" path="res://addons/pollinations/pollinations_text.gd" id="text_script"]
+[ext_resource type="Script" path="res://addons/pollinations/pollinations_image.gd" id="image_script"]
+[ext_resource type="Script" path="res://addons/pollinations/pollinations_speech.gd" id="speech_script"]
+
+[node "PollinationsDemo"]
+node_names = ["PollinationsDemo"]
+script = ExtResource("client_script")
+
+[node "PollinationsText" parent="."]
+script = ExtResource("text_script")
+
+[node "PollinationsImage" parent="."]
+script = ExtResource("image_script")
+
+[node "PollinationsSpeech" parent="."]
+script = ExtResource("speech_script")
+
+[node "Label" parent="."]
+text = "Enter prompt below"

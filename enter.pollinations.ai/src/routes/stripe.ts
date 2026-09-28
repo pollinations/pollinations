@@ -8,6 +8,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -400,28 +401,7 @@ async function isInternalRequest(
     const header = request.headers.get("Authorization") ?? "";
     if (!header.startsWith("Bearer ")) return false;
 
-    const presentedToken = header.slice("Bearer ".length);
-    const [presentedDigest, expectedDigest] = await Promise.all([
-        sha256Utf8(presentedToken),
-        sha256Utf8(expectedToken),
-    ]);
-    return constantTimeBytesEqual(presentedDigest, expectedDigest);
-}
-
-async function sha256Utf8(value: string): Promise<Uint8Array> {
-    const bytes = new TextEncoder().encode(value);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return new Uint8Array(digest);
-}
-
-function constantTimeBytesEqual(left: Uint8Array, right: Uint8Array): boolean {
-    if (left.length !== right.length) return false;
-
-    let mismatch = 0;
-    for (let index = 0; index < left.length; index += 1) {
-        mismatch |= left[index] ^ right[index];
-    }
-    return mismatch === 0;
+    return secretEquals(header.slice("Bearer ".length), expectedToken);
 }
 
 function normalizeStripePortalError(error: unknown): string {

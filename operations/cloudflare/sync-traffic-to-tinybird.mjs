@@ -14,8 +14,8 @@
  *   host_views  one response per host and day: all requests to that host by
  *               status, content type, country, device, browser, without the
  *               path. A host with more groups than one query returns is
- *               fetched as HTML and non-HTML, and the two group lists are
- *               stored together in one response.
+ *               fetched as two halves by country code (A–L, M–Z), and the two
+ *               group lists are stored together in one response.
  *
  * Requests come from real clients only (requestSource eyeball), which leaves
  * out our Workers' own outgoing calls. Paths are kept only for our own page
@@ -178,13 +178,15 @@ async function complete(query, filter) {
 async function hostViews(filter) {
     const body = await graphql(HOST_VIEWS_QUERY, filter);
     if (groupsOf(body).length < LIMIT) return body;
-    const html = await complete(HOST_VIEWS_QUERY, {
+    // Country halves split a host's groups far more evenly than content type,
+    // which is mostly JSON on API hosts.
+    const firstHalf = await complete(HOST_VIEWS_QUERY, {
         ...filter,
-        edgeResponseContentTypeName: "html",
+        clientCountryName_lt: "M",
     });
-    const other = await complete(HOST_VIEWS_QUERY, {
+    const secondHalf = await complete(HOST_VIEWS_QUERY, {
         ...filter,
-        edgeResponseContentTypeName_neq: "html",
+        clientCountryName_geq: "M",
     });
     return JSON.stringify({
         data: {
@@ -192,8 +194,8 @@ async function hostViews(filter) {
                 zones: [
                     {
                         httpRequestsAdaptiveGroups: [
-                            ...groupsOf(html),
-                            ...groupsOf(other),
+                            ...groupsOf(firstHalf),
+                            ...groupsOf(secondHalf),
                         ],
                     },
                 ],

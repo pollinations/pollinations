@@ -3,8 +3,10 @@ import {
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
-import { MAX_KEY_EXPIRY_DAYS } from "@shared/auth/authorize-config.ts";
+import {
+    MAX_KEY_EXPIRY_DAYS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {

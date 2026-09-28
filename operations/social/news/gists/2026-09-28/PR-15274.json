@@ -1,0 +1,36 @@
+{
+  "pr_number": 15274,
+  "title": "chore(web): remove unused button variants and model-monitor sdk dep",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15274",
+  "merged_at": "2026-09-28T11:04:39Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Small dead-code cleanup split out of #15060. No visual change to pollinations.ai.\n\n- Removes the unused `toggle`, `copy` and `remove` button variants and the unused `buttonVariants` export\n- `LazyMarkdownGfm` reuses `LazyMarkdown` instead of duplicating its Suspense wrapper\n- Drops the unused `@pollinations/sdk` dependency from model-monitor (it only uses SDK types via `@pollinations/ui`, and its deploy installs the root workspace anyway)\n\nThe earlier version also swapped the website's coloured CTA buttons, header/footer pills, social icon tiles and accent chip links for plain `InlineLink` text links. That is a redesign, not a cleanup, so it is dropped here; website v2 (#14472) covers the new link style.\n\nChecked: website `tsc`, `vite build` and tests pass; built CSS differs from main only by rules for the removed variants. model-monitor `npm ci`, tests and build pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A little garden pruning",
+    "blurb": "A few unused button variants and a spare dependency left the garden. The website looks exactly the same.",
+    "summary": "Removed the unused toggle, copy, and remove button variants and buttonVariants export, made LazyMarkdownGfm reuse LazyMarkdown's Suspense wrapper, and dropped model-monitor's unused @pollinations/sdk dependency.",
+    "impact": "Maintainers get less unused code and CSS to carry forward; pollinations.ai has no visual change.",
+    "keywords": [
+      "website",
+      "button variants",
+      "markdown",
+      "model-monitor",
+      "SDK",
+      "cleanup"
+    ],
+    "visual_concept": "Polli tends a code garden, pruning three unused button-shaped leaves while leaving the bright, working website flowers untouched; a small markdown plant grows from one shared pot, and an unused SDK package sits in the compost basket.",
+    "image_prompt": "In a cozy pixel art code garden, Polli wears a tiny gardener's hat and gently prunes three button-shaped leaves beside a shared markdown flower pot, while the lime green (#ecf874) website flowers remain bright and untouched. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15274.jpg",
+    "prompt": "In a cozy pixel art code garden, Polli wears a tiny gardener's hat and gently prunes three button-shaped leaves beside a shared markdown flower pot, while the lime green (#ecf874) website flowers remain bright and untouched. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-28T11:05:41.926850+00:00"
+}

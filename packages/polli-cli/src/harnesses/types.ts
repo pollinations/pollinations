@@ -27,6 +27,8 @@ export interface HarnessResult {
     mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
+    /** Whether the harness itself is present, when the adapter can tell. */
+    installed?: boolean;
 }
 
 /** One harness integration. Each adapter owns its setup strategy. */

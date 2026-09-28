@@ -1,6 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { parse, stringify } from "yaml";
+import {
+    commandExists,
+    readTextIfExists,
+    writeTextAtomic,
+} from "../harnesses/fs.js";
+import { hermesConfigPath } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -125,15 +131,22 @@ const jsonClient = (adapter: {
     label: string;
     description: string;
     target: JsonTarget;
+    /** Config codec; defaults to JSON so existing clients are unchanged. */
+    io?: {
+        read: (path: string) => JsonObject;
+        write: (path: string, value: JsonObject) => void;
+    };
 }): McpClientAdapter => {
     const { id, label, description, target } = adapter;
+    const read = adapter.io?.read ?? readJsonObject;
+    const write = adapter.io?.write ?? writeJsonObject;
 
     const update = (
         ctx: McpContext,
         mutate: (table: JsonObject) => string[],
     ): { installed: string[]; removed: string[]; file: string } => {
         const file = target.file(ctx);
-        const config = readJsonObject(file);
+        const config = read(file);
         const existing = config[target.table];
         const table: JsonObject =
             existing && typeof existing === "object"
@@ -142,7 +155,7 @@ const jsonClient = (adapter: {
         config[target.table] = table;
         const removed = mutate(table);
         if (Object.keys(table).length === 0) delete config[target.table];
-        writeJsonObject(file, config);
+        write(file, config);
         return { installed: ownedEntryNames(table), removed, file };
     };
 
@@ -198,12 +211,11 @@ const jsonClient = (adapter: {
             };
         },
         status: (ctx) => {
-            const file = target.file(ctx);
-            const config = readJsonObject(file);
+            const config = read(target.file(ctx));
             return { installed: ownedEntryNames(config[target.table]) };
         },
         existingKey: (ctx) => {
-            const config = readJsonObject(target.file(ctx));
+            const config = read(target.file(ctx));
             return recoverKeyFromTable(config[target.table]);
         },
     };
@@ -470,6 +482,56 @@ const cliClient = (adapter: {
     };
 };
 
+// ---------------------------------------------------------------------------
+// YAML config file clients
+// ---------------------------------------------------------------------------
+
+/**
+ * Hermes keeps every client config in one YAML file, so its MCP servers live in
+ * the `mcp_servers` table of config.yaml rather than their own JSON file.
+ */
+export const readYamlObject = (path: string): JsonObject => {
+    const text = readTextIfExists(path);
+    if (!text?.trim()) return {};
+    const parsed = parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error(`${path} does not contain a YAML mapping`);
+    }
+    return parsed as JsonObject;
+};
+
+export const writeYamlObject = (path: string, value: JsonObject) =>
+    writeTextAtomic(path, stringify(value), 0o600);
+
+const yamlClient = (adapter: {
+    id: string;
+    label: string;
+    description: string;
+    target: JsonTarget;
+}): McpClientAdapter =>
+    jsonClient({
+        ...adapter,
+        io: { read: readYamlObject, write: writeYamlObject },
+    });
+
+const yamlClients: McpClientAdapter[] = [
+    yamlClient({
+        id: "hermes",
+        label: "Hermes Agent",
+        description: "Hermes Agent (mcp_servers in config.yaml)",
+        target: {
+            file: (ctx) => hermesConfigPath(ctx),
+            table: "mcp_servers",
+            entry: (server, key) => ({
+                enabled: true,
+                url: server.url,
+                headers: bearerHeader(key),
+            }),
+            notes: () => ["Restart Hermes for the new MCP servers to load."],
+        },
+    }),
+];
+
 const jsonTableIds =
     (file: (ctx: McpContext) => string, table: string, ownedOnly = true) =>
     (ctx: McpContext): string[] => {
@@ -701,6 +763,7 @@ const PRIORITY = [
     "vscode",
     "cursor",
     "opencode",
+    "hermes",
     "gemini",
     "copilot",
     "windsurf",
@@ -712,7 +775,10 @@ const PRIORITY = [
 ];
 
 const byId = new Map(
-    [...cliClients, ...jsonClients].map((client) => [client.id, client]),
+    [...cliClients, ...jsonClients, ...yamlClients].map((client) => [
+        client.id,
+        client,
+    ]),
 );
 
 export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.flatMap((id) => {

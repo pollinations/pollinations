@@ -28,13 +28,14 @@ const freshCtx = (): McpContext => ({
 });
 
 describe("client table", () => {
-    it("covers all 13 clients in the issue's priority order", () => {
+    it("covers all 14 clients in the issue's priority order, Hermes included", () => {
         expect(MCP_CLIENTS.map((client) => client.id)).toEqual([
             "claude-code",
             "codex",
             "vscode",
             "cursor",
             "opencode",
+            "hermes",
             "gemini",
             "copilot",
             "windsurf",

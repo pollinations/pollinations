@@ -1,6 +1,6 @@
 import { ApiError, gen, requireKey } from "./api.js";
 import { BASE_URL } from "./config.js";
-import { printError } from "./output.js";
+import { ExitSignal, printError } from "./output.js";
 
 // Returns null for non-402 so callers fall through to their generic error path.
 export async function budgetHint(
@@ -62,5 +62,5 @@ export async function fetchGen(
 
 export function exitWithError(error: unknown): never {
     printError(error instanceof Error ? error.message : "unknown error");
-    process.exit(1);
+    throw new ExitSignal(1);
 }

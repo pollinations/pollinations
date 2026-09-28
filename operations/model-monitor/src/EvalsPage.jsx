@@ -18,7 +18,12 @@ function percent(value) {
 }
 
 function Comparison({ row }) {
-    if (!row.community || !row.officialMatch) return <Text size="xs" tone="soft">-</Text>;
+    if (!row.community || !row.officialMatch)
+        return (
+            <Text size="xs" tone="soft">
+                -
+            </Text>
+        );
     const significant = row.comparison?.significant;
     return (
         <div className="flex flex-wrap items-center gap-1.5">
@@ -43,8 +48,9 @@ export function EvalsPage() {
                     Model Evals
                 </Heading>
                 <Text className="m-0 max-w-3xl">
-                    Weekly randomized Alice-in-Wonderland and bowls reasoning checks,
-                    graded by code. Errors and timeouts count as failed trials.
+                    Weekly randomized Alice-in-Wonderland and bowls reasoning
+                    checks, graded by code. Errors and timeouts count as failed
+                    trials.
                 </Text>
             </section>
 
@@ -74,7 +80,9 @@ export function EvalsPage() {
                 )}
             </div>
 
-            {loading && !run && <Text tone="soft">Loading eval results...</Text>}
+            {loading && !run && (
+                <Text tone="soft">Loading eval results...</Text>
+            )}
 
             {run && (
                 <Surface className="max-w-full overflow-x-auto p-0">
@@ -91,7 +99,9 @@ export function EvalsPage() {
                                 <TableHeaderCell align="right" numeric>
                                     Failures
                                 </TableHeaderCell>
-                                <TableHeaderCell>Official comparison</TableHeaderCell>
+                                <TableHeaderCell>
+                                    Official comparison
+                                </TableHeaderCell>
                                 <TableHeaderCell align="right" numeric>
                                     Cost
                                 </TableHeaderCell>
@@ -104,7 +114,10 @@ export function EvalsPage() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span>{row.model}</span>
                                             {row.community && (
-                                                <Chip intent="neutral" size="sm">
+                                                <Chip
+                                                    intent="neutral"
+                                                    size="sm"
+                                                >
                                                     community
                                                 </Chip>
                                             )}
@@ -134,7 +147,8 @@ export function EvalsPage() {
 
             {run && (
                 <Text size="xs" tone="soft" className="m-0">
-                    Run {run.runId}  |  seed {run.runSeed}  |  families: {run.families.join(", ")}
+                    Run {run.runId} | seed {run.runSeed} | families:{" "}
+                    {run.families.join(", ")}
                 </Text>
             )}
         </div>

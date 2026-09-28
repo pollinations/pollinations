@@ -192,7 +192,7 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
 function DiscordLiveButton({ online }: { online: number | null }) {
     if (online === null) return null;
 
-    const label = `Join Discord — ${online.toLocaleString()} users online now`;
+    const label = `Join the Discord — ${online.toLocaleString()} users online now`;
 
     return (
         <Button

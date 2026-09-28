@@ -69,7 +69,7 @@ export const loadQuestLeaderboard = cachePublic(async () => {
 function LeaderboardAction() {
     return (
         <ExternalLinkButton href={QUESTS_PAGE_URL} size="md" intent="brand">
-            Browse open quests
+            Explore Quests
         </ExternalLinkButton>
     );
 }

@@ -82,7 +82,7 @@ const WAYS_IN = [
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         links: [
             {
-                label: "Explore open quests",
+                label: "Find a GitHub Quest",
                 href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
             },
         ],
@@ -92,7 +92,7 @@ const WAYS_IN = [
         icon: MegaphoneIcon,
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
-        links: [{ label: "Join Discord", href: DISCORD_URL }],
+        links: [{ label: "Join the Discord", href: DISCORD_URL }],
     },
 ];
 
@@ -1010,7 +1010,7 @@ function CommunityPage() {
                 body="Builders are in there swapping prompts, debugging each other's apps, and telling us what to build next."
             >
                 <ExternalLinkButton href={DISCORD_URL} intent="brand" size="lg">
-                    Join Discord
+                    Join the Discord
                 </ExternalLinkButton>
                 <InlineLink href={REPO_URL} className="px-2 text-base">
                     Browse the repo

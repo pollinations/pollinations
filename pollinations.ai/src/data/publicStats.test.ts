@@ -6,7 +6,6 @@ import {
     type DirectoryApp,
     describeModelKinds,
     isBuzz,
-    selectShowcaseApps,
     selectWeeklyApps,
     type WeeklyAppUsage,
 } from "./publicStats";
@@ -97,51 +96,6 @@ describe("BYOP-only popularity", () => {
     });
 });
 
-describe("app showcase", () => {
-    const app = (name: string, requests: number, date = "2026-09-01") =>
-        ({
-            name,
-            description: "An app",
-            byop: true,
-            requests_24h: requests,
-            approved_date: date,
-        }) as DirectoryApp;
-
-    it("ranks every measured BYOP app by usage and recency without mutating the catalog", () => {
-        const catalog = [
-            app("Low usage", 99),
-            app("Popular", 500),
-            app("Newer", 100, "2026-09-11"),
-            app("Older", 100),
-            app("Quiet", 0),
-            { ...app("Unmeasured", 0), requests_24h: "" },
-            { ...app("No description", 1000), description: "" },
-            { ...app("Developer total", 999999), byop: false },
-            { ...app("Another app by that developer", 999999), byop: false },
-        ];
-        expect(selectShowcaseApps(catalog).map((item) => item.name)).toEqual([
-            "Popular",
-            "Newer",
-            "Older",
-            "Low usage",
-            "Quiet",
-        ]);
-        expect(catalog[0].name).toBe("Low usage");
-    });
-
-    it("limits the showcase to eight apps", () => {
-        expect(
-            selectShowcaseApps(
-                Array.from({ length: 12 }, (_, i) => app(String(i), 100 + i)),
-            ),
-        ).toHaveLength(8);
-        expect(selectShowcaseApps([])).toEqual([]);
-        expect(
-            selectShowcaseApps([{ ...app("Non-BYOP", 999999), byop: false }]),
-        ).toEqual([]);
-    });
-});
-
 describe("weekly featured apps", () => {
     const app = (name: string, web_url = `https://${name}.example`) =>
         ({
@@ -176,8 +130,6 @@ describe("weekly featured apps", () => {
             { ...usage(item), app_url: "https://shared.example/another" },
             { ...usage(item), app_name: "Unlisted app" },
             { ...usage(item), owner: "someone-else" },
-            usage(item, 0),
-            usage(item, -1),
         ];
         expect(selectWeeklyApps([item], wrong)).toEqual([]);
         expect(selectWeeklyApps([item], [...wrong, usage(item)])).toHaveLength(
@@ -202,6 +154,16 @@ describe("weekly featured apps", () => {
         expect(second.requests_24h).toBe(200);
         expect(isBuzz(second)).toBe(true);
         expect(stale.requests_24h).toBe("999999");
+    });
+
+    it("adds no usage or description threshold to the server ranking", () => {
+        const catalog = [app("Low usage"), app("No description")];
+        expect(
+            selectWeeklyApps(catalog, [
+                usage(catalog[0], 1),
+                usage(catalog[1], 0),
+            ]).map((item) => item.name),
+        ).toEqual(["Low usage", "No description"]);
     });
 
     it("caps at eight distinct apps and never fills missing entries from unranked apps", () => {
@@ -241,10 +203,11 @@ describe("weekly featured apps", () => {
         vi.stubGlobal("fetch", fetchMock);
         await expect(loadWeeklyApps()).rejects.toThrow("app_top_weekly: 503");
         available = true;
-        await expect(loadWeeklyApps()).resolves.toEqual([
-            { ...item, byop: true },
-        ]);
-        await loadWeeklyApps();
+        const hello = loadWeeklyApps();
+        const apps = loadWeeklyApps();
+        expect(hello).toBe(apps);
+        await expect(hello).resolves.toEqual([{ ...item, byop: true }]);
+        expect(await loadWeeklyApps()).toBe(await hello);
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 });

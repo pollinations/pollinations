@@ -141,7 +141,7 @@ export function selectWeeklyApps(
                     candidate.github_username.toLowerCase() ===
                         row.owner.toLowerCase(),
             );
-            if (!app || !(row.request_count > 0)) return [];
+            if (!app) return [];
             const identity = appIdentity(app);
             if (seen.has(identity)) return [];
             seen.add(identity);
@@ -160,39 +160,9 @@ export const loadWeeklyApps = cachePublic(async () => {
     return selectWeeklyApps(catalog, ranking);
 });
 
+/** Hello and Apps use the exact same cached seven-day BYOP ranking. */
 export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
-}
-
-/** The same cached catalog serves discovery, the active showcase, and counts. */
-export function useAppShowcase() {
-    const directory = useAppDirectory();
-    return {
-        ...directory,
-        data: selectShowcaseApps(directory.data),
-        total: directory.data.length,
-    };
-}
-
-/**
- * Minimum BYOP requests in 24 hours for the Hello shelf. Zero shows the eight
- * busiest measured apps; raise it again once enough apps clear a real bar.
- */
-const SHOWCASE_MIN_REQUESTS_24H = 0;
-
-export function selectShowcaseApps(apps: DirectoryApp[]): DirectoryApp[] {
-    return apps
-        .filter(
-            (app) =>
-                app.description &&
-                (byopRequests24h(app) ?? -1) >= SHOWCASE_MIN_REQUESTS_24H,
-        )
-        .sort(
-            (left, right) =>
-                compareAppUsage(left, right) ||
-                right.approved_date.localeCompare(left.approved_date),
-        )
-        .slice(0, 8);
 }
 
 type PlatformStats = {

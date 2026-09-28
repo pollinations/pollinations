@@ -6,7 +6,7 @@ import {
     ScrollArea,
 } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { useAppShowcase } from "../../data/publicStats";
+import { useWeeklyApps } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
 /**
@@ -15,9 +15,9 @@ import { AppCarousel } from "../apps/AppCarousel";
  * visual without pretending generated art is the real app.
  */
 export function LiveApps({ className }: { className?: string }) {
-    const { data: featured, loading, failed } = useAppShowcase();
+    const { data: featured, loading, failed } = useWeeklyApps();
 
-    // Only disappears when the directory loaded fine and genuinely had
+    // Only disappears when the ranking loaded fine and genuinely had
     // nothing to show — a failure gets a line, not a silent hole.
     if (!loading && !failed && featured.length === 0) return null;
 
@@ -26,6 +26,7 @@ export function LiveApps({ className }: { className?: string }) {
             <ContentHeader
                 eyebrow="Live now"
                 title="Apps from the community."
+                subtitle="The most-used Pollen Pay apps over the last 7 days."
             />
             <Button
                 as={Link}
@@ -54,7 +55,7 @@ export function LiveApps({ className }: { className?: string }) {
                 </ScrollArea>
             ) : failed ? (
                 <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
-                    The app directory couldn’t be loaded right now.
+                    Featured apps couldn’t be loaded right now.
                 </p>
             ) : (
                 <AppCarousel

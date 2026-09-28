@@ -38,7 +38,11 @@ import {
     usePullRequestCount,
     useVotingIssues,
 } from "../data/community";
-import { compact, useAppShowcase, usePlatformStats } from "../data/publicStats";
+import {
+    compact,
+    useAppDirectory,
+    usePlatformStats,
+} from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import { BottomScene } from "../ui/site/BottomScene";
@@ -163,10 +167,10 @@ function CommunityParticipation() {
         failed: platformFailed,
     } = usePlatformStats();
     const {
-        total: appCount,
+        data: apps,
         loading: appsLoading,
         failed: appsFailed,
-    } = useAppShowcase();
+    } = useAppDirectory();
     const ways = [
         {
             ...WAYS_IN[0],
@@ -174,7 +178,7 @@ function CommunityParticipation() {
                 ? []
                 : [
                       {
-                          value: appsLoading ? null : String(appCount),
+                          value: appsLoading ? null : String(apps.length),
                           label: "listed apps",
                       },
                   ],

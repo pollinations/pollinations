@@ -443,18 +443,35 @@ export async function markAutoTopUpInvoiceFailed(
         if (paymentIntent?.status === "requires_action") return;
     }
 
-    if (options.cleanupInvoice !== false) {
-        await cleanupFailedAutoTopUpInvoice(env, invoice.id);
+    if (options.disableAutoTopUp === false) {
+        await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
+    } else {
+        const now = Date.now();
+        const attempt = await env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+            SET status = ?, failure_reason = ?, updated_at = ?,
+                completed_at = COALESCE(completed_at, ?)
+            WHERE stripe_invoice_id = ?
+                AND status != ?
+                AND (status != ? OR failure_reason IS NOT ?)
+            RETURNING user_id AS userId`,
+        )
+            .bind(
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+                now,
+                now,
+                invoice.id,
+                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+            )
+            .first<{ userId: string }>();
+        if (attempt) await disableAutoTopUp(env.DB, attempt.userId);
     }
 
-    const attempt = await markAttemptFailedByInvoice(
-        env.DB,
-        invoice.id,
-        reason,
-    );
-
-    if (options.disableAutoTopUp !== false && attempt) {
-        await disableAutoTopUp(env.DB, attempt.userId);
+    if (options.cleanupInvoice !== false) {
+        await cleanupFailedAutoTopUpInvoice(env, invoice.id);
     }
 }
 
@@ -706,31 +723,28 @@ async function markAttemptFailedByInvoice(
     db: D1Database,
     invoiceId: string,
     reason: string,
-): Promise<{ id: string; userId: string } | null> {
+): Promise<void> {
     const now = Date.now();
-    return (
-        (await db
-            .prepare(
-                `UPDATE stripe_auto_top_up_attempt
+    await db
+        .prepare(
+            `UPDATE stripe_auto_top_up_attempt
                     SET status = ?,
                         failure_reason = ?,
                         updated_at = ?,
                         completed_at = ?
                     WHERE stripe_invoice_id = ?
-                        AND status NOT IN (?, ?)
-                    RETURNING id, user_id AS userId`,
-            )
-            .bind(
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-                reason,
-                now,
-                now,
-                invoiceId,
-                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-            )
-            .first<{ id: string; userId: string }>()) ?? null
-    );
+                        AND status NOT IN (?, ?)`,
+        )
+        .bind(
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            reason,
+            now,
+            now,
+            invoiceId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        )
+        .run();
 }
 
 async function cleanupFailedAutoTopUpInvoice(

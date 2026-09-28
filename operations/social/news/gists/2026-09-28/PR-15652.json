@@ -1,0 +1,36 @@
+{
+  "pr_number": 15652,
+  "title": "fix: redirect old.pollinations.ai to pollinations.ai",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15652",
+  "merged_at": "2026-09-28T15:14:35Z",
+  "labels": [
+    "BUG",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "`old.pollinations.ai` still serves the pre-migration site from Netlify, including the old Google Analytics tag (`G-LPZ9GEJVHR`). That is third-party tracking without consent, which our privacy policy rules out, and it keeps feeding a GA property we are retiring. Real visits there are rising (Cloudflare, bots excluded: 26 on 23 Sep → 957 on 27 Sep).\n\n**Changes**\n- `pollinations.ai/wrangler.toml`: adds the route `old.pollinations.ai/*` to the pollinations.ai Worker, so the Worker answers before Netlify is reached\n- `pollinations.ai/src/worker.ts`: that hostname gets a 301 to `https://pollinations.ai/`\n- `operations/app-management/app.json`: removes the \"Ai Chatbot\" entry (#6370), which listed `old.pollinations.ai` as a community app\n\n**Verified locally**: `old.pollinations.ai/` and `old.pollinations.ai/p/…` → 301 `https://pollinations.ai/`; `pollinations.ai/apps` unchanged (200). `app.js validate` passes (877 apps).\n\n**Deploy**: through the normal `Deploy / Cloudflare production` workflow after promotion. Afterwards the Netlify site and its DNS record can be deleted.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The old hive points home",
+    "blurb": "The old address now leads straight to the current site. Polli put up a sign; the Worker handles directions.",
+    "summary": "The Cloudflare Worker now returns a 301 from every old.pollinations.ai path to https://pollinations.ai/, and the outdated Ai Chatbot app listing has been removed.",
+    "impact": "Visitors using old.pollinations.ai links reach the current site instead of the pre-migration copy; the apps page continues to work as before.",
+    "keywords": [
+      "redirect",
+      "Cloudflare Worker",
+      "legacy site",
+      "app directory",
+      "privacy"
+    ],
+    "visual_concept": "Show the old site as a small, vine-covered pixel doorway beside a bright path marked 301 leading to a welcoming current-site cottage. Polli, wearing a tiny guide's hat, points visitors down the path; a lime-green garden makes the destination feel like home.",
+    "image_prompt": "In a cozy pixel garden, a little doorway labeled 'old.pollinations.ai' opens onto a lime green (#ecf874) path marked '301' leading to a warmly lit cottage labeled 'pollinations.ai'. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wears a tiny guide's hat, and points visitors toward the cottage. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, and dark purple (#110518) pixel lettering; nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15652.jpg",
+    "prompt": "In a cozy pixel garden, a little doorway labeled 'old.pollinations.ai' opens onto a lime green (#ecf874) path marked '301' leading to a warmly lit cottage labeled 'pollinations.ai'. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wears a tiny guide's hat, and points visitors toward the cottage. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, and dark purple (#110518) pixel lettering; nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-28T15:15:58.866678+00:00"
+}

@@ -83,8 +83,8 @@ const WAYS_IN = [
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         links: [
             {
-                label: "Find a good first issue",
-                href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
+                label: "Explore open quests",
+                href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
             },
         ],
     },

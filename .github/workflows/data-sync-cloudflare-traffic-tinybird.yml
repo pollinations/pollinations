@@ -2,7 +2,7 @@ name: Data / Sync Cloudflare traffic to Tinybird
 
 on:
   schedule:
-    # Cloudflare keeps per-page detail for 30 days only; sync each finished UTC day
+    # Cloudflare keeps per-request detail for 30 days only; sync each finished UTC day for every *.pollinations.ai host
     - cron: "15 5 * * *"
   workflow_dispatch:
     inputs:
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v5

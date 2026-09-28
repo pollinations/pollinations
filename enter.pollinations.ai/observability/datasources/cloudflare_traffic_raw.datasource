@@ -1,18 +1,20 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Raw Cloudflare GraphQL analytics responses for the pollinations.ai zone, one row per UTC
-    date, appended daily by .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The
-    Free plan keeps per-request detail for 30 days only, so body is stored exactly as returned
-    for later analysis. Dataset page_views: HTML responses to real clients on our own page
-    routes of pollinations.ai, www and enter, by page, country, device, browser and verified
-    bot category. Counts are Cloudflare's sampled estimates.
+    Raw Cloudflare GraphQL analytics responses for every *.pollinations.ai host, appended daily
+    by .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The Free plan keeps
+    per-request detail for 30 days only, so body is stored exactly as returned for later
+    analysis. Real clients only; no IP, user-agent string or free-form path.
+    page_views (host ''): HTML pages of pollinations.ai, www and enter by page, country, device,
+    browser. host_views (one row per host): all requests to that host by country, device,
+    browser and content type. Counts are Cloudflare's sampled estimates.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,
     `date` Date `json:$.date`,
+    `host` LowCardinality(String) `json:$.host`,
     `fetched_at` DateTime `json:$.fetched_at`,
     `body` String `json:$.body`
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "dataset, date, fetched_at"
+ENGINE_SORTING_KEY "dataset, date, host, fetched_at"

@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 
 /**
- * Sync Cloudflare page traffic for pollinations.ai and enter.pollinations.ai
- * → Tinybird cloudflare_traffic_raw.
+ * Sync Cloudflare traffic for every *.pollinations.ai host → Tinybird
+ * cloudflare_traffic_raw.
  *
- * The zone is on the Free plan, where per-request detail (page, country,
- * device) is kept for 30 days only, so this runs daily
- * (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml) and stores one
- * raw GraphQL response per UTC day.
+ * The zone is on the Free plan, where per-request detail is kept for 30 days
+ * only, so this runs daily (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml)
+ * and stores raw GraphQL responses per UTC day:
  *
- * Only HTML responses to real clients on our own page routes are requested:
- * people type prompts into URLs, so any other path may contain prompt text.
- * No IP or user-agent string is requested. Verified bots stay in, labelled by
- * verifiedBotCategory.
+ *   page_views  one response per day: HTML pages of pollinations.ai, www and
+ *               enter by page, country, device, browser
+ *   host_views  one response per host and day: all requests to that host by
+ *               country, device, browser and content type, without the path
+ *
+ * Requests come from real clients only (requestSource eyeball), which leaves
+ * out our Workers' own outgoing calls. Paths are kept only for our own page
+ * routes: people type prompts into URLs, so any other path may contain prompt
+ * text. No IP or user-agent string is requested. Verified bots stay in,
+ * labelled by verifiedBotCategory.
  *
  * Usage:
  *   node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
@@ -20,8 +25,9 @@
  *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
  *
  * --days fetches the last N complete UTC days (up to 30 for backfill); --save
- * writes each day's response to <dir>/<date>.json without ingesting;
- * --snapshot ingests those files later, using each file's mtime as fetched_at.
+ * writes each response to <dir>/<date>__<dataset>[__<host>].json without
+ * ingesting; --snapshot ingests those files later, using each file's mtime as
+ * fetched_at.
  *
  * Env vars:
  *   CLOUDFLARE_API_TOKEN  Required unless --snapshot — Analytics read on the pollinations.ai zone
@@ -35,9 +41,10 @@ import { parseArgs } from "node:util";
 const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
-const DATASET = "page_views";
 const LIMIT = 10000;
 const MAX_RETRIES = 3;
+// Cloudflare allows 300 GraphQL queries per 5 minutes.
+const QUERY_INTERVAL_MS = 1100;
 
 // Page routes of pollinations.ai/src/App.tsx and of the enter page list in
 // shared/product-analytics.ts.
@@ -76,16 +83,26 @@ const PAGES = {
 };
 PAGES["www.pollinations.ai"] = PAGES["pollinations.ai"];
 
-const QUERY = `query ($zone: String!, $date: Date!, $filter: ZoneHttpRequestsAdaptiveGroupsFilter_InputObject!) {
+const groupsQuery = (
+    dimensions,
+) => `query ($zone: String!, $filter: ZoneHttpRequestsAdaptiveGroupsFilter_InputObject!) {
   viewer { zones(filter: { zoneTag: $zone }) {
     httpRequestsAdaptiveGroups(limit: ${LIMIT}, filter: $filter) {
       count
       avg { sampleInterval }
       sum { visits }
-      dimensions { date clientRequestHTTPHost clientRequestPath clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory }
+      dimensions { ${dimensions} }
     }
   } }
 }`;
+
+const PAGE_VIEWS_QUERY = groupsQuery(
+    "date clientRequestHTTPHost clientRequestPath clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
+);
+const HOST_VIEWS_QUERY = groupsQuery(
+    "date clientRequestHTTPHost clientCountryName clientDeviceType userAgentBrowser edgeResponseContentTypeName verifiedBotCategory",
+);
+const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
 
 const { values: args } = parseArgs({
     options: {
@@ -97,6 +114,9 @@ const { values: args } = parseArgs({
 });
 
 const toDateTime = (d) => d.toISOString().slice(0, 19).replace("T", " ");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const groupsOf = (body) =>
+    JSON.parse(body).data.viewer.zones[0].httpRequestsAdaptiveGroups;
 
 async function fetchWithRetry(url, options) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -108,7 +128,7 @@ async function fetchWithRetry(url, options) {
         if (!retryable || attempt === MAX_RETRIES) {
             throw new Error(`HTTP ${res.status} ${url}: ${body}`);
         }
-        await new Promise((r) => setTimeout(r, 500 * 2 ** (attempt - 1)));
+        await sleep(500 * 2 ** (attempt - 1));
     }
 }
 
@@ -120,16 +140,8 @@ function lastDays(days) {
     );
 }
 
-async function fetchDay(date) {
-    const filter = {
-        date,
-        requestSource: "eyeball",
-        edgeResponseContentTypeName: "html",
-        OR: Object.entries(PAGES).map(([host, paths]) => ({
-            clientRequestHTTPHost: host,
-            clientRequestPath_in: paths,
-        })),
-    };
+async function graphql(query, filter) {
+    await sleep(QUERY_INTERVAL_MS);
     const res = await fetchWithRetry(
         "https://api.cloudflare.com/client/v4/graphql",
         {
@@ -139,48 +151,70 @@ async function fetchDay(date) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                query: QUERY,
-                variables: { zone: ZONE_ID, date, filter },
+                query,
+                variables: { zone: ZONE_ID, filter },
             }),
         },
     );
     const body = await res.text();
-    const { data, errors } = JSON.parse(body);
-    if (errors) throw new Error(`${date}: ${JSON.stringify(errors)}`);
-    const groups = data.viewer.zones[0].httpRequestsAdaptiveGroups.length;
+    const { errors } = JSON.parse(body);
+    if (errors) throw new Error(JSON.stringify(errors));
     // A full page means Cloudflare cut rows off: fail rather than store a partial day.
-    if (groups >= LIMIT)
-        throw new Error(`${date}: ${groups} groups hit the limit`);
+    if (groupsOf(body).length >= LIMIT) {
+        throw new Error(`${JSON.stringify(filter)} hit the ${LIMIT} row limit`);
+    }
     return body;
 }
 
-async function fromApi(days) {
-    const rows = [];
+async function* fromApi(days) {
     for (const date of lastDays(days)) {
-        const body = await fetchDay(date);
-        rows.push({
-            dataset: DATASET,
-            date,
-            fetched_at: toDateTime(new Date()),
-            body,
+        const real = { date, requestSource: "eyeball" };
+        const pageViews = await graphql(PAGE_VIEWS_QUERY, {
+            ...real,
+            edgeResponseContentTypeName: "html",
+            OR: Object.entries(PAGES).map(([host, paths]) => ({
+                clientRequestHTTPHost: host,
+                clientRequestPath_in: paths,
+            })),
         });
+        yield { dataset: "page_views", date, host: "", body: pageViews };
+
+        const hosts = groupsOf(
+            await graphql(HOSTS_QUERY, {
+                ...real,
+                clientRequestHTTPHost_like: "%pollinations.ai",
+            }),
+        ).map((g) => g.dimensions.clientRequestHTTPHost);
+        for (const host of hosts) {
+            const body = await graphql(HOST_VIEWS_QUERY, {
+                ...real,
+                clientRequestHTTPHost: host,
+            });
+            yield { dataset: "host_views", date, host, body };
+        }
     }
-    return rows;
 }
 
-async function fromSnapshot(dir) {
-    const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
-    return Promise.all(
-        files.map(async (file) => ({
-            dataset: DATASET,
-            date: file.slice(0, -".json".length),
-            fetched_at: toDateTime((await stat(join(dir, file))).mtime),
-            body: (await readFile(join(dir, file), "utf8")).trim(),
-        })),
-    );
+const fileName = ({ date, dataset, host }) =>
+    `${[date, dataset, host].filter(Boolean).join("__")}.json`;
+
+async function* fromSnapshot(dir) {
+    for (const file of (await readdir(dir)).filter((f) =>
+        f.endsWith(".json"),
+    )) {
+        const [date, dataset, host = ""] = file.slice(0, -5).split("__");
+        const path = join(dir, file);
+        yield {
+            dataset,
+            date,
+            host,
+            fetched_at: toDateTime((await stat(path)).mtime),
+            body: (await readFile(path, "utf8")).trim(),
+        };
+    }
 }
 
-// One request per day: a day's body is up to about a megabyte.
+// One request per response: a body can be close to a megabyte.
 async function append(row) {
     const res = await fetchWithRetry(
         `${TINYBIRD_BASE}/v0/events?name=${DATASOURCE}&wait=true`,
@@ -194,7 +228,9 @@ async function append(row) {
     );
     const { successful_rows, quarantined_rows } = await res.json();
     if (successful_rows !== 1 || quarantined_rows > 0) {
-        throw new Error(`${row.date}: ${quarantined_rows} rows quarantined`);
+        throw new Error(
+            `${fileName(row)}: ${quarantined_rows} rows quarantined`,
+        );
     }
 }
 
@@ -206,27 +242,25 @@ async function main() {
     if (ingest && !process.env.TINYBIRD_SYNC_TOKEN) {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
+    if (args.save) await mkdir(args.save, { recursive: true });
 
-    const rows = args.snapshot
-        ? await fromSnapshot(args.snapshot)
-        : await fromApi(Number(args.days));
-    for (const row of rows) {
-        const groups = JSON.parse(row.body).data.viewer.zones[0]
-            .httpRequestsAdaptiveGroups.length;
-        console.log(`${row.date}: ${groups} groups, ${row.body.length} bytes`);
+    const source = args.snapshot
+        ? fromSnapshot(args.snapshot)
+        : fromApi(Number(args.days));
+    let count = 0;
+    for await (const row of source) {
+        row.fetched_at ??= toDateTime(new Date());
+        console.log(
+            `${fileName(row)}: ${groupsOf(row.body).length} groups, ${row.body.length} bytes`,
+        );
+        if (args.save)
+            await writeFile(join(args.save, fileName(row)), row.body);
+        if (ingest) await append(row);
+        count++;
     }
-
-    if (args.save) {
-        await mkdir(args.save, { recursive: true });
-        for (const row of rows) {
-            await writeFile(join(args.save, `${row.date}.json`), row.body);
-        }
-        console.log(`saved ${rows.length} days to ${args.save}`);
-    }
-    if (!ingest) return;
-
-    for (const row of rows) await append(row);
-    console.log(`${DATASOURCE}: appended ${rows.length} days`);
+    console.log(
+        `${count} responses ${args.save ? `saved to ${args.save}` : ingest ? `appended to ${DATASOURCE}` : "read"}`,
+    );
 }
 
 main().catch((err) => {

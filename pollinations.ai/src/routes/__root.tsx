@@ -81,7 +81,7 @@ function RootLayout() {
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <HeadContent />
             <SiteHeader />
-            <div className="site-shell site-page-shell mb-6 flex flex-1 flex-col pt-4 min-[700px]:pt-0">
+            <div className="site-shell site-page-shell mb-6 flex flex-1 flex-col sm:pt-4 min-[700px]:pt-0">
                 <main
                     ref={mainRef}
                     className={cn(

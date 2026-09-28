@@ -132,6 +132,8 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 ### Phase D — quiet, consistent visual polish
 
+- [x] **Mobile top edge · Remove the gray strip.** **Implemented (28 September 2026).** Below 640px, the first page card starts at the viewport top with square top corners. Keep 20px content gutters, the inset floating menu, lower corners, and subsequent Play card rounding. At 640px and above, previous top spacing and corners remain. Browser measurements confirmed all four routes at 390/640px with no horizontal overflow.
+
 - [x] **Community votes · Remove the standalone divider.** **Implemented (28 September 2026).** Removed only the horizontal rule above the vote/suggestion row; retained its 20px top padding. Browser computed styles confirmed a 0px border and unchanged padding.
 
 - [x] **Homepage opening · Explain, show the tools, then introduce Quests.** **Approved and implemented (28 September 2026).** Hero now reads “Build with AI. Everything connected.” with the approved API/agents/wallets introduction and Pollen explained as credits. Keep “Start for free” in the hero for direct onboarding; “Read the docs” is a quieter shared inline link. Tools now follow the hero, then the simplified Quests card with one “Explore Quests” action. Removed the duplicate key CTA and key-security aside from this marketing card; no API documentation or security behavior changed. Search/social metadata and no-JavaScript copy match. Artwork, mobile 20px gutters, and Live Now placement are preserved. Verified section order, link destinations, and 320/390/768/1280px overflow checks.

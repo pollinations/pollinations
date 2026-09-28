@@ -595,6 +595,25 @@ function WindowTabs({ value, onChange }) {
     );
 }
 
+function PageTabs({ value, onChange }) {
+    return (
+        <div className="flex w-fit items-center gap-1">
+            <TabButton
+                active={value === "monitor"}
+                onClick={() => onChange("monitor")}
+            >
+                Monitor
+            </TabButton>
+            <TabButton
+                active={value === "evals"}
+                onClick={() => onChange("evals")}
+            >
+                Evals
+            </TabButton>
+        </div>
+    );
+}
+
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [activeView, setActiveView] = useState("monitor");
@@ -797,6 +816,27 @@ function App() {
         setTypeFilter(null);
     };
 
+    if (activeView === "evals") {
+        return (
+            <div className="min-h-dvh bg-app-bg text-theme-text-base">
+                <AppHeader
+                    navLabel="Model Monitor links"
+                    autoHide
+                    innerClassName="polli:max-w-6xl"
+                >
+                    {EXTERNAL_LINKS.map((link) => (
+                        <HeaderLink key={link.href} {...link} />
+                    ))}
+                    <ColorModeToggle />
+                </AppHeader>
+                <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                    <PageTabs value={activeView} onChange={setActiveView} />
+                    <EvalsPage />
+                </main>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <AppHeader
@@ -810,537 +850,474 @@ function App() {
                 <ColorModeToggle />
             </AppHeader>
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <div className="flex items-center gap-1">
-                    <TabButton
-                        active={activeView === "monitor"}
-                        onClick={() => setActiveView("monitor")}
-                    >
-                        Monitor
-                    </TabButton>
-                    <TabButton
-                        active={activeView === "evals"}
-                        onClick={() => setActiveView("evals")}
-                    >
-                        Evals
-                    </TabButton>
-                </div>
-                {activeView === "evals" ? (
-                    <EvalsPage />
-                ) : (
-                    <>
-                        <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div className="flex min-w-0 flex-col gap-1">
-                                <Heading
-                                    as="h1"
-                                    size="title"
-                                    className="polli:m-0 sm:text-5xl"
-                                >
-                                    Model Monitor
-                                </Heading>
-                                <Text className="m-0 max-w-3xl">
-                                    Real-time health monitoring for Pollinations
-                                    AI models.
-                                </Text>
-                            </div>
-                            <div className="flex flex-col items-start gap-2 sm:items-end">
-                                <WindowTabs
-                                    value={aggregationWindow}
-                                    onChange={setAggregationWindow}
-                                />
-                                <Text size="xs" tone="soft" className="m-0">
-                                    Data as of:{" "}
-                                    {lastUpdated?.toLocaleTimeString("en-GB", {
-                                        timeZone: "UTC",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        second: "2-digit",
-                                    }) || "-"}{" "}
-                                    UTC
-                                </Text>
-                            </div>
-                        </section>
-
-                        {error && (
-                            <Alert intent="danger" title="Monitor error">
-                                {error}
-                            </Alert>
-                        )}
-
-                        {catalogUnavailable && (
-                            <Alert
-                                intent="warning"
-                                title="Model catalog unavailable"
-                            >
-                                Showing observed Tinybird traffic only until the
-                                live model catalog responds.
-                            </Alert>
-                        )}
-
-                        {models.some(
-                            (model) => model.catalogStatus === "historical",
-                        ) && (
-                            <Text size="xs" tone="soft" className="m-0">
-                                Historical IDs retain their recorded traffic and
-                                do not contribute to current model health. New
-                                IDs build their own statistics as traffic
-                                arrives.
-                            </Text>
-                        )}
-
-                        <div className="flex flex-col gap-2">
-                            <ScopeTabs
-                                models={observedModels}
-                                value={scopeFilter}
-                                onChange={handleScopeChange}
-                            />
-                            <CategoryTabs
-                                models={scopedModels}
-                                value={typeFilter}
-                                onChange={setTypeFilter}
-                            />
-                        </div>
-
-                        {favorites.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <TabButton
-                                    active={favoritesOnly}
-                                    variant="ghost"
-                                    size="sm"
-                                    ariaLabel={`Show favorites only (${favorites.length})`}
-                                    onClick={() =>
-                                        setFavoritesOnly((prev) => !prev)
-                                    }
-                                >
-                                    <span className="inline-flex items-center gap-1">
-                                        <StarIcon filled={favoritesOnly} />
-                                        Favorites
-                                        <span className="ml-0.5 tabular-nums opacity-70">
-                                            {favorites.length}
-                                        </span>
-                                    </span>
-                                </TabButton>
-                            </div>
-                        )}
-
-                        <Surface
-                            variant="card"
-                            className="max-w-full overflow-x-auto p-0"
+                <PageTabs value={activeView} onChange={setActiveView} />
+                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="polli:m-0 sm:text-5xl"
                         >
-                            <Table className="min-w-[64rem]">
-                                <TableHead>
-                                    <tr>
-                                        <TableHeaderCell className="w-8">
-                                            <span className="sr-only">
-                                                Favorite
-                                            </span>
-                                        </TableHeaderCell>
-                                        <SortableTh
-                                            label="Type"
-                                            sortKey="type"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        <SortableTh
-                                            label="Model"
-                                            sortKey="name"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        <SortableTh
-                                            label="Status"
-                                            sortKey="status"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                        />
-                                        {adminMode && (
-                                            <SortableTh
-                                                label="Provider"
-                                                sortKey="provider"
-                                                currentSort={sort}
-                                                onSort={handleSort}
-                                            />
-                                        )}
-                                        <SortableTh
-                                            label={
-                                                <span title="Requests excluding client errors (4xx)">
-                                                    Reqs
-                                                </span>
-                                            }
-                                            sortKey="requests"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="Success"
-                                            sortKey="ok2xx"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="5xx"
-                                            sortKey="errors"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label={
-                                                <span title="Requests a fallback served after the model's own route had already failed. On a fallback row, how many that route rescued.">
-                                                    Rescued
-                                                </span>
-                                            }
-                                            sortKey="rescued"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="4xx"
-                                            sortKey="user4xx"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="Avg"
-                                            sortKey="avg"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label="P95"
-                                            sortKey="p95"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                        <SortableTh
-                                            label={
-                                                <span title="Completion tokens per second over the full request duration (not pure decode speed). Cache hits excluded.">
-                                                    tok/s
-                                                </span>
-                                            }
-                                            sortKey="tps"
-                                            currentSort={sort}
-                                            onSort={handleSort}
-                                            align="right"
-                                        />
-                                    </tr>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredModels.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={adminMode ? 13 : 12}
-                                                align="center"
-                                                className="py-8 text-theme-text-muted"
-                                            >
-                                                {lastUpdated
-                                                    ? favoritesOnly
-                                                        ? "No favorited models match the current filter"
-                                                        : "No traffic in this window"
-                                                    : "Loading models..."}
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        filteredModels.map((model) => {
-                                            const stats = model.stats;
-                                            const total =
-                                                stats?.total_requests || 0;
-                                            const total5xx =
-                                                stats?.errors_5xx || 0;
-                                            const total4xx =
-                                                stats?.errors_4xx || 0;
-                                            const nonUserErrorTotal =
-                                                total - total4xx;
-                                            const pct4xx =
-                                                total > 0
-                                                    ? (total4xx / total) * 100
-                                                    : 0;
-                                            const avgSec = stats?.avg_latency_ms
-                                                ? stats.avg_latency_ms / 1000
-                                                : null;
-                                            const p95Sec = stats?.latency_p95_ms
-                                                ? stats.latency_p95_ms / 1000
-                                                : null;
-                                            const historical =
-                                                model.catalogStatus ===
-                                                "historical";
-                                            const health = historical
-                                                ? "historical"
-                                                : computeHealthStatus(stats);
-                                            const modelSlug =
-                                                model.name.split("/").pop() ||
-                                                model.name;
-                                            const modelLabel =
-                                                model.title || modelSlug;
-                                            const showCanonicalId =
-                                                model.title ||
-                                                model.name !== modelLabel;
-                                            const rescued = rescuedCount(model);
-                                            const isFavorite =
-                                                favorites.includes(
-                                                    modelKey(model),
-                                                );
-                                            const routeKey = modelKey(model);
-                                            const hasRoutes =
-                                                (model.routes?.length || 0) > 1;
-                                            const isExpanded =
-                                                hasRoutes &&
-                                                expandedRoutes.has(routeKey);
+                            Model Monitor
+                        </Heading>
+                        <Text className="m-0 max-w-3xl">
+                            Real-time health monitoring for Pollinations AI
+                            models.
+                        </Text>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <WindowTabs
+                            value={aggregationWindow}
+                            onChange={setAggregationWindow}
+                        />
+                        <Text size="xs" tone="soft" className="m-0">
+                            Data as of:{" "}
+                            {lastUpdated?.toLocaleTimeString("en-GB", {
+                                timeZone: "UTC",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                            }) || "-"}{" "}
+                            UTC
+                        </Text>
+                    </div>
+                </section>
 
-                                            return (
-                                                <Fragment key={routeKey}>
-                                                    <TableRow
-                                                        intent={rowIntent(
-                                                            health,
-                                                        )}
+                {error && (
+                    <Alert intent="danger" title="Monitor error">
+                        {error}
+                    </Alert>
+                )}
+
+                {catalogUnavailable && (
+                    <Alert intent="warning" title="Model catalog unavailable">
+                        Showing observed Tinybird traffic only until the live
+                        model catalog responds.
+                    </Alert>
+                )}
+
+                {models.some(
+                    (model) => model.catalogStatus === "historical",
+                ) && (
+                    <Text size="xs" tone="soft" className="m-0">
+                        Historical IDs retain their recorded traffic and do not
+                        contribute to current model health. New IDs build their
+                        own statistics as traffic arrives.
+                    </Text>
+                )}
+
+                <div className="flex flex-col gap-2">
+                    <ScopeTabs
+                        models={observedModels}
+                        value={scopeFilter}
+                        onChange={handleScopeChange}
+                    />
+                    <CategoryTabs
+                        models={scopedModels}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
+                    />
+                </div>
+
+                {favorites.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <TabButton
+                            active={favoritesOnly}
+                            variant="ghost"
+                            size="sm"
+                            ariaLabel={`Show favorites only (${favorites.length})`}
+                            onClick={() => setFavoritesOnly((prev) => !prev)}
+                        >
+                            <span className="inline-flex items-center gap-1">
+                                <StarIcon filled={favoritesOnly} />
+                                Favorites
+                                <span className="ml-0.5 tabular-nums opacity-70">
+                                    {favorites.length}
+                                </span>
+                            </span>
+                        </TabButton>
+                    </div>
+                )}
+
+                <Surface
+                    variant="card"
+                    className="max-w-full overflow-x-auto p-0"
+                >
+                    <Table className="min-w-[64rem]">
+                        <TableHead>
+                            <tr>
+                                <TableHeaderCell className="w-8">
+                                    <span className="sr-only">Favorite</span>
+                                </TableHeaderCell>
+                                <SortableTh
+                                    label="Type"
+                                    sortKey="type"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Model"
+                                    sortKey="name"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
+                                    label="Status"
+                                    sortKey="status"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                {adminMode && (
+                                    <SortableTh
+                                        label="Provider"
+                                        sortKey="provider"
+                                        currentSort={sort}
+                                        onSort={handleSort}
+                                    />
+                                )}
+                                <SortableTh
+                                    label={
+                                        <span title="Requests excluding client errors (4xx)">
+                                            Reqs
+                                        </span>
+                                    }
+                                    sortKey="requests"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Success"
+                                    sortKey="ok2xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="5xx"
+                                    sortKey="errors"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label={
+                                        <span title="Requests a fallback served after the model's own route had already failed. On a fallback row, how many that route rescued.">
+                                            Rescued
+                                        </span>
+                                    }
+                                    sortKey="rescued"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="4xx"
+                                    sortKey="user4xx"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="Avg"
+                                    sortKey="avg"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="P95"
+                                    sortKey="p95"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label={
+                                        <span title="Completion tokens per second over the full request duration (not pure decode speed). Cache hits excluded.">
+                                            tok/s
+                                        </span>
+                                    }
+                                    sortKey="tps"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                            </tr>
+                        </TableHead>
+                        <TableBody>
+                            {filteredModels.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={adminMode ? 13 : 12}
+                                        align="center"
+                                        className="py-8 text-theme-text-muted"
+                                    >
+                                        {lastUpdated
+                                            ? favoritesOnly
+                                                ? "No favorited models match the current filter"
+                                                : "No traffic in this window"
+                                            : "Loading models..."}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredModels.map((model) => {
+                                    const stats = model.stats;
+                                    const total = stats?.total_requests || 0;
+                                    const total5xx = stats?.errors_5xx || 0;
+                                    const total4xx = stats?.errors_4xx || 0;
+                                    const nonUserErrorTotal = total - total4xx;
+                                    const pct4xx =
+                                        total > 0
+                                            ? (total4xx / total) * 100
+                                            : 0;
+                                    const avgSec = stats?.avg_latency_ms
+                                        ? stats.avg_latency_ms / 1000
+                                        : null;
+                                    const p95Sec = stats?.latency_p95_ms
+                                        ? stats.latency_p95_ms / 1000
+                                        : null;
+                                    const historical =
+                                        model.catalogStatus === "historical";
+                                    const health = historical
+                                        ? "historical"
+                                        : computeHealthStatus(stats);
+                                    const modelSlug =
+                                        model.name.split("/").pop() ||
+                                        model.name;
+                                    const modelLabel = model.title || modelSlug;
+                                    const showCanonicalId =
+                                        model.title ||
+                                        model.name !== modelLabel;
+                                    const rescued = rescuedCount(model);
+                                    const isFavorite = favorites.includes(
+                                        modelKey(model),
+                                    );
+                                    const routeKey = modelKey(model);
+                                    const hasRoutes =
+                                        (model.routes?.length || 0) > 1;
+                                    const isExpanded =
+                                        hasRoutes &&
+                                        expandedRoutes.has(routeKey);
+
+                                    return (
+                                        <Fragment key={routeKey}>
+                                            <TableRow
+                                                intent={rowIntent(health)}
+                                            >
+                                                <TableCell className="w-8">
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        pressed={isFavorite}
+                                                        title={
+                                                            isFavorite
+                                                                ? "Remove from favorites"
+                                                                : "Add to favorites"
+                                                        }
+                                                        className={
+                                                            isFavorite
+                                                                ? "polli:text-theme-text-soft polli:hover:text-theme-text-soft"
+                                                                : undefined
+                                                        }
+                                                        onClick={() =>
+                                                            toggleFavorite(
+                                                                modelKey(model),
+                                                            )
+                                                        }
                                                     >
-                                                        <TableCell className="w-8">
-                                                            <IconButton
-                                                                variant="ghost"
-                                                                pressed={
-                                                                    isFavorite
-                                                                }
-                                                                title={
-                                                                    isFavorite
-                                                                        ? "Remove from favorites"
-                                                                        : "Add to favorites"
-                                                                }
-                                                                className={
-                                                                    isFavorite
-                                                                        ? "polli:text-theme-text-soft polli:hover:text-theme-text-soft"
-                                                                        : undefined
+                                                        <StarIcon
+                                                            filled={isFavorite}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    </IconButton>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <ModalityChip
+                                                        modality={model.type}
+                                                        size="sm"
+                                                        className="text-micro font-bold uppercase tracking-wide"
+                                                    >
+                                                        {model.type}
+                                                    </ModalityChip>
+                                                </TableCell>
+                                                <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
+                                                    <div className="min-w-0">
+                                                        {hasRoutes ? (
+                                                            <TableDisclosureButton
+                                                                expanded={
+                                                                    isExpanded
                                                                 }
                                                                 onClick={() =>
-                                                                    toggleFavorite(
-                                                                        modelKey(
-                                                                            model,
-                                                                        ),
+                                                                    toggleRoutes(
+                                                                        routeKey,
                                                                     )
                                                                 }
+                                                                className="w-full"
                                                             >
-                                                                <StarIcon
-                                                                    filled={
-                                                                        isFavorite
-                                                                    }
-                                                                    className="h-4 w-4"
-                                                                />
-                                                            </IconButton>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <ModalityChip
-                                                                modality={
-                                                                    model.type
+                                                                <span
+                                                                    className="truncate font-medium text-theme-text-strong"
+                                                                    title={`${model.routes.length} routes observed in this window`}
+                                                                >
+                                                                    {modelLabel}
+                                                                </span>
+                                                            </TableDisclosureButton>
+                                                        ) : (
+                                                            <div className="truncate font-medium text-theme-text-strong">
+                                                                {modelLabel}
+                                                            </div>
+                                                        )}
+                                                        {showCanonicalId && (
+                                                            <div
+                                                                className="truncate text-micro text-theme-text-muted"
+                                                                title={
+                                                                    model.name
                                                                 }
-                                                                size="sm"
-                                                                className="text-micro font-bold uppercase tracking-wide"
                                                             >
-                                                                {model.type}
-                                                            </ModalityChip>
-                                                        </TableCell>
-                                                        <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
-                                                            <div className="min-w-0">
-                                                                {hasRoutes ? (
-                                                                    <TableDisclosureButton
-                                                                        expanded={
-                                                                            isExpanded
-                                                                        }
-                                                                        onClick={() =>
-                                                                            toggleRoutes(
-                                                                                routeKey,
-                                                                            )
-                                                                        }
-                                                                        className="w-full"
-                                                                    >
-                                                                        <span
-                                                                            className="truncate font-medium text-theme-text-strong"
-                                                                            title={`${model.routes.length} routes observed in this window`}
-                                                                        >
-                                                                            {
-                                                                                modelLabel
-                                                                            }
-                                                                        </span>
-                                                                    </TableDisclosureButton>
-                                                                ) : (
-                                                                    <div className="truncate font-medium text-theme-text-strong">
-                                                                        {
-                                                                            modelLabel
-                                                                        }
-                                                                    </div>
-                                                                )}
-                                                                {showCanonicalId && (
-                                                                    <div
-                                                                        className="truncate text-micro text-theme-text-muted"
-                                                                        title={
-                                                                            model.name
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            model.name
-                                                                        }
-                                                                    </div>
-                                                                )}
+                                                                {model.name}
                                                             </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <div className="flex flex-wrap items-center gap-1">
-                                                                {!historical && (
-                                                                    <StatusBadge
-                                                                        stats={
-                                                                            stats
-                                                                        }
-                                                                    />
-                                                                )}
-                                                                {!historical && (
-                                                                    <PrimaryRouteBadge
-                                                                        model={
-                                                                            model
-                                                                        }
-                                                                    />
-                                                                )}
-                                                                <CatalogStatusBadge
-                                                                    status={
-                                                                        model.catalogStatus
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        </TableCell>
-                                                        {adminMode && (
-                                                            <TableCell muted>
-                                                                {model.provider ||
-                                                                    "-"}
-                                                            </TableCell>
                                                         )}
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            muted
-                                                        >
-                                                            {total > 0
-                                                                ? nonUserErrorTotal.toLocaleString()
-                                                                : "-"}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            className={get2xxColor(
-                                                                stats?.status_2xx ||
-                                                                    0,
-                                                                nonUserErrorTotal,
-                                                            )}
-                                                        >
-                                                            {formatPercent(
-                                                                stats?.status_2xx ||
-                                                                    0,
-                                                                nonUserErrorTotal,
-                                                                true,
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                        >
-                                                            {total5xx > 0 ? (
-                                                                <span className="font-semibold text-intent-danger-text">
-                                                                    {total5xx}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-theme-text-muted">
-                                                                    -
-                                                                </span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            muted
-                                                        >
-                                                            {rescued > 0
-                                                                ? rescued
-                                                                : "-"}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            muted
-                                                        >
-                                                            {pct4xx > 0
-                                                                ? pct4xx < 1
-                                                                    ? `${pct4xx.toFixed(1)}%`
-                                                                    : `${Math.round(pct4xx)}%`
-                                                                : "-"}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            className={
-                                                                avgSec
-                                                                    ? getLatencyColor(
-                                                                          avgSec,
-                                                                      )
-                                                                    : "text-theme-text-muted"
-                                                            }
-                                                        >
-                                                            {avgSec
-                                                                ? `${avgSec.toFixed(1)}s`
-                                                                : "-"}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            className={
-                                                                p95Sec
-                                                                    ? getLatencyColor(
-                                                                          p95Sec,
-                                                                      )
-                                                                    : "text-theme-text-muted"
-                                                            }
-                                                        >
-                                                            {p95Sec
-                                                                ? `${p95Sec.toFixed(1)}s`
-                                                                : "-"}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            align="right"
-                                                            numeric
-                                                            muted
-                                                            className="whitespace-nowrap"
-                                                        >
-                                                            {stats?.tokens_per_second !=
-                                                            null
-                                                                ? stats.tokens_per_second.toFixed(
-                                                                      1,
-                                                                  )
-                                                                : "-"}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                    {isExpanded &&
-                                                        model.routes.map(
-                                                            (route) => (
-                                                                <RouteRow
-                                                                    key={`${routeKey}-${route.model_used}-${route.provider}-${route.fallback_used ? "fb" : "primary"}`}
-                                                                    route={
-                                                                        route
-                                                                    }
-                                                                    adminMode={
-                                                                        adminMode
-                                                                    }
-                                                                />
-                                                            ),
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap items-center gap-1">
+                                                        {!historical && (
+                                                            <StatusBadge
+                                                                stats={stats}
+                                                            />
                                                         )}
-                                                </Fragment>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </Surface>
-                    </>
-                )}
+                                                        {!historical && (
+                                                            <PrimaryRouteBadge
+                                                                model={model}
+                                                            />
+                                                        )}
+                                                        <CatalogStatusBadge
+                                                            status={
+                                                                model.catalogStatus
+                                                            }
+                                                        />
+                                                    </div>
+                                                </TableCell>
+                                                {adminMode && (
+                                                    <TableCell muted>
+                                                        {model.provider || "-"}
+                                                    </TableCell>
+                                                )}
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    muted
+                                                >
+                                                    {total > 0
+                                                        ? nonUserErrorTotal.toLocaleString()
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    className={get2xxColor(
+                                                        stats?.status_2xx || 0,
+                                                        nonUserErrorTotal,
+                                                    )}
+                                                >
+                                                    {formatPercent(
+                                                        stats?.status_2xx || 0,
+                                                        nonUserErrorTotal,
+                                                        true,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                >
+                                                    {total5xx > 0 ? (
+                                                        <span className="font-semibold text-intent-danger-text">
+                                                            {total5xx}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-theme-text-muted">
+                                                            -
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    muted
+                                                >
+                                                    {rescued > 0
+                                                        ? rescued
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    muted
+                                                >
+                                                    {pct4xx > 0
+                                                        ? pct4xx < 1
+                                                            ? `${pct4xx.toFixed(1)}%`
+                                                            : `${Math.round(pct4xx)}%`
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    className={
+                                                        avgSec
+                                                            ? getLatencyColor(
+                                                                  avgSec,
+                                                              )
+                                                            : "text-theme-text-muted"
+                                                    }
+                                                >
+                                                    {avgSec
+                                                        ? `${avgSec.toFixed(1)}s`
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    className={
+                                                        p95Sec
+                                                            ? getLatencyColor(
+                                                                  p95Sec,
+                                                              )
+                                                            : "text-theme-text-muted"
+                                                    }
+                                                >
+                                                    {p95Sec
+                                                        ? `${p95Sec.toFixed(1)}s`
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    align="right"
+                                                    numeric
+                                                    muted
+                                                    className="whitespace-nowrap"
+                                                >
+                                                    {stats?.tokens_per_second !=
+                                                    null
+                                                        ? stats.tokens_per_second.toFixed(
+                                                              1,
+                                                          )
+                                                        : "-"}
+                                                </TableCell>
+                                            </TableRow>
+                                            {isExpanded &&
+                                                model.routes.map((route) => (
+                                                    <RouteRow
+                                                        key={`${routeKey}-${route.model_used}-${route.provider}-${route.fallback_used ? "fb" : "primary"}`}
+                                                        route={route}
+                                                        adminMode={adminMode}
+                                                    />
+                                                ))}
+                                        </Fragment>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </Surface>
             </main>
         </div>
     );

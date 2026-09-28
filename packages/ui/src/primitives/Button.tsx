@@ -14,7 +14,7 @@ const pillSizes = {
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
     sm: "polli:min-h-7 polli:px-2 polli:pt-0.5 polli:pb-1",
     md: "polli:min-h-9 polli:px-4 polli:pt-1.5 polli:pb-2",
-    lg: "polli:min-h-12 polli:px-6 polli:py-3",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3 polli:text-base",
 } as const;
 
 const raisedSizes = {
@@ -78,14 +78,18 @@ const buttonClasses = ({
     size,
     className,
     disabled,
-}: BaseButtonProps & { disabled?: boolean }) => {
+    busy,
+}: BaseButtonProps & { disabled?: boolean; busy?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
     return cn(
         "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border polli:border polli:border-transparent",
-        disabled
-            ? "polli:opacity-50 polli:cursor-not-allowed"
-            : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
+        // A busy button is working, not unavailable: it keeps its strength.
+        busy
+            ? "polli:cursor-progress"
+            : disabled
+              ? "polli:opacity-50 polli:cursor-not-allowed"
+              : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
         colorClasses,
         appearanceClasses[appearance],
         sizeClasses[size || "md"],
@@ -122,6 +126,10 @@ export function Button<T extends React.ElementType = "button">({
             onClick?: (event: ReactMouseEvent) => void;
         }
     ).onClick;
+    const ariaBusy = (
+        buttonProps as { "aria-busy"?: boolean | "true" | "false" }
+    )["aria-busy"];
+    const busy = ariaBusy === true || ariaBusy === "true";
     const handleClick = disabled
         ? (event: ReactMouseEvent) => {
               event.preventDefault();
@@ -145,6 +153,7 @@ export function Button<T extends React.ElementType = "button">({
                 size,
                 className,
                 disabled,
+                busy,
             })}
         >
             {icon && (
@@ -152,7 +161,11 @@ export function Button<T extends React.ElementType = "button">({
                     aria-hidden="true"
                     className="polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
                 >
-                    {icon}
+                    {busy ? (
+                        <span className="polli:block polli:size-full polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent polli:motion-reduce:animate-none" />
+                    ) : (
+                        icon
+                    )}
                 </span>
             )}
             {children}

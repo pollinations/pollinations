@@ -466,7 +466,7 @@ export function Authorize() {
     ) : (
         <AppAttribution
             attribution={attribution}
-            redirectHostname={redirectHostname}
+            redirectUrl={parsedRedirectUrl}
         />
     );
     const access = "to access your Pollinations account.";
@@ -523,7 +523,7 @@ export function Authorize() {
             footnote="legal"
             title={title}
             subject={subject}
-            description={`${access} Choose what it can use. You can revoke access at any time from your Keys page. Only connect apps you trust.`}
+            description={`${access} You can revoke access at any time from your Keys page.`}
             actions={
                 <>
                     <Button

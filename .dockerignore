@@ -11,14 +11,3 @@
 **/tmp
 **/.DS_Store
 **/Thumbs.db
-**/dist-live
-**/.local
-**/.wrangler
-**/.claude
-**/.codex
-**/.agents
-**/secrets
-**/.dev.vars*
-**/.testingtokens
-**/*.pem
-**/*.key

@@ -134,3 +134,22 @@ export const restoreOrStrip = (
 
 const clearSnapshot = (ctx: HarnessContext, id: string, paths: string[]) =>
     removeIfExists(snapshotPath(ctx, id, paths));
+
+/**
+ * The pre-`on` content of one snapshotted file, for strip-mode ownership
+ * decisions: `undefined` when there is no snapshot, `null` when the file did
+ * not exist before the first `on`, otherwise the exact before-content.
+ * Valid only inside a `restoreOrStrip` strip callback (the snapshot is
+ * cleared once `off` finishes).
+ */
+export const snapshotBefore = (
+    ctx: HarnessContext,
+    id: string,
+    paths: string[],
+    path: string,
+): string | null | undefined => {
+    const snapshot = loadSnapshot(ctx, id, paths);
+    if (!snapshot) return undefined;
+    const file = snapshot.files[path];
+    return file ? file.before : undefined;
+};

@@ -1,6 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { isMap, parseDocument } from "yaml";
+import {
+    commandExists,
+    readTextIfExists,
+    writeTextAtomic,
+} from "../harnesses/fs.js";
+import { hermesHome } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
@@ -692,9 +698,124 @@ const cliClients: McpClientAdapter[] = [
     }),
 ];
 
+// ---------------------------------------------------------------------------
+// YAML config file clients
+// ---------------------------------------------------------------------------
+
+const hermesConfigYaml = (ctx: McpContext) =>
+    join(hermesHome({ home: ctx.home, env: ctx.env }), "config.yaml");
+
+const loadYamlConfig = (path: string) => {
+    const text = readTextIfExists(path);
+    const doc = parseDocument(text?.trim() ? text : "{}");
+    if (doc.errors.length > 0) {
+        throw new Error(
+            `${path} is not valid YAML (${doc.errors[0].message}). Fix it by hand - polli will not rewrite a broken config.`,
+        );
+    }
+    return doc;
+};
+
+/** The mcp_servers table as plain JSON, for ownership/key recovery checks. */
+const hermesMcpTable = (ctx: McpContext): JsonObject => {
+    try {
+        const node = loadYamlConfig(hermesConfigYaml(ctx)).getIn(
+            ["mcp_servers"],
+            true,
+        );
+        if (!isMap(node)) return {};
+        return node.toJSON() as JsonObject;
+    } catch {
+        return {};
+    }
+};
+
+// parseDocument keeps comments and untouched entries intact on rewrite.
+// Hermes resolves ${VAR} placeholders at connect time, but a literal Bearer
+// header passes through unchanged and lets existingKey recover the key.
+const hermesClient: McpClientAdapter = {
+    id: "hermes",
+    label: "Hermes Agent",
+    description: "Hermes Agent ($HERMES_HOME/config.yaml mcp_servers)",
+    install: (ctx, servers, key) => {
+        const file = hermesConfigYaml(ctx);
+        const doc = loadYamlConfig(file);
+        if (!isMap(doc.contents)) {
+            throw new Error(`${file} must contain a YAML mapping`);
+        }
+        // A fresh file starts as the flow-style "{}" placeholder - write block.
+        doc.contents.flow = false;
+        const skipped: string[] = [];
+        for (const server of servers) {
+            const existing = doc.getIn(["mcp_servers", server.id], true);
+            const existingJson = isMap(existing) ? existing.toJSON() : existing;
+            if (existingJson !== undefined && !isOwnedEntry(existingJson)) {
+                // Never clobber a non-Pollinations server that happens to
+                // share the id.
+                skipped.push(server.id);
+                continue;
+            }
+            const entry = doc.createNode(urlEntry(server, key));
+            if (isMap(entry)) {
+                entry.flow = false;
+                const headers = entry.get("headers", true);
+                if (isMap(headers)) headers.flow = false;
+            }
+            doc.setIn(["mcp_servers", server.id], entry);
+        }
+        writeTextAtomic(file, doc.toString({ lineWidth: 0 }), 0o600);
+        return {
+            client: "hermes",
+            label: "Hermes Agent",
+            installed: ownedEntryNames(hermesMcpTable(ctx)),
+            files: [file],
+            notes: skipped.map(
+                (serverId) =>
+                    `Kept existing non-Pollinations server "${serverId}" - not overwritten.`,
+            ),
+        };
+    },
+    remove: (ctx, serverIds) => {
+        const file = hermesConfigYaml(ctx);
+        const doc = loadYamlConfig(file);
+        const table = doc.getIn(["mcp_servers"], true);
+        const removed: string[] = [];
+        if (isMap(table)) {
+            const owned = ownedEntryNames(table.toJSON());
+            const names = serverIds?.length
+                ? serverIds.filter((name) => owned.includes(name))
+                : owned;
+            for (const name of names) {
+                table.delete(name);
+                removed.push(name);
+            }
+            if (removed.length > 0) {
+                if (table.items.length === 0) doc.delete("mcp_servers");
+                const empty =
+                    isMap(doc.contents) && doc.contents.items.length === 0;
+                writeTextAtomic(
+                    file,
+                    empty ? "" : doc.toString({ lineWidth: 0 }),
+                    0o600,
+                );
+            }
+        }
+        return {
+            client: "hermes",
+            label: "Hermes Agent",
+            installed: ownedEntryNames(hermesMcpTable(ctx)),
+            removed,
+            files: removed.length > 0 ? [file] : [],
+            notes: [],
+        };
+    },
+    status: (ctx) => ({ installed: ownedEntryNames(hermesMcpTable(ctx)) }),
+    existingKey: (ctx) => recoverKeyFromTable(hermesMcpTable(ctx)),
+};
+
 // Exported table matches the issue's priority list:
 // claude-code, codex, vscode, cursor, opencode, gemini, copilot, windsurf,
-// cline, amp, kiro, zed, warp.
+// cline, amp, kiro, zed, warp, hermes.
 const PRIORITY = [
     "claude-code",
     "codex",
@@ -709,10 +830,14 @@ const PRIORITY = [
     "kiro",
     "zed",
     "warp",
+    "hermes",
 ];
 
 const byId = new Map(
-    [...cliClients, ...jsonClients].map((client) => [client.id, client]),
+    [...cliClients, ...jsonClients, hermesClient].map((client) => [
+        client.id,
+        client,
+    ]),
 );
 
 export const MCP_CLIENTS: McpClientAdapter[] = PRIORITY.flatMap((id) => {

@@ -14,8 +14,8 @@ import {
     getModelCapabilities,
     getModelCapabilityLabel,
     getModelDescriptionWithoutName,
-    getModelDisplayedModalities,
     getModelDisplayName,
+    getModelInputModalities,
     getModelModalityLabel,
     hasPollinationsTools,
     isAlpha,
@@ -198,15 +198,11 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+    const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
-    const { input: inputModalities, output: outputModalities } =
-        getModelDisplayedModalities(model);
-    const displayedModalities = [
-        ...inputModalities,
-        ...outputModalities.filter((m) => !inputModalities.includes(m)),
-    ];
+    const inputModalities = getModelInputModalities(model);
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
@@ -257,6 +253,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showCopyIcon
                         />
                     </div>
+                    {modelDescription && (
+                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
+                            {modelDescription}
+                        </p>
+                    )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
@@ -354,7 +355,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     pricing={pricing}
                     requestBadge={<BalanceAccessChip access={balanceAccess} />}
                     hasTools={pollinationsTools}
-                    requestEstimate={<PerPollenEstimate model={model} ledger />}
+                    requestEstimate={
+                        !model.agent && (
+                            <PerPollenEstimate model={model} ledger />
+                        )
+                    }
                 />
             </div>
         </Surface>

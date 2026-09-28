@@ -427,7 +427,7 @@ export const adminReviewCases: ReviewCase[] = [
         conditions: { account: "signed-out", role: "admin" },
         expected: [
             ...signInReady,
-            { selector: "p", text: "with your Pollinations admin account." },
+            { selector: "p", text: "to continue to this app." },
         ],
     }),
     ...(["pending", "error"] as const).map((outcome) =>

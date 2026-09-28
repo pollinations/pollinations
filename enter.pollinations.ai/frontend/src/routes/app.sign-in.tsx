@@ -19,6 +19,11 @@ export const Route = createFileRoute("/app/sign-in")({
     component: AppSignIn,
 });
 
+// Any OAuth app lands here, ours or a developer's: name Pollinations as the
+// account and let the app card name the app. Each app states its own
+// requirements (such as admin access) on its own screen.
+const title = "Sign in to Pollinations";
+
 function AppSignIn() {
     const { client_id, redirect_uri } = Route.useSearch();
     const { data: session, isPending } = authClient.useSession();
@@ -57,13 +62,13 @@ function AppSignIn() {
     const redirectHost = parsedRedirect ? new URL(parsedRedirect).host : "";
 
     if (!sessionChecked || client === "loading")
-        return <AuthModalLoading title="Sign in" />;
+        return <AuthModalLoading title={title} />;
 
     if (client === "unreachable") {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Sign in"
+                title={title}
                 error="Couldn’t check this sign-in link."
                 actions={
                     <Button
@@ -86,8 +91,7 @@ function AppSignIn() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Sign in"
-                description="with your Pollinations account."
+                title={title}
                 error="This sign-in link is invalid or has expired. Open the dashboard again to get a new one."
                 actions={
                     parsedRedirect ? (
@@ -124,7 +128,7 @@ function AppSignIn() {
     if (user) {
         return (
             <AuthFlowScreen
-                title="Sign in"
+                title="Continue"
                 subject={appCard}
                 description={`as ${user.name || user.githubUsername || user.email}.`}
                 actions={
@@ -143,9 +147,9 @@ function AppSignIn() {
 
     return (
         <SignInScreen
-            title="Sign in"
+            title={title}
             subject={appCard}
-            description="with your Pollinations admin account."
+            description="to continue to this app."
             callbackURL={callbackURL}
         />
     );

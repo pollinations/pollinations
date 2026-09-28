@@ -161,6 +161,13 @@ export default {
         }
 
         if (
+            (request.method === "GET" || request.method === "HEAD") &&
+            (url.pathname === "/docs" || url.pathname === "/docs/")
+        ) {
+            return Response.redirect("https://gen.pollinations.ai/docs", 301);
+        }
+
+        if (
             request.method === "GET" &&
             url.pathname === DISCORD_PRESENCE_PATH
         ) {

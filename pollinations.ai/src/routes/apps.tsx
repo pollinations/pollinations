@@ -456,7 +456,7 @@ function AppsPage() {
                         Built something with Pollinations?
                     </span>
                     <ExternalLinkButton
-                        href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
+                        href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
                         intent="brand"
                         size="lg"
                         icon={<PlusIcon className="size-4 shrink-0" />}

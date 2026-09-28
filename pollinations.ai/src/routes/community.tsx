@@ -60,7 +60,7 @@ const WAYS_IN = [
         links: [
             {
                 label: "List your app",
-                href: "https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml",
+                href: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
             },
         ],
     },

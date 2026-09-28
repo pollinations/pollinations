@@ -132,6 +132,19 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 ### Phase D — quiet, consistent visual polish
 
+- [x] **V5 · Reduce startup JavaScript (28 September 2026).** Approved, implemented in `17342c09cc`, pushed and deployed to the fixed preview as Worker `d70017e1-74a1-483b-a3d5-70a95bc75325`. Website Vite aliases its five used public UI JS entry points to the same package's source modules, allowing route-level splitting and deduplicating primitives. No shared-package, Enter, design, CSS, auth or API changes. Initial entry + vendor gzip decreased from approximately **169KB to 135KB (20%)**; Play's own chunk decreased from 90.52KB to 79.33KB gzip. These are build payloads, not total page transfer. Shared CSS remains 18.18KB gzip, retaining its cache and avoiding unstyled content. Diagnostic source maps were local only; final deployment contains none.
+
+  **Validation:** all 152 website tests, formatting, typecheck and standard full build passed. Local browser checks covered the mobile drawer/navigation, Apps search/empty state/sort selection, signed-in Play account menu and agent selector, Community and Terms rendering. No generation, account or budget changes. All four deployed documents served the new entry with HTTP 200; hashed JS retains one-year immutable caching.
+
+  | Source-split benchmark | Mobile score / LCP / CLS | Desktop score / LCP / CLS |
+  | --- | --- | --- |
+  | [Hello](https://pagespeed.web.dev/analysis/https-pollinations-ai-website-v2-elliot-b6e-workers-dev/9hpwqf0htr) | 89 / 3.1s / 0 | 98 / 1.1s / 0 |
+  | [Play](https://pagespeed.web.dev/analysis/https-pollinations-ai-website-v2-elliot-b6e-workers-dev-play/ahrp59flnz) | 87 / 3.5s / 0.001 | 99 / 0.7s / 0.056 |
+  | [Apps](https://pagespeed.web.dev/analysis/https-pollinations-ai-website-v2-elliot-b6e-workers-dev-apps/idwngwmiu1) | 82 / 3.3s / 0.143 | 91 / 0.9s / 0.179 |
+  | [Community](https://pagespeed.web.dev/analysis/https-pollinations-ai-website-v2-elliot-b6e-workers-dev-community/kiiosfps5j) | 85 / 3.7s / 0 | 97 / 1.1s / 0 |
+
+  Same Lighthouse 13.5.0 / Moto G Power / slow 4G methodology as below. These single successful runs show only modest changes within lab variability, not a proven speedup on every route. Hello's first run failed with `NO_FCP`; live browser rendering was checked and a repeat succeeded. Its unused-JS estimate fell from 77KiB to 31KiB. **The <2.5s mobile LCP target remains unmet. Next proposal, not yet approved:** investigate pre-rendering the first screen so useful content no longer waits for React and the route chunk; keep one source for markup, preserve themes, account state and hydration behavior. This is a larger rendering change, not another preload. Apps layout stability and unused stats requests remain separate follow-ups.
+
 - [ ] **V5 · Hosted performance benchmark (28 September 2026).** Read-only audit of fixed preview Worker version `0907e998-ab4a-44bb-8fd8-d20673010378` / commit `21b38ff934` (before the later CTA-size commit). Lighthouse 13.5.0, one cold-load lab run per successful route/device; mobile uses emulated Moto G Power / slow 4G, desktop uses custom throttling. No real-user field data is available; these are baselines, not an all-interactions sign-off.
 
   | Page / report | Mobile score / LCP / CLS | Desktop score / LCP / CLS |

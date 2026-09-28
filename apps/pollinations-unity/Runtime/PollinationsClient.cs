@@ -60,8 +60,8 @@ namespace Pollinations.Unity
         public string ApiKey { get; set; }
         public string DeviceToken { get; set; }
         public string TextModel { get; set; } = "openai/gpt-5.4-nano";
-        public string ImageModel { get; set; } = "flux";
-        public string SpeechModel { get; set; } = "openai-audio";
+        public string ImageModel { get; set; } = "tongyi-mai/z-image-turbo";
+        public string SpeechModel { get; set; } = "elevenlabs/eleven-v3";
 
         private string AccessToken => string.IsNullOrEmpty(DeviceToken) ? ApiKey : DeviceToken;
 
@@ -181,7 +181,7 @@ namespace Pollinations.Unity
             using (var web = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
             {
                 web.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
-                web.downloadHandler = new DownloadHandlerAudioClip(url, AudioType.UNKNOWN);
+                web.downloadHandler = new DownloadHandlerAudioClip(url, AudioTypeFor(responseFormat));
                 SetHeaders(web);
                 await SendAsync(web, cancellationToken);
                 EnsureSuccess(web);
@@ -251,6 +251,22 @@ namespace Pollinations.Unity
                 : web.responseCode == 429 ? "Pollinations rate-limited the request."
                 : "Pollinations request failed (" + web.responseCode + ").";
             throw new PollinationsException(message, web.responseCode);
+        }
+
+        private static AudioType AudioTypeFor(string responseFormat)
+        {
+            switch ((responseFormat ?? string.Empty).ToLowerInvariant())
+            {
+                case "wav":
+                    return AudioType.WAV;
+                case "mp3":
+                case "mpeg":
+                    return AudioType.MPEG;
+                case "ogg":
+                    return AudioType.OGGVORBIS;
+                default:
+                    return AudioType.UNKNOWN;
+            }
         }
 
         private static Task SendAsync(UnityWebRequest web, CancellationToken cancellationToken)

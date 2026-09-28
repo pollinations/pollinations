@@ -52,6 +52,16 @@ let version = "3.1.1";
 let smokeStatus = 200;
 let smokeBodies: Record<string, unknown>[] = [];
 
+it("refuses a foreign profile before resolving a key or changing configuration", async () => {
+    config.profile.profiles.push({ ...nativeProfile, id: "pollinations-claude-code", name: "My custom profile", model: "openai/existing" });
+    const original = structuredClone(config);
+    await expect(claudeCode.on(ctx, {})).rejects.toThrow("foreign settings");
+    expect(mocks.resolveHarnessKey).not.toHaveBeenCalled();
+    await expect(configureClaudeCode(ctx, { apiKey: "sk_child", model: "test/model", models: [{ id: "test/model", contextWindow: 128000, input: ["text"] }] })).rejects.toThrow("foreign settings");
+    expect(config).toEqual(original);
+    expect(smokeBodies).toEqual([]);
+});
+
 const foreignProvider = {
     id: "openrouter-user",
     name: "OpenRouter",

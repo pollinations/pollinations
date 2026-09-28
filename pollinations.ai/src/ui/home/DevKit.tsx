@@ -30,7 +30,8 @@ type Feature = {
     icon: ComponentType<IconProps>;
 };
 
-const BUILD_FOUNDATIONS: Feature[] = [
+// The first row mirrors the headline: models, agents, tools.
+const BUILD_FEATURES: Feature[] = [
     {
         title: "Official and community models",
         body: (modelKinds) =>
@@ -49,15 +50,19 @@ const BUILD_FOUNDATIONS: Feature[] = [
         icon: RobotIcon,
     },
     {
+        title: "Hosted MCP tools",
+        body: "Web search, media editing, a private computer, and the GitHub, Gmail or Slack accounts users connect—for your agents and compatible MCP clients.",
+        linkLabel: "Explore MCP servers",
+        href: "https://enter.pollinations.ai/models?category=mcp",
+        icon: McpIcon,
+    },
+    {
         title: "Connect user wallets",
         body: "Users sign in with Pollinations and approve a Pollen budget. Their wallet, not yours, pays for what they use.",
         linkLabel: "Integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
     },
-];
-
-const BUILD_TOOLS: Feature[] = [
     {
         title: "Media storage",
         body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
@@ -72,16 +77,7 @@ const BUILD_TOOLS: Feature[] = [
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
     },
-    {
-        title: "Hosted MCP tools",
-        body: "Web search, media editing, a private computer, and the GitHub, Gmail or Slack accounts users connect—for your agents and compatible MCP clients.",
-        linkLabel: "Explore MCP servers",
-        href: "https://enter.pollinations.ai/models?category=mcp",
-        icon: McpIcon,
-    },
 ];
-
-const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 
 const PUBLISH_FEATURES: Feature[] = [
     {

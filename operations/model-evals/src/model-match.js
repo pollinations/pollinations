@@ -1,5 +1,8 @@
 function normalized(value) {
-    return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 }
 
 function leaf(modelName) {
@@ -30,11 +33,14 @@ export function matchOfficialModel(communityModel, officialModels) {
 }
 
 export function attachOfficialMatches(results) {
-    const official = results.filter((row) => !row.community).map((row) => row.model);
+    const official = results
+        .filter((row) => !row.community)
+        .map((row) => row.model);
     const byModel = new Map(results.map((row) => [row.model, row]));
 
     return results.map((row) => {
-        if (!row.community) return { ...row, officialMatch: null, comparison: null };
+        if (!row.community)
+            return { ...row, officialMatch: null, comparison: null };
         const officialMatch = matchOfficialModel(row.model, official);
         const peer = officialMatch ? byModel.get(officialMatch) : null;
         if (!peer) return { ...row, officialMatch, comparison: null };

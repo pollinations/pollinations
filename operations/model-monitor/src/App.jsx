@@ -24,6 +24,7 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import EvalsPanel from "./EvalsPanel.jsx";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -596,6 +597,11 @@ function WindowTabs({ value, onChange }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
+    const [view, setView] = useState(() =>
+        new URLSearchParams(window.location.search).get("view") === "evals"
+            ? "evals"
+            : "health",
+    );
     const [adminMode] = useState(isAdminPath);
     const { models, lastUpdated, error, endpointStatus } =
         useModelMonitor(aggregationWindow);
@@ -863,6 +869,29 @@ function App() {
                     </Text>
                 )}
 
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-1">
+                        <TabButton
+                            active={view === "health"}
+                            size="sm"
+                            onClick={() => setView("health")}
+                        >
+                            Health
+                        </TabButton>
+                        <TabButton
+                            active={view === "evals"}
+                            size="sm"
+                            onClick={() => setView("evals")}
+                        >
+                            Evals
+                        </TabButton>
+                    </div>
+                </div>
+
+                {view === "evals" && <EvalsPanel />}
+
+                {view === "health" && (
+                    <>
                 <div className="flex flex-col gap-2">
                     <ScopeTabs
                         models={observedModels}
@@ -1275,6 +1304,8 @@ function App() {
                         </TableBody>
                     </Table>
                 </Surface>
+                    </>
+                )}
             </main>
         </div>
     );

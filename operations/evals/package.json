@@ -1,0 +1,11 @@
+{
+    "name": "@pollinations/evals",
+    "private": true,
+    "version": "0.0.1",
+    "type": "module",
+    "description": "Weekly model evals for gen.pollinations.ai, starting with the Alice in Wonderland puzzle.",
+    "scripts": {
+        "eval": "node src/run.js",
+        "test": "node --test src/*.test.js"
+    }
+}

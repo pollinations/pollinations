@@ -1,0 +1,80 @@
+name: Evals / weekly model ranking
+
+# Scores every text model on gen.pollinations.ai against the Alice in Wonderland
+# puzzle and publishes the ranking the model-monitor "Evals" tab reads.
+#
+# Needs a POLLINATIONS_API_KEY repository secret (a key with a little budget).
+# Until a maintainer adds it, this workflow is a no-op.
+
+on:
+    schedule:
+        # Mondays at 06:00 UTC
+        - cron: "0 6 * * 1"
+    workflow_dispatch:
+        inputs:
+            limit:
+                description: "Score at most N models (blank = all)"
+                required: false
+                default: ""
+
+permissions:
+    contents: write
+
+jobs:
+    evals:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Check for the eval key
+              id: guard
+              env:
+                  KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+              run: |
+                  if [ -z "$KEY" ]; then
+                    echo "No POLLINATIONS_API_KEY secret set; skipping (maintainer setup)."
+                    echo "run=false" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "run=true" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Run the eval
+              if: steps.guard.outputs.run == 'true'
+              working-directory: operations/evals
+              env:
+                  POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+              run: |
+                  mkdir -p ../model-monitor/public/evals
+                  node src/run.js \
+                    --repeats 3 \
+                    --output ../model-monitor/public/evals/latest.json \
+                    ${{ inputs.limit != '' && format('--limit {0}', inputs.limit) || '' }}
+
+            - name: Append to history
+              if: steps.guard.outputs.run == 'true'
+              run: |
+                  node -e '
+                    const fs = require("fs");
+                    const latest = JSON.parse(fs.readFileSync("operations/model-monitor/public/evals/latest.json"));
+                    const histPath = "operations/model-monitor/public/evals/history.json";
+                    const history = fs.existsSync(histPath) ? JSON.parse(fs.readFileSync(histPath)) : [];
+                    history.push(latest);
+                    fs.writeFileSync(histPath, JSON.stringify(history.slice(-52), null, 2) + "\n");
+                  '
+
+            - name: Commit and push
+              if: steps.guard.outputs.run == 'true'
+              run: |
+                  git config user.name "pollinations-evals[bot]"
+                  git config user.email "evals@pollinations.ai"
+                  git add operations/model-monitor/public/evals
+                  if git diff --staged --quiet; then
+                    echo "No changes."
+                  else
+                    git commit -m "chore(evals): weekly model ranking $(date -u +%Y-%m-%d)"
+                    git push
+                  fi

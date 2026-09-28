@@ -12,7 +12,7 @@ describe("LinkCard", () => {
         expect(html).not.toContain("<div");
         expect(html).toContain('target="_blank"');
         expect(html).toContain('rel="noopener noreferrer"');
-        expect(html).toContain("polli:shadow-well");
+        expect(html).toContain("polli:bg-surface-opaque");
         expect(html).toContain("polli:focus-visible:ring-theme-border");
     });
 });

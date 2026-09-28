@@ -34,6 +34,11 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
+| Generate a 3D model | `polli gen 3d "<prompt>" --output model.glb` |
+| Embed text | `polli gen embeddings "first text" "second text"` (one vector per line) |
+| Change a voice | `polli gen voice-change talk.mp3 --voice nova` |
+| Isolate speech | `polli gen isolate interview.mp4` |
+| Speech with timings | `polli gen audio "<text>" --timestamps` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
 | Filter models by type | `polli models --type image` |
@@ -97,6 +102,11 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 ### Text-to-speech
 ```bash
 polli gen audio "hello world" --voice nova --output hello.mp3
+polli gen 3d "a red fox" --output fox.glb
+polli gen embeddings "a cat" "a dog" --json
+polli gen voice-change talk.mp3 --voice nova
+polli gen isolate interview.mp4 --output clean.wav
+polli gen audio "Hello" --timestamps --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
 Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.

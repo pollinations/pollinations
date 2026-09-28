@@ -41,7 +41,10 @@ export const runCommand = async (
     // Commands read the global output mode; --json is a root-level option.
     setOutputMode(mode);
     // A TTY keeps readStdin() from waiting for piped input that never arrives.
-    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+    Object.defineProperty(process.stdin, "isTTY", {
+        configurable: true,
+        value: true,
+    });
 
     vi.spyOn(process.stdout, "write").mockImplementation((value) => {
         out.push(String(value));
@@ -63,12 +66,14 @@ export const runCommand = async (
 
 /** exitWithError exits the process; assert that instead of an exception. */
 export const expectExit = async (command: GenCommand, argv: string[]) => {
-    const exit = vi
-        .spyOn(process, "exit")
-        .mockImplementation(((code?: number) => {
-            throw new Error(`exit:${code}`);
-        }) as never);
-    await expect(command.parseAsync(argv, { from: "user" })).rejects.toThrow(/exit:1/);
+    const exit = vi.spyOn(process, "exit").mockImplementation(((
+        code?: number,
+    ) => {
+        throw new Error(`exit:${code}`);
+    }) as never);
+    await expect(command.parseAsync(argv, { from: "user" })).rejects.toThrow(
+        /exit:1/,
+    );
     exit.mockRestore();
 };
 

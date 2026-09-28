@@ -2,8 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createIsolateCommand, createVoiceChangeCommand } from "./voice.js";
 import { resetOutput, runCommand } from "./test-helpers.js";
+import { createIsolateCommand, createVoiceChangeCommand } from "./voice.js";
 
 afterEach(resetOutput);
 
@@ -20,7 +20,11 @@ const withSource = (name: string, argv: (source: string) => string[]) => {
 
 describe("gen voice-change", () => {
     it("uploads the file and names the output from the response format", async () => {
-        const { folder, argv } = withSource("talk.mp3", (s) => [s, "--voice", "nova"]);
+        const { folder, argv } = withSource("talk.mp3", (s) => [
+            s,
+            "--voice",
+            "nova",
+        ]);
         try {
             await runCommand(
                 createVoiceChangeCommand(),

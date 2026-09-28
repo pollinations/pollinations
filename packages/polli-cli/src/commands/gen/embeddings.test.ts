@@ -32,8 +32,17 @@ describe("gen embeddings", () => {
     it("passes the model, dimensions and retrieval hints through", async () => {
         await runCommand(
             createEmbeddingsCommand(),
-            ["q", "--model", "m", "--dimensions", "256",
-             "--task-type", "RETRIEVAL_QUERY", "--input-type", "search_query"],
+            [
+                "q",
+                "--model",
+                "m",
+                "--dimensions",
+                "256",
+                "--task-type",
+                "RETRIEVAL_QUERY",
+                "--input-type",
+                "search_query",
+            ],
             () => vectors([{ index: 0, embedding: [1] }]),
             ({ calls }) => {
                 expect(JSON.parse(String(calls[0].init.body))).toEqual({

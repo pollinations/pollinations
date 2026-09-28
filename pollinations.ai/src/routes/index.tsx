@@ -67,7 +67,7 @@ function HelloPage() {
                         Start for free
                     </ExternalLinkButton>
                     <ExternalLinkButton
-                        href="https://gen.pollinations.ai/docs"
+                        href="https://gen.pollinations.ai/docs#tag/quick-start"
                         intent="neutral"
                         size="lg"
                         icon={<BookIcon className="size-4 shrink-0" />}

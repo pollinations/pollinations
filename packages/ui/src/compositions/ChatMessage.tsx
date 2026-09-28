@@ -23,7 +23,7 @@ export function ChatMessage({
                 "polli:group/message polli:flex polli:w-fit polli:max-w-full polli:min-w-0 polli:flex-col polli:gap-3 polli:[overflow-wrap:anywhere] polli:rounded-xl polli:px-4 polli:py-3",
                 from === "user"
                     ? "polli:ml-auto polli:bg-theme-bg-active polli:text-theme-text-strong"
-                    : "polli:mr-auto polli:bg-surface-opaque polli:text-theme-text-base polli:shadow-well",
+                    : "polli:mr-auto polli:bg-surface-opaque polli:text-theme-text-base",
                 className,
             )}
             {...props}

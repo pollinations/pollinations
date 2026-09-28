@@ -115,7 +115,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  sumMerge(all_calls) AS calls,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps,\n  uniqIf(model, model != 'unknown') AS active_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')",
+          "rawSql": "SELECT\n  sumMerge(all_calls) AS calls,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps,\n  uniqIf(model, model != 'unknown') AS active_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})",
           "refId": "A"
         }
       ],
@@ -144,6 +144,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -177,7 +178,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -206,6 +207,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -239,7 +241,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  hour AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  hour AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -365,7 +367,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -390,7 +392,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily revenue-bearing Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly; values are successful billed consumption, not cash collected. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
+      "description": "Daily Paid Pollen consumed across four mutually exclusive product paths. BYOP and BYOM overlap is shown explicitly. Values are successful billed consumption, not cash collected or Pollinations revenue: BYOP markup and 75% of BYOM spend are credited to app and model owners. This source query also supplies the Quest, request-volume, and selected-period summary panels.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -407,6 +409,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
@@ -541,7 +544,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  multiIf(\n    is_byop = 1 AND is_community = 1, 'BYOP · BYOM',\n    is_byop = 1, 'BYOP · Pollinations models',\n    is_community = 1, 'BYOM · Direct',\n    'Direct API'\n  ) AS product_path,\n  sumMerge(successful_calls) AS requests,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, product_path\nORDER BY time, product_path",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  multiIf(\n    is_byop = 1 AND is_community = 1, 'BYOP · BYOM',\n    is_byop = 1, 'BYOP · Pollinations models',\n    is_community = 1, 'BYOM · Direct',\n    'Direct API'\n  ) AS product_path,\n  sumMerge(successful_calls) AS requests,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time, product_path\nORDER BY time, product_path",
           "refId": "A"
         }
       ],
@@ -595,6 +598,7 @@
             }
           },
           "decimals": 2,
+          "min": 0,
           "unit": "suffix: Pollen"
         },
         "overrides": [
@@ -781,6 +785,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -1118,6 +1123,7 @@
               "mode": "percent"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -1151,7 +1157,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH top_models AS (\n  SELECT model\n  FROM generation_usage_hourly\n  WHERE $__timeFilter(hour)\n    AND environment IN ('production', 'debug-prod-copy')\n  GROUP BY model\n  ORDER BY sumMerge(successful_calls) DESC\n  LIMIT 8\n)\nSELECT\n  toStartOfDay(hour) AS time,\n  if(model IN (SELECT model FROM top_models), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "WITH top_models AS (\n  SELECT model\n  FROM generation_usage_hourly\n  WHERE $__timeFilter(hour)\n    AND environment IN ('production', 'debug-prod-copy')\n    AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  GROUP BY model\n  ORDER BY sumMerge(successful_calls) DESC\n  LIMIT 8\n)\nSELECT\n  toStartOfDay(hour) AS time,\n  if(model IN (SELECT model FROM top_models), model, 'Other') AS metric,\n  sumMerge(successful_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
@@ -1219,7 +1225,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  uniqIfMerge(apps) AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  uniqIfMerge(apps) AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1247,6 +1253,7 @@
               "mode": "normal"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": []
@@ -1280,7 +1287,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_text_tokens) AS prompt,\n  sumMerge(prompt_cached_tokens) AS cached,\n  sumMerge(prompt_cache_write_tokens) AS cache_write,\n  sumMerge(completion_text_tokens) AS completion,\n  sumMerge(completion_reasoning_tokens) AS reasoning\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_text_tokens) AS prompt,\n  sumMerge(prompt_cached_tokens) AS cached,\n  sumMerge(prompt_cache_write_tokens) AS cache_write,\n  sumMerge(completion_text_tokens) AS completion,\n  sumMerge(completion_reasoning_tokens) AS reasoning\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1308,6 +1315,7 @@
               "mode": "none"
             }
           },
+          "min": 0,
           "unit": "short"
         },
         "overrides": [
@@ -1447,7 +1455,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds) AS audio_seconds,\n  sumMerge(completion_video_seconds) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(prompt_image_tokens) + sumMerge(completion_image_tokens) AS image_tokens,\n  sumMerge(prompt_audio_seconds) + sumMerge(completion_audio_seconds) AS audio_seconds,\n  sumMerge(completion_video_seconds) AS video_seconds\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1488,7 +1496,36 @@
     "generation-v2"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "Everything else",
+          "value": "everything_else"
+        },
+        "hide": 2,
+        "name": "traffic",
+        "label": "Traffic",
+        "options": [
+          {
+            "selected": true,
+            "text": "Everything else",
+            "value": "everything_else"
+          },
+          {
+            "selected": false,
+            "text": "Legacy",
+            "value": "legacy"
+          },
+          {
+            "selected": false,
+            "text": "Both",
+            "value": "all"
+          }
+        ],
+        "query": "Everything else : everything_else, Legacy : legacy, Both : all",
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-30d",

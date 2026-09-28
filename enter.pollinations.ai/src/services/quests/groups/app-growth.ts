@@ -29,7 +29,6 @@ type AppDirectoryRow = {
 
 type AppUsageRow = QuestUserRow & {
     paidPollenUsed: number;
-    paidRequests: number;
 };
 
 type AppReachRow = QuestUserRow & {
@@ -58,6 +57,8 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 15,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const tenAppUsersQuest = {
@@ -80,7 +81,7 @@ const paidAppUsageQuest = {
         "Other users spend 3 Paid Pollen across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Quest Pollen and your own usage do not count.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 5,
+    rewardAmount: 10,
     balanceBucket: "tier",
     goal: { target: 3, unit: "pollen" },
 } satisfies QuestDefinition;
@@ -128,9 +129,8 @@ export async function evaluateUser(
         return { proposals: [] };
     }
 
-    const usageQuestIds = [firstPaidSpendInAppQuest.id, paidAppUsageQuest.id];
     const [appUsage, appReach, listedAppRows] = await Promise.all([
-        usageQuestIds.some((id) => rewardableQuestIds.has(id))
+        rewardableQuestIds.has(paidAppUsageQuest.id)
             ? loadAppUsage(ctx, user)
             : null,
         rewardableQuestIds.has(tenAppUsersQuest.id)
@@ -142,11 +142,6 @@ export async function evaluateUser(
     ]);
 
     const proposals = [
-        ...(appUsage &&
-        appUsage.paidRequests >= 1 &&
-        rewardableQuestIds.has(firstPaidSpendInAppQuest.id)
-            ? [{ quest: firstPaidSpendInAppQuest, userId: user.id }]
-            : []),
         ...(appReach &&
         appReach.externalUsers >= tenAppUsersQuest.goal.target &&
         rewardableQuestIds.has(tenAppUsersQuest.id)
@@ -163,13 +158,12 @@ export async function evaluateUser(
         })),
     ];
     log.info(
-        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} paidPollenUsed={paidPollenUsed} paidRequests={paidRequests} listedAppRows={listed} questIds={questIds}",
+        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} paidPollenUsed={paidPollenUsed} listedAppRows={listed} questIds={questIds}",
         {
             userId: user.id,
             byop: appReach ? 1 : 0,
             externalUsers: appReach?.externalUsers ?? 0,
             paidPollenUsed: appUsage?.paidPollenUsed ?? 0,
-            paidRequests: appUsage?.paidRequests ?? 0,
             listed: listedAppRows.length,
             questIds: proposals.map((p) => p.quest.id),
         },

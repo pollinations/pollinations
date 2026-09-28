@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { InlineLink } from "../primitives/InlineLink.tsx";
 import {
     CheckIcon,
     ClockIcon,
@@ -45,15 +46,9 @@ function linkedValue(value: unknown): ReactNode[] {
         const key = `${offset}:${segment}`;
         offset += segment.length;
         return segment.startsWith("https://") ? (
-            <a
-                key={key}
-                href={segment}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="polli:underline"
-            >
+            <InlineLink key={key} href={segment}>
                 {segment}
-            </a>
+            </InlineLink>
         ) : (
             segment
         );
@@ -139,7 +134,7 @@ export function ToolCallDetails({
         <div
             data-tool-status={status}
             className={cn(
-                "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque polli:shadow-well",
+                "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque",
                 className,
             )}
         >

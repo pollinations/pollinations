@@ -4,8 +4,8 @@ import {
     CardIcon,
     CheckIcon,
     cn,
-    ExternalLinkButton,
     InfoTip,
+    InlineLink,
     Switch,
     type SwitchStatus,
     Tooltip,
@@ -19,6 +19,7 @@ import {
     calculateServiceFeeCents,
     formatUsdCentsCompact,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import {
     type FC,
@@ -27,7 +28,8 @@ import {
     useEffect,
     useState,
 } from "react";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { PackSliderRow, PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
     | {
@@ -127,6 +129,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     returnToTopUp,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
+    const [isReloading, setIsReloading] = useState(false);
     const [packAmountUsd, setPackAmountUsd] = useState(
         normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
     );
@@ -181,6 +184,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         );
         setEnableDraft(false);
     }, [initialBillingState]);
+
+    async function reloadBilling(): Promise<void> {
+        setIsReloading(true);
+        try {
+            const response = await apiClient.stripe.billing.$get();
+            if (!response.ok) return;
+            const next = await response.json();
+            setBillingState(next);
+            if (next.autoTopUp.enabled || !enableDraft) {
+                setPackAmountUsd(
+                    normalizePackAmount(next.autoTopUp.packAmountUsd),
+                );
+            }
+        } catch {
+            // Keep the billing error visible so this section can be retried again.
+        } finally {
+            setIsReloading(false);
+        }
+    }
 
     async function openBillingPortal(): Promise<void> {
         setIsOpeningPortal(true);
@@ -294,6 +316,16 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const alertTone = switchStatus === "invalid";
     const isToggleOn = toggleStatus !== "off";
 
+    if (billingState === null) {
+        return (
+            <SectionContent loading={isReloading}>
+                <LoadError onRetry={reloadBilling}>
+                    Couldn’t load billing settings.
+                </LoadError>
+            </SectionContent>
+        );
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -332,33 +364,38 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             {showConfig && (
                 <div className="space-y-4">
                     {showSliderAndSave && (
-                        <div className="flex flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                            <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
-                                <PollenPackSlider
-                                    value={packAmountUsd}
-                                    onChange={setPackAmountUsd}
-                                    packs={AUTO_TOP_UP_PACKS}
-                                    selectedBadgeLabel={
-                                        selectedPack
-                                            ? formatUsdCentsCompact(
-                                                  selectedPack.amountUsd * 100 +
-                                                      serviceFeeCents,
-                                              )
-                                            : "$0"
-                                    }
-                                    selectedBadgeDetail={
-                                        selectedPack
-                                            ? `incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`
-                                            : undefined
-                                    }
-                                    disabled={isSaving}
-                                />
-                            </div>
-                            <AutoTopUpSaveButton
-                                hasUnsavedChanges={hasUnsavedChanges}
-                                setup={setup}
-                                onSave={handleSave}
+                        <div className="space-y-3">
+                            <PackSliderRow
+                                slider={
+                                    <PollenPackSlider
+                                        value={packAmountUsd}
+                                        onChange={setPackAmountUsd}
+                                        packs={AUTO_TOP_UP_PACKS}
+                                        disabled={isSaving}
+                                    />
+                                }
+                                action={
+                                    <AutoTopUpSaveButton
+                                        hasUnsavedChanges={hasUnsavedChanges}
+                                        setup={setup}
+                                        onSave={handleSave}
+                                    />
+                                }
                             />
+                            {selectedPack && (
+                                <p className="text-[13px] leading-snug text-theme-text-muted">
+                                    <span className="text-sm font-bold text-theme-text-strong tabular-nums">
+                                        {formatUsdCentsCompact(
+                                            selectedPack.amountUsd * 100 +
+                                                serviceFeeCents,
+                                        )}
+                                    </span>{" "}
+                                    per top-up · Includes{" "}
+                                    {formatUsdCentsCompact(serviceFeeCents)}{" "}
+                                    {SERVICE_FEE_NAME.toLowerCase()} · Tax added
+                                    when charged
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -367,7 +404,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             title="Payment method"
                             value={formatPaymentMethod(billingState)}
                         />
-                        <ManageBillingButton
+                        <ManageBillingLink
                             onClick={openBillingPortal}
                             loading={isOpeningPortal}
                         />
@@ -380,12 +417,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     );
 };
 
+const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
+    <div
+        role="alert"
+        className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text"
+    >
+        {children}
+    </div>
+);
+
 function renderStatusMessage(
     status: ToggleStatus,
     issue: AutoTopUpIssue | null,
     billingReady: boolean,
 ): ReactNode {
-    if (status === "off") return "Off";
+    if (status === "off") {
+        return issue?.kind === "failed"
+            ? "Off — last charge failed. Check your payment method and re-enable auto top-up."
+            : "Off";
+    }
     if (status === "draft") {
         return billingReady
             ? "Choose amount, then click Save to enable"
@@ -395,14 +445,9 @@ function renderStatusMessage(
         return (
             <>
                 Further steps required in Stripe —{" "}
-                <a
-                    href={issue.invoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:text-theme-text-soft"
-                >
+                <InlineLink href={issue.invoiceUrl}>
                     complete in Stripe
-                </a>
+                </InlineLink>
             </>
         );
     }
@@ -410,25 +455,29 @@ function renderStatusMessage(
     return "On";
 }
 
-type ManageBillingButtonProps = {
+type ManageBillingLinkProps = {
     onClick: () => void;
     loading: boolean;
 };
 
-const ManageBillingButton: FC<ManageBillingButtonProps> = ({
+const ManageBillingLink: FC<ManageBillingLinkProps> = ({
     onClick,
     loading,
 }) => (
-    <ExternalLinkButton
+    <InlineLink
+        as="button"
+        type="button"
+        external
+        size="sm"
         onClick={onClick}
         disabled={loading}
-        className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
+        className="inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap"
     >
         <span className="inline-flex items-center gap-1.5">
             <CardIcon className="h-4 w-4 shrink-0" />
             <span>{loading ? "Opening..." : "Manage billing"}</span>
         </span>
-    </ExternalLinkButton>
+    </InlineLink>
 );
 
 function mapToggleStatusToSwitchStatus(
@@ -462,16 +511,17 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     return (
         <DisabledControlTooltip
             content={saveDisabled ? disabledReason : null}
-            className="self-start sm:shrink-0 sm:self-center"
+            className="flex"
         >
             <Button
                 as="button"
                 type="button"
                 onClick={onSave}
+                intent="commit"
+                size="lg"
+                icon={<CheckIcon />}
                 disabled={saveDisabled}
-                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
-                <CheckIcon className="h-4 w-4 shrink-0" />
                 Save
             </Button>
         </DisabledControlTooltip>
@@ -492,7 +542,12 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip triggerAs="span" content={content} className={className}>
+        <Tooltip
+            triggerAs="span"
+            content={content}
+            className={cn("polli:cursor-not-allowed", className)}
+            displayContents
+        >
             {children}
         </Tooltip>
     );
@@ -540,18 +595,9 @@ type SetupSnippetProps = {
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
     <div className="min-w-0 break-words leading-relaxed text-theme-text-soft">
         <span className="text-sm font-bold">{title}:</span>{" "}
-        <span className="inline-flex rounded-lg bg-surface-opaque px-2 py-0.5 text-sm font-medium">
+        <span className="inline-flex rounded-lg bg-theme-bg-pale px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
-    </div>
-);
-
-const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
-    <div
-        role="alert"
-        className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text"
-    >
-        {children}
     </div>
 );
 

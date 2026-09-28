@@ -74,16 +74,18 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
-    "perplexity-ai": "perplexity",
     openrouter: "openrouter",
 };
 const HOST_VENDORS: Record<string, string> = {
+    "api.openai.com": "openai",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.mistral.ai": "mistral",
+    "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",
+    "api.x.ai": "xai",
     "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
         "ovhcloud",
     "oai.endpoints.kepler.ai.cloud.ovh.net": "ovhcloud",

@@ -13,7 +13,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             data-error={error ? "true" : undefined}
             className={cn(
                 "polli-input polli:px-3 polli:py-2 polli:border polli:rounded-lg",
-                "polli:text-theme-text-strong",
+                "polli:font-body polli:text-base polli:font-normal polli:leading-6 polli:text-theme-text-strong",
                 "polli:transition-colors",
                 "polli:disabled:opacity-50 polli:disabled:cursor-not-allowed",
                 hideNumberSteppers && "polli-input-number-clean",

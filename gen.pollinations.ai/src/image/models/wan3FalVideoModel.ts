@@ -13,7 +13,6 @@ const WAN_3_IMAGE_ENDPOINT =
 const WAN_3_R2V_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const WAN_3_DURATION_SECONDS = 5;
-const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
 const WAN_3_ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
@@ -40,16 +39,6 @@ async function readJson<T>(response: Response, message: string): Promise<T> {
     } catch {
         throw UpstreamError.fromProvider(502, { message });
     }
-}
-
-function remainingTime(deadline: number): number {
-    const remaining = deadline - Date.now();
-    if (remaining <= 0) {
-        throw UpstreamError.fromProvider(504, {
-            message: "Wan 3.0 generation timed out",
-        });
-    }
-    return remaining;
 }
 
 export async function callWan3FalAPI(
@@ -84,7 +73,6 @@ export async function callWan3FalAPI(
     }
 
     const resolution = safeParams.resolution ?? "480p";
-    const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const endpoint = hasReference
@@ -128,7 +116,6 @@ export async function callWan3FalAPI(
         method: "POST",
         headers: { ...authorization, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 submission failed",
     });
     const submission = await readJson<FalQueueSubmission>(
@@ -144,7 +131,6 @@ export async function callWan3FalAPI(
     while (true) {
         const statusResponse = await fetchUpstream(submission.status_url, {
             headers: authorization,
-            signal: AbortSignal.timeout(remainingTime(deadline)),
             errorLabel: "Wan 3.0 status check failed",
         });
         const status = await readJson<FalQueueStatus>(
@@ -162,12 +148,11 @@ export async function callWan3FalAPI(
                 message: "Wan 3.0 returned an invalid status",
             });
         }
-        await sleep(Math.min(WAN_3_POLL_INTERVAL_MS, remainingTime(deadline)));
+        await sleep(WAN_3_POLL_INTERVAL_MS);
     }
 
     const resultResponse = await fetchUpstream(submission.response_url, {
         headers: authorization,
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 result fetch failed",
     });
     const result = await readJson<FalWan3Result>(
@@ -181,7 +166,6 @@ export async function callWan3FalAPI(
     }
 
     const videoResponse = await fetchUpstream(result.video.url, {
-        signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Failed to download Wan 3.0 output",
     });
     return {
@@ -192,7 +176,7 @@ export async function callWan3FalAPI(
             "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "alibaba/wan-3.0",
+            actualModel: safeParams.model,
             usage: { completionVideoSeconds: duration },
         },
     };

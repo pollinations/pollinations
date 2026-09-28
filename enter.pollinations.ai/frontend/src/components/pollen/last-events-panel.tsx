@@ -3,7 +3,6 @@ import {
     Button,
     CardIcon,
     Chip,
-    ClockIcon,
     SproutIcon,
     Table,
     TableBody,
@@ -16,6 +15,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
+import { LoadError } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -225,15 +225,11 @@ export const LastEventsPanel: FC = () => {
     const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
-        return (
-            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                Loading…
-            </p>
-        );
+        return null;
     }
 
     if (state.error && state.rows.length === 0) {
-        return <p className="text-sm text-intent-danger-text">{state.error}</p>;
+        return <LoadError>{state.error}</LoadError>;
     }
 
     if (state.rows.length === 0) {
@@ -246,15 +242,13 @@ export const LastEventsPanel: FC = () => {
 
     return (
         <div className="flex flex-col gap-3">
-            {state.error && (
-                <p className="text-sm text-intent-danger-text">{state.error}</p>
-            )}
+            {state.error && <LoadError>{state.error}</LoadError>}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
                     {state.rows.map((event) => (
                         <li
                             key={`${event.kind}-${event.id}`}
-                            className="flex flex-col gap-1.5 rounded-lg bg-surface-opaque p-3"
+                            className="flex flex-col gap-1.5 rounded-lg bg-theme-bg-pale p-3"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="font-semibold text-ink-900 truncate">
@@ -342,14 +336,7 @@ export const LastEventsPanel: FC = () => {
                     </Table>
                 </div>
 
-                <div className="mt-4 flex flex-col gap-3 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted sm:flex-row sm:items-center sm:justify-between">
-                    <p className="flex items-start gap-1.5">
-                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Showing {state.rows.length} recent event
-                            {state.rows.length === 1 ? "" : "s"}.
-                        </span>
-                    </p>
+                <div className="mt-4 flex justify-end text-[13px] leading-snug text-theme-text-muted">
                     {state.hasMore && (
                         <Button
                             as="button"
@@ -359,7 +346,7 @@ export const LastEventsPanel: FC = () => {
                             disabled={state.loading}
                             className="self-start sm:self-auto"
                         >
-                            {loadingMore ? "Loading…" : "Show more"}
+                            {loadingMore ? "Loading…" : "Show older"}
                         </Button>
                     )}
                 </div>

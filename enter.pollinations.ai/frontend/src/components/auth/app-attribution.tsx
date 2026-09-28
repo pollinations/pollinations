@@ -1,4 +1,11 @@
-import { InlineLink, Surface, Text } from "@pollinations/ui";
+import {
+    AppIcon,
+    GlobeIcon,
+    InlineLink,
+    Surface,
+    Text,
+} from "@pollinations/ui";
+import type { ReactNode } from "react";
 
 type Attribution = {
     appName?: string;
@@ -11,23 +18,23 @@ type AppAttributionProps = {
 };
 
 /**
- * The requesting app, shown the same way before and after sign-in: its name
- * as a name plate in the pixel face, the owner with their GitHub avatar, the
- * redirect host on the right.
+ * The requesting app, shown the same way before and after sign-in: one
+ * full-width line each for its name, its owner and its redirect host, so long
+ * values wrap on their own line instead of squeezing their neighbours.
  */
 export function AppAttribution({
     attribution,
     redirectHostname,
 }: AppAttributionProps) {
-    // A redirect hostname identifies the destination, not the app. Keep it in
-    // the details row even when lookup has not supplied an app name.
+    // A redirect hostname identifies the destination, not the app. Keep it
+    // even when lookup has not supplied an app name, and lead with it then.
     const unknown = !attribution?.appName;
     const displayName = attribution?.appName || "Unknown app";
     const owner = attribution?.githubUsername;
     return (
         <Surface>
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+            <ul className="space-y-2">
+                <Line lead={<AppIcon className="h-4 w-4" />}>
                     <Text
                         size="body"
                         tone="strong"
@@ -35,46 +42,56 @@ export function AppAttribution({
                     >
                         {displayName}
                     </Text>
-                    {owner && (
-                        <Text
-                            size="sm"
-                            tone="muted"
-                            className="mt-1.5 flex items-center gap-1.5"
-                        >
-                            <span>by</span>
-                            <InlineLink
-                                href={`https://github.com/${owner}`}
-                                className="inline-flex items-center gap-1.5"
-                            >
-                                <img
-                                    src={`https://github.com/${owner}.png?size=40`}
-                                    alt=""
-                                    width={20}
-                                    height={20}
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer"
-                                    className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
-                                />
-                                <span className="underline">@{owner}</span>
+                </Line>
+                {owner && (
+                    <Line
+                        lead={
+                            <img
+                                src={`https://github.com/${owner}.png?size=40`}
+                                alt=""
+                                width={20}
+                                height={20}
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                className="h-5 w-5 rounded-full bg-theme-bg-subtle object-cover"
+                            />
+                        }
+                    >
+                        <Text size="sm" tone="muted" className="break-words">
+                            by{" "}
+                            <InlineLink href={`https://github.com/${owner}`}>
+                                @{owner}
                             </InlineLink>
                         </Text>
-                    )}
-                </div>
-                {redirectHostname && !unknown && (
-                    <Text size="xs" tone="muted" className="shrink-0 font-mono">
-                        {redirectHostname}
-                    </Text>
+                    </Line>
                 )}
-            </div>
-            {redirectHostname && unknown && (
-                <Text
-                    size="sm"
-                    tone="strong"
-                    className="mt-2 break-all font-mono"
-                >
-                    {redirectHostname}
-                </Text>
-            )}
+                {redirectHostname && (
+                    <Line lead={<GlobeIcon className="h-4 w-4" />}>
+                        <Text
+                            size="sm"
+                            tone={unknown ? "strong" : "muted"}
+                            className="break-all font-mono"
+                        >
+                            {redirectHostname}
+                        </Text>
+                    </Line>
+                )}
+            </ul>
         </Surface>
+    );
+}
+
+/** One card line: a 20px lead slot, matching the consent rows below it. */
+function Line({ lead, children }: { lead: ReactNode; children: ReactNode }) {
+    return (
+        <li className="flex min-h-6 items-center gap-3">
+            <span
+                aria-hidden="true"
+                className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong"
+            >
+                {lead}
+            </span>
+            <div className="min-w-0 flex-1">{children}</div>
+        </li>
     );
 }

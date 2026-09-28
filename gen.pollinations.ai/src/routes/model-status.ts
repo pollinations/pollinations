@@ -49,14 +49,15 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
-            "Cached for 60 seconds per window and traffic scope. Traffic defaults to all; regular excludes legacy bridges, internal automation, and local tests.",
+            "Cached for 60 seconds per window and traffic scope.",
         ].join("\n"),
         parameters: [
             {
                 name: "traffic",
                 in: "query",
                 required: false,
-                description: "Traffic population; defaults to all.",
+                description:
+                    "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
                 schema: {
                     type: "string",
                     enum: ["all", "regular"],

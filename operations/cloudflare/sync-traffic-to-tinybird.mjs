@@ -47,8 +47,11 @@ const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
 const MAX_RETRIES = 3;
-// Cloudflare allows 300 GraphQL queries per 5 minutes.
+// Cloudflare allows 300 GraphQL queries per 5 minutes, and also limits their
+// total cost: when that budget runs out it asks to wait 5 minutes.
 const QUERY_INTERVAL_MS = 1100;
+const BUDGET_WAIT_MS = 5 * 60_000;
+const BUDGET_RETRIES = 5;
 
 // Page routes of pollinations.ai/src/App.tsx and of the enter page list in
 // shared/product-analytics.ts.
@@ -144,7 +147,7 @@ function lastDays(days) {
     );
 }
 
-async function graphql(query, filter) {
+async function graphql(query, filter, budgetRetries = BUDGET_RETRIES) {
     await sleep(QUERY_INTERVAL_MS);
     const res = await fetchWithRetry(
         "https://api.cloudflare.com/client/v4/graphql",
@@ -162,6 +165,14 @@ async function graphql(query, filter) {
     );
     const body = await res.text();
     const { errors } = JSON.parse(body);
+    if (
+        errors?.some((e) => e.extensions?.code === "budget") &&
+        budgetRetries > 0
+    ) {
+        console.log("Cloudflare query budget used up, waiting 5 minutes");
+        await sleep(BUDGET_WAIT_MS);
+        return graphql(query, filter, budgetRetries - 1);
+    }
     if (errors) throw new Error(JSON.stringify(errors));
     return body;
 }

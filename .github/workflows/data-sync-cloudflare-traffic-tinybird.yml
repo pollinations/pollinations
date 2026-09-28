@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: "Complete UTC days to fetch (max 30, for backfill or a missed run)"
+        description: "Complete UTC days to fetch (1-30, for backfill or a missed run; 30 days take 1-2 hours)"
         default: "1"
 
 permissions: {}
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v5

@@ -11,7 +11,6 @@ import {
     type IconProps,
     McpIcon,
     RobotIcon,
-    SproutIcon,
     Surface,
     TerminalIcon,
     Text,
@@ -186,67 +185,6 @@ export function DevKit({ className }: { className?: string }) {
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
-            <Surface
-                variant="card"
-                className="flex flex-col gap-6 overflow-hidden p-5 sm:p-6"
-            >
-                <ContentHeader
-                    eyebrow="Start free"
-                    title="Start with Pollen and a key"
-                />
-                <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-active text-theme-text-strong">
-                                <SproutIcon className="size-6" />
-                            </div>
-                            <Heading as="h3" size="card">
-                                Earn Pollen with Quests
-                            </Heading>
-                        </div>
-                        <Text size="sm">
-                            Complete Quests to earn Pollen—our platform credit,
-                            where 1 Pollen = $1 of usage. Some models require
-                            Paid Pollen.
-                        </Text>
-                        <Text size="xs" tone="muted">
-                            Personal secret keys stay on your server. Browser
-                            apps use Connect User Wallets.
-                        </Text>
-                    </div>
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
-                        <ExternalLinkButton
-                            href="https://enter.pollinations.ai/quests"
-                            size="md"
-                            intent="brand"
-                            className="whitespace-nowrap"
-                        >
-                            Browse Quests
-                        </ExternalLinkButton>
-                        <ExternalLinkButton
-                            href="https://enter.pollinations.ai/keys"
-                            size="md"
-                            intent="neutral"
-                            className="whitespace-nowrap"
-                        >
-                            Create a secret key
-                        </ExternalLinkButton>
-                    </div>
-                </div>
-                <img
-                    src={scene.src}
-                    srcSet={scene.srcSet}
-                    sizes="(max-width: 1240px) 100vw, 1100px"
-                    alt=""
-                    aria-hidden="true"
-                    width={2048}
-                    height={1024}
-                    loading="lazy"
-                    decoding="async"
-                    className="first-call-scene pointer-events-none -mx-5 -mb-5 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-6 sm:-mb-6 sm:w-[calc(100%+3rem)]"
-                />
-            </Surface>
-
             <FeatureGroup
                 eyebrow="Build"
                 title="Tools for production AI apps"
@@ -266,6 +204,37 @@ export function DevKit({ className }: { className?: string }) {
                     ))}
                 </div>
             </FeatureGroup>
+
+            <Surface
+                variant="card"
+                className="flex flex-col gap-6 overflow-hidden p-5 sm:p-6"
+            >
+                <ContentHeader
+                    eyebrow="Quests"
+                    title="Build something. Earn your next generation."
+                    subtitle="Complete Quests to earn Pollen for AI usage. Some models require Paid Pollen."
+                />
+                <ExternalLinkButton
+                    href="https://enter.pollinations.ai/quests"
+                    size="md"
+                    intent="brand"
+                    className="self-start whitespace-nowrap"
+                >
+                    Explore Quests
+                </ExternalLinkButton>
+                <img
+                    src={scene.src}
+                    srcSet={scene.srcSet}
+                    sizes="(max-width: 1240px) 100vw, 1100px"
+                    alt=""
+                    aria-hidden="true"
+                    width={2048}
+                    height={1024}
+                    loading="lazy"
+                    decoding="async"
+                    className="first-call-scene pointer-events-none -mx-5 -mb-5 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-6 sm:-mb-6 sm:w-[calc(100%+3rem)]"
+                />
+            </Surface>
 
             <FeatureGroup
                 eyebrow="Publish and earn"

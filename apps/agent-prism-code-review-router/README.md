@@ -1,99 +1,39 @@
-# prism code-review router
+# Prism — wallet-aware engineering router
 
-`prism` is a [code agent](../../../BUILD_YOUR_OWN_AGENT.md) that routes every request to the right model, then answers as that model. It is tuned for engineering work — PR review, debugging, architecture, security, operations, data — and still routes everyday questions, documentation, planning, and creative work.
+A code agent tuned for code review, debugging and architecture. It classifies locally, then selects a model using live capabilities, health, prices and the caller's visible balance. No extra classifier call.
 
-Fixes [pollinations/pollinations#15017](https://github.com/pollinations/pollinations/issues/15017).
+Source and deployment: [cesus-agent/prism-code-review-router](https://github.com/cesus-agent/prism-code-review-router).
+Callable name from the author's submission: `cesus-agent/prism-code-review-router`.
+Addresses [quest #15017](https://github.com/pollinations/pollinations/issues/15017).
 
-## Why routing decisions stay local
+## Routing
 
-Most routers spend one LLM call deciding which LLM to call. Prism classifies locally with deterministic signals (keyword families, diff hunk counts, payload size, modality detection) because that decision:
+- Security-sensitive and large engineering requests go deep; ordinary reviews and planning go balanced; small questions go fast.
+- Reads `/account/balance` using the caller's delegated authority. If unavailable, selection proceeds without wallet information.
+- Excludes agents, unknown prices, unhealthy models and models that cannot handle the endpoint, context, images or caller tools.
+- Prefers models whose estimated request cost fits half the visible balance. If none fit, chooses the cheapest eligible estimated request.
+- Fast/balanced prefer explicitly zero-priced models when available, then low/median prices. Deep prefers reasoning and context within the affordable pool.
+- Appends the author's engineering-review rubric on balanced/deep requests. Conversation roles, tool calls and results otherwise remain unchanged.
+- Catalog failure or no compatible candidates fails explicitly. Optional health-feed failure does not prevent routing.
 
-- adds zero model-call cost and zero extra latency;
-- keeps the full request payload (including unreleased diffs) out of a second model's context;
-- is auditable — every route can be traced to explicit rules instead of a classifier's mood.
+**The wallet budget is a routing estimate, not a guaranteed spending cap.** Token estimates omit media-specific costs and can differ from real usage. The gateway remains responsible for permissions, key budgets and billing. Missing token prices never mean a model is free.
 
-The trade-off: no semantic understanding of the task. Prism compensates by escalating on cheap, high-recall signals (security vocabulary, diff size, request size) rather than trying to be clever about "difficulty".
+## Trace and tests
 
-## Routing policy
+Each request logs its selection and sets `x-pollinations-router-model`, `x-pollinations-router-tier` and `x-pollinations-router-reason`. Gateway conversions may remove custom headers; this is not a guaranteed public trace API.
 
-Before anything else, the router reads the caller's pollen wallet (`GET /account/balance`, forwarded with the caller's own credentials) and derives a per-request spend cap: `balance / 2`. Every later decision respects that cap. If the balance isn't visible (budgeted keys always report it; unbudgeted keys without `account:usage` get 403), routing proceeds uncapped — a privacy-limited wallet never breaks routing.
+Run `node --test agent.test.ts` with a current Node.js release.
+Tests cover image/tool selection, agent and unknown-price exclusion, wallet-aware choices, degradation, unavailable balance/health, structured history and SSE forwarding.
 
-Tier selection, in evaluation order:
+## Deploy
 
-| Condition | Tier | Why |
-| --- | --- | --- |
-| Security vocabulary (auth, secrets, injection, CVE, crypto…) | deep | misses here cost real money; over-escalation is cheap |
-| Code review + architecture/migration/concurrency signals | deep | architectural PR analysis |
-| Ops + deep signals (deploys, k8s, incidents…) | deep | high-impact systems work |
-| Request > 24k chars | deep | large-context request |
-| Unified diff payload (≥2 hunks or ≥20 diff lines) + deep signals | deep | diff-driven review, not keyword noise |
-| Code review / PR / diff / failing tests | balanced | normal review depth |
-| Deep signals on small payloads | balanced | single "performance" word shouldn't burn flagship tokens |
-| Planning/spec/ADR or ops tasks | balanced | multi-step, moderate depth |
-| Code/data tasks | balanced | multi-step engineering |
-| Everything else (docs, writing, short questions) | fast | one-shot answers |
-
-Model selection then filters the live catalog:
-
-1. **Hard gates** — drops models that are unhealthy (explicit `down`/`degraded` catalog status, success rate <95% on a real sample, >10% 5xx in the last 30 min on `/models/status`, or a status row where every request failed; rows with <10 requests are ignored as noise, and *unproven* models with no traffic are allowed), that don't support the stateless Responses API (`supported_endpoints` — community/proxy models often don't), that can't fit the estimated context (chars/3 + 4k margin), that lack text/image input modality when needed, or that lack `tool_calling` when the request needs tools.
-2. **Wallet cap** — models whose estimated cost for this request (prompt tokens from actual payload size + completion tokens from `max_output_tokens`, default 500) exceed the spend cap are dropped before ranking. If *nothing* fits, the router picks the cheapest eligible model: the caller either gets an answer that squeaks under budget or a clean gateway 402 instead of a surprise drain. Capping is visible in the trace (`wallet-capped (balance 2, max spend 1.0000)`).
-3. **Free-community preference (fast/balanced)** — when any healthy free community model qualifies, it wins: free listings cost the caller zero pollen, and if one degrades it fails the health gate on the next request, so the router automatically switches to the next-best (verified live: a community model serving 41 requests with 0 successes is dropped and the paid model is picked). When no free model qualifies, the paid pool is ranked by live token price: lowest for fast, median for balanced (median avoids both toy models and accidental flagships).
-4. **Deep tier pays for quality** — among affordable models, ranks by reasoning capability, then context length, then listed price (flagship proxy). Deep is deliberately the tier where paying for strength is allowed; the wallet cap, not a free preference, protects affordability. If nothing is reasoning-capable, the largest-context model wins.
-
-The router also:
-
-- injects `reasoning_effort` (`high`/`medium`) only when the caller didn't set one and the routed model supports it; strips the field when the routed model can't honor it;
-- appends an engineering rubric to non-fast requests: facts vs hypotheses, security/regression/concurrency/data-loss priorities, file-and-hunk citations, confidence levels, risks, rollback, verification, edge cases;
-- forwards the original conversation unchanged otherwise — no reordering, no rewriting.
-
-## Robustness
-
-- **Catalog failures** fall back to a deterministic tier→model table (`gpt-5.4-nano` / `gemini-3.8-flash` / `grok-4.3`) instead of throwing; a routing outage never fails the caller's request.
-- **Malformed bodies** are forwarded verbatim so the gateway returns its own proper validation errors.
-- **Catalog cache** (60 s per isolate) keeps routing fast without stale-for-minutes health data.
-- **Billing/auth** stay on the platform path — `pollinations(path)` calls use the caller's delegated authority; no keys, no retries that could double-charge.
-
-## Observability
-
-Each request logs one JSON line and sets response headers:
-
-```
-x-pollinations-router: prism
-x-pollinations-router-model: <selected model id>
-x-pollinations-router-tier: fast | balanced | deep
-x-pollinations-router-reason: <classification>; <selection>; catalog=live|fallback; balance=<n|private>
-```
-
-The caller's balance is included so wallet-capped routes are auditable; keys that hide their balance show `balance=private`.
-
-Note: gateway conversions can strip custom headers on Chat Completions; the trace is designed to be checked on `/v1/responses` and via worker logs.
-
-## Supported workloads
-
-PR/diff review, debugging, failing tests, API/SDK work, dependency upgrades, architecture, migrations, refactors, security audits, performance and concurrency, databases and data pipelines, analytics, Docker/Kubernetes/Terraform/cloud, CI/CD, incidents and postmortems, technical specs and roadmaps, documentation and translation, research synthesis, creative and product copy.
-
-## Demo matrix
-
-Live-verified routes (test API key, balance 2 pollen):
-
-| Request | Tier | Routed to | Why |
-| --- | --- | --- | --- |
-| `what does this function return? function f(x) { return x * 2 }` | fast | `community/YoannDev90/agentic-gt` | small coding request; healthy free community model — 0 pollen |
-| `review this PR diff for regressions` + diff body | balanced | `community/YoannDev90/agentic-gt` | code review context; free community model preferred |
-| `audit this oauth migration for race conditions and security issues` | deep | `openai/gpt-6-astra` | security-sensitive; strongest affordable (reasoning, 1.05M ctx) |
-| `design a technical plan… for migrating our webhook delivery to a queue` | balanced | `community/YoannDev90/agentic-gt` | planning work; free community model preferred |
-
-Degradation switchover is covered by a zero-spend check against `choose()`: a healthy free community model wins the fast tier, and the same model with a status row of 41 requests / 0 successes is dropped in favor of the paid model — "switch when one degrades", no config needed.
-
-## Register and call
-
-The deployable source is the root-level `agent.ts` in [the source repository](https://github.com/cesus-agent/prism-code-review-router). Register it as a code agent (My Models → Add Agent → Code agent), then call it like any model:
+Copy this example's `agent.ts` to the author's standalone repository, then sync the existing code agent. Merging here does not update the standalone deployment.
 
 ```bash
 curl https://gen.pollinations.ai/v1/responses \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"cesus-agent/prism-code-review-router","input":"Audit this OAuth migration for race conditions and security issues.","store":false}'
+  -d '{"model":"cesus-agent/prism-code-review-router","input":"Review this small function for bugs."}'
 ```
 
-Routing evidence is in the response: the `model` field of the answer plus the `x-pollinations-router-*` headers and the worker's JSON log line.
+The submission's original live demonstrations covered small code questions, review and a security audit. Rerun them after syncing: model availability, prices and health change.

@@ -104,7 +104,7 @@ const PUBLISH_FEATURES: Feature[] = [
     },
     {
         title: "Publish an agent",
-        body: "Share a prompt or code agent that runs on the caller’s Pollen. Agent earnings are coming soon.",
+        body: "Share a prompt or code agent that runs on the user’s Pollen. Agent earnings are coming soon.",
         icon: RobotIcon,
     },
 ];
@@ -257,7 +257,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Build"
                 title="Tools for production AI apps"
-                description="Build with models and agents, connect users, and add tools without managing the infrastructure."
+                description="Build with models and agents, connect user wallets, and add tools through one platform."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (

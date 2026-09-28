@@ -285,7 +285,7 @@ test.runIf(process.env.FLOW_CAPTURE_TEST === "1")(
                 const errors: string[] = [];
                 page.on("pageerror", (error) => errors.push(error.message));
                 await page.goto(
-                    `${ENTER_ORIGIN}/flow?theme=dark&view=journey&flow=admin&section=main`,
+                    `${ENTER_ORIGIN}/journey?theme=dark&flow=admin&section=main`,
                 );
                 const frame = page.frameLocator('iframe[title$="· journey"]');
                 await frame

@@ -57,6 +57,28 @@
     );
 }
 
+/* Side padding shared by every dialog part. */
+:root {
+    --polli-dialog-gutter: 1.5rem;
+}
+
+/* On phones a full-screen modal fills the screen in its own block colour with
+   a 20px gutter; its top-level cards run edge to edge like page sections.
+   Nested cards and compact dialogs are untouched. */
+@media (width < 40rem) {
+    .polli-dialog-mobile-page {
+        --polli-dialog-gutter: 1.25rem;
+        border-radius: 0;
+    }
+
+    .polli-dialog-mobile-page
+        .polli-surface-card:not(.polli-surface-card .polli-surface-card) {
+        margin-inline: calc(-1 * var(--polli-dialog-gutter));
+        padding: 1rem var(--polli-dialog-gutter);
+        border-radius: 1.5rem;
+    }
+}
+
 .polli-input-number-clean::-webkit-inner-spin-button,
 .polli-input-number-clean::-webkit-outer-spin-button {
     -webkit-appearance: none;

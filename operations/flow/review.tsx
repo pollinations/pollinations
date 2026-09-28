@@ -83,6 +83,7 @@ type Review = {
     resolve: (entry: CanvasScreen) => ReviewCase | undefined;
     run: (recipe: ReviewCase) => Promise<boolean>;
     startOver: () => Promise<boolean>;
+    retryPreviews: () => void;
 };
 const ReviewContext = createContext<Review | null>(null);
 export const useReview = () => useContext(ReviewContext);
@@ -168,23 +169,13 @@ export function ReviewProvider({
         query: string;
         result: PreviewResult;
     }>();
+    const [previewAttempt, setPreviewAttempt] = useState(0);
+    const consumedPreviewAttempt = useRef(0);
     const [runError, setRunError] = useState("");
     const [running, setRunning] = useState(false);
     const runLock = useRef(false);
-    const mapCases = new Map<string, ReviewCase>();
-    for (const recipe of cases)
-        if (
-            !mapCases.has(recipe.family) ||
-            choices[recipe.pageId] === recipe.id
-        )
-            mapCases.set(recipe.family, recipe);
-    const requested = (
-        view === "map" ? [...mapCases.values()] : selected ? [selected] : []
-    ).filter((recipe) => !recipe.provider);
-    const requestedIds = requested
-        .map((recipe) => recipe.id)
-        .sort()
-        .join(",");
+    const requestedIds =
+        selected && !selected.provider && enabled ? selected.id : "";
     const query = new URLSearchParams({
         flow,
         section,
@@ -196,18 +187,28 @@ export function ReviewProvider({
         if (!enabled || !requestedIds) return;
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout>;
+        let retryFailed = previewAttempt > consumedPreviewAttempt.current;
+        consumedPreviewAttempt.current = previewAttempt;
         setPreview(undefined);
         async function poll() {
             try {
-                const response = await fetch(`/__flow/previews?${query}`, {
+                const request = new URLSearchParams(query);
+                if (retryFailed) {
+                    request.set("retry", "true");
+                    retryFailed = false;
+                }
+                const response = await fetch(`/__flow/previews?${request}`, {
                     method: "POST",
                     signal: controller.signal,
                 });
                 if (!response.ok)
                     throw new Error("Couldn’t load screen previews.");
                 const next: PreviewResult = await response.json();
-                if (!controller.signal.aborted)
+                if (!controller.signal.aborted) {
                     setPreview({ query, result: next });
+                    if (next.status === "loading")
+                        timer = setTimeout(poll, 2000);
+                }
             } catch (reason) {
                 if (!controller.signal.aborted)
                     setPreview({
@@ -224,8 +225,6 @@ export function ReviewProvider({
                                     : "Couldn’t load screen previews.",
                         },
                     });
-            } finally {
-                if (!controller.signal.aborted) timer = setTimeout(poll, 2000);
             }
         }
         void poll();
@@ -233,7 +232,7 @@ export function ReviewProvider({
             controller.abort();
             clearTimeout(timer);
         };
-    }, [enabled, query, requestedIds]);
+    }, [enabled, previewAttempt, query, requestedIds]);
     function selectScreen(pageId: string, recipe?: ReviewCase) {
         if (!screens.some((entry) => entry.id === pageId)) return;
         if (pageId === screen?.id && (!recipe || recipe.id === selected?.id))
@@ -289,6 +288,7 @@ export function ReviewProvider({
         running,
         journey: !enabled,
         pending: pendingScope === scope,
+        retryPreviews: () => setPreviewAttempt((attempt) => attempt + 1),
         observed: observed?.scope === scope ? observed.screen : undefined,
         selectScreen,
         select: (id) => {
@@ -422,14 +422,14 @@ export function ReviewJourneyTab({
     onResume: () => void;
 }) {
     const review = useReview();
-    const { state, busy } = useFlowConditions();
+    const { busy } = useFlowConditions();
     return (
         <IconButton
             size="md"
             variant={active ? "tile" : "ghost"}
             pressed={active}
             title={review?.running ? "Starting Journey…" : "Journey"}
-            disabled={busy || !state || review?.running}
+            disabled={busy || !review?.selected || review.running}
             onClick={() => {
                 if (review?.selected && (review.pending || !visited))
                     void review.run(review.selected);
@@ -705,16 +705,25 @@ export function CapturedScreen({
                     role={capture?.status === "error" ? "alert" : "status"}
                 >
                     <strong>
-                        {capture?.status === "error" ||
-                        review?.result?.status === "error"
-                            ? "Preview unavailable"
-                            : review?.result?.queue?.position
-                              ? `Queued · ${review.result.queue.position} of ${review.result.queue.total}`
-                              : "Capturing real screen…"}
+                        {!capture && review?.selected?.id !== recipe.id
+                            ? "Select to capture"
+                            : capture?.status === "error" ||
+                                review?.result?.status === "error"
+                              ? "Preview unavailable"
+                              : review?.result?.queue?.position
+                                ? `Queued · ${review.result.queue.position} of ${review.result.queue.total}`
+                                : "Capturing real screen…"}
                     </strong>
                     {(capture?.error || review?.result?.error) && (
                         <span>{capture?.error || review?.result?.error}</span>
                     )}
+                    {review &&
+                        (capture?.status === "error" ||
+                            review.result?.status === "error") && (
+                            <Button size="sm" onClick={review.retryPreviews}>
+                                Retry
+                            </Button>
+                        )}
                 </div>
             )}
         </div>

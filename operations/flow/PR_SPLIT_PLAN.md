@@ -13,7 +13,7 @@ The full historical extraction plan and session log remain available in Git at `
 
 ## Deployment
 
-- Public entry: https://flow.pollinations.ai/flow. The technical Admin origin is https://admin.flow.pollinations.ai and shares the same reviewer login.
+- Public entry: https://flow.pollinations.ai/screens. The technical Admin origin is https://admin.flow.pollinations.ai and shares the same reviewer login.
 - Flow uses the existing `Deploy / Applications` workflow and `deploy.json`, exactly like other container applications: merge to `main`, then promote `main` to `production`. A merge to `main` alone does not deploy. There is no PR deployment job or new deployment token.
 - The manifest uses the existing `myceli` credential and watches the product code Flow executes. Full Git history in the shared deployment checkout preserves the source revisions shown in Flow. The deploy command requires a clean production Actions checkout; the shared workflow verifies HTTPS using the manifest URLs and its existing readiness checks.
 - Reuse the existing Worker `pollinations-flow-preview`, its Durable Object namespace and `POLLINATIONS_AUTH_SESSION_SECRET`. Its internal name and public OAuth client ID remain stable; they do not determine the public URL. No secrets are copied, replaced or synchronized.
@@ -39,7 +39,7 @@ The full historical extraction plan and session log remain available in Git at `
 
 ## Local use
 
-From the repository root, run `npm ci`, then `npm run dev --workspace=pollinations-flow`. Open `http://localhost:4180/flow`; Worker transport uses 4181 and Admin uses 4182. Set `FLOW_PORT` to choose a different three-port range. The predev hook installs Chromium and startup builds source UI styles.
+From the repository root, run `npm ci`, then `npm run dev --workspace=pollinations-flow`. Open `http://localhost:4180/screens`; Worker transport uses 4181 and Admin uses 4182. Set `FLOW_PORT` to choose a different three-port range. The predev hook installs Chromium and startup builds source UI styles.
 
 For built pages, run `npm run build --workspace=pollinations-flow` then `npm run start --workspace=pollinations-flow`. Public origins can be set with `FLOW_ENTER_ORIGIN` and `FLOW_ADMIN_ORIGIN`. Packaged builds carry `FLOW_REVISION`, `FLOW_MAIN_REVISION` and `FLOW_DIRTY`. `npm run reset --workspace=pollinations-flow` intentionally clears only that checkout's local fixture data; do not reset a user's current review merely to inspect it.
 

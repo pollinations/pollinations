@@ -94,7 +94,7 @@ try {
 vite.watcher.add(sources);
 try {
     await vite.listen();
-    console.log(`Flow: ${ENTER_ORIGIN}/flow`);
+    console.log(`Flow: ${ENTER_ORIGIN}/screens`);
     console.log(
         "Prepare or reset the local account explicitly with: npm run reset",
     );

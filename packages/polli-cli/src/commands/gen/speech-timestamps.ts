@@ -21,7 +21,9 @@ export function createSpeechTimestampsCommand() {
         .action(async (textArg, opts) => {
             const input = textArg || (await readStdin());
             if (!input) {
-                printError("No text provided. Pass as argument or pipe via stdin.");
+                printError(
+                    "No text provided. Pass as argument or pipe via stdin.",
+                );
                 process.exit(1);
             }
             const output = opts.output ?? `speech.${opts.format}`;

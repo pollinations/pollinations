@@ -12,7 +12,9 @@ export function createEmbedCommand() {
         .action(async (texts: string[], opts) => {
             const input = texts.length ? texts : [await readStdin()];
             if (!input[0]) {
-                printError("No text provided. Pass as argument or pipe via stdin.");
+                printError(
+                    "No text provided. Pass as argument or pipe via stdin.",
+                );
                 process.exit(1);
             }
 
@@ -35,7 +37,9 @@ export function createEmbedCommand() {
                 if (getOutputMode() === "json") printResult(data);
                 else
                     for (const item of data.data)
-                        process.stdout.write(`${JSON.stringify(item.embedding)}\n`);
+                        process.stdout.write(
+                            `${JSON.stringify(item.embedding)}\n`,
+                        );
             } catch (error) {
                 exitWithError(error);
             }

@@ -52,7 +52,12 @@ export function createVoiceIsolatorCommand() {
         .action(async (file, opts) => {
             if (getOutputMode() === "human") printInfo("Isolating voice...");
             try {
-                await postAudio("/v1/audio/voice-isolator", file, {}, opts.output);
+                await postAudio(
+                    "/v1/audio/voice-isolator",
+                    file,
+                    {},
+                    opts.output,
+                );
             } catch (error) {
                 exitWithError(error);
             }

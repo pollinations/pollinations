@@ -20,7 +20,9 @@ export function create3dCommand() {
             if (opts.seed) params.set("seed", opts.seed);
 
             if (getOutputMode() === "human")
-                printInfo("Generating 3D model (this can take a few minutes)...");
+                printInfo(
+                    "Generating 3D model (this can take a few minutes)...",
+                );
 
             try {
                 const res = await fetchGen(

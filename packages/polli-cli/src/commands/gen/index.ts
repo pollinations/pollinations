@@ -1,10 +1,10 @@
 import { Command } from "commander";
 import { createAudioCommand } from "./audio.js";
+import { createChatCommand } from "./chat.js";
 import { createEmbedCommand } from "./embed.js";
+import { createImageCommand } from "./image.js";
 import { create3dCommand } from "./model3d.js";
 import { createSpeechTimestampsCommand } from "./speech-timestamps.js";
-import { createChatCommand } from "./chat.js";
-import { createImageCommand } from "./image.js";
 import { createTextCommand } from "./text.js";
 import { createTranscribeCommand } from "./transcribe.js";
 import { createVideoCommand } from "./video.js";

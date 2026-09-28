@@ -95,7 +95,9 @@ describe("hermes harness", () => {
     });
 
     it("stops before configuration when hermes is unavailable", async () => {
-        await expect(hermes.on(ctx, {})).rejects.toThrow("hermes was not found");
+        await expect(hermes.on(ctx, {})).rejects.toThrow(
+            "hermes was not found",
+        );
         expect(existsSync(configFile())).toBe(false);
     });
 });

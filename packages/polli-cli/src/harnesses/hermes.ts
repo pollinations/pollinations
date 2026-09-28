@@ -61,8 +61,7 @@ const writeConfig = (ctx: HarnessContext, settings: HermesSettings) => {
     doc.setIn(["model", "default"], settings.model);
     if (settings.mcp === false) {
         if (doc.hasIn(MCP_PATH)) doc.deleteIn(MCP_PATH);
-    }
-    else
+    } else
         doc.setIn(
             MCP_PATH,
             doc.createNode({

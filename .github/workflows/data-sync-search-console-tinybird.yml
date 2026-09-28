@@ -30,7 +30,7 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.SEARCH_CONSOLE_SERVICE_ACCOUNT }}
+          service_account: ${{ vars.GOOGLE_DATA_SYNC_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/webmasters.readonly
 

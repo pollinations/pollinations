@@ -18,6 +18,7 @@ import {
     cn,
     Dialog,
     Dropdown,
+    EditableCombobox,
     ExpandIcon,
     FieldStack,
     FileUpload,
@@ -296,6 +297,45 @@ function AudioTaskPicker({
                     </div>
                 )}
             </Dropdown>
+        </div>
+    );
+}
+
+function VoicePicker({
+    voices,
+    value,
+    onChange,
+}: {
+    voices: string[];
+    value: string;
+    onChange: (voice: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+
+    return (
+        <div className="flex min-w-0 max-w-full items-center gap-3">
+            <Text as="span" size="sm" weight="bold" className="shrink-0">
+                Voice
+            </Text>
+            <div className="w-44 min-w-0 max-w-full">
+                <EditableCombobox
+                    aria-label="Voice"
+                    value={open ? query : value}
+                    options={voices}
+                    placeholder="Search voices…"
+                    emptyMessage="No voices match."
+                    open={open}
+                    onOpenChange={(next) => {
+                        setOpen(next);
+                        if (next) setQuery("");
+                    }}
+                    onChange={(next) => {
+                        setQuery(next);
+                        if (voices.includes(next)) onChange(next);
+                    }}
+                />
+            </div>
         </div>
     );
 }
@@ -1127,6 +1167,14 @@ export function Playground() {
                                 isLoading={isLoading || !isHydrated}
                                 onSelectModel={selectModel}
                             />
+                            {currentModel && currentModel.voices.length > 0 && (
+                                <VoicePicker
+                                    key={currentModel.id}
+                                    voices={currentModel.voices}
+                                    value={selectedVoice}
+                                    onChange={setSelectedVoice}
+                                />
+                            )}
                         </div>
                         {isHydrated &&
                             !isLoading &&
@@ -1471,25 +1519,6 @@ export function Playground() {
                                         ))}
                                 </div>
                             )}
-
-                        {currentModel && currentModel.voices.length > 0 && (
-                            <FieldStack label="Voice">
-                                <ButtonGroup aria-label="Voice">
-                                    {currentModel.voices.map((voice) => (
-                                        <TabButton
-                                            key={voice}
-                                            active={selectedVoice === voice}
-                                            size="sm"
-                                            onClick={() =>
-                                                setSelectedVoice(voice)
-                                            }
-                                        >
-                                            {voice}
-                                        </TabButton>
-                                    ))}
-                                </ButtonGroup>
-                            </FieldStack>
-                        )}
 
                         {error && <Alert intent="danger">{error}</Alert>}
 

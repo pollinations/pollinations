@@ -6,6 +6,7 @@ import {
     Input,
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
+import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -17,6 +18,10 @@ type DeviceProps = {
     prefilledCode: string;
 };
 
+// Devices show the bare code; people may type it with a dash or spaces.
+const normalizeCode = (value: string) =>
+    value.replace(/[^0-9A-Z]/gi, "").toUpperCase();
+
 export function Device({ prefilledCode }: DeviceProps) {
     const navigate = useNavigate();
 
@@ -25,6 +30,9 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     const [userCode, setUserCode] = useState(prefilledCode);
     const [error, setError] = useState<string | null>(null);
+    // A rejected code keeps Continue off until it changes; a check that
+    // could not run is not remembered, so it can be retried.
+    const [rejectedCode, setRejectedCode] = useState<string | null>(null);
     const [checking, setChecking] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +52,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                         data?.error_description ||
                             "Code not recognized. Check it and try again.",
                     );
+                    setRejectedCode(code);
                     return;
                 }
                 const data = (await res.json()) as {
@@ -57,12 +66,13 @@ export function Device({ prefilledCode }: DeviceProps) {
                             ? "This code has expired. Get a new code from your device."
                             : "This code has already been used. Return to your device, or get a new code to reconnect.",
                     );
+                    setRejectedCode(code);
                     return;
                 }
                 navigate({
                     to: "/authorize",
                     search: {
-                        user_code: code.toUpperCase(),
+                        user_code: code,
                         ...(data.scope && {
                             scope: data.scope.split(" ").filter(Boolean),
                         }),
@@ -80,7 +90,8 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     // Auto-verify and redirect if pre-filled
     useEffect(() => {
-        if (prefilledCode && user) verifyAndRedirect(prefilledCode);
+        if (prefilledCode && user)
+            verifyAndRedirect(normalizeCode(prefilledCode));
     }, [prefilledCode, user, verifyAndRedirect]);
 
     // Focus input on mount
@@ -88,11 +99,15 @@ export function Device({ prefilledCode }: DeviceProps) {
         inputRef.current?.focus();
     }, []);
 
+    const entered = normalizeCode(userCode);
+    const canContinue =
+        entered.length === USER_CODE_LENGTH &&
+        !checking &&
+        entered !== rejectedCode;
+
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const code = userCode.trim().toUpperCase();
-        if (!code) return;
-        verifyAndRedirect(code);
+        if (canContinue) verifyAndRedirect(entered);
     }
 
     const access = "to access your Pollinations account.";
@@ -116,9 +131,9 @@ export function Device({ prefilledCode }: DeviceProps) {
                 <Button
                     type="submit"
                     form="device-code-form"
-                    intent="neutral"
                     icon={<ArrowRightIcon />}
-                    disabled={checking}
+                    disabled={!canContinue}
+                    aria-busy={checking}
                 >
                     {checking ? "Checking code…" : "Continue"}
                 </Button>

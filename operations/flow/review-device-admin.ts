@@ -141,7 +141,8 @@ export function deviceReviewCasesForSection(
                             selector: "#device-code-form",
                             text: deviceCodeExpectations[kind],
                         },
-                        { selector: 'button:enabled:text-is("Continue")' },
+                        // A rejected code freezes Continue until it changes.
+                        { selector: 'button:disabled:text-is("Continue")' },
                     ],
                 }),
                 recipe(
@@ -577,7 +578,7 @@ export const adminReviewCases: ReviewCase[] = [
                 outcome === "pending"
                     ? [
                           {
-                              selector: "output",
+                              selector: "button:disabled",
                               text: "Checking sign-in…",
                           },
                       ]

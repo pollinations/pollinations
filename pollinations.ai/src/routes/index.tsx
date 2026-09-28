@@ -53,7 +53,7 @@ function HelloPage() {
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
-                    subtitle="Build with AI models and ready-made agents through one platform and API. Use a shared Pollen wallet for text, images, audio and video—and start with credits earned through Quests."
+                    subtitle="Build AI apps with models, ready-made agents, and shared infrastructure. Pay for usage with Pollen, our platform credit—buy it or earn it through Quests."
                     variant="page"
                     className="sm:[&_h1]:max-w-[9ch]"
                 />

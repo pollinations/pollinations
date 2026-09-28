@@ -102,7 +102,7 @@ Fix these before calling V2 ready for production. Removing an unsupported claim 
 
 Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
-- [ ] **C1 · Explain Pollen at first mention.** Put a short definition in the hero or directly adjacent supporting copy: **“Pollen is the credit used to pay for AI usage.”** Keep approximate dollar equivalence in supporting explanation, not as a fixed purchase/cash-redemption promise. Align hero, metadata, and wallet language. **Done when:** a first-time visitor understands both the platform and the credit before reaching the next section. Headline wording remains D1. [Hello][hello]
+- [x] **C1 · Explain Pollen at first mention.** **Approved and implemented (28 September 2026).** The Hello intro now reads: “Build AI apps with models, ready-made agents, and shared infrastructure. Pay for usage with Pollen, our platform credit—buy it or earn it through Quests.” The headline and layout remain unchanged; detailed wallet rules stay further down the page. No dollar-equivalence or cash-redemption promise is added. [Hello][hello]
 
 - [ ] **C2 · Make the two hero actions match their destinations.** Retain two clear actions. If the first opens Quests, name or qualify that path—for example, **“Earn Pollen with Quests”**—without suggesting unlimited anonymous generation. Link docs to the actual Quick Start anchor after verifying it. **Done when:** free access, sign-in, and Paid-Pollen limits are understandable without extra marketing buttons.
 

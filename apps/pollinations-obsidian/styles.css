@@ -1,0 +1,11 @@
+/* Pollinations AI plugin styles */
+
+.pollinations-status {
+	color: var(--color-accent-primary);
+	font-size: var(--font-small);
+}
+
+.pollinations-loading {
+	opacity: 0.6;
+	pointer-events: none;
+}

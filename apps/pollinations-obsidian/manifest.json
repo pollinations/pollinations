@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-pollinations",
+  "name": "Pollinations AI",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Generate text and images with Pollinations AI inside your notes, paying with your own Pollen.",
+  "author": "g33ky00",
+  "authorUrl": "https://github.com/g33ky00",
+  "isDesktopOnly": false
+}

@@ -38,7 +38,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "pollinations-router/floret",
+    "model": "pollinations-ai/floret",
     "messages": [{"role": "user", "content": "Create a narrated launch concept"}],
     "stream": true,
     "routing": {

@@ -2,9 +2,9 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
     Raw Cloudflare GraphQL analytics responses for the pollinations.ai zone, one row per UTC
-    date, loaded once by operations/cloudflare/export-traffic-to-tinybird.mjs. The Free plan
-    keeps per-request detail for 30 days only, so body is stored exactly as returned and
-    interpreted in pipes. Dataset page_views: HTML responses to real clients on our own page
+    date, appended daily by .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The
+    Free plan keeps per-request detail for 30 days only, so body is stored exactly as returned
+    and interpreted in pipes. Dataset page_views: HTML responses to real clients on our own page
     routes of pollinations.ai, www and enter, by page, country, device, browser and verified
     bot category. Counts are Cloudflare's sampled estimates.
 

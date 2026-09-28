@@ -1,0 +1,36 @@
+name: Data / Sync Cloudflare traffic to Tinybird
+
+on:
+  schedule:
+    # Cloudflare keeps per-page detail for 30 days only; sync each finished UTC day
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Complete UTC days to fetch (max 30, for backfill or a missed run)"
+        default: "1"
+
+permissions: {}
+
+concurrency:
+  group: cloudflare-traffic-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Sync traffic
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
+          DAYS: ${{ inputs.days || '1' }}
+        run: node operations/cloudflare/sync-traffic-to-tinybird.mjs --days "$DAYS"

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * One-off export of Cloudflare page traffic for pollinations.ai and
- * enter.pollinations.ai → Tinybird cloudflare_traffic_raw.
+ * Sync Cloudflare page traffic for pollinations.ai and enter.pollinations.ai
+ * → Tinybird cloudflare_traffic_raw.
  *
  * The zone is on the Free plan, where per-request detail (page, country,
- * device) is kept for 30 days only. This stores one raw GraphQL response per
- * UTC day; the cloudflare_page_views_daily pipe interprets it.
+ * device) is kept for 30 days only, so this runs daily
+ * (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml) and stores one
+ * raw GraphQL response per UTC day; the cloudflare_page_views_daily pipe
+ * interprets it.
  *
  * Only HTML responses to real clients on our own page routes are requested:
  * people type prompts into URLs, so any other path may contain prompt text.
@@ -14,15 +16,16 @@
  * verifiedBotCategory.
  *
  * Usage:
- *   node operations/cloudflare/export-traffic-to-tinybird.mjs [--days 30] [--dry-run]
- *   node operations/cloudflare/export-traffic-to-tinybird.mjs --save <dir> [--days 30]
- *   node operations/cloudflare/export-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
+ *   node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
+ *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --save <dir> [--days 30]
+ *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
  *
- * --save writes each day's response to <dir>/<date>.json without ingesting;
+ * --days fetches the last N complete UTC days (up to 30 for backfill); --save
+ * writes each day's response to <dir>/<date>.json without ingesting;
  * --snapshot ingests those files later, using each file's mtime as fetched_at.
  *
  * Env vars:
- *   CLOUDFLARE_API_TOKEN  Required unless --snapshot — zone read on pollinations.ai
+ *   CLOUDFLARE_API_TOKEN  Required unless --snapshot — Analytics read on the pollinations.ai zone
  *   TINYBIRD_SYNC_TOKEN   Required unless --dry-run or --save
  */
 
@@ -87,7 +90,7 @@ const QUERY = `query ($zone: String!, $date: Date!, $filter: ZoneHttpRequestsAda
 
 const { values: args } = parseArgs({
     options: {
-        days: { type: "string", default: "30" },
+        days: { type: "string", default: "1" },
         save: { type: "string" },
         snapshot: { type: "string" },
         "dry-run": { type: "boolean", default: false },
@@ -228,6 +231,6 @@ async function main() {
 }
 
 main().catch((err) => {
-    console.error("Export failed:", err.message);
+    console.error("Sync failed:", err.message);
     process.exit(1);
 });

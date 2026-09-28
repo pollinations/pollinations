@@ -14,13 +14,14 @@ import {
     Button,
     ButtonGroup,
     ChevronIcon,
+    ClockIcon,
     cn,
     Dialog,
     Dropdown,
+    ExpandIcon,
     FieldStack,
     FileUpload,
     ImageIcon,
-    Input,
     LockIcon,
     MicIcon,
     RobotIcon,
@@ -33,12 +34,21 @@ import {
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
-import { categoryLabel, ModelAccessIcon } from "@pollinations/ui/gen";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { categoryLabel } from "@pollinations/ui/gen";
+import {
+    type CSSProperties,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { API_BASE_URL } from "../../config";
 import { Chat } from "./Chat";
 import { errorMessage } from "./chat-models";
 import { MediaDownloadButton } from "./MediaDownloadButton";
+import { MediaFact, MediaModelOption } from "./MediaModelDetails";
+import { mediaModelSettings } from "./media-model-settings";
+import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
     audioEndpoint,
     audioInputError,
@@ -63,7 +73,7 @@ type PlaygroundModel = {
     durationStep?: number;
     maxReferenceImages?: number;
     voices: string[];
-    paidOnly: boolean;
+    paidOnly?: boolean;
 };
 
 const AUDIO_TASK_ORDER = [
@@ -101,7 +111,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         durationStep: model.duration_step,
         maxReferenceImages: model.max_reference_images,
         voices: model.voices ?? [],
-        paidOnly: model.paid_only ?? false,
+        paidOnly: model.paid_only,
     };
 }
 
@@ -126,32 +136,6 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
 };
 const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
-
-const IMAGE_FORMATS = [
-    { id: "square", label: "Square", ratio: "1:1", width: 1024, height: 1024 },
-    {
-        id: "portrait",
-        label: "Portrait",
-        ratio: "4:5",
-        width: 1024,
-        height: 1280,
-    },
-    {
-        id: "landscape",
-        label: "Landscape",
-        ratio: "3:2",
-        width: 1152,
-        height: 768,
-    },
-    { id: "story", label: "Story", ratio: "9:16", width: 576, height: 1024 },
-] as const;
-type ImageFormat = (typeof IMAGE_FORMATS)[number]["id"] | "custom";
-
-const VIDEO_FORMATS = [
-    { id: "landscape", label: "Landscape", ratio: "16:9" },
-    { id: "portrait", label: "Portrait", ratio: "9:16" },
-] as const;
-type VideoFormat = (typeof VIDEO_FORMATS)[number]["id"];
 
 type PlaygroundResult =
     | {
@@ -335,7 +319,8 @@ function ModelPicker({
                 Model
             </Text>
             <Dropdown
-                className="w-max max-w-[calc(100vw-2rem)] p-2"
+                portalled={false}
+                className="w-[34rem] max-w-[calc(100vw-2rem)] p-2"
                 trigger={(open) => (
                     <Button
                         type="button"
@@ -367,14 +352,7 @@ function ModelPicker({
                                         close();
                                     }}
                                 >
-                                    <span className="flex min-w-0 items-center gap-2">
-                                        <span className="truncate">
-                                            {model.title}
-                                        </span>
-                                        <ModelAccessIcon
-                                            paidOnly={model.paidOnly}
-                                        />
-                                    </span>
+                                    <MediaModelOption model={model} />
                                 </TabButton>
                             ))}
                         </div>
@@ -624,23 +602,64 @@ export function Playground() {
         enabled: isHydrated,
     });
     const { isLoading, error: catalogError } = catalog;
-    const [activeCategory, setActiveCategory] =
-        useState<PlaygroundCategory>("text");
-    const [audioTask, setAudioTask] = useState<AudioTask>("speech-generation");
-    const [selectedModel, setSelectedModel] = useState("");
-    const [prompt, setPrompt] = useState("");
-    const [imageFormat, setImageFormat] = useState<ImageFormat>("square");
-    const [videoFormat, setVideoFormat] = useState<VideoFormat>("landscape");
-    const [width, setWidth] = useState(1024);
-    const [height, setHeight] = useState(1024);
-    const [selectedResolution, setSelectedResolution] = useState("");
-    const [duration, setDuration] = useState(5);
+    const [restoredDraft] = useState(() =>
+        readPlayDraft("media", {
+            activeCategory: "text",
+            audioTask: "speech-generation",
+            selectedModel: "",
+            prompt: "",
+            selectedResolution: "",
+            duration: 0,
+            selectedVoice: "",
+            hadAttachments: false,
+        }),
+    );
+    const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
+        CATEGORY_ORDER.find(
+            (value) => value === restoredDraft.activeCategory,
+        ) ?? "text",
+    );
+    const [audioTask, setAudioTask] = useState<AudioTask>(
+        AUDIO_TASK_ORDER.find((value) => value === restoredDraft.audioTask) ??
+            "speech-generation",
+    );
+    const [selectedModel, setSelectedModel] = useState(
+        restoredDraft.selectedModel,
+    );
+    const [prompt, setPrompt] = useState(restoredDraft.prompt);
+    const [selectedResolution, setSelectedResolution] = useState(
+        restoredDraft.selectedResolution,
+    );
+    const [duration, setDuration] = useState(restoredDraft.duration);
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
-    const [selectedVoice, setSelectedVoice] = useState("");
+    const [selectedVoice, setSelectedVoice] = useState(
+        restoredDraft.selectedVoice,
+    );
+    const [needsAttachments, setNeedsAttachments] = useState<boolean>(
+        restoredDraft.hadAttachments,
+    );
+    const configuredModelRef = useRef(restoredDraft.selectedModel);
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const draftSaveFailed = useRememberPlayDraft("media", {
+        activeCategory,
+        audioTask,
+        selectedModel,
+        prompt,
+        selectedResolution,
+        duration,
+        selectedVoice,
+        hadAttachments:
+            referenceImages.length > 0 ||
+            audioFiles.length > 0 ||
+            needsAttachments,
+    });
+    useEffect(() => {
+        if (referenceImages.length > 0 || audioFiles.length > 0)
+            setNeedsAttachments(false);
+    }, [referenceImages.length, audioFiles.length]);
 
     // Community models stay off the playground menu: this page pitches the
     // official catalog, and owner/model entries would double the list. Every
@@ -672,7 +691,16 @@ export function Playground() {
     );
 
     useEffect(() => {
-        if (activeCategory === "text") return;
+        if (
+            activeCategory === "text" ||
+            !isHydrated ||
+            isLoading ||
+            catalogError
+        )
+            return;
+        // Keep a restored selection while discovery loads, or until the user
+        // explicitly replaces a model that has left the catalog.
+        if (selectedModel && !currentModel) return;
         if (
             currentModel?.category === activeCategory &&
             (activeCategory !== "audio" ||
@@ -681,7 +709,16 @@ export function Playground() {
             return;
         setSelectedModel(categoryModels[0]?.id ?? "");
         setAudioFiles([]);
-    }, [activeCategory, audioTask, categoryModels, currentModel]);
+    }, [
+        activeCategory,
+        audioTask,
+        categoryModels,
+        currentModel,
+        selectedModel,
+        isHydrated,
+        isLoading,
+        catalogError,
+    ]);
 
     useEffect(() => {
         if (!currentModel) return;
@@ -697,13 +734,15 @@ export function Playground() {
 
     useEffect(() => {
         if (!currentModel) return;
+        if (configuredModelRef.current === currentModel.id) return;
+        configuredModelRef.current = currentModel.id;
         setSelectedResolution(currentModel.resolutions[0] ?? "");
         if (currentModel.category === "video") {
             setDuration(
                 currentModel.defaultDuration ??
                     currentModel.allowedDurations[0] ??
                     currentModel.minDuration ??
-                    5,
+                    0,
             );
         }
     }, [currentModel]);
@@ -719,7 +758,9 @@ export function Playground() {
     const maxReferenceImages = referenceImageLimit(currentModel);
     const supportsReferenceImages = maxReferenceImages > 0;
     const isVideoReferenceMode =
-        currentModel?.category === "video" && supportsReferenceImages;
+        currentModel?.category === "video" &&
+        currentModel.videoCapabilities.includes("start_frame") &&
+        supportsReferenceImages;
     const isReferenceImageListMode =
         supportsReferenceImages && !isVideoReferenceMode;
     const supportsLastFrame =
@@ -772,22 +813,12 @@ export function Playground() {
         !!currentModel &&
         isLoggedIn &&
         catalog.allowedModelIds.has(currentModel.id);
-    const allowedDurations = currentModel?.allowedDurations ?? [];
-    const minDuration = currentModel?.minDuration ?? duration;
-    const maxDuration = currentModel?.maxDuration ?? duration;
-    const fixedDuration = minDuration === maxDuration;
-    const durationSliderValue =
-        allowedDurations.length > 0
-            ? Math.max(0, allowedDurations.indexOf(duration))
-            : duration;
-    const durationSliderMin = allowedDurations.length > 0 ? 0 : minDuration;
-    const durationSliderMax =
-        allowedDurations.length > 0 ? allowedDurations.length - 1 : maxDuration;
-    const durationSliderStep =
-        allowedDurations.length > 0 ? 1 : (currentModel?.durationStep ?? 1);
-    const videoAspectRatio =
-        VIDEO_FORMATS.find((format) => format.id === videoFormat)?.ratio ??
-        "16:9";
+    const mediaSettings = mediaModelSettings(currentModel, {
+        resolution: selectedResolution,
+        duration,
+    });
+    const videoDuration =
+        currentModel?.category === "video" ? mediaSettings.duration : undefined;
 
     useEffect(() => {
         setReferenceImages((current) => {
@@ -798,6 +829,7 @@ export function Playground() {
 
     function selectCategory(category: PlaygroundCategory) {
         if (category === activeCategory) return;
+        setNeedsAttachments(false);
         setActiveCategory(category);
         setAudioFiles([]);
         if (category === "text") return;
@@ -811,6 +843,7 @@ export function Playground() {
 
     function selectAudioTask(task: AudioTask) {
         if (task === audioTask) return;
+        setNeedsAttachments(false);
         setAudioTask(task);
         setSelectedModel(
             visibleModels.find(
@@ -823,24 +856,9 @@ export function Playground() {
     }
 
     function selectModel(modelId: string) {
+        setNeedsAttachments(false);
         setSelectedModel(modelId);
         setAudioFiles([]);
-    }
-
-    function selectImageFormat(format: ImageFormat) {
-        setImageFormat(format);
-        const preset = IMAGE_FORMATS.find((item) => item.id === format);
-        if (!preset) return;
-        setWidth(preset.width);
-        setHeight(preset.height);
-    }
-
-    function selectDuration(value: number) {
-        if (allowedDurations.length > 0) {
-            setDuration(allowedDurations[value] ?? duration);
-            return;
-        }
-        setDuration(value);
     }
 
     function setFrameImage(index: 0 | 1, files: File[]) {
@@ -897,9 +915,8 @@ export function Playground() {
             if (currentModel.category === "video") {
                 const response = await client.video(trimmedPrompt, {
                     model: currentModel.id,
-                    duration,
-                    aspectRatio: videoAspectRatio,
-                    resolution: selectedResolution || undefined,
+                    duration: videoDuration?.value,
+                    resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
@@ -918,9 +935,7 @@ export function Playground() {
             if (currentModel.category === "image") {
                 const response = await client.image(trimmedPrompt, {
                     model: currentModel.id,
-                    width,
-                    height,
-                    resolution: selectedResolution || undefined,
+                    resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
                         referenceUrls.length > 0 ? referenceUrls : undefined,
@@ -1113,6 +1128,28 @@ export function Playground() {
                                 onSelectModel={selectModel}
                             />
                         </div>
+                        {isHydrated &&
+                            !isLoading &&
+                            !catalogError &&
+                            selectedModel &&
+                            !currentModel && (
+                                <Alert intent="warning">
+                                    Your selected model is unavailable. Choose
+                                    another model to continue.
+                                </Alert>
+                            )}
+                        {needsAttachments && (
+                            <Text size="sm" tone="muted">
+                                Your draft was restored. Please reattach your
+                                files.
+                            </Text>
+                        )}
+                        {draftSaveFailed && (
+                            <Alert intent="warning">
+                                Your browser couldn’t save this draft. Copy your
+                                text before connecting.
+                            </Alert>
+                        )}
                         {isAudioTranscription && audioInput}
                         {showPromptInput && (
                             <FieldStack label={promptLabel}>
@@ -1141,11 +1178,22 @@ export function Playground() {
 
                         {isReferenceImageListMode && (
                             <FieldStack
-                                label={
-                                    <>
-                                        Reference images (up to{" "}
-                                        {pluralizeImages(maxReferenceImages)})
-                                    </>
+                                label="Reference images"
+                                action={
+                                    <span
+                                        role="img"
+                                        aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
+                                        className="inline-flex items-center gap-1.5 text-xs tabular-nums text-theme-text-muted"
+                                    >
+                                        <ImageIcon
+                                            aria-hidden="true"
+                                            className="h-3.5 w-3.5"
+                                        />
+                                        <span aria-hidden="true">
+                                            {referenceImages.length}/
+                                            {maxReferenceImages}
+                                        </span>
+                                    </span>
                                 }
                             >
                                 <FileUpload
@@ -1156,11 +1204,7 @@ export function Playground() {
                                     maxSizeBytes={5 * 1024 * 1024}
                                     label={
                                         <>
-                                            Drag up to{" "}
-                                            {pluralizeImages(
-                                                maxReferenceImages,
-                                            )}{" "}
-                                            here or{" "}
+                                            Drop images here or{" "}
                                             <span className="underline">
                                                 browse
                                             </span>
@@ -1282,203 +1326,151 @@ export function Playground() {
                         )}
 
                         {(currentModel?.category === "image" ||
-                            currentModel?.category === "video") && (
-                            <div
-                                className={cn(
-                                    "gap-y-4",
-                                    currentModel.category === "video"
-                                        ? "grid gap-3 sm:grid-cols-2"
-                                        : "flex flex-col",
-                                )}
-                            >
-                                <FieldStack
-                                    label="Format"
-                                    className="min-w-0 max-w-full"
-                                >
-                                    <ButtonGroup aria-label="Format">
-                                        {currentModel.category === "image"
-                                            ? IMAGE_FORMATS.map((format) => (
-                                                  <TabButton
-                                                      key={format.id}
-                                                      active={
-                                                          imageFormat ===
-                                                          format.id
-                                                      }
-                                                      size="sm"
-                                                      onClick={() =>
-                                                          selectImageFormat(
-                                                              format.id,
-                                                          )
-                                                      }
-                                                      className="gap-1.5"
-                                                  >
-                                                      <span>
-                                                          {format.label}
-                                                      </span>
-                                                      <span className="text-theme-text-muted text-xs">
-                                                          {format.ratio}
-                                                      </span>
-                                                  </TabButton>
-                                              ))
-                                            : VIDEO_FORMATS.map((format) => (
-                                                  <TabButton
-                                                      key={format.id}
-                                                      active={
-                                                          videoFormat ===
-                                                          format.id
-                                                      }
-                                                      size="sm"
-                                                      onClick={() =>
-                                                          setVideoFormat(
-                                                              format.id,
-                                                          )
-                                                      }
-                                                      className="gap-1.5"
-                                                  >
-                                                      <span>
-                                                          {format.label}
-                                                      </span>
-                                                      <span className="text-theme-text-muted text-xs">
-                                                          {format.ratio}
-                                                      </span>
-                                                  </TabButton>
-                                              ))}
-                                        {currentModel.category === "image" && (
-                                            <TabButton
-                                                active={
-                                                    imageFormat === "custom"
-                                                }
-                                                size="sm"
-                                                onClick={() =>
-                                                    selectImageFormat("custom")
-                                                }
+                            currentModel?.category === "video") &&
+                            (mediaSettings.resolution || videoDuration) && (
+                                <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                                    {currentModel.resolutions.length > 1 ? (
+                                        <FieldStack
+                                            label="Resolution"
+                                            className="w-fit min-w-0 max-w-full"
+                                        >
+                                            <ButtonGroup aria-label="Resolution">
+                                                {currentModel.resolutions.map(
+                                                    (resolution) => (
+                                                        <TabButton
+                                                            key={resolution}
+                                                            active={
+                                                                mediaSettings.resolution ===
+                                                                resolution
+                                                            }
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                setSelectedResolution(
+                                                                    resolution,
+                                                                )
+                                                            }
+                                                        >
+                                                            {resolution.toUpperCase()}
+                                                        </TabButton>
+                                                    ),
+                                                )}
+                                            </ButtonGroup>
+                                        </FieldStack>
+                                    ) : mediaSettings.resolution ? (
+                                        <MediaFact
+                                            label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                        >
+                                            <ExpandIcon aria-hidden="true" />
+                                            <span aria-hidden="true">
+                                                {mediaSettings.resolution.toUpperCase()}
+                                            </span>
+                                        </MediaFact>
+                                    ) : null}
+
+                                    {videoDuration &&
+                                        (videoDuration.min ===
+                                        videoDuration.max ? (
+                                            <MediaFact
+                                                label={`Fixed duration: ${videoDuration.value} seconds`}
                                             >
-                                                Custom
-                                            </TabButton>
-                                        )}
-                                    </ButtonGroup>
-                                </FieldStack>
-
-                                {currentModel.category === "image" &&
-                                    imageFormat === "custom" && (
-                                        <div className="grid gap-3 sm:grid-cols-2">
-                                            <FieldStack label="Width">
-                                                <Input
-                                                    type="number"
-                                                    min={256}
-                                                    max={2048}
-                                                    step={64}
-                                                    value={width}
-                                                    onChange={(event) =>
-                                                        setWidth(
-                                                            Number(
-                                                                event.target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    hideNumberSteppers
-                                                />
-                                            </FieldStack>
-                                            <FieldStack label="Height">
-                                                <Input
-                                                    type="number"
-                                                    min={256}
-                                                    max={2048}
-                                                    step={64}
-                                                    value={height}
-                                                    onChange={(event) =>
-                                                        setHeight(
-                                                            Number(
-                                                                event.target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    hideNumberSteppers
-                                                />
-                                            </FieldStack>
-                                        </div>
-                                    )}
-
-                                {currentModel.resolutions.length > 1 && (
-                                    <FieldStack
-                                        label="Resolution"
-                                        className="min-w-0 max-w-full"
-                                    >
-                                        <ButtonGroup aria-label="Resolution">
-                                            {currentModel.resolutions.map(
-                                                (resolution) => (
-                                                    <TabButton
-                                                        key={resolution}
-                                                        active={
-                                                            selectedResolution ===
-                                                            resolution
-                                                        }
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setSelectedResolution(
-                                                                resolution,
-                                                            )
-                                                        }
-                                                    >
-                                                        {resolution.toUpperCase()}
-                                                    </TabButton>
-                                                ),
-                                            )}
-                                        </ButtonGroup>
-                                    </FieldStack>
-                                )}
-
-                                {currentModel.category === "video" && (
-                                    <FieldStack
-                                        label="Duration"
-                                        className="w-full max-w-80"
-                                        action={
-                                            <Text
-                                                as="span"
-                                                size="sm"
-                                                tone="strong"
-                                                weight="semibold"
-                                                className="tabular-nums"
-                                            >
-                                                {duration}s
-                                            </Text>
-                                        }
-                                    >
-                                        {fixedDuration ? (
-                                            <Text size="xs" tone="muted">
-                                                Fixed for this model
-                                            </Text>
+                                                <ClockIcon aria-hidden="true" />
+                                                <span aria-hidden="true">
+                                                    {videoDuration.value}s
+                                                </span>
+                                            </MediaFact>
                                         ) : (
-                                            <Slider
-                                                aria-label="Video duration"
-                                                aria-valuetext={`${duration} seconds`}
-                                                style={
-                                                    {
-                                                        "--polli-slider-fill":
-                                                            "var(--polli-color-text-soft)",
-                                                        "--polli-slider-track":
-                                                            "var(--polli-color-bg-active)",
-                                                    } as CSSProperties
+                                            <FieldStack
+                                                label="Duration"
+                                                className="w-56 max-w-full"
+                                                action={
+                                                    <MediaFact
+                                                        label={`Selected duration: ${videoDuration.value} seconds`}
+                                                    >
+                                                        <ClockIcon aria-hidden="true" />
+                                                        <span aria-hidden="true">
+                                                            {
+                                                                videoDuration.value
+                                                            }
+                                                            s
+                                                        </span>
+                                                    </MediaFact>
                                                 }
-                                                min={durationSliderMin}
-                                                max={durationSliderMax}
-                                                step={durationSliderStep}
-                                                value={durationSliderValue}
-                                                onChange={(event) =>
-                                                    selectDuration(
-                                                        Number(
-                                                            event.target.value,
-                                                        ),
-                                                    )
-                                                }
-                                            />
-                                        )}
-                                    </FieldStack>
-                                )}
-                            </div>
-                        )}
+                                            >
+                                                <div className="flex flex-col gap-1">
+                                                    <Slider
+                                                        aria-label="Video duration"
+                                                        aria-valuetext={`${videoDuration.value} seconds`}
+                                                        style={
+                                                            {
+                                                                "--polli-slider-fill":
+                                                                    "var(--polli-color-text-soft)",
+                                                                "--polli-slider-track":
+                                                                    "var(--polli-color-bg-active)",
+                                                            } as CSSProperties
+                                                        }
+                                                        min={
+                                                            videoDuration
+                                                                .options.length
+                                                                ? 0
+                                                                : videoDuration.min
+                                                        }
+                                                        max={
+                                                            videoDuration
+                                                                .options.length
+                                                                ? videoDuration
+                                                                      .options
+                                                                      .length -
+                                                                  1
+                                                                : videoDuration.max
+                                                        }
+                                                        step={
+                                                            videoDuration
+                                                                .options.length
+                                                                ? 1
+                                                                : videoDuration.step
+                                                        }
+                                                        value={
+                                                            videoDuration
+                                                                .options.length
+                                                                ? videoDuration.options.indexOf(
+                                                                      videoDuration.value,
+                                                                  )
+                                                                : videoDuration.value
+                                                        }
+                                                        onChange={(event) => {
+                                                            const value =
+                                                                Number(
+                                                                    event.target
+                                                                        .value,
+                                                                );
+                                                            setDuration(
+                                                                videoDuration
+                                                                    .options
+                                                                    .length
+                                                                    ? videoDuration
+                                                                          .options[
+                                                                          value
+                                                                      ]
+                                                                    : value,
+                                                            );
+                                                        }}
+                                                    />
+                                                    <div
+                                                        aria-hidden="true"
+                                                        className="flex justify-between text-xs tabular-nums text-theme-text-muted"
+                                                    >
+                                                        <span>
+                                                            {videoDuration.min}s
+                                                        </span>
+                                                        <span>
+                                                            {videoDuration.max}s
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </FieldStack>
+                                        ))}
+                                </div>
+                            )}
 
                         {currentModel && currentModel.voices.length > 0 && (
                             <FieldStack label="Voice">

@@ -116,6 +116,91 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const db = drizzle(env.DB);
 
 fixtureTest(
+    "official agent ownership transfer changes callable model IDs",
+    async () => {
+        const sourceUserId = await createTestUser({
+            githubId: 240205932,
+            githubUsername: "pollinations-router",
+        });
+        const destinationUserId = await createTestUser({
+            githubId: 314960022,
+            githubUsername: "pollinations-ai",
+        });
+        const listings = [
+            ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
+            ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
+            ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
+        ] as const;
+        await insertCommunityEndpoints(
+            listings.map(([id, name]) => ({
+                id,
+                ownerUserId: sourceUserId,
+                name,
+                title: name,
+                description: null,
+                type:
+                    name === "midijourney" ? "prompt_agent" : "endpoint_agent",
+                visibility: "public",
+                baseUrl:
+                    name === "midijourney"
+                        ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                        : `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name === "midijourney" ? id : name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const oldPolli = communityModelId("pollinations-router", "polli");
+        const newPolli = communityModelId("pollinations-ai", "polli");
+        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
+
+        const catalogIdsFor = async (key: string) => {
+            const response = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                }),
+            );
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { id: string }[] };
+            return body.data.map((model) => model.id);
+        };
+
+        await resetGenerationModelRegistryCache(env);
+        expect(await catalogIdsFor(oldKey.key)).toContain(oldPolli);
+        await db
+            .update(communityEndpointTable)
+            .set({ ownerUserId: destinationUserId })
+            .where(eq(communityEndpointTable.ownerUserId, sourceUserId));
+        await resetGenerationModelRegistryCache(env);
+        const registry = await getGenerationModelRegistry(env);
+        for (const [, name] of listings) {
+            expect(
+                registry.resolve(communityModelId("pollinations-router", name)),
+            ).toBeNull();
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-router", name),
+                ),
+            ).toBeNull();
+            const current = registry.resolve(
+                communityModelId("pollinations-ai", name),
+            );
+            expect(current?.communityEndpoint?.ownerUserId).toBe(
+                destinationUserId,
+            );
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-ai", name),
+                ),
+            ).toBe(current);
+        }
+        expect(await catalogIdsFor(oldKey.key)).not.toContain(newPolli);
+        const newKey = await createTestApiKey({ allowedModels: [newPolli] });
+        expect(await catalogIdsFor(newKey.key)).toContain(newPolli);
+    },
+);
+
+fixtureTest(
     "banned owners' public models and agents leave the registry",
     async () => {
         const ownerUserId = await createTestUser({

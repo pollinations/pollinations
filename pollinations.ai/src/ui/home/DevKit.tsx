@@ -34,7 +34,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
     {
         title: "Official and community models",
         body: (modelKinds) =>
-            `${modelKinds ?? "Text, image, video, audio and embeddings"}. OpenAI-compatible, with plain GET URLs for quick calls.`,
+            `${modelKinds ? `${modelKinds}. ` : ""}OpenAI-compatible, with plain GET URLs for quick calls.`,
         catalogCount: "models",
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",

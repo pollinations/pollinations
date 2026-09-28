@@ -1,0 +1,69 @@
+name: MCP / Publish registry entries
+
+# Publishes every hosted Pollinations MCP server (GET /mcp, built from
+# shared/registry/mcp.ts) to the official MCP registry under
+# io.github.pollinations/<server-id>. GitHub OIDC authenticates the
+# namespace — no secrets needed. Run it once after a merge that adds or
+# changes an MCP server; the generator reads the live /mcp list, so new
+# servers appear on the next run with no extra wiring.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # Required for GitHub OIDC authentication
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate server.json entries from the live /mcp list
+        run: node operations/mcp-registry/generate.mjs "$RUNNER_TEMP/mcp-registry"
+
+      - name: Validate entries against the registry schema
+        run: |
+          cd "$RUNNER_TEMP"
+          npm install --no-save --no-package-lock ajv
+          node --input-type=module -e '
+            import { readFile, readdir } from "node:fs/promises";
+            import path from "node:path";
+            import Ajv from "ajv";
+            const schema = JSON.parse(
+              await (await fetch("https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json")).text(),
+            );
+            const validate = new Ajv({ strict: false, allErrors: true });
+            try {
+              const { default: addFormats } = await import("ajv-formats");
+              addFormats(validate);
+            } catch {}
+            const compiled = validate.compile(schema);
+            let failed = false;
+            for (const d of await readdir("mcp-registry", { withFileTypes: true })) {
+              if (!d.isDirectory()) continue;
+              const file = path.join("mcp-registry", d.name, "server.json");
+              const entry = JSON.parse(await readFile(file, "utf8"));
+              if (compiled(entry)) console.log(`PASS ${file}: ${entry.name}`);
+              else { failed = true; console.error(file, JSON.stringify(compiled.errors)); }
+            }
+            if (failed) process.exit(1);
+          '
+
+      - name: Install mcp-publisher
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Login to the MCP registry via GitHub OIDC
+        working-directory: ${{ runner.temp }}
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server entries
+        working-directory: ${{ runner.temp }}
+        run: |
+          for dir in mcp-registry/*/; do
+            echo "Publishing ${dir}server.json"
+            (cd "$dir" && "$GITHUB_WORKSPACE/mcp-publisher" publish)
+          done

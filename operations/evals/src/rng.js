@@ -25,10 +25,16 @@ export function makeRng(seed) {
 // "JSON body validation failed"), so every seed we send is kept in [0, 2^31).
 const SEED_MAX = 0x7fffffff;
 
+/** Random int in [min, max] using the platform CSPRNG. */
+function randomInt(min, max) {
+    const float = crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+    return min + Math.floor(float * (max - min + 1));
+}
+
 /** A fresh run seed (unless an explicit one is given), in [1, 2^31). */
 export function runSeed(explicit) {
     if (explicit !== undefined) return clampSeed(Number(explicit));
-    return ((Math.floor(Math.random() * SEED_MAX) | 0) % SEED_MAX) + 1;
+    return randomInt(1, SEED_MAX);
 }
 
 /** Per-repeat seed derived from the run seed: keeps each request uncached. */

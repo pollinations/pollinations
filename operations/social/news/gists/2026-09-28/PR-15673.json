@@ -1,0 +1,37 @@
+{
+  "pr_number": 15673,
+  "title": "ci: deploy legacy caches from master",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15673",
+  "merged_at": "2026-09-28T18:57:13Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Adds a manual GitHub Actions deploy for the legacy image and text cache Workers.\n- Runs on the default branch but checks out legacy master; no modern production branch involved.\n- Tests both caches before deploying with the existing Cloudflare account credentials.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Old caches, fresh button",
+    "blurb": "The legacy image and text caches have a manual deploy button. It tests them first, then fetches their code from master—no detour through the modern production branch.",
+    "summary": "Added a manual GitHub Actions workflow on the default branch that checks out legacy master, tests both image and text cache Workers, then deploys them with the existing Cloudflare credentials.",
+    "impact": "Maintainers can deploy the tested legacy cache Workers without involving the modern production branch.",
+    "keywords": [
+      "GitHub Actions",
+      "legacy caches",
+      "image cache",
+      "text cache",
+      "Cloudflare Workers",
+      "deployment"
+    ],
+    "visual_concept": "A cozy garden-shed deploy station with two labeled cache boxes for images and text, a test checklist, and a path from an old 'master' code shelf to a Cloudflare Worker terminal. Polli, wearing a tiny tool belt, presses a manual deploy button; the imagery should make clear this is a maintainer workflow, not a new user feature.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli presses a lime green (#ecf874) manual deploy button beside two little cache boxes marked 'IMAGE' and 'TEXT,' with checked test cards and a vine-lined path from an old 'master' code shelf to a glowing terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, is small-to-medium sized within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15673.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli presses a lime green (#ecf874) manual deploy button beside two little cache boxes marked 'IMAGE' and 'TEXT,' with checked test cards and a vine-lined path from an old 'master' code shelf to a glowing terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, is small-to-medium sized within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-28T18:59:34.460140+00:00"
+}

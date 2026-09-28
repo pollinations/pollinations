@@ -1,8 +1,5 @@
 import {
     type AudioFormat,
-    CHAT_ROUTING_CAPABILITIES,
-    type ChatRouting,
-    type ChatRoutingCapability,
     type MessageContent,
     type MessageContentPart,
     type ModelInfo,
@@ -21,22 +18,6 @@ export function isCancellation(error: unknown): boolean {
         (error instanceof PollinationsError && error.code === "CANCELLED") ||
         (error instanceof DOMException && error.name === "AbortError")
     );
-}
-
-export type RoutingSelection = Record<ChatRoutingCapability, string | null>;
-
-export const AUTO_ROUTING: RoutingSelection = {
-    text: null,
-    web_search: null,
-    image_generation: null,
-    image_editing: null,
-    video: null,
-    audio: null,
-};
-
-export interface RoutingChoice {
-    id: string;
-    title: string;
 }
 
 export interface AgentChoice {
@@ -189,10 +170,6 @@ const AUDIO_FORMATS: Record<string, AudioFormat> = {
     wav: "wav",
 };
 
-function normalizedValues(values: readonly string[] | undefined): Set<string> {
-    return new Set(values?.map((value) => value.toLowerCase()) ?? []);
-}
-
 function modelId(model: ModelInfo): string | null {
     const id = (model.id ?? model.name).trim();
     return id.length > 0 ? id : null;
@@ -210,81 +187,6 @@ export function agentChoices(models: ModelInfo[]): AgentChoice[] {
             },
         ];
     });
-}
-
-export function supportsRoutingField(
-    model: ModelInfo,
-    field: ChatRoutingCapability,
-): boolean {
-    const category = model.category?.toLowerCase();
-    const inputs = normalizedValues(model.input_modalities);
-    const outputs = normalizedValues(model.output_modalities);
-    const capabilities = normalizedValues(model.capabilities);
-    const hasTextInput = inputs.has("text");
-
-    switch (field) {
-        case "text":
-            return category === "text" && hasTextInput && outputs.has("text");
-        case "web_search":
-            return (
-                category === "text" &&
-                hasTextInput &&
-                outputs.has("text") &&
-                capabilities.has("web_search")
-            );
-        case "image_generation":
-            return category === "image" && hasTextInput && outputs.has("image");
-        case "image_editing":
-            return (
-                category === "image" &&
-                hasTextInput &&
-                inputs.has("image") &&
-                outputs.has("image")
-            );
-        case "video":
-            return category === "video" && hasTextInput && outputs.has("video");
-        case "audio":
-            return category === "audio" && hasTextInput && outputs.has("audio");
-        default:
-            return false;
-    }
-}
-
-export function routingChoices(
-    models: ModelInfo[],
-    allowedModelIds: ReadonlySet<string>,
-    field: ChatRoutingCapability,
-): RoutingChoice[] {
-    return models
-        .flatMap((model): RoutingChoice[] => {
-            const id = modelId(model);
-            if (
-                !id ||
-                model.agent === true ||
-                model.community === true ||
-                !allowedModelIds.has(id) ||
-                !supportsRoutingField(model, field)
-            ) {
-                return [];
-            }
-            return [{ id, title: model.title ?? model.name }];
-        })
-        .sort(
-            (left, right) =>
-                left.title.localeCompare(right.title) ||
-                left.id.localeCompare(right.id),
-        );
-}
-
-export function compactRouting(
-    selection: RoutingSelection,
-): ChatRouting | undefined {
-    const routing: ChatRouting = {};
-    for (const field of CHAT_ROUTING_CAPABILITIES) {
-        const model = selection[field]?.trim();
-        if (model) routing[field] = model;
-    }
-    return Object.keys(routing).length > 0 ? routing : undefined;
 }
 
 function extension(name: string): string {

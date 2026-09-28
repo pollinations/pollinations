@@ -1,5 +1,4 @@
 import type {
-    ChatRouting,
     ChatStreamChunk,
     Message,
     MessageContentPart,
@@ -52,7 +51,6 @@ type PollinationsChatClient = Pick<Pollinations, "chatStream">;
 interface PollinationsChatTransportOptions {
     client: PollinationsChatClient | null;
     model: string | null;
-    routing?: ChatRouting;
 }
 
 function escapeHtml(value: string): string {
@@ -162,7 +160,7 @@ export class PollinationsChatTransport
         messages,
         abortSignal,
     }: Parameters<ChatTransport<PollinationsUIMessage>["sendMessages"]>[0]) {
-        const { client, model, routing } = this.options;
+        const { client, model } = this.options;
         if (!client || !model)
             throw new Error("Select an agent and connect first.");
         return new ReadableStream<UIMessageChunk>({
@@ -381,7 +379,7 @@ export class PollinationsChatTransport
                 try {
                     for await (const chunk of client.chatStream(
                         messagesForPollinations(messages),
-                        { model, routing, signal: abortSignal },
+                        { model, signal: abortSignal },
                     )) {
                         finalReason = finishReason(chunk) ?? finalReason;
                         const delta = chunk.choices[0]?.delta;

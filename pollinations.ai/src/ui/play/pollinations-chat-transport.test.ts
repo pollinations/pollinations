@@ -123,6 +123,35 @@ describe("messagesForPollinations", () => {
 });
 
 describe("PollinationsChatTransport", () => {
+    it("always leaves routing to the agent, even when given obsolete overrides", async () => {
+        let sentOptions: Parameters<Pollinations["chatStream"]>[1];
+        const client: Pick<Pollinations, "chatStream"> = {
+            async *chatStream(_messages, options) {
+                sentOptions = options;
+                yield contentChunk("Ready", "automatic-routing");
+            },
+        };
+        const options = {
+            client,
+            model: "community/pollinations-ai/floret",
+            routing: { text: "old-explicit-model" },
+        };
+        const transport = new PollinationsChatTransport(options);
+        const stream = await transport.sendMessages({
+            trigger: "submit-message",
+            chatId: "automatic-routing",
+            messageId: undefined,
+            messages: [],
+            abortSignal: undefined,
+        });
+        const reader = stream.getReader();
+        while (!(await reader.read()).done) {}
+        expect(sentOptions).toEqual({
+            model: "community/pollinations-ai/floret",
+            signal: undefined,
+        });
+    });
+
     it("normalizes tool markup into UI Message Stream chunks, leaving media markdown inline", async () => {
         const content =
             "Found it.\n\n" +

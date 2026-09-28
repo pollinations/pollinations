@@ -1,8 +1,6 @@
 import { useChat } from "@ai-sdk/react";
 import {
     type AudioFormat,
-    CHAT_ROUTING_CAPABILITIES,
-    type ChatRoutingCapability,
     type MessageContentPart,
     Pollinations,
 } from "@pollinations/sdk";
@@ -13,7 +11,6 @@ import {
 } from "@pollinations/sdk/react";
 import {
     Alert,
-    BeakerIcon,
     Button,
     ChatConversation,
     ChatConversationContent,
@@ -26,7 +23,6 @@ import {
     ChatPromptTextarea,
     CheckIcon,
     ChevronIcon,
-    Chip,
     ClipboardIcon,
     CloudUploadIcon,
     CopyButton,
@@ -47,7 +43,6 @@ import { Markdown } from "@pollinations/ui/markdown";
 import type { DynamicToolUIPart } from "ai";
 import {
     type ClipboardEvent,
-    type CSSProperties,
     type DragEvent,
     type FormEvent,
     type KeyboardEvent as ReactKeyboardEvent,
@@ -59,42 +54,23 @@ import {
 import { API_BASE_URL } from "../../config";
 import {
     type AgentChoice,
-    AUTO_ROUTING,
     agentChoices,
     arrayBufferToBase64,
     audioFormat,
     type ChatAttachmentKind,
-    compactRouting,
     errorMessage,
     FLORET_MODEL_ID,
     fileKind,
     isCancellation,
-    type RoutingChoice,
-    type RoutingSelection,
-    routingChoices,
     selectedAgentChoice,
 } from "./chat-models";
+import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
     PollinationsChatTransport,
     type PollinationsUIMessage,
     type PreparedAttachment,
 } from "./pollinations-chat-transport";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
-
-const ROUTING_LABELS: Record<ChatRoutingCapability, string> = {
-    text: "Text",
-    web_search: "Web search",
-    image_generation: "Image",
-    image_editing: "Image edit",
-    video: "Video",
-    audio: "Audio",
-};
-
-function routingThemeStyle(): CSSProperties {
-    return {
-        "--play-routing-accent": "var(--polli-color-text-soft)",
-    } as CSSProperties;
-}
 
 const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
@@ -466,7 +442,6 @@ function AgentPicker({
             </Text>
             <Dropdown
                 className="w-max max-w-[calc(100vw-2rem)] p-2"
-                panelStyle={routingThemeStyle()}
                 trigger={(open) => (
                     <Button
                         type="button"
@@ -517,125 +492,6 @@ function AgentPicker({
     );
 }
 
-function RoutingSelector({
-    field,
-    value,
-    choices,
-    disabled,
-    onChange,
-}: {
-    field: ChatRoutingCapability;
-    value: string | null;
-    choices: RoutingChoice[];
-    disabled: boolean;
-    onChange: (model: string | null) => void;
-}) {
-    const selected = choices.find((choice) => choice.id === value);
-    const themeStyle = routingThemeStyle();
-    return (
-        <div className="flex min-w-0 items-center gap-2">
-            <Text
-                as="span"
-                size="xs"
-                tone="muted"
-                weight="bold"
-                className="shrink-0"
-            >
-                {ROUTING_LABELS[field]}
-            </Text>
-            <Dropdown
-                className="w-max max-w-[calc(100vw-2rem)] p-2"
-                panelStyle={themeStyle}
-                trigger={(open) => (
-                    <Button
-                        type="button"
-                        size="sm"
-                        intent={value === null ? "neutral" : undefined}
-                        disabled={disabled}
-                        data-theme={value === null ? "neutral" : undefined}
-                        data-customized={value !== null}
-                        style={value === null ? undefined : themeStyle}
-                        className="play-routing-value w-fit max-w-full justify-between gap-2"
-                        aria-label={`${ROUTING_LABELS[field]} routing: ${selected?.title ?? "Auto"}`}
-                    >
-                        <span className="truncate">
-                            {selected?.title ?? "Auto"}
-                        </span>
-                        <ChevronIcon expanded={open} />
-                    </Button>
-                )}
-            >
-                {(close) => (
-                    <ScrollArea className="max-h-72 pr-2">
-                        <div className="flex flex-col gap-1">
-                            <TabButton
-                                data-theme="neutral"
-                                active={value === null}
-                                size="sm"
-                                variant="ghost"
-                                className="w-full justify-start text-left"
-                                onClick={() => {
-                                    onChange(null);
-                                    close();
-                                }}
-                            >
-                                Auto
-                            </TabButton>
-                            {choices.map((choice) => (
-                                <TabButton
-                                    key={choice.id}
-                                    active={choice.id === value}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start text-left"
-                                    onClick={() => {
-                                        onChange(choice.id);
-                                        close();
-                                    }}
-                                >
-                                    <span className="truncate">
-                                        {choice.title}
-                                    </span>
-                                </TabButton>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                )}
-            </Dropdown>
-        </div>
-    );
-}
-
-function RoutingPanel({
-    selection,
-    choices,
-    disabled,
-    onChange,
-}: {
-    selection: RoutingSelection;
-    choices: Record<ChatRoutingCapability, RoutingChoice[]>;
-    disabled: boolean;
-    onChange: (field: ChatRoutingCapability, model: string | null) => void;
-}) {
-    return (
-        <div
-            id="play-chat-routing"
-            className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-        >
-            {CHAT_ROUTING_CAPABILITIES.map((field) => (
-                <RoutingSelector
-                    key={field}
-                    field={field}
-                    value={selection[field]}
-                    choices={choices[field]}
-                    disabled={disabled}
-                    onChange={(model) => onChange(field, model)}
-                />
-            ))}
-        </div>
-    );
-}
-
 export function Chat({
     catalog,
     active,
@@ -649,11 +505,21 @@ export function Chat({
         () => agentChoices(catalog.models),
         [catalog.models],
     );
-    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-    const [draft, setDraft] = useState("");
+    const [restoredDraft] = useState(() =>
+        readPlayDraft("chat", {
+            selectedAgentId: null as string | null,
+            draft: "",
+            hadAttachments: false,
+        }),
+    );
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(
+        restoredDraft.selectedAgentId,
+    );
+    const [draft, setDraft] = useState(restoredDraft.draft);
     const [files, setFiles] = useState<File[]>([]);
-    const [routing, setRouting] = useState<RoutingSelection>(AUTO_ROUTING);
-    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [needsAttachments, setNeedsAttachments] = useState<boolean>(
+        restoredDraft.hadAttachments,
+    );
     const [uploading, setUploading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -681,12 +547,8 @@ export function Chat({
             new PollinationsChatTransport({
                 client,
                 model: selectedAgent?.id ?? null,
-                routing:
-                    selectedAgent?.id === FLORET_MODEL_ID
-                        ? compactRouting(routing)
-                        : undefined,
             }),
-        [client, selectedAgent?.id, routing],
+        [client, selectedAgent?.id],
     );
     const {
         messages,
@@ -703,20 +565,11 @@ export function Chat({
     });
     const streaming = status === "submitted" || status === "streaming";
     const sending = uploading || streaming;
-    const modelChoices = useMemo(
-        () =>
-            Object.fromEntries(
-                CHAT_ROUTING_CAPABILITIES.map((field) => [
-                    field,
-                    routingChoices(
-                        catalog.models,
-                        catalog.allowedModelIds,
-                        field,
-                    ),
-                ]),
-            ) as Record<ChatRoutingCapability, RoutingChoice[]>,
-        [catalog.models, catalog.allowedModelIds],
-    );
+    const draftSaveFailed = useRememberPlayDraft("chat", {
+        selectedAgentId,
+        draft,
+        hadAttachments: files.length > 0 || needsAttachments,
+    });
 
     useEffect(
         () => () => {
@@ -732,30 +585,19 @@ export function Chat({
             return;
         }
         if (activeAgentRef.current === selectedAgent.id) return;
+        const switchingAgent = activeAgentRef.current !== null;
         activeAgentRef.current = selectedAgent.id;
         uploadAbortRef.current?.abort();
         void stop();
         setMessages([welcomeMessage(selectedAgent)]);
-        setDraft("");
-        setFiles([]);
+        if (switchingAgent) {
+            setDraft("");
+            setFiles([]);
+            setNeedsAttachments(false);
+        }
         setLocalError(null);
         clearError();
     }, [selectedAgent, setMessages, stop, clearError]);
-    useEffect(() => {
-        setRouting((current) => {
-            const next = { ...current };
-            for (const field of CHAT_ROUTING_CAPABILITIES) {
-                if (
-                    next[field] &&
-                    !modelChoices[field].some(
-                        (choice) => choice.id === next[field],
-                    )
-                )
-                    next[field] = null;
-            }
-            return next;
-        });
-    }, [modelChoices]);
     useEffect(() => {
         if (messages.length === 0) return;
         const transcript = transcriptRef.current;
@@ -773,15 +615,6 @@ export function Chat({
         ) ?? [])
             media.pause();
     }, [isLoggedIn, active, stop]);
-    useEffect(() => {
-        if (!advancedOpen) return;
-        const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setAdvancedOpen(false);
-        };
-        window.addEventListener("keydown", closeOnEscape);
-        return () => window.removeEventListener("keydown", closeOnEscape);
-    }, [advancedOpen]);
-
     async function send(messageText = draft) {
         if (sending || !isHydrated || !active) return;
         if (!isLoggedIn || !client) {
@@ -807,6 +640,7 @@ export function Chat({
             controller.signal.throwIfAborted();
             setDraft("");
             setFiles([]);
+            setNeedsAttachments(false);
             followOutputRef.current = true;
             setUploading(false);
             uploadAbortRef.current = null;
@@ -860,6 +694,7 @@ export function Chat({
         }
 
         setFiles(accepted);
+        if (accepted.length > 0) setNeedsAttachments(false);
         setLocalError(problems.length > 0 ? problems.join(" ") : null);
     }
 
@@ -898,14 +733,10 @@ export function Chat({
 
     const canRetryLast = (id: string) =>
         messages[messages.length - 1]?.id === id && !sending;
-    const routingOverrideCount = CHAT_ROUTING_CAPABILITIES.filter(
-        (field) => routing[field] !== null,
-    ).length;
 
     function selectAgent(agentId: string) {
         if (agentId === selectedAgentId) return;
         setSelectedAgentId(agentId);
-        setAdvancedOpen(false);
         composerRef.current?.focus();
     }
 
@@ -962,7 +793,7 @@ export function Chat({
             aria-label={`${assistantName} chat`}
         >
             <div className="play-chat-window flex min-h-0 flex-col">
-                <div className="pt-6 pb-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-6 pb-3">
                     <AgentPicker
                         agents={agents}
                         selectedAgentId={selectedAgent?.id ?? null}
@@ -981,6 +812,7 @@ export function Chat({
                                       ]);
                                       setDraft("");
                                       setFiles([]);
+                                      setNeedsAttachments(false);
                                       setLocalError(null);
                                       clearError();
                                       composerRef.current?.focus();
@@ -1069,6 +901,17 @@ export function Chat({
                             </div>
                         </Alert>
                     )}
+                    {needsAttachments && (
+                        <Text size="sm" tone="muted">
+                            Your draft was restored. Please reattach your files.
+                        </Text>
+                    )}
+                    {draftSaveFailed && (
+                        <Alert intent="warning">
+                            Your browser couldn’t save this draft. Copy your
+                            text before connecting.
+                        </Alert>
+                    )}
                     {localError && (
                         <Alert intent="danger" title="Could not send">
                             {localError}
@@ -1124,41 +967,6 @@ export function Chat({
                             />
                         </div>
                         <ChatPromptInputFooter className="pt-2">
-                            {selectedAgent?.id === FLORET_MODEL_ID && (
-                                <TabButton
-                                    type="button"
-                                    active={advancedOpen}
-                                    intent="neutral"
-                                    size="lg"
-                                    disabled={sending}
-                                    aria-expanded={advancedOpen}
-                                    aria-controls="play-chat-routing"
-                                    ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
-                                    onClick={() =>
-                                        setAdvancedOpen((open) => !open)
-                                    }
-                                    className="play-routing-toggle h-12 gap-2"
-                                >
-                                    <BeakerIcon className="h-5 w-5" />
-                                    <Chip
-                                        size="sm"
-                                        aria-label={
-                                            routingOverrideCount > 0
-                                                ? `${routingOverrideCount} routes customized`
-                                                : "Automatic routing"
-                                        }
-                                        className="play-routing-badge min-w-6 justify-center px-1.5"
-                                    >
-                                        {routingOverrideCount > 0
-                                            ? routingOverrideCount
-                                            : "Auto"}
-                                    </Chip>
-                                    <ChevronIcon
-                                        expanded={advancedOpen}
-                                        className="h-4 w-4"
-                                    />
-                                </TabButton>
-                            )}
                             <span className="inline-flex">
                                 <input
                                     ref={fileInputRef}
@@ -1270,21 +1078,6 @@ export function Chat({
                     </ChatPromptInput>
                 </form>
             </div>
-            {advancedOpen && selectedAgent?.id === FLORET_MODEL_ID && (
-                <div>
-                    <RoutingPanel
-                        selection={routing}
-                        choices={modelChoices}
-                        disabled={!isLoggedIn || catalog.isLoading || sending}
-                        onChange={(field, model) =>
-                            setRouting((current) => ({
-                                ...current,
-                                [field]: model,
-                            }))
-                        }
-                    />
-                </div>
-            )}
         </section>
     );
 }

@@ -81,6 +81,9 @@ describe("agent selection UI", () => {
         ]);
         expect(html).toContain('aria-label="Agent: Floret"');
         expect(html).toContain('placeholder="Message Floret…"');
+        expect(html).not.toContain('aria-label="Selected model capabilities"');
+        expect(html).not.toContain('aria-label="Routing,');
+        expect(html).not.toContain("play-chat-routing");
     });
 
     it("offers an enabled selector instead of silently starting another agent", () => {

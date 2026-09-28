@@ -1,18 +1,14 @@
 import type { ModelInfo } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
-    AUTO_ROUTING,
     agentChoices,
     arrayBufferToBase64,
     audioFormat,
     buildUserContent,
-    compactRouting,
     FLORET_MODEL_ID,
     fileKind,
     parseAgentMessage,
-    routingChoices,
     selectedAgentChoice,
-    supportsRoutingField,
 } from "./chat-models";
 
 function model(overrides: Partial<ModelInfo>): ModelInfo {
@@ -136,91 +132,6 @@ describe("chat agents", () => {
                 inputModalities: ["text", "image"],
             },
         ]);
-    });
-});
-
-describe("chat routing models", () => {
-    it.each([
-        ["text", model({})],
-        ["web_search", model({ capabilities: ["web_search"] })],
-        [
-            "image_generation",
-            model({
-                category: "image",
-                output_modalities: ["image"],
-            }),
-        ],
-        [
-            "image_editing",
-            model({
-                category: "image",
-                input_modalities: ["text", "image"],
-                output_modalities: ["image"],
-            }),
-        ],
-        [
-            "video",
-            model({
-                category: "video",
-                output_modalities: ["video"],
-            }),
-        ],
-        [
-            "audio",
-            model({
-                category: "audio",
-                output_modalities: ["audio"],
-            }),
-        ],
-    ] as const)("accepts a compatible %s model", (field, candidate) => {
-        expect(supportsRoutingField(candidate, field)).toBe(true);
-    });
-
-    it("requires image input for image editing", () => {
-        expect(
-            supportsRoutingField(
-                model({
-                    category: "image",
-                    output_modalities: ["image"],
-                }),
-                "image_editing",
-            ),
-        ).toBe(false);
-    });
-
-    it("only lists allowed official models and excludes agents", () => {
-        const choices = routingChoices(
-            [
-                model({ id: "allowed", title: "Allowed" }),
-                model({ id: "blocked", title: "Blocked" }),
-                model({ id: "community", community: true }),
-                model({ id: FLORET_MODEL_ID, title: "Floret", agent: true }),
-                model({ id: "official-agent", agent: true }),
-            ],
-            new Set([
-                "allowed",
-                "community",
-                FLORET_MODEL_ID,
-                "official-agent",
-            ]),
-            "text",
-        );
-
-        expect(choices.map((choice) => choice.id)).toEqual(["allowed"]);
-    });
-
-    it("omits routing while every capability is Auto", () => {
-        expect(compactRouting(AUTO_ROUTING)).toBeUndefined();
-    });
-
-    it("includes only explicit routing overrides", () => {
-        expect(
-            compactRouting({
-                ...AUTO_ROUTING,
-                web_search: "gemini-search",
-                video: "veo",
-            }),
-        ).toEqual({ web_search: "gemini-search", video: "veo" });
     });
 });
 

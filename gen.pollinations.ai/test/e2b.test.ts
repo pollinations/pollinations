@@ -110,7 +110,9 @@ function stubE2b() {
             return new Response(null, { status: 204 });
         }
         if (call === "POST /pause") {
+            // Like E2B, a paused sandbox reports its pause time as endAt.
             sandbox.state = "paused";
+            sandbox.endAt = inSeconds(0);
             return new Response(null, { status: 204 });
         }
         if (call === "POST /connect") {
@@ -209,37 +211,39 @@ test("create pays the lease up front and hides the sandbox from other users", as
     expect(e2b.sandboxes).toEqual([]);
 });
 
-test("timeout and connect pay only for the seconds they add", async () => {
+test("each second of a lease is paid once", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const timeout = (seconds: number) =>
+        post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+            timeout: seconds,
+        });
+    const connect = (seconds?: number) =>
+        post(
+            owner.key,
+            `/v2/sandboxes/${sandboxID}/connect`,
+            seconds === undefined ? undefined : { timeout: seconds },
+        );
+    const pause = () => post(owner.key, `/sandboxes/${sandboxID}/pause`);
 
-    // 600 s from now extends the 300 s lease by about 300 s.
-    const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
-        timeout: 600,
-    });
-    expect(extended.status).toBe(204);
-    // A shorter timeout keeps the paid lease and costs nothing.
-    const shortened = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
-        timeout: 60,
-    });
-    expect(shortened.status).toBe(204);
-    expect(Date.parse(e2b.sandboxes[0].endAt)).toBeGreaterThan(
-        Date.now() + 500_000,
+    // Pausing and resuming within the 300 s paid at create costs nothing.
+    expect((await pause()).status).toBe(204);
+    expect((await connect(200)).status).toBe(201);
+    // 600 s from now extends the paid 300 s by about 300 s.
+    expect((await timeout(600)).status).toBe(204);
+    // Shortening, then extending again within the paid 600 s, costs nothing.
+    expect((await timeout(60)).status).toBe(204);
+    expect(Date.parse(e2b.sandboxes[0].endAt)).toBeLessThan(
+        Date.now() + 100_000,
     );
-    // Connecting within the paid lease is free and does not shorten it.
-    const connected = await post(
-        owner.key,
-        `/v2/sandboxes/${sandboxID}/connect`,
-        { timeout: 60 },
-    );
-    expect(connected.status).toBe(200);
-    // Pausing is free; resuming pays a fresh default lease of 300 s.
-    const paused = await post(owner.key, `/sandboxes/${sandboxID}/pause`);
-    expect(paused.status).toBe(204);
-    const resumed = await post(owner.key, `/v2/sandboxes/${sandboxID}/connect`);
-    expect(resumed.status).toBe(201);
+    expect((await timeout(500)).status).toBe(204);
+    // So does connecting with E2B's default lease of 300 s.
+    expect((await connect()).status).toBe(200);
+    // Resuming for 900 s pays only for the 300 s past the paid 600 s.
+    expect((await pause()).status).toBe(204);
+    expect((await connect(900)).status).toBe(201);
 
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
     for (const lease of e2b.leases()) {

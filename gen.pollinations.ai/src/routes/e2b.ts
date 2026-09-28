@@ -124,6 +124,40 @@ async function requireCapacity(c: E2bContext) {
     }
 }
 
+// E2B forgets a lease when its sandbox pauses (it then reports the pause time
+// as endAt), so gen keeps the time each sandbox is paid until. Keys expire
+// once that time has passed. A lost write or a stale read only charges again;
+// it never hands out unpaid time.
+const paidUntilKey = (sandboxID: string) => `e2b-paid-until:${sandboxID}`;
+
+async function readPaidUntil(
+    c: E2bContext,
+    sandbox: SandboxDetail,
+    now: number,
+): Promise<number> {
+    const stored = await c.env.KV.get(paidUntilKey(sandbox.sandboxID)).catch(
+        () => null,
+    );
+    // A running sandbox's lease was paid too, which covers a stale read.
+    const leaseEnd =
+        sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
+    return Math.max(Number(stored) || 0, leaseEnd, now);
+}
+
+async function savePaidUntil(
+    c: E2bContext,
+    sandboxID: string,
+    paidUntil: number,
+) {
+    // KV expirations must be at least 60 s ahead.
+    const expiration = Math.ceil(
+        Math.max(paidUntil, Date.now() + 60_000) / 1000,
+    );
+    await c.env.KV.put(paidUntilKey(sandboxID), String(paidUntil), {
+        expiration,
+    }).catch(() => {});
+}
+
 function leasePrice(sandbox: SandboxDetail, seconds: number): number {
     return roundPollenLedgerAmount(
         seconds *
@@ -217,10 +251,10 @@ async function charge(c: E2bContext, price: number, startTime: Date) {
     );
 }
 
-// Timeout and connect end the lease at now + timeout, but connect never
-// shortens a running sandbox's lease. The caller pays in advance for the
-// seconds added beyond the current lease. Nothing is refunded: pausing a
-// sandbox gives up the rest of its paid lease.
+// Timeout and connect end the lease at now + timeout (connect never shortens
+// a running sandbox's lease). The caller pays in advance for the seconds past
+// what the sandbox is already paid until, so shortening, pausing and resuming
+// within paid time cost nothing. Nothing is refunded.
 async function extendLease(
     c: E2bContext,
     sandbox: SandboxDetail,
@@ -233,17 +267,15 @@ async function extendLease(
         });
     }
     const now = startTime.getTime();
-    const paidUntil =
-        sandbox.state === "running"
-            ? Math.max(Date.parse(sandbox.endAt), now)
-            : now;
-    const price = leasePrice(
-        sandbox,
-        Math.max(0, now + timeout * 1000 - paidUntil) / 1000,
-    );
+    const paidUntil = await readPaidUntil(c, sandbox, now);
+    const endAt = now + timeout * 1000;
+    const price = leasePrice(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (price > 0) await requireFunds(c, price);
     const response = await forward(c);
-    if (response.ok && price > 0) await charge(c, price, startTime);
+    if (response.ok && price > 0) {
+        await charge(c, price, startTime);
+        await savePaidUntil(c, sandbox.sandboxID, endAt);
+    }
     return response;
 }
 
@@ -304,6 +336,7 @@ export const e2bRoutes = new Hono<Env>()
 
         // The template sets the size, so the price is known only now.
         let price: number;
+        let paidUntil: number;
         try {
             const sandbox = await getSandbox(c, created.sandboxID);
             if (!sandbox) {
@@ -311,10 +344,10 @@ export const e2bRoutes = new Hono<Env>()
                     message: `Sandbox ${created.sandboxID} vanished after create`,
                 });
             }
+            paidUntil = Date.parse(sandbox.endAt);
             price = leasePrice(
                 sandbox,
-                (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
-                    1000,
+                (paidUntil - Date.parse(sandbox.startedAt)) / 1000,
             );
             await requireFunds(c, price);
         } catch (error) {
@@ -325,6 +358,7 @@ export const e2bRoutes = new Hono<Env>()
             throw error;
         }
         await charge(c, price, startTime);
+        await savePaidUntil(c, created.sandboxID, paidUntil);
         return c.json(created, 201);
     })
     .get("/v2/sandboxes", (c) => {
@@ -345,12 +379,6 @@ export const e2bRoutes = new Hono<Env>()
     .post("/sandboxes/:id/timeout", async (c) => {
         const sandbox = await ownedSandbox(c);
         const { timeout } = await readJson<{ timeout: number }>(c);
-        // The lease is paid, so a timeout that would end it sooner is ignored.
-        const endsSooner =
-            sandbox.state === "running" &&
-            typeof timeout === "number" &&
-            Date.now() + timeout * 1000 <= Date.parse(sandbox.endAt);
-        if (endsSooner) return c.body(null, 204);
         return extendLease(c, sandbox, timeout);
     })
     .post("/v2/sandboxes/:id/connect", async (c) => {

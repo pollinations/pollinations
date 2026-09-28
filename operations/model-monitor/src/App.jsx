@@ -24,6 +24,7 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { EvalsPage } from "./EvalsPage";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -596,6 +597,7 @@ function WindowTabs({ value, onChange }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
+    const [activeView, setActiveView] = useState("monitor");
     const [adminMode] = useState(isAdminPath);
     const { models, lastUpdated, error, endpointStatus } =
         useModelMonitor(aggregationWindow);
@@ -808,6 +810,24 @@ function App() {
                 <ColorModeToggle />
             </AppHeader>
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <div className="flex items-center gap-1">
+                    <TabButton
+                        active={activeView === "monitor"}
+                        onClick={() => setActiveView("monitor")}
+                    >
+                        Monitor
+                    </TabButton>
+                    <TabButton
+                        active={activeView === "evals"}
+                        onClick={() => setActiveView("evals")}
+                    >
+                        Evals
+                    </TabButton>
+                </div>
+                {activeView === "evals" ? (
+                    <EvalsPage />
+                ) : (
+                    <>
                 <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Heading
@@ -1275,6 +1295,8 @@ function App() {
                         </TableBody>
                     </Table>
                 </Surface>
+                    </>
+                )}
             </main>
         </div>
     );

@@ -1,17 +1,16 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Raw GitHub traffic API responses for public pollinations repos, appended daily by
+    Raw GitHub traffic API responses for pollinations/pollinations, appended daily by
     .github/workflows/data-sync-github-traffic-tinybird.yml. GitHub keeps traffic for 14 days
     only, so body is stored exactly as returned and interpreted in pipes.
     endpoint is views, clones, popular/paths or popular/referrers. Each fetch covers the
     14 days before fetched_at, so fetches overlap: never sum across them.
 
 SCHEMA >
-    `repo` LowCardinality(String) `json:$.repo`,
     `endpoint` LowCardinality(String) `json:$.endpoint`,
     `fetched_at` DateTime `json:$.fetched_at`,
     `body` String `json:$.body`
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "repo, endpoint, fetched_at"
+ENGINE_SORTING_KEY "endpoint, fetched_at"

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Sync raw GitHub traffic responses for public pollinations repos → Tinybird
+ * Sync raw GitHub traffic responses for pollinations/pollinations → Tinybird
  * github_traffic_raw.
  *
  * GitHub keeps traffic for 14 days only, so this runs daily
@@ -13,20 +13,20 @@
  *   node operations/github/sync-traffic-to-tinybird.mjs [--dry-run]
  *   node operations/github/sync-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
  *
- * --snapshot loads files saved as <repo>.<views|clones|popular_paths|popular_referrers>.json
- * from `gh api repos/pollinations/<repo>/traffic/<endpoint>`, using each file's
- * mtime as fetched_at, to backfill days GitHub no longer serves.
+ * --snapshot loads files saved as pollinations.<views|clones|popular_paths|popular_referrers>.json
+ * from `gh api repos/pollinations/pollinations/traffic/<endpoint>`, using the
+ * views file's mtime as fetched_at, to backfill days GitHub no longer serves.
  *
  * Env vars:
  *   GITHUB_TOKEN         Required without --snapshot — needs Administration: read
  *   TINYBIRD_SYNC_TOKEN  Required unless --dry-run
  */
 
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 
-const ORG = "pollinations";
+const REPO = "pollinations/pollinations";
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "github_traffic_raw";
 const ENDPOINTS = ["views", "clones", "popular/paths", "popular/referrers"];
@@ -55,73 +55,36 @@ async function fetchWithRetry(url, options) {
     }
 }
 
-function github(path) {
-    return fetchWithRetry(`https://api.github.com/${path}`, {
-        headers: {
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    }).then((res) => res.text());
-}
-
-async function listPublicRepos() {
-    const names = [];
-    for (let page = 1; ; page++) {
-        const repos = JSON.parse(
-            await github(
-                `orgs/${ORG}/repos?type=public&per_page=100&page=${page}`,
-            ),
-        );
-        names.push(...repos.filter((r) => !r.archived).map((r) => r.name));
-        if (repos.length < 100) return names;
-    }
-}
-
-// Each source yields one repo's four responses as rows, or { repo, error }.
-async function* fromApi() {
-    for (const repo of await listPublicRepos()) {
-        const fetched_at = toDateTime(new Date());
-        try {
-            const bodies = await Promise.all(
-                ENDPOINTS.map((e) =>
-                    github(`repos/${ORG}/${repo}/traffic/${e}`),
-                ),
+async function fromApi() {
+    const fetched_at = toDateTime(new Date());
+    return Promise.all(
+        ENDPOINTS.map(async (endpoint) => {
+            const res = await fetchWithRetry(
+                `https://api.github.com/repos/${REPO}/traffic/${endpoint}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                        Accept: "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                },
             );
-            yield {
-                repo,
-                rows: ENDPOINTS.map((endpoint, i) => ({
-                    repo,
-                    endpoint,
-                    fetched_at,
-                    body: bodies[i],
-                })),
-            };
-        } catch (err) {
-            yield { repo, error: err.message };
-        }
-    }
+            return { endpoint, fetched_at, body: await res.text() };
+        }),
+    );
 }
 
-async function* fromSnapshot(dir) {
-    const repos = (await readdir(dir))
-        .filter((f) => f.endsWith(".views.json"))
-        .map((f) => f.slice(0, -".views.json".length));
-    for (const repo of repos) {
-        const file = (endpoint) =>
-            join(dir, `${repo}.${endpoint.replace("/", "_")}.json`);
-        const { mtime } = await stat(file("views"));
-        const fetched_at = toDateTime(mtime);
-        const rows = await Promise.all(
-            ENDPOINTS.map(async (endpoint) => ({
-                repo,
-                endpoint,
-                fetched_at,
-                body: (await readFile(file(endpoint), "utf8")).trim(),
-            })),
-        );
-        yield { repo, rows };
-    }
+async function fromSnapshot(dir) {
+    const file = (endpoint) =>
+        join(dir, `pollinations.${endpoint.replace("/", "_")}.json`);
+    const fetched_at = toDateTime((await stat(file("views"))).mtime);
+    return Promise.all(
+        ENDPOINTS.map(async (endpoint) => ({
+            endpoint,
+            fetched_at,
+            body: (await readFile(file(endpoint), "utf8")).trim(),
+        })),
+    );
 }
 
 async function append(rows) {
@@ -152,23 +115,10 @@ async function main() {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
 
-    const rows = [];
-    const failed = [];
-    const source = args.snapshot ? fromSnapshot(args.snapshot) : fromApi();
-    for await (const result of source) {
-        if (result.error) {
-            failed.push(result.repo);
-            console.log(`::warning::${result.repo}: ${result.error}`);
-            continue;
-        }
-        rows.push(...result.rows);
-    }
-
-    console.log(
-        `${rows.length / ENDPOINTS.length} repos read, ${failed.length} unreadable; ${rows.length} rows`,
-    );
-    if (rows.length === 0)
-        throw new Error("No traffic read — refusing to sync");
+    const rows = args.snapshot
+        ? await fromSnapshot(args.snapshot)
+        : await fromApi();
+    console.log(`${REPO}: ${rows.length} responses read`);
     if (args["dry-run"]) return;
 
     await append(rows);

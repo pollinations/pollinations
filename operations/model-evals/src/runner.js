@@ -161,7 +161,9 @@ export async function evaluateModel(model, options) {
         for (let repeat = 0; repeat < options.trials; repeat++) {
             const question = generateQuestion(family, rng);
             const requestSeed =
-                ((options.runSeed + hashString(model.name) + sequence * 1009) >>>
+                ((options.runSeed +
+                    hashString(model.name) +
+                    sequence * 1009) >>>
                     0) &
                 0x7fffffff;
             sequence += 1;

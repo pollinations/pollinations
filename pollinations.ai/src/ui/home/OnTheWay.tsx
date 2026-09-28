@@ -30,12 +30,14 @@ export function OnTheWay() {
                 eyebrow="On the way"
                 title="What we’re building next."
             />
-            {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {/* Dashed and unlifted on purpose: nothing here is clickable yet.
+                At most three per row; cards in a shorter last row grow to
+                share its width (five items read as 3 + 2). */}
+            <div className="flex flex-wrap gap-4">
                 {UPCOMING.map((item) => (
                     <div
                         key={item.title}
-                        className="flex flex-col gap-2 rounded-2xl border border-theme-border border-dashed bg-theme-bg-pale p-5"
+                        className="flex grow basis-full flex-col gap-2 rounded-2xl border border-theme-border border-dashed bg-theme-bg-pale p-5 sm:basis-[calc(50%-0.5rem)] lg:basis-[calc(33.333%-0.667rem)]"
                     >
                         <h3 className="font-body text-lg font-semibold text-theme-text-strong">
                             {item.title}

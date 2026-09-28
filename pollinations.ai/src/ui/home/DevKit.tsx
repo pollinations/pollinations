@@ -18,11 +18,12 @@ import {
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
 import { useArt } from "../../art";
-import { usePlatformStats } from "../../data/publicStats";
+import { describeModelKinds, usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
     title: string;
-    body: string;
+    /** Static copy, or copy built from the live catalog's model kinds. */
+    body: string | ((modelKinds: string | null) => string);
     catalogCount?: "models" | "agents";
     linkLabel?: string;
     href?: string;
@@ -31,8 +32,9 @@ type Feature = {
 
 const BUILD_FOUNDATIONS: Feature[] = [
     {
-        title: "One API, every model",
-        body: "Add text, image, video, audio and multimodal features through one OpenAI-compatible API.",
+        title: "Official and community models",
+        body: (modelKinds) =>
+            `${modelKinds ?? "Text, image, video, audio and embeddings"}. OpenAI-compatible, with plain GET URLs for quick calls.`,
         catalogCount: "models",
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
@@ -41,14 +43,14 @@ const BUILD_FOUNDATIONS: Feature[] = [
     {
         title: "Ready-made agents",
         catalogCount: "agents",
-        body: "Call ready-made agents through the same API. Their instructions, models and tools are already connected.",
+        body: "Call an agent the way you call a model. Instructions and any tools come wired in; you pay for what it uses.",
         linkLabel: "Explore agents",
         href: "https://enter.pollinations.ai/models?category=agent",
         icon: RobotIcon,
     },
     {
         title: "Connect user wallets",
-        body: "Let users approve access and a Pollen budget through OAuth 2.1. Their wallet pays for usage in your app.",
+        body: "Users sign in with Pollinations and approve a Pollen budget. Their wallet, not yours, pays for what they use.",
         linkLabel: "Integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
@@ -58,21 +60,21 @@ const BUILD_FOUNDATIONS: Feature[] = [
 const BUILD_TOOLS: Feature[] = [
     {
         title: "Media storage",
-        body: "Upload images, audio and video for use in apps and workflows. Links are public, with a renewable 30-day storage period.",
+        body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
         linkLabel: "Media storage guide",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
     },
     {
         title: "Pollinations CLI",
-        body: "Generate and manage from your terminal. Create text, images, video and audio. Manage API keys, models and agents, and track usage and earnings.",
+        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and earnings.",
         linkLabel: "CLI guide",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
     },
     {
-        title: "MCP tools & connected apps",
-        body: "Give your agents tools and connected apps. Search the web, process media, and work with supported services like GitHub, Gmail and Slack—from compatible MCP clients.",
+        title: "Hosted MCP tools",
+        body: "Web search, media editing, a private computer, and the GitHub, Gmail or Slack accounts users connect—for your agents and compatible MCP clients.",
         linkLabel: "Explore MCP servers",
         href: "https://enter.pollinations.ai/models?category=mcp",
         icon: McpIcon,
@@ -84,23 +86,35 @@ const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Add your app to the catalog for discovery. Connect user wallets and enable app earnings to earn Pollen from their usage.",
+        body: "Submit it for review to join the Apps catalog. To earn, connect user wallets and turn on app earnings.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Publish your model with your own pricing and earn Pollen when other people use it.",
+        body: "Connect an endpoint you run and set your price. Earn Pollen when others call it.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Share a prompt or code agent that runs on the user’s Pollen. Agent earnings are coming soon.",
+        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it; earnings are coming soon.",
         icon: RobotIcon,
     },
 ];
 
-function FeatureCard({ feature, count }: { feature: Feature; count?: number }) {
+function FeatureCard({
+    feature,
+    count,
+    modelKinds = null,
+}: {
+    feature: Feature;
+    count?: number;
+    modelKinds?: string | null;
+}) {
     const Icon = feature.icon;
+    const body =
+        typeof feature.body === "function"
+            ? feature.body(modelKinds)
+            : feature.body;
 
     return (
         <Surface
@@ -129,7 +143,7 @@ function FeatureCard({ feature, count }: { feature: Feature; count?: number }) {
                 </div>
             </div>
 
-            <Text size="sm">{feature.body}</Text>
+            <Text size="sm">{body}</Text>
 
             {feature.href && feature.linkLabel ? (
                 <ExternalLinkButton
@@ -182,13 +196,14 @@ function FeatureGroup({
 export function DevKit({ className }: { className?: string }) {
     const scene = useArt("home", "quests");
     const { data } = usePlatformStats();
+    const modelKinds = data ? describeModelKinds(data.byCategory) : null;
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
             <FeatureGroup
                 eyebrow="Build"
-                title="The foundations, already connected."
-                description="Models, agents, wallets and tools—so you can focus on your app."
+                title="Pick the pieces you need."
+                description="Models and agents from us and the community, plus the tools and wallets around them."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
@@ -200,6 +215,7 @@ export function DevKit({ className }: { className?: string }) {
                                     ? data?.[feature.catalogCount]
                                     : undefined
                             }
+                            modelKinds={modelKinds}
                         />
                     ))}
                 </div>
@@ -213,7 +229,7 @@ export function DevKit({ className }: { className?: string }) {
                     <ContentHeader
                         eyebrow="Quests"
                         title="Build something. Earn your next generation."
-                        subtitle="Complete Quests to earn Pollen for AI usage. Some models require Paid Pollen."
+                        subtitle="Earn Quest Pollen by solving GitHub Quests, trying models, or building an app or agent. Many models need Paid Pollen."
                     />
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
@@ -240,8 +256,8 @@ export function DevKit({ className }: { className?: string }) {
 
             <FeatureGroup
                 eyebrow="Publish and earn"
-                title="Bring what you build to the ecosystem"
-                description="Share your apps, models and agents with people ready to use them."
+                title="Publish where people already spend Pollen."
+                description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (

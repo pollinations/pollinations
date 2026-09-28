@@ -29,9 +29,9 @@ function HelloPage() {
                 contentClassName="sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
             >
                 <ContentHeader
-                    eyebrow="Open infrastructure for AI apps"
-                    title="Build, publish, and earn with AI."
-                    subtitle="Pollinations.ai brings AI models, ready-made agents, and community apps together. Build through one API, share what you create, and earn Pollen from eligible contributions and usage. Pollen is the credit that powers generation across the platform."
+                    eyebrow="Open infrastructure for AI builders"
+                    title="Models. Agents. Tools. One wallet."
+                    subtitle="One API for official and community models, agents and hosted tools. Pay with Pollen credits, or let users bring theirs. Publish your own models and agents; earn from your models and apps."
                     variant="page"
                     className="[&_h1]:text-balance sm:[&_h1]:max-w-[18ch]"
                 />
@@ -42,7 +42,7 @@ function HelloPage() {
                         size="lg"
                         icon={<RocketIcon className="size-4 shrink-0" />}
                     >
-                        Start for free
+                        Get an API key
                     </ExternalLinkButton>
                     <InlineLink
                         href="https://gen.pollinations.ai/docs#tag/quick-start"
@@ -52,7 +52,7 @@ function HelloPage() {
                             aria-hidden="true"
                             className="size-4 shrink-0"
                         />
-                        Read the docs
+                        Quick start
                     </InlineLink>
                 </div>
             </HeroScene>

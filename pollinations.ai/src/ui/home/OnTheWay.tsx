@@ -28,7 +28,7 @@ export function OnTheWay() {
         <section className="flex flex-col gap-6">
             <ContentHeader
                 eyebrow="On the way"
-                title={`${UPCOMING.length} things we’re building.`}
+                title="What we’re building next."
             />
             {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

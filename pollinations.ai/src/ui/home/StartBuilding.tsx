@@ -8,8 +8,8 @@ import { Callout, ExternalLinkButton } from "@pollinations/ui";
 export function StartBuilding() {
     return (
         <Callout
-            title="Start building"
-            body="Build with models and agents, then connect your users’ Pollen wallets when you’re ready to share."
+            title="Start with one piece."
+            body="Your first API key earns a small Quest reward. Make a call, then publish when you’re ready."
         >
             <ExternalLinkButton
                 href="https://enter.pollinations.ai/keys"

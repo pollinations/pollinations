@@ -36,7 +36,7 @@ const MONEY_FLOW = [
                 docsLabel: "Model publishing documentation",
             },
             {
-                text: "App · 20% of the marked-up request price",
+                text: "App · 25% markup on usage",
                 icon: AppIcon,
                 href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
                 docsLabel: "App wallet integration documentation",
@@ -58,7 +58,7 @@ export function MoneyMoves() {
             <div className="flex flex-col gap-5">
                 <ContentHeader
                     eyebrow="How the money moves"
-                    title="Users fund the usage. Builders share the value."
+                    title="Users spend Pollen. Builders earn a share."
                     subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
                 />
             </div>

@@ -91,7 +91,7 @@ export function SiteFooter() {
                     />
                     <p className="text-sm text-theme-text-muted">
                         <span className="block">
-                            Open infrastructure for AI apps
+                            Open infrastructure for AI builders
                         </span>
                         <span className="block">
                             Built with the community, in the open

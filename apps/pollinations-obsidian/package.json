@@ -1,0 +1,17 @@
+{
+  "name": "obsidian-pollinations",
+  "version": "1.0.0",
+  "description": "Obsidian plugin for Pollinations AI text and image generation",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "esbuild --bundle main.ts --outfile=dist/main.js --watch --external:obsidian --external:electron --external:@node-rs/argon2",
+    "build": "esbuild --bundle main.ts --outfile=dist/main.js --minify --external:obsidian --external:electron --external:@node-rs/argon2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "obsidian": "latest",
+    "typescript": "^5.6.0"
+  },
+  "keywords": ["obsidian", "pollinations", "ai", "text-generation", "image-generation"],
+  "license": "MIT"
+}

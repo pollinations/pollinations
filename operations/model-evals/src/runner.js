@@ -142,7 +142,9 @@ export async function requestCompletion({
 
 export async function evaluateModel(model, options) {
     const trials = [];
-    const rng = seededRng(options.runSeed ^ hashString(model.name));
+    // Every model must receive the exact same generated question instances within a run.
+    // The request seed still varies by model/trial below to bust the gateway cache.
+    const rng = seededRng(options.runSeed);
     let sequence = 0;
     for (const family of options.families) {
         for (let repeat = 0; repeat < options.trials; repeat++) {
@@ -170,6 +172,7 @@ export async function evaluateModel(model, options) {
                 correct: response.ok
                     ? gradeQuestion(family, response.content, question.answer)
                     : false,
+                prompt: question.prompt,
                 expected: question.answer,
                 output: response.ok ? response.content.slice(0, 1000) : null,
                 error: response.ok ? null : response.error,

@@ -31,6 +31,12 @@ pattern = "www.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+# The retired Netlify site still answered here with the old GA tag; the Worker
+# takes the hostname over and redirects it to the current site.
+[[env.production.routes]]
+pattern = "old.pollinations.ai/*"
+zone_name = "pollinations.ai"
+
 [env.staging]
 
 [[env.staging.routes]]

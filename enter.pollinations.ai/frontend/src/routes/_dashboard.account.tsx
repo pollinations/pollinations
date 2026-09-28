@@ -22,7 +22,10 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -121,7 +124,14 @@ function AccountPage() {
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
 
-            <Await promise={profile} fallback={null}>
+            <Await
+                promise={profile}
+                fallback={
+                    <Section title="Community">
+                        <PageStatus />
+                    </Section>
+                }
+            >
                 {(details) =>
                     details ? (
                         <CommunityConnections

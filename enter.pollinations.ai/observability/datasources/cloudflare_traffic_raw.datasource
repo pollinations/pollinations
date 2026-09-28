@@ -1,13 +1,14 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Raw Cloudflare GraphQL analytics responses for every *.pollinations.ai host, appended daily
-    by .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The Free plan keeps
-    per-request detail for 30 days only, so body is stored exactly as returned for later
-    analysis. Real clients only; no IP, user-agent string or free-form path.
-    page_views (host ''): HTML pages of pollinations.ai, www and enter by page, country, device,
-    browser. host_views (one row per host): all requests to that host by country, device,
-    browser and content type. Counts are Cloudflare's sampled estimates.
+    Cloudflare GraphQL analytics responses for every *.pollinations.ai host, appended daily by
+    .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The Free plan keeps
+    per-request detail for 30 days only, so each body is the unchanged response of the
+    requested fields; fields not requested cannot be recovered. Real clients only; no IP,
+    user-agent string or free-form path.
+    page_views (host ''): HTML pages of pollinations.ai, www and enter by page, status,
+    country, device, browser. host_views (one row per host): all requests to that host by
+    status, content type, country, device, browser. Counts are Cloudflare's sampled estimates.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,

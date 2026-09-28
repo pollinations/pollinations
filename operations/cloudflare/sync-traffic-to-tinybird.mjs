@@ -6,12 +6,16 @@
  *
  * The zone is on the Free plan, where per-request detail is kept for 30 days
  * only, so this runs daily (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml)
- * and stores raw GraphQL responses per UTC day:
+ * and stores the GraphQL responses of the queries below unchanged, per UTC
+ * day. Fields not requested here cannot be recovered later.
  *
  *   page_views  one response per day: HTML pages of pollinations.ai, www and
- *               enter by page, country, device, browser
+ *               enter by page, status, country, device, browser
  *   host_views  one response per host and day: all requests to that host by
- *               country, device, browser and content type, without the path
+ *               status, content type, country, device, browser, without the
+ *               path. A host with more groups than one query returns is
+ *               fetched as HTML and non-HTML, and the two group lists are
+ *               stored together in one response.
  *
  * Requests come from real clients only (requestSource eyeball), which leaves
  * out our Workers' own outgoing calls. Paths are kept only for our own page
@@ -24,7 +28,7 @@
  *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --save <dir> [--days 30]
  *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
  *
- * --days fetches the last N complete UTC days (up to 30 for backfill); --save
+ * --days fetches the last N complete UTC days (1–30; 30 for backfill); --save
  * writes each response to <dir>/<date>__<dataset>[__<host>].json without
  * ingesting; --snapshot ingests those files later, using each file's mtime as
  * fetched_at.
@@ -97,10 +101,10 @@ const groupsQuery = (
 }`;
 
 const PAGE_VIEWS_QUERY = groupsQuery(
-    "date clientRequestHTTPHost clientRequestPath clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
+    "date clientRequestHTTPHost clientRequestPath edgeResponseStatus clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
 const HOST_VIEWS_QUERY = groupsQuery(
-    "date clientRequestHTTPHost clientCountryName clientDeviceType userAgentBrowser edgeResponseContentTypeName verifiedBotCategory",
+    "date clientRequestHTTPHost edgeResponseStatus edgeResponseContentTypeName clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
 const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
 
@@ -159,17 +163,49 @@ async function graphql(query, filter) {
     const body = await res.text();
     const { errors } = JSON.parse(body);
     if (errors) throw new Error(JSON.stringify(errors));
-    // A full page means Cloudflare cut rows off: fail rather than store a partial day.
+    return body;
+}
+
+// A full page means Cloudflare cut rows off: fail rather than store a partial day.
+async function complete(query, filter) {
+    const body = await graphql(query, filter);
     if (groupsOf(body).length >= LIMIT) {
         throw new Error(`${JSON.stringify(filter)} hit the ${LIMIT} row limit`);
     }
     return body;
 }
 
+async function hostViews(filter) {
+    const body = await graphql(HOST_VIEWS_QUERY, filter);
+    if (groupsOf(body).length < LIMIT) return body;
+    const html = await complete(HOST_VIEWS_QUERY, {
+        ...filter,
+        edgeResponseContentTypeName: "html",
+    });
+    const other = await complete(HOST_VIEWS_QUERY, {
+        ...filter,
+        edgeResponseContentTypeName_neq: "html",
+    });
+    return JSON.stringify({
+        data: {
+            viewer: {
+                zones: [
+                    {
+                        httpRequestsAdaptiveGroups: [
+                            ...groupsOf(html),
+                            ...groupsOf(other),
+                        ],
+                    },
+                ],
+            },
+        },
+    });
+}
+
 async function* fromApi(days) {
     for (const date of lastDays(days)) {
         const real = { date, requestSource: "eyeball" };
-        const pageViews = await graphql(PAGE_VIEWS_QUERY, {
+        const pageViews = await complete(PAGE_VIEWS_QUERY, {
             ...real,
             edgeResponseContentTypeName: "html",
             OR: Object.entries(PAGES).map(([host, paths]) => ({
@@ -180,13 +216,13 @@ async function* fromApi(days) {
         yield { dataset: "page_views", date, host: "", body: pageViews };
 
         const hosts = groupsOf(
-            await graphql(HOSTS_QUERY, {
+            await complete(HOSTS_QUERY, {
                 ...real,
                 clientRequestHTTPHost_like: "%pollinations.ai",
             }),
         ).map((g) => g.dimensions.clientRequestHTTPHost);
         for (const host of hosts) {
-            const body = await graphql(HOST_VIEWS_QUERY, {
+            const body = await hostViews({
                 ...real,
                 clientRequestHTTPHost: host,
             });
@@ -242,11 +278,15 @@ async function main() {
     if (ingest && !process.env.TINYBIRD_SYNC_TOKEN) {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
+    const days = Number(args.days);
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+        throw new Error(
+            `--days must be a whole number from 1 to 30, got ${args.days}`,
+        );
+    }
     if (args.save) await mkdir(args.save, { recursive: true });
 
-    const source = args.snapshot
-        ? fromSnapshot(args.snapshot)
-        : fromApi(Number(args.days));
+    const source = args.snapshot ? fromSnapshot(args.snapshot) : fromApi(days);
     let count = 0;
     for await (const row of source) {
         row.fetched_at ??= toDateTime(new Date());

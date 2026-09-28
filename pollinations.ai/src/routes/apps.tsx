@@ -35,11 +35,11 @@ import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import {
     APP_CATEGORIES,
     APP_PLATFORMS,
-    type AppCategory,
+    APP_SORTS,
     type AppPlatform,
+    type AppSearch,
     type AppSort,
     CATEGORY_LABELS,
-    listOf,
     PLATFORM_LABELS,
     validateAppSearch,
 } from "./-app-search";
@@ -256,11 +256,12 @@ function AppSearchInput({
     const visiblePlatforms = platforms.filter(
         (platform) => platform !== draft?.editingPlatform,
     );
+    const showPollenToken =
+        pollenPay !== undefined && draft?.key !== "pollen-pay";
+    const pollenLabel = pollenPay ? "Yes" : "No";
     const tokenIds = [
         ...visiblePlatforms.map((platform) => `platform:${platform}`),
-        ...(pollenPay !== undefined && draft?.key !== "pollen-pay"
-            ? ["pollen-pay"]
-            : []),
+        ...(showPollenToken ? ["pollen-pay"] : []),
     ];
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -325,18 +326,15 @@ function AppSearchInput({
                                 onClick={() => editPlatform(platform)}
                             />
                         ))}
-                        {pollenPay !== undefined &&
-                            draft?.key !== "pollen-pay" && (
-                                <EditableComboboxToken
-                                    label="Pollen Pay"
-                                    value={pollenPay ? "Yes" : "No"}
-                                    highlighted={
-                                        pendingRemoval === "pollen-pay"
-                                    }
-                                    aria-label={`Change Pollen Pay filter: ${pollenPay ? "Yes" : "No"}`}
-                                    onClick={editPollenPay}
-                                />
-                            )}
+                        {showPollenToken && (
+                            <EditableComboboxToken
+                                label="Pollen Pay"
+                                value={pollenLabel}
+                                highlighted={pendingRemoval === "pollen-pay"}
+                                aria-label={`Change Pollen Pay filter: ${pollenLabel}`}
+                                onClick={editPollenPay}
+                            />
+                        )}
                         {draft && (
                             <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
                                 <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
@@ -353,13 +351,12 @@ function AppSearchInput({
 
 function AppsPage() {
     const search = Route.useSearch();
-    const { q } = search;
-    const category = search.category;
+    const { q, category, pollen: pollenPay } = search;
+    // validateAppSearch has already whitelisted every platform in the URL.
     const platform = useMemo(
-        () => listOf(APP_PLATFORMS, search.platform),
+        () => (search.platform?.split(",") ?? []) as AppPlatform[],
         [search.platform],
     );
-    const pollenPay = search.pollen;
     const sort = search.sort ?? "fresh";
     const navigate = useNavigate({ from: Route.fullPath });
     const { data: apps, loading, failed } = useAppDirectory();
@@ -398,20 +395,11 @@ function AppsPage() {
     // replace: true — filter changes refine one view, not a history of
     // keystrokes. resetScroll: false — the filters sit halfway down, and
     // jumping to the top on every selection made combining them unusable.
-    const selectCategory = (value: AppCategory) =>
+    const updateSearch = (patch: AppSearch) =>
         navigate({
             replace: true,
             resetScroll: false,
-            search: (prev) => ({
-                ...prev,
-                category: value,
-            }),
-        });
-    const clearCategories = () =>
-        navigate({
-            replace: true,
-            resetScroll: false,
-            search: (prev) => ({ ...prev, category: undefined }),
+            search: (prev) => ({ ...prev, ...patch }),
         });
 
     // A short first page keeps the one-column phone view browseable; Show more
@@ -504,8 +492,8 @@ function AppsPage() {
                         values={APP_CATEGORIES}
                         labels={CATEGORY_LABELS}
                         selected={category}
-                        onClear={clearCategories}
-                        onSelect={selectCategory}
+                        onClear={() => updateSearch({ category: undefined })}
+                        onSelect={(value) => updateSearch({ category: value })}
                     />
 
                     <div className="flex w-full flex-wrap items-center justify-between gap-3">
@@ -515,37 +503,20 @@ function AppsPage() {
                                 platforms={platform}
                                 pollenPay={pollenPay}
                                 onQueryChange={(next) =>
-                                    navigate({
-                                        replace: true,
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            q: next.trim() || undefined,
-                                        }),
+                                    updateSearch({
+                                        q: next.trim() || undefined,
                                     })
                                 }
                                 onPlatformsChange={(next) =>
-                                    navigate({
-                                        replace: true,
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            platform:
-                                                next.length > 0
-                                                    ? next.join(",")
-                                                    : undefined,
-                                        }),
+                                    updateSearch({
+                                        platform:
+                                            next.length > 0
+                                                ? next.join(",")
+                                                : undefined,
                                     })
                                 }
                                 onPollenPayChange={(next) =>
-                                    navigate({
-                                        replace: true,
-                                        resetScroll: false,
-                                        search: (prev) => ({
-                                            ...prev,
-                                            pollen: next,
-                                        }),
-                                    })
+                                    updateSearch({ pollen: next })
                                 }
                             />
                         </div>
@@ -589,11 +560,7 @@ function AppsPage() {
                             >
                                 {(close) => (
                                     <div className="flex flex-col gap-1">
-                                        {(
-                                            Object.keys(
-                                                SORT_LABELS,
-                                            ) as AppSort[]
-                                        ).map((value) => {
+                                        {APP_SORTS.map((value) => {
                                             const OptionIcon =
                                                 SORT_ICONS[value];
                                             return (
@@ -604,17 +571,12 @@ function AppsPage() {
                                                     variant="ghost"
                                                     className="w-full justify-start gap-2"
                                                     onClick={() => {
-                                                        navigate({
-                                                            replace: true,
-                                                            resetScroll: false,
-                                                            search: (prev) => ({
-                                                                ...prev,
-                                                                sort:
-                                                                    value ===
-                                                                    "fresh"
-                                                                        ? undefined
-                                                                        : value,
-                                                            }),
+                                                        updateSearch({
+                                                            sort:
+                                                                value ===
+                                                                "fresh"
+                                                                    ? undefined
+                                                                    : value,
                                                         });
                                                         close();
                                                     }}

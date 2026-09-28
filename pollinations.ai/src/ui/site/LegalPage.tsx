@@ -1,5 +1,5 @@
 import { Prose } from "@pollinations/ui/markdown";
-import { useEffect, useState } from "react";
+import { useAsync } from "../../data/useAsync";
 
 type LegalPageProps = {
     /** Path under public/legal, e.g. "/legal/PRIVACY_POLICY.md" */
@@ -13,30 +13,11 @@ type LegalPageProps = {
  * uses, rather than a second set of heading and list styles maintained here.
  */
 export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
-    const [markdown, setMarkdown] = useState<string | null>(null);
-    const [failed, setFailed] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        setMarkdown(null);
-        setFailed(false);
-
-        fetch(markdownPath)
-            .then((response) => {
-                if (!response.ok) throw new Error(String(response.status));
-                return response.text();
-            })
-            .then((text) => {
-                if (!cancelled) setMarkdown(text);
-            })
-            .catch(() => {
-                if (!cancelled) setFailed(true);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [markdownPath]);
+    const { data: markdown, failed } = useAsync<string | null>(async () => {
+        const response = await fetch(markdownPath);
+        if (!response.ok) throw new Error(String(response.status));
+        return response.text();
+    }, null);
 
     if (failed) {
         return (

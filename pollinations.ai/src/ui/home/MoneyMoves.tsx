@@ -41,13 +41,11 @@ const EARNINGS = {
 export function MoneyMoves() {
     return (
         <section className="dark -mx-5 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-none bg-brand-dark px-5 py-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14">
-            <div className="flex flex-col gap-5">
-                <ContentHeader
-                    eyebrow="How the money moves"
-                    title="Users spend Pollen. Builders earn a share."
-                    subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
-                />
-            </div>
+            <ContentHeader
+                eyebrow="How the money moves"
+                title="Users spend Pollen. Builders earn a share."
+                subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
+            />
 
             <Surface variant="card" className="flex flex-col gap-3 p-5">
                 <div className="flex items-center gap-3">

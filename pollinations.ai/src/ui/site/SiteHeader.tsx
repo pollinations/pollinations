@@ -8,25 +8,19 @@ import {
     DropdownItem,
     ExternalLinkIcon,
     GitHubIcon,
-    InstagramIcon,
-    LinkedInIcon,
     LogInIcon,
     MenuIcon,
     StarIcon,
     TabButton,
     XIcon,
-    XSocialIcon,
 } from "@pollinations/ui";
 import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import markUrl from "@pollinations/ui/brand/mark.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type CSSProperties, Fragment, useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
-import {
-    DISCORD_BLURPLE_STYLE,
-    DiscordPresenceBadge,
-} from "./DiscordPresenceBadge";
+import { DOCS_URL, maskStyle, SOCIAL } from "./links";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
@@ -42,49 +36,22 @@ const LEGAL = [
     { to: "/refunds", label: "Refunds" },
 ] as const;
 
-const EXTERNAL = [
-    // Not docs.pollinations.ai — that is the investor data room.
-    { href: "https://gen.pollinations.ai/docs", label: "Docs" },
-    { href: "https://github.com/pollinations/pollinations", label: "GitHub" },
+const [GITHUB, DISCORD, ...OTHER_SOCIAL] = SOCIAL;
+
+const ACCOUNT_ACTIONS = [
+    { href: DOCS_URL, label: "Docs", Icon: BookIcon },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
-        label: "Discord",
+        href: "https://enter.pollinations.ai",
+        label: "Sign in",
+        Icon: LogInIcon,
     },
 ] as const;
 
-const SOCIAL = [
-    {
-        href: "https://instagram.com/pollinations_ai",
-        label: "Instagram",
-        Icon: InstagramIcon,
-    },
-    {
-        href: "https://x.com/pollinations_ai",
-        label: "X",
-        Icon: XSocialIcon,
-    },
-    {
-        href: "https://www.linkedin.com/company/pollinations-ai",
-        label: "LinkedIn",
-        Icon: LinkedInIcon,
-    },
-] as const;
+const DISCORD_BLURPLE_STYLE = {
+    backgroundColor: "#5865F2",
+    color: "#FFFFFF",
+} satisfies CSSProperties;
 
-const maskStyle = (
-    url: string,
-    width: number,
-    height: number,
-): CSSProperties => {
-    const mask = `url('${url}') center / contain no-repeat`;
-
-    return {
-        width,
-        height,
-        backgroundColor: "currentColor",
-        WebkitMask: mask,
-        mask,
-    };
-};
 const MARK_STYLE = maskStyle(markUrl, 32, 32);
 const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
 const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
@@ -107,16 +74,14 @@ function MenuUtilities({
         <>
             <DropdownItem
                 as="a"
-                href={EXTERNAL[1].href}
+                href={GITHUB.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={close}
                 className="site-drawer-social-link site-external-link"
             >
                 <GitHubIcon className="h-4 w-4 shrink-0" />
-                <span className="site-drawer-social-label">
-                    {EXTERNAL[1].label}
-                </span>
+                <span className="site-drawer-social-label">{GITHUB.label}</span>
                 {displayedRepoStars !== null && (
                     <Chip intent="neutral" size="sm">
                         {displayedRepoStars} stars
@@ -125,7 +90,7 @@ function MenuUtilities({
             </DropdownItem>
             <DropdownItem
                 as="a"
-                href={EXTERNAL[2].href}
+                href={DISCORD.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={close}
@@ -138,12 +103,20 @@ function MenuUtilities({
             >
                 <DiscordIcon className="h-4 w-4 shrink-0" />
                 <span className="site-drawer-social-label">
-                    {EXTERNAL[2].label}
+                    {DISCORD.label}
                 </span>
-                <DiscordPresenceBadge online={discordOnline} />
+                {discordOnline !== null && (
+                    <Chip
+                        size="sm"
+                        style={DISCORD_BLURPLE_STYLE}
+                        className="gap-1.5 px-1.5 drop-shadow-[0_0_0.3rem_#5865F2]"
+                    >
+                        {compact(discordOnline)} online
+                    </Chip>
+                )}
             </DropdownItem>
             <footer className="mt-1 flex items-center gap-2 border-t border-theme-text-strong/10 px-2 pt-2">
-                {SOCIAL.map(({ href, label, Icon }) => (
+                {OTHER_SOCIAL.map(({ href, label, Icon }) => (
                     <Button
                         key={href}
                         as="a"
@@ -173,7 +146,7 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
     return (
         <Button
             as="a"
-            href={EXTERNAL[1].href}
+            href={GITHUB.href}
             target="_blank"
             rel="noopener noreferrer"
             intent="neutral"
@@ -197,7 +170,7 @@ function DiscordLiveButton({ online }: { online: number | null }) {
     return (
         <Button
             as="a"
-            href={EXTERNAL[2].href}
+            href={DISCORD.href}
             target="_blank"
             rel="noopener noreferrer"
             intent="neutral"
@@ -267,63 +240,42 @@ export function SiteHeader() {
                             </span>
                         </Link>
                         <nav className="hidden gap-1.5 min-[780px]:flex">
-                            {NAV.map((item) => {
-                                const active = isCurrent(item.to, pathname);
-                                return (
-                                    <Fragment key={item.to}>
-                                        <TabButton
-                                            as={Link}
-                                            to={item.to}
-                                            variant="ghost"
-                                            active={active}
-                                            className={`site-primary-nav-button ${
-                                                item.to === "/"
-                                                    ? "site-home-nav-button"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {item.label}
-                                        </TabButton>
-                                        {item.to === "/community" && (
-                                            <>
-                                                <DiscordLiveButton
-                                                    online={discordOnline}
-                                                />
-                                                <GitHubStarsButton
-                                                    stars={repoStars}
-                                                />
-                                            </>
-                                        )}
-                                    </Fragment>
-                                );
-                            })}
+                            {NAV.map((item) => (
+                                <TabButton
+                                    key={item.to}
+                                    as={Link}
+                                    to={item.to}
+                                    variant="ghost"
+                                    active={isCurrent(item.to, pathname)}
+                                    className={`site-primary-nav-button ${
+                                        item.to === "/"
+                                            ? "site-home-nav-button"
+                                            : ""
+                                    }`}
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                            <DiscordLiveButton online={discordOnline} />
+                            <GitHubStarsButton stars={repoStars} />
                         </nav>
                     </div>
                     <div className="pointer-events-auto flex items-center gap-2">
-                        <Button
-                            as="a"
-                            href={EXTERNAL[0].href}
-                            size="sm"
-                            aria-label="Docs"
-                            title="Docs"
-                            className={DESKTOP_ACTION_CLASS}
-                        >
-                            <BookIcon className="h-4 w-4" />
-                            <span>Docs</span>
-                            <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
-                        </Button>
-                        <Button
-                            as="a"
-                            href="https://enter.pollinations.ai"
-                            size="sm"
-                            aria-label="Sign in"
-                            title="Sign in"
-                            className={DESKTOP_ACTION_CLASS}
-                        >
-                            <LogInIcon className="h-4 w-4" />
-                            <span>Sign in</span>
-                            <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
-                        </Button>
+                        {ACCOUNT_ACTIONS.map(({ href, label, Icon }) => (
+                            <Button
+                                key={href}
+                                as="a"
+                                href={href}
+                                size="sm"
+                                aria-label={label}
+                                title={label}
+                                className={DESKTOP_ACTION_CLASS}
+                            >
+                                <Icon className="h-4 w-4" />
+                                <span>{label}</span>
+                                <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
+                            </Button>
+                        ))}
                         <div className="hidden h-9 items-center min-[780px]:flex">
                             <ColorModeToggle />
                         </div>
@@ -405,32 +357,24 @@ export function SiteHeader() {
                                                 : ""
                                         }`}
                                     >
-                                        <Button
-                                            as="a"
-                                            href={EXTERNAL[0].href}
-                                            size="md"
-                                            onClick={() =>
-                                                setMobileMenuOpen(false)
-                                            }
-                                            className="w-full gap-2 px-3"
-                                        >
-                                            <BookIcon className="h-4 w-4 shrink-0" />
-                                            {EXTERNAL[0].label}
-                                            <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
-                                        </Button>
-                                        <Button
-                                            as="a"
-                                            href="https://enter.pollinations.ai"
-                                            size="md"
-                                            onClick={() =>
-                                                setMobileMenuOpen(false)
-                                            }
-                                            className="w-full gap-2 px-3"
-                                        >
-                                            <LogInIcon className="h-4 w-4 shrink-0" />
-                                            Sign in
-                                            <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
-                                        </Button>
+                                        {ACCOUNT_ACTIONS.map(
+                                            ({ href, label, Icon }) => (
+                                                <Button
+                                                    key={href}
+                                                    as="a"
+                                                    href={href}
+                                                    size="md"
+                                                    onClick={() =>
+                                                        setMobileMenuOpen(false)
+                                                    }
+                                                    className="w-full gap-2 px-3"
+                                                >
+                                                    <Icon className="h-4 w-4 shrink-0" />
+                                                    {label}
+                                                    <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
+                                                </Button>
+                                            ),
+                                        )}
                                     </div>
                                     <div
                                         className={`site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-card bg-surface-opaque p-2.5 ${

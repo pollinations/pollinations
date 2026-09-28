@@ -50,8 +50,6 @@ function NotFoundPage() {
  *
  * Site chrome stays here rather than in @pollinations/ui: a marketing top bar
  * and enter's 240px dashboard rail are different information architectures.
- * The one thing borrowed from DashboardShell is its seam — chrome takes
- * children, never auth state, which is what keeps this site SDK-free.
  */
 function RootLayout() {
     const mainRef = useRef<HTMLElement>(null);

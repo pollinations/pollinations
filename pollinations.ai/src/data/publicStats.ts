@@ -142,9 +142,7 @@ export function selectWeeklyApps(
             const identity = appIdentity(app);
             if (seen.has(identity)) return [];
             seen.add(identity);
-            // Verified BYOP traffic is stronger evidence than the daily catalog flag.
-            // Do not relabel a stale developer-wide daily count as BYOP usage.
-            return [{ ...app, requests_24h: byopRequests24h(app), byop: true }];
+            return [app];
         })
         .slice(0, 8);
 }
@@ -178,19 +176,6 @@ type CatalogModel = {
     agent?: boolean;
     community?: boolean;
 };
-
-function summariseCatalog(models: CatalogModel[]) {
-    const byCategory: Record<string, number> = {};
-    let community = 0;
-    for (const model of models) {
-        const category = model.category ?? "other";
-        byCategory[category] = (byCategory[category] ?? 0) + 1;
-        if (model.community === true) {
-            community += 1;
-        }
-    }
-    return { byCategory, community };
-}
 
 const MODEL_KIND_LABELS: Record<string, string> = {
     embedding: "embeddings",
@@ -233,10 +218,17 @@ export const loadPlatformStats = cachePublic(
         const body = await response.json();
         if (!Array.isArray(body)) throw new Error("models: invalid catalog");
         const catalog = body as CatalogModel[];
+        const byCategory: Record<string, number> = {};
+        for (const model of catalog) {
+            const category = model.category ?? "other";
+            byCategory[category] = (byCategory[category] ?? 0) + 1;
+        }
         return {
             models: catalog.filter((model) => model.agent !== true).length,
             agents: catalog.filter((model) => model.agent === true).length,
-            ...summariseCatalog(catalog),
+            byCategory,
+            community: catalog.filter((model) => model.community === true)
+                .length,
         };
     },
 );

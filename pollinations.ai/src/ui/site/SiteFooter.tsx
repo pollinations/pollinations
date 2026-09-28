@@ -1,31 +1,15 @@
-import {
-    Button,
-    DiscordIcon,
-    Eyebrow,
-    GitHubIcon,
-    InlineLink,
-    InstagramIcon,
-    LinkedInIcon,
-    XSocialIcon,
-} from "@pollinations/ui";
+import { Button, Eyebrow, InlineLink } from "@pollinations/ui";
 import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { DOCS_URL, maskStyle, SOCIAL } from "./links";
 
-const lockupMask = `url('${lockupUrl}') center / contain no-repeat`;
-const LOCKUP_STYLE: CSSProperties = {
-    width: 211,
-    height: 26,
-    backgroundColor: "currentColor",
-    WebkitMask: lockupMask,
-    mask: lockupMask,
-};
+const LOCKUP_STYLE = maskStyle(lockupUrl, 211, 26);
 
 const COLUMNS = [
     {
         heading: "Build",
         links: [
-            { href: "https://gen.pollinations.ai/docs", label: "Docs" },
+            { href: DOCS_URL, label: "Docs" },
             { href: "https://enter.pollinations.ai/models", label: "Models" },
             { href: "https://enter.pollinations.ai", label: "Dashboard" },
         ],
@@ -44,38 +28,9 @@ const COLUMNS = [
         links: [
             { to: "/privacy", label: "Privacy" },
             { to: "/terms", label: "Terms" },
-            // A real route with a real page that nothing linked to. Payment
-            // providers generally require this to be reachable.
+            // Payment providers generally require this to be reachable.
             { to: "/refunds", label: "Refunds" },
         ],
-    },
-] as const;
-
-const SOCIAL = [
-    {
-        href: "https://github.com/pollinations/pollinations",
-        label: "GitHub",
-        Icon: GitHubIcon,
-    },
-    {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
-        label: "Discord",
-        Icon: DiscordIcon,
-    },
-    {
-        href: "https://instagram.com/pollinations_ai",
-        label: "Instagram",
-        Icon: InstagramIcon,
-    },
-    {
-        href: "https://x.com/pollinations_ai",
-        label: "X",
-        Icon: XSocialIcon,
-    },
-    {
-        href: "https://www.linkedin.com/company/pollinations-ai",
-        label: "LinkedIn",
-        Icon: LinkedInIcon,
     },
 ] as const;
 

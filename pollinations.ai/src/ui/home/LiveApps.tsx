@@ -57,10 +57,7 @@ export function LiveApps() {
                     Featured apps couldn’t be loaded right now.
                 </p>
             ) : (
-                <AppCarousel
-                    apps={featured}
-                    ariaLabel="Apps built on Pollinations"
-                />
+                <AppCarousel apps={featured} />
             )}
         </section>
     );

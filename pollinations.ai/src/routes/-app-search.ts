@@ -22,8 +22,7 @@ export const APP_CATEGORIES = [
     "bots",
     "video_audio",
 ] as const;
-type AppCategory = (typeof APP_CATEGORIES)[number];
-export type { AppCategory };
+export type AppCategory = (typeof APP_CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<AppCategory, string> = {
     image: "Image",
@@ -75,7 +74,7 @@ export const PLATFORM_LABELS: Record<AppPlatform, string> = {
     api: "API",
 };
 
-const APP_SORTS = ["fresh", "buzz"] as const;
+export const APP_SORTS = ["fresh", "buzz"] as const;
 export type AppSort = (typeof APP_SORTS)[number];
 
 /**
@@ -103,7 +102,7 @@ function cleanList<T extends string>(
     const valid = items
         .map((item) => item.trim())
         .filter((item): item is T => values.includes(item as T));
-    // Deduplicate so ?category=games,games doesn't double-count.
+    // Deduplicate so ?platform=web,web doesn't double-count.
     const unique = [...new Set(valid)];
     return unique.length > 0 ? unique.join(",") : undefined;
 }
@@ -117,17 +116,6 @@ function cleanValue<T extends string>(
     return values.includes(value as T) ? (value as T) : undefined;
 }
 
-/** Read one axis back as a typed list. */
-export function listOf<T extends string>(
-    values: readonly T[],
-    raw: string | undefined,
-): T[] {
-    if (!raw) return [];
-    return raw
-        .split(",")
-        .filter((item): item is T => values.includes(item as T));
-}
-
 export function validateAppSearch(search: Record<string, unknown>): AppSearch {
     const q = typeof search.q === "string" ? search.q.trim() : "";
     const pollen =
@@ -136,17 +124,13 @@ export function validateAppSearch(search: Record<string, unknown>): AppSearch {
             : search.pollen === false || search.pollen === "false"
               ? false
               : undefined;
-    const requestedSort =
-        typeof search.sort === "string" &&
-        APP_SORTS.includes(search.sort as AppSort)
-            ? (search.sort as AppSort)
-            : "fresh";
+    const sort = cleanValue(APP_SORTS, search.sort);
     return {
         category: cleanValue(APP_CATEGORIES, search.category),
         platform: cleanList(APP_PLATFORMS, search.platform),
         pollen,
         // Fresh is the default, so keep the default URL clean.
-        sort: requestedSort === "fresh" ? undefined : requestedSort,
+        sort: sort === "fresh" ? undefined : sort,
         q: q === "" ? undefined : q,
     };
 }

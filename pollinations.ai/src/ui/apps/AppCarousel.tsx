@@ -3,9 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { appIdentity, type DirectoryApp } from "../../data/publicStats";
 import { AppTile, SpotlightTile } from "./cards";
 
-const TILE_IMAGE_CLASS = "h-30";
-const TILE_ITEM_CLASS = "w-59 shrink-0";
-
 export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [direction, setDirection] = useState<1 | -1>(1);
@@ -82,13 +79,7 @@ export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
     );
 }
 
-export function AppCarousel({
-    apps,
-    ariaLabel,
-}: {
-    apps: DirectoryApp[];
-    ariaLabel: string;
-}) {
+export function AppCarousel({ apps }: { apps: DirectoryApp[] }) {
     const scroller = useRef<HTMLDivElement>(null);
     const drag = useRef<{
         pointerId: number;
@@ -134,12 +125,10 @@ export function AppCarousel({
         return () => window.cancelAnimationFrame(frame);
     }, [apps.length, paused]);
 
-    if (apps.length === 0) return null;
-
     return (
         <section
             aria-roledescription="carousel"
-            aria-label={ariaLabel}
+            aria-label="Apps built on Pollinations"
             className="flex min-w-0 flex-col gap-3"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
@@ -207,12 +196,10 @@ export function AppCarousel({
                                         ? `${index + 1} of ${apps.length}`
                                         : undefined
                                 }
-                                className={TILE_ITEM_CLASS}
+                                className="w-59 shrink-0"
                             >
                                 <AppTile
                                     app={app}
-                                    imageClassName={TILE_IMAGE_CLASS}
-                                    className="h-full w-full"
                                     tabIndex={copy === 1 ? -1 : undefined}
                                 />
                             </article>

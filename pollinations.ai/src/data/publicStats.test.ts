@@ -112,7 +112,7 @@ describe("weekly featured apps", () => {
         request_count,
     });
 
-    it("keeps server ranking and marks verified Pollen Pay usage without mutating the catalog", () => {
+    it("keeps server ranking", () => {
         const first = app("First");
         const second = app("Second");
         const result = selectWeeklyApps(
@@ -120,8 +120,6 @@ describe("weekly featured apps", () => {
             [usage(first, 50), usage(second, 10)],
         );
         expect(result.map((item) => item.name)).toEqual(["First", "Second"]);
-        expect(result.every((item) => item.byop === true)).toBe(true);
-        expect(first.byop).toBe("");
     });
 
     it("requires the exact catalog URL, name, and owner, not just a shared hostname", () => {
@@ -135,25 +133,6 @@ describe("weekly featured apps", () => {
         expect(selectWeeklyApps([item], [...wrong, usage(item)])).toHaveLength(
             1,
         );
-    });
-
-    it("does not turn stale developer totals into BYOP daily usage", () => {
-        const stale = { ...app("Stale flag"), requests_24h: "999999" };
-        const verified = {
-            ...app("Verified"),
-            byop: true,
-            requests_24h: "200",
-        };
-        const [first, second] = selectWeeklyApps(
-            [stale, verified],
-            [usage(stale), usage(verified)],
-        );
-        expect(first.byop).toBe(true);
-        expect(first.requests_24h).toBeNull();
-        expect(isBuzz(first)).toBe(false);
-        expect(second.requests_24h).toBe(200);
-        expect(isBuzz(second)).toBe(true);
-        expect(stale.requests_24h).toBe("999999");
     });
 
     it("adds no usage or description threshold to the server ranking", () => {
@@ -206,7 +185,7 @@ describe("weekly featured apps", () => {
         const hello = loadWeeklyApps();
         const apps = loadWeeklyApps();
         expect(hello).toBe(apps);
-        await expect(hello).resolves.toEqual([{ ...item, byop: true }]);
+        await expect(hello).resolves.toEqual([item]);
         expect(await loadWeeklyApps()).toBe(await hello);
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });

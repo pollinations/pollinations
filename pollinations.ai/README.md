@@ -13,17 +13,17 @@ npm ci            # here
 npm run dev       # builds packages/sdk and packages/ui first, then serves on :5173
 ```
 
-`npm run build` typechecks and bundles; `npm test` runs the Play unit tests.
+`npm run build` typechecks and bundles; `npm test` runs the unit tests.
 
 ## Data
 
-- Model, health and app-directory numbers come from the public endpoints in
+- Model and app-directory numbers come from the public endpoints in
   `gen.pollinations.ai/src/docs/public-stats.md` (see `src/data/publicStats.ts`).
 - Community signals are read anonymously from GitHub and Discord
   (`src/data/community.ts`); `npm run data:pr-history` refreshes the archived
   merged-PR list in `public/data`.
-- Hero art is generated once with `scripts/generate-hero-scenes.mjs` and
-  committed under `public/heroes`.
+- Illustrations are drawn by `scripts/art.mjs` into `public/art/<set>`;
+  `ART_SET` in `src/art-config.ts` picks the live set.
 
 ## Deploy
 

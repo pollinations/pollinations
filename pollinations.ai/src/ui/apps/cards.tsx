@@ -86,16 +86,12 @@ function AppCoverImage({
     );
 }
 
-/** Image on top, name and description below; the rail sets the image height. */
+/** Image on top, name and description below; fills its rail slot. */
 export function AppTile({
     app,
-    imageClassName,
-    className,
     tabIndex,
 }: {
     app: DirectoryApp;
-    imageClassName: string;
-    className?: string;
     tabIndex?: number;
 }) {
     return (
@@ -103,13 +99,10 @@ export function AppTile({
             href={appHref(app)}
             tabIndex={tabIndex}
             showIcon={false}
-            className={className}
+            className="h-full w-full"
             surfaceClassName="overflow-hidden rounded-2xl p-0"
         >
-            <AppCoverImage
-                src={app.screenshot_url}
-                className={imageClassName}
-            />
+            <AppCoverImage src={app.screenshot_url} className="h-30" />
             <div className="flex flex-col gap-1.5 px-5 py-4">
                 <span className="font-body text-lg font-semibold text-theme-text-strong">
                     {app.name}
@@ -125,11 +118,11 @@ export function AppTile({
 export function SpotlightTile({
     app,
     action,
-    direction = "forward",
+    direction,
 }: {
     app: DirectoryApp;
     action?: ReactNode;
-    direction?: "forward" | "back";
+    direction: "forward" | "back";
 }) {
     const href = appHref(app);
     const slideClassName = cn(
@@ -188,9 +181,7 @@ export function SpotlightTile({
                         {app.description}
                     </p>
                 </div>
-                <div key="spotlight-controls" className="shrink-0">
-                    {action}
-                </div>
+                <div className="shrink-0">{action}</div>
             </div>
         </article>
     );

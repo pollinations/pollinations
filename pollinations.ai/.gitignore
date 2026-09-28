@@ -1,24 +1,5 @@
-# Dependencies
-node_modules
-.pnp
-.pnp.js
-
-# Production
-dist
-build
-
-# Misc
-.DS_Store
-*.log
-
-# IDE
+# Editor settings
 .vscode
-.idea
-
-# Environment
-.env
-.env.local
-# Note: .encrypted.env is NOT ignored (encrypted, safe to commit)
 
 # Vite dependency cache
 .vite

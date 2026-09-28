@@ -3,9 +3,9 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/config.ts). This worker also exposes a
- * tiny cached proxy for Discord's public presence count, whose widget response
- * cannot be read directly by browsers because it does not include CORS headers.
+ * the publishable BYOP app key (see src/config.ts). This worker also exposes
+ * two tiny cached proxies (Discord presence, GitHub stars). Discord's widget
+ * response cannot be read directly by browsers because it has no CORS headers.
  */
 
 import { getJsonLd, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
@@ -206,59 +206,41 @@ export default {
                   headers: response.headers,
               });
 
-        return new HTMLRewriter()
-            .on("title", {
-                element(el) {
-                    el.setInnerContent(meta.title);
-                },
-            })
-            .on('link[rel="canonical"]', {
-                element(el) {
-                    if (knownRoute) el.setAttribute("href", canonical);
-                    else el.remove();
-                },
-            })
-            .on('meta[name="description"]', {
-                element(el) {
-                    el.setAttribute("content", meta.description);
-                },
-            })
-            .on('meta[property="og:title"]', {
-                element(el) {
-                    el.setAttribute("content", meta.title);
-                },
-            })
-            .on('meta[property="og:description"]', {
-                element(el) {
-                    el.setAttribute("content", meta.description);
-                },
-            })
-            .on('meta[property="og:url"]', {
-                element(el) {
-                    if (knownRoute) el.setAttribute("content", canonical);
-                    else el.remove();
-                },
-            })
-            .on('meta[name="twitter:title"]', {
-                element(el) {
-                    el.setAttribute("content", meta.title);
-                },
-            })
-            .on('meta[name="twitter:description"]', {
-                element(el) {
-                    el.setAttribute("content", meta.description);
-                },
-            })
-            .on("head", {
-                element(el) {
-                    if (jsonLd) {
-                        el.append(
-                            `<script data-route-meta type="application/ld+json">${jsonLd}</script>`,
-                            { html: true },
-                        );
-                    }
-                },
-            })
-            .transform(htmlResponse);
+        const rewriter = new HTMLRewriter().on("title", {
+            element: (el) => el.setInnerContent(meta.title),
+        });
+        for (const [selector, content] of [
+            ['meta[name="description"]', meta.description],
+            ['meta[property="og:title"]', meta.title],
+            ['meta[property="og:description"]', meta.description],
+            ['meta[name="twitter:title"]', meta.title],
+            ['meta[name="twitter:description"]', meta.description],
+        ]) {
+            rewriter.on(selector, {
+                element: (el) => el.setAttribute("content", content),
+            });
+        }
+        // Unknown routes are 404s, so they must not claim a canonical URL.
+        for (const [selector, attribute] of [
+            ['link[rel="canonical"]', "href"],
+            ['meta[property="og:url"]', "content"],
+        ]) {
+            rewriter.on(selector, {
+                element: (el) =>
+                    knownRoute
+                        ? el.setAttribute(attribute, canonical)
+                        : el.remove(),
+            });
+        }
+        if (jsonLd) {
+            rewriter.on("head", {
+                element: (el) =>
+                    el.append(
+                        `<script data-route-meta type="application/ld+json">${jsonLd}</script>`,
+                        { html: true },
+                    ),
+            });
+        }
+        return rewriter.transform(htmlResponse);
     },
 };

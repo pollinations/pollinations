@@ -92,7 +92,7 @@ for (const image of set.images) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: image.model ?? set.model,
+                model: set.model,
                 prompt: fillCast(lines.filter(Boolean).join("\n\n")),
                 image: refs.map((path) => ({ image_url: dataUri(path) })),
                 size: frame.request,

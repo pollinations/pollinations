@@ -11,11 +11,11 @@ not_found_handling = "single-page-application"
 # directly from Cloudflare's static asset layer.
 run_worker_first = ["/*", "!/assets/*", "!/art/*", "!/supporters/*", "!/data/*", "!/legal/*"]
 
-# Public hostnames are attached directly in the Myceli account.
 [env.website-v2]
 name = "pollinations-ai-website-v2"
 workers_dev = true
 
+# Public hostnames are attached directly in the Myceli account.
 [env.production]
 
 [[env.production.routes]]

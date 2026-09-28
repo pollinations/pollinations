@@ -81,22 +81,19 @@
     letter-spacing: 0.01em;
 }
 
-.site-primary-nav-button:hover {
-    border-color: transparent;
+.site-primary-nav-button:hover,
+.site-primary-nav-button[aria-current="page"] {
     background-color: var(--polli-color-brand-accent);
     color: var(--polli-color-brand-dark);
 }
 
-.site-primary-nav-button[aria-current="page"],
-.site-primary-nav-button[aria-current="page"]:hover {
-    border-color: transparent;
+/* Separate rule: a browser without :has() would drop the whole list above. */
+.site-home-nav-group:has(.site-home-logo:hover) .site-home-nav-button {
     background-color: var(--polli-color-brand-accent);
     color: var(--polli-color-brand-dark);
 }
 
-.site-github-stars,
-.site-github-stars:hover,
-.site-github-stars:focus-visible {
+.site-github-stars {
     border-color: rgb(240 246 252 / 14%);
     background-color: #0d1117;
     color: #f0f6fc;
@@ -107,12 +104,6 @@
     background-color: #010409;
 }
 
-.site-home-nav-group:has(.site-home-logo:hover)
-    .site-home-nav-button:not([aria-current="page"]) {
-    background-color: var(--polli-color-brand-accent);
-    color: var(--polli-color-brand-dark);
-}
-
 .site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {
     transform: translateY(-0.125rem);
 }
@@ -121,21 +112,17 @@
     opacity: 1;
 }
 
-.site-external-link,
-.site-external-link:hover,
-.site-external-link:focus-visible {
+.site-external-link {
     background-color: transparent;
     box-shadow: none;
     filter: none;
     transform: none;
-}
-
-.site-external-link {
     color: var(--polli-color-text-base);
 }
 
 .site-external-link:hover,
 .site-external-link:focus-visible {
+    box-shadow: none;
     color: var(--polli-color-text-muted);
 }
 
@@ -301,18 +288,11 @@ main > * {
 }
 
 /* ── Hero scene dissolve ───────────────────────────────────────────────
-   The painted scene melts into the sheet on two axes. Bottom: always — the
-   prompt paints a fade toward #fef8eb and this mask guarantees the seam
-   (the model never hits the exact hex). Left: desktop only, where the text
-   overlays the art — the prompts ask for an empty left two-thirds, but the
-   model keeps drifting scenery toward the centre (seed 4103's stalls reached
-   27% and a reroll still hit 46%), so the mask is what actually guarantees
-   the text's ground. Full opacity returns by 62%, right of every character.
-   The same mask applies at every width because the composition itself no
-   longer changes position—the scene simply scales with the page. */
-/* Phones show the scene as a banner above the copy, so it only fades out at
+   The model neither reliably leaves the left side empty nor hits the exact
+   fade colour, so this mask guarantees the seam and the text's ground.
+   Phones show the scene as a banner above the copy, so it only fades out at
    the bottom. From sm up it sits behind the copy and also fades in from the
-   left. */
+   left, reaching full opacity by 62%. */
 .hero-scene {
     mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
 }
@@ -356,10 +336,4 @@ main > * {
 .polli-playground-audio::-webkit-media-controls-enclosure {
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-}
-
-@media (min-width: 1024px) {
-    .polli-playground-textarea {
-        min-height: 14rem;
-    }
 }

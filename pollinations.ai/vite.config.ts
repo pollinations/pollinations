@@ -44,12 +44,7 @@ export default defineConfig({
             },
         },
         // Must run before react() so the generated route tree exists.
-        tanstackRouter({
-            target: "react",
-            autoCodeSplitting: true,
-            routesDirectory: "./src/routes",
-            generatedRouteTree: "./src/routeTree.gen.ts",
-        }),
+        tanstackRouter({ autoCodeSplitting: true }),
         react(),
         tailwindcss(),
         cloudflare(),

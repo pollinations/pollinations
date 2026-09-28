@@ -1,9 +1,7 @@
 import { Button } from "../../primitives/Button.tsx";
-import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
+import { useColorMode } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
-import { Surface } from "../../primitives/Surface.tsx";
-import { Text } from "../../primitives/Typography.tsx";
-import { AuthFlowLayout, ErrorBanner } from "./AuthModal.tsx";
+import { AuthFlowLayout } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
 
 const signInErrors = {
@@ -37,7 +35,7 @@ export function DashboardSignIn({
     onSignIn,
     isPending = false,
     sessionError,
-    description = "Sign in with your Pollinations admin account.",
+    description = "Use your Pollinations admin account.",
     authError = typeof window === "undefined"
         ? null
         : new URLSearchParams(window.location.search).get("auth_error"),
@@ -49,23 +47,28 @@ export function DashboardSignIn({
     description?: string;
     authError?: string | null;
 }) {
+    // Auth modals carry no theme switch; they follow the saved or system mode.
+    useColorMode();
     const error = sessionError
         ? { title: "Couldn’t check your session", message: sessionError }
         : authError && Object.hasOwn(signInErrors, authError)
           ? signInErrors[authError as keyof typeof signInErrors]
           : null;
+    const shownError = isPending ? null : error;
     return (
         <AuthFlowLayout
-            headerAction={<ColorModeToggle />}
-            title={!isPending && error ? error.title : "Sign in"}
+            title={shownError ? shownError.title : `Sign in to ${appName}`}
+            description={shownError ? undefined : description}
+            error={shownError?.message}
             actions={
                 isPending ? (
-                    <output>Checking sign-in…</output>
+                    <PollinationsSignInButton isPending>
+                        Checking sign-in…
+                    </PollinationsSignInButton>
                 ) : sessionError ? (
                     <Button
                         icon={<RefreshIcon />}
                         onClick={() => window.location.reload()}
-                        className="polli:w-full"
                     >
                         Reload
                     </Button>
@@ -75,18 +78,6 @@ export function DashboardSignIn({
                     </PollinationsSignInButton>
                 )
             }
-        >
-            {!isPending && error && <ErrorBanner>{error.message}</ErrorBanner>}
-            <Surface>
-                <Text size="sm" weight="semibold" tone="strong">
-                    {appName}
-                </Text>
-            </Surface>
-            {!(!isPending && error) && (
-                <Text size="sm" tone="muted">
-                    {description}
-                </Text>
-            )}
-        </AuthFlowLayout>
+        />
     );
 }

@@ -172,7 +172,10 @@ export type DialogBodyProps = ScrollAreaProps & {
     bodyClassName?: string;
 };
 
-/** Full-height scroll area with floating actions and an optional bottom link. */
+/**
+ * Scroll area whose actions follow the content and stay pinned to the bottom
+ * once the content scrolls, so a short screen never opens a gap above them.
+ */
 export function DialogBody({
     children,
     actions,
@@ -191,14 +194,17 @@ export function DialogBody({
         >
             <div
                 className={cn(
-                    "polli:grow polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4",
+                    "polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4",
                     bodyClassName,
                 )}
             >
                 {children}
             </div>
             {(actions || footnote) && (
-                <div className="polli-dialog-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                // The size container lets the footer follow the dialog's width.
+                // It sits on the footer alone so pickers and tooltips in the
+                // body keep their positioning.
+                <div className="polli-dialog-floating-controls polli:@container polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
                     {actions && (
                         <DialogFooter className="polli:pointer-events-auto">
                             {actions}
@@ -224,6 +230,10 @@ export const DialogFooter: FC<DialogFooterProps> = ({
         <div
             className={cn(
                 "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-transparent polli:px-(--polli-dialog-gutter) polli:pt-4 polli:pb-6",
+                // Actions are the screen's main controls: touch-sized, sharing
+                // the row in a narrow dialog (below 36rem, phones included), and
+                // spanning it when there is only one.
+                "polli:[&>.polli-control]:min-h-12 polli:[&>.polli-control]:text-base polli:@max-xl:[&>.polli-control]:flex-auto polli:[&>.polli-control:only-child]:flex-auto",
                 className,
             )}
             {...props}

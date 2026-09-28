@@ -38,26 +38,15 @@ const pages = JSON.parse(
     ),
 );
 
-const pullRequests = pages
-    .flatMap((page) => page.data.repository.pullRequests.nodes)
+const nodes = pages.flatMap((page) => page.data.repository.pullRequests.nodes);
+const diaryPullRequests = nodes
     .map((pullRequest) => ({
         number: pullRequest.number,
-        mergedAt: pullRequest.mergedAt,
+        date: pullRequest.mergedAt.slice(0, 10),
         title: pullRequest.title,
         author: pullRequest.author?.login ?? "community contributor",
     }))
-    .sort((left, right) => left.mergedAt.localeCompare(right.mergedAt));
-
-const diaryPullRequests = pullRequests
-    .filter(
-        (pullRequest) => pullRequest.mergedAt.slice(0, 10) >= historyStartDay,
-    )
-    .map(({ number, mergedAt, title, author }) => ({
-        number,
-        date: mergedAt.slice(0, 10),
-        title,
-        author,
-    }));
+    .filter((pullRequest) => pullRequest.date >= historyStartDay);
 
 const output = resolve(
     process.env.PR_HISTORY_OUTPUT ||
@@ -69,7 +58,7 @@ const output = resolve(
 mkdirSync(dirname(output), { recursive: true });
 const archive = `${JSON.stringify({
     generatedAt: new Date().toISOString(),
-    allTimeCount: pullRequests.length,
+    allTimeCount: nodes.length,
     pullRequests: diaryPullRequests,
 })}\n`;
 writeFileSync(output, archive);
@@ -102,5 +91,5 @@ if (process.argv.includes("--publish-news")) {
 }
 
 console.log(
-    `Saved ${diaryPullRequests.length} diary pull requests and an all-time total of ${pullRequests.length} from ${repository}.`,
+    `Saved ${diaryPullRequests.length} diary pull requests and an all-time total of ${nodes.length} from ${repository}.`,
 );

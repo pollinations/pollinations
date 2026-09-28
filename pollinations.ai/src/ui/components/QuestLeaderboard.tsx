@@ -7,8 +7,9 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { cachePublic } from "../../data/cachePublic";
+import { useAsync } from "../../data/useAsync";
 
 type QuestLeaderboardEntry = {
     githubLogin: string;
@@ -24,11 +25,6 @@ export type QuestLeaderboardData = {
         totalPollen: number;
     };
 };
-
-type QuestLeaderboardState =
-    | { status: "loading" }
-    | { status: "ready"; data: QuestLeaderboardData }
-    | { status: "failed" };
 
 const LEADERBOARD_API = "https://enter.pollinations.ai/api/quests/leaderboard";
 const QUESTS_PAGE_URL = "https://enter.pollinations.ai/quests";
@@ -66,11 +62,25 @@ export const loadQuestLeaderboard = cachePublic(async () => {
     return body;
 });
 
-function LeaderboardAction() {
+function LeaderboardSection({ children }: { children: ReactNode }) {
     return (
-        <ExternalLinkButton href={QUESTS_PAGE_URL} size="md" intent="brand">
-            Explore Quests
-        </ExternalLinkButton>
+        <Section
+            title="Quest leaderboard"
+            intro="Pollen earned by completing Quests and contributing to Pollinations."
+            action={
+                <ExternalLinkButton
+                    href={QUESTS_PAGE_URL}
+                    size="md"
+                    intent="brand"
+                >
+                    Explore Quests
+                </ExternalLinkButton>
+            }
+            className="gap-5"
+            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
+        >
+            {children}
+        </Section>
     );
 }
 
@@ -83,44 +93,28 @@ export function QuestLeaderboardContent({
     const visible = data.leaderboard.slice(0, VISIBLE_CONTRIBUTORS);
 
     return (
-        <Section
-            title="Quest leaderboard"
-            intro="Pollen earned by completing Quests and contributing to Pollinations."
-            action={<LeaderboardAction />}
-            className="gap-5"
-            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
-        >
+        <LeaderboardSection>
             <dl
                 className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
                 aria-label="Quest leaderboard totals"
             >
-                <Surface as="div" variant="card">
-                    <StatCard
-                        label="Participants"
-                        value={formatNumber(data.totals.contributors)}
-                        className="flex flex-col"
-                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
-                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
-                    />
-                </Surface>
-                <Surface as="div" variant="card">
-                    <StatCard
-                        label="Rewards earned"
-                        value={formatNumber(data.totals.completedQuests)}
-                        className="flex flex-col"
-                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
-                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
-                    />
-                </Surface>
-                <Surface as="div" variant="card">
-                    <StatCard
-                        label="Pollen earned"
-                        value={formatNumber(data.totals.totalPollen)}
-                        className="flex flex-col"
-                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
-                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
-                    />
-                </Surface>
+                {(
+                    [
+                        ["Participants", data.totals.contributors],
+                        ["Rewards earned", data.totals.completedQuests],
+                        ["Pollen earned", data.totals.totalPollen],
+                    ] as const
+                ).map(([label, value]) => (
+                    <Surface key={label} as="div" variant="card">
+                        <StatCard
+                            label={label}
+                            value={formatNumber(value)}
+                            className="flex flex-col"
+                            labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                            valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
+                        />
+                    </Surface>
+                ))}
             </dl>
 
             {visible.length > 0 ? (
@@ -196,45 +190,21 @@ export function QuestLeaderboardContent({
                     No public reward earners yet.
                 </Text>
             )}
-        </Section>
+        </LeaderboardSection>
     );
 }
 
 export function QuestLeaderboard() {
-    const [state, setState] = useState<QuestLeaderboardState>({
-        status: "loading",
-    });
+    const { data, loading } = useAsync<QuestLeaderboardData | null>(
+        loadQuestLeaderboard,
+        null,
+    );
 
-    useEffect(() => {
-        let cancelled = false;
-
-        loadQuestLeaderboard()
-            .then((body) => {
-                if (!cancelled) setState({ status: "ready", data: body });
-            })
-            .catch(() => {
-                if (!cancelled) setState({ status: "failed" });
-            });
-
-        // A route unmount must not cancel a load shared with the next mount.
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    if (state.status === "ready") {
-        return <QuestLeaderboardContent data={state.data} />;
-    }
+    if (data) return <QuestLeaderboardContent data={data} />;
 
     return (
-        <Section
-            title="Quest leaderboard"
-            intro="Pollen earned by completing Quests and contributing to Pollinations."
-            action={<LeaderboardAction />}
-            className="gap-5"
-            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
-        >
-            {state.status === "loading" ? (
+        <LeaderboardSection>
+            {loading ? (
                 <output
                     className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2"
                     aria-label="Loading Quest leaderboard"
@@ -253,6 +223,6 @@ export function QuestLeaderboard() {
                     The Quest leaderboard couldn’t be loaded right now.
                 </Text>
             )}
-        </Section>
+        </LeaderboardSection>
     );
 }

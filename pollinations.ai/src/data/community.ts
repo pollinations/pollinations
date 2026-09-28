@@ -3,8 +3,8 @@
  *
  * Most GitHub feeds are requested anonymously from each visitor's browser.
  * The small header signals use cached same-site endpoints so they remain
- * reliable without credentials. Everything degrades to `failed` and hides
- * rather than showing a stale hardcoded number. The diary labels its archive
+ * reliable without credentials. Failures surface as `failed`; the page shows
+ * what could not load, and live counts hide. The diary labels its archive
  * timestamp and explicitly identifies the bundled snapshot during an outage.
  */
 import { cachePublic } from "./cachePublic";
@@ -23,10 +23,6 @@ const loadGithub = cachePublic(async (path: string): Promise<unknown> => {
     if (!response.ok) throw new Error(`github ${path}: ${response.status}`);
     return response.json();
 });
-
-async function github<T>(path: string): Promise<T> {
-    return (await loadGithub(path)) as T;
-}
 
 /* ── Stars ──────────────────────────────────────────────────────────────── */
 
@@ -84,9 +80,9 @@ type GhContributor = {
 export function useContributors() {
     return useAsync<Contributor[]>(async () => {
         // One request, already ranked by commit count.
-        const rows = await github<GhContributor[]>(
+        const rows = (await loadGithub(
             `/repos/${REPO}/contributors?per_page=20`,
-        );
+        )) as GhContributor[];
         return rows
             .filter((row) => row.type !== "Bot")
             .slice(0, 12)
@@ -127,9 +123,9 @@ export async function loadVotingIssues(limit = 3): Promise<VotingIssue[]> {
     const query = encodeURIComponent(
         `repo:${REPO} is:issue is:open "${VOTE_MARKER}" in:title`,
     );
-    const found = await github<GhSearch>(
+    const found = (await loadGithub(
         `/search/issues?q=${query}&sort=reactions&order=desc&per_page=${limit}`,
-    );
+    )) as GhSearch;
     return found.items.map((item) => ({
         number: item.number,
         title: item.title.replace(VOTE_MARKER, "").trim(),
@@ -205,22 +201,9 @@ type DiaryAll = {
     months: DiaryMonth[];
 };
 
-type DailySummary = {
-    date: string;
-    title: string;
-    summary: string;
-};
-
-type MonthlySummary = {
-    title: string;
-    summary: string;
-};
-
-const summaryCache = new Map<string, Promise<DailySummary | null>>();
-const monthlySummaryCache = new Map<string, Promise<MonthlySummary | null>>();
 let historyCache: Promise<DiaryHistory> | null = null;
 
-function stableIndex(value: string, length: number) {
+export function stableIndex(value: string, length: number) {
     if (length === 0) return -1;
     return (
         [...value].reduce(
@@ -302,39 +285,23 @@ export function usePullRequestCount() {
     );
 }
 
-function addDays(iso: string, amount: number): string {
-    const date = new Date(`${iso}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + amount);
-    return date.toISOString().slice(0, 10);
-}
-
-function loadDailySummary(date: string) {
-    const existing = summaryCache.get(date);
-    if (existing) return existing;
-    const request = fetch(`${NEWS_RAW}/${date}/summary.json`)
-        .then(async (response) => {
-            // Not every calendar day has an entry. Raw GitHub content is
-            // CDN-backed and does not consume the API quota.
-            if (!response.ok) return null;
-            return (await response.json()) as DailySummary;
-        })
-        .catch(() => null);
-    summaryCache.set(date, request);
-    return request;
-}
-
-function loadMonthlySummary(month: string) {
-    const existing = monthlySummaryCache.get(month);
-    if (existing) return existing;
-    const request = fetch(`${NEWS_MONTHLY_RAW}/${month}/summary.json`)
-        .then(async (response) => {
-            if (!response.ok) return null;
-            return (await response.json()) as MonthlySummary;
-        })
-        .catch(() => null);
-    monthlySummaryCache.set(month, request);
-    return request;
-}
+/**
+ * A day or month summary, trimmed to its first paragraph. Not every period has
+ * one. Raw GitHub content is CDN-backed and does not consume the API quota.
+ */
+const loadSummary = cachePublic(async (url: string) => {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const { title, summary } = (await response.json()) as {
+            title: string;
+            summary: string;
+        };
+        return { title, summary: summary.split(/\n\s*\n/)[0].trim() };
+    } catch {
+        return null;
+    }
+});
 
 function toDiaryDay(date: string, pullRequests: DiaryPr[]): DiaryDay {
     const representative = pullRequests[stableIndex(date, pullRequests.length)];
@@ -355,19 +322,14 @@ function toDiaryDay(date: string, pullRequests: DiaryPr[]): DiaryDay {
 }
 
 function monthRange(month: string, latestDay: string): string[] {
-    const start = `${month}-01`;
     const [year, monthIndex] = month.split("-").map(Number);
-    const calendarEnd = new Date(Date.UTC(year, monthIndex, 0))
-        .toISOString()
-        .slice(0, 10);
-    const end = latestDay.startsWith(month) ? latestDay : calendarEnd;
-    const days =
-        Math.round(
-            (new Date(`${end}T00:00:00Z`).getTime() -
-                new Date(`${start}T00:00:00Z`).getTime()) /
-                86_400_000,
-        ) + 1;
-    return Array.from({ length: days }, (_, index) => addDays(start, index));
+    const lastDay = latestDay.startsWith(month)
+        ? Number(latestDay.slice(8, 10))
+        : new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
+    return Array.from(
+        { length: lastDay },
+        (_, index) => `${month}-${String(index + 1).padStart(2, "0")}`,
+    );
 }
 
 export function useBuildDiary(requestedMonth?: string) {
@@ -432,27 +394,25 @@ export async function loadBuildDiaryStory(
     day: DiaryDay | undefined,
 ): Promise<DiaryStory | null> {
     if (month) {
-        const summary = await loadMonthlySummary(month.month);
+        const summary = await loadSummary(
+            `${NEWS_MONTHLY_RAW}/${month.month}/summary.json`,
+        );
         if (summary)
             return {
                 ...month,
-                title: summary.title,
-                summary: summary.summary.split(/\n\s*\n/)[0].trim(),
+                ...summary,
                 imageUrl: `${NEWS_MONTHLY_RAW}/${month.month}/images/cover.jpg`,
                 period: "month",
             };
     }
     if (!day) return null;
-    const summary = await loadDailySummary(day.date);
+    const summary = await loadSummary(`${NEWS_RAW}/${day.date}/summary.json`);
     return {
         ...day,
-        ...(summary
-            ? {
-                  title: summary.title,
-                  summary: summary.summary.split(/\n\s*\n/)[0].trim(),
-                  imageUrl: `${NEWS_RAW}/${day.date}/images/twitter.jpg`,
-              }
-            : {}),
+        ...(summary && {
+            ...summary,
+            imageUrl: `${NEWS_RAW}/${day.date}/images/twitter.jpg`,
+        }),
         period: "day",
     };
 }

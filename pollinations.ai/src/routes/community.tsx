@@ -30,6 +30,7 @@ import {
     DISCORD_URL,
     REPO_URL,
     SUPPORTERS,
+    stableIndex,
     useBuildDiary,
     useBuildDiaryAll,
     useBuildDiaryStory,
@@ -60,43 +61,37 @@ const WAYS_IN = [
         icon: AppIcon,
         title: "List your app",
         body: "Share what you built, get feedback, and help users discover it.",
-        links: [
-            {
-                label: "List your app",
-                href: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
-            },
-        ],
+        cta: {
+            label: "List your app",
+            href: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
+        },
     },
     {
         label: "Models & agents",
         icon: BeakerIcon,
         title: "Publish a model or agent",
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
-        links: [
-            {
-                label: "Request access",
-                href: "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml",
-            },
-        ],
+        cta: {
+            label: "Request access",
+            href: "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml",
+        },
     },
     {
         label: "Code",
         icon: CodeIcon,
         title: "Improve code and docs",
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
-        links: [
-            {
-                label: "Find a GitHub Quest",
-                href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
-            },
-        ],
+        cta: {
+            label: "Find a GitHub Quest",
+            href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+        },
     },
     {
         label: "Talk",
         icon: MegaphoneIcon,
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
-        links: [{ label: "Join the Discord", href: DISCORD_URL }],
+        cta: { label: "Join the Discord", href: DISCORD_URL },
     },
 ];
 
@@ -109,12 +104,7 @@ function voteIconFor(title: string) {
     return MegaphoneIcon;
 }
 
-/**
- * Every feed on this page can fail — GitHub is rate-limited per visitor IP and
- * Discord's widget can be off. Returning null on failure quietly deleted whole
- * sections, so on a bad day the page was a hero and a CTA with no sign that
- * anything was missing. Each section now says what it could not load.
- */
+/** Loading skeleton, or a note saying which feed failed or is empty. */
 function FeedState({
     loading,
     failed,
@@ -148,87 +138,37 @@ function FeedState({
     );
 }
 
+/** A live count hides when its feed fails and shows a skeleton while loading. */
+function liveMetric<T>(
+    label: string,
+    {
+        data,
+        loading,
+        failed,
+    }: { data: T | null; loading: boolean; failed: boolean },
+    format: (value: T) => string,
+) {
+    if (failed || (!loading && data === null)) return null;
+    return { label, value: loading || data === null ? null : format(data) };
+}
+
 function CommunityParticipation() {
     const votesScene = useArt("community", "votes");
     const { data: issues, loading, failed } = useVotingIssues();
-    const {
-        data: online,
-        loading: onlineLoading,
-        failed: onlineFailed,
-    } = useDiscordPresence();
-    const {
-        data: pullRequestCount,
-        loading: pullRequestsLoading,
-        failed: pullRequestsFailed,
-    } = usePullRequestCount();
-    const {
-        data: platform,
-        loading: platformLoading,
-        failed: platformFailed,
-    } = usePlatformStats();
-    const {
-        data: apps,
-        loading: appsLoading,
-        failed: appsFailed,
-    } = useAppDirectory();
+    const online = useDiscordPresence();
+    const pullRequests = usePullRequestCount();
+    const platform = usePlatformStats();
+    const apps = useAppDirectory();
     const ways = [
-        {
-            ...WAYS_IN[0],
-            metrics: appsFailed
-                ? []
-                : [
-                      {
-                          value: appsLoading ? null : String(apps.length),
-                          label: "listed apps",
-                      },
-                  ],
-        },
-        {
-            ...WAYS_IN[1],
-            metrics: platformFailed
-                ? []
-                : [
-                      {
-                          value:
-                              platformLoading || platform === null
-                                  ? null
-                                  : compact(platform.community),
-                          label: "community models and agents",
-                      },
-                  ],
-        },
-        {
-            ...WAYS_IN[2],
-            metrics: pullRequestsFailed
-                ? []
-                : [
-                      {
-                          value:
-                              pullRequestsLoading || pullRequestCount === null
-                                  ? null
-                                  : compact(pullRequestCount),
-                          label: "PRs merged",
-                      },
-                  ],
-        },
-        {
-            ...WAYS_IN[3],
-            // The widget only exposes who is online now; a member total needs
-            // a bot token, so this is the one live number the card can show.
-            metrics:
-                onlineFailed || (!onlineLoading && online === null)
-                    ? []
-                    : [
-                          {
-                              value:
-                                  onlineLoading || online === null
-                                      ? null
-                                      : compact(online),
-                              label: "online in Discord",
-                          },
-                      ],
-        },
-    ];
+        liveMetric("listed apps", { ...apps, data: apps.data.length }, String),
+        liveMetric("community models and agents", platform, (stats) =>
+            compact(stats.community),
+        ),
+        liveMetric("PRs merged", pullRequests, compact),
+        // The widget only exposes who is online now; a member total needs
+        // a bot token, so this is the one live number the card can show.
+        liveMetric("online in Discord", online, compact),
+    ].map((metric, index) => ({ ...WAYS_IN[index], metric }));
 
     return (
         <>
@@ -291,50 +231,33 @@ function CommunityParticipation() {
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
-                                            {way.metrics.length > 0 && (
+                                            {way.metric && (
                                                 <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                                    {way.metrics.map(
-                                                        (metric) => (
-                                                            <div
-                                                                key={
-                                                                    metric.label
-                                                                }
-                                                                className="flex flex-col gap-0.5"
-                                                            >
-                                                                <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                                    {metric.value ?? (
-                                                                        <span
-                                                                            aria-hidden="true"
-                                                                            className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                                        />
-                                                                    )}
-                                                                </dt>
-                                                                <dd className="text-xs text-theme-text-muted">
-                                                                    {
-                                                                        metric.label
-                                                                    }
-                                                                </dd>
-                                                            </div>
-                                                        ),
-                                                    )}
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                            {way.metric
+                                                                .value ?? (
+                                                                <span
+                                                                    aria-hidden="true"
+                                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                                />
+                                                            )}
+                                                        </dt>
+                                                        <dd className="text-xs text-theme-text-muted">
+                                                            {way.metric.label}
+                                                        </dd>
+                                                    </div>
                                                 </dl>
                                             )}
-                                            <div className="flex flex-col items-start gap-2">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {way.links.map((link) => (
-                                                        <ExternalLinkButton
-                                                            key={link.label}
-                                                            href={link.href}
-                                                            size="md"
-                                                            intent="brand"
-                                                            showIcon
-                                                            className="whitespace-nowrap"
-                                                        >
-                                                            {link.label}
-                                                        </ExternalLinkButton>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <ExternalLinkButton
+                                                href={way.cta.href}
+                                                size="md"
+                                                intent="brand"
+                                                showIcon
+                                                className="whitespace-nowrap"
+                                            >
+                                                {way.cta.label}
+                                            </ExternalLinkButton>
                                         </div>
                                     </div>
                                 </Surface>
@@ -426,6 +349,12 @@ const DIARY_ZOOM_LABELS: Record<DiaryZoom, string> = {
     month: "Month",
 };
 
+/** The entries either side of `index`, or none when it is not in the list. */
+const neighbours = <T,>(list: T[], index: number): [T | null, T | null] =>
+    index < 0
+        ? [null, null]
+        : [list[index - 1] ?? null, list[index + 1] ?? null];
+
 function BuildDiary() {
     const [zoom, setZoom] = useState<DiaryZoom>("all");
     const [visibleMonth, setVisibleMonth] = useState<string | null>(null);
@@ -437,14 +366,9 @@ function BuildDiary() {
     } = useBuildDiary(visibleMonth ?? undefined);
     const { month, latestDay, days } = diary;
     const entries = days.filter((day) => day.title !== null);
-    const representativeIndex = entries.length
-        ? [...month].reduce((total, character) => {
-              return total + character.charCodeAt(0);
-          }, 0) % entries.length
-        : -1;
     const fallbackSelected =
-        zoom === "all" && representativeIndex >= 0
-            ? entries[representativeIndex]
+        zoom === "all"
+            ? entries[stableIndex(month, entries.length)]
             : entries[entries.length - 1];
     const {
         data: allDiary,
@@ -453,25 +377,19 @@ function BuildDiary() {
     } = useBuildDiaryAll();
     const selected =
         days.find((day) => day.date === selectedDate) ?? fallbackSelected;
-    const selectedIndex = selected
-        ? entries.findIndex((day) => day.date === selected.date)
-        : -1;
-    const previous = selectedIndex > 0 ? entries[selectedIndex - 1] : null;
-    const next =
-        selectedIndex >= 0 && selectedIndex < entries.length - 1
-            ? entries[selectedIndex + 1]
-            : null;
+    const [previous, next] = neighbours(
+        entries,
+        entries.findIndex((day) => day.date === selected?.date),
+    );
     const activeMonths = allDiary.months.filter((item) => item.prCount > 0);
-    const selectedMonth = activeMonths.find((item) => item.month === month);
-    const selectedMonthIndex = selectedMonth
-        ? activeMonths.findIndex((item) => item.month === selectedMonth.month)
-        : -1;
-    const previousMonth =
-        selectedMonthIndex > 0 ? activeMonths[selectedMonthIndex - 1] : null;
-    const nextMonth =
-        selectedMonthIndex >= 0 && selectedMonthIndex < activeMonths.length - 1
-            ? activeMonths[selectedMonthIndex + 1]
-            : null;
+    const selectedMonthIndex = activeMonths.findIndex(
+        (item) => item.month === month,
+    );
+    const selectedMonth = activeMonths[selectedMonthIndex];
+    const [previousMonth, nextMonth] = neighbours(
+        activeMonths,
+        selectedMonthIndex,
+    );
     const { data: loadedStory } = useBuildDiaryStory(
         zoom === "all" ? (selectedMonth ?? null) : null,
         selected,
@@ -486,7 +404,6 @@ function BuildDiary() {
         loadedStory?.period === "day" && loadedStory.date === selected?.date
             ? loadedStory
             : selected;
-    const showingMonthlyStory = Boolean(monthlyStory);
     const story = monthlyStory ?? dailyStory;
     const previousStory = zoom === "all" ? previousMonth : previous;
     const nextStory = zoom === "all" ? nextMonth : next;
@@ -562,9 +479,6 @@ function BuildDiary() {
     ];
 
     const selectZoom = (nextZoom: DiaryZoom) => {
-        if (!visibleMonth) {
-            setVisibleMonth(latestDay.slice(0, 7));
-        }
         setSelectedDate(null);
         setZoom(nextZoom);
     };
@@ -864,7 +778,7 @@ function BuildDiary() {
                             <div className="flex h-80 min-w-0 flex-col gap-4 p-5 sm:p-7">
                                 <div className="flex flex-wrap items-center gap-2.5">
                                     <Eyebrow size="chrome">
-                                        {showingMonthlyStory
+                                        {monthlyStory
                                             ? formatMonth(month)
                                             : formatDate(
                                                   selected?.date ?? latestDay,
@@ -977,14 +891,8 @@ function CommunityPage() {
                                 aria-hidden="true"
                                 className="row-span-2 h-9 w-9 bg-theme-text-strong"
                                 style={{
-                                    maskImage: `url(${supporter.logo})`,
-                                    WebkitMaskImage: `url(${supporter.logo})`,
-                                    maskRepeat: "no-repeat",
-                                    WebkitMaskRepeat: "no-repeat",
-                                    maskPosition: "center",
-                                    WebkitMaskPosition: "center",
-                                    maskSize: "contain",
-                                    WebkitMaskSize: "contain",
+                                    WebkitMask: `url(${supporter.logo}) center / contain no-repeat`,
+                                    mask: `url(${supporter.logo}) center / contain no-repeat`,
                                 }}
                             />
                             <span className="font-body text-base font-semibold text-theme-text-strong">

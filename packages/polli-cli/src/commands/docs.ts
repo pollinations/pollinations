@@ -74,7 +74,6 @@ export const docsCommand = new Command("docs")
                     process.stdout.write("\n");
                 }
             } catch (err) {
-                if (err instanceof ExitSignal) throw err;
                 fail("Failed to fetch docs", err);
             }
             return;

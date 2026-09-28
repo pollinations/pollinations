@@ -15,7 +15,7 @@ figma.ui.onmessage = (msg) => {
     if (msg.type === "save-api-key") {
         figma.clientStorage.setAsync("apiKey", msg.key);
     } else if (msg.type === "get-api-key") {
-        figma.clientStorage.getAsync("apiKey").then(key => {
+        figma.clientStorage.getAsync("apiKey").then((key) => {
             figma.ui.postMessage({ type: "api-key-result", key: key || "" });
         });
     } else if (msg.type === "generate-image") {

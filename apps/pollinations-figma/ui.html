@@ -69,15 +69,12 @@
 
     document.getElementById("apiKey").addEventListener("input", (e) => {
       apiKey = e.target.value;
-      localStorage.setItem("pollinations_api_key", apiKey);
+      parent.postMessage({ pluginMessage: { type: "save-api-key", key: apiKey } }, "*");
     });
 
-    // Load saved key
-    const savedKey = localStorage.getItem("pollinations_api_key");
-    if (savedKey) {
-      apiKey = savedKey;
-      document.getElementById("apiKey").value = savedKey;
-    }
+    // Request saved key from main context (uses figma.clientStorage — encrypted)
+    parent.postMessage({ pluginMessage: { type: "get-api-key" } }, "*");
+    apiKey = "";
 
     document.getElementById("action").addEventListener("change", (e) => {
       currentAction = e.target.value;
@@ -133,10 +130,16 @@
       }
     });
 
-    // Listen for init message
+    // Listen for init message and API key response
     window.onmessage = (event) => {
       if (event.data?.type === "init") {
         document.getElementById("runBtn").disabled = false;
+      }
+      if (event.data?.pluginMessage?.type === "api-key-result") {
+        apiKey = event.data.pluginMessage.key || "";
+        if (apiKey) {
+          document.getElementById("apiKey").value = apiKey;
+        }
       }
     };
   </script>

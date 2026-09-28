@@ -12,10 +12,18 @@ const _POLLINATIONS_GEN_HOST = "https://gen.pollinations.ai";
 
 // Listen for messages from the UI
 figma.ui.onmessage = (msg) => {
-    if (msg.type === "generate-image") {
+    if (msg.type === "save-api-key") {
+        figma.clientStorage.setAsync("apiKey", msg.key);
+    } else if (msg.type === "get-api-key") {
+        figma.clientStorage.getAsync("apiKey").then(key => {
+            figma.ui.postMessage({ type: "api-key-result", key: key || "" });
+        });
+    } else if (msg.type === "generate-image") {
         handleGenerateImage(msg);
     } else if (msg.type === "edit-image") {
         handleEditImage(msg);
+    } else if (msg.type === "image-ready") {
+        renderImageInSelection(msg.imageBytes, msg.prompt);
     } else if (msg.type === "close-plugin") {
         figma.closePlugin();
     }
@@ -97,12 +105,7 @@ function extractImageFromNode(node) {
     return null;
 }
 
-// Handle image download from the UI (when UI successfully fetches the image)
-figma.ui.onmessage = (msg) => {
-    if (msg.type === "image-ready") {
-        renderImageInSelection(msg.imageBytes, msg.prompt);
-    }
-};
+// Image rendering is handled via the combined onmessage handler above
 
 async function renderImageInSelection(imageBytes, prompt) {
     try {

@@ -28,6 +28,10 @@ export function createAudioCommand() {
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--seed <n>", "Seed for deterministic output")
+        .option(
+            "--timestamps",
+            "Also save character timings as JSON beside the audio",
+        )
         .option("--output <path>", "Save to file")
         .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {
@@ -51,12 +55,38 @@ export function createAudioCommand() {
             if (opts.seed) params.set("seed", opts.seed);
 
             const encodedText = encodeURIComponent(inputText);
-            const path = `/audio/${encodedText}?${params}`;
+            // The timestamps endpoint answers with JSON instead of audio bytes,
+            // so the timings can be written next to the saved audio.
+            const path = opts.timestamps
+                ? `/audio/${encodedText}/with-timestamps?${params}`
+                : `/audio/${encodedText}?${params}`;
 
             if (isHuman) printInfo("Generating audio...");
 
             try {
                 const res = await fetchGen(path);
+
+                if (opts.timestamps) {
+                    const data = (await res.json()) as {
+                        audio?: string;
+                        timestamps?: unknown;
+                    };
+                    const audio = Buffer.from(data.audio ?? "", "base64");
+                    writeFileSync(output, audio);
+
+                    const timingsPath = `${output}.timestamps.json`;
+                    writeFileSync(
+                        timingsPath,
+                        `${JSON.stringify(data.timestamps ?? [], null, 2)}\n`,
+                    );
+                    printMeta({
+                        path: output,
+                        size: audio.length,
+                        voice: opts.voice,
+                        timestamps: timingsPath,
+                    });
+                    return;
+                }
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(output, buffer);

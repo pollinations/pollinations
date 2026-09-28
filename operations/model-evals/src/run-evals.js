@@ -16,7 +16,8 @@ const defaultResults = path.join(here, "..", "results");
 
 function positiveInteger(value, name) {
     const parsed = Number.parseInt(value, 10);
-    if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(`${name} must be > 0`);
+    if (!Number.isInteger(parsed) || parsed <= 0)
+        throw new Error(`${name} must be > 0`);
     return parsed;
 }
 
@@ -37,16 +38,23 @@ function parseOptions(argv) {
             "results-dir": { type: "string", default: defaultResults },
         },
     });
-    const families = values.families.split(",").map((v) => v.trim()).filter(Boolean);
+    const families = values.families
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
     for (const family of families) {
-        if (!FAMILY_NAMES.includes(family)) throw new Error(`Unknown family: ${family}`);
+        if (!FAMILY_NAMES.includes(family))
+            throw new Error(`Unknown family: ${family}`);
     }
     const budgetPollen = Number(values["budget-pollen"]);
     if (!(budgetPollen > 0)) throw new Error("budget-pollen must be > 0");
     return {
         communityOnly: values.community,
         modelFilter: values.models
-            ? values.models.split(",").map((v) => v.trim()).filter(Boolean)
+            ? values.models
+                  .split(",")
+                  .map((v) => v.trim())
+                  .filter(Boolean)
             : null,
         families,
         trials: positiveInteger(values.trials, "trials"),
@@ -64,7 +72,8 @@ function parseOptions(argv) {
 
 async function fetchModels() {
     const response = await fetch(MODELS_URL);
-    if (!response.ok) throw new Error(`Model catalog failed: HTTP ${response.status}`);
+    if (!response.ok)
+        throw new Error(`Model catalog failed: HTTP ${response.status}`);
     return response.json();
 }
 
@@ -75,7 +84,8 @@ async function main() {
 
     const catalog = await fetchModels();
     const selected = selectModels(catalog, options);
-    if (!selected.length) throw new Error("No models matched the requested filters");
+    if (!selected.length)
+        throw new Error("No models matched the requested filters");
 
     const queue = [...selected];
     const rows = [];
@@ -113,7 +123,9 @@ async function main() {
     const models = finalizeComparisons(rows);
     const totalCost = models.reduce((sum, row) => sum + row.cost, 0);
     if (totalCost >= 20) {
-        throw new Error(`Full run cost ${totalCost.toFixed(6)} Pollen; must remain under 20`);
+        throw new Error(
+            `Full run cost ${totalCost.toFixed(6)} Pollen; must remain under 20`,
+        );
     }
 
     const createdAt = new Date().toISOString();
@@ -129,7 +141,9 @@ async function main() {
         models,
     };
     const output = await writeRun(options.resultsDir, payload);
-    console.log(`Done: ${models.length} model(s), ${totalCost.toFixed(6)} Pollen, ${output}`);
+    console.log(
+        `Done: ${models.length} model(s), ${totalCost.toFixed(6)} Pollen, ${output}`,
+    );
 }
 
 main().catch((error) => {

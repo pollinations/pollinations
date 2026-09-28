@@ -1,16 +1,18 @@
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
+import { byopClientAllowsMarkup } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import {
     AGENT_RUN_TOKEN_PREFIX,
     type AgentRunClaims,
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
-import { parseMetadata } from "./api-key-creation.ts";
+import { parseMetadata } from "./api-key-metadata.ts";
+import { isUserBanned } from "./ban.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -26,6 +28,8 @@ export interface AuthenticatedApiKey {
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
+    /** True when deduction will add BYOP markup. Set at auth so preflight matches. */
+    byopMarkupApplies?: boolean;
     rawKey?: string;
 }
 
@@ -109,10 +113,6 @@ type VerifyApiKeyResponse = {
     valid: boolean;
     key?: {
         id?: unknown;
-        name?: unknown;
-        userId?: unknown;
-        permissions?: unknown;
-        metadata?: unknown;
     } | null;
 };
 
@@ -154,7 +154,8 @@ export function createApiKeyPlugin() {
         },
         keyExpiration: {
             minExpiresIn: 0,
-            maxExpiresIn: 365,
+            // JS Date's max representable range is ±100,000,000 days from epoch.
+            maxExpiresIn: 100_000_000,
         },
         rateLimit: {
             enabled: false,
@@ -204,8 +205,7 @@ export function assertNotBanned(user: {
     banExpires?: Date | string | null;
     banReason?: string | null;
 }): void {
-    if (user.banned !== true) return;
-    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
+    if (!isUserBanned(user)) return;
     throw new BannedAccountError(
         user.banReason ? `Account banned: ${user.banReason}` : "Account banned",
     );
@@ -236,54 +236,11 @@ export async function authenticateApiKeyRequest(opts: {
     const key = keyResult.key;
     const keyId = typeof key.id === "string" ? key.id : undefined;
     if (!keyId) return null;
-
-    const db = drizzle(opts.env.DB, { schema });
-    const userId = typeof key.userId === "string" ? key.userId : undefined;
-    const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const [apiKeyExtra, userData] = await Promise.all([
-        db
-            .select({
-                pollenBalance: schema.apikey.pollenBalance,
-                byopClientKeyId: schema.apikey.byopClientKeyId,
-                byopClientName: byopClientKey.name,
-                byopClientUserId: byopClientKey.userId,
-            })
-            .from(schema.apikey)
-            .leftJoin(
-                byopClientKey,
-                eq(byopClientKey.id, schema.apikey.byopClientKeyId),
-            )
-            .where(eq(schema.apikey.id, keyId))
-            .get(),
-        userId
-            ? db
-                  .select()
-                  .from(schema.user)
-                  .where(eq(schema.user.id, userId))
-                  .get()
-            : null,
-    ]);
-
-    if (userData) {
-        assertNotBanned(userData);
-    }
-    assertStagingAccess(opts.env, userData);
-
-    return {
-        user: userData ?? undefined,
-        apiKey: {
-            id: keyId,
-            name: typeof key.name === "string" ? key.name : undefined,
-            permissions: normalizePermissions(key.permissions),
-            metadata: normalizeMetadata(key.metadata),
-            pollenBalance: apiKeyExtra?.pollenBalance ?? null,
-            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
-            byopClientName: apiKeyExtra?.byopClientName ?? null,
-            byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
-            rawKey: rawApiKey,
-        },
+    return loadActiveApiKeyAuthResult({
+        apiKeyId: keyId,
         rawApiKey,
-    };
+        env: opts.env,
+    });
 }
 
 async function authenticateAgentRunToken(
@@ -333,59 +290,67 @@ async function loadActiveApiKeyAuthResult(opts: {
 }): Promise<ApiKeyAuthResult | null> {
     const db = drizzle(opts.env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const apiKeyData = await db
+    const byopOwner = alias(schema.user, "byop_owner");
+    const row = await db
         .select({
-            id: schema.apikey.id,
-            name: schema.apikey.name,
-            userId: schema.apikey.userId,
-            enabled: schema.apikey.enabled,
-            expiresAt: schema.apikey.expiresAt,
-            permissions: schema.apikey.permissions,
-            metadata: schema.apikey.metadata,
-            pollenBalance: schema.apikey.pollenBalance,
-            byopClientKeyId: schema.apikey.byopClientKeyId,
+            apiKey: getTableColumns(schema.apikey),
+            user: getTableColumns(schema.user),
             byopClientName: byopClientKey.name,
-            byopClientUserId: byopClientKey.userId,
+            byopOwner: {
+                banned: byopOwner.banned,
+                banExpires: byopOwner.banExpires,
+            },
+            byopClientUserId: byopClientKey.referenceId,
+            byopClientPrefix: byopClientKey.prefix,
+            byopClientEnabled: byopClientKey.enabled,
+            byopClientExpiresAt: byopClientKey.expiresAt,
+            byopClientMetadata: byopClientKey.metadata,
         })
         .from(schema.apikey)
+        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.referenceId))
         .leftJoin(
             byopClientKey,
             eq(byopClientKey.id, schema.apikey.byopClientKeyId),
         )
         .where(eq(schema.apikey.id, opts.apiKeyId))
+        .leftJoin(byopOwner, eq(byopOwner.id, byopClientKey.referenceId))
         .get();
 
     if (
-        !apiKeyData ||
-        apiKeyData.enabled === false ||
-        (apiKeyData.expiresAt && apiKeyData.expiresAt <= new Date())
+        !row ||
+        row.apiKey.enabled === false ||
+        (row.apiKey.expiresAt && row.apiKey.expiresAt <= new Date())
     ) {
         return null;
     }
 
-    const userData = await db
-        .select()
-        .from(schema.user)
-        .where(eq(schema.user.id, apiKeyData.userId))
-        .get();
-    if (!userData) return null;
-
-    assertNotBanned(userData);
-    assertStagingAccess(opts.env, userData);
+    assertNotBanned(row.user);
+    if (row.byopOwner) assertNotBanned(row.byopOwner);
+    assertStagingAccess(opts.env, row.user);
 
     return {
-        user: userData,
+        user: row.user,
         apiKey: {
-            id: apiKeyData.id,
-            name: apiKeyData.name ?? undefined,
+            id: row.apiKey.id,
+            name: row.apiKey.name ?? undefined,
             permissions: normalizePermissions(
-                parseMetadata(apiKeyData.permissions),
+                parseMetadata(row.apiKey.permissions),
             ),
-            metadata: normalizeMetadata(parseMetadata(apiKeyData.metadata)),
-            pollenBalance: apiKeyData.pollenBalance ?? null,
-            byopClientKeyId: apiKeyData.byopClientKeyId ?? null,
-            byopClientName: apiKeyData.byopClientName ?? null,
-            byopClientUserId: apiKeyData.byopClientUserId ?? null,
+            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            pollenBalance: row.apiKey.pollenBalance ?? null,
+            byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
+            byopClientName: row.byopClientName ?? null,
+            byopClientUserId: row.byopClientUserId ?? null,
+            byopMarkupApplies: byopClientAllowsMarkup(
+                {
+                    userId: row.byopClientUserId,
+                    prefix: row.byopClientPrefix,
+                    enabled: row.byopClientEnabled,
+                    expiresAt: row.byopClientExpiresAt,
+                    metadata: row.byopClientMetadata,
+                },
+                row.user.id,
+            ),
             rawKey: opts.rawApiKey,
         },
         rawApiKey: opts.rawApiKey,

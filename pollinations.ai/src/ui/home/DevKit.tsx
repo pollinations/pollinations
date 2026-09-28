@@ -187,8 +187,8 @@ export function DevKit({ className }: { className?: string }) {
         <section className={cn("flex flex-col gap-10", className)}>
             <FeatureGroup
                 eyebrow="Build"
-                title="Tools for production AI apps"
-                description="Build with models and agents, connect user wallets, and add tools through one platform."
+                title="The foundations, already connected."
+                description="Models, agents, wallets and tools—so you can focus on your app."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
@@ -207,32 +207,34 @@ export function DevKit({ className }: { className?: string }) {
 
             <Surface
                 variant="card"
-                className="flex flex-col gap-6 overflow-hidden p-5 sm:p-6"
+                className="relative flex flex-col gap-6 overflow-hidden p-5 sm:p-6 lg:min-h-72 lg:justify-center"
             >
-                <ContentHeader
-                    eyebrow="Quests"
-                    title="Build something. Earn your next generation."
-                    subtitle="Complete Quests to earn Pollen for AI usage. Some models require Paid Pollen."
-                />
-                <ExternalLinkButton
-                    href="https://enter.pollinations.ai/quests"
-                    size="md"
-                    intent="brand"
-                    className="self-start whitespace-nowrap"
-                >
-                    Explore Quests
-                </ExternalLinkButton>
+                <div className="relative z-10 flex flex-col gap-6 lg:max-w-[48%]">
+                    <ContentHeader
+                        eyebrow="Quests"
+                        title="Build something. Earn your next generation."
+                        subtitle="Complete Quests to earn Pollen for AI usage. Some models require Paid Pollen."
+                    />
+                    <ExternalLinkButton
+                        href="https://enter.pollinations.ai/quests"
+                        size="md"
+                        intent="brand"
+                        className="self-start whitespace-nowrap"
+                    >
+                        Explore Quests
+                    </ExternalLinkButton>
+                </div>
                 <img
                     src={scene.src}
                     srcSet={scene.srcSet}
-                    sizes="(max-width: 1240px) 100vw, 1100px"
+                    sizes="(min-width: 1240px) 550px, (min-width: 1024px) 50vw, 100vw"
                     alt=""
                     aria-hidden="true"
                     width={2048}
                     height={1024}
                     loading="lazy"
                     decoding="async"
-                    className="first-call-scene pointer-events-none -mx-5 -mb-5 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-6 sm:-mb-6 sm:w-[calc(100%+3rem)]"
+                    className="first-call-scene pointer-events-none -mx-5 -mb-5 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-6 sm:-mb-6 sm:w-[calc(100%+3rem)] lg:absolute lg:right-0 lg:bottom-0 lg:m-0 lg:h-full lg:w-1/2 lg:object-contain lg:object-bottom"
                 />
             </Surface>
 

@@ -132,6 +132,8 @@ Preserve working copy. Make surgical changes, not a second blanket rewrite.
 
 ### Phase D — quiet, consistent visual polish
 
+- [x] **Desktop overview and Quests scale · Follow-up.** **Approved and implemented (28 September 2026).** Hero now introduces the platform with “Build, publish, and earn with AI.” and explains models, agents, community apps, and Pollen before the tools. The tool heading is “The foundations, already connected.” Search/social and no-JavaScript copy match. At 1024px and above, Quests uses text left and an uncropped, softly faded illustration right; measured 295px high at 1280/1440px versus the previous 793px at 1440px (340px at 1024px). Smaller widths retain the stacked layout. Checked 320/390/768/1024/1280/1440px without horizontal overflow and desktop light/dark appearance; all 139 tests and the production build passed.
+
 - [x] **Mobile outer edges · Remove outer gray strips and rounding.** **Implemented (28 September 2026).** Below 640px, the first page card starts at the viewport top with square top corners; the last card has square bottom corners and no trailing page-wrapper margin. Keep 20px content gutters, the inset floating menu, and the rounding between Play's two cards. At 640px and above, previous outer spacing and all corners remain. Browser measurements confirmed all four routes at 390/640px with no horizontal overflow.
 
 - [x] **Community votes · Remove the standalone divider.** **Implemented (28 September 2026).** Removed only the horizontal rule above the vote/suggestion row; retained its 20px top padding. Browser computed styles confirmed a 0px border and unchanged padding.

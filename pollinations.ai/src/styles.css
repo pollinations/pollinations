@@ -370,6 +370,15 @@ main > * {
     mask-image: linear-gradient(to bottom, transparent, black 30%);
 }
 
+@media (min-width: 64rem) {
+    .first-call-scene {
+        mask-image:
+            linear-gradient(to right, transparent, black 25%),
+            linear-gradient(to bottom, transparent, black 30%);
+        mask-composite: intersect;
+    }
+}
+
 /* ── /play ─────────────────────────────────────────────────────────────
    Layout that needs container queries or sticky positioning, which is
    clearer as CSS than as a wall of arbitrary variants. */

@@ -14,7 +14,11 @@ const accountLastRequest = async (apiKey: string): Promise<number | null> => {
     if (!accountKey || accountKey === apiKey) return null;
     try {
         const result = await gen<{
-            data: { start: string; lastRequest: string | null; enabled: boolean }[];
+            data: {
+                start: string;
+                lastRequest: string | null;
+                enabled: boolean;
+            }[];
         }>("/account/keys", { apiKey: accountKey });
         const row = result.data?.find(
             (item) =>

@@ -21,6 +21,7 @@ interface ModelEntry {
 
 function classifyType(m: ModelEntry): string {
     const out = m.output_modalities ?? [];
+    if (out.includes("3d")) return "3d";
     if (out.includes("video")) return "video";
     if (out.includes("embedding")) return "embedding";
     if (out.includes("audio")) return "audio";
@@ -66,7 +67,7 @@ export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option(
         "--type <type>",
-        "Filter: text, image, audio, video, embedding, all",
+        "Filter: text, image, audio, video, 3d, embedding, all",
         "all",
     )
     .option("--verbose", "Show additional details (context length)")
@@ -78,12 +79,18 @@ export const modelsCommand = new Command("models")
     )
     .action(async (opts) => {
         if (
-            !["text", "image", "audio", "video", "embedding", "all"].includes(
-                opts.type,
-            )
+            ![
+                "text",
+                "image",
+                "audio",
+                "video",
+                "3d",
+                "embedding",
+                "all",
+            ].includes(opts.type)
         ) {
             fail(
-                "--type must be one of: text, image, audio, video, embedding, all",
+                "--type must be one of: text, image, audio, video, 3d, embedding, all",
             );
         }
         if (opts.stats) {
@@ -163,6 +170,11 @@ export const modelsCommand = new Command("models")
                 const audioModels = await gen<ModelEntry[]>("/audio/models");
                 for (const m of audioModels)
                     raw.push({ model: m, type: "audio" });
+            }
+            if (type === "all" || type === "3d") {
+                const threeDModels = await gen<ModelEntry[]>("/3d/models");
+                for (const m of threeDModels)
+                    raw.push({ model: m, type: "3d" });
             }
             if (type === "all" || type === "embedding") {
                 const embeddingModels =

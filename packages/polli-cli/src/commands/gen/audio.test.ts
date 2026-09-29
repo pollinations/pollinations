@@ -62,3 +62,66 @@ describe("gen audio output", () => {
         }
     });
 });
+
+describe("gen audio --timestamps", () => {
+    it("saves the audio and the character timings beside it", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            Object.defineProperty(process.stdin, "isTTY", {
+                configurable: true,
+                value: true,
+            });
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const output: string[] = [];
+            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+                output.push(String(value));
+                return true;
+            });
+            const calls: { url: string; init: RequestInit }[] = [];
+            vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+                calls.push({ url, init });
+                return new Response(
+                    JSON.stringify({
+                        audio_base64: Buffer.from([5, 6]).toString("base64"),
+                        alignment: {
+                            characters: ["H", "i"],
+                            character_start_times_seconds: [0, 0.1],
+                            character_end_times_seconds: [0.1, 0.2],
+                        },
+                        normalized_alignment: null,
+                    }),
+                );
+            });
+
+            await createAudioCommand().parseAsync(
+                ["Hi", "--timestamps", "--voice", "nova"],
+                { from: "user" },
+            );
+
+            expect(new URL(calls[0].url).pathname).toBe(
+                "/v1/audio/speech/with-timestamps",
+            );
+            expect(JSON.parse(String(calls[0].init.body))).toEqual({
+                input: "Hi",
+                voice: "nova",
+                model: "elevenlabs/eleven-v3",
+            });
+            expect([...readFileSync("speech.mp3")]).toEqual([5, 6]);
+            const timings = JSON.parse(
+                readFileSync("speech.mp3.json", "utf-8"),
+            );
+            expect(timings.alignment.characters).toEqual(["H", "i"]);
+            expect(timings.alignment.character_end_times_seconds).toEqual([
+                0.1, 0.2,
+            ]);
+            expect(JSON.parse(output.join("")).timestamps).toBe(
+                "speech.mp3.json",
+            );
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+});

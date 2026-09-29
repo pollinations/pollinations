@@ -1,20 +1,20 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
+description: Generate images, text, audio, video, 3D models and embeddings, change or isolate voices, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video, 3D models, and embeddings; changes and isolates voices; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
 If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
 ## When to use this skill
 
-- User asks to **generate an image / text / audio / video** via pollinations
+- User asks to **generate an image / text / audio / video / 3D model** or **embed text** via pollinations
 - User mentions **polli, pollinations, pollen, pollinations.ai**
-- User wants to **transcribe speech** or run TTS
+- User wants to **transcribe speech**, run TTS, **change a voice**, or **isolate speech** from a noisy recording
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
@@ -32,7 +32,12 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Describe an image (vision) | `polli gen text "what is this?" --image <url>` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
+| Speech + character timings | `polli gen audio "<text>" --timestamps --output speech.mp3` (also writes `speech.mp3.json`) |
+| Change a voice | `polli gen voice-change in.mp3 --voice alloy --output out.mp3` |
+| Isolate speech from noise | `polli gen isolate noisy.mp3 --output clean.mp3` |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
+| Generate a 3D model | `polli gen 3d --image <url> --output model.glb` (image-to-3D) / `polli gen 3d "<prompt>" --model hyper3d/rodin-2.5` (text-to-3D) |
+| Embed text | `polli gen embeddings "<text>" ["<text2>" ...]` (one vector per line; stdin = one input per line) |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
@@ -101,6 +106,38 @@ echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
 Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
+### Speech with character timestamps
+```bash
+polli gen audio "hello world" --timestamps --output speech.mp3
+```
+Writes the audio to `--output` and character-level timings to `<output>.json` (`model`, `voice`, `alignment`, `normalized_alignment`). Each alignment holds `characters`, `character_start_times_seconds`, and `character_end_times_seconds` — index 0 of the three arrays describes the same character, which is what captioning and karaoke-style highlighting need. Only `elevenlabs/eleven-v3` (default), `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2` support this endpoint via `--model`. All speech models are paid-only: without paid pollen the request fails with `INSUFFICIENT_BALANCE` (402).
+
+### Change a voice (speech-to-speech)
+```bash
+polli gen voice-change speech.mp3 --voice alloy --output changed.mp3
+```
+`/v1/audio/voice-changer` keeps the words, timing, and delivery of the input audio while swapping the speaker. `--model` defaults to `elevenlabs/eleven-multilingual-sts-v2`, `--format` (`mp3|opus|aac|wav|pcm`) to `mp3`. Input is a local file (uploaded as multipart, up to 50 MB / 5 minutes), so no public URL is needed.
+
+### Isolate speech from background noise
+```bash
+polli gen isolate interview.mp4 --output voice.mp3
+```
+`/v1/audio/voice-isolator` strips music and ambience. Accepts audio or video, up to 50 MB, and the clip must be **at least 4.6 seconds** long — shorter input is rejected server-side. Output is always MP3, so `--output` should end in `.mp3` (the default is `isolated.mp3`).
+
+### Embeddings
+```bash
+polli gen embeddings "the cat sat on the mat" "a feline rested on the rug"
+cat sentences.txt | polli gen embeddings --dimensions 512
+```
+`/v1/embeddings` takes up to 32 inputs per request; local arguments or one input per stdin line. Human mode prints one JSON vector per line, in input order. `--json` prints the full response (including `usage`) — use it if you need the per-vector `index` field. Useful flags: `--model` (default `openai/text-embedding-3-small`), `--dimensions`, `--task-type` (Gemini models only), `--input-type` (Cohere models only). Embeddings are cheap but not in the free tier — check `polli usage --history --json` after a batch.
+
+### Generate a 3D model
+```bash
+polli gen 3d --image "$(polli upload chair.png)" --output chair.glb
+polli gen 3d "a low-poly treasure chest" --model hyper3d/rodin-2.5 --output chest.glb
+```
+`GET /3d/{prompt}` returns a GLB binary for `microsoft/trellis-2` (default). **The default model is image-to-3D only** — it needs `--image` (public http(s) URL, repeatable, `|`-joined) and ignores the prompt, and a prompt-only call is rejected client-side with a hint instead of a server 400. Use `--model hyper3d/rodin-2.5` for text-to-3D (accepts a prompt, optionally with images). `--model nvidia/asset-harvester` returns a Gaussian-splat **PLY**; the CLI switches the default `--output` to `model.ply` for it. `--resolution low|medium|high` (trellis-2, defaults to `low` server-side; higher costs more) and `--seed` force a fresh generation for the same input. Generation takes ~1–2 minutes for trellis-2. `nvidia/asset-harvester` and `hyper3d/rodin-2.5` need paid pollen; `microsoft/trellis-2` works on free pollen (~0.24 pollen at low resolution).
+
 ### Generate music (elevenmusic)
 ```bash
 polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrumental --output track.mp3
@@ -137,6 +174,7 @@ Models: `whisper` (default), `scribe`, `universal-2`, `universal-3.5-pro`. Accep
 ### Discover models
 ```bash
 polli models --type text              # text models only
+polli models --type 3d                # 3D models (trellis-2, asset-harvester, rodin)
 polli models --type image --verbose   # with context length / pricing
 polli models --stats                  # health + avg latency + err% (60m default)
 polli models --stats --window 5       # last 5 minutes only

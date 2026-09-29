@@ -21,8 +21,14 @@ body:
         - 🎨 Creator, no code
         - 🤖 Bot builder (Discord, Telegram…)
         - 🔬 Educator / researcher
+        - 🐝 Something else
     validations:
       required: true
+
+  - type: input
+    id: bee-type-other
+    attributes:
+      label: Other kind of bee (optional)
 
   - type: checkboxes
     id: making
@@ -37,6 +43,11 @@ body:
         - label: Game
         - label: Agent / automation
         - label: Just playing around
+
+  - type: input
+    id: making-other
+    attributes:
+      label: Making something else? (optional)
 
   - type: dropdown
     id: found-us
@@ -55,6 +66,11 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: found-us-other
+    attributes:
+      label: Where exactly? Which assistant, video, post or app (optional)
+
   - type: checkboxes
     id: other-ai
     attributes:
@@ -68,6 +84,11 @@ body:
         - label: Higgsfield / Krea / Midjourney
         - label: Local models
         - label: Nowhere else
+
+  - type: input
+    id: other-ai-other
+    attributes:
+      label: Other AI tools you use (optional)
 
   - type: dropdown
     id: ai-spend
@@ -96,6 +117,11 @@ body:
         - label: Not sure what Pollen buys
         - label: Nothing, I already pay
 
+  - type: input
+    id: blockers-other
+    attributes:
+      label: Anything else stopping you? (optional)
+
   - type: checkboxes
     id: would-pay
     attributes:
@@ -108,6 +134,11 @@ body:
         - label: My app's users pay (BYOP)
         - label: Crypto
         - label: None
+
+  - type: input
+    id: would-pay-other
+    attributes:
+      label: Something else you'd pay for? (optional)
 
   - type: dropdown
     id: vanish

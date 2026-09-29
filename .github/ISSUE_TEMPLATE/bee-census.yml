@@ -1,0 +1,143 @@
+name: 🐝 Bee Census
+description: Tell us who you are and what you build. Takes 3 minutes and earns 3 Quest Pollen.
+title: "[Bee Census] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us decide what to build next. Most questions are one click.
+
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account).
+
+  - type: dropdown
+    id: bee-type
+    attributes:
+      label: What kind of bee are you?
+      options:
+        - 🛠️ Indie dev shipping an app
+        - 🧪 Hobbyist / tinkerer
+        - 🎓 Student
+        - 🏢 Startup or company
+        - 🎨 Creator, no code
+        - 🤖 Bot builder (Discord, Telegram…)
+        - 🔬 Educator / researcher
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: making
+    attributes:
+      label: What are you making?
+      options:
+        - label: Chat / assistant
+        - label: Image app
+        - label: Video
+        - label: Music / voice
+        - label: Bot
+        - label: Game
+        - label: Agent / automation
+        - label: Just playing around
+
+  - type: dropdown
+    id: found-us
+    attributes:
+      label: How did you find us?
+      options:
+        - An AI assistant told me
+        - GitHub
+        - Google
+        - YouTube / TikTok
+        - Discord / Reddit
+        - A friend
+        - An app built on Pollinations
+        - A directory (OpenRouter, MCP list…)
+        - Something else
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: other-ai
+    attributes:
+      label: Where else do you get AI?
+      options:
+        - label: OpenAI / ChatGPT
+        - label: Claude
+        - label: Gemini / AI Studio
+        - label: OpenRouter
+        - label: fal / Replicate
+        - label: Higgsfield / Krea / Midjourney
+        - label: Local models
+        - label: Nowhere else
+
+  - type: dropdown
+    id: ai-spend
+    attributes:
+      label: What do you spend on AI per month, everywhere combined?
+      options:
+        - $0
+        - Under $5
+        - $5–20
+        - $20–100
+        - $100–500
+        - $500+
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: blockers
+    attributes:
+      label: What stops you spending (more) with us?
+      options:
+        - label: Free Pollen is enough
+        - label: Too expensive
+        - label: My payment method isn't offered
+        - label: Errors / reliability
+        - label: A model I need is missing
+        - label: Not sure what Pollen buys
+        - label: Nothing, I already pay
+
+  - type: checkboxes
+    id: would-pay
+    attributes:
+      label: Which would you actually pay for?
+      options:
+        - label: Pollen packs, like now
+        - label: Monthly plan with Pollen + perks
+        - label: Auto top-up
+        - label: Team billing
+        - label: My app's users pay (BYOP)
+        - label: Crypto
+        - label: None
+
+  - type: dropdown
+    id: vanish
+    attributes:
+      label: If Pollinations vanished tomorrow, you'd feel…
+      options:
+        - 😭 Very disappointed
+        - 😕 Somewhat disappointed
+        - 😐 Not really
+        - 💃 I'd throw a party
+    validations:
+      required: true
+
+  - type: textarea
+    id: wishlist
+    attributes:
+      label: 🪄 Wishlist — features or models you'd like on Pollinations
+      description: List as many as you like, and anything we should fix.
+      placeholder: |
+        - a model you'd use…
+        - a feature you're missing…
+    validations:
+      required: true
+
+  - type: input
+    id: roast
+    attributes:
+      label: 🔥 Roast us in one sentence (optional)
+
+  - type: input
+    id: call
+    attributes:
+      label: Up for a 15-minute call with the team? Leave your Discord handle (optional)

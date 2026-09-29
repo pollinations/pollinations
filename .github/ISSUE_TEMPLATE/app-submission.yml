@@ -74,3 +74,10 @@ body:
     attributes:
       label: Discord Username
       description: Optional contact username.
+
+  - type: input
+    id: quest
+    attributes:
+      label: Quest
+      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
+      placeholder: "#15600"

@@ -154,7 +154,8 @@ export function createApiKeyPlugin() {
         },
         keyExpiration: {
             minExpiresIn: 0,
-            maxExpiresIn: 365,
+            // Override Better Auth's 365-day default with JavaScript Date's range.
+            maxExpiresIn: 100_000_000,
         },
         rateLimit: {
             enabled: false,

@@ -9,7 +9,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    LoadingStatus,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -36,7 +35,11 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
@@ -887,7 +890,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
     const showSummary = !initialError;
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             {/* Summary. The per-user accounting (completed/claimed cards +
                 claimable footers + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
@@ -895,9 +898,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {state.loading && (
-                    <LoadingStatus>Loading quests…</LoadingStatus>
-                )}
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
@@ -908,9 +908,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             claimable={claimable}
                         />
                     )}
-                    {state.checking && (
-                        <LoadingStatus>Refreshing quests…</LoadingStatus>
-                    )}
+                    {state.checking && <PageStatus />}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (
                         <QuestSummary
@@ -945,27 +943,62 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            <div className="flex flex-col gap-6">
-                {bonusRewardCards.length > 0 && (
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
+            {CATEGORIES.map((category) => {
+                const cards = sections[category.key];
+                if (state.loading || cards.length === 0) return null;
+                // The progress chip counts only real (grantable) quests —
+                // coming_soon rows are excluded from both done and total.
+                const liveCards = cards.filter((card) => !card.comingSoon);
+                const done = liveCards.filter(
+                    (card) => card.status !== "open",
+                ).length;
+                return (
                     <Section
-                        title="Bonus rewards"
+                        key={category.key}
+                        title={category.label}
                         action={
-                            <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                {
-                                    bonusRewardCards.filter(
-                                        (card) => card.status === "claimed",
-                                    ).length
-                                }{" "}
-                                / {bonusRewardCards.length}
-                            </span>
+                            !initialError && (
+                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                                    {done} / {liveCards.length}
+                                </span>
+                            )
                         }
                     >
                         <div className="flex flex-col gap-2">
-                            {bonusRewardCards.map((card) => (
+                            {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    icon={SparkleIcon}
+                                    icon={category.icon}
                                     claiming={state.claimingRewardIds.includes(
                                         card.rewardId ?? "",
                                     )}
@@ -974,45 +1007,8 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             ))}
                         </div>
                     </Section>
-                )}
-                {CATEGORIES.map((category) => {
-                    const cards = sections[category.key];
-                    if (state.loading || cards.length === 0) return null;
-                    // The progress chip counts only real (grantable) quests —
-                    // coming_soon rows are excluded from both done and total.
-                    const liveCards = cards.filter((card) => !card.comingSoon);
-                    const done = liveCards.filter(
-                        (card) => card.status !== "open",
-                    ).length;
-                    return (
-                        <Section
-                            key={category.key}
-                            title={category.label}
-                            action={
-                                !initialError && (
-                                    <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                        {done} / {liveCards.length}
-                                    </span>
-                                )
-                            }
-                        >
-                            <div className="flex flex-col gap-2">
-                                {cards.map((card) => (
-                                    <QuestRow
-                                        key={card.key}
-                                        card={card}
-                                        icon={category.icon}
-                                        claiming={state.claimingRewardIds.includes(
-                                            card.rewardId ?? "",
-                                        )}
-                                        onClaim={handleClaimReward}
-                                    />
-                                ))}
-                            </div>
-                        </Section>
-                    );
-                })}
-            </div>
-        </div>
+                );
+            })}
+        </>
     );
 }

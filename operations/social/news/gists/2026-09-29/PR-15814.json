@@ -1,0 +1,37 @@
+{
+  "pr_number": 15814,
+  "title": "feat: add Azure TTS models to speech routes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15814",
+  "merged_at": "2026-09-29T18:31:14Z",
+  "labels": [
+    "FEATURE",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `openai/tts-1` and `openai/tts-1-hd` to the existing speech endpoints using Azure and Quest Pollen; preserves the ElevenLabs aliases.\n- Uses Azure's published $15/$30 per million-character rates with multiplier 1; adds explicit pricing expectations and snapshots.\n- Verified 24 live local E2E cases across both endpoints, both models, six voices and six formats, plus cache and disconnect/rejoin checks. Wallet deductions and staging Tinybird agree: 28 generations, 0.0333 Quest Pollen, no duplicate charges.\n- Validation: 177 focused Gen tests, Gen typecheck, and 479 Enter pricing/alias tests passed. Required CI reruns on the latest commit.\n- Azure deployments now serve speech successfully. Each still has 1 RPM allocated against its separate 3 RPM regional quota. Azure character/cost metrics and today's Cost Management records contain no TTS billing quantities yet; provider-side billing reconciliation remains unverified.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive finds its voice",
+    "blurb": "Two Azure-backed voices have joined the speech routes: `openai/tts-1` and `openai/tts-1-hd`. The ElevenLabs aliases are still right where you left them.",
+    "summary": "Added Azure-backed `openai/tts-1` and `openai/tts-1-hd` to both existing speech endpoints, with Quest Pollen pricing based on $15 and $30 per million characters respectively, while preserving ElevenLabs aliases.",
+    "impact": "Developers can request either new model through the existing speech routes; live checks covered six voices, six formats, caching, and disconnect/rejoin without duplicate wallet charges.",
+    "keywords": [
+      "Azure",
+      "text-to-speech",
+      "tts-1",
+      "tts-1-hd",
+      "audio API",
+      "Quest Pollen"
+    ],
+    "visual_concept": "A cozy speech studio with two code-flowers labeled tts-1 and tts-1-hd sending musical notes toward a retro microphone. Polli, wearing tiny headphones, listens beside a delighted CRT monitor robot; an older ElevenLabs-labeled flower keeps blooming nearby.",
+    "image_prompt": "In a cozy pixel art speech studio, two lime green (#ecf874) code-flowers labeled 'tts-1' and 'tts-1-hd' send gentle musical notes toward a retro microphone while a friendly CRT monitor robot listens beside Polli, who wears tiny headphones. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15814.jpg",
+    "prompt": "In a cozy pixel art speech studio, two lime green (#ecf874) code-flowers labeled 'tts-1' and 'tts-1-hd' send gentle musical notes toward a retro microphone while a friendly CRT monitor robot listens beside Polli, who wears tiny headphones. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-29T18:32:07.140008+00:00"
+}

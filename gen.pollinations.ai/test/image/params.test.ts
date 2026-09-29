@@ -326,4 +326,39 @@ describe("ImageParamsSchema", () => {
         });
         expect(invalidUrl.success).toBe(false);
     });
+
+    it("accepts inferenceport-ai/lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects an unregistered short model name", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "lightning-image-turbo",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("parses two image references for lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+                image: [
+                    "https://example.com/a.png",
+                    "https://example.com/b.png",
+                ],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects resolution on lightning-image-turbo", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            resolution: "720p",
+        });
+        expect(result.success).toBe(false);
+    });
 });

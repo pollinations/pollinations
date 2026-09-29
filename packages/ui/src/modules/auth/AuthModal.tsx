@@ -45,8 +45,11 @@ export function AuthModal({ children, size, dialog, onClose }: AuthModalProps) {
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:bg-app-bg"
-            contentClassName="polli:overflow-hidden"
+            // On phones the whole dialog scrolls inside the screen area the
+            // browser shows, which can be shorter than 100dvh when a toolbar
+            // covers the bottom; a 100dvh-tall dialog would hide its actions.
+            positionerClassName="polli:bg-app-bg polli:max-sm:h-auto polli:max-sm:max-h-dvh polli:max-sm:overflow-y-auto"
+            contentClassName="polli:overflow-hidden polli:max-sm:h-auto polli:max-sm:min-h-full polli:max-sm:max-h-none polli:max-sm:overflow-visible"
             size={size}
         >
             {children}
@@ -127,6 +130,9 @@ export function AuthFlowLayout({
             <DialogBody
                 actions={actions}
                 footnote={<AuthModalFootnote>{footnote}</AuthModalFootnote>}
+                // On phones AuthModal scrolls instead, so the actions stay
+                // pinned to the bottom of the visible screen.
+                className="polli:max-sm:overflow-visible"
                 bodyClassName="polli:space-y-0 polli:p-0"
             >
                 <AuthModalHeader>{headerAction}</AuthModalHeader>

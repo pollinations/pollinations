@@ -180,6 +180,10 @@ polli machine logs my-agent
 polli machine stop my-agent       # start | rm
 ```
 
+To serve a web app, create the machine with `--port 8080` and run
+`polli machine share my-agent`. Anyone with the printed link can reach that
+port until you run `unshare` or stop the machine.
+
 A running machine costs pollen per hour by size (`polli machine list` shows
 it), and it stops when your balance runs out. Your login key needs the
 `machines` permission: if you logged in before machines existed, run

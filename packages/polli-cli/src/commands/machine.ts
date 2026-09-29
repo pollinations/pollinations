@@ -19,14 +19,21 @@ interface Machine {
     diskGb: number;
     pricePerHour: number;
     autoStopSeconds: number | null;
+    port: number | null;
     createdAt: string;
 }
 
 interface ExecResult {
     stdout: string;
     stderr: string;
+    // Byte-exact and untruncated, unlike stdout and stderr.
+    stdoutB64?: string;
+    stderrB64?: string;
     exitCode: number;
 }
+
+const bytes = (text: string, b64?: string) =>
+    b64 === undefined ? text : Buffer.from(b64, "base64");
 
 /** `KEY=value` pairs from repeated `--env` flags. */
 export const parseEnv = (pairs: string[]): Record<string, string> => {
@@ -64,6 +71,7 @@ const create = new Command("create")
     .option("--memory <mb>", "Memory in MB", Number)
     .option("--disk <gb>", "Disk in GB", Number)
     .option("--auto-stop <seconds>", "Stop after this long idle", Number)
+    .option("--port <n>", "Guest port to serve (see `share`)", Number)
     .action(async (name: string, opts) => {
         const apiKey = requireKey();
         try {
@@ -97,6 +105,7 @@ const create = new Command("create")
                     memoryMb: opts.memory,
                     diskGb: opts.disk,
                     autoStopSeconds: opts.autoStop,
+                    port: opts.port,
                 },
             });
             printResult({ ...machine });
@@ -144,8 +153,8 @@ const exec = new Command("exec")
                 apiKey: requireKey(),
                 body: { command },
             });
-            process.stdout.write(result.stdout);
-            process.stderr.write(result.stderr);
+            process.stdout.write(bytes(result.stdout, result.stdoutB64));
+            process.stderr.write(bytes(result.stderr, result.stderrB64));
             process.exitCode = result.exitCode;
         } catch (err) {
             fail("Failed to run command", err);
@@ -202,5 +211,11 @@ export const machineCommand = new Command("machine")
             "POST",
             "/stop",
         ),
+    )
+    .addCommand(
+        simple("share", "Print a link to the machine's port", "POST", "/share"),
+    )
+    .addCommand(
+        simple("unshare", "Revoke the machine's link", "DELETE", "/share"),
     )
     .addCommand(simple("rm", "Delete a machine and its disk", "DELETE", ""));

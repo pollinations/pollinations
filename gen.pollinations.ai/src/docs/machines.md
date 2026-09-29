@@ -39,8 +39,8 @@ curl https://gen.pollinations.ai/machines \
   `POST /account/keys`. `polli auth login` asks for it.
 - A running machine costs pollen per hour, by size: see `pricePerHour` in
   each machine response. Quest Pollen counts.
-- Creating, starting, or running a command pays the current hour if it is
-  not paid yet. Each further hour is charged while the machine runs; a
+- Creating, starting, running a command, or sharing pays the current hour
+  if it is not paid yet. Each further hour is charged while the machine runs; a
   stopped machine costs nothing.
 - If the wallet or the key's budget cannot cover an hour, the request gets
   a 402, and a running machine stops. Its disk survives, so start it again
@@ -62,5 +62,22 @@ curl -X POST https://gen.pollinations.ai/machines/my-agent/stop \
 ```
 
 Machines are private: every route accepts only the owner's keys. A
-machine can call out to the internet, but nothing can call in yet, so agents
-that poll or hold an outbound connection fit best.
+machine can call out to the internet.
+
+### Serve a port
+
+Create the machine with `"port": 8080`, run a server on that port, then share
+it:
+
+```bash
+curl -X POST https://gen.pollinations.ai/machines/my-agent/share \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+# {"url": "https://...?t=..."}
+```
+
+- Anyone holding the link can reach the port, so treat it like a key.
+  Opening it sets a cookie for that machine's host.
+- Stopping the machine or `DELETE /machines/my-agent/share` revokes the link.
+  Sharing again replaces it.
+- A visit starts a stopped machine, which is billed like any start. After an
+  auto-stop, the link works until the paid hour ends.

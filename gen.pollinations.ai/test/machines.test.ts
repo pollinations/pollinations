@@ -39,6 +39,7 @@ function stubSmol(machines: Machine[] = []) {
                 source: body.source,
                 resources: body.resources,
                 autoStopSeconds: body.autoStopSeconds ?? null,
+                ports: body.ports,
                 createdAt: "2026-09-21T00:00:00Z",
             };
             machines.push(machine);
@@ -61,7 +62,14 @@ function stubSmol(machines: Machine[] = []) {
                 exitCode: 0,
                 durationMs: 5,
                 stdoutB64: "aGkK",
+                machineId: machine.id,
             });
+        }
+        if (rest === "/share") {
+            machine.shared = request.method === "POST";
+            return machine.shared
+                ? Response.json({ token: "t", url: "https://web.apps?t=t" })
+                : new Response(null, { status: 204 });
         }
         if (rest === "" && request.method === "DELETE") {
             machines.splice(machines.indexOf(machine), 1);
@@ -154,6 +162,7 @@ test("creates, lists, execs and deletes a machine for its owner only", async () 
         stderr: "",
         exitCode: 0,
         durationMs: 5,
+        stdoutB64: "aGkK",
     });
 
     // Creating paid the first hour; the exec ran inside it.
@@ -256,4 +265,48 @@ test("stops the machine when the next hour is unaffordable", async () => {
     expect(await runDurableObjectAlarm(env.MACHINE_METER.getByName(id))).toBe(
         false,
     );
+});
+
+test("a share link lasts until the machine stops", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const smol = stubSmol();
+    const owner = await machineKey();
+    const created = await call(owner.key, "/machines", {
+        method: "POST",
+        body: JSON.stringify({ name: "web", image: "nginx", port: 80 }),
+    });
+    expect(await created.json()).toMatchObject({ name: "web", port: 80 });
+    const [machine] = smol.machines;
+    expect(machine.ports).toEqual([{ port: 80 }]);
+    const share = () =>
+        call(owner.key, "/machines/web/share", { method: "POST" });
+
+    expect(await (await share()).json()).toEqual({
+        url: "https://web.apps?t=t",
+    });
+    // Stopping revokes the link, so no visit can start the machine unpaid.
+    await call(owner.key, "/machines/web/stop", { method: "POST" });
+    expect(machine.shared).toBe(false);
+
+    // An auto-stop keeps the link until the meter ends at the paid hour.
+    await call(owner.key, "/machines/web/start", { method: "POST" });
+    await share();
+    machine.state = "stopped";
+    expect(await nextHour(machine.id)).toBe(true);
+    expect(machine.shared).toBe(false);
+    expect(
+        await runDurableObjectAlarm(env.MACHINE_METER.getByName(machine.id)),
+    ).toBe(false);
+    // Stop, start and share all ran inside the first paid hour.
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - HOURLY, 8);
+});
+
+test("only a machine with a port can be shared", async () => {
+    stubSmol();
+    const owner = await machineKey();
+    await create(owner.key, "a");
+    const response = await call(owner.key, "/machines/a/share", {
+        method: "POST",
+    });
+    expect(response.status).toBe(409);
 });

@@ -41,6 +41,10 @@ const CreateMachineSchema = z.object({
     autoStopSeconds: z.number().int().min(60).optional().meta({
         description: "Stop after this long without activity. Omit to stay on.",
     }),
+    port: z.number().int().min(1).max(65535).optional().meta({
+        description:
+            "Guest port to serve, reachable through `POST /machines/{name}/share`.",
+    }),
 });
 
 const ExecSchema = z.object({
@@ -50,15 +54,16 @@ const ExecSchema = z.object({
     stdin: z.string().optional(),
     timeoutSeconds: z.number().int().min(1).max(600).optional(),
     background: z.boolean().optional().meta({
-        description: "Detach the process and return its pid.",
+        description: "Detach the process and return at once.",
     }),
 });
 
 type MachinesContext = Context<Env>;
 
 // smol cloud has one tenant for all of Pollinations, so ownership is the
-// name prefix: a hash of the caller's user id. Guest ports are not exposed:
-// smol's ingress forwards our tenant key to the guest as `authorization`.
+// name prefix: a hash of the caller's user id. The guest port is reachable
+// only through a share link, whose token opens that one machine. smol's other
+// ingress would forward our tenant key to the guest as `authorization`.
 async function ownerPrefix(userId: string): Promise<string> {
     const digest = await crypto.subtle.digest(
         "SHA-256",
@@ -161,6 +166,7 @@ function publicMachine(machine: SmolMachine, prefix: string) {
         diskGb: machine.resources.diskGb,
         pricePerHour: hourlyPrice(machine.resources),
         autoStopSeconds: machine.autoStopSeconds,
+        port: machine.ports?.[0]?.port ?? null,
         createdAt: machine.createdAt,
     };
 }
@@ -237,6 +243,7 @@ export const machinesRoutes = new Hono<Env>()
                         diskGb: input.diskGb,
                     },
                     autoStopSeconds: input.autoStopSeconds,
+                    ports: input.port ? [{ port: input.port }] : undefined,
                 },
             );
             try {
@@ -283,17 +290,21 @@ export const machinesRoutes = new Hono<Env>()
             tags: [TAG],
             summary: "Start or Stop a Machine",
             description:
-                "`stop` powers the machine off and keeps its disk. `start` boots it and runs `command` again, paying for an hour unless the current one is paid.",
+                "`stop` powers the machine off, keeps its disk and revokes its share link. `start` boots it and runs `command` again, paying for an hour unless the current one is paid.",
             responses,
         }),
         async (c) => {
             const machine = await findOwned(c);
-            if (c.req.param("action") === "start") await payHour(c, machine);
+            const action = c.req.param("action");
+            if (action === "start") await payHour(c, machine);
+            // A visit through the link would start the machine again.
+            else
+                await smolJson(c, `/v1/machines/${machine.id}/share`, "DELETE");
             return respond(
                 c,
                 await smolJson<SmolMachine>(
                     c,
-                    `/v1/machines/${machine.id}/${c.req.param("action")}`,
+                    `/v1/machines/${machine.id}/${action}`,
                     "POST",
                 ),
             );
@@ -305,30 +316,64 @@ export const machinesRoutes = new Hono<Env>()
             tags: [TAG],
             summary: "Run a Command",
             description:
-                "Run a command inside the machine and return its output. A stopped machine starts first and pays for an hour.",
+                "Run a command inside the machine. Returns `exitCode`, `durationMs`, `stdout` and `stderr` (capped; see `stdoutTruncated` and `stderrTruncated`) and their byte-exact base64 copies `stdoutB64` and `stderrB64`. A stopped machine starts first and pays for an hour.",
             responses,
         }),
         validator("json", ExecSchema),
         async (c) => {
             const machine = await findOwned(c);
             await payHour(c, machine);
-            const result = await smolJson<{
-                stdout: string;
-                stderr: string;
-                exitCode: number;
-                durationMs: number;
+            const { machineId: _machineId, ...result } = await smolJson<{
+                machineId: string;
             }>(
                 c,
                 `/v1/machines/${machine.id}/exec`,
                 "POST",
                 c.req.valid("json"),
             );
-            return c.json({
-                stdout: result.stdout,
-                stderr: result.stderr,
-                exitCode: result.exitCode,
-                durationMs: result.durationMs,
-            });
+            return c.json(result);
+        },
+    )
+    .post(
+        "/machines/:name/share",
+        describeRoute({
+            tags: [TAG],
+            summary: "Share a Machine's Port",
+            description:
+                "Return a link to the machine's `port`. Anyone holding the link can reach that port until you unshare or stop the machine; sharing again replaces the link. A visit starts a stopped machine, so sharing pays the current hour unless it is paid.",
+            responses: {
+                ...responses,
+                409: { description: "The machine has no `port`" },
+            },
+        }),
+        async (c) => {
+            const machine = await findOwned(c);
+            if (!machine.ports?.length) {
+                throw new HTTPException(409, {
+                    message: "Machine has no port. Create it with `port`.",
+                });
+            }
+            await payHour(c, machine);
+            const { url } = await smolJson<{ url: string }>(
+                c,
+                `/v1/machines/${machine.id}/share`,
+                "POST",
+            );
+            return c.json({ url });
+        },
+    )
+    .delete(
+        "/machines/:name/share",
+        describeRoute({
+            tags: [TAG],
+            summary: "Unshare a Machine",
+            description: "Revoke the machine's share link.",
+            responses,
+        }),
+        async (c) => {
+            const machine = await findOwned(c);
+            await smolJson(c, `/v1/machines/${machine.id}/share`, "DELETE");
+            return c.json({ shared: false });
         },
     )
     .get(

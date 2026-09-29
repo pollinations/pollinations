@@ -34,6 +34,7 @@ export type SmolMachine = {
     source: { reference: string };
     resources: { cpus: number; memoryMb: number; diskGb: number };
     autoStopSeconds: number | null;
+    ports?: { port: number }[];
     createdAt: string;
 };
 
@@ -59,6 +60,17 @@ export function smol(
     const headers = new Headers(init?.headers);
     headers.set("authorization", `Bearer ${env.SMOL_API_KEY}`);
     return fetch(`${SMOL_API}${path}`, { ...init, headers });
+}
+
+/** Revokes the machine's share link. True once no link can reach it. */
+export async function revokeShare(
+    env: CloudflareBindings,
+    machineId: string,
+): Promise<boolean> {
+    const response = await smol(env, `/v1/machines/${machineId}/share`, {
+        method: "DELETE",
+    });
+    return response.ok || response.status === 404;
 }
 
 /** Pollen per started hour, at smol's list rates (1 pollen ≈ $1). */
@@ -110,10 +122,10 @@ async function loadPayer(
 }
 
 /**
- * Bills one smol machine per started hour. A request that starts the machine
- * or runs a command pays the first hour; the alarm then bills each further
- * hour while smol reports the machine running, and stops it when the payer can
- * no longer cover the next one. The disk survives that stop.
+ * Bills one smol machine per started hour. A request that starts the machine,
+ * runs a command or shares it pays the first hour; the alarm then bills each
+ * further hour while smol reports the machine running, and stops it when the
+ * payer can no longer cover the next one. The disk survives that stop.
  */
 export class MachineMeter extends DurableObject<CloudflareBindings> {
     private readonly log = getLogger(["durable", "machine-meter"]);
@@ -165,7 +177,7 @@ export class MachineMeter extends DurableObject<CloudflareBindings> {
             }
             const machine = await response.json<SmolMachine>();
             if (!RUNNING_STATES.has(machine.state)) {
-                await this.ctx.storage.deleteAll();
+                await this.end(meter.machineId);
                 return;
             }
 
@@ -188,8 +200,19 @@ export class MachineMeter extends DurableObject<CloudflareBindings> {
                 await this.ctx.storage.setAlarm(Date.now() + RETRY_MS);
                 return;
             }
-            await this.ctx.storage.deleteAll();
+            await this.end(meter.machineId);
         });
+    }
+
+    // A visit through a share link starts a stopped machine, and nothing
+    // would bill it without a meter. So the meter ends only once the link is
+    // revoked.
+    private async end(machineId: string) {
+        if (await revokeShare(this.env, machineId)) {
+            await this.ctx.storage.deleteAll();
+        } else {
+            await this.ctx.storage.setAlarm(Date.now() + RETRY_MS);
+        }
     }
 
     // Bills the hour that starts at `meter.paidUntil`.

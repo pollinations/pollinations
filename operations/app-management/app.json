@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Pollinations for Obsidian",
+    "url": "https://github.com/tomdacatto/pollinations-obsidian",
+    "description": "Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor.",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-obsidian",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15666",
+    "approvedDate": "2026-09-29",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Roleplay AI",
     "url": "https://arpitgoswami.github.io/roleplay-app",

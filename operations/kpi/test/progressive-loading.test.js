@@ -37,7 +37,7 @@ it("publishes each source, distinguishes pending from failed, and ignores an old
     expect(requests).toHaveLength(1);
     expect(state.github.stars).toBeUndefined();
     expect(state.missing).toEqual([]);
-    await reply(0, { stars: 123 });
+    await reply(0, { stars: 123, data: [{ date: "2026-09-22", stars: 123 }] });
     expect(state.github.stars).toBe(123);
     expect(state.loading).toBe(true);
     expect(requests).toHaveLength(2);

@@ -20,6 +20,6 @@ export const weekly = (pipe, weeks) =>
 
 export async function github() {
     const res = await dashboardFetch("/api/kpi/github");
-    if (!res.ok) return { stars: 0, forks: 0 };
+    if (!res.ok) return null;
     return res.json();
 }

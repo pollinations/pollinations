@@ -388,22 +388,23 @@ kpiRoutes.get("/app-submissions", async (c) => {
     return c.json({ data: result });
 });
 
-// GitHub: Stars
+// Daily authenticated Actions snapshots, not anonymous per-visit API reads.
 kpiRoutes.get("/github", async (c) => {
     const res = await fetchPublicGithub(
-        "https://api.github.com/repos/pollinations/pollinations",
+        "https://raw.githubusercontent.com/pollinations/pollinations/kpi-data/github-stars.json",
     );
 
-    if (!res.ok) return c.json({ stars: 0, forks: 0, error: true });
-
-    const data = (await res.json()) as {
-        stargazers_count: number;
-        forks_count: number;
-        subscribers_count: number;
-    };
+    if (!res.ok)
+        return c.json({ error: "GitHub star snapshots unavailable" }, 502);
+    const data = (await res.json()) as Array<{
+        date: string;
+        stars: number;
+        capturedAt: string;
+    }>;
+    const latest = data.at(-1);
     return c.json({
-        stars: data.stargazers_count || 0,
-        forks: data.forks_count || 0,
-        watchers: data.subscribers_count || 0,
+        stars: latest?.stars,
+        capturedAt: latest?.capturedAt,
+        data,
     });
 });

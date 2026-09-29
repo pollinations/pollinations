@@ -1,0 +1,122 @@
+name: MCP registry / Publish hosted servers
+
+# The MCP servers we host are declared once in shared/registry/mcp.ts and served
+# at gen.pollinations.ai/mcp/<id>. This workflow turns that declaration into MCP
+# registry entries, so a server added there reaches the official registry on the
+# next publish without anyone writing another entry by hand.
+#
+# Publishing authenticates with GitHub OIDC, so it stores no secret: the
+# registry grants the io.github.pollinations namespace to workflows that run in
+# this repository. A maintainer dispatches the publish job from main after the
+# pull request merges.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish for every entry (bump it to update an existing listing)
+        required: false
+        default: "1.0.0"
+  pull_request:
+    paths:
+      - shared/registry/mcp.ts
+      - operations/mcp-registry/**
+      - .github/workflows/mcp-registry.yml
+
+concurrency:
+  group: mcp-registry-publish
+  queue: max
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate registry entries
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Test the entry generator
+        run: node --test operations/mcp-registry/entries.test.mts
+
+      - name: Generate registry entries
+        env:
+          VERSION: ${{ inputs.version || '1.0.0' }}
+        run: >-
+          node operations/mcp-registry/emit.mts
+          --out "$RUNNER_TEMP/mcp-registry"
+          --version "$VERSION"
+          --commit "${GITHUB_SHA}"
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Validate every entry against the MCP registry
+        run: |
+          for entry in "$RUNNER_TEMP"/mcp-registry/*/; do
+            echo "::group::$(basename "$entry")"
+            (cd "$entry" && "$GITHUB_WORKSPACE/mcp-publisher" validate)
+            echo "::endgroup::"
+          done
+
+      - name: Upload registry entries
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-registry-entries
+          path: ${{ runner.temp }}/mcp-registry
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish registry entries
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC, so publishing needs no stored secret
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Require the default branch
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::Dispatch this workflow from main, which is the ref the registry grants the io.github.pollinations namespace to."
+            exit 1
+          fi
+
+      - name: Download validated registry entries
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-registry-entries
+          path: ${{ runner.temp }}/mcp-registry
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to the MCP registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish every entry
+        run: |
+          for entry in "$RUNNER_TEMP"/mcp-registry/*/; do
+            echo "::group::$(basename "$entry")"
+            (cd "$entry" && "$GITHUB_WORKSPACE/mcp-publisher" publish)
+            echo "::endgroup::"
+          done

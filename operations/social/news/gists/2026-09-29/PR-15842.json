@@ -1,0 +1,37 @@
+{
+  "pr_number": 15842,
+  "title": "fix: clean up the lotus logo in the brand kit",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15842",
+  "merged_at": "2026-09-29T23:07:31Z",
+  "labels": [
+    "FEATURE",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "The icon-only lotus in `@pollinations/ui` was a pixel trace, and every mask and icon generated from it came out jagged. The pixel look belongs to the wordmark only. This cleans the logo up at the source. Supersedes #15835.\n\n- Restores the smooth lotus as `brand/mark.svg` with a 25% heavier line and rebuilds the kit (marks, lockups, generated icons); adds 152/167 apple touch presets to the generator\n- Adds `BrandMark` and replaces the six hand-written lotus/lockup masks (`AppHeader`, `AppUserMenu`, `AuthModal`, `PollinationsSignInButton`, Enter's rail) with it\n- Drops dead logo copies: KPI's unused `logo.svg`, `myceli-logo.svg`, manifest and OG image, and the unreferenced `android-chrome-*` duplicates of `icon-192/512`\n- Applies the body font on every `polli-ui-root` app (Model Monitor, KPI and Observability were in the system font)\n\nAlso: the ops dashboards (Economics, KPI, Observability, Model Monitor) show lotus + app name via a new `AppBrand` / `AppHeader` `appName`, with app-name tab titles and the regenerated icons.\n\nVisible outside the ops apps: Enter's rail lockup gets the thicker lotus. A follow-up swaps the static icons for Enter, gen, the website and `apps/`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A smoother lotus takes root",
+    "blurb": "The lotus mark got its curves back. Enter’s rail and the ops dashboards now use the refreshed mark, while the wordmark keeps its pixels.",
+    "summary": "Restored a smooth lotus in @pollinations/ui with a 25% heavier line, introduced reusable BrandMark and AppBrand components, and regenerated icons and app branding for the ops dashboards.",
+    "impact": "Enter’s rail shows the thicker lotus; Economics, KPI, Observability, and Model Monitor show the lotus alongside each app’s name, with matching tab titles and icons.",
+    "keywords": [
+      "brand kit",
+      "lotus",
+      "UI",
+      "icons",
+      "ops dashboards",
+      "Enter"
+    ],
+    "visual_concept": "Show the smooth lotus as a clean emblem on a cozy design desk, distinct from the deliberately pixel-styled wordmark. Polli helps the monitor robot arrange small, named dashboard signs among flowers and code-plants.",
+    "image_prompt": "In a cozy pixel art design studio, a small bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a happy smile, and small rounded light blue translucent wings wears tiny designer glasses and helps a chunky CRT-headed robot place a smooth lotus emblem beside little dashboard signs; flowers and code-plants grow around them. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15842.jpg",
+    "prompt": "In a cozy pixel art design studio, a small bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a happy smile, and small rounded light blue translucent wings wears tiny designer glasses and helps a chunky CRT-headed robot place a smooth lotus emblem beside little dashboard signs; flowers and code-plants grow around them. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-09-29T23:08:29.833053+00:00"
+}

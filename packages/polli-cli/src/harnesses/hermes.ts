@@ -19,7 +19,7 @@ import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 const ID = "hermes";
 const LABEL = "Hermes Agent";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 const KEY_ENV = "POLLI_HERMES_API_KEY";
 // Never fold long scalars (the API key) across lines.
 const YAML_OUT = { lineWidth: 0 };

@@ -99,7 +99,6 @@ export async function filterCatalogEntries(
         .filter(
             (entry) =>
                 reliability === "all" ||
-                !isCommunityProxy(entry) ||
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );

@@ -71,13 +71,16 @@ function mockCatalogHealth(
         });
 }
 
-test("official models stay discoverable across every list regardless of reliability", async () => {
+test("unreliable official models are filtered from lists but remain callable by ID", async () => {
     const registry = await getGenerationModelRegistry(env);
     const categories = ["text", "image", "video", "3d", "audio", "embedding"];
     const failing = categories.map((category) => {
         const entry = registry
             .visibleEntries()
-            .find((entry) => entry.info.category === category);
+            .find(
+                (entry) =>
+                    entry.info.category === category && !entry.info.community,
+            );
         if (!entry) throw new Error(`Missing test category ${category}`);
         return entry;
     });
@@ -107,10 +110,9 @@ test("official models stay discoverable across every list regardless of reliabil
         const ids = Array.isArray(body)
             ? body.map((row) => row.name)
             : body.data.map((row) => row.id);
-        expect(
-            ids.some((id) => failing.some((entry) => entry.id === id)),
-            path,
-        ).toBe(true);
+        for (const entry of failing) {
+            expect(ids, path).not.toContain(entry.id);
+        }
     }
     for (const [query, headers] of [
         ["?reliability=all", {}],
@@ -131,7 +133,7 @@ test("official models stay discoverable across every list regardless of reliabil
         ((await overridden.json()) as { name: string }[]).some(
             (model) => model.name === failing[0].id,
         ),
-    ).toBe(true);
+    ).toBe(false);
     const exact = await fetchWorker(
         `/v1/models/${encodeURIComponent(failing[0].id)}`,
     );

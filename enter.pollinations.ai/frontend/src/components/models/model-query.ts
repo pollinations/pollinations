@@ -126,7 +126,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:all"].filter(
+        ...["source:official", "status:reliable"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,
@@ -306,7 +306,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return Boolean(model.community) === (filter.value === "community");
         case "status":
             if (filter.value === "all") return true;
-            if (filter.value === "reliable" && model.community && !model.agent)
+            if (filter.value === "reliable")
                 return isModelReliable(model.health?.success_rate);
             return model.health?.status === "healthy";
         case "publisher": {

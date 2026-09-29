@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-28",
+  "period_start": "2026-09-28",
+  "period_end": "2026-09-28",
+  "title": "Agents gained client tools and two community model routers",
+  "summary": "Agents gained client tools and smarter routing, Polli added coding harnesses, and the dashboard and app catalog got easier to use.\n\nPrompt agents can now call functions defined by the client, then continue after the client returns results. Two new community agents route coding and code-review requests using model health, capabilities, and estimated cost. The hosted MCP audio transcription tool also works again for direct public audio URLs.\n\nNew Polli harness commands connect Codex and Claude Code through their supported routers, with model selection and setup-status checks. Polli also now returns reliable failure exit codes on Windows instead of aborting after certain fetch errors.\n\nDashboard pages keep their frame visible while loading, with one status indicator instead of scattered spinners. Sign-in actions are easier to reach, device-code validation is more precise, and authorization cards are easier to read. Model rows now show descriptions and clearer agent output labels without requiring an extra click.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 15191,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15213,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15226,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15289,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15461,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15537,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15603,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15630,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15648,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15649,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15652,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15655,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15673,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15694,
+      "date": "2026-09-28"
+    },
+    {
+      "number": 15695,
+      "date": "2026-09-28"
+    }
+  ],
+  "generated_at": "2026-09-29T06:31:44.048001+00:00"
+}

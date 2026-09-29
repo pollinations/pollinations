@@ -16,7 +16,7 @@ beforeAll(async () => {
                 JSON.stringify({
                     data: [
                         {
-                            name: "chat",
+                            id: "chat",
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -24,7 +24,7 @@ beforeAll(async () => {
                             context_length: 100,
                         },
                         {
-                            name: "publisher/chat",
+                            id: "publisher/chat",
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -32,7 +32,7 @@ beforeAll(async () => {
                             context_length: 200,
                         },
                         {
-                            name: "owner/community-chat",
+                            id: "owner/community-chat",
                             community: true,
                             input_modalities: ["text"],
                             output_modalities: ["text"],
@@ -41,7 +41,7 @@ beforeAll(async () => {
                             context_length: 300,
                         },
                         {
-                            name: "realtime",
+                            id: "realtime",
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/realtime"],

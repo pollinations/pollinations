@@ -18,7 +18,7 @@ import {
 } from "./hermes.js";
 import type { HarnessContext } from "./types.js";
 
-const MODEL = "openai/gpt-5.4-nano";
+const MODEL = "deepseek/deepseek-v4-flash";
 
 let home: string;
 let ctx: HarnessContext;

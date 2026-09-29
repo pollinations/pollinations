@@ -385,10 +385,62 @@ describe("managed agent Responses runtime", () => {
     it.each([
         false,
         true,
-    ])("rejects non-MCP prompt history before starting stream:%s", async (stream) => {
+    ])("replays caller function history with plain-text results (stream:%s)", async (stream) => {
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const body = (await new Request(input, init).json()) as {
+                    messages: unknown[];
+                };
+                expect(body.messages).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            role: "assistant",
+                            tool_calls: [
+                                expect.objectContaining({
+                                    id: "external-call",
+                                    function: {
+                                        name: "lookup",
+                                        arguments: "{}",
+                                    },
+                                }),
+                            ],
+                        }),
+                        {
+                            role: "tool",
+                            tool_call_id: "external-call",
+                            content: "The answer is 42.",
+                        },
+                    ]),
+                );
+                const usage = {
+                    prompt_tokens: 6,
+                    completion_tokens: 2,
+                    total_tokens: 8,
+                };
+                return stream
+                    ? new Response(
+                          `data: ${JSON.stringify({ choices: [{ delta: { content: "Remembered" }, finish_reason: "stop" }], usage })}\n\ndata: [DONE]\n\n`,
+                          { headers: { "content-type": "text/event-stream" } },
+                      )
+                    : Response.json({
+                          choices: [
+                              {
+                                  message: {
+                                      role: "assistant",
+                                      content: "Remembered",
+                                  },
+                                  finish_reason: "stop",
+                              },
+                          ],
+                          usage,
+                      });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
         const response = await handlePromptAgentResponsesRequest(
             request({
                 stream,
+                tool_choice: "auto",
                 input: [
                     {
                         type: "function_call",
@@ -402,7 +454,7 @@ describe("managed agent Responses runtime", () => {
                         type: "function_call_output",
                         id: "fco_external",
                         call_id: "external-call",
-                        output: '{"answer":42}',
+                        output: "The answer is 42.",
                         status: "completed",
                     },
                 ],
@@ -410,10 +462,42 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: { code: "unsupported_parameter", param: "input" },
+        expect(response.status).toBe(200);
+        const result = stream
+            ? streamEvents(await response.text()).at(-1)?.response
+            : await response.json();
+        expect(result).toMatchObject({
+            status: "completed",
+            output: [{ type: "message", content: [{ text: "Remembered" }] }],
         });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ["lookup", "lookup"],
+        ["mcp__pollinations__listModels"],
+        ["mcp__"],
+        [""],
+        ["not a name"],
+        ["x".repeat(65)],
+    ])("rejects conflicting or invalid caller tool names: %j", async (...names) => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        for (const stream of [false, true]) {
+            const response = await handlePromptAgentResponsesRequest(
+                request({
+                    stream,
+                    tools: names.map((name) => ({ type: "function", name })),
+                }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toMatchObject({
+                error: { param: "tools" },
+            });
+        }
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("returns a native stateless Response with required usage", async () => {
@@ -1074,7 +1158,7 @@ describe("managed agent Responses runtime", () => {
             [call, { role: "user", content: "Too soon" }, result],
             [{ ...call, arguments: "invalid JSON" }, result],
             [{ ...call, arguments: "[]" }, result],
-            [{ ...call, name: "external" }, result],
+            [{ ...call, name: "" }, result],
             [call, { ...result, output: "plain text" }],
             [call, { ...result, output: "{}" }],
             [{ type: "mcp_call", id: "old", status: "completed" }],
@@ -1301,6 +1385,9 @@ describe("managed agent Responses runtime", () => {
         };
         collected.onPart(call);
         expect(() => collected.finish("stop")).toThrow("has no result");
+        expect(() =>
+            collected.finish("tool_calls", new Set(["read_file"])),
+        ).toThrow("has no result");
         expect(() => collected.onPart(call)).toThrow("reused a tool call ID");
         const result = {
             type: "tool-result" as const,
@@ -1330,9 +1417,7 @@ describe("managed agent Responses runtime", () => {
             }).success,
         ).toBe(false);
 
-        // Caller tools are ignored, not rejected: Open WebUI attaches builtin
-        // tool specs to every chat sent from its UI, which used to 400 every
-        // managed-agent call.
+        // Caller tools reach the runtime; an upstream error is still propagated.
         const withTools = await handlePromptAgentResponsesRequest(
             request({
                 tools: [{ type: "function", name: "external", parameters: {} }],
@@ -1344,6 +1429,13 @@ describe("managed agent Responses runtime", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
         for (const [field, value] of [
+            ["tool_choice", { tool_choice: "required" }],
+            ["tool_choice", { tool_choice: "none" }],
+            [
+                "tool_choice",
+                { tool_choice: { type: "function", name: "external" } },
+            ],
+            ["parallel_tool_calls", { parallel_tool_calls: false }],
             ["max_tool_calls", { max_tool_calls: 2 }],
             [
                 "reasoning.summary",

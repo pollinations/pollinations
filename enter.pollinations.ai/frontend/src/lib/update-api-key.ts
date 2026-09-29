@@ -1,11 +1,11 @@
 import { apiClient } from "../api.ts";
+import { readError } from "../components/community-endpoints/types.ts";
 import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
 
 /** Server-side fields of a key (budget, models, expiry, permissions). */
 export async function updateApiKey(
     id: string,
     updates: ApiKeyUpdateParams,
-    failureMessage = "Failed to save key. Please try again.",
 ): Promise<void> {
     const response = await apiClient["api-keys"][":id"].update.$post({
         param: { id },
@@ -18,10 +18,6 @@ export async function updateApiKey(
         },
     });
     if (!response.ok) {
-        const result = await response.json().catch(() => null);
-        throw new Error(
-            (result as { error?: { message?: string } } | null)?.error
-                ?.message || failureMessage,
-        );
+        throw new Error(await readError(response));
     }
 }

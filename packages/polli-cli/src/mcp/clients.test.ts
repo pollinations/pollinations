@@ -1,8 +1,10 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import { commandExists } from "../harnesses/fs.js";
+import { hermesHome } from "../harnesses/hermes.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -28,7 +30,7 @@ const freshCtx = (): McpContext => ({
 });
 
 describe("client table", () => {
-    it("covers all 13 clients in the issue's priority order", () => {
+    it("covers all 14 clients in the issue's priority order", () => {
         expect(MCP_CLIENTS.map((client) => client.id)).toEqual([
             "claude-code",
             "codex",
@@ -43,6 +45,7 @@ describe("client table", () => {
             "kiro",
             "zed",
             "warp",
+            "hermes",
         ]);
     });
 });
@@ -265,6 +268,66 @@ describe("json config clients", () => {
                 "pollinations",
             ]);
         }
+    });
+});
+
+describe("hermes yaml client", () => {
+    it("preserves comments within foreign MCP entries and skips collisions", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        const foreign =
+            "  pollinations:\n    # private server\n    url: https://example.com/mcp # keep inline comment\n";
+        writeFileSync(file, `mcp_servers:\n${foreign}`);
+        const client = findClient("hermes");
+        const result = await client?.install(ctx, SERVERS, "sk-test");
+        expect(result?.notes.join(" ")).toContain("not overwritten");
+        expect(readFileSync(file, "utf8")).toContain(foreign);
+        await client?.remove(ctx);
+        expect(readFileSync(file, "utf8")).toContain(foreign);
+    });
+    it("writes mcp_servers into config.yaml, preserving comments and config", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(
+            file,
+            "# user comment\nmodel:\n  provider: openai-api\n  default: gpt-5\n",
+        );
+
+        const hermes = findClient("hermes");
+        const result = await hermes?.install(ctx, SERVERS, "sk-test");
+        const text = readFileSync(file, "utf8");
+        expect(text).toContain("# user comment");
+
+        const config = parse(text);
+        expect(config.mcp_servers.pollinations).toEqual({
+            url: `${BASE_URL}/mcp/pollinations`,
+            headers: { Authorization: "Bearer sk-test" },
+        });
+        expect(config.model.provider).toBe("openai-api");
+        expect(result?.installed.sort()).toEqual(["ffmpeg", "pollinations"]);
+        expect(hermes?.status(ctx).installed.sort()).toEqual([
+            "ffmpeg",
+            "pollinations",
+        ]);
+        expect(hermes?.existingKey?.(ctx)).toBe("sk-test");
+
+        const removed = await hermes?.remove(ctx);
+        expect(removed?.removed?.sort()).toEqual(["ffmpeg", "pollinations"]);
+        expect(parse(readFileSync(file, "utf8")).mcp_servers).toBeUndefined();
+    });
+
+    it("leaves config.yaml untouched when there is nothing to remove", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        const original = "# comment\nmodel:\n  provider: openai-api\n";
+        writeFileSync(file, original);
+
+        const removed = await findClient("hermes")?.remove(ctx);
+        expect(removed?.removed).toEqual([]);
+        expect(readFileSync(file, "utf8")).toBe(original);
     });
 });
 

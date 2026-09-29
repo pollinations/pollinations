@@ -1,0 +1,231 @@
+name: 🐝 Bee Census
+description: Tell us who you are and what you build. Takes 3 minutes and earns 3 Quest Pollen.
+title: "[Bee Census] "
+labels: ["BEE-CENSUS"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us decide what to build next. Most questions are a quick pick; two ask for a sentence.
+
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account). The Pollen is paid when your two written answers have at least 60 characters in total. Too short? Edit your issue and check your quests again.
+
+  - type: dropdown
+    id: bee-type
+    attributes:
+      label: What kind of bee are you?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - 🛠️ Indie dev shipping an app
+        - 🧪 Hobbyist / tinkerer
+        - 🎓 Student
+        - 🏢 Startup or company
+        - 🎨 Creator, no code
+        - 🤖 Bot builder (Discord, Telegram…)
+        - 🔬 Educator / researcher
+        - 🐝 Something else
+    validations:
+      required: true
+
+  - type: input
+    id: bee-type-other
+    attributes:
+      label: Other kind of bee (optional)
+
+  - type: dropdown
+    id: making
+    attributes:
+      label: What are you making?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Chat / assistant
+        - Image app
+        - Video
+        - Music / voice
+        - Bot
+        - Game
+        - Agent / automation
+        - Just playing around
+    validations:
+      required: true
+
+  - type: input
+    id: making-other
+    attributes:
+      label: Making something else? (optional)
+
+  - type: dropdown
+    id: found-us
+    attributes:
+      label: How did you find us?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - An AI assistant told me
+        - GitHub
+        - Google
+        - YouTube / TikTok
+        - Discord / Reddit
+        - A friend
+        - An app built on Pollinations
+        - A directory (OpenRouter, MCP list…)
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: found-us-other
+    attributes:
+      label: Where exactly? Which assistant, search, video, post or app
+      placeholder: e.g. searched “free image API” on Google, Claude recommended you, a YouTube video by …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: other-ai
+    attributes:
+      label: Where else do you get AI?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - OpenAI / ChatGPT
+        - Claude
+        - Gemini / AI Studio
+        - OpenRouter
+        - fal / Replicate
+        - Higgsfield / Krea / Midjourney
+        - Local models
+        - Nowhere else
+    validations:
+      required: true
+
+  - type: input
+    id: other-ai-other
+    attributes:
+      label: Other AI tools you use (optional)
+
+  - type: dropdown
+    id: ai-spend
+    attributes:
+      label: What do you spend on AI per month, everywhere combined?
+      description: Pick one.
+      multiple: true
+      options:
+        - $0
+        - Under $5
+        - $5–20
+        - $20–100
+        - $100–500
+        - $500+
+    validations:
+      required: true
+
+  - type: dropdown
+    id: blockers
+    attributes:
+      label: What stops you spending (more) with us?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Free Pollen is enough
+        - Too expensive
+        - My payment method isn't offered
+        - Errors / reliability
+        - A model I need is missing
+        - Not sure what Pollen buys
+        - Nothing, I already pay
+    validations:
+      required: true
+
+  - type: input
+    id: payment-method
+    attributes:
+      label: Payment method not offered? Which one would you use (optional)
+      placeholder: the method and your country
+
+  - type: input
+    id: blockers-other
+    attributes:
+      label: Anything else stopping you? (optional)
+
+  - type: dropdown
+    id: would-pay
+    attributes:
+      label: Which would you actually pay for?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Pollen packs, like now
+        - Monthly plan with Pollen + perks
+        - Auto top-up
+        - Team billing
+        - My app's users pay (BYOP)
+        - Crypto
+        - Nothing for now
+    validations:
+      required: true
+
+  - type: input
+    id: would-pay-other
+    attributes:
+      label: Something else you'd pay for? (optional)
+
+  - type: dropdown
+    id: plan-price
+    attributes:
+      label: What would you pay per month for a Pollinations plan?
+      description: Pick one.
+      multiple: true
+      options:
+        - $3
+        - $5
+        - $10
+        - $20
+        - $50+
+        - I wouldn't subscribe
+    validations:
+      required: true
+
+  - type: textarea
+    id: pay-trigger
+    attributes:
+      label: What would make you pay this month?
+      description: A sentence is plenty.
+      placeholder: e.g. a $5 plan that includes the image models I use
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vanish
+    attributes:
+      label: If Pollinations vanished tomorrow, you'd feel…
+      description: Pick one.
+      multiple: true
+      options:
+        - 😭 Very disappointed
+        - 😕 Somewhat disappointed
+        - 😐 Not really
+        - 💃 I'd throw a party
+    validations:
+      required: true
+
+  - type: textarea
+    id: couldnt-build
+    attributes:
+      label: What did you last try to build that Pollinations couldn't do?
+      description: A model, feature or integration you missed. A sentence or two.
+      placeholder: e.g. a Discord bot that answers by voice; realtime speech was too slow
+    validations:
+      required: true
+
+  - type: input
+    id: roast
+    attributes:
+      label: 🔥 Roast us in one sentence (optional)
+
+  - type: input
+    id: call
+    attributes:
+      label: Up for a 15-minute call with the team? Leave your Discord handle (optional)

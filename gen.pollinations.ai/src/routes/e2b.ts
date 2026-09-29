@@ -302,7 +302,9 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
 
 export const e2bRoutes = new Hono<Env>()
     .use("*", edgeRateLimit, auth(), requireSandboxAccess)
-    .post("/v2/sandboxes", async (c) => {
+    // E2B's CLI still creates and connects through the deprecated v1 paths,
+    // which take the same bodies as v2.
+    .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
         const startTime = new Date();
         const body = await readJson<NewSandbox>(c);
         if (body.autoResume?.enabled) {
@@ -320,7 +322,7 @@ export const e2bRoutes = new Hono<Env>()
         await requireFunds(c, 0);
         await requireCapacity(c);
 
-        const response = await e2b(c, "/v2/sandboxes", {
+        const response = await e2b(c, c.req.path.slice("/e2b".length), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -381,12 +383,16 @@ export const e2bRoutes = new Hono<Env>()
         const { timeout } = await readJson<{ timeout: number }>(c);
         return extendLease(c, sandbox, timeout);
     })
-    .post("/v2/sandboxes/:id/connect", async (c) => {
-        const sandbox = await ownedSandbox(c);
-        if (sandbox.state === "paused") await requireCapacity(c);
-        const { timeout } = await readJson<{ timeout: number }>(c);
-        return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
-    })
+    .on(
+        "POST",
+        ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
+        async (c) => {
+            const sandbox = await ownedSandbox(c);
+            if (sandbox.state === "paused") await requireCapacity(c);
+            const { timeout } = await readJson<{ timeout: number }>(c);
+            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
+        },
+    )
     // Everything else (templates, snapshots, forks, volumes, secrets,
     // webhooks, ...) stays closed until someone reviews how it is billed.
     .all("*", () => {

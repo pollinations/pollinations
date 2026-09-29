@@ -47,7 +47,10 @@ function stubE2b() {
             metadata?: Record<string, string>;
         };
 
-        if (url.pathname === "/v2/sandboxes" && request.method === "POST") {
+        if (
+            /^(\/v2)?\/sandboxes$/.test(url.pathname) &&
+            request.method === "POST"
+        ) {
             if (body.templateID === "missing") {
                 return Response.json(
                     { code: 400, message: "Template not found" },
@@ -250,6 +253,25 @@ test("each second of a lease is paid once", async () => {
         expect(lease.totalPrice).toBeCloseTo(LEASE_300S, 5);
     }
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 5);
+});
+
+test("the E2B CLI's deprecated v1 create and connect are paid the same way", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+
+    const created = await post(owner.key, "/sandboxes", { templateID: "base" });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    expect(e2b.sandboxes[0].metadata).toEqual({
+        pollinations_user: owner.userId,
+    });
+    const connected = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 600,
+    });
+    expect(connected.status).toBe(200);
+
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(2));
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 5);
 });
 
 test("E2B errors reach the caller and cost nothing", async () => {

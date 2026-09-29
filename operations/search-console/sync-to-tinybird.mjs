@@ -113,7 +113,7 @@ const daysAgo = (n) =>
 
 async function searchAnalytics(request) {
     const res = await fetch(
-        `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}/searchAnalytics/query`,
+        `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}/searchAnalytics/query?prettyPrint=false`,
         {
             method: "POST",
             headers: {

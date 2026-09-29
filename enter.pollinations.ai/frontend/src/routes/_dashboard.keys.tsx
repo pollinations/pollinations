@@ -15,7 +15,10 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageLoading,
+} from "../components/layout/dashboard-loading.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
@@ -99,7 +102,10 @@ function KeysPage() {
     }
 
     return (
-        <Await promise={apiKeys} fallback={null}>
+        <Await
+            promise={apiKeys}
+            fallback={<PageLoading titles={["Secrets", "Apps"]} />}
+        >
             {(keys) => (
                 <KeysContent
                     key={user?.id}

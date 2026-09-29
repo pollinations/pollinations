@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
+import { agentsCommand } from "./agents.js";
 import { createChatCommand } from "./gen/chat.js";
 import { createTextCommand } from "./gen/text.js";
+import { keysCommand } from "./keys.js";
 import { modelsCommand } from "./models.js";
 
 const originalStdinTTY = process.stdin.isTTY;
@@ -27,9 +29,6 @@ function prepare() {
     setOutputMode("json");
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("CLI exited");
-    });
     const fetch = vi.fn(async (_url: string, _init: RequestInit) =>
         Response.json({
             choices: [{ message: { content: "ok" } }],
@@ -41,6 +40,44 @@ function prepare() {
 }
 
 describe("CLI argument validation", () => {
+    it("prints an invalid key budget only once", async () => {
+        const fetch = prepare();
+        await expect(
+            keysCommand.parseAsync(
+                ["create", "--name", "test", "--budget", "-1"],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("--budget must be a non-negative number")],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("prints an invalid agent option only once", async () => {
+        const fetch = prepare();
+        await expect(
+            agentsCommand.parseAsync(
+                [
+                    "create",
+                    "--config",
+                    "unused.json",
+                    "--visibility",
+                    "invalid",
+                ],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [
+                expect.stringContaining(
+                    "--visibility must be 'private' or 'public'",
+                ),
+            ],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
     it.each([
         "bogus",
         "Text",
@@ -49,8 +86,26 @@ describe("CLI argument validation", () => {
         const fetch = prepare();
         await expect(
             modelsCommand.parseAsync(["--type", type], { from: "user" }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("fetches only /3d/models for --type 3d", async () => {
+        prepare();
+        const fetch = vi.fn(async (url: string) =>
+            url.includes("/3d/models")
+                ? Response.json([
+                      {
+                          name: "microsoft/trellis-2",
+                          output_modalities: ["3d"],
+                      },
+                  ])
+                : Response.json([]),
+        );
+        vi.stubGlobal("fetch", fetch);
+        await modelsCommand.parseAsync(["--type", "3d"], { from: "user" });
+        const urls = fetch.mock.calls.map(([url]) => url as string);
+        expect(urls).toEqual([expect.stringContaining("/3d/models")]);
     });
 
     it("rejects an unknown model type in stats mode too", async () => {
@@ -59,7 +114,7 @@ describe("CLI argument validation", () => {
             modelsCommand.parseAsync(["--stats", "--type", "bogus"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -77,7 +132,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", flag, value], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -87,7 +142,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", "--image", "./photo.jpg"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -97,7 +152,7 @@ describe("CLI argument validation", () => {
             createChatCommand().parseAsync(["--temperature", "abc"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 

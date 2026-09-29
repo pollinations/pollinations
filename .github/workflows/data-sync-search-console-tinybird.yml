@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: "Latest final days to sync (1-486, for a missed run or backfill)"
+        description: "Latest final days to sync (1-7, for a missed run)"
         default: "3"
 
 permissions: {}
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     permissions:
       contents: read
       id-token: write

@@ -1,3 +1,7 @@
+- **2026-09-28** – **🤖 Frugal code-agent routing** Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools.
+- **2026-09-28** – **🎯 Code reviews with Prism** `cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget.
+- **2026-09-28** – **🔗 Polli connects to Codex and Claude Code** Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login.
+- **2026-09-28** – **✨ Prompt agents can call your tools** Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-27** – **🎯 Apps can complete Quests** Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward.
 - **2026-09-27** – **🎨 Try image2gpt** Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app) <!-- app -->
 - **2026-09-27** – **✨ Generate images in your browser** Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator) <!-- app -->

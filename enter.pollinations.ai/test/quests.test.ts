@@ -516,7 +516,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 4,
+        rewardAmount: 3,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });

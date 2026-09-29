@@ -1,4 +1,4 @@
-import { Section } from "@pollinations/ui";
+import { Section, Surface } from "@pollinations/ui";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -11,6 +11,7 @@ import {
     createFileRoute,
     redirect,
     useNavigate,
+    useRouter,
 } from "@tanstack/react-router";
 import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
@@ -19,16 +20,19 @@ import {
     PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
         search: Record<string, unknown>,
-    ): { pack?: PollenPackKey } => ({
+    ): { pack?: PollenPackKey; session_id?: string } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack
                 : undefined,
+        ...checkoutReturnSearch(search),
     }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -49,8 +53,11 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const { pack } = Route.useSearch();
+    const { pack, session_id: checkoutSessionId } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
+    const router = useRouter();
+    // Balance and billing both come from loaders; rerun them once credited.
+    const reloadWallet = () => void router.invalidate();
     const { balance, earnings } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
@@ -93,6 +100,15 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
+                {checkoutSessionId && (
+                    <Surface>
+                        <CheckoutConfirmation
+                            sessionId={checkoutSessionId}
+                            onCredited={reloadWallet}
+                            onRetry={() => void navigate({ search: { pack } })}
+                        />
+                    </Surface>
+                )}
                 <Suspense fallback={<PageStatus />}>
                     <Await promise={billing}>
                         {(billingState) => (
@@ -102,6 +118,7 @@ function PollenPage() {
                                     selectedPack?.amountUsd ?? 5
                                 }
                                 onSelectedPackAmountChange={selectPack}
+                                onCredited={reloadWallet}
                             />
                         )}
                     </Await>

@@ -263,6 +263,8 @@ type BuyPollenPanelProps = {
     onSelectedPackAmountChange: (amount: number) => void;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
+    /** Reload the wallet and billing once a purchase is credited. */
+    onCredited?: () => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
@@ -270,6 +272,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
     returnToTopUp,
+    onCredited,
 }) => {
     return (
         <>
@@ -277,6 +280,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 selectedPackAmount={selectedPackAmount}
                 onSelectedPackAmountChange={onSelectedPackAmountChange}
                 returnToTopUp={returnToTopUp}
+                onCredited={onCredited}
             />
             <Surface>
                 <AutoTopUpPanel

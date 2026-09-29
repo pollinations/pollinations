@@ -136,7 +136,7 @@ function stubE2b() {
 
 // E2B's SDKs send the key in X-API-KEY.
 const call = (key: string, path: string, init?: RequestInit) =>
-    SELF.fetch(`https://gen.pollinations.ai/e2b${path}`, {
+    SELF.fetch(`https://gen.pollinations.ai/alpha/e2b${path}`, {
         ...init,
         headers: { "x-api-key": key, "content-type": "application/json" },
     });

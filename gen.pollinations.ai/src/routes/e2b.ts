@@ -22,6 +22,8 @@ import { requestIdentity } from "@/middleware/track.ts";
 // sandboxes themselves (commands, files, ports) directly at E2B with the
 // per-sandbox tokens these responses carry.
 const E2B_API = "https://api.e2b.app";
+// Gen serves E2B's API under this experimental path; the rest of each path is E2B's.
+export const E2B_PATH = "/alpha/e2b";
 // One E2B team runs every user's sandboxes; this metadata key names the owner.
 const OWNER_KEY = "pollinations_user";
 const MAX_RUNNING_PER_USER = 3;
@@ -59,7 +61,7 @@ function e2b(c: E2bContext, path: string, init: RequestInit = {}) {
 // Relays the caller's request with the team key in place of theirs.
 async function forward(c: E2bContext, search = new URL(c.req.url).search) {
     const body = c.req.method === "GET" ? "" : await c.req.text();
-    const response = await e2b(c, c.req.path.slice("/e2b".length) + search, {
+    const response = await e2b(c, c.req.path.slice(E2B_PATH.length) + search, {
         method: c.req.method,
         ...(body && { headers: { "content-type": "application/json" }, body }),
     });
@@ -322,7 +324,7 @@ export const e2bRoutes = new Hono<Env>()
         await requireFunds(c, 0);
         await requireCapacity(c);
 
-        const response = await e2b(c, c.req.path.slice("/e2b".length), {
+        const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({

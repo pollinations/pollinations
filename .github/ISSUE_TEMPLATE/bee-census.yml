@@ -118,6 +118,12 @@ body:
         - label: Nothing, I already pay
 
   - type: input
+    id: payment-method
+    attributes:
+      label: Payment method not offered? Which one would you use (optional)
+      placeholder: the method and your country
+
+  - type: input
     id: blockers-other
     attributes:
       label: Anything else stopping you? (optional)

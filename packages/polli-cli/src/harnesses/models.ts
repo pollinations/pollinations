@@ -2,7 +2,7 @@ import { gen } from "../lib/api.js";
 import type { HarnessModel } from "./types.js";
 
 interface CatalogModel {
-    id: string;
+    name: string;
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
@@ -32,7 +32,7 @@ export const fetchHarnessModels = async (
                 m.community !== true,
         )
         .map((m) => ({
-            id: m.id,
+            id: m.name,
             contextWindow: m.context_length as number,
             input: (m.input_modalities ?? ["text"]).filter(
                 (modality) => modality === "text" || modality === "image",

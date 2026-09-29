@@ -6,12 +6,7 @@ import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
-import {
-    ExitSignal,
-    getOutputMode,
-    printError,
-    printResult,
-} from "../../lib/output.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface Message {

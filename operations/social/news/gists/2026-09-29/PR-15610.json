@@ -1,0 +1,37 @@
+{
+  "pr_number": 15610,
+  "title": "feat: sync GitHub traffic to Tinybird daily",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15610",
+  "merged_at": "2026-09-29T19:56:31Z",
+  "labels": [
+    "FEATURE",
+    "MONITORING"
+  ],
+  "pr_body_excerpt": "GitHub keeps repository traffic for 14 days only. This saves it daily so we build a long-term history.\n\n**What we get** (for `pollinations/pollinations`, e.g. 10–23 Sep):\n- **Visitors per day**: ~1,400 views, ~700 unique people. Shows whether developer interest grows and whether launches move it.\n- **Where they come from**: top 10 sources. Today GitHub and Google dominate; ChatGPT sends almost no one to the repo (72 people) but 1,228 views to the dashboard.\n- **What they read**: top 10 pages. The API docs (~950 people) and the BYOP guide (445) are among the most read, so GitHub works as our docs site.\n- **Clones per day**: mostly bots and CI, weak signal.\n\n**What we don't get**: who the visitors are, so no link to signups or revenue. This is a background trend metric, not a decision metric.\n\n**Changes**\n- Daily workflow stores the raw traffic API responses (views, clones, popular paths, popular referrers) in a new `github_traffic_raw` datasource. No pipe until we decide how to analyse it\n- No retries or backfill options: every run sends GitHub's whole 14-day window, so a failed run is covered by the next one. The export saved on 27 Sep gets a one-off load outside the repo\n\n**Before it runs in production**\n- Give the `pollinations-ai` app **Administration: read** (read-only)\n- Deploy to `pollinations_enter`, then load the saved 27 Sep export once\n\n**Review fixes**\n- The app token is limited to `repositories: pollinations` with `permission-administration: read`, instead of inheriting every installation permission\n- Responses that are not traffic data (e.g. an error with HTTP 200) fail the run instead of being stored\n- Verified: live dry run reads all four endpoints; error bodies are rejected\n\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Four jars for GitHub traffic",
+    "blurb": "GitHub remembers repository traffic for 14 days. A daily sync now keeps the views, clones, referrers, and popular pages in Tinybird for the longer view.",
+    "summary": "A daily workflow saves GitHub's full 14-day traffic window—views, clones, popular paths, and popular referrers—to the new Tinybird `github_traffic_raw` datasource, building a history beyond GitHub's retention period.",
+    "impact": "The team can track repository traffic trends over time; each run resends the 14-day window, so the next successful run also covers an isolated failed day.",
+    "keywords": [
+      "GitHub",
+      "traffic",
+      "Tinybird",
+      "observability",
+      "daily sync",
+      "repository analytics"
+    ],
+    "visual_concept": "Polli files four little scrolls labeled views, clones, pages, and sources into a Tinybird birdhouse-shaped archive beside a 14-day calendar. A growing code-plant represents the long-term history; this is an internal metrics sync, not a new visitor-facing dashboard.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears a tiny archivist's cap and carries four pixel scrolls from a GitHub-marked calendar to a birdhouse-shaped data archive, where a code-plant grows beside a prominent lime green (#ecf874) glow. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15610.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny archivist's cap and carries four pixel scrolls from a GitHub-marked calendar to a birdhouse-shaped data archive, where a code-plant grows beside a prominent lime green (#ecf874) glow. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T19:57:59.028518+00:00"
+}

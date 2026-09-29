@@ -1,0 +1,38 @@
+{
+  "pr_number": 15824,
+  "title": "fix: match Bee Census responses by label, not title",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15824",
+  "merged_at": "2026-09-29T17:54:29Z",
+  "labels": [
+    "BUG",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Responders rename the prefilled \"[Bee Census]\" title (#15816, #15817), so the quest never paid them and the AI triage commented on their survey.\n- The quest search and the triage skip now use the `BEE-CENSUS` label, which the form applies and responders can't remove.\n- Test: a renamed title with the label pays; an unlabelled issue doesn't.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The label knows the bee",
+    "blurb": "Bee Census respondents can rename their issue titles and still collect their Pollen. The form’s `BEE-CENSUS` label now tells both the Quest and the triage bot what they’re looking at.",
+    "summary": "Bee Census Quest matching and AI triage now use the form-applied `BEE-CENSUS` label instead of the issue title, so renamed responses qualify for rewards and bypass triage comments.",
+    "impact": "Respondents who change the prefilled title can still receive their Quest reward, while only issues carrying the `BEE-CENSUS` label are treated as census responses.",
+    "keywords": [
+      "Bee Census",
+      "Quests",
+      "Pollen",
+      "GitHub issues",
+      "AI triage",
+      "labels"
+    ],
+    "visual_concept": "Depict a Bee Census issue as a paper form with a prominent BEE-CENSUS label and an edited title. Polli follows the label to a small Pollen reward, while a friendly CRT monitor robot routes the form past an AI triage desk; flowers frame the scene.",
+    "image_prompt": "In a cozy pixel art garden office, Polli follows a lime green (#ecf874) BEE-CENSUS tag on a renamed paper form toward a little Pollen reward, while a friendly CRT monitor robot waves the form past its triage desk among pixel flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny census clipboard satchel and stays small within the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and mint background, dark purple (#110518) outlines, chunky retro sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15824.jpg",
+    "prompt": "In a cozy pixel art garden office, Polli follows a lime green (#ecf874) BEE-CENSUS tag on a renamed paper form toward a little Pollen reward, while a friendly CRT monitor robot waves the form past its triage desk among pixel flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny census clipboard satchel and stays small within the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and mint background, dark purple (#110518) outlines, chunky retro sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-29T17:55:37.277085+00:00"
+}

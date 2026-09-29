@@ -28,6 +28,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 Roleplay AI](https://arpitgoswami.github.io/roleplay-app) | Here is the complete, polished submission description tailored specifically for Roleplay App, ready to copy and paste for your submission! Roleplay App — Interactive AI Storytelling in Your Browser Br | [@arpitgoswami](https://github.com/arpitgoswami) |
+| [🎬 GAANA BANANA](https://gaana.namansoni.in) | # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🛠️ Calibrated Decisions](https://jonakss--calibrated-decisions-app-page.modal.run) | A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/ | [@Jonakss](https://github.com/Jonakss) |
 | [🖼️ Simple Image Generator](https://xzeyrix.github.io/Simple-Image-Generator) | A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own Pollen balance. The app supports | [@xZeyrix](https://github.com/xZeyrix) |
 | [🖼️ image2gpt](https://image2gpt.vercel.app) | Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three | [@18074148384](https://github.com/18074148384) |
 | [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
@@ -35,9 +38,6 @@
 | [🖼️ Bees Pollination](https://halimyassine.github.io/bees-pollination-app) | Bees Pollination is a simple AI image generation app powered by Pollinations. Users connect their Pollinations account, enter a text prompt, and generate an image directly in the browser using the Pol | [@halimyassine](https://github.com/halimyassine) |
 | [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🖼️ PersonaMorph](https://personamorph-ai-production.up.railway.app) | A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
-| [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-28** – **🤖 Frugal code-agent routing** Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools.
+- **2026-09-28** – **🎯 Code reviews with Prism** `cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget.
+- **2026-09-28** – **🔗 Polli connects to Codex and Claude Code** Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login.
+- **2026-09-28** – **✨ Prompt agents can call your tools** Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-27** – **🎯 Apps can complete Quests** Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward.
 - **2026-09-27** – **🎨 Try image2gpt** Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app) <!-- app -->
 - **2026-09-27** – **✨ Generate images in your browser** Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator) <!-- app -->
 - **2026-09-26** – **🎨 MiniMax H3 Max makes longer videos** Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs).
 - **2026-09-26** – **🎵 Gemini 3.8 finds its voice** Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs).
 - **2026-09-26** – **🤖 GPT-6 Sol and Luna join the lineup** Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models).
-- **2026-09-25** – **🚀 Polli meets tgpt** Connect tgpt to Pollinations with `polli harness tgpt on`, using `openai/gpt-5.4-nano` by default—and turn it back off without trampling your existing setup. [View repo](https://github.com/pollinations/pollinations)
-- **2026-09-25** – **🎨 Qwen Image 2.1 arrives** Generate images or guide edits with up to 10 reference images using `qwen/qwen-image-2.1`. The model has brought its own collage scissors. [Try it](https://pollinations.ai/play)
-- **2026-09-25** – **✨ Recraft V4.1 Flash** Generate crisp text-to-image work with `recraft/recraft-v4.1-flash`, including aspect ratios from square to 9:16. [Check the API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-25** – **🎵 What TTS joins the app garden** A browser-based Arabic RTL text-to-speech app with Pollinations OAuth is now in the community catalog. [Try it](https://bloodtubes6-cmyk.github.io/Blood) <!-- app -->
 ---
 
 ## 🌱 Introduction

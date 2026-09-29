@@ -1,0 +1,36 @@
+{
+  "pr_number": 15773,
+  "title": "feat: require more Bee Census answers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15773",
+  "merged_at": "2026-09-29T12:36:24Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Makes \"What are you making?\", \"Where else do you get AI?\", \"What stops you spending?\" and \"What would you pay for?\" required.\n- GitHub checkbox groups can't require at least one tick, so these become required multi-select dropdowns (\"Pick all that apply\"). Each keeps an escape answer.\n- Makes \"Where exactly did you find us?\" required; channel detail is the most useful traction data.\n- Renames the would-pay \"None\" option to \"Nothing for now\", because GitHub reserves \"None\" in dropdowns.\n- Conditional follow-ups, the roast and the call handle stay optional.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The census asks a little more",
+    "blurb": "The Bee Census now collects a few more answers, including exactly where people found the hive. The optional roast remains optional.",
+    "summary": "The Bee Census now requires answers about what people are making, where else they get AI, what stops them spending, what they would pay for, and exactly where they found Pollinations; checkbox groups became required multi-select dropdowns with escape answers.",
+    "impact": "Census responses will include more consistent project and discovery-channel details, while conditional follow-ups, the roast, and the call handle remain optional.",
+    "keywords": [
+      "Bee Census",
+      "GitHub issue template",
+      "survey",
+      "discovery channels",
+      "multi-select"
+    ],
+    "visual_concept": "Depict Polli helping fill out a GitHub-style Bee Census form on a cozy CRT, with several selected dropdown answers and a small map showing a path to the hive. Flowers and code-plants keep the survey scene warm rather than bureaucratic.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli points to a census form with selected dropdowns on a glowing CRT beside a tiny flower-lined map to the hive. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the form. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream and lavender, with dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15773.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli points to a census form with selected dropdowns on a glowing CRT beside a tiny flower-lined map to the hive. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the form. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream and lavender, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T12:37:24.331769+00:00"
+}

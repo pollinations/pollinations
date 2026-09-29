@@ -12,6 +12,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
+
 from floret.routing import RoutingPreferences
 from floret.tools import gen, mcp, media
 
@@ -313,7 +315,8 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "bash",
             "description": (
                 "Run official Computer MCP bash: shell utilities, curl, git, jq, and files. "
-                "Each Floret run gets an isolated /workspace/floret directory; do not expect files from another run. "
+                "Defaults to a temporary run-specific directory under /workspace/floret. "
+                "The caller's Computer filesystem is shared across runs, not isolated. Use relative paths for run files. "
                 "/tmp is cleared after each call. No Python, Node, package installs, native ffmpeg, or GUI. "
                 "Use stdin with cat > path to write text; assets publish <path> prints a public file URL and attaches media. "
                 "Commands have a 60-second limit and bounded output."
@@ -325,7 +328,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "stdin": {"type": "string"},
                     "cwd": {
                         "type": "string",
-                        "description": "Absolute working directory; defaults to /workspace.",
+                        "description": "Absolute working directory; defaults to this run's temporary directory, removed when the run ends.",
                     },
                 },
                 "required": ["command"],
@@ -528,16 +531,30 @@ async def dispatch(
                 and not result.isError
                 and "assets publish" in str(args.get("command", ""))
             ):
-                for url in _PUBLISHED_URL.findall(brain):
-                    path = url.split("?", 1)[0].lower()
-                    kind = (
-                        "video"
-                        if path.endswith((".mp4", ".webm", ".mov", ".mkv"))
-                        else "audio"
-                        if path.endswith((".mp3", ".wav", ".ogg", ".m4a", ".flac"))
-                        else "file"
-                    )
-                    arts.append({"type": kind, "url": url})
+                async with httpx.AsyncClient(
+                    timeout=15, follow_redirects=False
+                ) as client:
+                    for url in dict.fromkeys(_PUBLISHED_URL.findall(brain)):
+                        response = await client.head(url)
+                        response.raise_for_status()
+                        mime = (
+                            response.headers.get(
+                                "content-type", "application/octet-stream"
+                            )
+                            .split(";", 1)[0]
+                            .strip()
+                            .lower()
+                        )
+                        kind = mime.split("/", 1)[0]
+                        arts.append(
+                            {
+                                "type": kind
+                                if kind in {"image", "video", "audio"}
+                                else "file",
+                                "url": url,
+                                "mime_type": mime,
+                            }
+                        )
             return ToolResult(
                 brain=f"ERROR from {name}: {brain}" if result.isError else brain,
                 artifacts=[] if result.isError else arts,

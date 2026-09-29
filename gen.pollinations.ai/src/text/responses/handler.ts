@@ -153,6 +153,7 @@ async function handleDirectResponse(
         const capabilityError = textCapabilityError(
             c.var.model.definition,
             request,
+            c.var.model.communityEndpoint,
         );
         if (capabilityError)
             throw new ResponsesInvalidRequestError(capabilityError);

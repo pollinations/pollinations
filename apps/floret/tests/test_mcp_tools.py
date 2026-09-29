@@ -9,7 +9,6 @@ from typing import Any
 
 import httpx
 import pytest
-
 from floret.config import _api_key_override
 from floret.tools import mcp
 from floret.toolset import dispatch
@@ -27,6 +26,14 @@ def transport(monkeypatch: pytest.MonkeyPatch) -> Iterator[dict[str, Any]]:
     }
 
     async def handle(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            assert request.url.host == "media.pollinations.ai"
+            assert "authorization" not in request.headers
+            state.setdefault("heads", []).append(str(request.url))
+            return httpx.Response(
+                state.get("media_status", 200),
+                headers={"Content-Type": state.get("mime", "text/plain")},
+            )
         if request.method != "POST":
             return httpx.Response(405)
         payload = json.loads(request.content)
@@ -108,25 +115,58 @@ async def test_computer_uses_sdk_and_keeps_auth_out_of_arguments(
     assert "ag_test-caller" not in request.content.decode()
     assert result.brain == "https://media.pollinations.ai/result.txt"
     assert result.artifacts == [
-        {"type": "file", "url": "https://media.pollinations.ai/result.txt"}
+        {
+            "type": "file",
+            "url": "https://media.pollinations.ai/result.txt",
+            "mime_type": "text/plain",
+        }
     ]
 
 
 @pytest.mark.parametrize(
-    ("url", "kind"),
+    ("mime", "kind"),
     [
-        ("https://media.pollinations.ai/result.mp4", "video"),
-        ("https://media.pollinations.ai/result.mp3", "audio"),
+        ("video/mp4", "video"),
+        ("audio/mpeg", "audio"),
+        ("image/png", "image"),
+        ("application/octet-stream", "file"),
     ],
 )
 async def test_computer_published_media_text_becomes_artifact(
-    transport: dict[str, Any], url: str, kind: str
+    transport: dict[str, Any], mime: str, kind: str
 ) -> None:
+    from floret.api import _build_content
+
+    url = "https://media.pollinations.ai/1e73de3b-c7a2-48f4-8f70-467e117f8a24"
+    transport["mime"] = mime
     transport["result"] = {"content": [{"type": "text", "text": f"Published: {url}"}]}
 
-    result = await dispatch("bash", {"command": "assets publish /workspace/out"})
+    result = await dispatch("bash", {"command": 'assets publish "$output"'})
 
-    assert result.artifacts == [{"type": kind, "url": url}]
+    assert result.artifacts == [{"type": kind, "url": url, "mime_type": mime}]
+    assert transport["heads"] == [url]
+    markdown, parts = await _build_content("done", result.artifacts)
+    assert url in markdown
+    if kind == "file":
+        assert parts == [{"type": "text", "text": markdown}]
+        assert f"[Download file]({url})" in markdown
+    else:
+        assert parts[1] == {"type": f"{kind}_url", f"{kind}_url": {"url": url}}
+
+
+@pytest.mark.parametrize("status", [302, 404, 503])
+async def test_computer_media_metadata_failure_is_reported(
+    transport: dict[str, Any], status: int
+) -> None:
+    url = "https://media.pollinations.ai/1e73de3b-c7a2-48f4-8f70-467e117f8a24"
+    transport["result"] = {"content": [{"type": "text", "text": url}]}
+    transport["media_status"] = status
+
+    result = await dispatch("bash", {"command": "assets publish output"})
+
+    assert result.brain.startswith("ERROR from bash:")
+    assert result.artifacts == []
+    assert transport["heads"] == [url]
 
 
 @pytest.mark.parametrize(
@@ -233,11 +273,10 @@ async def test_concurrent_callers_never_share_mcp_credentials(
     assert len(transport["clients"]) == 2
 
 
-async def test_computer_workspace_is_created_and_removed(
+async def test_computer_run_directory_is_removed(
     transport: dict[str, Any],
 ) -> None:
     path = "/workspace/floret/run"
-    await mcp.prepare_workspace(path)
     await mcp.cleanup_workspace(path)
 
     commands = [
@@ -245,45 +284,40 @@ async def test_computer_workspace_is_created_and_removed(
         for _, payload in transport["calls"]
         if payload["method"] == "tools/call"
     ]
-    assert commands == [f"mkdir -p {path}", f"rm -rf -- {path}"]
+    assert commands == [f"rm -rf -- {path}"]
 
 
-async def test_computer_workspace_is_scoped_to_each_run(
+async def test_computer_defaults_to_each_run_directory(
     transport: dict[str, Any],
 ) -> None:
-    with mcp.workspace("/workspace/floret/one"):
-        await dispatch("bash", {"command": "pwd", "cwd": "/workspace/ignored"})
-    with mcp.workspace("/workspace/floret/two"):
-        await dispatch("bash", {"command": "pwd"})
+    for path in ("/workspace/floret/one", "/workspace/floret/two"):
+        with mcp.workspace(path):
+            await dispatch("bash", {"command": "pwd"})
 
     calls = [
         payload["params"]["arguments"]
         for _, payload in transport["calls"]
         if payload["method"] == "tools/call"
     ]
-    assert [call["cwd"] for call in calls] == ["/workspace", "/workspace"]
-    assert calls[0]["command"] == (
-        "mkdir -p /workspace/floret/one/ignored && "
-        "cd /workspace/floret/one/ignored && pwd"
-    )
-    assert calls[1]["command"] == (
-        "mkdir -p /workspace/floret/two && cd /workspace/floret/two && pwd"
-    )
+    assert calls == [
+        {"command": "pwd", "cwd": "/workspace/floret/one"},
+        {"command": "pwd", "cwd": "/workspace/floret/two"},
+    ]
 
 
-async def test_computer_workspace_rewrites_absolute_workspace_paths(
+async def test_computer_preserves_command_text_and_explicit_cwd(
     transport: dict[str, Any],
 ) -> None:
+    args = {"command": "printf '/workspace/example'", "cwd": "/workspace/project"}
     with mcp.workspace("/workspace/floret/run"):
-        await dispatch("bash", {"command": "cat /workspace/input > /workspace/output"})
+        await dispatch("bash", args)
 
     call = next(
         payload["params"]["arguments"]
         for _, payload in transport["calls"]
         if payload["method"] == "tools/call"
     )
-    assert "/workspace/floret/run/input" in call["command"]
-    assert "/workspace/floret/run/output" in call["command"]
+    assert call == args
 
 
 async def test_cancellation_closes_mcp_transport(transport: dict[str, Any]) -> None:

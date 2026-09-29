@@ -28,9 +28,11 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
+import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -147,6 +149,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
+    .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
@@ -156,6 +159,12 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route(
+        "/",
+        createMessagesRoutes((request, c) =>
+            app.fetch(request, c.env, c.executionCtx),
+        ),
+    )
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

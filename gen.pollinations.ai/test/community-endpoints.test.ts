@@ -116,6 +116,91 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 const db = drizzle(env.DB);
 
 fixtureTest(
+    "official agent ownership transfer changes callable model IDs",
+    async () => {
+        const sourceUserId = await createTestUser({
+            githubId: 240205932,
+            githubUsername: "pollinations-router",
+        });
+        const destinationUserId = await createTestUser({
+            githubId: 314960022,
+            githubUsername: "pollinations-ai",
+        });
+        const listings = [
+            ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
+            ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
+            ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
+        ] as const;
+        await insertCommunityEndpoints(
+            listings.map(([id, name]) => ({
+                id,
+                ownerUserId: sourceUserId,
+                name,
+                title: name,
+                description: null,
+                type:
+                    name === "midijourney" ? "prompt_agent" : "endpoint_agent",
+                visibility: "public",
+                baseUrl:
+                    name === "midijourney"
+                        ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                        : `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name === "midijourney" ? id : name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const oldPolli = communityModelId("pollinations-router", "polli");
+        const newPolli = communityModelId("pollinations-ai", "polli");
+        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
+
+        const catalogIdsFor = async (key: string) => {
+            const response = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                }),
+            );
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { id: string }[] };
+            return body.data.map((model) => model.id);
+        };
+
+        await resetGenerationModelRegistryCache(env);
+        expect(await catalogIdsFor(oldKey.key)).toContain(oldPolli);
+        await db
+            .update(communityEndpointTable)
+            .set({ ownerUserId: destinationUserId })
+            .where(eq(communityEndpointTable.ownerUserId, sourceUserId));
+        await resetGenerationModelRegistryCache(env);
+        const registry = await getGenerationModelRegistry(env);
+        for (const [, name] of listings) {
+            expect(
+                registry.resolve(communityModelId("pollinations-router", name)),
+            ).toBeNull();
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-router", name),
+                ),
+            ).toBeNull();
+            const current = registry.resolve(
+                communityModelId("pollinations-ai", name),
+            );
+            expect(current?.communityEndpoint?.ownerUserId).toBe(
+                destinationUserId,
+            );
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-ai", name),
+                ),
+            ).toBe(current);
+        }
+        expect(await catalogIdsFor(oldKey.key)).not.toContain(newPolli);
+        const newKey = await createTestApiKey({ allowedModels: [newPolli] });
+        expect(await catalogIdsFor(newKey.key)).toContain(newPolli);
+    },
+);
+
+fixtureTest(
     "banned owners' public models and agents leave the registry",
     async () => {
         const ownerUserId = await createTestUser({
@@ -3481,6 +3566,153 @@ fixtureTest(
             models.data.find((model) => model.id === modelId)
                 ?.supported_endpoints,
         ).toContain("/v1/responses");
+    },
+);
+
+fixtureTest(
+    "rejects image input for text-only community models on Chat and Responses",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const listings = [
+            { name: "text-only", type: "proxy" as const },
+            {
+                name: "vision",
+                type: "proxy" as const,
+                inputModalities: ["text", "image"] as ModelInputModality[],
+            },
+            { name: "agent", type: "endpoint_agent" as const },
+        ].map((listing) => ({
+            ...listing,
+            modelId: communityModelId(ownerGithubUsername, listing.name),
+            url: `https://${listing.name}.example.com/v1/responses`,
+        }));
+        const bearerTokenCiphertext = await encryptSecret(
+            "Bearer image-token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await insertCommunityEndpoints(
+            listings.map(({ modelId: _modelId, url, ...listing }) => ({
+                ...listing,
+                bearerTokenCiphertext,
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                api: "responses",
+                baseUrl: url,
+                upstreamModel: "provider-model",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+
+        const upstreamUrls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (listings.some((listing) => listing.url === request.url)) {
+                    upstreamUrls.push(request.url);
+                    return Response.json({
+                        id: "resp_image",
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_image",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "green",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const image = `data:image/png;base64,${TEST_PNG_BASE64}`;
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        for (const listing of listings) {
+            const responses = [
+                await post("/v1/chat/completions", {
+                    model: listing.modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What color?" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: image },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                await post("/v1/responses", {
+                    model: listing.modelId,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What color?" },
+                                { type: "input_image", image_url: image },
+                            ],
+                        },
+                    ],
+                }),
+            ];
+            for (const response of responses) {
+                const body = await response.text();
+                if (listing.name === "text-only") {
+                    expect(response.status, body).toBe(400);
+                    expect(body).toContain(
+                        "This model does not support image input",
+                    );
+                } else {
+                    expect(response.status, body).toBe(200);
+                }
+            }
+        }
+        expect(upstreamUrls.sort()).toEqual(
+            [
+                listings[1].url,
+                listings[1].url,
+                listings[2].url,
+                listings[2].url,
+            ].sort(),
+        );
     },
 );
 

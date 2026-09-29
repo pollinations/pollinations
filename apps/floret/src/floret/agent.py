@@ -12,7 +12,6 @@ from typing import Any, cast
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
-from floret import registry
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
 from floret.routing import RoutingPreferences
@@ -34,7 +33,7 @@ def _client() -> AsyncOpenAI:
 
 
 _WORKSPACE_MEDIA_RE = re.compile(
-    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.IGNORECASE
+    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.I
 )
 
 
@@ -226,28 +225,35 @@ async def run_agent_events(
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
-    """Run one agent event stream in an isolated Computer workspace."""
-    from floret.tools import mcp
+    """Run one agent event stream."""
+    from floret.registry import (
+        fetch_model_catalog,
+        reset_request_catalog,
+        set_request_catalog,
+        warm_registry,
+    )
 
-    workspace = f"/workspace/floret/{uuid.uuid4().hex}"
-    used = [False]
     catalog_token = None
     try:
         if settings.catalog_endpoint:
-            await registry.warm_registry()
-            catalog_token = registry.set_request_catalog(
-                await registry.fetch_model_catalog()
-            )
-        with mcp.workspace(workspace) as used:
-            async for event in _run_agent_events(
-                messages, model=model, max_iters=max_iters, routing=routing
-            ):
-                yield event
+            await warm_registry()
+            catalog_token = set_request_catalog(await fetch_model_catalog())
+        from floret.tools import mcp
+
+        workspace = f"/workspace/floret/{uuid.uuid4().hex}"
+        used = [False]
+        try:
+            with mcp.workspace(workspace) as used:
+                async for event in _run_agent_events(
+                    messages, model=model, max_iters=max_iters, routing=routing
+                ):
+                    yield event
+        finally:
+            if used[0]:
+                await mcp.cleanup_workspace(workspace)
     finally:
         if catalog_token is not None:
-            registry.reset_request_catalog(catalog_token)
-        if used[0]:
-            await mcp.cleanup_workspace(workspace)
+            reset_request_catalog(catalog_token)
 
 
 async def run_agent(
@@ -262,10 +268,7 @@ async def run_agent(
     Returns {"text", "artifacts", "iterations"}.
     """
     events = run_agent_events(
-        messages,
-        model=model,
-        max_iters=max_iters,
-        routing=routing,
+        messages, model=model, max_iters=max_iters, routing=routing
     )
     try:
         async for event in events:

@@ -270,18 +270,20 @@ export function classifyReplicateHttpStatus(httpStatus: number): number {
  * Replicate returns prediction failures as HTTP 200 + error string with no
  * structured code field. Patterns observed in our prod logs:
  * - E005 / "flagged as sensitive" — Seedance content filter (400)
+ * - E006 — Seedance invalid input (400)
  * - "Input validation error:" — Replicate's input URL fetcher (400)
  * - "cannot identify image file" — malformed image input (400)
- * - E003 / "unavailable due to high demand" — Alibaba capacity for WAN
+ * - E003 / E004 / "unavailable due to high demand" — provider capacity
  *   models (503, so monitoring separates provider capacity from our bugs)
  * - deadline / timeout messages — upstream execution deadline (504)
  * Default 500 keeps new failure modes loud.
  */
 export function classifyReplicatePredictionError(message: string): number {
+    if (/\bE006\b/i.test(message)) return 400;
     if (/\bE005\b|flagged as sensitive/i.test(message)) return 400;
     if (/^Input validation error:/i.test(message)) return 400;
     if (/cannot identify image file/i.test(message)) return 400;
-    if (/\bE003\b|unavailable due to high demand/i.test(message)) return 503;
+    if (/\bE00[34]\b|unavailable due to high demand/i.test(message)) return 503;
     if (/\bdeadline\b|\btimed?\s*out\b|\btimeout\b/i.test(message)) return 504;
     return 500;
 }

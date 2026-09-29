@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 from openai import AsyncOpenAI
 
+from floret import registry
 from floret.config import resolve_api_key, settings
 
 logger = logging.getLogger(__name__)
@@ -88,15 +89,13 @@ async def generate_3d(
     seed: int | None = None,
 ) -> tuple[str, str]:
     """Generate a hosted 3D asset through the durable 3D endpoint."""
-    from floret.registry import default_model
-
     prompt = prompt.strip()
     if not prompt or prompt in {".", ".."}:
         raise ValueError("A descriptive 3D prompt is required")
     if resolution is not None and resolution not in {"low", "medium", "high"}:
         raise ValueError("resolution must be low, medium, or high")
     images = [image] if isinstance(image, str) else image or []
-    model = model or default_model("3d", prompt, "")
+    model = model or registry.default_model("3d", prompt, "")
     if not model:
         raise ValueError("No 3D model is available")
     body: dict[str, Any] = {"model": model}

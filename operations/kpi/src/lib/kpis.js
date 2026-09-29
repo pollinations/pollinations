@@ -292,6 +292,23 @@ export const KPIS = [
         ],
     },
     {
+        key: "githubStarGrowth",
+        category: "Community",
+        views: [
+            {
+                name: "GitHub stars · weekly growth",
+                tooltip:
+                    "Net change between daily Monday snapshots (UTC), including unstars. Current week compares Monday with the latest daily snapshot. Missing boundaries stay blank; history starts when collection begins.",
+            },
+            {
+                key: "githubStars",
+                name: "GitHub stars · total",
+                tooltip:
+                    "Observed total at the next Monday snapshot; current week uses the latest daily snapshot. Collection runs daily near 00:17 UTC, subject to GitHub Actions scheduling delays.",
+            },
+        ],
+    },
+    {
         key: "appSubmissions",
         name: "App submissions",
         category: "Community",

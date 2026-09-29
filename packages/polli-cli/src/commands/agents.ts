@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    ExitSignal,
     getOutputMode,
     printError,
     printResult,
@@ -46,7 +47,7 @@ function readConfig(path: string): Record<string, unknown> {
         printError(
             `Failed to read agent config: ${error instanceof Error ? error.message : "unknown"}`,
         );
-        process.exit(1);
+        throw new ExitSignal(1);
     }
 }
 
@@ -60,7 +61,7 @@ export function agentBody(
         opts.visibility !== "public"
     ) {
         printError("--visibility must be 'private' or 'public'");
-        process.exit(1);
+        throw new ExitSignal(1);
     }
     return {
         ...(configPath && readConfig(configPath)),
@@ -118,7 +119,7 @@ const list = new Command("list")
             printError(
                 `Failed to list agents: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 
@@ -138,7 +139,7 @@ const get = new Command("get")
             printError(
                 `Failed to get agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 
@@ -157,11 +158,12 @@ const create = new Command("create")
     )
     .action(async (opts) => {
         const key = requireKey();
+        const body = agentBody(opts.config, opts);
         try {
             const agent = await gen<Agent>("/account/agents", {
                 apiKey: key,
                 method: "POST",
-                body: agentBody(opts.config, opts),
+                body,
             });
             if (getOutputMode() === "json") printResult(agent);
             else {
@@ -172,7 +174,7 @@ const create = new Command("create")
             printError(
                 `Failed to create agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 
@@ -189,13 +191,14 @@ const update = new Command("update")
     .option("--visibility <visibility>", "Agent visibility: private or public")
     .action(async (id, opts) => {
         const key = requireKey();
+        const body = agentBody(opts.config, opts);
         try {
             const agent = await gen<Agent>(
                 `/account/agents/${encodeURIComponent(id)}`,
                 {
                     apiKey: key,
                     method: "PATCH",
-                    body: agentBody(opts.config, opts),
+                    body,
                 },
             );
             if (getOutputMode() === "json") printResult(agent);
@@ -207,7 +210,7 @@ const update = new Command("update")
             printError(
                 `Failed to update agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 
@@ -227,7 +230,7 @@ const remove = new Command("delete")
             printError(
                 `Failed to delete agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 
@@ -254,7 +257,7 @@ const sync = new Command("sync")
             printError(
                 `Failed to sync agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
     });
 

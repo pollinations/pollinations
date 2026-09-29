@@ -2134,7 +2134,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
 });
 
-test("Bee Census quest pays 3 Pollen once for the user's own survey issue with enough written answers", async ({
+test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2147,10 +2147,12 @@ test("Bee Census quest pays 3 Pollen once for the user's own survey issue with e
         title: string,
         databaseId: number,
         written: [string, string],
+        labels = [{ name: "BEE-CENSUS" }],
     ) => ({
         number,
         state: "open" as const,
         title,
+        labels,
         html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
         body: [
             "### What kind of bee are you?\n\n🧪 Hobbyist / tinkerer",
@@ -2184,12 +2186,22 @@ test("Bee Census quest pays 3 Pollen once for the user's own survey issue with e
             "A $5 plan that includes the image models I use every day.",
             "A Discord bot that answers by voice.",
         ]),
+        survey(
+            9204,
+            "[Bee Census] typed without the form",
+            user.githubId ?? 0,
+            [
+                "A $5 plan that includes the image models I use every day.",
+                "A Discord bot that answers by voice.",
+            ],
+            [],
+        ),
     );
     await checkQuestsForUser(env, user.id);
     expect(await beeCensusRewards()).toEqual([]);
 
     mocks.github.state.questIssues.push(
-        survey(9202, "[Bee Census] second answer", user.githubId ?? 0, [
+        survey(9202, "developer", user.githubId ?? 0, [
             "A $5 plan that includes the image models I use every day.",
             "A Discord bot that answers by voice.",
         ]),

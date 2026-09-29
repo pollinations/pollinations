@@ -1,0 +1,37 @@
+{
+  "pr_number": 15538,
+  "title": "feat: publish hosted MCP servers to the official MCP registry",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15538",
+  "merged_at": "2026-09-29T08:55:37Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Fixes #15529\n\n- Generates hosted MCP listings from the existing shared registry, including the required Bearer API-key template.\n- Adds a manual, main-only publishing workflow with an explicit version and GitHub OIDC; validates every entry before publishing any.\n- Runs directly on Node 24 without a dependency install or a second publishing pipeline.\n- Documents Smithery header forwarding and Glama/mcp.so submission and ownership steps in operations/mcp-registry/DIRECTORY_LISTINGS.md.\n\nValidation: both focused tests pass; all six entries pass the official mcp-publisher v1.8.1 validator; actionlint and Biome pass. No registry login or publication performed. Directory submissions remain maintainer actions.\n\nMaintainer follow-up incorporates the main-branch guard and official validation ideas from #15716, and ownership guidance from #15628. Contributors credited in the commit.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Six servers, one registry map",
+    "blurb": "The six hosted MCP servers now have listings ready for the official registry. Polli has labeled the shelves; a maintainer still has to open the shop.",
+    "summary": "Added a generator for six hosted MCP listings from the shared registry, including Bearer API-key templates, plus a manual main-branch workflow that validates every listing before publishing with GitHub OIDC.",
+    "impact": "Maintainers can validate and publish the six listings through a Node 24 workflow without installing dependencies; no registry publication has happened yet.",
+    "keywords": [
+      "MCP",
+      "registry",
+      "hosted servers",
+      "GitHub Actions",
+      "OIDC",
+      "discovery"
+    ],
+    "visual_concept": "Depict the official MCP registry as a cozy directory shelf holding six labeled server cards, with a key-shaped Bearer auth tag and a closed publishing gate. Polli checks the cards while a small CRT monitor robot holds the validation checklist; code-plants grow around the shelf. No external project mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli checks six server cards on a registry shelf while a chunky CRT monitor robot holds a validation checklist beside a small closed publishing gate and sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15538.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli checks six server cards on a registry shelf while a chunky CRT monitor robot holds a validation checklist beside a small closed publishing gate and sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-09-29T08:56:51.925728+00:00"
+}

@@ -196,6 +196,11 @@ export const stripeRoutes = new Hono<Env>()
                     address: "auto",
                     name: "auto",
                 },
+                // Optional "save for future purchases" checkbox. Saved cards
+                // are prefilled on the buyer's next checkout.
+                saved_payment_method_options: {
+                    payment_method_save: "enabled",
+                },
                 payment_intent_data: {
                     metadata: packMetadata,
                 },

@@ -9,8 +9,9 @@ DESCRIPTION >
     payments). flow_id is only the device_code row id, never a code, token or
     email: the browser sends no identifier at all. client_id is the public app
     key. Browser events carry where the visit came from: referrer_host
-    (hostname only) and utm_* from the landing URL. No backfill; rows expire
-    after 24 months.
+    (hostname only) and utm_* from the landing URL. country is the ISO code
+    Cloudflare derives from the connection (CF-IPCountry), never the IP; empty
+    before it was recorded. No backfill; rows expire after 24 months.
 
 SCHEMA >
     `timestamp` DateTime64(3) `json:$.timestamp`,
@@ -25,6 +26,7 @@ SCHEMA >
     `utm_source` String `json:$.utm_source` DEFAULT '',
     `utm_medium` String `json:$.utm_medium` DEFAULT '',
     `utm_campaign` String `json:$.utm_campaign` DEFAULT '',
+    `country` LowCardinality(String) `json:$.country` DEFAULT '',
     `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0
 
 ENGINE "MergeTree"

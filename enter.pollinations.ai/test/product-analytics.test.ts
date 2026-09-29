@@ -120,6 +120,32 @@ test("signed-out views are recorded without a user and pass attribution through"
     ]);
 });
 
+test("views record the visitor's country from Cloudflare, never the IP", async () => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    expect(
+        (
+            await pageView(VIEW, "", {
+                "CF-IPCountry": "DE",
+                "CF-Connecting-IP": "203.0.113.7",
+            })
+        ).status,
+    ).toBe(204);
+    expect(rows).toEqual([
+        expect.objectContaining({ page: "/top-up", country: "DE" }),
+    ]);
+    expect(JSON.stringify(rows)).not.toContain("203.0.113.7");
+});
+
 test("page views derive the user from the authenticated session", async ({
     sessionToken,
 }) => {

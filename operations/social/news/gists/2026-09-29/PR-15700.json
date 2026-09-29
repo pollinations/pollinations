@@ -1,0 +1,38 @@
+{
+  "pr_number": 15700,
+  "title": "fix: auto top-up double credit on concurrent invoice webhooks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15700",
+  "merged_at": "2026-09-29T09:14:43Z",
+  "labels": [
+    "BUG",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "Both `invoice.paid` and `invoice.payment_succeeded` call `creditAutoTopUpInvoice`, so every auto top-up invoice gets two near-simultaneous credit calls. The wallet update only checked for a paid attempt with `completed_at = now`. If both calls computed the same millisecond, the second batch's attempt update changed nothing, but its wallet update still matched, and the pack was credited twice.\n\n- The batch now credits the wallet only while the attempt is still `pending`/`failed`, then marks it paid in the same transaction. A concurrent caller then sees `paid` and credits nothing.\n- `credited` now comes from the wallet update's changes.\n- Adds a regression test: two concurrent calls with a frozen `Date.now` raise `pack_balance` by exactly one pack. It fails on main (balance 21 instead of 11).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One invoice, one refill",
+    "blurb": "Two Stripe webhook events can arrive for the same auto top-up. The wallet now counts the refill once, even when they turn up at the same millisecond.",
+    "summary": "Auto top-ups now credit the wallet only while an invoice attempt is pending or failed, then mark it paid in the same transaction, preventing concurrent invoice.paid and invoice.payment_succeeded webhooks from crediting two packs.",
+    "impact": "A completed auto top-up adds exactly one pack to the wallet, even when both Stripe webhook events arrive simultaneously.",
+    "keywords": [
+      "auto top-up",
+      "Stripe",
+      "billing",
+      "webhooks",
+      "wallet",
+      "concurrency"
+    ],
+    "visual_concept": "Show Polli checking two identical Stripe invoice cards as they converge on a single Pollen jar; a friendly CRT monitor robot displays one checkmark. The paired cards represent concurrent webhooks, while the single jar represents one wallet credit.",
+    "image_prompt": "In a cozy pixel art garden workspace, two matching invoice cards reach a retro terminal, but only one lime green (#ecf874) Pollen jar fills; a chunky CRT monitor robot shows a single checkmark. Polli wears tiny accountant glasses and checks the jar: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, cream backdrop, dark purple (#110518) outlines, and pixel flowers."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15700.jpg",
+    "prompt": "In a cozy pixel art garden workspace, two matching invoice cards reach a retro terminal, but only one lime green (#ecf874) Pollen jar fills; a chunky CRT monitor robot shows a single checkmark. Polli wears tiny accountant glasses and checks the jar: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, cream backdrop, dark purple (#110518) outlines, and pixel flowers."
+  },
+  "generated_at": "2026-09-29T09:15:45.379833+00:00"
+}

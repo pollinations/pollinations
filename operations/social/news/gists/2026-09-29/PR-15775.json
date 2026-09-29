@@ -1,0 +1,40 @@
+{
+  "pr_number": 15775,
+  "title": "Add Pollinations for Obsidian to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15775",
+  "merged_at": "2026-09-29T12:45:12Z",
+  "labels": [
+    "FEATURE",
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) to writing\n- An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for \n\nFixes #15711, fixes #15574",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Notes with room to grow",
+    "blurb": "Pollinations for Obsidian brings text and image generation into your notes. Give it a prompt or select some text, and keep writing without leaving your vault.",
+    "summary": "Added Pollinations for Obsidian to the writing app listings; the plugin generates text from a prompt or selection and creates images inside Obsidian notes using the user's own Pollen.",
+    "impact": "Obsidian users can find a plugin that brings Pollinations text and image generation into their notes, with usage charged to their own Pollen.",
+    "keywords": [
+      "Obsidian",
+      "plugin",
+      "writing",
+      "text generation",
+      "image generation",
+      "Pollen"
+    ],
+    "visual_concept": "Depict an Obsidian-style purple crystal beside an open pixel notebook, with a text passage and a small generated picture on its pages. Polli, wearing a tiny writer's scarf, helps tend a code-plant growing from the notebook; the scene represents a community plugin rather than a new API feature.",
+    "image_prompt": "In a cozy pixel art writing nook, an open notebook beside a dark-purple Obsidian-style crystal holds a short text passage and a little landscape picture, while lime green (#ecf874) code-plants bloom around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny writer's scarf and tending the notebook's sprouting code-plant, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and the emotionally warm lo-fi feel of Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15775.jpg",
+    "prompt": "In a cozy pixel art writing nook, an open notebook beside a dark-purple Obsidian-style crystal holds a short text passage and a little landscape picture, while lime green (#ecf874) code-plants bloom around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny writer's scarf and tending the notebook's sprouting code-plant, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and the emotionally warm lo-fi feel of Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-09-29T12:46:11.084444+00:00",
+  "app_name": "Pollinations for Obsidian",
+  "app_url": "https://github.com/xiaotian1171/pollinations-obsidian"
+}

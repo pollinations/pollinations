@@ -23,35 +23,27 @@
  * text. No IP or user-agent string is requested. Verified bots stay in,
  * labelled by verifiedBotCategory.
  *
- * Usage:
- *   node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
- *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --save <dir> [--days 30]
- *   node operations/cloudflare/sync-traffic-to-tinybird.mjs --snapshot <dir> [--dry-run]
+ * Reruns append the same day and host again; the latest fetched_at wins.
  *
- * --days fetches the last N complete UTC days (1–30; 30 for backfill); --save
- * writes each response to <dir>/<date>__<dataset>[__<host>].json without
- * ingesting; --snapshot ingests those files later, using each file's mtime as
- * fetched_at.
+ * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
+ *
+ * --days fetches the last N complete UTC days (1–7, for a missed run).
  *
  * Env vars:
- *   CLOUDFLARE_API_TOKEN  Required unless --snapshot — Analytics read on the pollinations.ai zone
- *   TINYBIRD_SYNC_TOKEN   Required unless --dry-run or --save
+ *   CLOUDFLARE_API_TOKEN  Required — Analytics read on the pollinations.ai zone
+ *   TINYBIRD_SYNC_TOKEN   Required unless --dry-run
  */
 
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { parseArgs } from "node:util";
 
 const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
+const MAX_DAYS = 7;
 const MAX_RETRIES = 3;
-// Cloudflare allows 300 GraphQL queries per 5 minutes, and also limits their
-// total cost: when that budget runs out it asks to wait 5 minutes.
+// Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~47.
 const QUERY_INTERVAL_MS = 1100;
-const BUDGET_WAIT_MS = 5 * 60_000;
-const BUDGET_RETRIES = 5;
 
 // Page routes of pollinations.ai/src/App.tsx and of the enter page list in
 // shared/product-analytics.ts.
@@ -114,8 +106,6 @@ const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
 const { values: args } = parseArgs({
     options: {
         days: { type: "string", default: "1" },
-        save: { type: "string" },
-        snapshot: { type: "string" },
         "dry-run": { type: "boolean", default: false },
     },
 });
@@ -147,7 +137,7 @@ function lastDays(days) {
     );
 }
 
-async function graphql(query, filter, budgetRetries = BUDGET_RETRIES) {
+async function graphql(query, filter) {
     await sleep(QUERY_INTERVAL_MS);
     const res = await fetchWithRetry(
         "https://api.cloudflare.com/client/v4/graphql",
@@ -165,14 +155,6 @@ async function graphql(query, filter, budgetRetries = BUDGET_RETRIES) {
     );
     const body = await res.text();
     const { errors } = JSON.parse(body);
-    if (
-        errors?.some((e) => e.extensions?.code === "budget") &&
-        budgetRetries > 0
-    ) {
-        console.log("Cloudflare query budget used up, waiting 5 minutes");
-        await sleep(BUDGET_WAIT_MS);
-        return graphql(query, filter, budgetRetries - 1);
-    }
     if (errors) throw new Error(JSON.stringify(errors));
     return body;
 }
@@ -244,25 +226,6 @@ async function* fromApi(days) {
     }
 }
 
-const fileName = ({ date, dataset, host }) =>
-    `${[date, dataset, host].filter(Boolean).join("__")}.json`;
-
-async function* fromSnapshot(dir) {
-    for (const file of (await readdir(dir)).filter((f) =>
-        f.endsWith(".json"),
-    )) {
-        const [date, dataset, host = ""] = file.slice(0, -5).split("__");
-        const path = join(dir, file);
-        yield {
-            dataset,
-            date,
-            host,
-            fetched_at: toDateTime((await stat(path)).mtime),
-            body: (await readFile(path, "utf8")).trim(),
-        };
-    }
-}
-
 // One request per response: a body can be close to a megabyte.
 async function append(row) {
     const res = await fetchWithRetry(
@@ -278,41 +241,36 @@ async function append(row) {
     const { successful_rows, quarantined_rows } = await res.json();
     if (successful_rows !== 1 || quarantined_rows > 0) {
         throw new Error(
-            `${fileName(row)}: ${quarantined_rows} rows quarantined`,
+            `${row.date} ${row.dataset} ${row.host}: ${quarantined_rows} rows quarantined`,
         );
     }
 }
 
 async function main() {
-    if (!args.snapshot && !process.env.CLOUDFLARE_API_TOKEN) {
+    if (!process.env.CLOUDFLARE_API_TOKEN) {
         throw new Error("CLOUDFLARE_API_TOKEN env var is required");
     }
-    const ingest = !args["dry-run"] && !args.save;
-    if (ingest && !process.env.TINYBIRD_SYNC_TOKEN) {
+    if (!args["dry-run"] && !process.env.TINYBIRD_SYNC_TOKEN) {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
     const days = Number(args.days);
-    if (!Number.isInteger(days) || days < 1 || days > 30) {
+    if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
         throw new Error(
-            `--days must be a whole number from 1 to 30, got ${args.days}`,
+            `--days must be a whole number from 1 to ${MAX_DAYS}, got ${args.days}`,
         );
     }
-    if (args.save) await mkdir(args.save, { recursive: true });
 
-    const source = args.snapshot ? fromSnapshot(args.snapshot) : fromApi(days);
+    const fetched_at = toDateTime(new Date());
     let count = 0;
-    for await (const row of source) {
-        row.fetched_at ??= toDateTime(new Date());
+    for await (const row of fromApi(days)) {
         console.log(
-            `${fileName(row)}: ${groupsOf(row.body).length} groups, ${row.body.length} bytes`,
+            `${row.date} ${row.dataset} ${row.host}: ${groupsOf(row.body).length} groups, ${row.body.length} bytes`,
         );
-        if (args.save)
-            await writeFile(join(args.save, fileName(row)), row.body);
-        if (ingest) await append(row);
+        if (!args["dry-run"]) await append({ ...row, fetched_at });
         count++;
     }
     console.log(
-        `${count} responses ${args.save ? `saved to ${args.save}` : ingest ? `appended to ${DATASOURCE}` : "read"}`,
+        `${count} responses ${args["dry-run"] ? "read" : `appended to ${DATASOURCE}`}`,
     );
 }
 

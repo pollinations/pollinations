@@ -55,9 +55,22 @@ function serviceError(
     return error;
 }
 
+function positiveCount(value: unknown): number | undefined {
+    return typeof value === "number" && Number.isInteger(value) && value > 0
+        ? value
+        : undefined;
+}
+
 function chatUsage(usage: ResponseUsage): JsonObject {
     const inputDetails = usage.input_tokens_details;
     const outputDetails = usage.output_tokens_details;
+    // Perplexity reports built-in search calls here; Chat carries the count in
+    // OpenRouter's usage field so billing reads one shape.
+    const webSearches = positiveCount(
+        (usage.tool_calls_details as JsonObject | undefined)?.search_web &&
+            ((usage.tool_calls_details as JsonObject).search_web as JsonObject)
+                .invocation,
+    );
     return {
         prompt_tokens: usage.input_tokens,
         completion_tokens: usage.output_tokens,
@@ -66,7 +79,12 @@ function chatUsage(usage: ResponseUsage): JsonObject {
             ? {
                   prompt_tokens_details: {
                       cached_tokens: inputDetails.cached_tokens ?? 0,
-                      cache_write_tokens: inputDetails.cache_write_tokens ?? 0,
+                      cache_write_tokens:
+                          inputDetails.cache_write_tokens ??
+                          positiveCount(
+                              inputDetails.cache_creation_input_tokens,
+                          ) ??
+                          0,
                       ...(typeof inputDetails.cache_type === "string"
                           ? { cache_type: inputDetails.cache_type }
                           : {}),
@@ -87,7 +105,34 @@ function chatUsage(usage: ResponseUsage): JsonObject {
                   },
               }
             : {}),
+        ...(webSearches
+            ? { server_tool_use_details: { web_search_requests: webSearches } }
+            : {}),
     };
+}
+
+/**
+ * Chat `citations` and `search_results` from provider search items
+ * (Perplexity), ordered by result ID so an inline [n] is `citations[n - 1]`.
+ */
+function searchSources(output: ResponseItem[]): JsonObject {
+    const results = output
+        .filter((item) => item.type === "search_results")
+        .flatMap((item) => (Array.isArray(item.results) ? item.results : []))
+        .filter(
+            (result): result is JsonObject =>
+                isObject(result) && typeof result.url === "string",
+        )
+        .sort((a, b) => Number(a.id) - Number(b.id));
+    if (!results.length) return {};
+    return {
+        citations: results.map((result) => result.url),
+        search_results: results.map(({ id: _id, ...result }) => result),
+    };
+}
+
+function isObject(value: unknown): value is JsonObject {
+    return Boolean(value) && typeof value === "object";
 }
 
 function finishReason(data: ResponsesData, hasToolCalls: boolean): string {
@@ -247,6 +292,7 @@ export function responsesToChatCompletion(
                 },
             ],
             ...(usage.data ? { usage: chatUsage(usage.data) } : {}),
+            ...searchSources(data.output),
         },
         requestUrl,
     );
@@ -684,7 +730,23 @@ export function responsesToChatStream(
                         );
                     }
                     controller.enqueue(
-                        chunk({}, finishReason(response, toolIndex > 0)),
+                        dataEvent({
+                            id,
+                            object: "chat.completion.chunk",
+                            created,
+                            model,
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: finishReason(
+                                        response,
+                                        toolIndex > 0,
+                                    ),
+                                },
+                            ],
+                            ...searchSources(response.output ?? []),
+                        }),
                     );
                     if (usage.data)
                         controller.enqueue(

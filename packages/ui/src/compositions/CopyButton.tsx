@@ -86,6 +86,9 @@ export function CopyButton({
             onClick={handleCopy}
             className={cn(
                 "polli-control",
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
                 typeof className === "function" ? className(copied) : className,
             )}
         >
@@ -108,7 +111,12 @@ export function CopyButton({
             maxWidth={tooltipMaxWidth}
             displayContents
             tapEnabled={false}
-            className={tooltipClassName}
+            className={cn(
+                buttonProps.disabled
+                    ? "polli:cursor-not-allowed"
+                    : "polli:cursor-pointer",
+                tooltipClassName,
+            )}
         >
             {button}
         </Tooltip>

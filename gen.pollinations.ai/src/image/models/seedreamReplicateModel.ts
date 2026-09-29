@@ -312,8 +312,6 @@ async function callSeedreamReplicateAPI(
         buffer: imageBuffer,
         // Seedream has built-in content filtering — preserve the existing
         // contract from the BytePlus path.
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: variant.trackingLabel,
             // Flat per-image pricing on Replicate; report 1 image token to

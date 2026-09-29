@@ -17,6 +17,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
@@ -106,6 +107,10 @@ service = "pollinations-enter-production"
 [[env.production.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
+
+[[env.production.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
 
 [[env.production.services]]
 binding = "FFMPEG_MCP"
@@ -219,6 +224,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp-staging"
 
 [[env.staging.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp-staging"
+
+[[env.staging.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp-staging"
 
@@ -314,6 +323,10 @@ service = "pollinations-enter"
 [[env.test.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
+
+[[env.test.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
 
 [[env.test.services]]
 binding = "FFMPEG_MCP"

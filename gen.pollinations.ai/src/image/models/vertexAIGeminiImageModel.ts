@@ -373,8 +373,6 @@ export async function callVertexAIGeminiImageAPI(
     });
     return {
         buffer: finalImageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: { actualModel: params.model, usage },
     };
 }

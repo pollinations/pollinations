@@ -8,22 +8,32 @@ import type { Env } from "@/env.ts";
 const MODEL_ROUTE_HEALTH_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_route_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-const HEALTH_ROWS_WINDOW_MINUTES = 24 * 60;
-
-// Powers the `health` field attached by default to /v1/models and /models
-// entries (see model-catalog.ts). Same cf cacheTtl as the /models/status route
-// below, so repeat calls in one colo hit the edge cache instead of Tinybird.
-export async function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
-    const url = new URL(MODEL_ROUTE_HEALTH_URL);
-    url.searchParams.set("minutes", String(HEALTH_ROWS_WINDOW_MINUTES));
+async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
     const upstream = await fetch(url, {
         cf: { cacheTtl: 60, cacheEverything: true },
+        signal: AbortSignal.timeout(5_000),
     });
     if (!upstream.ok) {
         throw new Error(`Model health fetch failed (${upstream.status})`);
     }
     const body = (await upstream.json()) as { data?: ModelHealthRow[] };
-    return body.data ?? [];
+    if (!Array.isArray(body.data))
+        throw new Error("Invalid model health response");
+    return body.data;
+}
+
+// Community discovery uses its bounded 50-request sample.
+export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
+    const url = new URL(MODEL_ROUTE_HEALTH_URL);
+    url.pathname = "/v0/pipes/model_catalog_health.json";
+    return fetchHealthRows(url);
+}
+
+// Official models and agents retain their existing 24-hour health display.
+export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
+    const url = new URL(MODEL_ROUTE_HEALTH_URL);
+    url.searchParams.set("minutes", "1440");
+    return fetchHealthRows(url);
 }
 
 // Exists only for the shared edge cache: Tinybird runs the query on every

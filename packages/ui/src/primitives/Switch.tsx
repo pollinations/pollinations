@@ -61,7 +61,7 @@ export const Switch: FC<SwitchProps> = ({
         >
             <span
                 className={cn(
-                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-switch-thumb polli:shadow-sm polli:transition-transform",
+                    "polli:inline-block polli:h-5 polli:w-5 polli:rounded-full polli:bg-switch-thumb polli:transition-transform",
                     checked ? "polli:translate-x-6" : "polli:translate-x-1",
                 )}
             />

@@ -9,18 +9,10 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { Command } from "commander";
-import { gen, genText, requireKey } from "../lib/api.js";
-import {
-    fail,
-    printInfo,
-    printResult,
-    printSuccess,
-    printTable,
-} from "../lib/output.js";
+import { fail, printInfo } from "../../lib/output.js";
+import bootstrap from "./bootstrap.sh?raw";
+import { type Connection, connectSandbox } from "./e2b.js";
 
-// Gen serves E2B's API here, so E2B's own CLI and SDKs work against it.
-const E2B_PATH = "/alpha/e2b";
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
 const SSH_CONFIG = join(SSH_DIR, "config");
@@ -28,70 +20,8 @@ const USER_SSH_CONFIG = join(homedir(), ".ssh", "config");
 const INCLUDE = "Include ~/.pollinations/ssh/config";
 // websocat in the sandbox relays this port's WebSocket to sshd.
 const SSH_PORT = 8022;
-// Each connection keeps the sandbox paid for this long, renewed while open.
-const LEASE_SECONDS = 600;
+// Renews the lease well before it runs out while a connection is open.
 const RENEW_MS = 300_000;
-
-interface Connection {
-    sandboxID: string;
-    domain?: string | null;
-    envdAccessToken?: string;
-    trafficAccessToken?: string | null;
-}
-
-// Idempotent: installs sshd, rsync and websocat on the first connection only.
-// E2B sandboxes run systemd, which runs sshd once installed. E2B's base image
-// sets `PermitEmptyPasswords yes` and `user` has no password, so sshd would
-// accept a login without a key; the settings prepended below win because sshd
-// uses the first value it reads.
-const BOOTSTRAP = `set -e
-if [ ! -x /usr/sbin/sshd ] || ! command -v rsync >/dev/null; then
-    command -v apt-get >/dev/null || { echo "polli ssh needs a Debian-based template" >&2; exit 1; }
-    apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-upgrade openssh-server rsync >/dev/null
-fi
-if [ ! -x /usr/local/bin/websocat ]; then
-    curl -fsSL -o /tmp/websocat https://github.com/vi/websocat/releases/download/v1.14.1/websocat.x86_64-unknown-linux-musl
-    echo "66f8dd3a0394761556339117f8bb5123bddefd44e087af2a72ec22b0bd08d514  /tmp/websocat" | sha256sum -c --quiet
-    install -m 755 /tmp/websocat /usr/local/bin/websocat
-fi
-mkdir -p /run/sshd
-ssh-keygen -A >/dev/null
-key_only() {
-    test "$(sshd -T | grep -cxE '(permitemptypasswords|passwordauthentication|kbdinteractiveauthentication|permitrootlogin) no')" = 4
-}
-if key_only; then
-    systemctl start ssh
-else
-    printf 'PermitEmptyPasswords no\\nPasswordAuthentication no\\nKbdInteractiveAuthentication no\\nPermitRootLogin no\\n\\n' |
-        cat - /etc/ssh/sshd_config > /tmp/sshd_config
-    cat /tmp/sshd_config > /etc/ssh/sshd_config
-    key_only
-    systemctl restart ssh
-fi
-install -d -m 700 -o user -g user /home/user/.ssh
-touch /home/user/.ssh/authorized_keys
-grep -qxF "$POLLI_SSH_KEY" /home/user/.ssh/authorized_keys || printf '%s\\n' "$POLLI_SSH_KEY" >> /home/user/.ssh/authorized_keys
-chown user:user /home/user/.ssh/authorized_keys
-chmod 600 /home/user/.ssh/authorized_keys
-if ! { [ -s /run/polli-ws.pid ] && kill -0 "$(cat /run/polli-ws.pid)" 2>/dev/null; }; then
-    setsid nohup sh -c 'while :; do websocat -b -E ws-l:0.0.0.0:${SSH_PORT} tcp:127.0.0.1:22; sleep 1; done' >/dev/null 2>&1 </dev/null &
-    echo $! > /run/polli-ws.pid
-fi
-for i in $(seq 50); do
-    (exec 3<>/dev/tcp/127.0.0.1/22 4<>/dev/tcp/127.0.0.1/${SSH_PORT}) 2>/dev/null && exit 0
-    sleep 0.1
-done
-echo "sshd or websocat did not start" >&2
-exit 1
-`;
-
-// Resumes a paused sandbox and makes sure it is paid for LEASE_SECONDS.
-const connect = (id: string) =>
-    gen<Connection>(`${E2B_PATH}/sandboxes/${id}/connect`, {
-        method: "POST",
-        body: { timeout: LEASE_SECONDS },
-    });
 
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
@@ -147,20 +77,21 @@ async function runAsRoot(
 }
 
 // Pipes stdin and stdout to sshd in the sandbox; ssh runs this per connection.
-async function proxy(host: string) {
+export async function proxy(host: string) {
     const id = host.replace(/\.polli$/, "");
     if (!/^[a-z0-9]+$/.test(id)) {
         fail(`Expected <sandbox-id>.polli, got "${host}"`);
     }
     if (typeof WebSocket === "undefined")
         fail("This needs Node.js 22 or newer");
-    const sandbox = await connect(id);
-    await runAsRoot(sandbox, BOOTSTRAP, {
+    const sandbox = await connectSandbox(id);
+    await runAsRoot(sandbox, bootstrap, {
         POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
+        POLLI_SSH_PORT: String(SSH_PORT),
     });
     const renew = setInterval(
         () =>
-            connect(id).catch((err) =>
+            connectSandbox(id).catch((err) =>
                 process.stderr.write(`polli: lease renewal failed: ${err}\n`),
             ),
         RENEW_MS,
@@ -198,7 +129,7 @@ async function proxy(host: string) {
     });
 }
 
-function setupSsh() {
+export function setupSsh() {
     mkdirSync(SSH_DIR, { recursive: true, mode: 0o700 });
     if (!existsSync(SSH_KEY)) {
         execFileSync("ssh-keygen", [
@@ -240,118 +171,3 @@ function setupSsh() {
         printInfo(`Added "${INCLUDE}" to ${USER_SSH_CONFIG}`);
     }
 }
-
-interface Sandbox {
-    sandboxID: string;
-    templateID: string;
-    alias?: string;
-    state: string;
-    cpuCount: number;
-    memoryMB: number;
-    endAt: string;
-}
-
-export const sandboxCommand = new Command("sandbox")
-    .description("E2B sandboxes billed to your Pollinations account")
-    .addCommand(
-        new Command("create")
-            .description("Start a sandbox you can ssh into")
-            .option("-t, --template <name>", "E2B template", "base")
-            .action(async ({ template }: { template: string }) => {
-                requireKey();
-                try {
-                    // Paused, not killed, when its paid time runs out.
-                    const { sandboxID } = await gen<Connection>(
-                        `${E2B_PATH}/sandboxes`,
-                        {
-                            method: "POST",
-                            body: {
-                                templateID: template,
-                                timeout: LEASE_SECONDS,
-                                autoPause: true,
-                            },
-                        },
-                    );
-                    setupSsh();
-                    printSuccess(
-                        `Sandbox ${sandboxID} created. It pauses about 10 minutes after the last ssh session.`,
-                    );
-                    printResult({
-                        id: sandboxID,
-                        ssh: `ssh ${sandboxID}.polli`,
-                    });
-                } catch (err) {
-                    fail("Failed to create sandbox", err);
-                }
-            }),
-    )
-    .addCommand(
-        new Command("list")
-            .description("List your sandboxes")
-            .action(async () => {
-                requireKey();
-                try {
-                    const sandboxes = await gen<Sandbox[]>(
-                        `${E2B_PATH}/v2/sandboxes`,
-                    );
-                    printTable(
-                        sandboxes.map((s) => ({
-                            id: s.sandboxID,
-                            state: s.state,
-                            template: s.alias ?? s.templateID,
-                            size: `${s.cpuCount} vCPU, ${s.memoryMB} MB`,
-                            paid_until: new Date(s.endAt).toLocaleString(),
-                        })),
-                    );
-                } catch (err) {
-                    fail("Failed to list sandboxes", err);
-                }
-            }),
-    )
-    .addCommand(
-        new Command("kill")
-            .description("Delete a sandbox and its files")
-            .argument("<id>")
-            .action(async (id: string) => {
-                requireKey();
-                try {
-                    // E2B answers 204 with no body.
-                    await genText(`${E2B_PATH}/sandboxes/${id}`, {
-                        method: "DELETE",
-                    });
-                    printSuccess(`Sandbox ${id} killed.`);
-                } catch (err) {
-                    fail(`Failed to kill sandbox ${id}`, err);
-                }
-            }),
-    )
-    .addCommand(
-        new Command("ssh-config")
-            .description(
-                "Set up ssh to <sandbox-id>.polli (create does this for you)",
-            )
-            .action(() => {
-                try {
-                    setupSsh();
-                    printSuccess(
-                        "ssh, scp and rsync now reach <sandbox-id>.polli",
-                    );
-                } catch (err) {
-                    fail("Failed to set up ssh", err);
-                }
-            }),
-    )
-    .addCommand(
-        new Command("proxy")
-            .description("ssh ProxyCommand for <sandbox-id>.polli")
-            .argument("<host>")
-            .action(async (host: string) => {
-                requireKey();
-                try {
-                    await proxy(host);
-                } catch (err) {
-                    fail(`Could not reach sandbox ${host}`, err);
-                }
-            }),
-        { hidden: true },
-    );

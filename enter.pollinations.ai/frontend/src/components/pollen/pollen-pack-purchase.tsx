@@ -1,14 +1,9 @@
-import { Button, Surface, WalletIcon } from "@pollinations/ui";
-import {
-    calculateServiceFeeCents,
-    formatUsdCentsCompact,
-    POLLEN_PACKS,
-    SERVICE_FEE_NAME,
-} from "@shared/pollen-packs.ts";
+import { Surface } from "@pollinations/ui";
+import { POLLEN_PACKS, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import type { FC } from "react";
 import { useState } from "react";
 import { PackCheckoutDialog } from "./pack-checkout-dialog.tsx";
-import { PackSliderRow, PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { PollenPackButtons } from "./pollen-pack-controls.tsx";
 
 type PollenPackPurchaseProps = {
     selectedPackAmount: number;
@@ -19,7 +14,10 @@ type PollenPackPurchaseProps = {
     onCredited?: () => void;
 };
 
-/** The pack slider and Buy button: the one thing a top-up needs. */
+/**
+ * The pack buttons: the one thing a top-up needs. A pack opens checkout for
+ * it, so a returning buyer tops up in two clicks: pack → Confirm.
+ */
 export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
@@ -27,57 +25,42 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
     onCredited,
 }) => {
     const [checkoutOpen, setCheckoutOpen] = useState(false);
-    const selectedPackIndex = Math.max(
-        0,
-        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
+    // The clicked pack, not the URL's: the URL catches up a render later.
+    const [checkoutPack, setCheckoutPack] = useState(
+        () =>
+            POLLEN_PACKS.find(
+                (pack) => pack.amountUsd === selectedPackAmount,
+            ) ?? POLLEN_PACKS[0],
     );
-    const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    if (!selectedPack) return null;
-    const serviceFeeCents = calculateServiceFeeCents(
-        selectedPack.amountUsd * 100,
-    );
-    const chargeLabel = formatUsdCentsCompact(
-        selectedPack.amountUsd * 100 + serviceFeeCents,
-    );
+    if (!checkoutPack) return null;
     const checkoutParams = new URLSearchParams();
     if (returnToTopUp) {
         checkoutParams.set("return", "top-up");
         if (returnToTopUp.redirect)
             checkoutParams.set("redirect", returnToTopUp.redirect);
     }
-    const checkoutQuery = checkoutParams.toString();
 
-    // The charged total (pack + service fee) appears once, on the button that
-    // charges it; the fee breakdown and tax treatment sit right under it.
     return (
         <Surface className="flex flex-col gap-3">
-            <PackSliderRow
-                slider={
-                    <PollenPackSlider
-                        value={selectedPack.amountUsd}
-                        onChange={onSelectedPackAmountChange}
-                    />
+            <PollenPackButtons
+                selectedAmount={
+                    checkoutOpen ? checkoutPack.amountUsd : undefined
                 }
-                action={
-                    <Button
-                        onClick={() => setCheckoutOpen(true)}
-                        size="lg"
-                        icon={<WalletIcon />}
-                        className="w-full tabular-nums"
-                    >
-                        Buy for {chargeLabel}
-                    </Button>
-                }
+                onSelect={(pack) => {
+                    onSelectedPackAmountChange(pack.amountUsd);
+                    setCheckoutPack(pack);
+                    setCheckoutOpen(true);
+                }}
             />
             <p className="text-[13px] leading-snug text-theme-text-muted">
-                Includes {formatUsdCentsCompact(serviceFeeCents)}{" "}
-                {SERVICE_FEE_NAME.toLowerCase()} · Tax calculated at checkout
+                Prices include the {SERVICE_FEE_NAME.toLowerCase()} · Tax
+                calculated at checkout
             </p>
             <PackCheckoutDialog
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
-                pack={selectedPack}
-                checkoutQuery={checkoutQuery}
+                pack={checkoutPack}
+                checkoutQuery={checkoutParams.toString()}
                 onCredited={onCredited}
             />
         </Surface>

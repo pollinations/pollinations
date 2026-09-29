@@ -1,6 +1,8 @@
 import { cn, Slider } from "@pollinations/ui";
 import {
+    calculateServiceFeeCents,
     formatPollenPackValue,
+    formatUsdCentsCompact,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
@@ -109,5 +111,46 @@ export const PackSliderRow: FC<{ slider: ReactNode; action: ReactNode }> = ({
         {/* pt lines the slider track up with the centre of the action */}
         <div className="min-w-0 sm:pt-2">{slider}</div>
         <div className="flex">{action}</div>
+    </div>
+);
+
+/** Pack plus service fee: the price before tax, as Checkout charges it. */
+export function packChargeCents(pack: PollenPack): number {
+    return (
+        pack.amountUsd * 100 + calculateServiceFeeCents(pack.amountUsd * 100)
+    );
+}
+
+/** One button per pack; each opens checkout for that pack. */
+export const PollenPackButtons: FC<{
+    onSelect: (pack: PollenPack) => void;
+    selectedAmount?: number;
+    packs?: ReadonlyArray<PollenPack>;
+}> = ({ onSelect, selectedAmount, packs = POLLEN_PACKS }) => (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {packs.map((pack) => {
+            const pollen = formatPollenPackValue(pack.amountUsd);
+            const price = formatUsdCentsCompact(packChargeCents(pack));
+            return (
+                <button
+                    key={pack.packKey}
+                    type="button"
+                    onClick={() => onSelect(pack)}
+                    aria-label={`Buy ${pollen} Pollen for ${price}`}
+                    className={cn(
+                        "flex flex-col items-center rounded-xl bg-paid-pale px-2 pt-3 pb-2.5 text-paid-deep tabular-nums transition-shadow",
+                        "hover:ring-2 hover:ring-paid-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paid-soft",
+                        pack.amountUsd === selectedAmount &&
+                            "ring-2 ring-paid-soft",
+                    )}
+                >
+                    <span className="text-2xl font-bold leading-none tracking-tight">
+                        {pollen}
+                    </span>
+                    <span className="mt-1 text-xs">pollen</span>
+                    <span className="mt-2 text-sm font-semibold">{price}</span>
+                </button>
+            );
+        })}
     </div>
 );

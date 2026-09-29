@@ -1,0 +1,37 @@
+{
+  "pr_number": 15497,
+  "title": "feat: add ElevenLabs stem separation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15497",
+  "merged_at": "2026-09-29T12:19:31Z",
+  "labels": [
+    "BILLING",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Adds `elevenlabs/stem-separation`: paid-only, multiplier **1**, no aliases, direct ElevenLabs. No equivalent fallback on fal, Replicate, Azure, or Fireworks.\n- Adds a thin native `POST /alpha/audio/stem-separation`: multipart `model`, `file` (≤50 MB), `stem_variation_id` (`two_stems_v1` or default `six_stems_v1`). Forwards [ElevenLabs' upstream endpoint](https://elevenlabs.io/docs/api-reference/music/separate-stems) and returns its ZIP of 44.1 kHz/128 kbps MP3s unchanged; non-ZIP upstream responses return `502` so they are never billed or cached as audio.\n- Bills the decoded input duration at **$0.15/min (two)** or **$0.30/min (six)**. ElevenLabs sends no usage headers.\n- No per-stem uploads, second response format, or output unzip/duration cross-check.\n\nLocal E2E (real `GenerationCoordinator`, media worker/R2, local D1, Tinybird ingest captured locally), reconciled against ElevenLabs workspace usage:\n\n| Case | Result |\n|---|---|\n| 60s six-stem: client aborts at 2s, identical request rejoins, third request after completion | 1 upstream call, rejoin gets the ZIP, third is an R2 `HIT` in 14ms, byte-identical; 1 debit (0.30), 1 billed event |\n| CBR MP3, VBR MP3 (Xing), WAV, FLAC, Ogg/Opus — 10.3s | billed 10.3s exactly |\n| VBR MP3 without Xing / AAC `.m4a` | billed 10.318s / 10.323s (+18/+23 ms encoder padding/priming) |\n| 361.7s MP3 (two stems) | billed 361.7s |\n| All 9 upstream calls | ElevenLabs: 493.854s, $1.384635 · Pollinations: 493.842s, $1.384604 |\n\nTests: full gen suite, enter pricing snapshot, TypeScript, Biome; regression test for a `200 audio/mpeg` upstream response (502, no billing, no cache).\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A song, neatly unbundled",
+    "blurb": "Send in a song; get its separate parts back in a ZIP. Polli is already deciding which track to listen to first.",
+    "summary": "Added paid-only ElevenLabs stem separation at POST /alpha/audio/stem-separation, accepting audio files up to 50 MB and returning a ZIP of either two MP3 stems at $0.15/min or six at $0.30/min.",
+    "impact": "Developers can split uploaded audio into two stems or the default six stems through one API call, with billing based on the input audio’s duration.",
+    "keywords": [
+      "ElevenLabs",
+      "stem separation",
+      "audio",
+      "API",
+      "billing",
+      "ZIP"
+    ],
+    "visual_concept": "Depict one music waveform branching into six tidy audio tracks that flow into a ZIP parcel. Polli wears tiny headphones and listens to one track beside a glowing retro terminal; lime-green code-plants and flowers make the scene feel like a little sound garden.",
+    "image_prompt": "In a cozy pixel art music garden, one waveform on a retro terminal branches into six little audio tracks and a ZIP parcel while Polli, wearing tiny headphones, listens beside lime green (#ecf874) flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, chunky sprites, and a soft lime green (#ecf874) glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15497.jpg",
+    "prompt": "In a cozy pixel art music garden, one waveform on a retro terminal branches into six little audio tracks and a ZIP parcel while Polli, wearing tiny headphones, listens beside lime green (#ecf874) flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, chunky sprites, and a soft lime green (#ecf874) glow."
+  },
+  "generated_at": "2026-09-29T12:20:27.065950+00:00"
+}

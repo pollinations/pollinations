@@ -2,13 +2,15 @@ TOKEN tinybird_read READ
 
 DESCRIPTION >
     Cloudflare GraphQL analytics responses for every *.pollinations.ai host, appended daily by
-    .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The Free plan keeps
-    per-request detail for 30 days only, so each body is the unchanged response of the
-    requested fields; fields not requested cannot be recovered. Real clients only; no IP,
-    user-agent string or free-form path.
+    .github/workflows/data-sync-cloudflare-traffic-tinybird.yml. The zone reports 31 days of
+    per-request detail and a 30-day maximum query range, so each body is the unchanged
+    response of the requested fields; fields not requested cannot be recovered. Real clients
+    only; no IP, user-agent string or free-form path.
     page_views (host ''): HTML pages of pollinations.ai, www and enter by page, status,
     country, device, browser. host_views (one row per host): all requests to that host by
     status, content type, country, device, browser. Counts are Cloudflare's sampled estimates.
+    Append-only: a rerun adds the same dataset, date and host again. Consumers must select
+    the latest fetched_at per (dataset, date, host) before aggregating.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,

@@ -4,8 +4,8 @@
  * Sync Cloudflare traffic for every *.pollinations.ai host → Tinybird
  * cloudflare_traffic_raw.
  *
- * The zone is on the Free plan, where per-request detail is kept for 30 days
- * only, so this runs daily (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml)
+ * The zone (Free plan) reports 31 days of per-request detail and a 30-day
+ * maximum query range, so this runs daily (.github/workflows/data-sync-cloudflare-traffic-tinybird.yml)
  * and stores the GraphQL responses of the queries below unchanged, per UTC
  * day. Fields not requested here cannot be recovered later.
  *
@@ -23,7 +23,8 @@
  * text. No IP or user-agent string is requested. Verified bots stay in,
  * labelled by verifiedBotCategory.
  *
- * Reruns append the same day and host again; the latest fetched_at wins.
+ * Reruns append the same day and host again: consumers must select the latest
+ * fetched_at per (dataset, date, host) before aggregating.
  *
  * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
  *

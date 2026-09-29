@@ -1,6 +1,7 @@
 name: 🐝 Bee Census
 description: Tell us who you are and what you build. Takes 3 minutes and earns 3 Quest Pollen.
 title: "[Bee Census] "
+labels: ["BEE-CENSUS"]
 body:
   - type: markdown
     attributes:

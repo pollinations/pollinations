@@ -1,7 +1,8 @@
 DESCRIPTION >
     Incrementally maintains quest_model_modalities_mv: for every billed,
-    successful text/image/audio generation, sets the user's "used this
-    modality" flag. Runs at ingest time, so the model-usage quest endpoint never
+    successful text/image/audio/video generation, sets the user's "used this
+    modality" flag. Video arrives as generate.image with video usage. Runs at
+    ingest time, so the model-usage quest endpoint never
     scans raw generation_event_v2 (a large raw GROUP BY that times out at prod
     scale). max() of a 0/1 indicator makes backfill duplicates idempotent.
 
@@ -17,7 +18,8 @@ SQL >
         user_id,
         maxState(toUInt8(event_type = 'generate.text')) AS used_text,
         maxState(toUInt8(event_type = 'generate.image' AND token_count_completion_video_seconds = 0 AND token_count_completion_video_tokens = 0)) AS used_image,
-        maxState(toUInt8(event_type = 'generate.audio')) AS used_audio
+        maxState(toUInt8(event_type = 'generate.audio')) AS used_audio,
+        maxState(toUInt8(event_type = 'generate.image' AND (token_count_completion_video_seconds > 0 OR token_count_completion_video_tokens > 0))) AS used_video
     FROM generation_event_v2
     WHERE user_id != ''
       AND user_id != 'undefined'

@@ -1385,13 +1385,14 @@ test("quest check records model-usage rewards per modality", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    // This user has generated with text and audio, but not image.
+    // This user has generated with text, audio and video, but not image.
     mocks.tinybird.state.modelModalitiesResponse = [
         {
             userId: user.id,
             usedText: 1,
             usedImage: 0,
             usedAudio: 1,
+            usedVideo: 1,
         },
     ];
 
@@ -1404,6 +1405,7 @@ test("quest check records model-usage rewards per modality", async ({
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("use_text_model")).toBe(true);
     expect(questIds.has("use_audio_model")).toBe(true);
+    expect(questIds.has("use_video_model")).toBe(true);
     expect(questIds.has("use_image_model")).toBe(false);
 
     expect(
@@ -1415,17 +1417,45 @@ test("quest check records model-usage rewards per modality", async ({
     ).toBe(true);
 });
 
-for (const { usedAgent, createdUsedAgent, expected } of [
-    { usedAgent: 0, createdUsedAgent: 0, expected: [] },
-    { usedAgent: 1, createdUsedAgent: 0, expected: ["use_agent"] },
-    { usedAgent: 0, createdUsedAgent: 1, expected: ["create_used_agent"] },
+const AGENT_QUEST_REWARDS: Record<string, number> = {
+    use_agent: 0.25,
+    create_used_agent: 2,
+    use_community_model: 0.25,
+    create_used_community_model: 2,
+};
+const NO_AGENT_FLAGS = {
+    usedAgent: 0,
+    createdUsedAgent: 0,
+    usedCommunityModel: 0,
+    createdUsedCommunityModel: 0,
+};
+const ALL_AGENT_FLAGS = {
+    usedAgent: 1,
+    createdUsedAgent: 1,
+    usedCommunityModel: 1,
+    createdUsedCommunityModel: 1,
+};
+
+for (const { flags, expected } of [
+    { flags: {}, expected: [] },
+    { flags: { usedAgent: 1 }, expected: ["use_agent"] },
+    { flags: { createdUsedAgent: 1 }, expected: ["create_used_agent"] },
+    { flags: { usedCommunityModel: 1 }, expected: ["use_community_model"] },
     {
-        usedAgent: 1,
-        createdUsedAgent: 1,
-        expected: ["create_used_agent", "use_agent"],
+        flags: { createdUsedCommunityModel: 1 },
+        expected: ["create_used_community_model"],
+    },
+    {
+        flags: ALL_AGENT_FLAGS,
+        expected: [
+            "create_used_agent",
+            "create_used_community_model",
+            "use_agent",
+            "use_community_model",
+        ],
     },
 ]) {
-    test(`agent quests award each milestone once: ${usedAgent}/${createdUsedAgent}`, async ({
+    test(`agent quests award each milestone once: ${expected.join("+") || "none"}`, async ({
         mocks,
         sessionToken: _sessionToken,
     }) => {
@@ -1433,8 +1463,8 @@ for (const { usedAgent, createdUsedAgent, expected } of [
         const db = drizzle(env.DB, { schema });
         await mocks.enable("tinybird");
         mocks.tinybird.state.agentUsageResponse = [
-            { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
-            { userId: user.id, usedAgent, createdUsedAgent },
+            { userId: "another-user", ...ALL_AGENT_FLAGS },
+            { userId: user.id, ...NO_AGENT_FLAGS, ...flags },
         ];
         const groups = [{ id: "agent-usage", ...agentUsage }];
         const result = await checkQuestsForUser(env, user.id, groups);
@@ -1451,7 +1481,7 @@ for (const { usedAgent, createdUsedAgent, expected } of [
         expect(rewards.map((r) => r.questId).sort()).toEqual(expected);
         for (const reward of rewards) {
             expect(reward.pollenAmount).toBe(
-                reward.questId === "use_agent" ? 0.25 : 2,
+                AGENT_QUEST_REWARDS[reward.questId],
             );
             expect(reward.balanceBucket).toBe("tier");
             expect(reward.claimedAt).toBeNull();
@@ -1485,7 +1515,7 @@ test("agent quests ignore another user's milestone rows", async ({
     const user = await getOnlyUser();
     await mocks.enable("tinybird");
     mocks.tinybird.state.agentUsageResponse = [
-        { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
+        { userId: "another-user", ...ALL_AGENT_FLAGS },
     ];
     const result = await checkQuestsForUser(env, user.id, [
         { id: "agent-usage", ...agentUsage },

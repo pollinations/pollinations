@@ -7,6 +7,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "pollinations_krita"))
 
+from PyQt5.QtCore import QBuffer, QByteArray, QIODevice
 from PyQt5.QtGui import QGuiApplication, QImage
 
 import image_codec as codec
@@ -37,6 +38,20 @@ class ImageCodecTests(unittest.TestCase):
         self.assertTrue(image.loadFromData(png, "PNG"))
         color = image.pixelColor(0, 0)
         self.assertEqual((color.red(), color.green(), color.blue(), color.alpha()), (255, 0, 0, 255))
+
+    def test_png_to_pixels_decodes_jpeg_bytes(self):
+        # Some models return JPEG rather than PNG; the format must be
+        # auto-detected instead of forced.
+        width, height = 2, 2
+        image = QImage(width, height, QImage.Format_ARGB32)
+        image.fill(0xFF0000FF)
+        buffer = QByteArray()
+        device = QBuffer(buffer)
+        device.open(QIODevice.WriteOnly)
+        image.save(device, "JPEG")
+        device.close()
+        pixels = codec.png_to_pixels(bytes(buffer), width, height)
+        self.assertEqual(len(pixels), width * height * 4)
 
     def test_png_to_pixels_scales_to_the_requested_size(self):
         source = solid_bgra(8, 8, 1, 2, 3, 255)

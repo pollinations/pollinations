@@ -33,15 +33,16 @@ def pixels_to_png(data, width, height):
 
 
 def png_to_pixels(data, width, height):
-    """Decode PNG bytes to a raw BGRA pixel buffer sized to (width, height).
+    """Decode generated image bytes to a raw BGRA pixel buffer sized to (width, height).
 
-    The source is scaled to fit exactly, since a model's fixed resolution
-    presets rarely match the target canvas or selection pixel-for-pixel.
-    Raises ValueError if Qt cannot decode the PNG bytes.
+    Models can return PNG or JPEG bytes, so the format is auto-detected
+    rather than forced. The source is scaled to fit exactly, since a model's
+    fixed resolution presets rarely match the target canvas or selection
+    pixel-for-pixel. Raises ValueError if Qt cannot decode the data.
     """
     image = QImage()
-    if not image.loadFromData(data, "PNG"):
-        raise ValueError("Qt could not decode the generated PNG data.")
+    if not image.loadFromData(data):
+        raise ValueError("Qt could not decode the generated image data.")
     if image.width() != width or image.height() != height:
         image = image.scaled(width, height, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
     image = image.convertToFormat(PIXEL_FORMAT)

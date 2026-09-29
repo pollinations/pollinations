@@ -177,7 +177,7 @@ class PollinationsExtension(Extension):
         ]
         for identifier, text, handler in actions:
             action = window.createAction(identifier, text, "tools/scripts")
-            action.triggered.connect(lambda _checked=False, h=handler, w=window: h(w))
+            action.triggered.connect(lambda _checked=False, h=handler: h(Krita.instance().activeWindow()))
 
     def connect_account(self, window):
         parent = window.qwindow()

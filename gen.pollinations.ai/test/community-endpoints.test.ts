@@ -3569,6 +3569,153 @@ fixtureTest(
     },
 );
 
+fixtureTest(
+    "rejects image input for text-only community models on Chat and Responses",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const listings = [
+            { name: "text-only", type: "proxy" as const },
+            {
+                name: "vision",
+                type: "proxy" as const,
+                inputModalities: ["text", "image"] as ModelInputModality[],
+            },
+            { name: "agent", type: "endpoint_agent" as const },
+        ].map((listing) => ({
+            ...listing,
+            modelId: communityModelId(ownerGithubUsername, listing.name),
+            url: `https://${listing.name}.example.com/v1/responses`,
+        }));
+        const bearerTokenCiphertext = await encryptSecret(
+            "Bearer image-token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await insertCommunityEndpoints(
+            listings.map(({ modelId: _modelId, url, ...listing }) => ({
+                ...listing,
+                bearerTokenCiphertext,
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                api: "responses",
+                baseUrl: url,
+                upstreamModel: "provider-model",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+
+        const upstreamUrls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (listings.some((listing) => listing.url === request.url)) {
+                    upstreamUrls.push(request.url);
+                    return Response.json({
+                        id: "resp_image",
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_image",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "green",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const image = `data:image/png;base64,${TEST_PNG_BASE64}`;
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        for (const listing of listings) {
+            const responses = [
+                await post("/v1/chat/completions", {
+                    model: listing.modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What color?" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: image },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                await post("/v1/responses", {
+                    model: listing.modelId,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What color?" },
+                                { type: "input_image", image_url: image },
+                            ],
+                        },
+                    ],
+                }),
+            ];
+            for (const response of responses) {
+                const body = await response.text();
+                if (listing.name === "text-only") {
+                    expect(response.status, body).toBe(400);
+                    expect(body).toContain(
+                        "This model does not support image input",
+                    );
+                } else {
+                    expect(response.status, body).toBe(200);
+                }
+            }
+        }
+        expect(upstreamUrls.sort()).toEqual(
+            [
+                listings[1].url,
+                listings[1].url,
+                listings[2].url,
+                listings[2].url,
+            ].sort(),
+        );
+    },
+);
+
 fixtureTest.each(
     ["responses", "chat/completions"].flatMap((route) =>
         [false, true].flatMap((stream) =>

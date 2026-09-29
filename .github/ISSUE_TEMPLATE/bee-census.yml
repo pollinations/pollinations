@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Help us decide what to build next. Most questions are one click.
+        Help us decide what to build next. Most questions are a quick pick.
 
         Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account).
 
@@ -30,19 +30,23 @@ body:
     attributes:
       label: Other kind of bee (optional)
 
-  - type: checkboxes
+  - type: dropdown
     id: making
     attributes:
       label: What are you making?
+      description: Pick all that apply.
+      multiple: true
       options:
-        - label: Chat / assistant
-        - label: Image app
-        - label: Video
-        - label: Music / voice
-        - label: Bot
-        - label: Game
-        - label: Agent / automation
-        - label: Just playing around
+        - Chat / assistant
+        - Image app
+        - Video
+        - Music / voice
+        - Bot
+        - Game
+        - Agent / automation
+        - Just playing around
+    validations:
+      required: true
 
   - type: input
     id: making-other
@@ -69,21 +73,27 @@ body:
   - type: input
     id: found-us-other
     attributes:
-      label: Where exactly? Which assistant, video, post or app (optional)
+      label: Where exactly? Which assistant, search, video, post or app
+    validations:
+      required: true
 
-  - type: checkboxes
+  - type: dropdown
     id: other-ai
     attributes:
       label: Where else do you get AI?
+      description: Pick all that apply.
+      multiple: true
       options:
-        - label: OpenAI / ChatGPT
-        - label: Claude
-        - label: Gemini / AI Studio
-        - label: OpenRouter
-        - label: fal / Replicate
-        - label: Higgsfield / Krea / Midjourney
-        - label: Local models
-        - label: Nowhere else
+        - OpenAI / ChatGPT
+        - Claude
+        - Gemini / AI Studio
+        - OpenRouter
+        - fal / Replicate
+        - Higgsfield / Krea / Midjourney
+        - Local models
+        - Nowhere else
+    validations:
+      required: true
 
   - type: input
     id: other-ai-other
@@ -104,18 +114,22 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: dropdown
     id: blockers
     attributes:
       label: What stops you spending (more) with us?
+      description: Pick all that apply.
+      multiple: true
       options:
-        - label: Free Pollen is enough
-        - label: Too expensive
-        - label: My payment method isn't offered
-        - label: Errors / reliability
-        - label: A model I need is missing
-        - label: Not sure what Pollen buys
-        - label: Nothing, I already pay
+        - Free Pollen is enough
+        - Too expensive
+        - My payment method isn't offered
+        - Errors / reliability
+        - A model I need is missing
+        - Not sure what Pollen buys
+        - Nothing, I already pay
+    validations:
+      required: true
 
   - type: input
     id: payment-method
@@ -128,18 +142,22 @@ body:
     attributes:
       label: Anything else stopping you? (optional)
 
-  - type: checkboxes
+  - type: dropdown
     id: would-pay
     attributes:
       label: Which would you actually pay for?
+      description: Pick all that apply.
+      multiple: true
       options:
-        - label: Pollen packs, like now
-        - label: Monthly plan with Pollen + perks
-        - label: Auto top-up
-        - label: Team billing
-        - label: My app's users pay (BYOP)
-        - label: Crypto
-        - label: None
+        - Pollen packs, like now
+        - Monthly plan with Pollen + perks
+        - Auto top-up
+        - Team billing
+        - My app's users pay (BYOP)
+        - Crypto
+        - Nothing for now
+    validations:
+      required: true
 
   - type: input
     id: would-pay-other

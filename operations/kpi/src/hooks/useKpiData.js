@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import * as api from "../lib/api";
 import { buildDailyComparison } from "../lib/dailyComparison";
 import { currentWeekStart } from "../lib/format";
+import { buildStarWeeks } from "../lib/githubStars";
 import { DEFAULT_WEEKS } from "../lib/range";
 
 const RETENTION_WEEKS = 8;
@@ -127,6 +128,17 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     .map(([, label]) => label);
 
                 const weekMap = new Map();
+                if ("github" in raw && !raw.github?.data?.length) {
+                    missing.push("GitHub (star snapshots)");
+                }
+                mergeInto(
+                    weekMap,
+                    buildStarWeeks(raw.github?.data ?? []),
+                    (row) => ({
+                        githubStars: row.githubStars,
+                        githubStarGrowth: row.githubStarGrowth,
+                    }),
+                );
                 mergeInto(weekMap, raw.registrations, (row) => ({
                     registrations: row.registrations,
                 }));

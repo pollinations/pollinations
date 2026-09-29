@@ -1,8 +1,15 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    createScheduledController,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
+import worker from "../src/index.ts";
 
 const EXE = "https://exe.dev/exec";
 const HOUR = 0.105;
@@ -210,15 +217,19 @@ test("the cron deletes only user VMs whose paid time is over", async () => {
         { vm_name: "team-box", tags: [`paid-${now() - 60}`] },
     );
 
-    await SELF.scheduled({ cron: "*/5 * * * *" });
-
-    await vi.waitFor(() =>
-        expect(exe.vms.map((vm) => vm.vm_name)).toEqual([
-            `${owned}paid`,
-            `${owned}unknown`,
-            "team-box",
-        ]),
+    const ctx = createExecutionContext();
+    worker.scheduled(
+        createScheduledController({ cron: "*/5 * * * *" }),
+        env,
+        ctx,
     );
+    await waitOnExecutionContext(ctx);
+
+    expect(exe.vms.map((vm) => vm.vm_name)).toEqual([
+        `${owned}paid`,
+        `${owned}unknown`,
+        "team-box",
+    ]);
 });
 
 test("refuses keys without the scope, unpaid VMs and closed commands", async () => {

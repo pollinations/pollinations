@@ -2134,6 +2134,55 @@ test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 });
 
+test("Bee Census quest pays 3 Pollen once for the user's own survey issue", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    const survey = (number: number, title: string, databaseId: number) => ({
+        number,
+        state: "open" as const,
+        title,
+        html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
+        body: "### What kind of bee are you?\n\n🧪 Hobbyist / tinkerer",
+        created_at: "2026-09-29T00:00:00Z",
+        updated_at: "2026-09-29T00:00:00Z",
+        closed_at: null,
+        user: { login: user.githubUsername ?? "", databaseId },
+    });
+    mocks.github.state.questIssues.push(
+        survey(9201, "[Bee Census] hello", user.githubId ?? 0),
+        survey(9202, "[Bee Census] second answer", user.githubId ?? 0),
+        survey(9203, "[Bee Census] renamed account", 999999),
+    );
+
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({
+            idempotencyKey: schema.rewards.idempotencyKey,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    expect(
+        rewards.filter((reward) =>
+            reward.idempotencyKey.includes("bee_census"),
+        ),
+    ).toEqual([
+        {
+            idempotencyKey: `quest:bee_census:github:${user.githubId}`,
+            pollenAmount: 3,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
 test("account quest history includes pending and claimed GitHub quest rewards", async ({
     sessionToken,
 }) => {

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15800,
+  "title": "feat: label Bee Census responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15800",
+  "merged_at": "2026-09-29T14:37:56Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- The Bee Census form now applies the `BEE-CENSUS` label to every response (label created; the 8 existing responses are backfilled).\n- The issue organizer skips `BEE-CENSUS` issues, like `APP-SUBMISSION`, so survey answers no longer get AI kind/priority labels or land on the Dev project board.\n- Lists `BEE-CENSUS` among the workflow labels in `AGENTS.md`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The bees have been counted",
+    "blurb": "Bee Census answers now get their own label and stay out of the development queue. The eight early responses got counted too.",
+    "summary": "The Bee Census form now labels every response `BEE-CENSUS`, backfills the eight existing responses, and keeps those issues out of AI kind/priority labeling and the Dev project board.",
+    "impact": "Survey responses remain available under `BEE-CENSUS` without being treated as development tasks.",
+    "keywords": [
+      "Bee Census",
+      "GitHub issues",
+      "labels",
+      "issue organizer",
+      "project board"
+    ],
+    "visual_concept": "Polli is a friendly census taker sorting eight survey cards into a lime-green BEE-CENSUS basket beside a separate development board; flowers and code-plants make the sorting desk feel like a small garden office.",
+    "image_prompt": "In a cozy pixel art garden office, Polli wears a tiny census-taker cap and sorts eight survey cards into a basket marked 'BEE-CENSUS,' away from a retro development board, with flowers and code-plants nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15800.jpg",
+    "prompt": "In a cozy pixel art garden office, Polli wears a tiny census-taker cap and sorts eight survey cards into a basket marked 'BEE-CENSUS,' away from a retro development board, with flowers and code-plants nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-29T14:38:58.938870+00:00"
+}

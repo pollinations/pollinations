@@ -43,6 +43,7 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
+const SURVEY_TITLE_PREFIX = "[Bee Census]";
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -59,10 +60,10 @@ const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
     description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+        "Report a bug or suggest an improvement in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 4,
+    rewardAmount: 3,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -77,6 +78,18 @@ const solveGithubIssueQuest: QuestDefinition = {
     rewardAmount: 0,
     balanceBucket: "tier",
     state: "coming_soon",
+};
+
+const beeCensusQuest: QuestDefinition = {
+    id: "bee_census",
+    title: "Join the Bee Census",
+    description:
+        "Answer a 3-minute survey about what you build and what you need. One response per GitHub account.",
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 3,
+    balanceBucket: "tier",
+    url: `https://github.com/${REPO}/issues/new?template=bee-census.yml`,
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -369,6 +382,7 @@ export async function listQuestCards(
         questToCard(firstMergedPrQuest),
         questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
+        questToCard(beeCensusQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
@@ -429,6 +443,26 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
     return data.search.nodes.some((pr) => pr.mergedAt !== null);
 }
 
+async function answeredSurvey(
+    token: string,
+    user: QuestUser,
+): Promise<boolean> {
+    if (!user.githubUsername) return false;
+    const data = await graphql<PaginatedSearchData<ReportedIssueNode>>(
+        token,
+        REPORTED_ISSUES_QUERY,
+        {
+            query: `repo:${REPO} is:issue author:${user.githubUsername} in:title "${SURVEY_TITLE_PREFIX}"`,
+            after: null,
+        },
+    );
+    return data.search.nodes.some(
+        (issue) =>
+            issue.author?.databaseId === user.githubId &&
+            issue.title.startsWith(SURVEY_TITLE_PREFIX),
+    );
+}
+
 export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
@@ -437,10 +471,11 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, reportedIssues] = await Promise.all([
+    const [issues, mergedPr, reportedIssues, surveyed] = await Promise.all([
         loadQuestIssues(token),
         hasMergedPr(token, user),
         reportedIssueProposals(token, user),
+        answeredSurvey(token, user),
     ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
@@ -463,6 +498,7 @@ export async function evaluateUser(
             ...(mergedPr
                 ? [{ quest: firstMergedPrQuest, userId: user.id }]
                 : []),
+            ...(surveyed ? [{ quest: beeCensusQuest, userId: user.id }] : []),
         ],
     };
 }

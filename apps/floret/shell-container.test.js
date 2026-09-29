@@ -13,11 +13,14 @@ function authFetch(valid = true) {
     };
 }
 
-function shellRequest(body = new Uint8Array([0, 0, 0, 1, 123])) {
+function shellRequest(
+    body = new Uint8Array([0, 0, 0, 1, 123]),
+    credential = "ag_test",
+) {
     return new Request("http://floret-shell.internal/run", {
         method: "POST",
         headers: {
-            Authorization: "Bearer ag_test",
+            Authorization: `Bearer ${credential}`,
             "Content-Type": "application/octet-stream",
             "Content-Length": String(body.byteLength),
         },
@@ -59,6 +62,20 @@ test("invalid auth allocates no shell container", async () => {
     });
     assert.equal((await outbound(shellRequest(), {})).status, 401);
     assert.equal(allocations, 0);
+});
+
+test("direct user keys can authorize shell calls", async () => {
+    const outbound = createShellOutbound({
+        fetchImpl: authFetch(),
+        getContainerImpl: () => container(),
+    });
+    for (const key of ["pk_test", "sk_test"]) {
+        const response = await outbound(shellRequest(undefined, key), {
+            FLORET_SHELL: {},
+        });
+        assert.equal(response.status, 200);
+        await response.arrayBuffer();
+    }
 });
 
 test("authentication redirects are rejected without following or allocating", async () => {

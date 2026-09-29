@@ -1,4 +1,4 @@
-import { authenticateRun } from "./shell-bridge.js";
+import { authenticateBearer } from "./shell-bridge.js";
 
 function catalog(env) {
     return env.FLORET_CATALOG.getByName("global");
@@ -33,9 +33,9 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
         }
         const isChat =
             path === "/v1/chat/completions" && request.method === "POST";
-        if (isChat && !(await authenticateRun(request, fetchImpl))) {
+        if (isChat && !(await authenticateBearer(request, fetchImpl))) {
             return Response.json(
-                { detail: "Invalid agent run token." },
+                { detail: "Invalid bearer credential." },
                 {
                     status: 401,
                     headers: {

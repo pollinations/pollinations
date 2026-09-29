@@ -5,7 +5,7 @@ const MAX_REQUEST_BYTES = 102 * 1024 * 1024 + 64 * 1024 + 4;
 const MAX_LIFECYCLE_MS = 11 * 60 * 1000;
 
 function token(request) {
-    const match = /^Bearer\s+(ag_\S+)$/i.exec(
+    const match = /^Bearer\s+(\S+)$/i.exec(
         (request.headers.get("Authorization") || "").trim(),
     );
     return match?.[1] || null;
@@ -40,7 +40,10 @@ async function boundedJson(response) {
     }
 }
 
-export async function authenticateRun(request, fetchImpl = globalThis.fetch) {
+export async function authenticateBearer(
+    request,
+    fetchImpl = globalThis.fetch,
+) {
     const bearer = token(request);
     if (!bearer) return false;
     let response;
@@ -150,7 +153,7 @@ export function createShellOutbound({
         ) {
             return errorResponse(413, "Invalid shell request size");
         }
-        if (!(await authenticateRun(request, fetchImpl))) {
+        if (!(await authenticateBearer(request, fetchImpl))) {
             return errorResponse(401, "Unauthorized");
         }
 

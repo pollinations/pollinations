@@ -1,11 +1,11 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import {
-    authenticateRun,
+    authenticateBearer,
     createShellOutbound,
     SHELL_CONTAINER_LIMITS,
 } from "./shell-bridge.js";
 
-export { authenticateRun, createShellOutbound, SHELL_CONTAINER_LIMITS };
+export { authenticateBearer, createShellOutbound, SHELL_CONTAINER_LIMITS };
 
 export class FloretShellContainer extends Container {
     defaultPort = 8080;

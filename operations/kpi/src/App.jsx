@@ -90,54 +90,6 @@ function AccountControls({ accountUser }) {
     );
 }
 
-function LoadingScreen({ done, active, accountUser }) {
-    return (
-        <div className="min-h-screen bg-app-bg">
-            <AppHeader
-                navLabel="KPI dashboard links"
-                innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-end"
-                navClassName="polli:items-center"
-            >
-                <AccountControls accountUser={accountUser} />
-            </AppHeader>
-            <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
-                <Text as="p" tone="soft">
-                    Loading KPIs from all data sources…
-                </Text>
-                <div className="flex flex-col gap-1.5">
-                    {SOURCE_LABELS.map((label) => {
-                        const complete = done.includes(label);
-                        const running = !complete && active === label;
-                        return (
-                            <Text
-                                key={label}
-                                as="div"
-                                size="sm"
-                                tone={
-                                    running
-                                        ? "strong"
-                                        : complete
-                                          ? "base"
-                                          : "muted"
-                                }
-                                className="flex items-center gap-2"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="w-4 text-center"
-                                >
-                                    {complete ? "✓" : running ? "◍" : "·"}
-                                </span>
-                                {label}
-                            </Text>
-                        );
-                    })}
-                </div>
-            </main>
-        </div>
-    );
-}
-
 const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
@@ -198,31 +150,21 @@ function Dashboard({ accountUser }) {
         previousWeek,
     } = useKpiData(weeks);
 
-    if (loading) {
-        return (
-            <LoadingScreen
-                done={done}
-                active={active}
-                accountUser={accountUser}
-            />
-        );
-    }
-
-    const wapc = currentWeek?.packPurchases || 0;
+    const wapc = currentWeek?.packPurchases;
     const funnelStages = currentWeek
         ? [
-              { stage: "Signups", count: currentWeek.registrations || 0 },
+              { stage: "Signups", count: currentWeek.registrations },
               {
                   stage: "Activated",
-                  count: currentWeek.activations || 0,
+                  count: currentWeek.activations,
                   of: "Signups",
               },
               // WAU is not a subset of this week's signups, so it carries no
               // step rate — only Paying is measured against it.
-              { stage: "Active (WAU)", count: currentWeek.wau || 0 },
+              { stage: "Active (WAU)", count: currentWeek.wau },
               {
                   stage: "Paying",
-                  count: currentWeek.packPurchases || 0,
+                  count: currentWeek.packPurchases,
                   of: "Active (WAU)",
               },
           ]
@@ -240,6 +182,7 @@ function Dashboard({ accountUser }) {
                     size="sm"
                     className="h-9 px-3 py-0"
                     onClick={() => exportCsv(weeklyData)}
+                    disabled={loading}
                 >
                     <span className="inline-flex items-center gap-1.5">
                         <DownloadIcon className="h-4 w-4" />
@@ -277,6 +220,13 @@ function Dashboard({ accountUser }) {
                         </select>
                     </label>
                 </div>
+
+                {loading && (
+                    <Text as="p" size="sm" tone="muted" role="status">
+                        Loading {active}… {done.length}/{SOURCE_LABELS.length}{" "}
+                        sources complete. Pending values appear as —.
+                    </Text>
+                )}
 
                 {missing.length > 0 && (
                     <Alert intent="warning" title="Incomplete data">

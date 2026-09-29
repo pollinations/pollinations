@@ -47,6 +47,7 @@ export async function captureProductEvent(
         utm_source?: string;
         utm_medium?: string;
         utm_campaign?: string;
+        country?: string;
         amount_usd?: number;
     } = {},
 ): Promise<void> {
@@ -115,6 +116,18 @@ export function referringSource(
     }
 }
 
+/**
+ * The visitor's country as Cloudflare derives it from the connection
+ * (CF-IPCountry: ISO 3166 alpha-2, XX unknown, T1 Tor). Only the code is
+ * recorded, never the IP. Absent outside Cloudflare, e.g. in tests.
+ */
+export function visitorCountry(headers: Headers | null | undefined): {
+    country?: string;
+} {
+    const country = headers?.get("cf-ipcountry");
+    return country ? { country: country.slice(0, 2) } : {};
+}
+
 /** Fire-and-forget capture from a request handler. */
 export function captureFromRequest(
     // biome-ignore lint/suspicious/noExplicitAny: every route shape may capture
@@ -124,6 +137,9 @@ export function captureFromRequest(
     properties?: Parameters<typeof captureProductEvent>[3],
 ): void {
     c.executionCtx.waitUntil(
-        captureProductEvent(c.env, event, userId, properties),
+        captureProductEvent(c.env, event, userId, {
+            ...visitorCountry(c.req.raw.headers),
+            ...properties,
+        }),
     );
 }

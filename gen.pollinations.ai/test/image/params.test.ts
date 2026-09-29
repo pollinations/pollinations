@@ -69,6 +69,12 @@ describe("ImageParamsSchema", () => {
         for (const resolution of ["480p", "768p", "1080p"] as const) {
             expect(
                 ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max",
+                    resolution,
+                }).success,
+            ).toBe(true);
+            expect(
+                ImageParamsSchema.safeParse({
                     model: "minimax/minimax-h3-max-turbo",
                     resolution,
                 }).success,
@@ -123,11 +129,14 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
-    it("enforces the public MiniMax H3 Max Turbo contract", () => {
+    it.each([
+        "minimax/minimax-h3-max",
+        "minimax/minimax-h3-max-turbo",
+    ] as const)("enforces the public %s contract", (model) => {
         for (const duration of [5, 10, 15]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     duration,
                 }).success,
             ).toBe(true);
@@ -140,7 +149,7 @@ describe("ImageParamsSchema", () => {
         ]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     ...params,
                 }).success,
             ).toBe(false);
@@ -279,6 +288,21 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
+    it("accepts reference media on minimax-h3-max and rejects on turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max",
+                reference_videos: "https://media.example/video.mp4",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max-turbo",
+                reference_videos: "https://media.example/video.mp4",
+            }).success,
+        ).toBe(false);
+    });
+
     it("passes provider-specific reference combinations through", () => {
         expect(
             ImageParamsSchema.safeParse({
@@ -311,22 +335,20 @@ describe("ImageParamsSchema", () => {
         ).toBe(true);
     });
 
-    it("rejects alias directly in schema (alias resolved by middleware instead)", () => {
+    it("rejects an unregistered short model name", () => {
         const result = ImageParamsSchema.safeParse({
             model: "lightning-image-turbo",
         });
         expect(result.success).toBe(false);
     });
 
-    it("parses up to four image references for lightning-image-turbo", () => {
+    it("parses two image references for lightning-image-turbo", () => {
         expect(
             ImageParamsSchema.safeParse({
                 model: "inferenceport-ai/lightning-image-turbo",
                 image: [
                     "https://example.com/a.png",
                     "https://example.com/b.png",
-                    "https://example.com/c.png",
-                    "https://example.com/d.png",
                 ],
             }).success,
         ).toBe(true);

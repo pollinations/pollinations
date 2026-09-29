@@ -6,7 +6,6 @@ import type { ImageParams } from "../../src/image/params.ts";
 
 const GENERATIONS_ENDPOINT =
     "https://api.inferenceport.ai/v1/images/generations";
-const EDITS_ENDPOINT = "https://api.inferenceport.ai/v1/images/edits";
 const INPUT_IMAGE_URL = "https://example.com/reference.png";
 const INPUT_IMAGE = Buffer.from([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -33,6 +32,7 @@ const baseParams: ImageParams = {
 function successResponse(): Response {
     return Response.json({
         data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+        usage: { image_count: 1, payg_credits_charged: 0.02 },
     });
 }
 
@@ -84,7 +84,7 @@ describe("callInferencePortImage", () => {
         });
     });
 
-    it("edits with one safety-checked reference image through multipart form data", async () => {
+    it("conditions generation on a safety-checked reference image", async () => {
         let editInit: RequestInit | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
             if (url.toString() === INPUT_IMAGE_URL) {
@@ -92,7 +92,7 @@ describe("callInferencePortImage", () => {
                     headers: { "Content-Type": "image/png" },
                 });
             }
-            expect(url.toString()).toBe(EDITS_ENDPOINT);
+            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
             editInit = init;
             return successResponse();
         });
@@ -106,31 +106,22 @@ describe("callInferencePortImage", () => {
         expect(editInit?.headers).toMatchObject({
             Authorization: "Bearer test-ip-key",
         });
-        expect(editInit?.headers).not.toHaveProperty("Content-Type");
-        const formData = editInit?.body as FormData;
-        expect(formData).toBeInstanceOf(FormData);
-        expect(formData.get("model")).toBe("lightning-image-turbo");
-        expect(formData.get("prompt")).toBe("make the bicycle blue");
-        expect(formData.get("n")).toBe("1");
-        const image = formData.get("image");
-        expect(image).toBeInstanceOf(Blob);
-        expect((image as Blob).type).toBe("image/png");
-        expect(Buffer.from(await (image as Blob).arrayBuffer())).toEqual(
-            INPUT_IMAGE,
-        );
+        expect(JSON.parse(editInit?.body as string)).toEqual({
+            model: "lightning-image-turbo",
+            prompt: "make the bicycle blue",
+            n: 1,
+            image_urls: [
+                `data:image/png;base64,${INPUT_IMAGE.toString("base64")}`,
+            ],
+        });
         expect(result.trackingData.usage).toEqual({
             completionImageTokens: 1,
             totalTokenCount: 1,
         });
     });
 
-    it("edits with four reference images", async () => {
-        const urls = [
-            "https://example.com/a.png",
-            "https://example.com/b.png",
-            "https://example.com/c.png",
-            "https://example.com/d.png",
-        ];
+    it("sends both reference images", async () => {
+        const urls = ["https://example.com/a.png", "https://example.com/b.png"];
         let editInit: RequestInit | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
             if (urls.includes(url.toString())) {
@@ -138,7 +129,7 @@ describe("callInferencePortImage", () => {
                     headers: { "Content-Type": "image/png" },
                 });
             }
-            expect(url.toString()).toBe(EDITS_ENDPOINT);
+            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
             editInit = init;
             return successResponse();
         });
@@ -149,22 +140,19 @@ describe("callInferencePortImage", () => {
             USER_INFO,
         );
 
-        const formData = editInit?.body as FormData;
-        expect(formData).toBeInstanceOf(FormData);
-        expect(formData.get("model")).toBe("lightning-image-turbo");
-        const imageParts = formData.getAll("image");
-        expect(imageParts).toHaveLength(4);
-        for (const part of imageParts) {
-            expect(part).toBeInstanceOf(Blob);
-            expect((part as Blob).type).toBe("image/png");
-        }
+        const body = JSON.parse(editInit?.body as string);
+        expect(body.image_urls).toEqual(
+            urls.map(
+                () => `data:image/png;base64,${INPUT_IMAGE.toString("base64")}`,
+            ),
+        );
         expect(result.trackingData.usage).toEqual({
             completionImageTokens: 1,
             totalTokenCount: 1,
         });
     });
 
-    it("rejects more than four reference images before calling upstream", async () => {
+    it("rejects more than two reference images before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
@@ -180,6 +168,18 @@ describe("callInferencePortImage", () => {
                         "https://example.com/e.png",
                     ],
                 },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects unsupported dimensions before calling upstream", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callInferencePortImage(
+                "a lighthouse",
+                { ...baseParams, dimensionsExplicit: true, width: 512 },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({ status: 400 });
@@ -210,6 +210,41 @@ describe("callInferencePortImage", () => {
         await expect(
             callInferencePortImage("a lighthouse", baseParams, USER_INFO),
         ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it.each([
+        undefined,
+        0,
+        -1,
+        1.5,
+    ])("rejects invalid reported image usage %s", async (imageCount) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                usage: { image_count: imageCount },
+            }),
+        );
+        await expect(
+            callInferencePortImage("a lighthouse", baseParams, USER_INFO),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("bills the image count reported by the provider", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                usage: { image_count: 2, payg_credits_charged: 0.04 },
+            }),
+        );
+        const result = await callInferencePortImage(
+            "a lighthouse",
+            baseParams,
+            USER_INFO,
+        );
+        expect(result.trackingData.usage).toEqual({
+            completionImageTokens: 2,
+            totalTokenCount: 2,
+        });
     });
 
     it("preserves upstream 4xx errors", async () => {
@@ -249,6 +284,7 @@ describe("callInferencePortImage", () => {
             if (url.toString() === GENERATIONS_ENDPOINT) {
                 return Response.json({
                     data: [{ url: INPUT_IMAGE_URL }],
+                    usage: { image_count: 1, payg_credits_charged: 0.02 },
                 });
             }
             if (url.toString() === INPUT_IMAGE_URL) {

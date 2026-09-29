@@ -10,6 +10,21 @@ TOKEN tinybird_read READ
 NODE weekly_usage_stats_node
 SQL >
     %
+    WITH
+        -- Classify the whole billed request, not individual token charges.
+        -- /image also serves video and music; event_type alone is not a modality.
+        multiIf(
+            model_provider_used = 'community', 'community',
+            event_type = 'generate.realtime', 'realtime',
+            event_type = 'generate.embedding', 'embedding',
+            startsWith(request_path, '/3d/'), '3d',
+            token_count_completion_video_seconds > 0 OR token_count_completion_video_tokens > 0, 'video',
+            event_type = 'generate.audio' OR token_count_completion_audio > 0 OR token_count_completion_audio_seconds > 0, 'audio',
+            event_type = 'generate.image' OR token_count_completion_image > 0, 'image',
+            event_type = 'generate.text', 'text',
+            'other'
+        ) AS spend_category,
+        if(is_billed_usage AND response_status >= 200 AND response_status < 300, total_price, 0) AS billed_pollen
     SELECT
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
         count() AS total_requests,
@@ -21,6 +36,15 @@ SQL >
         sum(token_count_completion_text) AS completion_tokens,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS revenue_usd,
+        sumIf(billed_pollen, spend_category = 'text') AS pollen_text,
+        sumIf(billed_pollen, spend_category = 'image') AS pollen_image,
+        sumIf(billed_pollen, spend_category = 'video') AS pollen_video,
+        sumIf(billed_pollen, spend_category = 'audio') AS pollen_audio,
+        sumIf(billed_pollen, spend_category = 'realtime') AS pollen_realtime,
+        sumIf(billed_pollen, spend_category = 'embedding') AS pollen_embedding,
+        sumIf(billed_pollen, spend_category = '3d') AS pollen_3d,
+        sumIf(billed_pollen, spend_category = 'community') AS pollen_community,
+        sumIf(billed_pollen, spend_category = 'other') AS pollen_other,
         sumIf(
             total_price,
             is_billed_usage
@@ -93,8 +117,10 @@ SQL >
             ),
             2
         ) AS community_availability
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY

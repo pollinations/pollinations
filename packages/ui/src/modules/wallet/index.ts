@@ -1,3 +1,4 @@
+export { AccountPollen } from "./AccountPollen.tsx";
 export { PaidChip, TierChip, type WalletChipProps } from "./chips.tsx";
 export {
     PAID_BALANCE_CHART_COLOR,

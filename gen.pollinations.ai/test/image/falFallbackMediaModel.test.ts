@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
@@ -26,7 +27,7 @@ const baseParams: ImageParams = {
     audio: true,
 };
 
-function mockFal(output: Record<string, unknown>) {
+function mockFal(output: Record<string, unknown>, status = 200) {
     const requests: { url: string; body?: Record<string, unknown> }[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
         const href = typeof url === "string" ? url : url.toString();
@@ -40,7 +41,7 @@ function mockFal(output: Record<string, unknown>) {
         if (href === STATUS_URL) {
             return Response.json({ status: "COMPLETED" });
         }
-        if (href === RESULT_URL) return Response.json(output);
+        if (href === RESULT_URL) return Response.json(output, { status });
         if (href === MEDIA_URL) {
             return new Response(MEDIA_BYTES, {
                 headers: { "content-type": "video/mp4" },
@@ -109,6 +110,51 @@ describe("Fal fallback media models", () => {
                 completionVideoSeconds: expectedDuration,
             },
         });
+    });
+
+    it.each([
+        [
+            "charges a Grok video rejected after generation",
+            {
+                prompt: "move",
+                duration: 5,
+                resolution: "720p",
+                aspect_ratio: "16:9",
+                image_url: "https://example.com/start.png",
+            },
+            { promptImageTokens: 1, completionVideoSeconds: 5 },
+        ],
+        [
+            "does not charge a Grok request rejected before generation",
+            { text: ["move"], image_url: ["https://example.com/start.png"] },
+            undefined,
+        ],
+    ])("%s", async (_, echoedInput, billedUsage) => {
+        mockFal(
+            {
+                detail: [
+                    {
+                        loc: ["body"],
+                        msg: "Content flagged by the content checker.",
+                        type: "content_policy_violation",
+                        input: echoedInput,
+                    },
+                ],
+            },
+            422,
+        );
+        const errorPromise = callFalFallbackVideo("move", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video",
+            duration: 5,
+            image: ["https://example.com/start.png"],
+        }).catch((error: unknown) => error);
+        await vi.advanceTimersByTimeAsync(5_000);
+        const error = await errorPromise;
+
+        expect(error).toBeInstanceOf(UpstreamError);
+        expect(error).toMatchObject({ status: 422 });
+        expect((error as UpstreamError).billedUsage).toEqual(billedUsage);
     });
 
     it.each([

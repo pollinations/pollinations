@@ -10,7 +10,13 @@
       "class_name": "OpenWebUIContainer",
       "image": "registry.cloudflare.com/b6ec751c0862027ba269faf7029b2501/open-webui:0.11.3-slim",
       "max_instances": 1,
-      "instance_type": "standard-1"
+      "instance_type": "standard-1",
+      // Postgres lives in AWS us-east-1. Without a constraint Cloudflare starts
+      // the container wherever the waking request is nearest (it landed in
+      // Riga), and every DB session then costs ~3 transatlantic round trips.
+      // Changing this does not move a running container: delete the container
+      // application and deploy again (see README).
+      "constraints": { "regions": ["ENAM"] }
     }
   ],
   "durable_objects": {
@@ -55,7 +61,8 @@
           "class_name": "OpenWebUIContainer",
           "image": "registry.cloudflare.com/b6ec751c0862027ba269faf7029b2501/open-webui:0.11.3-slim",
           "max_instances": 1,
-          "instance_type": "standard-1"
+          "instance_type": "standard-1",
+          "constraints": { "regions": ["ENAM"] }
         }
       ],
       "durable_objects": {

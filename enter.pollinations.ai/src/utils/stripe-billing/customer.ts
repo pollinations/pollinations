@@ -48,6 +48,8 @@ export async function getUserStripeBillingRow(
     const [user] = await drizzle(db)
         .select({
             id: userTable.id,
+            banned: userTable.banned,
+            banExpires: userTable.banExpires,
             name: userTable.name,
             email: userTable.email,
             packBalance: userTable.packBalance,

@@ -1,4 +1,5 @@
 import * as accountSetup from "./groups/account-setup.ts";
+import * as agentUsage from "./groups/agent-usage.ts";
 import * as appGrowth from "./groups/app-growth.ts";
 import * as discordCommunity from "./groups/discord-community.ts";
 import * as githubContributions from "./groups/github-contributions.ts";
@@ -14,6 +15,7 @@ export const ACCOUNT_SETUP_QUEST_GROUP: QuestGroup = {
 
 export const QUEST_GROUPS: QuestGroup[] = [
     ACCOUNT_SETUP_QUEST_GROUP,
+    { id: "agent-usage", ...agentUsage },
     { id: "app-growth", ...appGrowth },
     { id: "discord-community", ...discordCommunity },
     { id: "model-usage", ...modelUsage },

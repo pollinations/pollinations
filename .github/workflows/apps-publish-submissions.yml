@@ -65,6 +65,12 @@ jobs:
           APPROVED_DATE="$TODAY" node operations/app-management/ingestion/validate-submission.js > "$RUNNER_TEMP/app-validation.json"
           jq -e '.valid == true' "$RUNNER_TEMP/app-validation.json" >/dev/null
           APP_JSON=$(jq -c .app "$RUNNER_TEMP/app-validation.json")
+          # A named quest closes with the submission, paying the submitter.
+          QUEST=$(jq -r '.submission.quest // ""' "$RUNNER_TEMP/app-validation.json")
+          FIXES="Fixes #${ISSUE_NUMBER}"
+          if [ -n "$QUEST" ]; then
+            FIXES="${FIXES}, fixes #${QUEST}"
+          fi
           {
             echo "app=$APP_JSON"
             echo "name=$(jq -r .submission.name "$RUNNER_TEMP/app-validation.json")"
@@ -72,6 +78,7 @@ jobs:
             echo "url=$(jq -r '.submission.appUrl // .submission.repoUrl' "$RUNNER_TEMP/app-validation.json")"
             echo "description=$(jq -r .submission.description "$RUNNER_TEMP/app-validation.json")"
             echo "user_id=$(jq -r .metadata.githubUserId "$RUNNER_TEMP/app-validation.json")"
+            echo "fixes=$FIXES"
           } >> "$GITHUB_OUTPUT"
 
       - name: Add app to catalog
@@ -83,6 +90,7 @@ jobs:
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           USER_ID: ${{ steps.app.outputs.user_id }}
+          FIXES: ${{ steps.app.outputs.fixes }}
           BOT_LOGIN: ${{ steps.bot.outputs.login }}
           BOT_ID: ${{ steps.bot.outputs.id }}
         run: |
@@ -96,7 +104,7 @@ jobs:
           git commit -m "Add ${APP_NAME} to ${APP_CATEGORY}
 
           Co-authored-by: ${ISSUE_AUTHOR} <${USER_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #${ISSUE_NUMBER}"
+          ${FIXES}"
           git push origin "$BRANCH"
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
 
@@ -109,7 +117,7 @@ jobs:
           APP_URL: ${{ steps.app.outputs.url }}
           APP_DESCRIPTION: ${{ steps.app.outputs.description }}
           BRANCH: ${{ steps.branch.outputs.name }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          FIXES: ${{ steps.app.outputs.fixes }}
         run: |
           PR_URL=$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
@@ -119,7 +127,7 @@ jobs:
             --body "- Adds [${APP_NAME}](${APP_URL}) to ${APP_CATEGORY}
           - ${APP_DESCRIPTION}
 
-          Fixes #${ISSUE_NUMBER}")
+          ${FIXES}")
           gh pr merge "$PR_URL" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
 

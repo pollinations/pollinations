@@ -23,7 +23,7 @@ export function summarizeStreamForLog(output: unknown): unknown {
         doneSeen?: boolean;
     };
     if (!Array.isArray(streamEvents)) return output;
-    return {
+    const summary = {
         chunks: streamEvents.length,
         doneSeen: doneSeen === true || streamEvents.some(isUsageMissingAtDone),
         streamEvents:
@@ -32,6 +32,20 @@ export function summarizeStreamForLog(output: unknown): unknown {
                       ...streamEvents.slice(0, LOGGED_STREAM_HEAD),
                       ...streamEvents.slice(-LOGGED_STREAM_TAIL),
                   ]
-                : streamEvents,
+                : [...streamEvents],
     };
+    // Keep the ending even when large chunks exceed the error body's budget.
+    while (JSON.stringify(summary).length > 16_000) {
+        if (summary.streamEvents.length > 1) {
+            summary.streamEvents.shift();
+        } else {
+            summary.streamEvents = [
+                {
+                    truncated: true,
+                    tail: JSON.stringify(summary.streamEvents[0]).slice(-6_000),
+                },
+            ];
+        }
+    }
+    return summary;
 }

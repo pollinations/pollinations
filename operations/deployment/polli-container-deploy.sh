@@ -90,6 +90,7 @@ compose() {
   local directory=$1 tag=$2
   shift 2
   sudo -n env "POLLI_IMAGE=polli:$tag" "POLLI_VISUAL_STUDIO_IMAGE=polli-visual-studio:$tag" \
+    "POLLI_GITHUB_KEY_FILE=$HOME/polli/polli.pem" \
     docker compose --project-name "$PROJECT" --project-directory "$directory" --env-file "$runtime/.env" \
     -f "$directory/compose.yaml" "$@"
 }

@@ -1,0 +1,147 @@
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Model health at two grains in one pass: one rollup row per model, plus one row
+per execution route that served it.
+
+Rows where `is_rollup` is 1 are the model total: what the caller experienced,
+counting only the call that settled each request, so a rescued request counts as
+the success it was. This matches what `model_health` reports. Rows where
+`is_rollup` is 0 are a single execution route — the model's own primary, or a
+fallback it fell through to — and count every call that route received,
+including attempts that were retried elsewhere, so a primary that is quietly
+failing cannot hide behind its rescues.
+
+The two therefore do not add up, and the gap is the point: a model's routes
+receive more calls than the model receives requests, by exactly the number of
+attempts that were retried. `fallback_rescues` names how many of those retries
+succeeded.
+
+Both grains come from one GROUPING SETS pass, so a rollup and its routes always
+describe the same traffic, and p50/p95 are computed correctly at each level
+rather than derived from the other (percentiles cannot be combined after the
+fact).
+
+Column names match `model_health` so consumers reuse one health rule for both.
+Time window is controlled by the `minutes` parameter (default 60).
+
+NODE model_route_health_stats
+SQL >
+    %
+    SELECT
+        resolved_model_requested as model,
+        event_type,
+        model_used,
+        -- Read through an aggregate rather than as a plain key: provider is a
+        -- grouping key only at the route grain, so selecting it directly would
+        -- leave every rollup row blank — and consumers read it to tell a
+        -- community model from an official one.
+        topK(1)(model_provider_used)[1] as provider,
+        -- 1 on the model total, 0 on a single route. From GROUPING rather than
+        -- an empty-string test, so it stays correct whatever model_used holds.
+        GROUPING(model_used) as is_rollup,
+        -- On a route: whether it serves as a fallback. On the rollup: whether
+        -- any fallback fired for this model at all.
+        max(fallback_used) as fallback_used,
+        -- The two grains count different things on purpose.
+        --
+        -- A route counts every call it received, settled or retried elsewhere,
+        -- because a primary that fails and gets rescued has to show that
+        -- failure somewhere or it reads as healthy.
+        --
+        -- The rollup counts only the call that settled each request, so it is
+        -- what the caller actually experienced — a rescued request succeeded,
+        -- and says so. Counting attempts here would charge a model for a
+        -- failure no user ever saw. This makes the rollup identical to
+        -- `model_health`; the difference against its routes is the retried
+        -- attempts, which `fallback_rescues` accounts for.
+        if(GROUPING(model_used) = 1, countIf(is_final), count()) as total_requests,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND response_status >= 200 AND response_status < 300),
+            countIf(response_status >= 200 AND response_status < 300)
+        ) as status_2xx,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND response_status >= 400 AND response_status < 500),
+            countIf(response_status >= 400 AND response_status < 500)
+        ) as errors_4xx,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND response_status >= 500),
+            countIf(response_status >= 500)
+        ) as errors_5xx,
+        -- How many of these calls were the one the caller actually received.
+        -- Summed over a model's routes this equals its request count, which is
+        -- what `model_health` reports.
+        countIf(is_final) as served,
+        countIf(
+            -- Qualified: the SELECT aliases `fallback_used` to max(fallback_used)
+            -- above, and an unqualified reference here would resolve to that
+            -- aggregate, which ClickHouse rejects as a nested aggregate.
+            is_final AND generation_event_v2.fallback_used
+            AND response_status >= 200 AND response_status < 300
+        ) as fallback_rescues,
+        -- Non-final 503s retried elsewhere: capacity pressure, not a
+        -- caller-visible failure.
+        countIf(NOT is_final AND response_status = 503) as retried_503s,
+        maxIf(start_time, response_status >= 500) as last_error_at,
+        -- Route latency excludes earlier attempts. Historical rows without
+        -- attempt timing are omitted instead of assigning request latency.
+        round(if(
+            GROUPING(model_used) = 1,
+            quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300),
+            quantileIf(0.5)(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as latency_p50_ms,
+        round(if(
+            GROUPING(model_used) = 1,
+            quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300),
+            quantileIf(0.95)(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as latency_p95_ms,
+        round(if(
+            GROUPING(model_used) = 1,
+            avgIf(response_time, response_status >= 200 AND response_status < 300),
+            avgIf(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as avg_latency_ms,
+        max(start_time) as last_request_at,
+        -- Completion tokens per second of full request duration, same
+        -- definition as model_health. Computed per group, so the rollup is the
+        -- true combined rate rather than an average of its routes' rates.
+        if(
+            sumIf(
+                response_time,
+                response_status >= 200 AND response_status < 300
+                AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                AND response_time > 0
+            ) > 0,
+            round(
+                sumIf(
+                    toUInt64(token_count_completion_text) + toUInt64(token_count_completion_reasoning),
+                    response_status >= 200 AND response_status < 300
+                    AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                    AND response_time > 0
+                )
+                / (
+                    sumIf(
+                        response_time,
+                        response_status >= 200 AND response_status < 300
+                        AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                        AND response_time > 0
+                    ) / 1000
+                ),
+                1
+            ),
+            NULL
+        ) as tokens_per_second
+    FROM generation_event_v2
+    WHERE start_time >= now() - interval least(greatest({{Int32(minutes, 60)}}, 1), 10080) minute
+    -- provider is deliberately not a key: a route id already determines it, and
+    -- keying on it would make it unaggregatable and leave rollup rows blank.
+    GROUP BY GROUPING SETS (
+        (model, event_type, model_used),
+        (model, event_type)
+    )
+    ORDER BY model, event_type, is_rollup DESC, total_requests DESC
+
+TYPE endpoint

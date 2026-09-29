@@ -1,7 +1,105 @@
+test("eight failed cards are recorded without a webhook account ban", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+
+    const customer = mockCustomer("cus_test_card_gate");
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_fraud",
+        object: "checkout.session",
+        mode: "payment",
+        customer: customer.id,
+        status: "open",
+        url: "https://checkout.stripe.test/fraud",
+    });
+    for (const fingerprint of [
+        "fp_gate_1",
+        "fp_gate_2",
+        "fp_gate_3",
+        "fp_gate_4",
+        "fp_gate_5",
+        "fp_gate_6",
+        "fp_gate_7",
+        "fp_gate_8",
+    ]) {
+        const paymentIntentId = `pi_${fingerprint}`;
+        mocks.stripe.state.paymentIntents.push({
+            id: paymentIntentId,
+            object: "payment_intent",
+            status: "requires_payment_method",
+            amount: 1000,
+            currency: "usd",
+            metadata: { userId },
+            payment_method_types: ["card"],
+            receipt_email: "buyer@example.com",
+            latest_charge: {
+                id: `ch_${fingerprint}`,
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "failed",
+                customer: "cus_test_card_gate",
+                payment_intent: paymentIntentId,
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint,
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+                outcome: { risk_level: "elevated", risk_score: 61 },
+            },
+        });
+
+        const response = await postSignedStripeWebhook(
+            createCardPaymentFailedEvent({
+                eventId: `evt_${fingerprint}`,
+                paymentIntentId,
+                userId,
+            }),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    await expect
+        .poll(async () => {
+            const rows = await drizzle(env.DB)
+                .select()
+                .from(stripeCardFingerprintAttemptTable)
+                .where(eq(stripeCardFingerprintAttemptTable.userId, userId));
+            return rows.length;
+        })
+        .toBe(8);
+    const [user] = await drizzle(env.DB)
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    expect(user.banned).not.toBe(true);
+    expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
+    expect(
+        (
+            await SELF.fetch(`${base}/checkout/p10`, {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            })
+        ).status,
+    ).toBe(302);
+});
+
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import {
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
+    stripeCheckoutCredits as stripeCheckoutCreditsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import {
@@ -16,7 +114,9 @@ import {
 } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import type Stripe from "stripe";
+import { expect, vi } from "vitest";
+import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing/index.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -366,7 +466,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
         ],
     ).toBe("ok");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -458,7 +558,7 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct fa
         ],
     ).toBe("4");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -610,6 +710,64 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
             },
         },
     });
+});
+
+test("POST /api/stripe/billing/portal returns to standalone top-up without changing the shared default", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const response = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            return: "top-up",
+            redirect: "https://app.example/chat",
+        }),
+    });
+    expect(response.status).toBe(200);
+    const request = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/billing_portal/sessions",
+    );
+    const url = new URL(String(request?.body.return_url));
+    expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(url.pathname).toBe("/top-up");
+    expect(url.searchParams.get("redirect")).toBe("https://app.example/chat");
+    expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    const defaultUrl = new URL(
+        String(mocks.stripe.state.portalConfigurations[0].default_return_url),
+    );
+    expect(defaultUrl.pathname).toBe("/pollen");
+    expect(defaultUrl.searchParams.has("redirect")).toBe(false);
+});
+
+test("POST /api/stripe/billing/portal returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    for (const value of ["/top-up", "https://evil.example", 123, null]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/billing/portal`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ return: value }),
+        });
+        expect(response.status).toBe(200);
+        const request = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/billing_portal/sessions",
+        );
+        const url = new URL(String(request?.body.return_url));
+        expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect(url.pathname).toBe("/pollen");
+        expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    }
 });
 
 test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", async ({
@@ -2417,6 +2575,41 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
     expect(updatedUser?.packBalance).toBe(11);
 });
 
+test("creditAutoTopUpInvoice credits once for concurrent calls in the same millisecond", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe");
+    const userId = await getSeededUserId();
+    await env.DB.prepare("UPDATE user SET pack_balance = 1 WHERE id = ?")
+        .bind(userId)
+        .run();
+
+    const invoiceId = "in_concurrent_credit";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    const invoice = createAutoTopUpInvoiceEvent(
+        "invoice.paid",
+        invoiceId,
+        userId,
+    ).data.object as unknown as Stripe.Invoice;
+
+    vi.spyOn(Date, "now").mockReturnValue(Date.now());
+    const results = await Promise.all([
+        creditAutoTopUpInvoice(env, invoice),
+        creditAutoTopUpInvoice(env, invoice),
+    ]);
+    vi.restoreAllMocks();
+
+    const updatedUser = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ packBalance: number | null }>();
+    expect(updatedUser?.packBalance).toBe(11);
+    expect(results.filter((result) => result.credited)).toHaveLength(1);
+});
+
 test.for([
     {
         name: "amount",
@@ -2569,12 +2762,163 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
     expect(attempt?.failureReason).toBeNull();
 });
 
-// SCA recovery is verified end-to-end against the Stripe sandbox (see
-// STAGING_AUTO_TOPUP_TEST_PLAN.md S6/S7). The unit-test path can't easily
-// simulate the new `invoice.payments.data[0].payment.payment_intent`
-// expansion that the live Stripe API requires.
+test.for([
+    false,
+    true,
+])("declined auto top-up can be re-enabled without waiting (void first: %s)", async (voidFirst, {
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_manual_reenable");
+    customer.invoice_settings.default_payment_method = "pm_manual_reenable";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_manual_reenable", customer.id),
+    );
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10, pack_balance = 1, stripe_customer_id = ? WHERE id = ?",
+    )
+        .bind(customer.id, userId)
+        .run();
+    const invoiceId = "in_manual_reenable";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    mocks.stripe.state.invoices.push({
+        id: invoiceId,
+        object: "invoice",
+        customer: customer.id,
+        status: voidFirst ? "void" : "open",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+    });
+    if (voidFirst) {
+        expect(
+            (
+                await postSignedStripeWebhook(
+                    createAutoTopUpInvoiceEvent(
+                        "invoice.voided",
+                        invoiceId,
+                        userId,
+                    ),
+                )
+            ).status,
+        ).toBe(200);
+    }
+    const declined = createAutoTopUpInvoiceEvent(
+        "invoice.payment_failed",
+        invoiceId,
+        userId,
+    );
+    expect((await postSignedStripeWebhook(declined)).status).toBe(200);
+    const disabledTrigger = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+    });
+    expect(await disabledTrigger.json()).toEqual({
+        status: "skipped",
+        reason: "auto top-up disabled",
+    });
+    expect(mocks.stripe.state.invoices).toHaveLength(1);
+    const reenable = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ enabled: true, packAmountUsd: 10 }),
+    });
+    expect(reenable.status).toBe(200);
+    // A duplicate old failure must not reverse the customer's explicit choice.
+    expect((await postSignedStripeWebhook(declined)).status).toBe(200);
+    const next = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, environment: env.ENVIRONMENT }),
+    });
+    expect(next.status).toBe(200);
+    expect(await next.json()).toMatchObject({ status: "created" });
+    expect(mocks.stripe.state.invoices).toHaveLength(2);
+});
 
-test("POST /api/webhooks/stripe fails declined invoices without disabling auto top-up", async ({
+test("payment_failed keeps a 3DS invoice open and auto top-up enabled", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1, auto_top_up_amount_usd = 10 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    const invoiceId = "in_webhook_3ds";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    // The retrieve endpoint returns the expanded PaymentIntent supplied here.
+    const invoice = {
+        id: invoiceId,
+        object: "invoice" as const,
+        customer: "cus_webhook",
+        status: "open",
+        amount_due: 1000,
+        amount_paid: 0,
+        currency: "usd",
+        payments: {
+            data: [
+                {
+                    payment: {
+                        payment_intent: {
+                            id: "pi_3ds",
+                            object: "payment_intent",
+                            status: "requires_action",
+                        },
+                    },
+                },
+            ],
+        },
+    };
+    mocks.stripe.state.invoices.push(invoice);
+    expect(
+        (
+            await postSignedStripeWebhook(
+                createAutoTopUpInvoiceEvent(
+                    "invoice.payment_failed",
+                    invoiceId,
+                    userId,
+                ),
+            )
+        ).status,
+    ).toBe(200);
+    const user = await env.DB.prepare(
+        "SELECT auto_top_up_enabled AS enabled FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ enabled: number }>();
+    const attempt = await env.DB.prepare(
+        "SELECT status FROM stripe_auto_top_up_attempt WHERE stripe_invoice_id = ?",
+    )
+        .bind(invoiceId)
+        .first<{ status: string }>();
+    expect(user?.enabled).toBe(1);
+    expect(attempt?.status).toBe("pending");
+    expect(invoice.status).toBe("open");
+    expect(
+        mocks.stripe.state.requests.some((request) =>
+            request.path.endsWith("/void"),
+        ),
+    ).toBe(false);
+});
+
+test("POST /api/webhooks/stripe disables auto top-up on the first declined invoice", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2647,7 +2991,7 @@ test("POST /api/webhooks/stripe fails declined invoices without disabling auto t
             completedAt: number | null;
         }>();
 
-    expect(updatedUser?.autoTopUpEnabled).toBe(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(0);
     expect(attempt?.status).toBe("failed");
     expect(attempt?.failureReason).toContain(
         "Stripe could not charge the default payment method.",
@@ -3155,7 +3499,7 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
     });
 });
 
-test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gate fingerprint or credit checkout", async ({
+test("POST /api/webhooks/stripe charge.succeeded records the gate fingerprint without crediting checkout", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3165,9 +3509,6 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
 
     const creditsBefore = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
-    ).first<{ count: number }>();
-    const attemptsBefore = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
     ).first<{ count: number }>();
 
     const response = await postSignedStripeWebhook({
@@ -3205,10 +3546,24 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
     ).first<{ count: number }>();
     expect(after?.count).toBe(creditsBefore?.count);
 
-    const attemptsAfter = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
-    ).first<{ count: number }>();
-    expect(attemptsAfter?.count).toBe(attemptsBefore?.count);
+    // Successful cards feed the new-card gate too, so a tester rotating
+    // working stolen cards locks the gate like one rotating declined cards.
+    const [attempt] = await drizzle(env.DB)
+        .select({
+            userId: stripeCardFingerprintAttemptTable.userId,
+            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
+        })
+        .from(stripeCardFingerprintAttemptTable)
+        .where(
+            eq(
+                stripeCardFingerprintAttemptTable.eventId,
+                "evt_test_charge_no_d1",
+            ),
+        );
+    expect(attempt).toEqual({
+        userId,
+        cardFingerprint: "fp_test_charge_no_d1",
+    });
 });
 
 test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({
@@ -3381,4 +3736,102 @@ test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird witho
     // Exact serialization: the expired handler does not emit the offered
     // payment methods, so the shared mapper must not synthesize them here.
     expect(emitted.payment_methods_offered).toBe("");
+});
+
+test("GET /api/stripe/checkout/p5?return=top-up returns to the standalone page", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(String(body?.success_url));
+    expect(successUrl.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(successUrl.pathname).toBe("/top-up");
+    expect(successUrl.searchParams.get("redirect")).toBe(
+        "https://app.example/chat",
+    );
+    expect(successUrl.searchParams.get("pack")).toBe("p5");
+    expect(successUrl.searchParams.get("stripe_success")).toBe("true");
+    expect(new URL(String(body?.cancel_url)).pathname).toBe("/top-up");
+});
+
+test("GET /api/stripe/checkout/p5 returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    for (const value of ["/top-up", "https://evil.example/x", "elsewhere"]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(
+            `${base}/checkout/p5?return=${encodeURIComponent(value)}`,
+            {
+                method: "GET",
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        for (const target of [body?.success_url, body?.cancel_url]) {
+            const url = new URL(String(target));
+            expect(url.origin, value).toBe(
+                new URL(env.STRIPE_SUCCESS_URL).origin,
+            );
+            expect(url.pathname, value).toBe("/pollen");
+        }
+    }
+});
+
+test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 or more", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await drizzle(env.DB).insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_prior_purchase",
+        eventId: "evt_prior_purchase",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+
+    for (const [packKey, expected] of [
+        ["p10", undefined],
+        ["p5", "any"],
+    ] as const) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/checkout/${packKey}`, {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(
+            body?.["payment_method_options[card][request_three_d_secure]"],
+            packKey,
+        ).toBe(expected);
+    }
 });

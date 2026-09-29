@@ -156,12 +156,12 @@ const establishedGitHubAccountQuest = {
     id: "github_established",
     title: "Senior dev",
     description:
-        "Sign in with a GitHub account that is at least two years old.",
+        "Sign in with a GitHub account that is at least three years old.",
     category: "contribute",
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 2,
     balanceBucket: "tier",
-    goal: { target: 730, unit: "days" },
+    goal: { target: 1095, unit: "days" },
 } satisfies QuestDefinition;
 
 const publicRepoStarsQuest: QuestDefinition = {

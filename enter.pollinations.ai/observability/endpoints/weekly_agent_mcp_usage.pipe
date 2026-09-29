@@ -1,0 +1,66 @@
+DESCRIPTION >
+    Observed agent runs and recorded MCP tool calls, with distinct authenticated users.
+    Agent runs are distinct top-level requests with a recorded child linked by a
+    verified ag_ token's parent_request_id. Excludes ordinary community proxies,
+    nested runs, cache hits and runs with no recorded child; all outcomes count.
+    Parent attribution first appeared on 2026-08-23. Earlier weeks return null;
+    2026-08-24 is the first complete week. No new classification field is required.
+    MCP covers receipt-emitting tools (Exa, FFmpeg, Computer, Composio), including
+    calls inside agents. Pollinations MCP and discovery calls are not recorded.
+
+TOKEN tinybird_read READ
+
+NODE observed_agent_runs
+SQL >
+    %
+    SELECT parent_request_id
+    FROM generation_events_classified
+    WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
+        {% if defined(start_date) %}
+        start_time >= toDate({{ String(start_date) }})
+        -- A run started on Sunday can make its child calls on Monday.
+        -- Allow the 30-minute token lifetime plus in-flight request time.
+        AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY + INTERVAL 1 HOUR
+        {% else %}
+        start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+        {% end %}
+        AND is_final
+        AND parent_request_id != ''
+
+NODE weekly_agent_mcp_usage_node
+SQL >
+    %
+    WITH
+        parent_request_id = '' AND event_type != 'mcp.call'
+        AND request_id IN (SELECT parent_request_id FROM observed_agent_runs) AS observed_agent
+    SELECT
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        if(
+            week < '2026-08-24',
+            NULL,
+            uniqIf(request_id, observed_agent)
+        ) AS agent_requests,
+        if(
+            week < '2026-08-24',
+            NULL,
+            uniqIf(user_id, observed_agent AND user_id NOT IN ('', 'undefined'))
+        ) AS agent_users,
+        countIf(event_type = 'mcp.call') AS mcp_calls,
+        uniqIf(user_id, event_type = 'mcp.call' AND user_id NOT IN ('', 'undefined')) AS mcp_users
+    FROM generation_events_classified
+    WHERE
+        traffic_group != 'legacy'  -- legacy bridges are not customer usage
+        AND
+        {% if defined(start_date) %}
+        start_time >= toDate({{ String(start_date) }})
+        AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
+        {% else %}
+        start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+        {% end %}
+        AND is_final
+    GROUP BY week
+    ORDER BY week ASC
+
+TYPE endpoint

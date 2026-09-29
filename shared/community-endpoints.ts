@@ -5,6 +5,7 @@ import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
     MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
@@ -18,7 +19,7 @@ import {
 } from "./registry/usage-headers.ts";
 import type { SafetyFeature } from "./schemas/safety.ts";
 
-export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
@@ -41,7 +42,7 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // Display name shown in the catalog and dashboard, separate from the callable
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
-export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 1000;
 export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
 export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.
@@ -686,6 +687,16 @@ export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
         api: CommunityEndpointApiSchema,
+        inputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Input types accepted by the agent. Defaults to text."),
+        outputModalities: z
+            .array(z.enum(MODEL_OUTPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Output types produced by the agent. Defaults to text."),
     })
     .strict();
 
@@ -813,6 +824,7 @@ type CommunityEndpointRuntimeBase = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -857,6 +869,7 @@ export type CodeAgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
 export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "endpoint_agent";
+        outputModalities?: ModelOutputModality[];
     };
 
 export type CommunityEndpointRuntime =
@@ -885,9 +898,11 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    outputModalities?: ModelOutputModality[];
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
@@ -913,17 +928,14 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${ownerGithubUsername}/${modelName}`;
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
 export function legacyCommunityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
-        ownerGithubUsername,
-        modelName,
-    )}`;
+    return `${ownerGithubUsername}/${modelName}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -959,8 +971,8 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
-        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+    const value = model.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? model.slice(COMMUNITY_MODEL_PREFIX.length).trim()
         : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;
@@ -1062,6 +1074,7 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
+        brandIconUrl: endpoint.providerIconUrl ?? undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
@@ -1069,7 +1082,9 @@ export function communityModelDefinition(
         title: endpoint.title,
         description: description || undefined,
         inputModalities,
-        outputModalities: [...spec.outputModalities],
+        outputModalities: endpoint.outputModalities ?? [
+            ...spec.outputModalities,
+        ],
         ...(spec.restrictDefinitionEndpoints
             ? {
                   supportedEndpoints: communityEndpointSupportedEndpoints(

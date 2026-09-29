@@ -28,6 +28,7 @@ import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
+    resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
@@ -213,7 +214,11 @@ function buildRegistry(
                       "/v1/chat/completions",
                   ]),
               ]
-            : entry.supportedEndpoints;
+            : entry.eventType === "generate.text" &&
+                entry.supportedEndpoints.includes("/v1/chat/completions")
+              ? // /v1/messages runs as a chat request.
+                [...entry.supportedEndpoints, "/v1/messages"]
+              : entry.supportedEndpoints;
         return {
             ...entry,
             supportedEndpoints,
@@ -307,6 +312,9 @@ export async function getGenerationModelRegistry(
     return registry;
 }
 
-export function resetGenerationModelRegistryCache(): void {
+export async function resetGenerationModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
     cachedRegistry = null;
+    await resetCommunityModelRegistryCache(env);
 }

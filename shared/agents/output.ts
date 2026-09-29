@@ -174,29 +174,29 @@ export function collectOutput(
                 type: "function_call_output",
                 id: `fco_${crypto.randomUUID()}`,
                 call_id: call.call_id,
-                output: JSON.stringify(result),
+                // Content parts rather than a bare string: Open WebUI iterates
+                // the output of every function_call_output item it receives.
+                output: [{ type: "input_text", text: JSON.stringify(result) }],
                 status: "completed",
             });
             items.push(item);
             const output_index = items.length - 1;
             send?.("response.output_item.added", {
                 output_index,
-                item: { ...item, output: "", status: "in_progress" },
+                item: { ...item, output: [], status: "in_progress" },
             });
             send?.("response.output_item.done", { output_index, item });
         },
-        finish(finishReason: string): AgentOutputItem[] {
-            if (pendingCalls.size) {
-                throw new Error("Agent tool call has no result");
-            }
+        finish(
+            finishReason: string,
+            callerTools: ReadonlySet<string> = new Set(),
+        ): AgentOutputItem[] {
             if (
-                !items.some(
-                    (item) =>
-                        item.type !== "message" ||
-                        item.content.some((part) => part.text.trim()),
+                [...pendingCalls.values()].some(
+                    (call) => !callerTools.has(call.name),
                 )
             ) {
-                throw new Error("Agent produced no response");
+                throw new Error("Agent tool call has no result");
             }
             closeMessage(
                 finishReason === "length" || finishReason === "content_filter"

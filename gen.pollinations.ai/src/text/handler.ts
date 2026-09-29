@@ -30,7 +30,10 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
-import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -338,11 +341,13 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const normalization = normalizeSearchContext(c, requestData);
-        if ("errorResponse" in normalization) {
-            return normalization.errorResponse;
-        }
-        const normalizedRequestData = normalization.requestData;
+        const capabilityError = textCapabilityError(
+            c.var.model?.definition,
+            requestData,
+            c.var.model?.communityEndpoint,
+        );
+        if (capabilityError)
+            throw new UpstreamError(400, { message: capabilityError });
         const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
@@ -354,20 +359,20 @@ async function generateTextResponse(
                     candidate.originalIndex === 0 ||
                     supportsTextFallbackRequest(
                         candidate.definition,
-                        normalizedRequestData,
+                        requestData,
                     ),
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
             async (attempt) => {
                 const result = await generateTextPortkey(
-                    normalizedRequestData.messages,
-                    await gatewayContext(c, normalizedRequestData, attempt),
+                    requestData.messages,
+                    await gatewayContext(c, requestData, attempt),
                     portkey
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
                 );
-                if (!normalizedRequestData.stream) {
+                if (!requestData.stream) {
                     requireChatCompletionUsage(result);
                 }
                 return result;
@@ -385,7 +390,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream) {
+        if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
             }
@@ -417,53 +422,6 @@ async function generateTextResponse(
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }
-}
-
-function normalizeSearchContext(
-    c: TextContext,
-    requestData: RequestData,
-): { requestData: RequestData } | { errorResponse: Response } {
-    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
-    const model = c.var.model;
-    if (!model) return { requestData: requestWithoutSearchOptions };
-    const supported = model.definition.searchContextSizes;
-    if (!supported?.length) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const requested = web_search_options?.search_context_size;
-    if (
-        supported.length > 1 &&
-        requested !== undefined &&
-        !supported.includes(requested as "low" | "high")
-    ) {
-        return {
-            errorResponse: c.json(
-                {
-                    error: {
-                        message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
-                    },
-                },
-                400,
-            ),
-        };
-    }
-
-    if (supported.length > 1 && requested === undefined) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const searchContextSize =
-        supported.length > 1 && requested
-            ? (requested as "low" | "high")
-            : supported[0];
-    c.var.track.setPricingInput({ searchContextSize });
-    return {
-        requestData: {
-            ...requestWithoutSearchOptions,
-            web_search_options: { search_context_size: searchContextSize },
-        },
-    };
 }
 
 export async function handleChatCompletionLocal(

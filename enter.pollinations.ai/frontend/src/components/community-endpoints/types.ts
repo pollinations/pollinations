@@ -65,6 +65,7 @@ export type AgentFormState = AgentFields &
 export type CommunityProviderProfile = {
     name: string | null;
     url: string | null;
+    iconUrl: string | null;
 };
 
 type PendingCommunityEndpointChange = Partial<CommunityEndpointPrices> & {

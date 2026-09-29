@@ -1,4 +1,6 @@
 export type UserStripeBillingRow = {
+    banned: boolean | null;
+    banExpires: Date | null;
     id: string;
     name: string;
     email: string;

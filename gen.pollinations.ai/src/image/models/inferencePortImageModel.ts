@@ -12,21 +12,18 @@ import {
     requireSafePrompt,
 } from "../utils/azureContentSafety.ts";
 import { logGptImageError } from "../utils/gptImageLogger.ts";
-import {
-    base64ToBuffer,
-    bufferToUint8Array,
-    downloadUserImage,
-} from "../utils/imageDownload.ts";
+import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logCloudflare = debug("pollinations:cloudflare");
 
 const INFERENCEPORT_BASE_URL = "https://api.inferenceport.ai/v1/images";
 const INFERENCEPORT_UPSTREAM_MODEL = "lightning-image-turbo";
 const INFERENCEPORT_TITLE = "Lightning Image Turbo";
-const INFERENCEPORT_MAX_REFERENCES = 4;
+const INFERENCEPORT_MAX_REFERENCES = 2;
 
 type InferencePortResponse = {
     data?: Array<{ b64_json?: string; url?: string }>;
+    usage?: { image_count?: number; payg_credits_charged?: number };
 };
 
 async function downloadAndSafetyCheck(
@@ -58,6 +55,14 @@ export async function callInferencePortImage(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
+    if (
+        safeParams.dimensionsExplicit &&
+        (safeParams.width !== 1024 || safeParams.height !== 1024)
+    ) {
+        throw UpstreamError.fromProvider(400, {
+            message: "Lightning Image Turbo supports only 1024x1024 output.",
+        });
+    }
     if (safeParams.transparent) {
         throw UpstreamError.fromProvider(400, {
             message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
@@ -78,53 +83,31 @@ export async function callInferencePortImage(
 
     await requireSafePrompt(prompt, safeParams, userInfo);
 
-    const isEdit = safeParams.image.length > 0;
-    const endpoint = `${INFERENCEPORT_BASE_URL}/${isEdit ? "edits" : "generations"}`;
-
-    logCloudflare(
-        `Calling InferencePort ${INFERENCEPORT_TITLE} in ${isEdit ? "edit" : "generation"} mode`,
-    );
-
-    let response: Response;
-    if (isEdit) {
-        const formData = new FormData();
-        formData.append("model", INFERENCEPORT_UPSTREAM_MODEL);
-        formData.append("prompt", sanitizeString(prompt));
-        formData.append("n", "1");
-
-        for (let i = 0; i < safeParams.image.length; i++) {
-            const { buffer, mimeType } = await downloadAndSafetyCheck(
-                safeParams.image[i],
-                prompt,
-                safeParams,
-                userInfo,
-            );
-            formData.append(
-                "image",
-                new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
-                `image${i}.${mimeType.split("/")[1] || "png"}`,
-            );
-        }
-
-        response = await fetch(endpoint, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${apiKey}` },
-            body: formData,
-        });
-    } else {
-        response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: INFERENCEPORT_UPSTREAM_MODEL,
-                prompt: sanitizeString(prompt),
-                n: 1,
-            }),
-        });
+    const endpoint = `${INFERENCEPORT_BASE_URL}/generations`;
+    const imageUrls: string[] = [];
+    for (const imageUrl of safeParams.image) {
+        const { buffer, mimeType } = await downloadAndSafetyCheck(
+            imageUrl,
+            prompt,
+            safeParams,
+            userInfo,
+        );
+        imageUrls.push(`data:${mimeType};base64,${buffer.toString("base64")}`);
     }
+    logCloudflare(`Calling InferencePort ${INFERENCEPORT_TITLE}`);
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            model: INFERENCEPORT_UPSTREAM_MODEL,
+            prompt: sanitizeString(prompt),
+            n: 1,
+            ...(imageUrls.length ? { image_urls: imageUrls } : {}),
+        }),
+    });
 
     if (!response.ok) {
         let responseBody: string | undefined;
@@ -163,17 +146,22 @@ export async function callInferencePortImage(
         });
     }
 
-    const outputSafety = await analyzeImageSafety(buffer);
-
+    const imageCount = data.usage?.image_count;
+    if (!Number.isInteger(imageCount) || !imageCount || imageCount < 0) {
+        throw new UpstreamError(502, {
+            message: "InferencePort returned no valid image usage",
+            requestUrl: new URL(endpoint),
+            upstreamStatus: response.status,
+        });
+    }
+    // payg_credits_charged is the total for these images, not an extra fee.
     return {
         buffer,
-        isMature: !outputSafety.safe,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
+                completionImageTokens: imageCount,
+                totalTokenCount: imageCount,
             },
         },
     };

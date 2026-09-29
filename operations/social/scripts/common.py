@@ -20,7 +20,7 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
-MODEL = "gpt-5.6-terra"  # Text generation model
+MODEL = "openai/gpt-6-sol"  # Text generation model
 IMAGE_MODEL = "nanobanana-2-lite"  # Image generation model
 
 # Limits and retry settings
@@ -119,6 +119,33 @@ def github_api_request(
     if last_exc:
         raise last_exc
     print(f"  WARNING: GitHub API returned {resp.status_code} after {max_retries} retries: {url}")
+    return resp
+
+
+def post_discord_webhook(
+    webhook_url: str,
+    *,
+    json_body: Optional[Dict] = None,
+    files: Optional[Dict] = None,
+) -> requests.Response:
+    """Retry explicit Discord server failures without replaying timed-out posts."""
+    url = webhook_url
+    if "wait=" not in url:
+        url += ("&" if "?" in url else "?") + "wait=true"
+
+    for attempt in range(MAX_RETRIES):
+        if files is not None:
+            resp = requests.post(url, files=files, timeout=30)
+        else:
+            resp = requests.post(url, json=json_body or {}, timeout=30)
+        if resp.status_code < 500:
+            return resp
+        print(
+            f"  Discord webhook {resp.status_code} on attempt "
+            f"{attempt + 1}/{MAX_RETRIES}"
+        )
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
     return resp
 
 

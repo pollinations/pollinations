@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ Pollination_chatbot](https://pollinations-chatbot.vercel.app) | Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure "Login with Pollinations" (BYOP a | [@zeroxmanhwa053-rgb](https://github.com/zeroxmanhwa053-rgb) |
-| [🖼️ Ziban](https://ziban.pages.dev) | Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence. | [@ayub-kokabi](https://github.com/ayub-kokabi) |
-| [💬 Talk Ai Companion](https://talkaicompanion.com) | # Talk Talk (talkaicompanion.com) is a free AI girlfriend & AI companion chat app — talk online with 7 Indian AI companions who remember you, make live voice calls, and live inside 4 interactive stori | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [💬 NewEra Ai Agent](https://newera.namansoni.in) | # NewEra AI Agent NewEra is a free online AI agent that plans, codes, builds and deploys real applications. Created by Naman Soni. URL: https://newera.namansoni.in/ NewEra turns a plain-English descri | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [✍️ YouTube Transcription AI by MrPaloma](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) | A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
-| [🖼️ Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) | Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model. | [@hindi-status](https://github.com/hindi-status) |
-| [✍️ StoryCraft AI](https://khushalkks.github.io/pollinations) | StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra | [@khushalkks](https://github.com/khushalkks) |
-| [🖼️ PolliArena](https://polli-arena.cloudbr.eu.org) | Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models | [@samucastudent](https://github.com/samucastudent) |
-| [🖼️ Nectar MCP](https://github.com/pinkpixel-dev/nectar-mcp) | Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee | [@sizzlebop](https://github.com/sizzlebop) |
-| [🛠️ Pollin Uptime (HA Gateway)](https://brhost.eu.org) | Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi | [@samucamg](https://github.com/samucamg) |
+| [🖼️ Pollinations for Figma](https://github.com/xiaotian1171/pollinations-figma) | A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [✍️ Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) | An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [✍️ Pollinations for Obsidian](https://github.com/tomdacatto/pollinations-obsidian) | Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor. | [@tomdacatto](https://github.com/tomdacatto) |
+| [💬 Roleplay AI](https://arpitgoswami.github.io/roleplay-app) | Here is the complete, polished submission description tailored specifically for Roleplay App, ready to copy and paste for your submission! Roleplay App — Interactive AI Storytelling in Your Browser Br | [@arpitgoswami](https://github.com/arpitgoswami) |
+| [🎬 GAANA BANANA](https://gaana.namansoni.in) | # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🛠️ Calibrated Decisions](https://jonakss--calibrated-decisions-app-page.modal.run) | A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/ | [@Jonakss](https://github.com/Jonakss) |
+| [🖼️ Simple Image Generator](https://xzeyrix.github.io/Simple-Image-Generator) | A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own Pollen balance. The app supports | [@xZeyrix](https://github.com/xZeyrix) |
+| [🖼️ image2gpt](https://image2gpt.vercel.app) | Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three | [@18074148384](https://github.com/18074148384) |
+| [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
+| [🛠️ ShouldIApply](https://notsointresting.github.io/shouldiapply) | ShouldIApply tells job seekers their real, calibrated odds of passing a job's initial screen — before they waste the effort applying. Paste your resume and a job description. The app sends them to Pol | [@notsointresting](https://github.com/notsointresting) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-09-10** – **✨ StoryCraft AI** Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations) <!-- app -->
-- **2026-09-10** – **🎨 Men’s Fashion Pins** Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) <!-- app -->
-- **2026-09-10** – **💡 YouTube Transcription AI** Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) <!-- app -->
-- **2026-09-10** – **🔗 Bloom harness for Polli CLI** Connect Bloom CLI to Pollinations text models with `polli harness bloom on`, then inspect or remove the setup without disturbing the rest of your `.env`.
-- **2026-09-09** – **✨ Media joins the chat** Generate images, video, audio, and 3D through OpenAI-compatible `/v1/chat/completions` and `/v1/responses`, with shareable public URLs returned in the reply. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-09** – **💡 Vectors join the hive** The JavaScript/TypeScript SDK now has `embeddings()` for text, batches, and multimodal inputs—no hand-rolled `/v1/embeddings` requests required. [SDK](https://www.npmjs.com/package/@pollinations/sdk)
-- **2026-09-09** – **🎨 Polli moves into GIMP** Generate images as new GIMP 3 layers, or edit a selection or active layer into a new layer while leaving the original alone. The plugin remembers your private auth after a restart.
-- **2026-09-09** – **🌟 Let the models duel** PolliArena runs blind, side-by-side image-model battles so you can find out which model you actually prefer, rather than which one has the loudest name. [Try it](https://polli-arena.cloudbr.eu.org) <!-- app -->
-- **2026-09-08** – **🎨 GPT Image 2.5 arrives** Paid users can generate and edit with `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`, including native quality controls and PNG transparency. [Try it](https://pollinations.ai/play)
-- **2026-09-08** – **✨ Generated media gets permanent-ish homes** Images, video, audio, edits, and 3D outputs now return stable Media links instead of accidentally starting another generation when revisited. Old cached creations can be recovered too. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-28** – **🤖 Frugal code-agent routing** Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools.
+- **2026-09-28** – **🎯 Code reviews with Prism** `cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget.
+- **2026-09-28** – **🔗 Polli connects to Codex and Claude Code** Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login.
+- **2026-09-28** – **✨ Prompt agents can call your tools** Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)
+- **2026-09-27** – **🎯 Apps can complete Quests** Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward.
+- **2026-09-27** – **🎨 Try image2gpt** Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app) <!-- app -->
+- **2026-09-27** – **✨ Generate images in your browser** Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator) <!-- app -->
+- **2026-09-26** – **🎨 MiniMax H3 Max makes longer videos** Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-09-26** – **🎵 Gemini 3.8 finds its voice** Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs).
+- **2026-09-26** – **🤖 GPT-6 Sol and Luna join the lineup** Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models).
 ---
 
 ## 🌱 Introduction
@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
@@ -351,20 +351,23 @@ Other OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](ht
 **Vercel AI SDK:**
 
 ```typescript
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 
-const client = createOpenAI({
+const pollinations = createOpenAICompatible({
+  name: "pollinations",
   baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 
 const { text } = await generateText({
-  model: client("openai"),
+  model: pollinations.chatModel("openai"),
   prompt: "Hello!",
 });
 console.log(text);
 ```
+
+Streaming, image, and embedding examples: [API docs → Vercel AI SDK](APIDOCS.md#-vercel-ai-sdk).
 
 ## Architecture
 

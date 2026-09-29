@@ -8,6 +8,7 @@ import {
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
+import { handleError } from "@shared/error.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import {
     parseSafeFeatures,
@@ -343,7 +344,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(await stored?.text()).toBe(secondPrompt);
     });
 
-    it("uses the redacted prompt for OpenAI image cache URLs", async () => {
+    it("uses the redacted prompt for the OpenAI image cache identity", async () => {
         guardrailResponse = intervened(
             {
                 sensitiveInformationPolicy: {
@@ -378,7 +379,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                 c.json({
                     prompt: (c.req.valid("json" as never) as { prompt: string })
                         .prompt,
-                    url: c.var.generationCacheUrl?.toString(),
+                    identity: c.var.generationCacheBody,
                 }),
             );
 
@@ -396,12 +397,12 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         );
         const result = await response.json<{
             prompt: string;
-            url: string;
+            identity: string;
         }>();
 
         expect(result.prompt).toBe("portrait of {EMAIL}");
-        expect(result.url).toContain("portrait%20of%20%7BEMAIL%7D");
-        expect(result.url).not.toContain("a%40example.com");
+        expect(result.identity).toContain("portrait of {EMAIL}");
+        expect(result.identity).not.toContain("a@example.com");
     });
 
     it("accepts safety from the request header", async () => {
@@ -491,18 +492,17 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
             },
         });
 
-        const response = await safetyApp().request(
-            "/scan/blocked?safe=sexual",
-            undefined,
-            configuredEnv,
-        );
+        // Production's error handler formats the body, so test through it.
+        const response = await safetyApp()
+            .onError(handleError)
+            .request("/scan/blocked?safe=sexual", undefined, configuredEnv);
 
         expect(response.status).toBe(400);
+        expect(response.headers.get("X-Safety-Applied")).toBe("sexual");
         expect(await response.json()).toMatchObject({
             error: {
-                type: "safety_error",
                 code: "content_blocked",
-                safety: { triggered: ["sexual"] },
+                message: "Request blocked by safety filter: sexual",
             },
         });
     });

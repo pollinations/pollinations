@@ -847,6 +847,8 @@ export type EarningsOptions = Pick<
 
 /** API key validation response */
 export interface KeyInfo {
+    /** Opaque key ID for the owner-only editor; never the API key value. */
+    id: string;
     valid: boolean;
     type: string;
     name?: string | null;
@@ -899,7 +901,7 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
     /**

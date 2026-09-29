@@ -1,4 +1,4 @@
-import { cn, Surface } from "@pollinations/ui";
+import { InlineLink, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -25,6 +25,31 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-09-26",
+        emoji: "📅",
+        title: "Upcoming model changes",
+        description:
+            "Nova Canvas and Nova Reel are retiring; MAI Image 2.5 Flash is moving to 2.6 Flash. Check the model IDs used by your apps.",
+        details: [
+            "September 30: amazon/nova-canvas-v1 and amazon/nova-reel-v1 will be removed, including their aliases. Requests will not automatically fall back to another model. Choose another image or video model before then.",
+            "October 1: MAI Image 2.5 Flash will leave the catalog as a separate model. Its existing ID, microsoft/mai-image-2.5-flash, will keep working but use MAI Image 2.6 Flash and 2.6 Flash pricing. Use microsoft/mai-image-2.6-flash for new integrations.",
+            "[Browse models](/models) for available options and current prices.",
+        ],
+    },
+    {
+        date: "2026-09-24",
+        emoji: "🔄",
+        title: "Model provider changes",
+        description:
+            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
+        details: [
+            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
+            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
+            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
+            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
+        ],
+    },
+    {
         date: "2026-09-11",
         dateLabel: "Alpha",
         emoji: "🧑‍💻",
@@ -39,12 +64,16 @@ const PINNED_NEWS: Highlight[] = [
     },
     {
         date: "2026-09-11",
-        dateLabel: "Planned for September 11",
+        dateLabel: "Now live",
         emoji: "🧩",
         title: "Community model IDs get a clearer prefix",
         description:
-            "Community models and agents will be listed as community/username/model instead of username/model.",
-        details: ["Your existing model IDs will keep working."],
+            "Community models and agents are listed as community/username/model instead of username/model.",
+        details: [
+            "Both IDs keep working in generation requests. No changes to models, prices or providers.",
+            "Key permissions use the canonical IDs. Existing permissions were migrated automatically.",
+            "If your app matches saved IDs against the catalog, check aliases too.",
+        ],
     },
     {
         date: "2026-08-15",
@@ -57,22 +86,6 @@ const PINNED_NEWS: Highlight[] = [
             "Choose a base model, add instructions, and optionally enable Pollinations tools.",
             "Create an agent from [My Models](/my-models).",
         ],
-    },
-    {
-        date: "2026-08-15",
-        dateLabel: "New quests",
-        emoji: "🌱",
-        title: "More ways to earn Pollen",
-        description:
-            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
-    },
-    {
-        date: "2026-07-15",
-        dateLabel: "Limited time",
-        emoji: "☀️",
-        title: "GPT-5.6 launch promotion",
-        description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
     },
     {
         date: "2026-06-30",
@@ -97,20 +110,13 @@ function renderWithLinks(text: string): ReactNode[] {
     for (const match of matches) {
         const idx = match.index ?? 0;
         const href = match[2];
-        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
-            <a
-                key={idx}
-                href={href}
-                target={isExternal ? "_blank" : undefined}
-                rel={isExternal ? "noopener noreferrer" : undefined}
-                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
-            >
+            <InlineLink key={idx} href={href}>
                 {match[1]}
-            </a>,
+            </InlineLink>,
         );
         lastIndex = idx + match[0].length;
     }
@@ -151,7 +157,7 @@ function formatNewsDate(date: string): string {
     });
 }
 
-/** Hand-curated, pinned announcements — stacked white cards. */
+/** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
     return (
         <div className="flex flex-col gap-3">
@@ -167,7 +173,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     <Surface
         id="canonical-model-slugs"
         variant="card"
-        className="scroll-mt-4 leading-relaxed"
+        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
     >
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
             API update
@@ -184,14 +190,9 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             The model catalog uses the new IDs. Existing IDs remain supported as
             aliases in API requests.
         </p>
-        <a
-            href="https://enter.pollinations.ai/models"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-        >
-            Browse models and their aliases →
-        </a>
+        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
+            Browse models and their aliases
+        </InlineLink>
     </Surface>
 );
 
@@ -250,23 +251,23 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface
-        variant="card"
-        className={cn("flex min-h-48 text-sm leading-relaxed")}
-    >
-        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
-            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
-            <div className="min-w-0">
-                <div className="font-semibold text-ink-900">{item.title}</div>
-                {item.date && (
-                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
-                        {formatNewsDate(item.date)}
-                    </div>
-                )}
-                <p className="mt-1 text-ink-700">
-                    {renderWithLinks(item.description)}
-                </p>
-            </div>
+    <Surface variant="card" className="text-sm leading-relaxed">
+        {item.date && (
+            <time
+                dateTime={item.date}
+                className="mb-1 block text-xs font-medium text-theme-text-muted"
+            >
+                {formatNewsDate(item.date)}
+            </time>
+        )}
+        <div className="flex items-start gap-2 font-semibold text-ink-900">
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0 text-base">
+                    {item.emoji}
+                </span>
+            )}
+            <div className="min-w-0">{item.title}</div>
         </div>
+        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
     </Surface>
 );

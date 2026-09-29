@@ -17,6 +17,12 @@ services:
     volumes:
       - polli-data:/app/data
       - polli-studio-socket:/run/polli-studio:ro
+      - type: bind
+        source: ${POLLI_GITHUB_KEY_FILE:-./polli.pem}
+        target: /app/polli.pem
+        read_only: true
+        bind:
+          create_host_path: false
     mem_limit: 2g
     cpus: 2.0
     pids_limit: 256

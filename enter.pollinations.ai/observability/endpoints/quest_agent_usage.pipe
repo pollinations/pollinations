@@ -1,0 +1,18 @@
+DESCRIPTION >
+    At most one row of agent milestone flags for the requested user. Reads
+    ingest-time aggregates, not raw generation events, for fast quest refreshes.
+
+TOKEN tinybird_read READ
+
+NODE quest_agent_usage_node
+SQL >
+    %
+    SELECT
+        {{String(user_id, '')}} AS userId,
+        maxMergeIf(used_agent, user_id = {{String(user_id, '')}}) AS usedAgent,
+        maxMergeIf(used_agent, owner_username != '' AND owner_username = lower({{String(github_username, '')}})) AS createdUsedAgent
+    FROM quest_agent_usage_mv
+    WHERE user_id = {{String(user_id, '')}}
+       OR (owner_username != '' AND owner_username = lower({{String(github_username, '')}}))
+
+TYPE endpoint

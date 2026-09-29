@@ -27,6 +27,8 @@
             // exclude dependencies
             ".github/**",
             "!**/node_modules/**",
+            // exclude sops-encrypted secrets: reformatting them breaks the MAC
+            "!**/secrets/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
             "!**/build/**",

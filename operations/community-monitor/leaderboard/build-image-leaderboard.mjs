@@ -41,7 +41,7 @@ async function tbSql(query) {
 async function fetchLeaderboardData() {
     const rows = await tbSql(`
     SELECT
-      resolved_model_requested AS model,
+      replaceRegexpOne(resolved_model_requested, '^community/', '') AS model,
       count() AS requests,
       countIf(response_status >= 200 AND response_status < 300) AS images,
       round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300 AND response_time > 0) / 1000, 1) AS median_seconds,
@@ -66,7 +66,7 @@ async function fetchLeaderboardData() {
         await tbSql(`
     SELECT count() AS requests,
            countIf(response_status >= 200 AND response_status < 300) AS images,
-           uniq(resolved_model_requested) AS models
+           uniq(replaceRegexpOne(resolved_model_requested, '^community/', '')) AS models
     FROM generation_event_v2
     WHERE environment = 'production'
       AND start_time > now() - INTERVAL 24 HOUR

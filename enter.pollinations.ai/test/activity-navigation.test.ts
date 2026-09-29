@@ -41,19 +41,15 @@ describe("activity period and bar selection", () => {
             bucket: undefined,
         });
     });
-    it("selects a day without leaving month or week view", () => {
-        for (const period of [
-            { granularity: "month" as const, period: "2026-08" },
-            { granularity: "week" as const, period: "2026-W32" },
-        ]) {
-            expect(
-                toggleActivityBucket(period, new Date("2026-08-08T00:00:00Z")),
-            ).toEqual({
-                ...period,
-                anchor: "2026-08-08",
-                bucket: "2026-08-08",
-            });
-        }
+    it("selects a day without leaving month view", () => {
+        const period = { granularity: "month" as const, period: "2026-08" };
+        expect(
+            toggleActivityBucket(period, new Date("2026-08-08T00:00:00Z")),
+        ).toEqual({
+            ...period,
+            anchor: "2026-08-08",
+            bucket: "2026-08-08",
+        });
     });
     it("moves across month and year boundaries and clears bar selection", () => {
         expect(
@@ -70,10 +66,6 @@ describe("activity period and bar selection", () => {
             shiftActivityPeriod({ granularity: "month", period: "2026-12" }, 1)
                 .period,
         ).toBe("2027-01");
-        expect(
-            shiftActivityPeriod({ granularity: "week", period: "2026-W53" }, 1)
-                .period,
-        ).toBe("2027-W01");
     });
     it("remembers the day when switching views and changing months", () => {
         const day = { granularity: "day" as const, period: "2026-05-20" };
@@ -126,17 +118,6 @@ describe("activity period and bar selection", () => {
             ).period,
         ).toBe("2026-08-29");
     });
-    it("preserves the weekday in mobile week view across month boundaries", () => {
-        const day = { granularity: "day" as const, period: "2026-05-31" };
-        const week = switchActivityView(day, "week");
-        expect(switchActivityView(week, "day")).toEqual(day);
-        expect(
-            switchActivityView(shiftActivityPeriod(week, 1), "day").period,
-        ).toBe("2026-06-07");
-        expect(
-            switchActivityView(shiftActivityPeriod(week, 1), "month").period,
-        ).toBe("2026-06");
-    });
     it("restores date memory from the URL and ignores invalid anchors", () => {
         const month = parseActivityPeriod(
             "month",
@@ -158,7 +139,7 @@ describe("activity period and bar selection", () => {
             parseActivityPeriod("day", "2026-02-31", undefined).period,
         ).not.toBe("2026-02-31");
         expect(
-            parseActivityPeriod("week", "2026-W99", undefined).granularity,
+            parseActivityPeriod("week", "2026-W37", undefined).granularity,
         ).toBe("day");
         expect(
             parseActivityPeriod("day", "2026-08-08", "2026-08-08 24"),

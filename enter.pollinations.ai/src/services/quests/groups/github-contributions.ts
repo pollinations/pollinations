@@ -44,6 +44,14 @@ const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
 const SURVEY_TITLE_PREFIX = "[Bee Census]";
+// Issue forms can only mark fields required, so the minimum length of the
+// written answers is checked here. The wishlist heading is the pre-2026-09-29 form.
+const SURVEY_WRITTEN_ANSWERS = [
+    "What did you last try to build that Pollinations couldn't do?",
+    "What would make you pay this month?",
+    "🪄 Wishlist — features or models you'd like on Pollinations",
+];
+const SURVEY_MIN_WRITTEN_CHARS = 60;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -82,7 +90,7 @@ const solveGithubIssueQuest: QuestDefinition = {
 const beeCensusQuest: QuestDefinition = {
     id: "bee_census",
     title: "Take the Bee Census",
-    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. One response per GitHub account.`,
+    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${SURVEY_MIN_WRITTEN_CHARS} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 3,
@@ -152,6 +160,12 @@ type ReportedIssueNode = {
     closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
 };
 
+type SurveyIssueNode = {
+    title: string;
+    body: string;
+    author: GitHubUser | null;
+};
+
 type SearchData<TNode> = {
     search: {
         nodes: TNode[];
@@ -217,6 +231,13 @@ query($query:String!,$after:String){
         }
       }
     }
+  }
+}`;
+
+const SURVEY_QUERY = `
+query($query:String!){
+  search(query:$query,type:ISSUE,first:10){
+    nodes{ ... on Issue{ title body author{ ... on User{ databaseId } } } }
   }
 }`;
 
@@ -446,19 +467,31 @@ async function answeredSurvey(
     user: QuestUser,
 ): Promise<boolean> {
     if (!user.githubUsername) return false;
-    const data = await graphql<PaginatedSearchData<ReportedIssueNode>>(
+    const data = await graphql<SearchData<SurveyIssueNode>>(
         token,
-        REPORTED_ISSUES_QUERY,
+        SURVEY_QUERY,
         {
             query: `repo:${REPO} is:issue author:${user.githubUsername} in:title "${SURVEY_TITLE_PREFIX}"`,
-            after: null,
         },
     );
     return data.search.nodes.some(
         (issue) =>
             issue.author?.databaseId === user.githubId &&
-            issue.title.startsWith(SURVEY_TITLE_PREFIX),
+            issue.title.startsWith(SURVEY_TITLE_PREFIX) &&
+            writtenAnswerLength(issue.body) >= SURVEY_MIN_WRITTEN_CHARS,
     );
+}
+
+// Characters written under the survey's free-text headings ("### <label>").
+function writtenAnswerLength(body: string): number {
+    let length = 0;
+    for (const section of body.split(/^### /m).slice(1)) {
+        const [heading, ...answer] = section.split("\n");
+        if (SURVEY_WRITTEN_ANSWERS.includes(heading.trim())) {
+            length += answer.join("\n").trim().length;
+        }
+    }
+    return length;
 }
 
 export async function evaluateUser(

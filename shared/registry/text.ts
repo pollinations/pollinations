@@ -1459,7 +1459,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MIDIjourney",
         description: "Turns your musical ideas into playable MIDI notation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: true,
@@ -1512,7 +1512,7 @@ const TEXT_BASE_SERVICES = {
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: true,
@@ -2831,7 +2831,7 @@ const TEXT_BASE_SERVICES = {
         title: "Qwen3.8 2.4T A95B",
         description:
             "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,

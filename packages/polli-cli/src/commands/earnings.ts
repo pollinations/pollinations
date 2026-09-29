@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -61,7 +62,7 @@ export const earningsCommand = new Command("earnings")
             printError(
                 err instanceof Error ? err.message : "Invalid --days value",
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
 
         try {

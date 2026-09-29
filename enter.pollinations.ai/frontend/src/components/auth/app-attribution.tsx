@@ -1,4 +1,12 @@
-import { InlineLink, Surface, Text } from "@pollinations/ui";
+import {
+    AccountIdentityLink,
+    AppIcon,
+    GlobeIcon,
+    InlineLink,
+    Surface,
+    Text,
+} from "@pollinations/ui";
+import type { ReactNode } from "react";
 
 type Attribution = {
     appName?: string;
@@ -7,27 +15,35 @@ type Attribution = {
 
 type AppAttributionProps = {
     attribution: Attribution | null;
-    redirectHostname: string;
+    redirectUrl: URL | null;
 };
 
 /**
- * The requesting app, shown the same way before and after sign-in: its name
- * as a name plate in the pixel face, the owner with their GitHub avatar, the
- * redirect host on the right.
+ * The requesting app, shown the same way before and after sign-in: one
+ * full-width line each for its name, its site and its developer, all behind
+ * the same icon column, so long values wrap on their own line instead of
+ * squeezing their neighbours.
  */
 export function AppAttribution({
     attribution,
-    redirectHostname,
+    redirectUrl,
 }: AppAttributionProps) {
-    // A redirect hostname identifies the destination, not the app. Keep it in
-    // the details row even when lookup has not supplied an app name.
+    // A redirect hostname identifies the destination, not the app. Keep it
+    // even when lookup has not supplied an app name, and lead with it then.
     const unknown = !attribution?.appName;
     const displayName = attribution?.appName || "Unknown app";
     const owner = attribution?.githubUsername;
+    const hostname = redirectUrl?.hostname ?? "";
+    // Link the site itself, never the redirect URL and its OAuth parameters.
+    // Native app schemes have no site to open.
+    const siteUrl =
+        redirectUrl?.protocol === "https:" || redirectUrl?.protocol === "http:"
+            ? redirectUrl.origin
+            : undefined;
     return (
         <Surface>
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+            <ul className="space-y-2">
+                <Line lead={<AppIcon className="h-4 w-4" />}>
                     <Text
                         size="body"
                         tone="strong"
@@ -35,46 +51,58 @@ export function AppAttribution({
                     >
                         {displayName}
                     </Text>
-                    {owner && (
+                </Line>
+                {hostname && (
+                    <Line lead={<GlobeIcon className="h-4 w-4" />}>
                         <Text
                             size="sm"
-                            tone="muted"
-                            className="mt-1.5 flex items-center gap-1.5"
+                            tone={unknown ? "strong" : "muted"}
+                            className="break-all font-mono"
                         >
-                            <span>by</span>
-                            <InlineLink
-                                href={`https://github.com/${owner}`}
-                                className="inline-flex items-center gap-1.5"
-                            >
-                                <img
-                                    src={`https://github.com/${owner}.png?size=40`}
-                                    alt=""
-                                    width={20}
-                                    height={20}
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer"
-                                    className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
-                                />
-                                <span className="underline">@{owner}</span>
-                            </InlineLink>
+                            {siteUrl ? (
+                                <InlineLink href={siteUrl} tone="quiet">
+                                    {hostname}
+                                </InlineLink>
+                            ) : (
+                                hostname
+                            )}
                         </Text>
-                    )}
-                </div>
-                {redirectHostname && !unknown && (
-                    <Text size="xs" tone="muted" className="shrink-0 font-mono">
-                        {redirectHostname}
-                    </Text>
+                    </Line>
                 )}
-            </div>
-            {redirectHostname && unknown && (
-                <Text
-                    size="sm"
-                    tone="strong"
-                    className="mt-2 break-all font-mono"
-                >
-                    {redirectHostname}
-                </Text>
-            )}
+                {owner && (
+                    <li className="flex min-h-6 items-center gap-3">
+                        {/* "by" takes the icon column, so the pill starts with the other lines' text. */}
+                        <Text
+                            as="span"
+                            size="sm"
+                            tone="muted"
+                            className="w-5 shrink-0 text-center"
+                        >
+                            by
+                        </Text>
+                        <AccountIdentityLink
+                            name={`@${owner}`}
+                            avatarUrl={`https://github.com/${owner}.png?size=48`}
+                            href={`https://github.com/${owner}`}
+                        />
+                    </li>
+                )}
+            </ul>
         </Surface>
+    );
+}
+
+/** One card line: a 20px lead slot, matching the consent rows below it. */
+function Line({ lead, children }: { lead: ReactNode; children: ReactNode }) {
+    return (
+        <li className="flex min-h-6 items-center gap-3">
+            <span
+                aria-hidden="true"
+                className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong"
+            >
+                {lead}
+            </span>
+            <div className="min-w-0 flex-1">{children}</div>
+        </li>
     );
 }

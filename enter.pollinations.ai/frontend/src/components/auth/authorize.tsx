@@ -466,7 +466,7 @@ export function Authorize() {
     ) : (
         <AppAttribution
             attribution={attribution}
-            redirectHostname={redirectHostname}
+            redirectUrl={parsedRedirectUrl}
         />
     );
     const access = "to access your Pollinations account.";

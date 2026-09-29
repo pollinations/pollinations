@@ -6,14 +6,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        Help us decide what to build next. Most questions are a quick pick.
+        Help us decide what to build next. Most questions are a quick pick; two ask for a sentence.
 
-        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account).
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account). The Pollen is paid when your two written answers have at least 60 characters in total. Too short? Edit your issue and check your quests again.
 
   - type: dropdown
     id: bee-type
     attributes:
       label: What kind of bee are you?
+      description: Pick all that apply.
+      multiple: true
       options:
         - 🛠️ Indie dev shipping an app
         - 🧪 Hobbyist / tinkerer
@@ -58,6 +60,8 @@ body:
     id: found-us
     attributes:
       label: How did you find us?
+      description: Pick all that apply.
+      multiple: true
       options:
         - An AI assistant told me
         - GitHub
@@ -75,6 +79,7 @@ body:
     id: found-us-other
     attributes:
       label: Where exactly? Which assistant, search, video, post or app
+      placeholder: e.g. searched “free image API” on Google, Claude recommended you, a YouTube video by …
     validations:
       required: true
 
@@ -105,6 +110,8 @@ body:
     id: ai-spend
     attributes:
       label: What do you spend on AI per month, everywhere combined?
+      description: Pick one.
+      multiple: true
       options:
         - $0
         - Under $5
@@ -166,9 +173,36 @@ body:
       label: Something else you'd pay for? (optional)
 
   - type: dropdown
+    id: plan-price
+    attributes:
+      label: What would you pay per month for a Pollinations plan?
+      description: Pick one.
+      multiple: true
+      options:
+        - $3
+        - $5
+        - $10
+        - $20
+        - $50+
+        - I wouldn't subscribe
+    validations:
+      required: true
+
+  - type: textarea
+    id: pay-trigger
+    attributes:
+      label: What would make you pay this month?
+      description: A sentence is plenty.
+      placeholder: e.g. a $5 plan that includes the image models I use
+    validations:
+      required: true
+
+  - type: dropdown
     id: vanish
     attributes:
       label: If Pollinations vanished tomorrow, you'd feel…
+      description: Pick one.
+      multiple: true
       options:
         - 😭 Very disappointed
         - 😕 Somewhat disappointed
@@ -178,13 +212,11 @@ body:
       required: true
 
   - type: textarea
-    id: wishlist
+    id: couldnt-build
     attributes:
-      label: 🪄 Wishlist — features or models you'd like on Pollinations
-      description: List as many as you like, and anything we should fix.
-      placeholder: |
-        - a model you'd use…
-        - a feature you're missing…
+      label: What did you last try to build that Pollinations couldn't do?
+      description: A model, feature or integration you missed. A sentence or two.
+      placeholder: e.g. a Discord bot that answers by voice; realtime speech was too slow
     validations:
       required: true
 

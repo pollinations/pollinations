@@ -40,6 +40,10 @@ jobs:
               console.log('Skipping: app submission');
               return;
             }
+            if (issue.title?.startsWith('[Bee Census]')) {
+              console.log('Skipping: survey response');
+              return;
+            }
             const hasPolliLabel = issue.labels?.some(l => l.name === 'POLLI');
             if (hasPolliLabel) {
               console.log('Skipping: already has POLLI label');

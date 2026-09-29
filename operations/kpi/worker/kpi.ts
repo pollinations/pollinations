@@ -322,31 +322,41 @@ kpiRoutes.get("/user-segments", async (c) => {
     return c.json({ data: result.data });
 });
 
-async function githubHeaders(
-    env: Env["Bindings"],
-): Promise<Record<string, string>> {
-    return {
-        "User-Agent": "KPI-Dashboard",
-        Accept: "application/vnd.github+json",
-        ...(env.GITHUB_TOKEN
-            ? { Authorization: `Bearer ${env.GITHUB_TOKEN}` }
-            : {}),
-    };
+async function fetchPublicGithub(url: string): Promise<Response> {
+    // These repository stats are public. An expired optional token must not
+    // make them unavailable; cache successes to conserve the public API quota.
+    const cache = await caches.open("kpi-public-github");
+    const key = new Request(url);
+    const cached = await cache.match(key);
+    if (cached) return cached;
+    const response = await fetch(url, {
+        headers: {
+            "User-Agent": "KPI-Dashboard",
+            Accept: "application/vnd.github+json",
+        },
+    });
+    if (response.ok) {
+        const stored = new Response(response.clone().body, {
+            headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "public, max-age=1800",
+            },
+        });
+        await cache.put(key, stored);
+    }
+    return response;
 }
 
 // GitHub: App submissions — weekly counts from issue labels
 kpiRoutes.get("/app-submissions", async (c) => {
-    const headers = await githubHeaders(c.env);
-
     const repo = "pollinations/pollinations";
     const since = DATA_START_DATE;
     const weeklySubmissions: Record<string, number> = {};
     let page = 1;
     let itemCount = 0;
     do {
-        const res = await fetch(
+        const res = await fetchPublicGithub(
             `https://api.github.com/repos/${repo}/issues?state=all&labels=APP-SUBMISSION&since=${since}T00:00:00Z&per_page=100&page=${page}`,
-            { headers },
         );
         if (!res.ok) {
             // Was `break`, which returned an empty list — a dead token, a rate
@@ -380,11 +390,8 @@ kpiRoutes.get("/app-submissions", async (c) => {
 
 // GitHub: Stars
 kpiRoutes.get("/github", async (c) => {
-    const headers = await githubHeaders(c.env);
-
-    const res = await fetch(
+    const res = await fetchPublicGithub(
         "https://api.github.com/repos/pollinations/pollinations",
-        { headers },
     );
 
     if (!res.ok) return c.json({ stars: 0, forks: 0, error: true });

@@ -114,7 +114,9 @@ import {
 } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
+import type Stripe from "stripe";
+import { expect, vi } from "vitest";
+import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing/index.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -2571,6 +2573,41 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
         .bind(user.id)
         .first<{ packBalance: number | null }>();
     expect(updatedUser?.packBalance).toBe(11);
+});
+
+test("creditAutoTopUpInvoice credits once for concurrent calls in the same millisecond", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe");
+    const userId = await getSeededUserId();
+    await env.DB.prepare("UPDATE user SET pack_balance = 1 WHERE id = ?")
+        .bind(userId)
+        .run();
+
+    const invoiceId = "in_concurrent_credit";
+    await insertAutoTopUpAttempt({ userId, invoiceId });
+    const invoice = createAutoTopUpInvoiceEvent(
+        "invoice.paid",
+        invoiceId,
+        userId,
+    ).data.object as unknown as Stripe.Invoice;
+
+    vi.spyOn(Date, "now").mockReturnValue(Date.now());
+    const results = await Promise.all([
+        creditAutoTopUpInvoice(env, invoice),
+        creditAutoTopUpInvoice(env, invoice),
+    ]);
+    vi.restoreAllMocks();
+
+    const updatedUser = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ packBalance: number | null }>();
+    expect(updatedUser?.packBalance).toBe(11);
+    expect(results.filter((result) => result.credited)).toHaveLength(1);
 });
 
 test.for([

@@ -54,7 +54,8 @@ const ExecSchema = z.object({
     stdin: z.string().optional(),
     timeoutSeconds: z.number().int().min(1).max(600).optional(),
     background: z.boolean().optional().meta({
-        description: "Detach the process and return at once.",
+        description:
+            "Detach the process and return at once, with `pid=<n>` in `stdout`.",
     }),
 });
 

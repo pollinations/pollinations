@@ -4,6 +4,7 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import { MAX_KEY_EXPIRY_DAYS } from "@shared/auth/authorize-config.ts";
 import {
     getAvailableBalance,
     getUserBalance,
@@ -107,9 +108,9 @@ const CreateKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .max(MAX_KEY_EXPIRY_DAYS * SECONDS_PER_DAY)
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now. No expiry when omitted"),
     allowedModels: z
         .array(z.string())
         .nullable()

@@ -30,6 +30,37 @@ describe("Account Key Management API", () => {
             expect(data.type).toBe("secret");
         });
 
+        // #15559: the API route must accept expiries beyond the old 365-day cap.
+        test("should create a key with an expiry beyond 365 days", async ({
+            sessionToken,
+        }) => {
+            const expiresIn = 730 * 24 * 60 * 60; // two years
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "long-lived-key",
+                        expiresIn,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.expiresAt).toBeTruthy();
+            const days = Math.round(
+                (new Date(data.expiresAt).getTime() - Date.now()) /
+                    (24 * 60 * 60 * 1000),
+            );
+            expect(days).toBeGreaterThan(729);
+            expect(days).toBeLessThan(731);
+        });
+
         test("should create a publishable app key with earnings off by default", async ({
             sessionToken,
         }) => {

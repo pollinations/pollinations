@@ -12,6 +12,7 @@ import {
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
 import { parseMetadata } from "./api-key-metadata.ts";
+import { MAX_KEY_EXPIRY_DAYS } from "./authorize-config.ts";
 import { isUserBanned } from "./ban.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
@@ -154,7 +155,7 @@ export function createApiKeyPlugin() {
         },
         keyExpiration: {
             minExpiresIn: 0,
-            maxExpiresIn: 365,
+            maxExpiresIn: MAX_KEY_EXPIRY_DAYS,
         },
         rateLimit: {
             enabled: false,

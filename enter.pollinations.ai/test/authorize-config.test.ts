@@ -8,6 +8,7 @@ import {
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    MAX_KEY_EXPIRY_DAYS,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
@@ -136,6 +137,29 @@ describe("expiryDaysToExpiresIn", () => {
     it("leaves a non-positive expiry for the server to reject", () => {
         expect(expiryDaysToExpiresIn(0)).toBe(0);
         expect(expiryDaysToExpiresIn(-7)).toBe(-604800);
+    });
+
+    // #15559: expiries beyond the old 365-day cap must convert like any other.
+    it("converts expiries longer than a year", () => {
+        expect(expiryDaysToExpiresIn(366)).toBe(366 * 86400);
+        expect(expiryDaysToExpiresIn(3650)).toBe(3650 * 86400);
+        expect(expiryDaysToExpiresIn(MAX_KEY_EXPIRY_DAYS)).toBe(
+            MAX_KEY_EXPIRY_DAYS * 86400,
+        );
+    });
+});
+
+describe("MAX_KEY_EXPIRY_DAYS", () => {
+    // The old 365-day cap is what rejected legitimate long-lived keys.
+    it("leaves room for keys that outlive a year", () => {
+        expect(MAX_KEY_EXPIRY_DAYS).toBeGreaterThan(365);
+    });
+
+    it("still keeps expiries inside the representable date range", () => {
+        const furthest = new Date(
+            Date.now() + MAX_KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+        );
+        expect(Number.isFinite(furthest.getTime())).toBe(true);
     });
 });
 

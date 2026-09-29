@@ -161,7 +161,7 @@ const create = new Command("create")
         "Key type: secret or publishable app key",
         "secret",
     )
-    .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
+    .option("--expires-in <seconds>", "Expiry in seconds (omit for no expiry)")
     .option("--models <models...>", "Restrict to specific model IDs")
     .option("--budget <pollen>", "Pollen budget cap")
     .option(

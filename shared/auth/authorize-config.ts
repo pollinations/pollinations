@@ -22,6 +22,14 @@ type AuthorizeDefaultsInput = {
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
+/**
+ * Upper sanity bound for API-key expiries: 100 years. Expiries used to be
+ * capped at 365 days, which rejected legitimate long-lived keys; the cap is
+ * now high enough that it only rejects values that could not be a real date.
+ * Shared so the dashboard, both API routes and Better Auth agree on one limit.
+ */
+export const MAX_KEY_EXPIRY_DAYS = 100 * 365;
+
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
 /**

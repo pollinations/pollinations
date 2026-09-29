@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { MAX_KEY_EXPIRY_DAYS } from "@shared/auth/authorize-config.ts";
 import {
     communityModelId,
     legacyCommunityModelId,
@@ -88,6 +89,62 @@ describe("API Key Management", () => {
                 models: [],
                 account: ["profile"],
             });
+        });
+
+        // #15559: an expiry longer than 365 days must be accepted.
+        test("accepts an expiry beyond 365 days", async ({ sessionToken }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const expiresIn = 730 * 24 * 60 * 60; // two years
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "two-year-key",
+                        expiresIn,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.expiresAt).toBeTruthy();
+
+            const stored = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                { headers },
+            );
+            const listed = (await stored.json()) as ApiKeyListResponse;
+            const saved = listed.data.find((key) => key.id === created.id);
+            const savedDays = Math.round(
+                (new Date(saved?.expiresAt ?? 0).getTime() - Date.now()) /
+                    (24 * 60 * 60 * 1000),
+            );
+            expect(savedDays).toBeGreaterThan(729);
+            expect(savedDays).toBeLessThan(731);
+        });
+
+        test("rejects an expiry past the supported date range", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "absurd-expiry",
+                        expiresIn: MAX_KEY_EXPIRY_DAYS * 24 * 60 * 60 + 86400,
+                    }),
+                },
+            );
+            expect(response.status).toBe(400);
         });
 
         test("forces publishable keys to zero direct-spend budget", async ({

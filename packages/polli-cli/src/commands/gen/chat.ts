@@ -6,12 +6,7 @@ import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
-import {
-    ExitSignal,
-    getOutputMode,
-    printError,
-    printResult,
-} from "../../lib/output.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface Message {
@@ -78,6 +73,19 @@ export function createChatCommand() {
                 prompt: isJson ? "" : chalk.cyan("you > "),
             });
 
+            // One terminal path for /exit, a fatal API error and readline's own
+            // close (EOF/Ctrl+D): the exit code is chosen once, the transcript
+            // is written once, and rl.prompt() is never called afterwards.
+            let sessionFinished = false;
+            let transcriptSaved = false;
+
+            const endSession = (code: number) => {
+                if (sessionFinished) return;
+                sessionFinished = true;
+                process.exitCode = code;
+                rl.close();
+            };
+
             const sendMessage = async (userMsg: string) => {
                 messages.push({ role: "user", content: userMsg });
 
@@ -104,11 +112,11 @@ export function createChatCommand() {
                         const hint = await budgetHint(res.status, errText);
                         if (hint) {
                             printError(hint);
-                            rl.close();
-                            // Set the code and let the loop unwind: an
-                            // immediate process.exit() aborts libuv on
-                            // Windows after network I/O (nodejs/node#56645).
-                            process.exitCode = 1;
+                            // End the session with the code already set, then
+                            // let the loop unwind: an immediate process.exit()
+                            // aborts libuv on Windows after network I/O
+                            // (nodejs/node#56645).
+                            endSession(1);
                             return;
                         }
                         throw new Error(`${res.status}: ${errText}`);
@@ -158,6 +166,12 @@ export function createChatCommand() {
                 }
             };
 
+            const saveOnce = (path: string) => {
+                if (transcriptSaved) return;
+                transcriptSaved = true;
+                saveTranscript(path);
+            };
+
             rl.prompt();
 
             rl.on("line", async (line) => {
@@ -169,7 +183,7 @@ export function createChatCommand() {
 
                 // Slash commands
                 if (input === "/exit" || input === "/quit") {
-                    if (opts.save) saveTranscript(opts.save);
+                    if (opts.save) saveOnce(opts.save);
                     if (!isJson) {
                         process.stderr.write(
                             chalk.dim(
@@ -177,8 +191,8 @@ export function createChatCommand() {
                             ),
                         );
                     }
-                    rl.close();
-                    process.exitCode = 0;
+                    endSession(0);
+                    return;
                 }
 
                 if (input === "/clear") {
@@ -204,12 +218,17 @@ export function createChatCommand() {
                 }
 
                 await sendMessage(input);
+                // sendMessage ends the session on a fatal API error; prompting
+                // a closed interface throws ERR_USE_AFTER_CLOSE and turns the
+                // chosen exit code into a libuv abort on Windows.
+                if (sessionFinished) return;
                 rl.prompt();
             });
 
             rl.on("close", () => {
-                if (opts.save) saveTranscript(opts.save);
-                process.exitCode = 0;
+                if (opts.save) saveOnce(opts.save);
+                // Keep the code endSession already chose; only default it here.
+                if (process.exitCode === undefined) process.exitCode = 0;
             });
         });
 }

@@ -59,8 +59,7 @@ const firstMergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 3,
@@ -82,9 +81,8 @@ const solveGithubIssueQuest: QuestDefinition = {
 
 const beeCensusQuest: QuestDefinition = {
     id: "bee_census",
-    title: "Join the Bee Census",
-    description:
-        "Answer a 3-minute survey about what you build and what you need. One response per GitHub account.",
+    title: "Take the Bee Census",
+    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 3,

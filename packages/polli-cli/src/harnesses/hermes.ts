@@ -56,6 +56,7 @@ const files = (ctx: HarnessContext) => [
 // parseDocument keeps comments and untouched entries intact on rewrite.
 const loadYaml = (path: string) => {
     const doc = parseDocument(readTextIfExists(path) ?? "");
+    if (doc.errors.length) throw doc.errors[0];
     if (doc.contents === null) doc.contents = doc.createNode({}) as never;
     return doc;
 };
@@ -94,18 +95,25 @@ const deleteEnvKey = (ctx: HarnessContext) => {
     return true;
 };
 
+const ownsProvider = (doc: ReturnType<typeof loadYaml>) =>
+    doc.getIn(["providers", PROVIDER, "api"]) === `${BASE_URL}/v1` &&
+    doc.getIn(["providers", PROVIDER, "key_env"]) === KEY_ENV;
+
 const writeConfig = (ctx: HarnessContext, model: string) => {
     const doc = loadYaml(configPath(ctx));
     if (!isMap(doc.contents)) {
         throw new Error(`${configPath(ctx)} must contain a YAML mapping`);
     }
+    if (doc.hasIn(["providers", PROVIDER]) && !ownsProvider(doc)) {
+        throw new Error(
+            "An existing pollinations provider has different settings; leaving it unchanged.",
+        );
+    }
     // A named custom provider: Hermes reads the key from key_env and
     // discovers the live model catalog from the OpenAI-compatible endpoint.
-    doc.setIn(["providers", PROVIDER], {
-        name: "Pollinations",
-        api: `${BASE_URL}/v1`,
-        key_env: KEY_ENV,
-    });
+    doc.setIn(["providers", PROVIDER, "name"], "Pollinations");
+    doc.setIn(["providers", PROVIDER, "api"], `${BASE_URL}/v1`);
+    doc.setIn(["providers", PROVIDER, "key_env"], KEY_ENV);
     doc.setIn(["model", "provider"], PROVIDER);
     doc.setIn(["model", "default"], model);
     writeTextAtomic(configPath(ctx), doc.toString(YAML_OUT), 0o600);
@@ -116,10 +124,15 @@ const stripConfig = (ctx: HarnessContext) => {
     if (!isMap(doc.contents)) return false;
     let changed = false;
 
-    if (isMap(doc.getIn(["providers", PROVIDER]))) {
-        doc.deleteIn(["providers", PROVIDER]);
-        changed = true;
+    if (!ownsProvider(doc)) return false;
+    for (const field of ["name", "api", "key_env"]) {
+        doc.deleteIn(["providers", PROVIDER, field]);
     }
+    const provider = doc.getIn(["providers", PROVIDER]);
+    if (isMap(provider) && provider.items.length === 0) {
+        doc.deleteIn(["providers", PROVIDER]);
+    }
+    changed = true;
     // Only unwind the default when this provider still owns it, so a model the
     // user moved to another provider survives.
     if (doc.getIn(["model", "provider"]) === PROVIDER) {
@@ -159,7 +172,7 @@ const result = (ctx: HarnessContext): HarnessResult => {
     const doc = loadYaml(configPath(ctx));
     const configured =
         isMap(doc.contents) &&
-        isMap(doc.getIn(["providers", PROVIDER])) &&
+        ownsProvider(doc) &&
         doc.getIn(["model", "provider"]) === PROVIDER &&
         readKey(ctx) !== null &&
         readTextIfExists(skillPath(ctx)) !== null;
@@ -186,6 +199,7 @@ const writeAll = (ctx: HarnessContext, settings: HermesSettings) => {
 };
 
 const stripAll = (ctx: HarnessContext) => {
+    if (!ownsProvider(loadYaml(configPath(ctx)))) return false;
     let changed = stripConfig(ctx);
     changed = deleteEnvKey(ctx) || changed;
     changed = stripSkill(ctx) || changed;

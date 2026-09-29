@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { parseDocument } from "yaml";
+import { isMap, parseDocument } from "yaml";
 import {
     commandExists,
     readTextIfExists,
@@ -247,15 +247,31 @@ const yamlClient = (adapter: {
     ): { installed: string[]; removed: string[] } => {
         const path = file(ctx);
         const doc = parseDocument(readTextIfExists(path) ?? "");
+        if (doc.errors.length) throw doc.errors[0];
         if (doc.contents === null) doc.contents = doc.createNode({}) as never;
+        if (
+            !isMap(doc.contents) ||
+            (doc.has(table) && !isMap(doc.get(table)))
+        ) {
+            throw new Error(
+                `${path}: expected YAML mappings for config and ${table}`,
+            );
+        }
         const entries = readTable(ctx);
-        const before = JSON.stringify(entries);
+        const before = { ...entries };
         const removed = mutate(entries);
-        if (JSON.stringify(entries) === before) {
+        if (JSON.stringify(entries) === JSON.stringify(before)) {
             return { installed: ownedEntryNames(entries), removed };
         }
+        for (const name of Object.keys(before)) {
+            if (!(name in entries)) doc.deleteIn([table, name]);
+        }
+        for (const [name, entry] of Object.entries(entries)) {
+            if (JSON.stringify(entry) !== JSON.stringify(before[name])) {
+                doc.setIn([table, name], entry);
+            }
+        }
         if (Object.keys(entries).length === 0) doc.delete(table);
-        else doc.set(table, entries);
         writeTextAtomic(path, doc.toString({ lineWidth: 0 }), 0o600);
         return { installed: ownedEntryNames(entries), removed };
     };

@@ -272,6 +272,20 @@ describe("json config clients", () => {
 });
 
 describe("hermes yaml client", () => {
+    it("preserves comments within foreign MCP entries and skips collisions", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        const foreign =
+            "  pollinations:\n    # private server\n    url: https://example.com/mcp # keep inline comment\n";
+        writeFileSync(file, `mcp_servers:\n${foreign}`);
+        const client = findClient("hermes");
+        const result = await client?.install(ctx, SERVERS, "sk-test");
+        expect(result?.notes.join(" ")).toContain("not overwritten");
+        expect(readFileSync(file, "utf8")).toContain(foreign);
+        await client?.remove(ctx);
+        expect(readFileSync(file, "utf8")).toContain(foreign);
+    });
     it("writes mcp_servers into config.yaml, preserving comments and config", async () => {
         const ctx = freshCtx();
         const file = join(hermesHome(ctx), "config.yaml");

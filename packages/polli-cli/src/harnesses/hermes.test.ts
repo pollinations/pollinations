@@ -36,6 +36,72 @@ const skillFile = () => join(hermesHome(ctx), "skills", "polli", "SKILL.md");
 const read = (path: string) => readFileSync(path, "utf-8");
 
 describe("hermes harness", () => {
+    it("keeps unrelated model settings and a provider selected after setup", () => {
+        mkdirSync(hermesHome(ctx), { recursive: true });
+        writeFileSync(
+            configFile(),
+            stringify({
+                model: {
+                    provider: "other",
+                    default: "old",
+                    context_length: 8192,
+                },
+            }),
+        );
+        configureHermes(ctx, { apiKey: "sk_test_key", model: MODEL });
+        const config = parse(read(configFile()));
+        expect(config.model.context_length).toBe(8192);
+        config.model.provider = "other";
+        config.model.default = "user-selected";
+        writeFileSync(configFile(), stringify(config));
+        disableHermes(ctx);
+        expect(parse(read(configFile())).model).toEqual({
+            provider: "other",
+            default: "user-selected",
+            context_length: 8192,
+        });
+    });
+
+    it("does not overwrite a different same-name provider", () => {
+        mkdirSync(hermesHome(ctx), { recursive: true });
+        const original =
+            "providers:\n  pollinations:\n    api: https://example.com/v1\n";
+        writeFileSync(configFile(), original);
+        expect(() =>
+            configureHermes(ctx, { apiKey: "sk_test_key", model: MODEL }),
+        ).toThrow("different settings");
+        expect(read(configFile())).toBe(original);
+        expect(existsSync(envFile())).toBe(false);
+    });
+
+    it("leaves a repurposed provider alone and reports it unconfigured", () => {
+        configureHermes(ctx, { apiKey: "sk_test_key", model: MODEL });
+        const config = parse(read(configFile()));
+        config.providers.pollinations.api = "https://example.com/v1";
+        writeFileSync(configFile(), stringify(config));
+        expect(hermes.status(ctx).configured).toBe(false);
+        disableHermes(ctx);
+        expect(parse(read(configFile())).providers.pollinations.api).toBe(
+            "https://example.com/v1",
+        );
+        expect(read(envFile())).toContain("sk_test_key");
+    });
+
+    it("preserves added provider settings during repeated setup and cleanup", () => {
+        configureHermes(ctx, { apiKey: "sk_test_key", model: MODEL });
+        const config = parse(read(configFile()));
+        config.providers.pollinations.extra_headers = { "X-Custom": "keep" };
+        writeFileSync(configFile(), stringify(config));
+        configureHermes(ctx, { apiKey: "sk_test_key", model: MODEL });
+        expect(
+            parse(read(configFile())).providers.pollinations.extra_headers,
+        ).toEqual({ "X-Custom": "keep" });
+        writeFileSync(configFile(), `${read(configFile())}\n# edited\n`);
+        disableHermes(ctx);
+        expect(
+            parse(read(configFile())).providers.pollinations.extra_headers,
+        ).toEqual({ "X-Custom": "keep" });
+    });
     it("writes the provider, key, default model, and skill from scratch", () => {
         const result = configureHermes(ctx, {
             apiKey: "sk_test_key",

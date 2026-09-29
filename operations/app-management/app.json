@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Calibrated Decisions",
+    "url": "https://jonakss--calibrated-decisions-app-page.modal.run",
+    "description": "A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "Jonakss",
+    "githubUserId": "11493034",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "jonakss",
+    "other": null,
+    "submittedDate": "2026-09-22",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15323",
+    "approvedDate": "2026-09-29",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Simple Image Generator",
     "url": "https://xzeyrix.github.io/Simple-Image-Generator",

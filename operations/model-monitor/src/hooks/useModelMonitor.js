@@ -27,7 +27,13 @@ const POLL_INTERVALS = {
     "5m": 60000, // Match the model status gateway cache
 };
 
-export function useModelMonitor(aggregationWindow = "60m") {
+/**
+ * Poll the health rollups for the given window.
+ *
+ * `enabled` lets the page keep the health poll off screen while another tab
+ * (the weekly evals) is showing, so a hidden view does not hammer the API.
+ */
+export function useModelMonitor(aggregationWindow = "60m", enabled = true) {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
@@ -109,10 +115,13 @@ export function useModelMonitor(aggregationWindow = "60m") {
     }, [fetchModels, fetchRouteStats]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
         refresh();
         const interval = setInterval(refresh, pollInterval);
         return () => clearInterval(interval);
-    }, [refresh, pollInterval]);
+    }, [refresh, pollInterval, enabled]);
 
     return {
         models: allModels,

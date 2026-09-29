@@ -1,0 +1,126 @@
+name: Model evals / Weekly leaderboard
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      eval:
+        description: 'Eval id to run (default: aiw).'
+        required: false
+        type: string
+      models:
+        description: 'Comma-separated models to score instead of the whole catalog.'
+        required: false
+        type: string
+      filter:
+        description: 'Which half of the catalog to score.'
+        required: false
+        type: choice
+        options:
+          - all
+          - official
+          - community
+      questions:
+        description: 'Questions per family.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Score the models but do not commit to the news branch.'
+        required: false
+        type: boolean
+        default: false
+
+# The default token stays read-only: the only write is the leaderboard commit to
+# the news branch, which goes through the POLLI_BOT App token below.
+permissions:
+  contents: read
+  issues: write
+
+# Two live runs would race on the same report files, so they queue instead of
+# cancelling each other. A manual dry run gets its own group.
+concurrency:
+  group: model-evals-${{ github.event.inputs.dry_run == 'true' && format('dry-{0}', github.run_id) || 'live' }}
+  cancel-in-progress: false
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Overlay the published leaderboard
+        # The previous report is the history baseline; without it a re-run would
+        # rewrite history instead of appending to it. On a true first run the
+        # news branch may not exist yet, so the fetch is chained with `||`.
+        run: |
+          git fetch origin news && git checkout origin/news -- operations/model-evals/latest.json operations/model-evals/history.json || echo "No published leaderboard yet"
+          mkdir -p operations/model-evals/output
+          for file in latest.json history.json; do
+            if [ -f "operations/model-evals/$file" ]; then
+              mv "operations/model-evals/$file" "operations/model-evals/output/$file"
+            fi
+          done
+
+      - name: Run the eval
+        id: run
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_EVALS_KEY }}
+          # Dispatch inputs reach the shell through the environment, never spliced
+          # into the command line.
+          EVAL_ID: ${{ github.event.inputs.eval }}
+          MODELS: ${{ github.event.inputs.models }}
+          FILTER: ${{ github.event.inputs.filter }}
+          QUESTIONS: ${{ github.event.inputs.questions }}
+        run: |
+          if [ -z "$POLLINATIONS_API_KEY" ]; then
+            echo "PLN_GITHUB_EVALS_KEY is not configured yet, so this weekly run has nothing to spend. Skipping."
+            echo "ran=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          args=(--out operations/model-evals/output)
+          if [ -n "$EVAL_ID" ]; then args+=(--eval "$EVAL_ID"); fi
+          if [ -n "$MODELS" ]; then args+=(--models "$MODELS"); fi
+          if [ -n "$FILTER" ]; then args+=(--filter "$FILTER"); fi
+          if [ -n "$QUESTIONS" ]; then args+=(--questions "$QUESTIONS"); fi
+          node operations/model-evals/run.mts "${args[@]}"
+          echo "ran=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Weekly model evals"
+            echo
+            echo '```'
+            cat operations/model-evals/output/leaderboard.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish to the news branch
+        if: steps.run.outputs.ran == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node operations/model-evals/publish.mts \
+            --source operations/model-evals/output \
+            --message "evals: weekly leaderboard $(date -u +%Y-%m-%d)"
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

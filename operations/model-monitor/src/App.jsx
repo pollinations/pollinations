@@ -24,6 +24,7 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { EvalsTab } from "./EvalsTab";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -77,6 +78,22 @@ const MODEL_SCOPES = [
     { key: "official", title: "Official" },
     { key: "community", title: "Community" },
 ];
+
+const VIEWS = [
+    { key: "monitor", title: "Monitor" },
+    { key: "evals", title: "Evals" },
+];
+
+const VIEW_KEY = "model-monitor-view";
+
+function loadView() {
+    try {
+        const raw = localStorage.getItem(VIEW_KEY);
+        return VIEWS.some((view) => view.key === raw) ? raw : "monitor";
+    } catch {
+        return "monitor";
+    }
+}
 
 const FILTER_KEY = "model-monitor-filter";
 
@@ -574,6 +591,45 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
     );
 }
 
+// The page-level switch: the health monitor and the weekly evals. It lives in
+// the header so both views navigate the same way.
+function ViewTabs({ value, onChange }) {
+    return (
+        <>
+            {VIEWS.map((view) => (
+                <TabButton
+                    key={view.key}
+                    active={value === view.key}
+                    variant="soft"
+                    size="sm"
+                    ariaLabel={`Show ${view.title}`}
+                    onClick={() => onChange(view.key)}
+                >
+                    {view.title}
+                </TabButton>
+            ))}
+        </>
+    );
+}
+
+// Shared page chrome: the links, the view switch and the colour toggle. The
+// monitor adds its window controls inside its own section.
+function PageHeader({ view, onViewChange }) {
+    return (
+        <AppHeader
+            navLabel="Model Monitor links"
+            autoHide
+            innerClassName="polli:max-w-6xl"
+        >
+            <ViewTabs value={view} onChange={onViewChange} />
+            {EXTERNAL_LINKS.map((link) => (
+                <HeaderLink key={link.href} {...link} />
+            ))}
+            <ColorModeToggle />
+        </AppHeader>
+    );
+}
+
 function WindowTabs({ value, onChange }) {
     return (
         <div className="flex w-fit max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
@@ -595,10 +651,15 @@ function WindowTabs({ value, onChange }) {
 }
 
 function App() {
+    const [view, setView] = useState(loadView);
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [adminMode] = useState(isAdminPath);
-    const { models, lastUpdated, error, endpointStatus } =
-        useModelMonitor(aggregationWindow);
+    // The evals tab reads a published report, so the health poll only has to run
+    // while the monitor itself is on screen.
+    const { models, lastUpdated, error, endpointStatus } = useModelMonitor(
+        aggregationWindow,
+        view === "monitor",
+    );
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [initialFilter] = useState(loadFilterState);
@@ -640,6 +701,14 @@ function App() {
     useEffect(() => {
         saveFilterState({ scope: scopeFilter, type: typeFilter });
     }, [scopeFilter, typeFilter]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(VIEW_KEY, view);
+        } catch {
+            // storage full or blocked — silently ignore
+        }
+    }, [view]);
 
     const toggleFavorite = useCallback((key) => {
         setFavorites((prev) => {
@@ -795,18 +864,20 @@ function App() {
         setTypeFilter(null);
     };
 
+    if (view === "evals") {
+        return (
+            <div className="min-h-dvh bg-app-bg text-theme-text-base">
+                <PageHeader view={view} onViewChange={setView} />
+                <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                    <EvalsTab />
+                </main>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
-            <AppHeader
-                navLabel="Model Monitor links"
-                autoHide
-                innerClassName="polli:max-w-6xl"
-            >
-                {EXTERNAL_LINKS.map((link) => (
-                    <HeaderLink key={link.href} {...link} />
-                ))}
-                <ColorModeToggle />
-            </AppHeader>
+            <PageHeader view={view} onViewChange={setView} />
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
                 <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">

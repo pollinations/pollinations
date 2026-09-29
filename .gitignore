@@ -392,6 +392,10 @@ operations/finance/config.local.json
 # Playwright MCP scratch output (snapshots, screenshots, console logs)
 .playwright-mcp/
 
+# Model evals — the weekly run writes here; the report is published to the
+# `news` branch by the workflow, never committed to the code branch.
+operations/model-evals/output/
+
 # Community monitor — live-only artifacts, never committed (see operations/community-monitor/README.md)
 operations/community-monitor/.env
 operations/community-monitor/state.json

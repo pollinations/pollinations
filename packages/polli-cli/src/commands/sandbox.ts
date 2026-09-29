@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import {
     chmodSync,
     existsSync,
@@ -245,12 +245,30 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("env")
             .description(
-                "Print exports that point E2B's CLI and SDKs at Pollinations",
+                "Run a command with E2B's CLI and SDKs pointed at Pollinations",
             )
-            .action(() => {
-                const key = requireKey();
-                console.log(`export E2B_API_URL=${BASE_URL}${E2B_PATH}`);
-                console.log(`export E2B_API_KEY=${key}`);
+            .argument("<command...>", "e.g. -- npx @e2b/cli sandbox list")
+            .action(async ([file, ...args]: string[]) => {
+                // Passed in the environment, never printed.
+                const env = {
+                    ...process.env,
+                    E2B_API_URL: `${BASE_URL}${E2B_PATH}`,
+                    E2B_API_KEY: requireKey(),
+                };
+                const child = spawn(file, args, {
+                    stdio: "inherit",
+                    env,
+                    shell: process.platform === "win32",
+                });
+                // Ctrl-C reaches the child, which decides when to exit.
+                process.on("SIGINT", () => {});
+                process.exitCode = await new Promise<number>((resolve) => {
+                    child.on("error", (err) => {
+                        process.stderr.write(`${err.message}\n`);
+                        resolve(127);
+                    });
+                    child.on("exit", (code) => resolve(code ?? 1));
+                });
             }),
     )
     .addCommand(

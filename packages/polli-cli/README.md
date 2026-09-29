@@ -178,8 +178,9 @@ Pollinations serves E2B's API at `/alpha/e2b`, so E2B's own CLI and SDKs create
 sandboxes billed to your Pollinations wallet.
 
 ```bash
-eval "$(polli sandbox env)"       # sets E2B_API_URL and E2B_API_KEY
-npx @e2b/cli sandbox create --detach --lifecycle.ontimeout pause
+# `env` runs a command with E2B_API_URL and E2B_API_KEY set
+polli sandbox env -- npx @e2b/cli sandbox create --detach --lifecycle.ontimeout pause
+polli sandbox env -- node my-e2b-script.js
 polli sandbox ssh-config          # once: adds an Include line to ~/.ssh/config
 ssh <sandbox-id>.polli            # resumes a paused sandbox
 scp file.txt <sandbox-id>.polli:

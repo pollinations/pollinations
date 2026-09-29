@@ -226,6 +226,10 @@ export function createChatCommand() {
             });
 
             rl.on("close", () => {
+                // readline closes on EOF (Ctrl+D, piped stdin, a hung-up
+                // terminal) as well; that is just as terminal as /exit, so a
+                // turn still in flight must not prompt afterwards.
+                sessionFinished = true;
                 if (opts.save) saveOnce(opts.save);
                 // Keep the code endSession already chose; only default it here.
                 if (process.exitCode === undefined) process.exitCode = 0;

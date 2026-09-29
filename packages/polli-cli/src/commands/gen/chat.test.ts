@@ -137,6 +137,30 @@ describe("polli gen chat session lifecycle", () => {
         expect(process.exitCode).toBe(0);
     });
 
+    it("does not prompt a closed interface when stdin ends mid-turn", async () => {
+        let release: (() => void) | undefined;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const fetch = prepare(async () => {
+            await gate;
+            return new Response(STREAM_OK, {
+                headers: { "Content-Type": "text/event-stream" },
+            });
+        });
+
+        const line = await startSession();
+        const turn = line("hello");
+        // EOF closes readline while the request is still in flight.
+        h.fakeRl.close();
+        release?.();
+        await turn;
+
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(h.state.promptsAfterClose).toBe(0);
+        expect(process.exitCode).toBe(0);
+    });
+
     it("saves the conversation, without /exit, when /exit meets --save", async () => {
         prepare(
             async () =>

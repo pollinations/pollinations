@@ -344,6 +344,7 @@ async function generateTextResponse(
         const capabilityError = textCapabilityError(
             c.var.model?.definition,
             requestData,
+            c.var.model?.communityEndpoint,
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });

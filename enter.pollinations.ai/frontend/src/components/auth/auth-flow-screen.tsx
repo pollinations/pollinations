@@ -8,24 +8,35 @@ import {
 } from "../../hooks/use-account-balance.ts";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
+// Footnote links stay quiet like the shared legal notice.
 export const footnotes = {
     // Use AuthFlowLayout's shared legal notice.
     legal: undefined,
     dashboard: (
         <>
             Manage your Pollinations account on the{" "}
-            <InlineLink href="/">dashboard</InlineLink>.
+            <InlineLink href="/" tone="quiet">
+                dashboard
+            </InlineLink>
+            .
         </>
     ),
     back: (
         <>
-            <InlineLink href="/">Back to the dashboard</InlineLink>.
+            <InlineLink href="/" tone="quiet">
+                Back to the dashboard
+            </InlineLink>
+            .
         </>
     ),
     help: (
         <>
             Need help?{" "}
-            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
+            <InlineLink
+                href="https://discord.gg/pollinations-ai-885844321461485618"
+                tone="quiet"
+                showIcon={false}
+            >
                 Ask on Discord
             </InlineLink>
             .
@@ -34,7 +45,11 @@ export const footnotes = {
     billing: (
         <>
             If you think this is a mistake, contact{" "}
-            <InlineLink href="mailto:billing@pollinations.ai">
+            <InlineLink
+                href="mailto:billing@pollinations.ai"
+                tone="quiet"
+                showIcon={false}
+            >
                 billing@pollinations.ai
             </InlineLink>
             .

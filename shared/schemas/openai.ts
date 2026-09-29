@@ -164,6 +164,7 @@ export type MessageContentPart = z.infer<
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
     type: z.literal("thinking"),
     thinking: z.string(),
+    signature: z.string().optional(),
 });
 
 const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({

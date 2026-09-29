@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-28",
+  "period_start": "2026-09-28",
+  "period_end": "2026-09-28",
+  "generated_at": "2026-09-29T06:31:44.048001+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Client tools and code routers landed today",
+  "text": "Merged 15 PRs today. The biggest functional changes are around agents.\n\nPrompt agents can now call tools defined by the client ([#15655](https://github.com/pollinations/pollinations/pull/15655)). Two community code-focused routers landed: frugal for code agents ([#15213](https://github.com/pollinations/pollinations/pull/15213)) and prism for code review ([#15226](https://github.com/pollinations/pollinations/pull/15226)). Polli also has harnesses for Codex and Claude Code ([#15289](https://github.com/pollinations/pollinations/pull/15289)). These are separate changes, not one new agent stack.\n\nA couple of fixes address failures that are easy to miss until they break a workflow: hosted MCP transcription now handles direct public audio URLs ([#15461](https://github.com/pollinations/pollinations/pull/15461)), and Polli CLI failures return failure exit codes on Windows ([#15537](https://github.com/pollinations/pollinations/pull/15537)). A script that can't tell failure from success has a very specific sense of humor.\n\nModel rows now show descriptions and clearer output labels ([#15191](https://github.com/pollinations/pollinations/pull/15191)). Mobile sign-in and device-code validation got work ([#15603](https://github.com/pollinations/pollinations/pull/15603)), authorization app cards fit narrow screens better ([#15648](https://github.com/pollinations/pollinations/pull/15648)), and the dashboard stays visible while sections load ([#15649](https://github.com/pollinations/pollinations/pull/15649)).\n\nThe remaining cleanup: a redirect from the old site ([#15652](https://github.com/pollinations/pollinations/pull/15652)), screenshots for 23 community apps ([#15694](https://github.com/pollinations/pollinations/pull/15694)), removal of dead and duplicate listings ([#15695](https://github.com/pollinations/pollinations/pull/15695)), a tested deployment workflow for legacy caches ([#15673](https://github.com/pollinations/pollinations/pull/15673)), and a README refresh ([#15630](https://github.com/pollinations/pollinations/pull/15630)).\n\nIf you're using client-defined tools or either router, concrete failure cases would be useful. [Repo](https://github.com/pollinations/pollinations)."
+}

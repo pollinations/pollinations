@@ -4,6 +4,9 @@ name: CI / Pull request checks
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 # HEAD is the pull request merge commit. With fetch-depth 2 its first parent
 # (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
 # request diff without fetching the full repository history.

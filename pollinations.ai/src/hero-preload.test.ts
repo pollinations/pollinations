@@ -5,8 +5,13 @@ import { HERO_IMAGE_SIZES } from "./art-config";
 
 // Execute the actual inline bootstrap, not a separate implementation of it.
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
-if (!script) throw new Error("Missing initial theme/hero bootstrap");
+const openingTag = "<script>";
+const scriptStart = html.indexOf(openingTag);
+const scriptEnd = html.indexOf("</script>", scriptStart + openingTag.length);
+if (scriptStart < 0 || scriptEnd < 0) {
+    throw new Error("Missing initial theme/hero bootstrap");
+}
+const script = html.slice(scriptStart + openingTag.length, scriptEnd);
 const bootstrap = script.replace(/__HERO_IMAGE_SIZES__/g, HERO_IMAGE_SIZES);
 
 function runBootstrap(

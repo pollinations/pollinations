@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-28",
+  "period_start": "2026-09-28",
+  "period_end": "2026-09-28",
+  "generated_at": "2026-09-29T06:31:44.048001+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: prompt agents can call client-defined tools. Polli now works with Codex and Claude Code; frugal routes code agents, prism routes code reviews. dashboard stays visible while sections load; mobile sign-in fits smaller screens."
+}

@@ -11,6 +11,7 @@ import {
     isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
+import { UserImageError } from "../userImage.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -28,6 +29,7 @@ import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
+    isGPTImageRefusedByAzure,
 } from "./createAndReturnImages.ts";
 import {
     createAndReturnVideo,
@@ -88,6 +90,7 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "FAL_KEY",
+    "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
@@ -283,8 +286,13 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
+            // Every Azure region refused, or the reference image host is
+            // rate limiting. Timeouts and 5xx stay terminal so an image Azure
+            // may have produced is not paid for twice.
             return (
-                error instanceof UpstreamError && error.upstreamStatus === 429
+                isGPTImageRefusedByAzure(error) ||
+                (error instanceof UserImageError &&
+                    error.upstreamStatus === 429)
             );
         }
         return isRetryableFallbackError(error);

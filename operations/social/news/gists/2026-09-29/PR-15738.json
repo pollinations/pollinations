@@ -1,0 +1,38 @@
+{
+  "pr_number": 15738,
+  "title": "Add Calibrated Decisions to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15738",
+  "merged_at": "2026-09-29T08:59:47Z",
+  "labels": [
+    "FEATURE",
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [Calibrated Decisions](https://jonakss--calibrated-decisions-app-page.modal.run) to build\n- A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/\n\nFixes #15323",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Decisions get a playground",
+    "blurb": "Calibrated Decisions joins the app collection. Write a decision state, arrange some typed questions, and see where the branches lead.",
+    "summary": "Added Calibrated Decisions to the app collection, a visual playground for the Pollinations Jev typed-decisions API at POST /alpha/decisions with choice and score questions.",
+    "impact": "People exploring POST /alpha/decisions can now use a visual app to build decision states, including choices with record options and scores with ordered rungs.",
+    "keywords": [
+      "community app",
+      "Calibrated Decisions",
+      "Jev",
+      "typed decisions",
+      "/alpha/decisions"
+    ],
+    "visual_concept": "Depict Calibrated Decisions as a friendly tabletop of branching decision cards: record-option cards on one path and ordered score rungs on another. Polli helps arrange the cards; no app-specific mascot or logo is identified in the PR.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and gently arranges branching decision cards beside a retro screen labeled 'DECISIONS'; one branch holds choice cards and another climbs ordered score rungs, with flowers growing around the table. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15738.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and gently arranges branching decision cards beside a retro screen labeled 'DECISIONS'; one branch holds choice cards and another climbs ordered score rungs, with flowers growing around the table. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T09:00:50.704255+00:00",
+  "app_name": "Calibrated Decisions",
+  "app_url": "https://jonakss--calibrated-decisions-app-page.modal.run"
+}

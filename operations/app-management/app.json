@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Kill · Fix · Ship",
+    "url": "https://kfs.kendev.ct8.pl",
+    "description": "**Kill · Fix · Ship** uses Pollinations’ Jev decision API ( POST /alpha/decisions ) to score a startup idea and return a clear verdict.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "smplstuff",
+    "githubUserId": "206557620",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "kennet678",
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15820",
+    "approvedDate": "2026-09-29",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations for Figma",
     "url": "https://github.com/xiaotian1171/pollinations-figma",

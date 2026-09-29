@@ -5,11 +5,14 @@ import {
     Outlet,
     useRouter,
 } from "@tanstack/react-router";
-import { useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import type { ApiKey } from "../components/keys";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
@@ -125,27 +128,36 @@ function DashboardLayout() {
             showQuestStatus={Boolean(data.user)}
             walletArea={
                 data.user ? (
-                    <Await promise={data.balance} fallback={null}>
-                        {(balance) =>
-                            balance ? (
-                                <Await
-                                    promise={data.earnings}
-                                    fallback={<SidebarWallet {...balance} />}
-                                >
-                                    {(earnings) => (
-                                        <SidebarWallet
-                                            {...balance}
-                                            {...earnings}
-                                        />
-                                    )}
-                                </Await>
-                            ) : (
-                                <LoadError onRetry={retry}>
-                                    Couldn’t load your balance.
-                                </LoadError>
-                            )
-                        }
-                    </Await>
+                    // Await adds no boundary for a null fallback; without this
+                    // the whole dashboard would wait for the balance.
+                    <Suspense fallback={<PageStatus />}>
+                        <Await promise={data.balance}>
+                            {(balance) =>
+                                balance ? (
+                                    <Await
+                                        promise={data.earnings}
+                                        fallback={
+                                            <>
+                                                <SidebarWallet {...balance} />
+                                                <PageStatus />
+                                            </>
+                                        }
+                                    >
+                                        {(earnings) => (
+                                            <SidebarWallet
+                                                {...balance}
+                                                {...earnings}
+                                            />
+                                        )}
+                                    </Await>
+                                ) : (
+                                    <LoadError onRetry={retry}>
+                                        Couldn’t load your balance.
+                                    </LoadError>
+                                )
+                            }
+                        </Await>
+                    </Suspense>
                 ) : undefined
             }
         >

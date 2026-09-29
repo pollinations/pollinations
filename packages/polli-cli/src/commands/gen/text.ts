@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -60,7 +61,7 @@ export function createTextCommand() {
                 printError(
                     "No prompt provided. Pass as argument or pipe via stdin.",
                 );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
 
             // If both stdin and arg are provided, use arg as prompt and stdin as context

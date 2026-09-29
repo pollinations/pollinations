@@ -1,0 +1,37 @@
+{
+  "pr_number": 15746,
+  "title": "feat: Bee Census wishlist for features and models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15746",
+  "merged_at": "2026-09-29T09:38:28Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Turns the single \"magic wand\" answer into an open wishlist: list any features or models you'd like on Pollinations, plus fixes\n- Free text, so answers aren't limited to options we thought of\n\nFollow-up to #15735.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive takes requests",
+    "blurb": "Bee Census has room for the whole wishlist now. Add the features, models, and fixes you want, even if nobody thought to put them on a list.",
+    "summary": "Bee Census replaces its single “magic wand” answer with an open-text wishlist for multiple Pollinations features, models, and fixes.",
+    "impact": "People filling out Bee Census can suggest as many ideas as they like without being limited to predefined options.",
+    "keywords": [
+      "Bee Census",
+      "wishlist",
+      "feedback",
+      "features",
+      "models",
+      "issue template"
+    ],
+    "visual_concept": "Depict Bee Census as a cozy garden suggestion box: Polli adds handwritten feature, model, and fix ideas to a growing wishlist, with each note sprouting a small flower. The open notebook represents free-text answers rather than a fixed set of choices.",
+    "image_prompt": "In a cozy pixel art garden, Polli writes several little wishlist notes labeled “features,” “models,” and “fixes” in an open notebook beside a lime green (#ecf874) suggestion box, while flowers sprout around the pages. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the garden. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15746.jpg",
+    "prompt": "In a cozy pixel art garden, Polli writes several little wishlist notes labeled “features,” “models,” and “fixes” in an open notebook beside a lime green (#ecf874) suggestion box, while flowers sprout around the pages. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the garden. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-29T09:39:27.894011+00:00"
+}

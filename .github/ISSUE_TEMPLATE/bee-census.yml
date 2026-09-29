@@ -122,10 +122,13 @@ body:
       required: true
 
   - type: textarea
-    id: magic-wand
+    id: wishlist
     attributes:
-      label: 🪄 Magic wand — one thing we should add or fix
-      placeholder: "If you could change one thing about Pollinations…"
+      label: 🪄 Wishlist — features or models you'd like on Pollinations
+      description: List as many as you like, and anything we should fix.
+      placeholder: |
+        - a model you'd use…
+        - a feature you're missing…
     validations:
       required: true
 

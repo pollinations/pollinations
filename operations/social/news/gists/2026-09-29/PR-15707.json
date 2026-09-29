@@ -1,0 +1,35 @@
+{
+  "pr_number": 15707,
+  "title": "chore: update app metrics 2026-09-29",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15707",
+  "merged_at": "2026-09-29T04:13:51Z",
+  "labels": [
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden counts itself",
+    "blurb": "The daily app-metrics refresh landed. Even gardens have spreadsheets.",
+    "summary": "The automated September 29 update refreshed app request and repository metrics in operations/app-management/app.json, keeping the app-management data current.",
+    "impact": "Maintainers have an up-to-date snapshot of app requests and repository metrics; there is no change to the user-facing API or site.",
+    "keywords": [
+      "app metrics",
+      "app management",
+      "automation",
+      "repository metrics"
+    ],
+    "visual_concept": "Depict the daily metrics refresh as Polli tending a garden of app-shaped code-plants, with a retro monitor displaying simple request and repository counters. Give Polli a tiny bookkeeper's visor; the scene should feel like a quiet maintenance task, not a product launch.",
+    "image_prompt": "In a cozy pixel garden workspace, a retro monitor glows lime green (#ecf874) with simple app request and repository counters while Polli, wearing a tiny bookkeeper's visor, checks the figures beside blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, warm cream tones, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15707.jpg",
+    "prompt": "In a cozy pixel garden workspace, a retro monitor glows lime green (#ecf874) with simple app request and repository counters while Polli, wearing a tiny bookkeeper's visor, checks the figures beside blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, warm cream tones, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T04:14:49.313509+00:00"
+}

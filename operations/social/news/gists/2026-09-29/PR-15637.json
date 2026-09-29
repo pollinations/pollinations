@@ -1,0 +1,37 @@
+{
+  "pr_number": 15637,
+  "title": "feat: sync Cloudflare traffic for every pollinations.ai host to Tinybird daily",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15637",
+  "merged_at": "2026-09-29T11:56:05Z",
+  "labels": [
+    "FEATURE",
+    "ECONOMICS"
+  ],
+  "pr_body_excerpt": "The pollinations.ai zone (Free plan) reports 31 days of per-request detail and a 30-day maximum query range. This syncs it daily into Tinybird so the history is kept, for every `*.pollinations.ai` host.\n\n**What we get** (per UTC day)\n- `page_views`: pollinations.ai, www and enter by page, HTTP status, country, device and browser\n- `host_views`: every host with traffic that day (about 46: API, apps, docs, blog, MCP, media, previews, staging) by HTTP status, content type (page, JSON, image), country, device and browser. Gives country and device for API traffic, which our own request logs don't record\n- Verified bots labelled (crawlers, link previews, SEO tools) and HTTP status stored, so bots, redirects, errors and challenges can be separated from real page loads\n\n**What we don't get**: referrers (not on the Free plan), who the visitor is, exact counts (Cloudflare samples busy days). Each row is the unchanged response of the fields requested here; fields not requested cannot be recovered later.\n\n**Privacy**\n- Real clients only; our Workers' own outgoing calls are left out\n- Paths only for our own page routes. People type prompts into URLs, so `host_views` has no path at all\n- No IP or user-agent string is requested\n\n**Changes**\n- `cloudflare_traffic_raw`: one response per dataset, day and host (`dataset, date, host, fetched_at, body`), ~47 rows / ~9 MB per day. Append-only: a rerun adds the same day and host again, and consumers must select the latest `fetched_at` per `(dataset, date, host)` before aggregating (stated in the datasource description). No pipe or other consumer reads it yet\n- `data-sync-cloudflare-traffic-tinybird.yml`: daily at 05:15 UTC for the previous day (~80 s); a manual run takes `days` (1–7) for a missed run; 20-minute timeout\n- `operations/cloudflare/sync-traffic-to-tinybird.mjs`: queries paced under Cloudflare's 300-per-5-minutes limit; a host with more groups than one query returns (10,000) is fetched as two halves by country code and stored a",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A longer memory for traffic",
+    "blurb": "Cloudflare’s traffic history now gets a daily shelf in Tinybird. Polli can count the visitors without collecting their prompts.",
+    "summary": "A daily 05:15 UTC sync saves the previous day’s Cloudflare traffic for every pollinations.ai host to Tinybird, preserving host, country, device, browser, status and bot breakdowns beyond Cloudflare’s 31-day detail window.",
+    "impact": "Maintainers can examine longer-term traffic across roughly 46 hosts, including API geography and device data, without storing IPs, user-agent strings or prompt-bearing paths.",
+    "keywords": [
+      "Cloudflare",
+      "Tinybird",
+      "traffic",
+      "observability",
+      "privacy",
+      "analytics"
+    ],
+    "visual_concept": "Polli tends a growing archive of daily traffic records in a cozy server garden. Small signposts for different hosts and simple country, device and bot icons show what the records contain; closed envelopes represent prompt paths deliberately left out.",
+    "image_prompt": "In a cozy pixel art server garden, Polli files yesterday’s traffic record on a growing shelf beside a lime green (#ecf874) CRT terminal, while tiny flowers mark different hosts and sealed envelopes stay outside the archive. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny archivist’s visor and shares the scene with chunky retro sprites against a soft lime green (#ecf874) and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15637.jpg",
+    "prompt": "In a cozy pixel art server garden, Polli files yesterday’s traffic record on a growing shelf beside a lime green (#ecf874) CRT terminal, while tiny flowers mark different hosts and sealed envelopes stay outside the archive. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny archivist’s visor and shares the scene with chunky retro sprites against a soft lime green (#ecf874) and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-29T11:57:04.580785+00:00"
+}

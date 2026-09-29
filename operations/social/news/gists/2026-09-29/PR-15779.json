@@ -1,0 +1,36 @@
+{
+  "pr_number": 15779,
+  "title": "fix: retry the other Azure region, then OpenAI direct, when Azure GPT Image refuses",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15779",
+  "merged_at": "2026-09-29T13:21:33Z",
+  "labels": [
+    "BUG",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Since 11:31 UTC on 2026-09-29, `gpt-image-1.5` on `myceli-prod-img-15-swedencentral` has returned 404 `DeploymentNotFound` (and sometimes a 408 timeout). Azure still shows the deployment as `Succeeded`. Each request went to a single region, and only a 429 triggered the OpenAI direct fallback, so every Sweden request failed with a 502 (monitor: 0% success across 21 requests in the last hour).\n\n- A 429 or 404 from one Azure region now retries the model's other Azure region. OpenAI direct (the registry fallback in `image-fallbacks.ts`) is used only when every region refuses.\n- 429 and 404 mean Azure generated nothing, so neither retry can produce a duplicate image or double billing. Timeouts and 5xx still end the request, as introduced in #14384.\n- The region loop and the OpenAI fallback use one shared rule (`isGPTImageRefusedByAzure`).\n- A dead reference image link (which also reports 404) still returns 400 with no retry.\n- Tests: a region refusal moves to the other region, a refusal from every region goes to OpenAI, and a dead link doesn't retry.\n\nThe Sweden deployment is left in place: both regions use their full 90/90 gpt-image-1.5 quota, and a delete might not give the capacity back.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Another route to the pixels",
+    "blurb": "If one Azure region refuses a GPT Image request, the other gets a turn. If both refuse, OpenAI direct takes over. Polli appreciates a backup plan.",
+    "summary": "GPT Image 1.5 requests now try the other Azure region after a 429 or 404, then fall back to OpenAI direct if both regions refuse; dead reference-image links still return 400 without retrying.",
+    "impact": "Image requests can succeed when one Azure deployment is unavailable, while timeouts and server errors still end the request rather than triggering another generation.",
+    "keywords": [
+      "gpt-image-1.5",
+      "Azure",
+      "image generation",
+      "regional failover",
+      "OpenAI fallback"
+    ],
+    "visual_concept": "Depict GPT Image routing as two friendly, flower-lined paths to Azure region terminals, with a third path to an OpenAI terminal. Polli guides an image request from a closed first gate toward the open second gate; the third path waits as a backup.",
+    "image_prompt": "In a cozy pixel garden, Polli wears a tiny conductor's cap and guides a glowing picture tile from a closed Azure region gate toward a welcoming second terminal, with a quiet OpenAI backup path beyond it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, prominent lime green (#ecf874) flowers and glow, warm cream background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15779.jpg",
+    "prompt": "In a cozy pixel garden, Polli wears a tiny conductor's cap and guides a glowing picture tile from a closed Azure region gate toward a welcoming second terminal, with a quiet OpenAI backup path beyond it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, prominent lime green (#ecf874) flowers and glow, warm cream background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-29T13:22:54.649397+00:00"
+}

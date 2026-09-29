@@ -1,0 +1,39 @@
+{
+  "pr_number": 15750,
+  "title": "Add Roleplay AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15750",
+  "merged_at": "2026-09-29T09:58:25Z",
+  "labels": [
+    "FEATURE",
+    "APPS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "- Adds [Roleplay AI](https://arpitgoswami.github.io/roleplay-app) to chat\n- Here is the complete, polished submission description tailored specifically for Roleplay App, ready to copy and paste for your submission! Roleplay App — Interactive AI Storytelling in Your Browser Br\n\nFixes #15239",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new story in the garden",
+    "blurb": "Roleplay AI has joined the chat app list. Pick a story and see where the conversation wanders.",
+    "summary": "Added arpitgoswami’s Roleplay AI to the chat app list, linking to an interactive AI storytelling app that runs in the browser.",
+    "impact": "Visitors can now discover and open Roleplay AI from the chat app list.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "roleplay",
+      "storytelling"
+    ],
+    "visual_concept": "Depict Roleplay AI as an open storybook beside a browser window, with branching paths growing from its pages. Polli, wearing a tiny storyteller’s scarf, points out a path; flowers and code-plants make the scene feel like a welcoming story garden.",
+    "image_prompt": "Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears a tiny scarf and points to branching story paths growing from an open book beside a browser window. She is small within a cozy garden of flowers and code-plants, with prominent lime green (#ecf874), soft pastel gradients, warm lighting, chunky sprites, and dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15750.jpg",
+    "prompt": "Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wears a tiny scarf and points to branching story paths growing from an open book beside a browser window. She is small within a cozy garden of flowers and code-plants, with prominent lime green (#ecf874), soft pastel gradients, warm lighting, chunky sprites, and dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-29T09:59:31.067607+00:00",
+  "app_name": "Roleplay AI",
+  "app_url": "https://arpitgoswami.github.io/roleplay-app"
+}

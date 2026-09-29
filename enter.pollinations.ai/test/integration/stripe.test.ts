@@ -119,7 +119,11 @@ import { expect, vi } from "vitest";
 import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing/index.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
-import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
+import {
+    type MockStripeState,
+    mockCardPaymentMethod,
+    mockCustomer,
+} from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
@@ -467,6 +471,10 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     ).toBe("ok");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
         "any",
+    );
+    // Buyers may opt in to save the card; saved cards prefill next time.
+    expect(body?.["saved_payment_method_options[payment_method_save]"]).toBe(
+        "enabled",
     );
 });
 
@@ -3446,6 +3454,136 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         customer_email: "buyer@example.com",
         livemode: 0,
     });
+});
+
+/**
+ * Post a paid p10 checkout whose card has the given save state, then wait
+ * until the background default-card step has read the payment method.
+ */
+async function completeCheckoutWithCard(
+    stripeState: MockStripeState,
+    {
+        id,
+        allowRedisplay,
+        existingDefault = null,
+    }: {
+        id: string;
+        allowRedisplay: "always" | "limited";
+        existingDefault?: string | null;
+    },
+) {
+    const userId = await getSeededUserId();
+    const customer = mockCustomer(`cus_${id}`);
+    customer.invoice_settings.default_payment_method = existingDefault;
+    const card = mockCardPaymentMethod(`pm_${id}`, customer.id);
+    card.allow_redisplay = allowRedisplay;
+    stripeState.customers.push(customer);
+    stripeState.paymentMethods.push(card);
+    stripeState.paymentIntents.push({
+        id: `pi_${id}`,
+        object: "payment_intent",
+        status: "succeeded",
+        payment_method: card.id,
+    });
+
+    const response = await postSignedStripeWebhook({
+        id: `evt_${id}`,
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: `cs_${id}`,
+                object: "checkout.session",
+                metadata: { userId, packKey: "p10" },
+                payment_status: "paid",
+                amount_subtotal: 1000,
+                amount_total: 1000,
+                currency: "usd",
+                customer: customer.id,
+                payment_intent: `pi_${id}`,
+                payment_method_types: ["card"],
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    await vi.waitFor(() =>
+        expect(
+            stripeState.requests.some(
+                (request) => request.path === `/v1/payment_methods/${card.id}`,
+            ),
+        ).toBe(true),
+    );
+    return { customer, card };
+}
+
+function customerUpdates(stripeState: MockStripeState, customerId: string) {
+    return stripeState.requests.filter(
+        (request) =>
+            request.method === "POST" &&
+            request.path === `/v1/customers/${customerId}`,
+    );
+}
+
+test("POST /api/webhooks/stripe makes a card saved at checkout the default", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const { customer, card } = await completeCheckoutWithCard(
+        mocks.stripe.state,
+        { id: "checkout_save_default", allowRedisplay: "always" },
+    );
+
+    await vi.waitFor(() =>
+        expect(customer.invoice_settings.default_payment_method).toBe(card.id),
+    );
+});
+
+test("POST /api/webhooks/stripe keeps an existing default card", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const { customer } = await completeCheckoutWithCard(mocks.stripe.state, {
+        id: "checkout_save_existing",
+        allowRedisplay: "always",
+        existingDefault: "pm_existing_default",
+    });
+
+    await vi.waitFor(() =>
+        expect(
+            mocks.stripe.state.requests.some(
+                (request) =>
+                    request.method === "GET" &&
+                    request.path === `/v1/customers/${customer.id}`,
+            ),
+        ).toBe(true),
+    );
+    expect(customerUpdates(mocks.stripe.state, customer.id)).toHaveLength(0);
+    expect(customer.invoice_settings.default_payment_method).toBe(
+        "pm_existing_default",
+    );
+});
+
+test("POST /api/webhooks/stripe does not default a card the buyer did not save", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const { customer } = await completeCheckoutWithCard(mocks.stripe.state, {
+        id: "checkout_not_saved",
+        allowRedisplay: "limited",
+    });
+
+    expect(customerUpdates(mocks.stripe.state, customer.id)).toHaveLength(0);
+    expect(customer.invoice_settings.default_payment_method).toBeNull();
 });
 
 test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({

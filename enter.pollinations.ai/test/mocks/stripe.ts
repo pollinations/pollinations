@@ -30,6 +30,7 @@ type StripePaymentMethod = {
     object: "payment_method";
     type: "card";
     customer: string | null;
+    allow_redisplay?: "always" | "limited" | "unspecified";
     card: {
         brand: string;
         last4: string;
@@ -145,6 +146,7 @@ type StripePaymentIntent = {
     amount?: number;
     currency?: string;
     metadata?: Record<string, string>;
+    payment_method?: string | null;
     payment_method_types?: string[];
     receipt_email?: string | null;
     latest_charge?: unknown;

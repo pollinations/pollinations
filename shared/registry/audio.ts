@@ -547,19 +547,19 @@ const AUDIO_BASE_SERVICES = {
     },
     "google/gemini-3.5-transcribe": {
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "audio",
         addedDate: new Date("2026-09-26").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Google AI Studio route, verified 2026-09-26, plus the
-            // mandatory 5.5% OpenRouter credit fee. Audio input is $2 per 1M
-            // tokens (about 25 tokens per second); text output is $12 per 1M
-            // tokens, which OpenRouter does not currently report or charge.
-            promptAudioTokens: (2 / 1_000_000) * 1.055,
-            completionTextTokens: (12 / 1_000_000) * 1.055,
+            // Vertex global: published audio-input and text-output rates.
+            promptAudioTokens: 2 / 1_000_000,
+            completionTextTokens: 12 / 1_000_000,
+            // Vertex reports extra text usage with timestamps; no input-text
+            // rate is published. Preserve this usage separately from audio.
+            promptTextTokens: 0,
         },
         title: "Gemini 3.5 Transcribe",
         description:

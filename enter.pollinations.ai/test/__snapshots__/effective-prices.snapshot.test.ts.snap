@@ -1185,6 +1185,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemini-3.5-transcribe": {
     "cost": {
+      "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
+      "promptTextTokens": 0,
+    },
+  },
+  "google/gemini-3.5-transcribe:openrouter": {
+    "cost": {
       "completionTextTokens": 0.00001266,
       "promptAudioTokens": 0.00000211,
     },

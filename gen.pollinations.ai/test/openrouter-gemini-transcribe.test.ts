@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { transcribeWithOpenRouterGemini } from "../src/routes/audio.ts";
+import {
+    transcribeWithOpenRouterGemini,
+    transcribeWithVertexGemini,
+} from "../src/routes/audio.ts";
 
 const log = {
     info: vi.fn(),
@@ -60,7 +63,7 @@ describe("transcribeWithOpenRouterGemini", () => {
             language: "en",
         });
         expect(response.headers.get("x-model-used")).toBe(
-            "google/gemini-3.5-transcribe",
+            "google/gemini-3.5-transcribe:openrouter",
         );
         expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("30");
         expect(
@@ -226,5 +229,154 @@ describe("transcribeWithOpenRouterGemini", () => {
         await expect(transcribe({ apiKey: "" })).rejects.toMatchObject({
             status: 500,
         });
+    });
+});
+
+describe("transcribeWithVertexGemini", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    const payload = {
+        candidates: [
+            {
+                content: {
+                    parts: [
+                        {
+                            text: "Hello.",
+                            audioTranscription: {
+                                text: "Hello.",
+                                speakerLabel: "spk:0",
+                                words: [
+                                    {
+                                        word: "Hello.",
+                                        startOffset: "0.100s",
+                                        endOffset: "1s",
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            text: "Yes.",
+                            audioTranscription: {
+                                text: "Yes.",
+                                speakerLabel: "spk:1",
+                                words: [
+                                    {
+                                        word: "Yes.",
+                                        startOffset: "2s",
+                                        endOffset: "2.500s",
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+        usageMetadata: {
+            promptTokenCount: 91,
+            candidatesTokenCount: 4,
+            promptTokensDetails: [
+                { modality: "AUDIO", tokenCount: 75 },
+                { modality: "TEXT", tokenCount: 16 },
+            ],
+        },
+    };
+    const invoke = (responseFormat = "diarized_json") =>
+        transcribeWithVertexGemini({
+            file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+            language: "en",
+            responseFormat,
+            projectId: "test-project",
+            accessToken: "test-token",
+        });
+
+    it("maps Vertex speaker turns and preserves separate provider usage units", async () => {
+        const fetchMock = vi.fn().mockResolvedValue(Response.json(payload));
+        vi.stubGlobal("fetch", fetchMock);
+        const response = await invoke();
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://aiplatform.googleapis.com/v1beta1/projects/test-project/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent",
+        );
+        expect(sentBody(fetchMock)).toMatchObject({
+            generationConfig: {
+                audioTranscriptionConfig: {
+                    languageCodes: ["en"],
+                    wordTimestamp: true,
+                    diarization: true,
+                },
+            },
+        });
+        expect(response.headers.get("x-model-used")).toBe(
+            "google/gemini-3.5-transcribe",
+        );
+        expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("75");
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("16");
+        expect(response.headers.get("x-usage-completion-text-tokens")).toBe(
+            "4",
+        );
+        await expect(response.json()).resolves.toMatchObject({
+            text: "Hello. Yes.",
+            segments: [
+                { speaker: "0", text: "Hello.", start: 0.1, end: 1 },
+                { speaker: "1", text: "Yes.", start: 2, end: 2.5 },
+            ],
+            usage: {
+                input_tokens: 91,
+                input_token_details: { audio_tokens: 75, text_tokens: 16 },
+                output_tokens: 4,
+                total_tokens: 95,
+            },
+        });
+    });
+
+    it("maps word offsets to seconds for verbose_json", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(Response.json(payload)),
+        );
+        const response = await invoke("verbose_json");
+        await expect(response.json()).resolves.toMatchObject({
+            duration: 3,
+            words: [
+                { word: "Hello.", start: 0.1, end: 1 },
+                { word: "Yes.", start: 2, end: 2.5 },
+            ],
+        });
+    });
+
+    it("keeps timestamps opt-in for plain text", async () => {
+        const fetchMock = vi.fn().mockResolvedValue(Response.json(payload));
+        vi.stubGlobal("fetch", fetchMock);
+        const response = await invoke("text");
+        expect(sentBody(fetchMock)).toMatchObject({
+            generationConfig: {
+                audioTranscriptionConfig: { languageCodes: ["en"] },
+            },
+        });
+        expect(JSON.stringify(sentBody(fetchMock))).not.toContain(
+            "wordTimestamp",
+        );
+        expect(await response.text()).toBe("Hello. Yes.");
+    });
+
+    it("rejects missing or inconsistent provider usage", async () => {
+        for (const usageMetadata of [
+            undefined,
+            { ...payload.usageMetadata, candidatesTokenCount: -1 },
+            { ...payload.usageMetadata, promptTokenCount: 75 },
+        ]) {
+            vi.stubGlobal(
+                "fetch",
+                vi
+                    .fn()
+                    .mockResolvedValue(
+                        Response.json({ ...payload, usageMetadata }),
+                    ),
+            );
+            await expect(invoke()).rejects.toMatchObject({ status: 502 });
+        }
     });
 });

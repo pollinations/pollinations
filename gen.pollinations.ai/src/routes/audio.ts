@@ -1070,7 +1070,7 @@ const OPENROUTER_STT_ENDPOINT =
 const GEMINI_TRANSCRIBE_MODEL = "google/gemini-3.5-transcribe";
 // Google meters audio at $0.003/min against $2 per 1M tokens: 25 tokens/s.
 const GEMINI_TRANSCRIBE_TOKENS_PER_SECOND = 25;
-const OPENROUTER_STT_FORMATS = [
+const GEMINI_STT_FORMATS = [
     "wav",
     "mp3",
     "flac",
@@ -1079,23 +1079,195 @@ const OPENROUTER_STT_FORMATS = [
     "webm",
     "aac",
 ] as const;
-const OPENROUTER_STT_FORMAT_ALIASES: Record<string, string> = {
+const GEMINI_STT_FORMAT_ALIASES: Record<string, string> = {
     mpeg: "mp3",
     mpga: "mp3",
     wave: "wav",
 };
 
-function resolveOpenRouterSttFormat(file: File): string {
+function resolveGeminiSttFormat(file: File): string {
     const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
     const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
     for (const candidate of [extension, subtype ?? ""]) {
-        const format = OPENROUTER_STT_FORMAT_ALIASES[candidate] ?? candidate;
-        if ((OPENROUTER_STT_FORMATS as readonly string[]).includes(format)) {
+        const format = GEMINI_STT_FORMAT_ALIASES[candidate] ?? candidate;
+        if ((GEMINI_STT_FORMATS as readonly string[]).includes(format)) {
             return format;
         }
     }
     throw new UpstreamError(400 as ContentfulStatusCode, {
-        message: `Unsupported audio format for ${GEMINI_TRANSCRIBE_MODEL}. Supported: ${OPENROUTER_STT_FORMATS.join(", ")}`,
+        message: `Unsupported audio format for ${GEMINI_TRANSCRIBE_MODEL}. Supported: ${GEMINI_STT_FORMATS.join(", ")}`,
+    });
+}
+
+interface VertexTranscriptionResponse {
+    candidates?: {
+        content?: {
+            parts?: {
+                text?: string;
+                audioTranscription?: {
+                    text: string;
+                    speakerLabel?: string;
+                    words?: {
+                        word: string;
+                        startOffset?: string;
+                        endOffset: string;
+                    }[];
+                };
+            }[];
+        };
+    }[];
+    usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        promptTokensDetails?: { modality: string; tokenCount: number }[];
+    };
+}
+
+export async function transcribeWithVertexGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    accessToken: string;
+    projectId: string;
+}): Promise<Response> {
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        accessToken,
+        projectId,
+    } = opts;
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveGeminiSttFormat(file);
+    if (!accessToken || !projectId) {
+        throw new UpstreamError(500, {
+            message: "Vertex transcription is not configured",
+        });
+    }
+    const mimeTypes: Record<string, string> = {
+        wav: "audio/wav",
+        mp3: "audio/mpeg",
+        flac: "audio/flac",
+        m4a: "audio/mp4",
+        ogg: "audio/ogg",
+        webm: "audio/webm",
+        aac: "audio/aac",
+    };
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent`;
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType: mimeTypes[format],
+                                    data: arrayBufferToBase64(
+                                        await file.arrayBuffer(),
+                                    ),
+                                },
+                            },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    audioTranscriptionConfig: {
+                        ...(language ? { languageCodes: [language] } : {}),
+                        ...(wantsWords ? { wordTimestamp: true } : {}),
+                        ...(responseFormat === "diarized_json"
+                            ? { diarization: true }
+                            : {}),
+                    },
+                },
+            }),
+        }),
+        endpoint,
+    );
+    const data = (await response
+        .json()
+        .catch(() => null)) as VertexTranscriptionResponse | null;
+    const usage = data?.usageMetadata;
+    const audioTokens = usage?.promptTokensDetails?.find(
+        (part) => part.modality === "AUDIO",
+    )?.tokenCount;
+    const textTokens =
+        usage?.promptTokensDetails?.find((part) => part.modality === "TEXT")
+            ?.tokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount;
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (
+        !parts ||
+        typeof audioTokens !== "number" ||
+        audioTokens <= 0 ||
+        !Number.isInteger(audioTokens) ||
+        typeof outputTokens !== "number" ||
+        outputTokens < 0 ||
+        !Number.isInteger(outputTokens) ||
+        !Number.isInteger(textTokens) ||
+        textTokens < 0 ||
+        usage?.promptTokenCount !== audioTokens + textTokens
+    ) {
+        throw new UpstreamError(502, {
+            message:
+                "Vertex transcription response did not include valid token usage.",
+        });
+    }
+    const turns = parts.flatMap((part) =>
+        part.audioTranscription ? [part.audioTranscription] : [],
+    );
+    const words = turns.flatMap((turn) =>
+        (turn.words ?? []).map((word) => ({
+            word: word.word,
+            start: Number.parseFloat(word.startOffset ?? "0s"),
+            end: Number.parseFloat(word.endOffset),
+        })),
+    );
+    const segments = turns
+        .filter((turn) => turn.words?.length)
+        .map((turn) => ({
+            text: turn.text,
+            start: Number.parseFloat(turn.words?.[0].startOffset ?? "0s"),
+            end: Number.parseFloat(turn.words?.at(-1)?.endOffset ?? "0s"),
+            speaker: turn.speakerLabel?.replace(/^spk:/, "") ?? null,
+        }));
+    return buildTranscriptionResponse({
+        normalized: {
+            text: parts
+                .map((part) => part.audioTranscription?.text ?? part.text ?? "")
+                .join(" "),
+            duration:
+                Math.round(
+                    (audioTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words,
+            segments,
+            diarizedSegments: segments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: audioTokens + textTokens,
+            input_token_details: {
+                audio_tokens: audioTokens,
+                text_tokens: textTokens,
+            },
+            output_tokens: outputTokens,
+            total_tokens: audioTokens + textTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(GEMINI_TRANSCRIBE_MODEL, {
+            promptAudioTokens: audioTokens,
+            promptTextTokens: textTokens,
+            completionTextTokens: outputTokens,
+        }),
     });
 }
 
@@ -1121,7 +1293,7 @@ export async function transcribeWithOpenRouterGemini(opts: {
         });
     }
     assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
-    const format = resolveOpenRouterSttFormat(file);
+    const format = resolveGeminiSttFormat(file);
 
     // Timestamps and speaker labels are opt-in upstream: Google notes that
     // word timestamps can reduce accuracy, so plain formats skip them.
@@ -1225,10 +1397,13 @@ export async function transcribeWithOpenRouterGemini(opts: {
             output_tokens: outputTokens,
             total_tokens: inputTokens + outputTokens,
         },
-        usageHeaders: buildUsageHeaders(GEMINI_TRANSCRIBE_MODEL, {
-            promptAudioTokens: inputTokens,
-            completionTextTokens: outputTokens,
-        }),
+        usageHeaders: buildUsageHeaders(
+            `${GEMINI_TRANSCRIBE_MODEL}:openrouter`,
+            {
+                promptAudioTokens: inputTokens,
+                completionTextTokens: outputTokens,
+            },
+        ),
     });
 }
 
@@ -3713,6 +3888,23 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
         if (candidate.id === GEMINI_TRANSCRIBE_MODEL) {
+            for (const key of [
+                "GOOGLE_PRIVATE_KEY",
+                "GOOGLE_PRIVATE_KEY_ID",
+                "GOOGLE_CLIENT_EMAIL",
+            ] as const) {
+                const value = c.env[key];
+                if (typeof value === "string") process.env[key] = value;
+            }
+            return transcribeWithVertexGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                accessToken: (await googleCloudAuth.getAccessToken()) ?? "",
+                projectId: c.env.GOOGLE_PROJECT_ID,
+            });
+        }
+        if (candidate.id === `${GEMINI_TRANSCRIBE_MODEL}:openrouter`) {
             return transcribeWithOpenRouterGemini({
                 file,
                 language: language || undefined,

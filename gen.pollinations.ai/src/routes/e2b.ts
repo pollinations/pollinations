@@ -30,6 +30,9 @@ const MAX_RUNNING_PER_USER = 3;
 // E2B list prices per second, in pollen (1 pollen ≈ $1).
 const VCPU_SECOND = 0.000014;
 const GIB_SECOND = 0.0000045;
+// Launch promo: callers pay 25% of E2B's list price. Set back to 1 when the
+// promo week ends.
+const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
 
@@ -160,12 +163,18 @@ async function savePaidUntil(
     }).catch(() => {});
 }
 
-function leasePrice(sandbox: SandboxDetail, seconds: number): number {
-    return roundPollenLedgerAmount(
+type Lease = { cost: number; price: number };
+
+// E2B's list cost for `seconds` of this sandbox, and what the caller pays.
+function lease(sandbox: SandboxDetail, seconds: number): Lease {
+    const cost =
         seconds *
-            (sandbox.cpuCount * VCPU_SECOND +
-                (sandbox.memoryMB / 1024) * GIB_SECOND),
-    );
+        (sandbox.cpuCount * VCPU_SECOND +
+            (sandbox.memoryMB / 1024) * GIB_SECOND);
+    return {
+        cost: roundPollenLedgerAmount(cost),
+        price: roundPollenLedgerAmount(cost * PRICE_MULTIPLIER),
+    };
 }
 
 async function requireFunds(c: E2bContext, price: number) {
@@ -192,7 +201,7 @@ async function requireFunds(c: E2bContext, price: number) {
     }
 }
 
-async function charge(c: E2bContext, price: number, startTime: Date) {
+async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
     try {
@@ -241,7 +250,7 @@ async function charge(c: E2bContext, price: number, startTime: Date) {
                 isBilledUsage: true,
                 ...priceToEventParams(),
                 ...usageToEventParams(),
-                totalCost: price,
+                totalCost: cost,
                 totalPrice: deduction?.billedPrice ?? 0,
                 devPrice: price,
                 markupRate: deduction?.markup?.markupRate ?? 0,
@@ -271,11 +280,11 @@ async function extendLease(
     const now = startTime.getTime();
     const paidUntil = await readPaidUntil(c, sandbox, now);
     const endAt = now + timeout * 1000;
-    const price = leasePrice(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (price > 0) await requireFunds(c, price);
+    const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
+    if (bill.price > 0) await requireFunds(c, bill.price);
     const response = await forward(c);
-    if (response.ok && price > 0) {
-        await charge(c, price, startTime);
+    if (response.ok && bill.price > 0) {
+        await charge(c, bill, startTime);
         await savePaidUntil(c, sandbox.sandboxID, endAt);
     }
     return response;
@@ -339,7 +348,7 @@ export const e2bRoutes = new Hono<Env>()
         const created = await response.json<{ sandboxID: string }>();
 
         // The template sets the size, so the price is known only now.
-        let price: number;
+        let bill: Lease;
         let paidUntil: number;
         try {
             const sandbox = await getSandbox(c, created.sandboxID);
@@ -349,11 +358,11 @@ export const e2bRoutes = new Hono<Env>()
                 });
             }
             paidUntil = Date.parse(sandbox.endAt);
-            price = leasePrice(
+            bill = lease(
                 sandbox,
                 (paidUntil - Date.parse(sandbox.startedAt)) / 1000,
             );
-            await requireFunds(c, price);
+            await requireFunds(c, bill.price);
         } catch (error) {
             // Never leave an unpaid sandbox running.
             await e2b(c, `/sandboxes/${created.sandboxID}`, {
@@ -361,7 +370,7 @@ export const e2bRoutes = new Hono<Env>()
             });
             throw error;
         }
-        await charge(c, price, startTime);
+        await charge(c, bill, startTime);
         await savePaidUntil(c, created.sandboxID, paidUntil);
         return c.json(created, 201);
     })

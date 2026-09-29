@@ -6,7 +6,9 @@ import { afterEach, expect, vi } from "vitest";
 
 const E2B = "https://api.e2b.app";
 // The fake's 2 vCPU, 512 MiB sandbox for 300 s, at E2B's list rates.
-const LEASE_300S = 300 * (2 * 0.000014 + 0.5 * 0.0000045);
+const COST_300S = 300 * (2 * 0.000014 + 0.5 * 0.0000045);
+// During the launch promo, callers pay 25% of the list price.
+const LEASE_300S = COST_300S * 0.25;
 
 type Sandbox = {
     sandboxID: string;
@@ -187,6 +189,7 @@ test("create pays the lease up front and hides the sandbox from other users", as
         isBilledUsage: true,
     });
     expect(e2b.leases()[0].totalPrice).toBeCloseTo(LEASE_300S, 8);
+    expect(e2b.leases()[0].totalCost).toBeCloseTo(COST_300S, 8);
 
     // Nor can the list filter or a sandbox ID reach another user's sandbox.
     const spoofed = new URLSearchParams({

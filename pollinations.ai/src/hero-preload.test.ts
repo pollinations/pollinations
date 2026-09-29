@@ -1,15 +1,13 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, test } from "vitest";
-import { ART_SET, HERO_IMAGE_SIZES } from "./art-config";
+import { HERO_IMAGE_SIZES } from "./art-config";
 
 // Execute the actual inline bootstrap, not a separate implementation of it.
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 if (!script) throw new Error("Missing initial theme/hero bootstrap");
-const bootstrap = script
-    .replace(/__ART_SET__/g, ART_SET)
-    .replace(/__HERO_IMAGE_SIZES__/g, HERO_IMAGE_SIZES);
+const bootstrap = script.replace(/__HERO_IMAGE_SIZES__/g, HERO_IMAGE_SIZES);
 
 function runBootstrap(
     pathname: string,
@@ -59,7 +57,7 @@ describe("early responsive hero preload", () => {
                 mode,
                 mode === "light",
             );
-            const base = `/art/${ART_SET}/${page}-hero-${mode === "dark" ? "night" : "day"}`;
+            const base = `/art/${page}-hero-${mode === "dark" ? "night" : "day"}`;
             expect(links).toEqual([
                 {
                     rel: "preload",
@@ -82,7 +80,7 @@ describe("early responsive hero preload", () => {
         for (const dark of [false, true]) {
             const { links } = runBootstrap("/", saved, dark);
             expect(links[0].href).toBe(
-                `/art/${ART_SET}/home-hero-${dark ? "night" : "day"}.webp`,
+                `/art/home-hero-${dark ? "night" : "day"}.webp`,
             );
         }
     });

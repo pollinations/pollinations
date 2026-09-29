@@ -22,8 +22,8 @@ npm run dev       # builds packages/sdk and packages/ui first, then serves on :5
 - Community signals are read anonymously from GitHub and Discord
   (`src/data/community.ts`); `npm run data:pr-history` refreshes the archived
   merged-PR list in `public/data`.
-- Illustrations are drawn by `scripts/art.mjs` into `public/art/<set>`;
-  `ART_SET` in `src/art-config.ts` picks the live set.
+- Illustrations live in `public/art`. `npm run art` draws new ones from
+  `art/recipe.json` into `art/out`; copy the ones you keep into `public/art`.
 
 ## Deploy
 

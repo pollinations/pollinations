@@ -24,7 +24,7 @@
         const path = location.pathname.replace(/\/$/, "").toLowerCase() || "/";
         const page = { "/": "home", "/play": "play", "/apps": "apps", "/community": "community" }[path];
         if (!page) return;
-        const base = `/art/__ART_SET__/${page}-hero-${mode === "dark" ? "night" : "day"}`;
+        const base = `/art/${page}-hero-${mode === "dark" ? "night" : "day"}`;
         const preload = document.createElement("link");
         preload.rel = "preload";
         preload.as = "image";

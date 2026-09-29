@@ -3,3 +3,6 @@
 
 # Vite dependency cache
 .vite
+
+# Generated illustrations; copy the ones you keep into public/art
+art/out/

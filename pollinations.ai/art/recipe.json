@@ -1,7 +1,7 @@
 {
-    "about": "v2: Around the Hive. One small world with the Hive at its centre and four lands around it, one per page (gold, blue, green, violet). Amber is always the light; each land's own colour lives in its ground, plants, water and shadows. Day shows in light mode, night in dark mode; every night is an edit of its day.",
+    "about": "Around the Hive. One small world with the Hive at its centre and four lands around it, one per page (gold, blue, green, violet). Amber is always the light; each land's own colour lives in its ground, plants, water and shadows. Day shows in light mode, night in dark mode; every night is an edit of its day.",
     "model": "nanobanana-2",
-    "sheet": "operations/social/prompts/brand/characters-ref.jpg",
+    "sheet": "refs/characters-ref.jpg",
     "style": "Cozy 8-bit pixel art like Stardew Valley and A Short Hike. Chunky sprites on a strict grid: one art pixel is about 6 image pixels at 2048 px wide, 1-pixel stair-stepped plum-brown #301d26 outlines, flat cel shading with at most three tones per surface. No anti-aliasing, dithering, blur, airbrushed glow, light beams or painterly texture. Amber leads: honey #ffd76d and lamp amber #ffc766 are the only light colours (sun glints, lit windows, lamps, a few drifting pollen motes). The world's own colour lives in ground, foliage, water and shadow, never in the upper sky. Soft pastels; never neon, hot pink, navy or indigo. Image 1 is the character sheet: draw only the characters the scene names, exactly as drawn there, one of each, never copying its layout or background. Polli is about a fifth of the frame height, the Robot 1.1 times Polli, Nomnom 0.8 times Polli. No text, letters, logos, borders, moon or sun disc.",
     "cast": {
         "polli": "Polli the bee (one round honey-yellow #fcd45e ball a little wider than tall, never a capsule and never a head on a body; dark brown stripes on her back half, black vertical oval eyes, soft rose #f67fac rectangular blush, a small smile, small pale-blue wings, thin black antennae, tiny black legs)",
@@ -100,7 +100,7 @@
             "frame": "closing",
             "seed": 5203,
             "refs": [
-                "pollinations.ai/public/art/v1/play-closing-day.webp",
+                "refs/play-closing-day.webp",
                 "play-hero"
             ],
             "prompt": "Image 2 is the current closing scene: keep its long workbench, its stations, its layout and its pixel grid exactly. Change only this: the blank paper on the left becomes a small retro terminal printing a chat scroll whose end {nomnom} happily munches; the heartbeat monitor becomes a small gramophone with headphones hanging on it; the bee becomes {polli}, wearing a painter's beret, adding a brushstroke to the framed painting; the bushes behind become a pier rail with the lagoon of image 3 beyond."
@@ -111,7 +111,7 @@
             "frame": "hero",
             "seed": 5301,
             "refs": [
-                "pollinations.ai/public/art/v1/apps-hero-day.webp"
+                "refs/apps-hero-day.webp"
             ],
             "prompt": "Keep the layout of image 2: the lane of app-window stalls receding to the right and Nomnom's place in it. {nomnom} strolls the lane carrying one colourful app window. {polli}, wearing a little leaf hat, strings a line of lanterns between the first two stalls. Giant monstera leaves frame the top right, and {hive} peeks through a gap in the leaves."
         },
@@ -121,7 +121,7 @@
             "frame": "closing",
             "seed": 5302,
             "refs": [
-                "pollinations.ai/public/art/v1/apps-closing-day.webp",
+                "refs/apps-closing-day.webp",
                 "apps-hero"
             ],
             "prompt": "Image 2 is the current scene: keep the noticeboard, the stalls, the cart and the layout. Change only this: the bee becomes {polli}, wearing a little leaf hat, hovering beside the board and pinning an app card (no longer standing on Nomnom); the round creature becomes {nomnom}; giant leaves frame the top corners and honey light patches fall on the lane, matching image 3."
@@ -150,7 +150,7 @@
             "frame": "closing",
             "seed": 5402,
             "refs": [
-                "pollinations.ai/public/art/v1/community-votes-day.webp",
+                "refs/community-votes-day.webp",
                 "community-hero"
             ],
             "prompt": "Image 2 is the current scene: keep the idea beds, the vote box with its VOTE lettering, the lantern, the characters and the layout. Change only this: the two small round creatures become one full-size {nomnom} queuing with a ballot in his mouth; the robot becomes {robot}; the upper sky becomes calm cream with apricot only at the horizon; the grass becomes sage with heather; a bulb string hangs behind the beds, matching image 3."

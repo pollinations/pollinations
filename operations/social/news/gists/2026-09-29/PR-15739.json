@@ -1,0 +1,39 @@
+{
+  "pr_number": 15739,
+  "title": "Add GAANA BANANA to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15739",
+  "merged_at": "2026-09-29T09:04:40Z",
+  "labels": [
+    "FEATURE",
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [GAANA BANANA](https://gaana.namansoni.in) to video_audio\n- # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, \n\nFixes #15636",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A banana joins the band",
+    "blurb": "GAANA BANANA has joined the video-and-audio app garden. Give it a name and a theme, and it makes a personalized song with vocals in about 1–2 minutes.",
+    "summary": "Added GAANA BANANA to the video_audio app listing, where people can discover an India-focused AI song maker that turns a name and theme into a personalized song with vocals in about 1–2 minutes.",
+    "impact": "Visitors can now find GAANA BANANA through the app listing and make songs for birthdays, anniversaries, and other occasions.",
+    "keywords": [
+      "community app",
+      "GAANA BANANA",
+      "AI music",
+      "vocals",
+      "video_audio",
+      "personalized songs"
+    ],
+    "visual_concept": "GAANA BANANA is a personalized song-making app; a banana-shaped microphone, musical notes, and a name-and-theme card convey its purpose without inventing a mascot. Polli, wearing tiny headphones, listens beside a flowering code-plant.",
+    "image_prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and listens to a banana-shaped microphone singing beside a card marked 'NAME + THEME,' with musical notes blooming from lime green (#ecf874) flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15739.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and listens to a banana-shaped microphone singing beside a card marked 'NAME + THEME,' with musical notes blooming from lime green (#ecf874) flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T09:05:39.160337+00:00",
+  "app_name": "GAANA BANANA",
+  "app_url": "https://gaana.namansoni.in"
+}

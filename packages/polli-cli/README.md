@@ -57,8 +57,15 @@ polli gen image "enhance this" --image https://media.pollinations.ai/abc --model
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
+polli gen audio "Hello world" --timestamps            # + speech.mp3.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
 polli gen transcribe speech.mp3
+
+polli gen 3d --image https://media.pollinations.ai/abc --output chair.glb   # image-to-3D (GLB)
+polli gen 3d "a low-poly treasure chest" --model hyper3d/rodin-2.5 --output chest.glb
+polli gen embeddings "the cat sat on the mat" "a feline rested on the rug"
+polli gen voice-change speech.mp3 --voice alloy --output changed.mp3
+polli gen isolate noisy.mp3 --output clean.mp3
 
 polli gen chat --model openai                         # interactive multi-turn
 ```

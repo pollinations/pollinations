@@ -31,6 +31,10 @@ export function createAudioCommand() {
         .option("--seed <n>", "Seed for deterministic output")
         .option("--output <path>", "Save to file")
         .option("--play", "Play the audio after saving (platform player)")
+        .option(
+            "--timestamps",
+            "Also save character timings next to the audio (JSON)",
+        )
         .action(async (textArg, opts) => {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
@@ -50,6 +54,17 @@ export function createAudioCommand() {
             if (opts.duration) params.set("duration", opts.duration);
             if (opts.instrumental) params.set("instrumental", "true");
             if (opts.seed) params.set("seed", opts.seed);
+
+            if (opts.timestamps) {
+                await generateWithTimestamps(inputText, output, {
+                    voice: opts.voice,
+                    model: opts.model,
+                    format: opts.format,
+                    seed: opts.seed,
+                    isHuman,
+                });
+                return;
+            }
 
             const encodedText = encodeURIComponent(inputText);
             const path = `/audio/${encodedText}?${params}`;
@@ -79,4 +94,81 @@ export function createAudioCommand() {
                 exitWithError(error);
             }
         });
+}
+
+const DEFAULT_TIMESTAMP_MODEL = "elevenlabs/eleven-v3";
+
+interface SpeechWithTimestamps {
+    audio_base64: string;
+    alignment?: SpeechAlignment;
+    normalized_alignment?: SpeechAlignment;
+}
+
+interface SpeechAlignment {
+    characters?: string[];
+    character_start_times_seconds?: number[];
+    character_end_times_seconds?: number[];
+}
+
+/**
+ * `/v1/audio/speech/with-timestamps` returns base64 audio plus character
+ * timings. Save the audio like a normal `gen audio` run and drop the timings
+ * beside it, so both stay together.
+ */
+async function generateWithTimestamps(
+    input: string,
+    output: string,
+    opts: {
+        voice: string;
+        model?: string;
+        format: string;
+        seed?: string;
+        isHuman: boolean;
+    },
+): Promise<void> {
+    const body: Record<string, unknown> = {
+        input,
+        voice: opts.voice,
+        model: opts.model ?? DEFAULT_TIMESTAMP_MODEL,
+    };
+    if (opts.format !== "mp3") body.response_format = opts.format;
+    if (opts.seed) body.seed = Number(opts.seed);
+
+    if (opts.isHuman) printInfo("Generating audio with timestamps...");
+
+    try {
+        const res = await fetchGen("/v1/audio/speech/with-timestamps", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        const data = (await res.json()) as SpeechWithTimestamps;
+
+        const buffer = Buffer.from(data.audio_base64, "base64");
+        writeFileSync(output, buffer);
+
+        const timingsPath = `${output}.json`;
+        writeFileSync(
+            timingsPath,
+            `${JSON.stringify(
+                {
+                    model: body.model,
+                    voice: opts.voice,
+                    alignment: data.alignment ?? null,
+                    normalized_alignment: data.normalized_alignment ?? null,
+                },
+                null,
+                2,
+            )}\n`,
+        );
+
+        printMeta({
+            path: output,
+            size: buffer.length,
+            voice: opts.voice,
+            timestamps: timingsPath,
+        });
+    } catch (error) {
+        exitWithError(error);
+    }
 }

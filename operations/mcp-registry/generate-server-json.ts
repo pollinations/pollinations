@@ -62,16 +62,11 @@ export function buildServerEntry(server: McpServerDefinition, version: string) {
     };
 }
 
-function todayVersion(): string {
-    const now = new Date();
-    return `${now.getUTCFullYear()}.${now.getUTCMonth() + 1}.${now.getUTCDate()}`;
-}
-
 function main() {
-    const [outDir, version = todayVersion()] = process.argv.slice(2);
-    if (!outDir) {
+    const [outDir, version] = process.argv.slice(2);
+    if (!outDir || !version?.trim()) {
         console.error(
-            "Usage: tsx generate-server-json.ts <output-dir> [version]",
+            "Usage: node generate-server-json.ts <output-dir> <version>",
         );
         process.exit(1);
     }

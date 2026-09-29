@@ -2,9 +2,15 @@ name: MCP / Publish registry entries
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "New registry version (published versions cannot be overwritten)"
+        required: true
+        type: string
 
 jobs:
   publish:
+    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -16,18 +22,26 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Test registry generation
+        run: node --test operations/mcp-registry/generate-server-json.test.ts
 
       - name: Generate server.json entries from shared/registry/mcp.ts
-        run: npx tsx operations/mcp-registry/generate-server-json.ts "$RUNNER_TEMP/mcp-registry"
+        env:
+          REGISTRY_VERSION: ${{ inputs.version }}
+        run: node operations/mcp-registry/generate-server-json.ts "$RUNNER_TEMP/mcp-registry" "$REGISTRY_VERSION"
 
       - name: Install mcp-publisher
         working-directory: ${{ runner.temp }}
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          curl -fL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Validate every entry before publishing any
+        working-directory: ${{ runner.temp }}
+        run: |
+          for file in mcp-registry/*.json; do
+            ./mcp-publisher validate "$file"
+          done
 
       - name: Login to the MCP registry via GitHub OIDC
         working-directory: ${{ runner.temp }}

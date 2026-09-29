@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { MCP_SERVERS } from "../../shared/registry/mcp.ts";
 import { buildServerEntry } from "./generate-server-json.ts";
@@ -12,6 +13,7 @@ test("every hosted server produces a valid, distinct registry entry", () => {
 
     for (const server of MCP_SERVERS) {
         const entry = buildServerEntry(server, "2026.9.27");
+        assert.equal(entry.version, "2026.9.27");
 
         assert.match(entry.name, NAME_PATTERN);
         assert.ok(entry.name.length <= 200);
@@ -43,4 +45,19 @@ test("every hosted server produces a valid, distinct registry entry", () => {
     }
 
     assert.equal(names.size, MCP_SERVERS.length, "server ids must be unique");
+});
+
+test("CLI requires an explicit, nonblank version", () => {
+    for (const args of [[], ["unused-output"], ["unused-output", " "]]) {
+        const result = spawnSync(
+            process.execPath,
+            [
+                new URL("./generate-server-json.ts", import.meta.url).pathname,
+                ...args,
+            ],
+            { encoding: "utf8" },
+        );
+        assert.equal(result.status, 1);
+        assert.match(result.stderr, /Usage:/);
+    }
 });

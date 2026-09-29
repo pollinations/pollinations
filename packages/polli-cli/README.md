@@ -135,7 +135,7 @@ polli agents delete <id>
 
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
-`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, `keys`, and `machines`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Coding harnesses
 
@@ -171,6 +171,25 @@ its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
+## Sandboxes
+
+Pollinations serves E2B's API at `/alpha/e2b`, so E2B's own CLI and SDKs create
+sandboxes billed to your Pollinations wallet.
+
+```bash
+eval "$(polli sandbox env)"       # sets E2B_API_URL and E2B_API_KEY
+npx @e2b/cli sandbox create --detach --lifecycle.ontimeout pause
+polli sandbox ssh-config          # once: adds an Include line to ~/.ssh/config
+ssh <sandbox-id>.polli            # resumes a paused sandbox
+scp file.txt <sandbox-id>.polli:
+rsync -a dir/ <sandbox-id>.polli:dir/
+```
+
+The first connection installs `sshd`, `rsync` and `websocat` in the sandbox
+(Debian-based templates) and allows only polli's key
+(`~/.pollinations/ssh/id_ed25519`). While a connection is open, polli keeps the
+sandbox paid for 10 minutes ahead. Needs Node.js 22 or newer.
 
 ## Links
 

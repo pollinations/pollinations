@@ -1,0 +1,37 @@
+{
+  "pr_number": 15512,
+  "title": "feat: add Gemini 3.5 Transcribe with Vertex and OpenRouter fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15512",
+  "merged_at": "2026-09-29T22:53:31Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes #15843\n\n- Adds paid-only `google/gemini-3.5-transcribe` with Vertex global `gemini-3.5-transcribe-preview` primary and OpenRouter fallback. No aliases; multiplier 1; no Pollinations GPU. OpenRouter manages its transcription backend selection.\n- Supports seven audio formats and json/text/verbose_json/diarized_json, including word timestamps and speaker labels. `prompt` is ignored; duration is approximate (reported audio tokens / 25).\n- Bills reported usage at [Vertex's published rates](https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing): $2/M audio input and $12/M text output. Fallback costs include OpenRouter's 5.5% fee; customer rates do not. Vertex's extra timestamp-related input text tokens remain recorded at zero pending clarification of their unpublished rate. OpenRouter currently reports zero output tokens; no official explanation was found.\n- Rejects text-valued and empty uploads with 400 responses. Preserves contributor history and updates the branch from main.\n- Verified: 99 focused/regression tests, pricing snapshot, Gen typecheck and formatting. Authenticated real-provider E2E passed Vertex and forced OpenRouter fallback, all formats/outputs, access errors, three concurrent requests, disconnect/rejoin and cached replay. Each generation produced one wallet debit and one staging billed event. Sample fallback: customer 0.000628 Pollen, cost 0.00066254 Pollen.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive takes notes",
+    "blurb": "Gemini 3.5 Transcribe can now turn audio into text, with word timestamps and speaker labels when you need the details. Vertex takes the first listen; OpenRouter is there if it needs a hand.",
+    "summary": "Added paid-only `google/gemini-3.5-transcribe`, using Vertex's `gemini-3.5-transcribe-preview` with OpenRouter fallback, seven audio formats, and four output formats including word timestamps and speaker labels.",
+    "impact": "Developers can request plain text, JSON, verbose JSON, or diarized JSON transcripts; customer usage is billed at $2 per million audio input tokens and $12 per million text output tokens.",
+    "keywords": [
+      "Gemini 3.5 Transcribe",
+      "audio",
+      "transcription",
+      "Vertex",
+      "OpenRouter",
+      "timestamps",
+      "diarization"
+    ],
+    "visual_concept": "Depict spoken audio becoming a readable transcript in a cozy garden workspace: Polli listens with tiny headphones while the monitor robot displays timestamped words and speaker labels. Two gently branching paths marked Vertex and OpenRouter represent the primary provider and fallback.",
+    "image_prompt": "In a cozy pixel-art garden workspace, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny headphones and listens to an audio waveform while a chunky CRT monitor robot displays a transcript with small timestamp and speaker icons. She is small-to-medium sized and shares the scene with the robot, flowering code-plants, and two softly branching paths; strictly pixel art, never realistic, with lime green (#ecf874) prominent against a warm cream and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15512.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny headphones and listens to an audio waveform while a chunky CRT monitor robot displays a transcript with small timestamp and speaker icons. She is small-to-medium sized and shares the scene with the robot, flowering code-plants, and two softly branching paths; strictly pixel art, never realistic, with lime green (#ecf874) prominent against a warm cream and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-29T22:54:41.998400+00:00"
+}

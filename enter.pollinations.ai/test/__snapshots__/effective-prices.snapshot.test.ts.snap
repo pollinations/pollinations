@@ -842,6 +842,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.000108333333333333,
     },
   },
+  "elevenlabs/stem-separation": {
+    "cost": {
+      "promptAudioSeconds": 0.005,
+    },
+    "costVariants": {
+      "two_stems_v1": {
+        "promptAudioSeconds": 0.0025,
+      },
+    },
+    "price": {
+      "promptAudioSeconds": 0.005,
+    },
+  },
   "elevenlabs/voice-isolator": {
     "cost": {
       "promptAudioSeconds": 0.002,
@@ -2556,6 +2569,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptTextTokens": 0.000000015,
+    },
+  },
+  "openai/tts-1": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
+  "openai/tts-1-hd": {
+    "cost": {
+      "completionAudioTokens": 0.00003,
+    },
+    "price": {
+      "completionAudioTokens": 0.00003,
     },
   },
   "openai/whisper-large-v3": {

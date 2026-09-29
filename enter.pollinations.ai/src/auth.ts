@@ -35,6 +35,7 @@ import { discordConfigFromEnv } from "./services/discord.ts";
 import {
     captureProductEvent,
     referringSource,
+    visitorCountry,
 } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
@@ -135,6 +136,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 authContext.headers,
                                 env.BETTER_AUTH_URL,
                             ),
+                            ...visitorCountry(authContext.headers),
                         }),
                     );
                 }
@@ -148,7 +150,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     authContext.query?.code
                 ) {
                     ctx?.waitUntil(
-                        captureProductEvent(env, "sign_in_returned", ""),
+                        captureProductEvent(
+                            env,
+                            "sign_in_returned",
+                            "",
+                            visitorCountry(authContext.headers),
+                        ),
                     );
                 }
                 if (
@@ -165,6 +172,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 env,
                                 "link_started",
                                 session.user.id,
+                                visitorCountry(authContext.headers),
                             ),
                         );
                 }
@@ -195,12 +203,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         databaseHooks: {
             user: {
                 create: {
-                    after: async (user) => {
+                    after: async (user, context) => {
                         ctx?.waitUntil(
                             captureProductEvent(
                                 env,
                                 "signup_completed",
                                 user.id,
+                                visitorCountry(context?.headers),
                             ),
                         );
                     },
@@ -216,13 +225,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             throw discordAccountAlreadyConnected();
                         }
                     },
-                    after: async (account) => {
+                    after: async (account, context) => {
                         if (account.providerId === "discord")
                             ctx?.waitUntil(
                                 captureProductEvent(
                                     env,
                                     "link_completed",
                                     account.userId,
+                                    visitorCountry(context?.headers),
                                 ),
                             );
                         if (account.providerId !== "github") return;
@@ -376,10 +386,15 @@ export function onAfterSessionCreate(
 ) {
     return async (
         session: { userId: string },
-        _ctx?: GenericEndpointContext | null,
+        ctx?: GenericEndpointContext | null,
     ) => {
         executionCtx?.waitUntil(
-            captureProductEvent(env, "sign_in_completed", session.userId),
+            captureProductEvent(
+                env,
+                "sign_in_completed",
+                session.userId,
+                visitorCountry(ctx?.headers),
+            ),
         );
         executionCtx?.waitUntil(
             (async () => {

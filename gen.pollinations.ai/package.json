@@ -53,6 +53,7 @@
         "hono": "4.10.6",
         "hono-openapi": "1.2.0",
         "jose": "^6.2.3",
+        "music-metadata": "^11.16.1",
         "piexif-ts": "^2.1.0",
         "yaml": "^2.9.0",
         "ai": "^7.0.66",

@@ -25,6 +25,32 @@ import type { TransformFn, TransformOptions } from "./types.js";
 const fireworksThinking = createReasoningEffortTransform("toggle");
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
+// Fireworks caches matching prefixes automatically and rejects Anthropic markers.
+const stripFireworksCacheControl: TransformFn = (messages, options) => ({
+    messages: messages.map((message) => {
+        const { cache_control: _messageCache, ...rest } = message;
+        if (!Array.isArray(rest.content)) return rest;
+        return {
+            ...rest,
+            content: rest.content.map((part) => {
+                if (!part || typeof part !== "object" || Array.isArray(part))
+                    return part;
+                const { cache_control: _partCache, ...cleanPart } =
+                    part as Record<string, unknown>;
+                return cleanPart;
+            }),
+        };
+    }),
+    options,
+});
+const fireworksThinkingWithoutCacheControl = pipe(
+    stripFireworksCacheControl,
+    fireworksThinking,
+);
+const mandatoryReasoningWithoutCacheControl = pipe(
+    stripFireworksCacheControl,
+    mandatoryReasoning,
+);
 // Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
 const stripReasoning = createReasoningEffortTransform("strip");
 // Claude families differ: Haiku 4.5 uses manual budget thinking; Sonnet/Opus
@@ -270,7 +296,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-2.4t-a95b",
         config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
-        transform: fireworksThinking,
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
@@ -375,7 +401,7 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4.1-flash",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
-        transform: fireworksThinking,
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
@@ -696,7 +722,7 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k3",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
-        transform: fireworksThinking,
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "poolside/laguna-s-2.1",
@@ -719,7 +745,11 @@ const models: ModelDefinition[] = [
     {
         name: "thinkingmachines/inkling",
         config: portkeyConfig["accounts/fireworks/models/inkling"],
-        transform: pipe(inputAudioToFireworks, mandatoryReasoning),
+        transform: pipe(
+            stripFireworksCacheControl,
+            inputAudioToFireworks,
+            mandatoryReasoning,
+        ),
     },
     {
         name: "nvidia/nemotron-3-ultra",
@@ -731,7 +761,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig[
             "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
         ],
-        transform: fireworksThinking,
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
@@ -796,7 +826,7 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.3",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3"],
         // Reasoning is mandatory; off requests keep the upstream default.
-        transform: mandatoryReasoning,
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
         name: "z-ai/glm-5.3:openrouter:friendli",
@@ -807,7 +837,7 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.3-flash",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
-        transform: mandatoryReasoning,
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
         name: "z-ai/glm-5.3-flashx",
@@ -843,7 +873,7 @@ const models: ModelDefinition[] = [
     {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
-        transform: fireworksThinking,
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "meta/muse-glimmer-30b",

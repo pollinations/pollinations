@@ -17,7 +17,7 @@ export function FunnelBars({ title, stages }) {
                 {stages.map((stage) => {
                     const base = stages.find((s) => s.stage === stage.of);
                     const stepPct =
-                        base?.count > 0
+                        base?.count > 0 && stage.count != null
                             ? (stage.count / base.count) * 100
                             : null;
                     return (
@@ -54,7 +54,10 @@ export function FunnelBars({ title, stages }) {
                                 <div
                                     className="h-full rounded-[4px]"
                                     style={{
-                                        width: `${Math.max((stage.count / top) * 100, 0.5)}%`,
+                                        width:
+                                            stage.count == null
+                                                ? "0%"
+                                                : `${Math.max((stage.count / top) * 100, 0.5)}%`,
                                         background: "var(--kpi-series-1)",
                                     }}
                                 />

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callQwenImage3API } from "../../src/image/models/qwenImage3Model.ts";
+import { callFalQwenImageAPI } from "../../src/image/models/falQwenImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const GENERATE_URL = "https://fal.run/alibaba/qwen-image-3/text-to-image";
@@ -55,6 +55,9 @@ function mockFal(requests: FalRequest[], responseBody: unknown = undefined) {
         });
 }
 
+const callQwen3 = (prompt: string, params: ImageParams) =>
+    callFalQwenImageAPI(prompt, params, "qwen/qwen-image-3:fal");
+
 beforeEach(() => {
     syncImageEnv({ FAL_KEY: "fal-test-key" } as CloudflareBindings, [
         "FAL_KEY",
@@ -70,10 +73,7 @@ describe("qwenImage3Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage3API(
-            "A poster reading BUILD",
-            baseParams,
-        );
+        const result = await callQwen3("A poster reading BUILD", baseParams);
 
         expect(requests).toHaveLength(1);
         expect(requests[0]).toMatchObject({
@@ -82,8 +82,7 @@ describe("qwenImage3Model", () => {
                 prompt: "A poster reading BUILD",
                 image_size: { width: 1024, height: 1024 },
                 enable_prompt_expansion: false,
-                enable_safety_checker: true,
-                num_images: 1,
+                enable_safety_checker: false,
                 output_format: "png",
                 seed: 42,
             },
@@ -102,7 +101,7 @@ describe("qwenImage3Model", () => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        await callQwenImage3API("large image", {
+        await callQwen3("large image", {
             ...baseParams,
             width: 2048,
             height: 2048,
@@ -115,13 +114,30 @@ describe("qwenImage3Model", () => {
         });
     });
 
+    it("forwards explicit dimensions without rounding", async () => {
+        const requests: FalRequest[] = [];
+        mockFal(requests);
+
+        await callQwen3("odd size", {
+            ...baseParams,
+            width: 1000,
+            height: 700,
+            dimensionsExplicit: true,
+        });
+
+        expect(requests[0].body.image_size).toEqual({
+            width: 1000,
+            height: 700,
+        });
+    });
+
     it.each([
         1, 3,
     ])("routes edits with %i reference image(s) and meters each input", async (imageCount) => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        const result = await callQwenImage3API("edit the references", {
+        const result = await callQwen3("edit the references", {
             ...baseParams,
             image: Array.from({ length: imageCount }, () => INPUT_IMAGE),
         });
@@ -140,7 +156,7 @@ describe("qwenImage3Model", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
-            callQwenImage3API("too many references", {
+            callQwen3("too many references", {
                 ...baseParams,
                 image: Array.from({ length: 4 }, () => INPUT_IMAGE),
             }),
@@ -155,7 +171,7 @@ describe("qwenImage3Model", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
-            callQwenImage3API("invalid size", {
+            callQwen3("invalid size", {
                 ...baseParams,
                 width,
                 height,
@@ -166,19 +182,16 @@ describe("qwenImage3Model", () => {
     });
 
     it.each([
-        ["1:1", "square_hd"],
-        ["4:3", "landscape_4_3"],
-        ["3:4", "portrait_4_3"],
-        ["16:9", "landscape_16_9"],
-        ["9:16", "portrait_16_9"],
-        ["21:9", { width: 1536, height: 658 }],
-        ["9:21", { width: 658, height: 1536 }],
+        ["1:1", { width: 1024, height: 1024 }],
+        ["16:9", { width: 1376, height: 768 }],
+        ["9:16", { width: 768, height: 1376 }],
+        ["21:9", { width: 1568, height: 672 }],
         ["adaptive", { width: 1024, height: 1024 }],
-    ] as const)("maps aspect ratio %s to Fal's supported size", async (aspectRatio, expected) => {
+    ] as const)("keeps the default area for aspect ratio %s", async (aspectRatio, expected) => {
         const requests: FalRequest[] = [];
         mockFal(requests);
 
-        await callQwenImage3API("aspect ratio", {
+        await callQwen3("aspect ratio", {
             ...baseParams,
             aspectRatio,
         });
@@ -190,7 +203,7 @@ describe("qwenImage3Model", () => {
         mockFal([], { images: [] });
 
         await expect(
-            callQwenImage3API("missing output", baseParams),
+            callQwen3("missing output", baseParams),
         ).rejects.toMatchObject({
             status: 502,
             requestUrl: new URL(GENERATE_URL),

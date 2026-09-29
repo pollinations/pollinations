@@ -38,7 +38,7 @@ describe("content compositions", () => {
             </Callout>,
         );
 
-        expect(html).toContain("polli:bg-theme-bg-pale");
+        expect(html).toContain("polli:bg-surface-block");
         expect(html).not.toContain("polli:bg-theme-bg-active");
     });
 });

@@ -21,18 +21,18 @@ When several kinds fit, pick the first matching kind in this list. `kind` is alw
 ## Type (at most ONE)
 
 - `BUG`: The main purpose is a defect: something that errored, crashed, returned wrong results, stopped working, or is down. For pull requests, a `fix:` title is a hint, not proof. Not for new features (even ones that also fix something small), refactors, cleanups, tuning values or prices, or routine updates
-- `FEATURE`: Issues only. A request or plan for new functionality or an enhancement
-- `QUESTION`: Issues only. How-to, usage or integration help, general inquiries
-- `TRACKING`: Issues only. A meta issue tracking several items or milestones
+- `FEATURE`: New functionality or an enhancement: requested or planned in an issue, added by a pull request
+- `QUESTION`: How-to, usage or integration help, general inquiries
+- `TRACKING`: A meta issue tracking several items or milestones
 
-Pull requests use `BUG` or no type. Return `null` when no type fits.
+Return `null` when no type fits, for example a refactor, cleanup or routine update.
 
 ## Flags (zero or more)
 
-- `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. For pull requests, not for adding or repricing a model; `MODEL` already covers model pricing
+- `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. Setting or changing a model's price is `MODEL`, not `BILLING`; a report that users are charged the wrong amount is `BILLING`
 - `SECURITY`: API keys, permissions, secrets or secret files (`secrets/*.json`), account access, fraud or ban handling, or allowlists
 - `AUTOMATED`: The author's account type is `Bot`. A person relayed from Discord is not automated
-- `POLLEN-QUEST`: Pull requests only. A linked issue has the `POLLEN-QUEST` label
+- `POLLEN-QUEST`: Pull requests only. The pull request says it closes or completes a referenced issue that has the `POLLEN-QUEST` label (for example `Fixes #123`). Fixing a problem that a quest issue reported, or only mentioning one, is not enough
 
 Return an empty `flags` list when none apply.
 

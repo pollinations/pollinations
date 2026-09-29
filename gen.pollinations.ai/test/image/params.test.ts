@@ -69,6 +69,12 @@ describe("ImageParamsSchema", () => {
         for (const resolution of ["480p", "768p", "1080p"] as const) {
             expect(
                 ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max",
+                    resolution,
+                }).success,
+            ).toBe(true);
+            expect(
+                ImageParamsSchema.safeParse({
                     model: "minimax/minimax-h3-max-turbo",
                     resolution,
                 }).success,
@@ -123,11 +129,14 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
-    it("enforces the public MiniMax H3 Max Turbo contract", () => {
+    it.each([
+        "minimax/minimax-h3-max",
+        "minimax/minimax-h3-max-turbo",
+    ] as const)("enforces the public %s contract", (model) => {
         for (const duration of [5, 10, 15]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     duration,
                 }).success,
             ).toBe(true);
@@ -140,7 +149,7 @@ describe("ImageParamsSchema", () => {
         ]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     ...params,
                 }).success,
             ).toBe(false);
@@ -275,6 +284,21 @@ describe("ImageParamsSchema", () => {
             ImageParamsSchema.safeParse({
                 model: "bytedance/seedance-2.0-mini",
                 reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(false);
+    });
+
+    it("accepts reference media on minimax-h3-max and rejects on turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max",
+                reference_videos: "https://media.example/video.mp4",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max-turbo",
+                reference_videos: "https://media.example/video.mp4",
             }).success,
         ).toBe(false);
     });

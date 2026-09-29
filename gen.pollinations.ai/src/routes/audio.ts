@@ -4,6 +4,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     CSM_VOICES,
+    GEMINI_TTS_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
     XAI_TTS_VOICES,
@@ -37,6 +38,8 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { runFalJob } from "@/model3d/models/falClient.ts";
+import { toUpstreamError } from "@/model3d/modelUtils.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
@@ -47,6 +50,7 @@ import {
     callCommunitySpeechEndpoint,
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
+import { generateLyria35 } from "../audio/lyria.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -81,10 +85,10 @@ const CreateSpeechRequestSchema = z
             }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-            .default("mp3")
+            .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -147,7 +151,7 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (qwen/qwen3-tts-instruct-flash only). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -2000,8 +2004,7 @@ export async function generateQwenTts(opts: {
     });
 }
 
-const OPENROUTER_FISH_TTS_ENDPOINT =
-    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
 const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
@@ -2037,7 +2040,7 @@ export async function generateOpenRouterFishSpeech(opts: {
     );
 
     const response = await ensureUpstreamOk(
-        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -2054,7 +2057,7 @@ export async function generateOpenRouterFishSpeech(opts: {
                 },
             }),
         }),
-        OPENROUTER_FISH_TTS_ENDPOINT,
+        OPENROUTER_SPEECH_ENDPOINT,
     );
 
     const generationId = response.headers.get("x-generation-id");
@@ -2074,6 +2077,368 @@ export async function generateOpenRouterFishSpeech(opts: {
             ),
             "x-tts-voice": voice,
             ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
+
+const GEMINI_TTS_MODELS = {
+    "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
+    "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
+} as const;
+const GEMINI_TTS_ENDPOINT =
+    "https://generativelanguage.googleapis.com/v1beta/interactions";
+
+const GeminiSpeechResponseSchema = z.object({
+    status: z.literal("completed"),
+    usage: z.object({
+        total_input_tokens: z.number().int().nonnegative(),
+        total_output_tokens: z.number().int().positive(),
+        input_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("text"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        output_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("audio"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        total_cached_tokens: z.literal(0),
+        total_thought_tokens: z.literal(0),
+        total_tool_use_tokens: z.literal(0),
+    }),
+    steps: z.array(
+        z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.string(),
+                        mime_type: z.string().optional(),
+                        data: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        }),
+    ),
+});
+
+// Validate the actual speech and billable usage together: a successful HTTP
+// response without usable audio or provider usage must never settle a charge.
+export function parseGeminiSpeechResponse(
+    data: unknown,
+    responseFormat: string,
+) {
+    const parsed = GeminiSpeechResponseSchema.safeParse(data);
+    if (!parsed.success) {
+        throw new UpstreamError(502, {
+            message: "Google returned incomplete speech or invalid usage",
+        });
+    }
+    // Google bills the public usage totals. raw_prompt_token and invocation
+    // counters include internal tokens; adding them would double-count usage.
+    // https://discuss.ai.google.dev/t/182722/2
+    const { usage, steps } = parsed.data;
+    if (
+        usage.input_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_input_tokens ||
+        usage.output_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_output_tokens
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned inconsistent speech usage",
+        });
+    }
+    const blocks = steps
+        .flatMap((step) => step.content ?? [])
+        .filter((block) => block.type === "audio");
+    const block = blocks[0];
+    const expectedMime = responseFormat === "pcm" ? "audio/l16" : "audio/wav";
+    if (
+        blocks.length !== 1 ||
+        !block?.data ||
+        block.mime_type?.split(";")[0] !== expectedMime
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned missing or unexpected speech audio",
+        });
+    }
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+        bytes = Uint8Array.from(atob(block.data), (char) => char.charCodeAt(0));
+    } catch {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid speech audio encoding",
+        });
+    }
+    if (!bytes.length || (responseFormat === "pcm" && bytes.length % 2 !== 0)) {
+        throw new UpstreamError(502, {
+            message: "Google returned empty or truncated speech audio",
+        });
+    }
+    if (
+        responseFormat === "wav" &&
+        (new TextDecoder().decode(bytes.subarray(0, 4)) !== "RIFF" ||
+            new TextDecoder().decode(bytes.subarray(8, 12)) !== "WAVE")
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid WAV audio",
+        });
+    }
+    return {
+        bytes,
+        usage: {
+            promptTextTokens: usage.total_input_tokens,
+            completionAudioTokens: usage.total_output_tokens,
+        },
+    };
+}
+
+function resolveGeminiSpeechVoice(
+    modelName: string,
+    requestedVoice: string,
+    responseFormat: string,
+) {
+    const voice = GEMINI_TTS_VOICES.find(
+        (candidate) =>
+            candidate.toLowerCase() ===
+            (requestedVoice === "alloy"
+                ? "Kore"
+                : requestedVoice
+            ).toLowerCase(),
+    );
+    if (!voice) {
+        throw new UpstreamError(400, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+    if (responseFormat !== "wav" && responseFormat !== "pcm") {
+        throw new UpstreamError(400, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: wav, pcm.`,
+        });
+    }
+    return voice;
+}
+
+export async function generateGeminiSpeech(opts: {
+    modelName: keyof typeof GEMINI_TTS_MODELS;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    instructions?: string;
+    apiKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, responseFormat, instructions, apiKey, log } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        modelName,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey) {
+        throw new UpstreamError(500, {
+            message: "Google Gemini is not configured (missing API key)",
+        });
+    }
+    const response = await ensureUpstreamOk(
+        await fetch(GEMINI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "x-goog-api-key": apiKey,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: GEMINI_TTS_MODELS[modelName],
+                store: false,
+                input: [
+                    {
+                        type: "user_input",
+                        content: [
+                            {
+                                type: "text",
+                                text,
+                                ...(instructions
+                                    ? {
+                                          annotations: [
+                                              {
+                                                  type: "speech_metadata",
+                                                  style: instructions,
+                                              },
+                                          ],
+                                      }
+                                    : {}),
+                            },
+                        ],
+                    },
+                ],
+                response_format: {
+                    type: "audio",
+                    mime_type:
+                        responseFormat === "pcm" ? "audio/l16" : "audio/wav",
+                },
+                generation_config: { speech_config: [{ voice }] },
+            }),
+        }),
+        GEMINI_TTS_ENDPOINT,
+    );
+    const { bytes, usage } = parseGeminiSpeechResponse(
+        await response.json(),
+        responseFormat,
+    );
+    log.info("Gemini TTS success: model={model}, usage={usage}", {
+        model: modelName,
+        usage,
+    });
+    return new Response(bytes, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
+                    : "audio/wav",
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+        },
+    });
+}
+
+function pcmToWav(
+    pcm: Uint8Array,
+    sampleRate: number,
+): Uint8Array<ArrayBuffer> {
+    const wav = new Uint8Array(44 + pcm.byteLength);
+    const view = new DataView(wav.buffer);
+    const writeAscii = (offset: number, value: string) => {
+        for (let i = 0; i < value.length; i++) {
+            wav[offset + i] = value.charCodeAt(i);
+        }
+    };
+    writeAscii(0, "RIFF");
+    view.setUint32(4, 36 + pcm.byteLength, true);
+    writeAscii(8, "WAVEfmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeAscii(36, "data");
+    view.setUint32(40, pcm.byteLength, true);
+    wav.set(pcm, 44);
+    return wav;
+}
+
+// Speech responses carry audio only. The generation record becomes available
+// asynchronously; wait for its native tokens before returning billable audio.
+export async function readOpenRouterSpeechUsage(
+    generationId: string,
+    apiKey: string,
+) {
+    const endpoint = `https://openrouter.ai/api/v1/generation?id=${encodeURIComponent(generationId)}`;
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const response = await fetch(endpoint, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 404) {
+            await response.body?.cancel();
+            if (attempt < 29) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+            continue;
+        }
+        await ensureUpstreamOk(response, endpoint);
+        const parsed = z
+            .object({
+                data: z.object({
+                    native_tokens_prompt: z.number().int().nonnegative(),
+                    native_tokens_completion: z.number().int().positive(),
+                    total_cost: z.number().nonnegative(),
+                }),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "OpenRouter returned invalid speech usage",
+            });
+        return {
+            promptTextTokens: parsed.data.data.native_tokens_prompt,
+            completionAudioTokens: parsed.data.data.native_tokens_completion,
+        };
+    }
+    throw new UpstreamError(502, {
+        message: "OpenRouter speech usage is not available",
+    });
+}
+
+export async function generateOpenRouterGeminiSpeech(opts: {
+    modelName: string;
+    upstreamModel: keyof typeof GEMINI_TTS_MODELS;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    instructions?: string;
+    apiKey: string;
+}): Promise<Response> {
+    const {
+        modelName,
+        upstreamModel,
+        text,
+        responseFormat,
+        instructions,
+        apiKey,
+    } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        upstreamModel,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey)
+        throw new UpstreamError(500, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: upstreamModel,
+                input: text,
+                voice,
+                response_format: "pcm",
+                ...(instructions ? { instructions } : {}),
+                provider: {
+                    only: ["google-ai-studio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_SPEECH_ENDPOINT,
+    );
+    const pcm = new Uint8Array(await response.arrayBuffer());
+    const generationId = response.headers.get("x-generation-id");
+    if (!pcm.length || pcm.length % 2 !== 0 || !generationId)
+        throw new UpstreamError(502, {
+            message:
+                "OpenRouter returned incomplete speech audio or no generation ID",
+        });
+    const usage = await readOpenRouterSpeechUsage(generationId, apiKey);
+    return new Response(responseFormat === "pcm" ? pcm : pcmToWav(pcm, 24000), {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
+                    : "audio/wav",
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+            "x-generation-id": generationId,
         },
     });
 }
@@ -2254,15 +2619,14 @@ export async function generateDeepInfraSpeech(opts: {
  * Dispatches the resolved text-to-audio model and wraps the result in safety
  * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
  */
-// fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
-// so the blocking `fal.run` route returns inline without needing the queue/poll
-// API.
+// fal queue endpoint. The blocking `fal.run` route returns a 524 once a job has
+// waited about two minutes for a runner, and fal may still run and bill it.
 const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+    "fal-ai/stable-audio-3/medium/text-to-audio";
 // A reference clip switches fal to audio-to-audio (style transfer) — a separate
 // endpoint with its own flat fee.
 const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+    "fal-ai/stable-audio-3/medium/audio-to-audio";
 
 // Stable Audio 3 Large runs on Stability's direct API, which is asynchronous:
 // the POST returns 202 + { id } and the rendered audio is retrieved by polling
@@ -2339,17 +2703,15 @@ export async function generateStableAudio3Medium(opts: {
         },
     );
 
-    const rawResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
-            Authorization: `Key ${falKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(input),
-    });
-    const response = await ensureUpstreamOk(rawResponse, endpoint);
-    const result = (await response.json()) as FalAudioOutput;
+    let result: FalAudioOutput;
+    try {
+        result = (await runFalJob(
+            { endpoint, input },
+            falKey,
+        )) as FalAudioOutput;
+    } catch (error) {
+        throw toUpstreamError(error);
+    }
     const audioUrl =
         typeof result.audio === "string" ? result.audio : result.audio?.url;
     if (!audioUrl) {
@@ -2649,6 +3011,21 @@ async function dispatchAudioGeneration(
         );
     }
 
+    if (model === "google/lyria-3.5" || model === "google/lyria-3.5:fal") {
+        return withSafetyHeaders(
+            c,
+            await generateLyria35({
+                model,
+                prompt: text,
+                responseFormat,
+                durationSeconds: duration,
+                referenceAudio,
+                geminiApiKey: c.env.GEMINI_API_KEY,
+                falKey: c.env.FAL_KEY,
+            }),
+        );
+    }
+
     if (model === "google/lyria-3-clip-preview") {
         const googleEnvKeys = [
             "GOOGLE_PRIVATE_KEY",
@@ -2772,6 +3149,38 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "google/gemini-3.8-flash-tts":
+        case "google/gemini-3.8-flash-lite-tts":
+            return withSafetyHeaders(
+                c,
+                await generateGeminiSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: c.env.GEMINI_API_KEY,
+                    instructions,
+                    log,
+                }),
+            );
+        case "google/gemini-3.8-flash-tts:openrouter:ai-studio":
+        case "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterGeminiSpeech({
+                    modelName: model,
+                    upstreamModel:
+                        model ===
+                        "google/gemini-3.8-flash-tts:openrouter:ai-studio"
+                            ? "google/gemini-3.8-flash-tts"
+                            : "google/gemini-3.8-flash-lite-tts",
+                    text,
+                    voice,
+                    responseFormat,
+                    instructions,
+                    apiKey: openRouterApiKey,
+                }),
+            );
         case "sesame/csm-1b":
         case "hexgrad/kokoro-82m":
             return withSafetyHeaders(
@@ -2801,7 +3210,9 @@ async function generateAudioFromSpeechRequest(
         input,
         safe,
         voice,
-        response_format,
+        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
+            ? "wav"
+            : "mp3",
         duration,
         seconds,
         steps,
@@ -2978,8 +3389,13 @@ export async function handleSpeechWithTimestamps(
     c: AudioContext,
 ): Promise<Response> {
     const log = c.get("log").getChild("tts-timestamps");
-    const { input, safe, voice, response_format, seed } =
-        await parseSpeechRequest(c);
+    const {
+        input,
+        safe,
+        voice,
+        response_format = "mp3",
+        seed,
+    } = await parseSpeechRequest(c);
     const modelName = c.var.model.resolved;
     if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -3343,7 +3759,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
@@ -3386,7 +3802,8 @@ export const audioRoutes = new Hono<Env>()
                                         "wav",
                                         "pcm",
                                     ],
-                                    default: "mp3",
+                                    description:
+                                        "Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav or raw 24 kHz pcm and rejects other explicit formats.",
                                 },
                                 duration: {
                                     type: "number",
@@ -3419,7 +3836,11 @@ export const audioRoutes = new Hono<Env>()
                                     minimum: 0,
                                     maximum: 4294967295,
                                 },
-                                instructions: { type: "string" },
+                                instructions: {
+                                    type: "string",
+                                    description:
+                                        "Emotion/style instruction for Gemini TTS and Qwen instruct speech.",
+                                },
                                 loop: { type: "boolean" },
                                 prompt_influence: {
                                     type: "number",

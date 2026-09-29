@@ -516,7 +516,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 4,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -1940,7 +1940,98 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
-test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
+// An approved app submission closes a quest through the bot's catalog PR, which
+// credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
+// even when a GitHub user with the bot's login opens one on a catalog branch.
+test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only their author", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    if (user.githubId === null) throw new Error("Expected fixture GitHub id");
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    const coAuthorGithubId = 515151;
+    await db.insert(schema.user).values({
+        id: "quest-co-author",
+        name: "Co Author",
+        email: "co-author@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: coAuthorGithubId,
+        githubUsername: "co-author",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+
+    const mergedAt = new Date("2026-06-03T00:00:00Z").toISOString();
+    mocks.github.state.commitAuthors = {
+        5001: [247793354, user.githubId],
+        5002: [616161, coAuthorGithubId],
+    };
+    for (const [issueNumber, pr] of [
+        [
+            931,
+            {
+                number: 5001,
+                mergedAt,
+                headRefName: "auto/app-4001-123-1",
+                author: { __typename: "Bot", login: "pollinations-ai" },
+            },
+        ],
+        [
+            932,
+            {
+                number: 5002,
+                mergedAt,
+                headRefName: "auto/app-4002-123-1",
+                author: {
+                    __typename: "User",
+                    login: "pollinations-ai",
+                    databaseId: 616161,
+                },
+            },
+        ],
+    ] as const) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Plug-in quest #${issueNumber}`,
+            goal: "Publish the plug-in.",
+            reward: 9,
+            closed: true,
+        });
+        const issue = mocks.github.state.questIssues.at(-1);
+        if (issue) issue.closedByPullRequestsReferences = [pr];
+    }
+
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, "quest-co-author");
+
+    const rewards = await db
+        .select({
+            idempotencyKey: schema.rewards.idempotencyKey,
+            userId: schema.rewards.userId,
+        })
+        .from(schema.rewards)
+        .where(
+            inArray(schema.rewards.questId, [
+                "github:issue:931",
+                "github:issue:932",
+            ]),
+        );
+    expect(rewards).toEqual([
+        {
+            idempotencyKey: `quest:github:issue:931:github:${user.githubId}`,
+            userId: user.id,
+        },
+    ]);
+});
+
+test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2024,7 +2115,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        2, 2, 2,
+        4, 4, 4,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2040,7 +2131,7 @@ test("reporters earn 2 Pollen per issue fixed since the 90-day cutoff, excluding
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 6);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

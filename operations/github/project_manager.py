@@ -37,11 +37,9 @@ PR_HEAD_REF = ITEM_DATA.get("head", {}).get("ref", "") if IS_PULL_REQUEST else "
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-AI_MODEL = "gpt-5.6-luna"
+AI_MODEL = "openai/gpt-6-luna"
 # Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
-# Re-classify items that already have labels, replacing the classifier's older labels.
-RELABEL = os.getenv("RELABEL") == "1"
 
 # Validate required tokens at startup
 if not GITHUB_TOKEN:
@@ -177,19 +175,16 @@ def read_prompt_file() -> str:
 # One label list for issues and pull requests; definitions live in project-manager.md.
 # Kinds are listed in tie-break order.
 KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-ISSUE_TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
-PR_TYPES = ["BUG"]
-ISSUE_FLAGS = {"BILLING", "SECURITY", "AUTOMATED"}
+TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
 # POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
-PR_FLAGS = ISSUE_FLAGS | {"POLLEN-QUEST"}
-# Labels the classifier owns per item type; a relabel replaces these and leaves workflow labels alone.
-ISSUE_LABELS = set(KINDS) | set(ISSUE_TYPES) | ISSUE_FLAGS
-PR_LABELS = set(KINDS) | set(ISSUE_TYPES) | PR_FLAGS
+FLAGS = {"BILLING", "SECURITY", "AUTOMATED"} | ({"POLLEN-QUEST"} if IS_PULL_REQUEST else set())
+# Labels the classifier owns; it replaces these and leaves workflow labels alone.
+OWNED_LABELS = set(KINDS) | set(TYPES) | FLAGS
 # Types a person set on an issue that the classifier keeps.
 PINNED_TYPES = {"TRACKING", "VOTING"}
 
 
-def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
+def parse_labels(raw: dict) -> Optional[list]:
     """The model's kind, type and flags as labels; None when the kind is invalid."""
     kind = str(raw.get("kind", "")).upper()
     if kind not in KINDS:
@@ -197,8 +192,8 @@ def parse_labels(raw: dict, types: list, flags: set) -> Optional[list]:
         return None
     item_type = str(raw.get("type") or "").upper()
     raw_flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
-    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in flags]
-    return list(dict.fromkeys([kind, *([item_type] if item_type in types else []), *picked]))
+    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in FLAGS]
+    return list(dict.fromkeys([kind, *([item_type] if item_type in TYPES else []), *picked]))
 
 
 def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
@@ -278,8 +273,7 @@ Body: {ISSUE_BODY[:2000]}
     if raw is None:
         return None
 
-    types, flags = (PR_TYPES, PR_FLAGS) if IS_PULL_REQUEST else (ISSUE_TYPES, ISSUE_FLAGS)
-    labels = parse_labels(raw, types, flags)
+    labels = parse_labels(raw)
     if labels is None:
         return None
 
@@ -477,11 +471,9 @@ def remove_label(label: str):
 
 
 def set_labels(labels: list):
-    """Apply the classifier's labels; a relabel first drops its older ones."""
-    if RELABEL:
-        owned = PR_LABELS if IS_PULL_REQUEST else ISSUE_LABELS
-        for stale in sorted((set(get_existing_labels()) & owned) - set(labels)):
-            remove_label(stale)
+    """Apply the classifier's labels, replacing the owned labels already on the item."""
+    for stale in sorted((set(get_existing_labels()) & OWNED_LABELS) - set(labels)):
+        remove_label(stale)
     add_labels(labels)
 
 
@@ -561,14 +553,11 @@ def fetch_linked_issues() -> list:
 def label_pull_request():
     # Every open PR sits next to the issues in Dev, where views separate them.
     add_to_project(CONFIG["projects"]["dev"]["id"])
-    if not RELABEL and set(get_existing_labels()) & set(KINDS):
-        log_debug(f"PR #{ISSUE_NUMBER} already has a kind label; keeping its labels")
-        return
 
     files = fetch_pr_files()
     linked = "\n".join(fetch_linked_issues()) or "none"
     listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
-    classification = classify(f"Linked issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
+    classification = classify(f"Referenced issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
     if classification is None:
         fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
     labels = classification["labels"]
@@ -617,7 +606,7 @@ def main():
     labels = classification["labels"]
     pinned = set(existing_labels) & PINNED_TYPES
     if pinned:
-        labels = [l for l in labels if l not in ISSUE_TYPES] + sorted(pinned)
+        labels = [l for l in labels if l not in TYPES] + sorted(pinned)
     log_debug(f"Labels: {labels}")
     if DRY_RUN:
         print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
@@ -626,10 +615,7 @@ def main():
     set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
     if priority:
         set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
-    if RELABEL or not set(existing_labels) & set(KINDS):
-        set_labels(labels)
-    else:
-        log_debug(f"Issue #{ISSUE_NUMBER} already has a kind label; keeping its labels")
+    set_labels(labels)
 
     # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
     is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels

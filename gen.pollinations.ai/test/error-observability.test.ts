@@ -317,6 +317,7 @@ describe("error observability", () => {
             const error = UpstreamError.fromProvider(422, {
                 message: "provider rejection",
                 responseBody: body,
+                billedUsage: { completionVideoSeconds: 5 },
             });
             try {
                 throwImageError(error);
@@ -327,6 +328,7 @@ describe("error observability", () => {
                     responseBody: body,
                     message: "provider rejection",
                     errorCode: code,
+                    billedUsage: { completionVideoSeconds: 5 },
                 });
             }
         }

@@ -258,6 +258,23 @@ test("catalog distinguishes flat image rates from image-token rates", () => {
     });
 });
 
+test("catalog displays Lyria 3.5 as a flat per-song rate", () => {
+    const models = getCatalogModels();
+    const prices = getCatalogModelPrices();
+    const model = models.find(({ name }) => name === "google/lyria-3.5");
+    const price = prices.find(({ name }) => name === "google/lyria-3.5");
+
+    expect(model?.flat_rate).toBe(true);
+    expect(price?.prices).toEqual([
+        {
+            direction: "output",
+            kind: "audioOut",
+            price: "0.08",
+            unit: "request",
+        },
+    ]);
+});
+
 test("catalog prices keep community text models flagged for display", () => {
     const [communityModel] = getModelPricesFromCatalog([
         {
@@ -734,7 +751,7 @@ test("Claude Fable 5.1 is paid-only and billed at current standard rates", () =>
     );
 });
 
-test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
+test("Qwen Image 3 uses DashScope's output tier and reference-image rates", () => {
     expect(
         calculatePrice("qwen/qwen-image-3", {
             completionImageTokens: 1,
@@ -745,7 +762,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
             "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
-            { megapixels: (1536 * 1536) / 1_000_000 },
+            { megapixels: (1500 * 1500) / 1_000_000 },
         ).totalPrice,
     ).toBeCloseTo(0.04, 8);
     expect(
@@ -753,7 +770,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
             "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
-            { megapixels: 2.4 },
+            { megapixels: (1536 * 1536) / 1_000_000 },
         ).totalPrice,
     ).toBeCloseTo(0.075, 8);
     expect(

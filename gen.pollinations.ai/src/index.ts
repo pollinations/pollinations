@@ -29,6 +29,7 @@ import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { machinesRoutes } from "./routes/machines.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
@@ -159,6 +160,12 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route(
+        "/",
+        createMessagesRoutes((request, c) =>
+            app.fetch(request, c.env, c.executionCtx),
+        ),
+    )
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

@@ -502,25 +502,18 @@ test("filters OpenRouter text models by paid balance", async ({
     }
 }, 15_000);
 
-test("requires paid balance for direct OpenAI GPT-6 models", async ({
+test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
-    const [freeResponse, paidResponse, responses] = await Promise.all([
+    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"] as const;
+    const [freeResponse, paidResponse] = await Promise.all([
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${apiKey}` },
         }),
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${paidApiKey}` },
         }),
-        Promise.all(
-            models.map((model) =>
-                fetchWorker(`/text/paid-only-check?model=${model}`, {
-                    headers: { Authorization: `Bearer ${apiKey}` },
-                }),
-            ),
-        ),
     ]);
     const freeModels = (await freeResponse.json()) as {
         data: { id: string }[];
@@ -531,12 +524,10 @@ test("requires paid balance for direct OpenAI GPT-6 models", async ({
     const freeNames = new Set(freeModels.data.map((model) => model.id));
     const paidNames = new Set(paidModels.data.map((model) => model.id));
 
-    for (const [index, model] of models.entries()) {
-        expect(freeNames.has(model)).toBe(false);
+    for (const model of models) {
+        expect(freeNames.has(model)).toBe(true);
         expect(paidNames.has(model)).toBe(true);
-        expect(responses[index].status).toBe(
-            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
-        );
+        expect(getRegistryModelDefinition(model).paidOnly).toBe(false);
     }
 }, 15_000);
 

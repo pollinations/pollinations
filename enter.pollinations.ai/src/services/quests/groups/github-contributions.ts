@@ -43,7 +43,8 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
-const SURVEY_TITLE_PREFIX = "[Bee Census]";
+// The issue form applies this label; responders can rename the title.
+const SURVEY_LABEL = "BEE-CENSUS";
 // Issue forms can only mark fields required, so the minimum length of the
 // written answers is checked here. The wishlist heading is the pre-2026-09-29 form.
 const SURVEY_WRITTEN_ANSWERS = [
@@ -161,7 +162,6 @@ type ReportedIssueNode = {
 };
 
 type SurveyIssueNode = {
-    title: string;
     body: string;
     author: GitHubUser | null;
 };
@@ -237,7 +237,7 @@ query($query:String!,$after:String){
 const SURVEY_QUERY = `
 query($query:String!){
   search(query:$query,type:ISSUE,first:10){
-    nodes{ ... on Issue{ title body author{ ... on User{ databaseId } } } }
+    nodes{ ... on Issue{ body author{ ... on User{ databaseId } } } }
   }
 }`;
 
@@ -471,13 +471,12 @@ async function answeredSurvey(
         token,
         SURVEY_QUERY,
         {
-            query: `repo:${REPO} is:issue author:${user.githubUsername} in:title "${SURVEY_TITLE_PREFIX}"`,
+            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${SURVEY_LABEL}`,
         },
     );
     return data.search.nodes.some(
         (issue) =>
             issue.author?.databaseId === user.githubId &&
-            issue.title.startsWith(SURVEY_TITLE_PREFIX) &&
             writtenAnswerLength(issue.body) >= SURVEY_MIN_WRITTEN_CHARS,
     );
 }

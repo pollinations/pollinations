@@ -27,6 +27,8 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "./lib/range";
 const EXPORT_COLUMNS = [
     ["week", "Week"],
     ["registrations", "Registrations"],
+    ["githubStarGrowth", "GitHub stars net growth"],
+    ["githubStars", "GitHub stars total"],
     ["activations", "Activations"],
     ["wau", "WAU"],
     ["wauAll", "WAU incl. rejected"],
@@ -303,7 +305,11 @@ function Dashboard({ accountUser }) {
                         previous={previousWeek?.revenue}
                     />
                     <Tile
-                        label="GitHub stars"
+                        label={
+                            github.capturedAt
+                                ? `GitHub stars · ${github.capturedAt.slice(0, 10)}`
+                                : "GitHub stars"
+                        }
                         value={github.stars}
                         format="compact"
                     />

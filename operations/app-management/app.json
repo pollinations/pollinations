@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollinations for Figma",
+    "url": "https://github.com/xiaotian1171/pollinations-figma",
+    "description": "A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/xiaotian1171/pollinations-figma",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15713",
+    "approvedDate": "2026-09-29",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "Pollinations for Obsidian",
     "url": "https://github.com/xiaotian1171/pollinations-obsidian",

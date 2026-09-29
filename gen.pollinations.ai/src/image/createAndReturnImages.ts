@@ -1,5 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import debug from "debug";
+import { UserImageError } from "../userImage.ts";
 import {
     fetchFromWeightedServer,
     type ServerType,
@@ -439,14 +440,27 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 
 const gptImageEndpointIndexes = new Map<string, number>();
 
-/** Round robins the Azure regions to spread load. One region per request. */
-function nextGPTImageConfig(model: string): GPTImageConfig {
+/** Every region of the model, starting from the next one in the rotation. */
+function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
     const configs =
         GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
-    const index = gptImageEndpointIndexes.get(model) ?? 0;
-    const config = configs[index % configs.length];
+    const index = (gptImageEndpointIndexes.get(model) ?? 0) % configs.length;
     gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
-    return config;
+    return [...configs.slice(index), ...configs.slice(0, index)];
+}
+
+/**
+ * Azure refused before generating anything: a rate limit or a missing
+ * deployment. Only these are safe to send elsewhere, because Azure bills a
+ * generation it completed even when we never saw the response. A reference
+ * image host's error is not Azure's and is left to the caller.
+ */
+export function isGPTImageRefusedByAzure(error: unknown): boolean {
+    return (
+        error instanceof UpstreamError &&
+        !(error instanceof UserImageError) &&
+        (error.upstreamStatus === 429 || error.upstreamStatus === 404)
+    );
 }
 
 const callGPTImageWithEndpoint = async (
@@ -719,24 +733,31 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    // One region, one attempt. Azure bills a generation it completed even when
-    // we never saw the response, so a second region would pay for a second
-    // image to answer a request the caller has already been told failed.
-    const config = nextGPTImageConfig(model);
-    try {
-        return await callGPTImageWithEndpoint(
-            prompt,
-            safeParams,
-            userInfo,
-            config,
-        );
-    } catch (error) {
-        logError(
-            `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
-            error,
-        );
-        throw error;
+    // The next region refused before generating: try the other one. Timeouts
+    // and 5xx never move on, or a second region would pay for a second image.
+    const configs = gptImageConfigsInTurn(model);
+    for (const [index, config] of configs.entries()) {
+        try {
+            return await callGPTImageWithEndpoint(
+                prompt,
+                safeParams,
+                userInfo,
+                config,
+            );
+        } catch (error) {
+            logError(
+                `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
+                error,
+            );
+            if (
+                index === configs.length - 1 ||
+                !isGPTImageRefusedByAzure(error)
+            ) {
+                throw error;
+            }
+        }
     }
+    throw new Error(`No GPT Image endpoint configured for ${model}`);
 };
 
 /**

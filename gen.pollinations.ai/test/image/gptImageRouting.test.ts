@@ -56,8 +56,11 @@ function successResponse(): Response {
     });
 }
 
-/** Client error, rate limit, and a timeout that may already have been billed. */
-const UPSTREAM_FAILURES = [400, 429, 524];
+/** Client error and a timeout that may already have been billed. */
+const UPSTREAM_FAILURES = [400, 524];
+
+/** Rate limit and missing deployment: Azure generated nothing. */
+const AZURE_REFUSALS = [429, 404];
 
 syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
 
@@ -100,6 +103,35 @@ describe("openai/gpt-image-2 Azure routing", () => {
                 upstreamStatus: status,
             });
             expect(fetchMock).toHaveBeenCalledOnce();
+        });
+    }
+
+    for (const status of AZURE_REFUSALS) {
+        it(`tries the other region after a ${status}`, async () => {
+            const hosts: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+                hosts.push(new URL(String(input)).host);
+                return hosts.length === 1
+                    ? new Response("refused", { status })
+                    : successResponse();
+            });
+
+            await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+
+            expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
+        });
+
+        it(`fails a ${status} to the caller once every region refused`, async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementation(
+                    async () => new Response("refused", { status }),
+                );
+
+            await expect(
+                callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
+            ).rejects.toMatchObject({ upstreamStatus: status });
+            expect(fetchMock).toHaveBeenCalledTimes(EXPECTED_HOSTS.size);
         });
     }
 });

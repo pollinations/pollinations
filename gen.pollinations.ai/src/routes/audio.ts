@@ -3654,7 +3654,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
@@ -3671,6 +3671,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     if (!file) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Missing required field: file",
+        });
+    }
+    if (!(file instanceof File) || file.size === 0) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "The file field must contain a non-empty audio file",
         });
     }
     if (speakersExpected !== undefined && responseFormat !== "diarized_json") {

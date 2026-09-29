@@ -1,0 +1,38 @@
+{
+  "pr_number": 15809,
+  "title": "feat: sharper Bee Census questions; pay only for written answers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15809",
+  "merged_at": "2026-09-29T16:05:38Z",
+  "labels": [
+    "FEATURE",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Required single-choice dropdowns started on their first option (e.g. \"Very disappointed\" 8/12). All required dropdowns are now multi-select, which starts empty; spend and vanish say \"Pick one.\"\n- Replaces the generic wishlist with \"What did you last try to build that Pollinations couldn't do?\" and adds \"What would make you pay this month?\", each with an example.\n- Adds a plan price question ($3–$50+ / wouldn't subscribe) and an example placeholder for \"Where exactly?\".\n- The `bee_census` quest pays only when the written answers total at least 60 characters (issue forms can't enforce length). Short answers can be edited and count on the next check; rewards already stored stay paid.\n- Test: a short survey pays nothing, a full one pays 3 Pollen once.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The census asks better questions",
+    "blurb": "Bee Census now starts with genuinely empty choices and asks what you tried to build. Write a little more about it, and the 3 Pollen reward is ready to claim.",
+    "summary": "Bee Census now uses empty-starting required choices, asks about unmet projects and willingness to pay, and awards its 3 Pollen quest reward when written answers total at least 60 characters.",
+    "impact": "Respondents can choose answers without a preselected option, edit short responses to qualify on the next check, and receive the 3 Pollen reward once.",
+    "keywords": [
+      "Bee Census",
+      "quest",
+      "Pollen",
+      "survey",
+      "GitHub issue forms",
+      "rewards"
+    ],
+    "visual_concept": "Depict Bee Census as a friendly garden survey: Polli fills in a clipboard beside an unselected choice box and a growing written-answer plant, with three Pollen tokens nearby. No separate project mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden, Polli fills in a survey clipboard while a little plant sprouts from her written answer and three Pollen tokens rest nearby; an empty choice box waits for her selection. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses, is small-to-medium sized within the scene, and is strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15809.jpg",
+    "prompt": "In a cozy pixel art garden, Polli fills in a survey clipboard while a little plant sprouts from her written answer and three Pollen tokens rest nearby; an empty choice box waits for her selection. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses, is small-to-medium sized within the scene, and is strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T16:06:41.255890+00:00"
+}

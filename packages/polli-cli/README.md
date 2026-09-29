@@ -149,6 +149,8 @@ polli harness bloom on            # creates a dedicated key for Bloom CLI
 polli harness dsh on              # DeepSeek Harness → Pollinations
 polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
+polli harness hermes on           # adds the Pollinations provider + Polli skill to Hermes Agent
+polli harness hermes on --model deepseek/deepseek-v4-flash
 polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill
@@ -161,7 +163,10 @@ polli harness <harness> off
 Bloom stores its dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`).
 tgpt stores its provider, dedicated key, and model in `~/.config/tgpt/config.conf`.
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
-and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Hermes Agent
+stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
+`%LOCALAPPDATA%\hermes` on Windows) and discovers the live Pollinations models;
+install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
 

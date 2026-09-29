@@ -1,0 +1,36 @@
+{
+  "pr_number": 15823,
+  "title": "fix: use dedicated Cloudflare token for traffic sync",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15823",
+  "merged_at": "2026-09-29T17:37:37Z",
+  "labels": [
+    "INFRA",
+    "SECURITY"
+  ],
+  "pr_body_excerpt": "- Uses a read-only Cloudflare token scoped to the pollinations.ai zone for the traffic sync.\n- Leaves the shared deployment token and deploy workflows unchanged.\n- Verified the new token can query Cloudflare GraphQL analytics for the zone.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key for the numbers",
+    "blurb": "Cloudflare traffic sync now has its own read-only key for the pollinations.ai zone. The deployment key gets to keep doing its day job.",
+    "summary": "The Cloudflare traffic sync workflow now uses a dedicated read-only token scoped to the pollinations.ai zone, verified against Cloudflare GraphQL analytics, while deployment workflows remain unchanged.",
+    "impact": "Traffic sync can query zone analytics with its own scoped token; deployments continue using the existing token.",
+    "keywords": [
+      "Cloudflare",
+      "traffic sync",
+      "GraphQL analytics",
+      "GitHub Actions",
+      "token"
+    ],
+    "visual_concept": "Depict the traffic sync as a small garden analytics station with a chart on a CRT monitor and its own labeled key; a separate deployment workstation remains undisturbed. Polli tends the analytics station while the monitor robot points out the chart.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli uses a tiny key-shaped watering can beside a lime green (#ecf874) analytics station while a chunky CRT-headed robot with square pixel eyes holds up a simple traffic chart; a separate retro deployment workstation sits quietly among code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat; she is small-to-medium in the scene, strictly pixel art, never realistic, against soft pastel gradients with warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15823.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli uses a tiny key-shaped watering can beside a lime green (#ecf874) analytics station while a chunky CRT-headed robot with square pixel eyes holds up a simple traffic chart; a separate retro deployment workstation sits quietly among code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat; she is small-to-medium in the scene, strictly pixel art, never realistic, against soft pastel gradients with warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-29T17:39:09.564820+00:00"
+}

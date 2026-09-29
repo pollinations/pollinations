@@ -14,10 +14,12 @@ import { questsRoutes } from "./routes/quests.ts";
 import { referralRoutes } from "./routes/referral.ts";
 import { statusNoticeRoutes } from "./routes/status-notice.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
+import { x402KeysRoutes } from "./routes/x402-keys.ts";
 
 export const frontendApi = new Hono<Env>()
     .route("/customer", customerRoutes)
     .route("/stripe", stripeRoutes)
+    .route("/x402/keys", x402KeysRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account/integrations", integrationsRoutes)

@@ -1,0 +1,38 @@
+{
+  "pr_number": 15680,
+  "title": "feat: add Anthropic Messages API at /v1/messages",
+  "author": "danhquach",
+  "url": "https://github.com/pollinations/pollinations/pull/15680",
+  "merged_at": "2026-09-29T04:07:16Z",
+  "labels": [
+    "FEATURE",
+    "API",
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15490\n\n- Adds `POST /v1/messages` (Anthropic Messages API). Claude Code and the Anthropic SDKs work by pointing their base URL at gen.\n- Each request is translated and runs as a `/v1/chat/completions` request through the full chat route (in-process `app.fetch`). That means auth, balance checks, key permissions, allowlists, rate limits, caching, dedup, tracking and billing are the chat code, running once. There is no second provider path.\n- Lists `/v1/messages` in `supported_endpoints` for every text model that supports chat, community models included. Media models return a 400.\n- Translates text, images, `system` blocks (including mid-conversation `system` entries), `cache_control`, tools, `tool_choice`, `stop_sequences` and `thinking` → `reasoning_effort`. Provider reasoning returns as `thinking` blocks, and signed Claude thinking is replayed.\n- Streams live in standard event order, with `ping` keepalives. Missing usage produces a JSON 502 `api_error` or a stream `error` event, and nothing is billed.\n- Errors use Anthropic's shape and status codes. Docs source updated; `APIDOCS.md` untouched.\n\n| | Before | After |\n|---|---|---|\n| Claude Code | needs Claude Code Router | `ANTHROPIC_BASE_URL=https://gen.pollinations.ai` |\n| Anthropic SDKs | not supported | `base_url` + `auth_token` |\n\n**Verification**\n- `tsc --noEmit` and `biome check` clean. Full gen suite: 139 files, 2439 passed.\n- 24 new tests in `test/text/messages.test.ts`:\n  - request, response and stream translation (thinking, text, parallel tool calls, signatures, pings);\n  - through the real worker: same price and one charge as chat, streamed and not; missing usage fails unbilled; 401/400 shapes; `/v1/models`.\n- Live checks against production gen via a local server mounting this route (transcripts below). Claude Code 2.1.282, `anthropic` 1.8.0, `@anthropic-ai/sdk` 0.128.0. Total cost 0.025 Pollen.\n\n**Not covered**\n- Claude models aren't live-verified: I only have Quest Pollen, and they're `paid_only`.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Claude Code finds the garden",
+    "blurb": "Claude Code and Anthropic SDKs can now talk to gen directly. The new entrance leads through the same chat route, so requests keep the usual model access, billing, and safeguards.",
+    "summary": "Added POST /v1/messages with Anthropic-compatible requests, responses, streaming, tools, and thinking, routed through /v1/chat/completions for all chat-capable text models, including community models.",
+    "impact": "Set ANTHROPIC_BASE_URL=https://gen.pollinations.ai for Claude Code, or configure an Anthropic SDK with a base URL and auth token; requests use the existing chat permissions and receive one charge, not two.",
+    "keywords": [
+      "Anthropic Messages API",
+      "Claude Code",
+      "Anthropic SDK",
+      "/v1/messages",
+      "streaming",
+      "billing"
+    ],
+    "visual_concept": "Show a cozy coding desk where an Anthropic-style message envelope enters a new /v1/messages doorway and joins an existing chat path on a CRT screen. Polli, wearing a tiny tool belt, guides the envelope past a single Pollen coin; code-plants and flowers make the route feel like part of the same garden.",
+    "image_prompt": "In a cozy pixel art garden workspace, a CRT terminal shows a little message envelope passing through a doorway labeled '/v1/messages' to join a glowing chat path, with one Pollen coin beside it and code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and warmly guides the envelope, small-to-medium in the scene, never oversized or realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and lavender, dark purple #110518 outlines, chunky sprites, and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15680.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a CRT terminal shows a little message envelope passing through a doorway labeled '/v1/messages' to join a glowing chat path, with one Pollen coin beside it and code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and warmly guides the envelope, small-to-medium in the scene, never oversized or realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and lavender, dark purple #110518 outlines, chunky sprites, and subtle CRT glow."
+  },
+  "generated_at": "2026-09-29T04:08:11.379066+00:00"
+}

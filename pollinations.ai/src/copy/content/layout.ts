@@ -12,6 +12,12 @@ export const LAYOUT = {
     navDocs: "docs",
     navApps: "apps",
     navCommunity: "community",
+    skipToContent: "Skip to content",
+    navigationLabel: "Main navigation",
+    footerNavigationLabel: "Explore",
+    resourcesLabel: "Build",
+    legalLabel: "Legal",
+    modelsLink: "Models",
 
     // Header
     enterButton: "Enter",
@@ -26,5 +32,5 @@ export const LAYOUT = {
     privacyLink: "Privacy",
     refundsLink: "Refunds",
     footerBranding: "Pollinations.AI © 2026 Myceli AI OÜ",
-    footerTagline: "Open source AI innovation",
+    footerTagline: "Open infrastructure for AI apps",
 };

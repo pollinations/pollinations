@@ -94,7 +94,8 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
         weeklyData: [],
         allWeeks: [],
         retentionData: [],
-        github: { stars: 0, forks: 0 },
+        github: {},
+        dailyComparison: [],
     });
 
     useEffect(() => {
@@ -106,6 +107,13 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 loading: true,
                 done: [],
                 active: SOURCES[0].label,
+                missing: [],
+                weeklyData: [],
+                allWeeks: [],
+                retentionData: [],
+                dailyComparison: [],
+                github: {},
+                signupsSyncedAt: undefined,
             }));
             const raw = {};
             for (const source of SOURCES) {
@@ -113,122 +121,119 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 setState((prev) => ({ ...prev, active: source.label }));
                 raw[source.key] = await source.load(weeks).catch(() => null);
                 if (cancelled) return;
+
+                const missing = Object.entries(REQUIRED)
+                    .filter(([key]) => key in raw && !raw[key]?.length)
+                    .map(([, label]) => label);
+
+                const weekMap = new Map();
+                mergeInto(weekMap, raw.registrations, (row) => ({
+                    registrations: row.registrations,
+                }));
+                // WAU counts users we actually served. A 402 is an out-of-Pollen
+                // rejection — no provider ran, nothing was billed — so counting it
+                // as an active user overstated WAU by roughly half and hid the
+                // served base shrinking. The raw figure stays as wauAll, and
+                // wauAll − wau is the number of people turned away.
+                mergeInto(weekMap, raw.wau, (row) => ({
+                    wau: row.served_users,
+                    wauAll: row.active_users,
+                    payingUsers: row.paying_users,
+                    totalRequests: row.served_requests,
+                    totalRequestsAll: row.total_requests,
+                }));
+                mergeInto(weekMap, raw.usage, (row) => ({
+                    tokens: row.total_tokens,
+                    tokensPerUser: row.tokens_per_user,
+                    textRequests: row.served_text_requests,
+                    imageRequests: row.served_image_requests,
+                    costUsd: row.cost_usd,
+                    // Pollen actually spent, in USD. Unlike Stripe cash this is
+                    // matched to the week's traffic, so it is the revenue side of
+                    // gross margin.
+                    pollenRevenue: row.revenue_usd,
+                    pollenText: row.pollen_text,
+                    pollenImage: row.pollen_image,
+                    pollenVideo: row.pollen_video,
+                    pollenAudio: row.pollen_audio,
+                    pollenRealtime: row.pollen_realtime,
+                    pollenEmbedding: row.pollen_embedding,
+                    pollen3d: row.pollen_3d,
+                    pollenCommunity: row.pollen_community,
+                    pollenOther: row.pollen_other,
+                    paidPollenPct: row.paid_pollen_pct,
+                    communityUserPct: row.served_community_user_pct,
+                    communityUserPctAll: row.community_user_pct,
+                    communityRequestPct: row.community_request_pct,
+                    communityAvailability: row.community_availability,
+                }));
+                mergeInto(weekMap, raw.revenue, (row) => ({
+                    revenue: row.revenue,
+                    packPurchases: row.purchases,
+                }));
+                mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
+                    agentRequests: row.agent_requests,
+                    agentUsers: row.agent_users,
+                    mcpCalls: row.mcp_calls,
+                    mcpUsers: row.mcp_users,
+                }));
+                mergeInto(weekMap, raw.health, (row) => ({
+                    availability: row.availability,
+                    serverErrors5xx: row.server_errors_5xx,
+                    latencyP50: row.latency_p50_ms,
+                    latencyP95: row.latency_p95_ms,
+                }));
+                mergeInto(weekMap, raw.segments, (row) => ({
+                    byopUsers: row.byop_users,
+                    byopPollen: row.byop_pollen,
+                    otherUsers: row.other_users,
+                    otherPollen: row.other_pollen,
+                    byopUserPct: row.byop_served_user_pct,
+                    byopUserPctAll: row.byop_user_pct,
+                    byopPollenPct: row.byop_pollen_pct,
+                }));
+                mergeInto(weekMap, raw.appSubmissions, (row) => ({
+                    appSubmissions: row.submitted,
+                }));
+                // Activations only annotate weeks another source already produced.
+                for (const row of raw.activations ?? []) {
+                    const existing = weekMap.get(row.week);
+                    if (existing) existing.activations = row.activations;
+                }
+
+                // Pipes disagree on how far back they reach — registrations and
+                // activations run to Oct 2025, the Tinybird pipes only cover the
+                // last selected range. The table needs the window every source
+                // can fill; the acquisition chart keeps the whole history.
+                const allWeeks = [...weekMap.values()].sort((a, b) =>
+                    a.week.localeCompare(b.week),
+                );
+                const weeklyData = allWeeks.slice(-(weeks + 1));
+
+                if (cancelled) return;
                 setState((prev) => ({
                     ...prev,
+                    loading: source !== SOURCES[SOURCES.length - 1],
                     done: [...prev.done, source.label],
+                    missing,
+                    weeklyData,
+                    allWeeks,
+                    retentionData: (raw.retention ?? []).map((row) => ({
+                        cohort: row.cohort,
+                        users: row.cohort_size,
+                        w1: row.w1_retention,
+                        w2: row.w2_retention,
+                        w3: row.w3_retention,
+                        w4: row.w4_retention,
+                    })),
+                    dailyComparison: buildDailyComparison(
+                        raw.dailyRevenue,
+                        raw.dailyRegistrations,
+                    ),
+                    signupsSyncedAt: raw.dailyRegistrations?.[0]?.snapshot_at,
+                    github: raw.github ?? {},
                 }));
             }
-
-            const missing = Object.entries(REQUIRED)
-                .filter(([key]) => !raw[key]?.length)
-                .map(([, label]) => label);
-
-            const weekMap = new Map();
-            mergeInto(weekMap, raw.registrations, (row) => ({
-                registrations: row.registrations,
-            }));
-            // WAU counts users we actually served. A 402 is an out-of-Pollen
-            // rejection — no provider ran, nothing was billed — so counting it
-            // as an active user overstated WAU by roughly half and hid the
-            // served base shrinking. The raw figure stays as wauAll, and
-            // wauAll − wau is the number of people turned away.
-            mergeInto(weekMap, raw.wau, (row) => ({
-                wau: row.served_users,
-                wauAll: row.active_users,
-                payingUsers: row.paying_users,
-                totalRequests: row.served_requests,
-                totalRequestsAll: row.total_requests,
-            }));
-            mergeInto(weekMap, raw.usage, (row) => ({
-                tokens: row.total_tokens,
-                tokensPerUser: row.tokens_per_user,
-                textRequests: row.served_text_requests,
-                imageRequests: row.served_image_requests,
-                costUsd: row.cost_usd,
-                // Pollen actually spent, in USD. Unlike Stripe cash this is
-                // matched to the week's traffic, so it is the revenue side of
-                // gross margin.
-                pollenRevenue: row.revenue_usd,
-                pollenText: row.pollen_text,
-                pollenImage: row.pollen_image,
-                pollenVideo: row.pollen_video,
-                pollenAudio: row.pollen_audio,
-                pollenRealtime: row.pollen_realtime,
-                pollenEmbedding: row.pollen_embedding,
-                pollen3d: row.pollen_3d,
-                pollenCommunity: row.pollen_community,
-                pollenOther: row.pollen_other,
-                paidPollenPct: row.paid_pollen_pct,
-                communityUserPct: row.served_community_user_pct,
-                communityUserPctAll: row.community_user_pct,
-                communityRequestPct: row.community_request_pct,
-                communityAvailability: row.community_availability,
-            }));
-            mergeInto(weekMap, raw.revenue, (row) => ({
-                revenue: row.revenue,
-                packPurchases: row.purchases,
-            }));
-            mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
-                agentRequests: row.agent_requests,
-                agentUsers: row.agent_users,
-                mcpCalls: row.mcp_calls,
-                mcpUsers: row.mcp_users,
-            }));
-            mergeInto(weekMap, raw.health, (row) => ({
-                availability: row.availability,
-                serverErrors5xx: row.server_errors_5xx,
-                latencyP50: row.latency_p50_ms,
-                latencyP95: row.latency_p95_ms,
-            }));
-            mergeInto(weekMap, raw.segments, (row) => ({
-                byopUsers: row.byop_users,
-                byopPollen: row.byop_pollen,
-                otherUsers: row.other_users,
-                otherPollen: row.other_pollen,
-                byopUserPct: row.byop_served_user_pct,
-                byopUserPctAll: row.byop_user_pct,
-                byopPollenPct: row.byop_pollen_pct,
-            }));
-            mergeInto(weekMap, raw.appSubmissions, (row) => ({
-                appSubmissions: row.submitted,
-            }));
-            // Activations only annotate weeks another source already produced.
-            for (const row of raw.activations ?? []) {
-                const existing = weekMap.get(row.week);
-                if (existing) existing.activations = row.activations;
-            }
-
-            // Pipes disagree on how far back they reach — registrations and
-            // activations run to Oct 2025, the Tinybird pipes only cover the
-            // last selected range. The table needs the window every source
-            // can fill; the acquisition chart keeps the whole history.
-            const allWeeks = [...weekMap.values()].sort((a, b) =>
-                a.week.localeCompare(b.week),
-            );
-            const weeklyData = allWeeks.slice(-(weeks + 1));
-
-            if (cancelled) return;
-            setState((prev) => ({
-                ...prev,
-                loading: false,
-                missing,
-                weeklyData,
-                allWeeks,
-                retentionData: (raw.retention ?? []).map((row) => ({
-                    cohort: row.cohort,
-                    users: row.cohort_size,
-                    w1: row.w1_retention,
-                    w2: row.w2_retention,
-                    w3: row.w3_retention,
-                    w4: row.w4_retention,
-                })),
-                dailyComparison: buildDailyComparison(
-                    raw.dailyRevenue,
-                    raw.dailyRegistrations,
-                ),
-                signupsSyncedAt: raw.dailyRegistrations?.[0]?.snapshot_at,
-                github: raw.github ?? { stars: 0, forks: 0 },
-            }));
         }
 
         load();

@@ -828,6 +828,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.000108333333333333,
     },
   },
+  "elevenlabs/stem-separation": {
+    "cost": {
+      "promptAudioSeconds": 0.005,
+    },
+    "costVariants": {
+      "two_stems_v1": {
+        "promptAudioSeconds": 0.0025,
+      },
+    },
+    "price": {
+      "promptAudioSeconds": 0.005,
+    },
+  },
   "elevenlabs/voice-isolator": {
     "cost": {
       "promptAudioSeconds": 0.002,

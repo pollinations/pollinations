@@ -336,6 +336,45 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
+    "elevenlabs/stem-separation": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-09-26").getTime(),
+        priceMultiplier: 1,
+        // Workspace analytics: 20s input costs $0.10 (six) or $0.05 (two).
+        cost: { promptAudioSeconds: 0.3 / 60 },
+        ...defineCostVariants(
+            { two_stems_v1: { promptAudioSeconds: 0.15 / 60 } },
+            ({ input }) =>
+                input?.stemVariation === "two_stems_v1"
+                    ? "two_stems_v1"
+                    : undefined,
+            {
+                two_stems_v1: {
+                    label: "Two stems",
+                    description:
+                        "Vocals and instrumental; stem_variation_id=two_stems_v1.",
+                },
+            },
+            "Six stems",
+            [
+                {
+                    key: "stem_variation_id",
+                    label: "Stems",
+                    values: { "": "Six", two_stems_v1: "Two" },
+                },
+            ],
+        ),
+        title: "ElevenLabs Stem Separation",
+        description:
+            "Separate vocals and instruments into two or six downloadable audio tracks",
+        inputModalities: ["audio"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/alpha/audio/stem-separation"],
+    },
     "elevenlabs/music-v2": {
         aliases: ["music", "elevenmusic"],
         provider: "elevenlabs",
@@ -524,6 +563,40 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 15 / 1_000_000 },
+        title: "OpenAI TTS",
+        description:
+            "Low-latency speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1-hd": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 30 / 1_000_000 },
+        title: "OpenAI TTS HD",
+        description:
+            "Higher-quality speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "google/gemini-3.8-flash-tts": {

@@ -291,10 +291,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "anthropic/claude-sonnet-5.5": createPinnedOpenRouterConfig(
-        "anthropic/claude-sonnet-5.5",
-        "anthropic",
-    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -722,6 +718,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-sonnet-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({

@@ -516,7 +516,7 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
-        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-4.6",

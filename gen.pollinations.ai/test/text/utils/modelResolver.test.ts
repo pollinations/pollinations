@@ -234,16 +234,14 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Claude Sonnet 5.5 to Anthropic on OpenRouter without fallback", () => {
+    it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-5.5",
         });
 
-        expect(result.options.model).toBe("anthropic/claude-sonnet-5.5");
-        expect(result.options.provider).toEqual({
-            only: ["anthropic"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
     });
 
     it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {

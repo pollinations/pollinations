@@ -19,6 +19,8 @@ export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
 // The caller's linked GitHub account as `id+username`, the local part of its
 // noreply address. Gen overwrites it too.
 export const MCP_USER_GITHUB_HEADER = "x-pollinations-user-github";
+export const MCP_VAULT_ACTOR_HEADER = "x-pollinations-vault-actor";
+export const MCP_VAULT_PERMISSIONS_HEADER = "x-pollinations-vault-permissions";
 
 type McpServerDefinitionBase = {
     id: string;
@@ -46,11 +48,13 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "VAULT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
         | { billing: "downstream" }
+        | { billing: "free" }
         | {
               billing: "usage_receipt";
               provider: string;
@@ -211,6 +215,16 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "vault",
+        name: "Vault",
+        description:
+            "Store and retrieve private memory for the authenticated account.",
+        binding: "VAULT_MCP",
+        billing: "free",
+        userScoped: true,
+        pricing: { rates: [] },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

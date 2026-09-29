@@ -74,6 +74,8 @@ async function probe(app: Hono<AuthEnv>, url: string, token?: string) {
 test("resolves to the parent key, without its account scope", async () => {
     const parent = await createTestApiKey({
         allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        memoryPermissions: ["read"],
+        accountPermissions: ["usage"],
         pollenBudget: 42,
         user: { tierBalance: 100 },
     });
@@ -91,10 +93,34 @@ test("resolves to the parent key, without its account scope", async () => {
         userId: parent.userId,
         apiKeyId: parent.id,
         pollenBalance: 42,
-        // Model access is inherited; every other scope the parent may hold is
-        // dropped, so the token cannot manage the owner's account.
-        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+        // Model and memory access are inherited; account scope is dropped.
+        permissions: {
+            models: [RESTRICTED_TEXT_TEST_MODEL],
+            memory: ["read"],
+        },
         agentRun: { parentApiKeyId: parent.id },
+    });
+});
+
+test.each([
+    ["revoked", { enabled: false }],
+    ["expired", { expiresAt: new Date(Date.now() - 1_000) }],
+])("rejects an agent run when its parent key is %s", async (_, update) => {
+    const parent = await createTestApiKey({ memoryPermissions: ["read"] });
+    const token = await runTokenFor(parent.id);
+    await drizzle(env.DB)
+        .update(apiKeyTable)
+        .set(update)
+        .where(eq(apiKeyTable.id, parent.id));
+
+    const response = await probe(
+        authProbe,
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(await response.json()).toMatchObject({
+        userId: null,
+        apiKeyId: null,
     });
 });
 

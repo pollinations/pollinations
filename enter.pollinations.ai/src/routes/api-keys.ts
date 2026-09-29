@@ -1,5 +1,7 @@
 import {
     createApiKeyForUser,
+    MEMORY_PERMISSIONS,
+    sanitizeMemoryPermissions,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
@@ -37,13 +39,19 @@ function buildUpdatedPermissions(
     existing: Record<string, string[]>,
     allowedModels?: string[] | null,
     accountPermissions?: string[] | null,
+    memoryPermissions?: string[] | null,
 ): Record<string, string[]> | undefined {
-    if (allowedModels === undefined && accountPermissions === undefined) {
+    if (
+        allowedModels === undefined &&
+        accountPermissions === undefined &&
+        memoryPermissions === undefined
+    ) {
         return undefined;
     }
     const updated = { ...existing };
     applyPermissionField(updated, "models", allowedModels);
     applyPermissionField(updated, "account", accountPermissions);
+    applyPermissionField(updated, "memory", memoryPermissions);
     return updated;
 }
 
@@ -139,6 +147,11 @@ const UpdateApiKeySchema = z.object({
         .describe(
             'Account permissions: ["profile", "usage", "keys"]. null = none',
         ),
+    memoryPermissions: z
+        .array(z.enum(MEMORY_PERMISSIONS))
+        .nullable()
+        .optional()
+        .describe('Memory permissions: ["read", "write"]. Secret keys only.'),
     expiresAt: z
         .string()
         .datetime()
@@ -189,6 +202,11 @@ const CreateApiKeySchema = z.object({
         .describe(
             'Account permissions: ["profile", "usage", "keys"]. null = none',
         ),
+    memoryPermissions: z
+        .array(z.enum(MEMORY_PERMISSIONS))
+        .nullable()
+        .optional()
+        .describe('Memory permissions: ["read", "write"]. Secret keys only.'),
     metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -244,6 +262,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
                 accountPermissions: input.accountPermissions,
+                memoryPermissions: input.memoryPermissions,
                 metadata: input.metadata,
                 defaultCreatedVia: createdVia,
             });
@@ -334,6 +353,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                memoryPermissions,
                 expiresAt,
             } = c.req.valid("json");
 
@@ -350,6 +370,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 accountPermissions === undefined
                     ? undefined
                     : sanitizeAuthorizeAccountPermissions(accountPermissions);
+            const sanitizedMemoryPerms =
+                memoryPermissions === undefined
+                    ? undefined
+                    : sanitizeMemoryPermissions(memoryPermissions);
+            if (existingKey.prefix !== "sk" && sanitizedMemoryPerms) {
+                throw new HTTPException(400, {
+                    message: "Publishable keys cannot have memory permissions",
+                });
+            }
 
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
@@ -357,6 +386,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     ? await validateModelPermissionIds(c.env.DB, allowedModels)
                     : allowedModels,
                 sanitizedAccountPerms,
+                sanitizedMemoryPerms,
             );
 
             if (updatedPermissions) {

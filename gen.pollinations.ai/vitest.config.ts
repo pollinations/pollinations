@@ -116,6 +116,14 @@ export default defineConfig(async ({ mode }) => {
         ),
         footer: { js: "export default {};" },
     }).outputFiles[0].text;
+    const vaultScript = buildSync({
+        entryPoints: [path.join(__dirname, "../apps/vault-mcp/src/index.ts")],
+        bundle: true,
+        write: false,
+        format: "esm",
+        external: ["cloudflare:workers"],
+        tsconfig: path.join(__dirname, "../apps/vault-mcp/tsconfig.json"),
+    }).outputFiles[0].text;
 
     return {
         ...baseConfig,
@@ -155,6 +163,19 @@ export default defineConfig(async ({ mode }) => {
                                 r2Buckets: ["MEDIA_BUCKET"],
                                 bindings: { MAX_FILE_SIZE: "104857600" },
                             },
+                            {
+                                name: "vault-test",
+                                modules: true,
+                                script: vaultScript,
+                                compatibilityDate: "2026-06-17",
+                                compatibilityFlags: ["nodejs_compat"],
+                                durableObjects: {
+                                    VAULT: {
+                                        className: "Vault",
+                                        useSQLite: true,
+                                    },
+                                },
+                            },
                         ],
                         bindings: {
                             TEST_MIGRATIONS: migrations,
@@ -166,6 +187,7 @@ export default defineConfig(async ({ mode }) => {
                                 name: "media-test",
                                 entrypoint: "MediaUpload",
                             },
+                            VAULT_MCP: { name: "vault-test" },
                             ENTER: async (request: Request) => {
                                 const url = new URL(request.url);
                                 if (

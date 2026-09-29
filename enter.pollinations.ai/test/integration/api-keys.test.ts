@@ -26,6 +26,75 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("creates secret keys with explicit memory permissions", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "memory-key",
+                        memoryPermissions: ["read", "write"],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.permissions).toEqual({
+                memory: ["read", "write"],
+            });
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ memoryPermissions: null }),
+                },
+            );
+            expect(update.status).toBe(200);
+            const db = drizzle(env.DB, { schema });
+            expect(
+                await db.query.apikey.findFirst({
+                    where: (apikey, { eq }) => eq(apikey.id, created.id),
+                }),
+            ).toMatchObject({ permissions: "{}" });
+        });
+
+        test("rejects memory permissions for publishable keys", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "publishable-memory-key",
+                        type: "publishable",
+                        memoryPermissions: ["read"],
+                    }),
+                },
+            );
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: "Publishable keys cannot have memory permissions",
+                },
+            });
+        });
+
         test("allows an expiry beyond one year", async ({ sessionToken }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",

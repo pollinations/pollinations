@@ -136,6 +136,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Vault MCP test service
+        run: npm ci --prefix apps/vault-mcp
+
       - name: Test
         run: npm test --workspace pollinations-gen
 

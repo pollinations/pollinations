@@ -13,6 +13,23 @@ import {
 
 export type ApiKeyType = "secret" | "publishable";
 
+export const MEMORY_PERMISSIONS = ["read", "write"] as const;
+export type MemoryPermission = (typeof MEMORY_PERMISSIONS)[number];
+
+export function sanitizeMemoryPermissions(
+    permissions: string[] | null | undefined,
+): MemoryPermission[] | null {
+    if (!permissions?.length) return null;
+    const valid = Array.from(
+        new Set(
+            permissions.filter((permission): permission is MemoryPermission =>
+                MEMORY_PERMISSIONS.includes(permission as MemoryPermission),
+            ),
+        ),
+    );
+    return valid.length ? valid : null;
+}
+
 export type CallerMetadata = {
     redirectUris?: string[];
     redirectUri?: string;
@@ -33,6 +50,7 @@ type CreateApiKeyForUserInput = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    memoryPermissions?: string[] | null;
     metadata?: CallerMetadata;
     defaultCreatedVia: string;
 };
@@ -218,6 +236,7 @@ export async function createApiKeyForUser({
     allowedModels,
     pollenBudget,
     accountPermissions,
+    memoryPermissions,
     metadata,
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
@@ -244,6 +263,12 @@ export async function createApiKeyForUser({
 
     const safeAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions);
+    const safeMemoryPerms = sanitizeMemoryPermissions(memoryPermissions);
+    if (isPublishable && safeMemoryPerms) {
+        throw new HTTPException(400, {
+            message: "Publishable keys cannot have memory permissions",
+        });
+    }
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
@@ -255,6 +280,7 @@ export async function createApiKeyForUser({
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;
     }
+    if (safeMemoryPerms) permissions.memory = safeMemoryPerms;
 
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {

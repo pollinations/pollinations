@@ -107,6 +107,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Vault MCP
+        working-directory: apps/vault-mcp
+        run: npm ci && npm run typecheck && npm test
+
+      - name: Deploy Vault before its gateway binding
+        working-directory: apps/vault-mcp
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:staging
+
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}

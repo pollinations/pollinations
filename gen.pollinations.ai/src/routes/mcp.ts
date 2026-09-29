@@ -14,6 +14,8 @@ import {
     MCP_USAGE_HEADERS,
     MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
+    MCP_VAULT_ACTOR_HEADER,
+    MCP_VAULT_PERMISSIONS_HEADER,
     type McpServerDefinition,
 } from "@shared/registry/mcp.ts";
 import {
@@ -30,18 +32,113 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
+const VAULT_REQUEST_MAX_BYTES = 131_072;
+type VaultAccess = "discovery" | "read" | "write";
+
+async function vaultAccessForRequest(request: Request): Promise<{
+    access: VaultAccess;
+    body: Uint8Array<ArrayBuffer>;
+}> {
+    const contentLength = request.headers.get("content-length");
+    if (contentLength) {
+        if (!/^\d+$/.test(contentLength)) {
+            throw new HTTPException(400, { message: "Invalid Vault request" });
+        }
+        if (Number(contentLength) > VAULT_REQUEST_MAX_BYTES) {
+            throw new HTTPException(413, {
+                message: "Vault request too large",
+            });
+        }
+    }
+    const reader = request.body?.getReader();
+    if (!reader)
+        throw new HTTPException(400, { message: "Invalid Vault request" });
+    const chunks: Uint8Array[] = [];
+    let length = 0;
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        length += value.byteLength;
+        if (length > VAULT_REQUEST_MAX_BYTES) {
+            await reader.cancel();
+            throw new HTTPException(413, {
+                message: "Vault request too large",
+            });
+        }
+        chunks.push(value);
+    }
+    const bytes = new Uint8Array(length);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    let body: unknown;
+    try {
+        body = JSON.parse(
+            new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+        );
+    } catch {
+        throw new HTTPException(400, { message: "Invalid Vault request" });
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+        throw new HTTPException(400, { message: "Invalid Vault request" });
+    }
+    const rpc = body as { method?: unknown; params?: { name?: unknown } };
+    if (
+        rpc.method === "initialize" ||
+        rpc.method === "notifications/initialized" ||
+        rpc.method === "tools/list" ||
+        rpc.method === "resources/list" ||
+        rpc.method === "resources/templates/list" ||
+        rpc.method === "prompts/list"
+    ) {
+        return { access: "discovery", body: bytes };
+    }
+    if (rpc.method === "tools/call" && rpc.params?.name === "write")
+        return { access: "write", body: bytes };
+    if (
+        rpc.method === "tools/call" &&
+        (rpc.params?.name === "read" || rpc.params?.name === "search")
+    ) {
+        return { access: "read", body: bytes };
+    }
+    if (rpc.method === "ping") return { access: "discovery", body: bytes };
+    throw new HTTPException(400, { message: "Unsupported Vault request" });
+}
+
+function requireVaultAccess(
+    permissions: string[] | undefined,
+    required: VaultAccess,
+): void {
+    if (
+        !permissions?.length ||
+        (required !== "discovery" && !permissions.includes(required))
+    ) {
+        throw new HTTPException(403, {
+            message: "API key lacks required memory permission",
+        });
+    }
+}
+
 function requestForMcp(
     request: Request,
     server: McpServerDefinition,
     user: AuthUser,
+    apiKeyId: string | undefined,
+    managedAgentId: string | undefined,
+    memoryPermissions: string[] | undefined,
+    vaultBody?: Uint8Array<ArrayBuffer>,
 ): Request {
     const headers = new Headers(request.headers);
-    if (server.billing === "usage_receipt") {
+    if (server.billing === "usage_receipt" || server.billing === "free") {
         headers.delete("authorization");
     }
     headers.delete("cookie");
     headers.delete(MCP_USER_ID_HEADER);
     headers.delete(MCP_USER_GITHUB_HEADER);
+    headers.delete(MCP_VAULT_ACTOR_HEADER);
+    headers.delete(MCP_VAULT_PERMISSIONS_HEADER);
     if (server.userScoped) {
         headers.set(MCP_USER_ID_HEADER, user.id);
         if (user.githubId && user.githubUsername) {
@@ -58,13 +155,33 @@ function requestForMcp(
     url.protocol = "https:";
     url.host = "mcp.internal";
     url.pathname = "/";
+    if (server.id === "vault") {
+        headers.set(MCP_USER_ID_HEADER, user.id);
+        headers.set(
+            MCP_VAULT_ACTOR_HEADER,
+            JSON.stringify([apiKeyId, managedAgentId ?? null]),
+        );
+        headers.set(
+            MCP_VAULT_PERMISSIONS_HEADER,
+            JSON.stringify(Array.from(new Set(memoryPermissions))),
+        );
+        for (const credential of [
+            "key",
+            "api_key",
+            "access_token",
+            "authorization",
+            "token",
+        ]) {
+            url.searchParams.delete(credential);
+        }
+    }
     return new Request(url, {
         method: request.method,
         headers,
         body:
             request.method === "GET" || request.method === "HEAD"
                 ? undefined
-                : request.body,
+                : (vaultBody ?? request.body),
         redirect: "manual",
     });
 }
@@ -174,7 +291,22 @@ export const mcpRoutes = new Hono<Env>()
     .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
+        const serverId = c.req.param("serverId");
+        const server = getMcpServerDefinition(serverId);
+        if (!server) {
+            throw new HTTPException(404, { message: "MCP server not found" });
+        }
+        let vaultBody: Uint8Array<ArrayBuffer> | undefined;
+        if (server.id === "vault" && c.req.method === "POST") {
+            const vaultRequest = await vaultAccessForRequest(c.req.raw);
+            vaultBody = vaultRequest.body;
+            requireVaultAccess(
+                c.var.auth.apiKey?.permissions?.memory,
+                vaultRequest.access,
+            );
+        }
         if (
+            server.id !== "vault" &&
             c.req.method === "POST" &&
             Array.isArray(
                 await c.req.raw
@@ -187,16 +319,19 @@ export const mcpRoutes = new Hono<Env>()
                 message: "MCP batch requests are not supported",
             });
         }
-        const serverId = c.req.param("serverId");
-        const server = getMcpServerDefinition(serverId);
-        if (!server) {
-            throw new HTTPException(404, { message: "MCP server not found" });
-        }
         const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user),
+            requestForMcp(
+                c.req.raw,
+                server,
+                user,
+                c.var.auth.apiKey?.id,
+                c.var.auth.agentRun?.managedAgentId,
+                c.var.auth.apiKey?.permissions?.memory,
+                vaultBody,
+            ),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);

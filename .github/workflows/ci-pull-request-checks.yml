@@ -195,7 +195,7 @@ jobs:
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(gen.pollinations.ai/|shared/|apps/vault-mcp/)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -217,6 +217,11 @@ jobs:
       - name: Install dependencies
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm ci
+
+      - name: Install and verify Vault MCP
+        if: steps.gen-files.outputs.any_changed == 'true'
+        working-directory: apps/vault-mcp
+        run: npm ci && npm run typecheck && npm test
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'

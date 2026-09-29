@@ -319,3 +319,54 @@ test("an external path that collides with one of our routes is not our page", as
     expect(start?.referrer_host).toBe("pollinations.ai");
     expect(start?.page ?? "").toBe("");
 });
+
+test("embedded checkout ready beacon records the session for signed-in buyers only", async ({
+    sessionToken,
+}) => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    async function ready(query: Record<string, string>, cookie = "") {
+        const ctx = createExecutionContext();
+        const response = await productAnalyticsRoutes.fetch(
+            new Request(
+                `http://localhost:3000/checkout-ready?${new URLSearchParams(query)}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Origin: "http://localhost:3000",
+                        Cookie: cookie,
+                    },
+                },
+            ),
+            env,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response.status;
+    }
+    const cookie = `better-auth.session_token=${sessionToken}`;
+    const valid = { session_id: "cs_test_a1B2", pack_key: "p10" };
+
+    expect(await ready(valid)).toBe(401);
+    expect(await ready({ ...valid, session_id: "cs_x&y" }, cookie)).toBe(400);
+    expect(await ready({ ...valid, pack_key: "p7" }, cookie)).toBe(400);
+    expect(await ready(valid, cookie)).toBe(204);
+    expect(rows).toEqual([
+        expect.objectContaining({
+            event: "checkout_embedded_ready",
+            mode: "embedded",
+            session_id: "cs_test_a1B2",
+            pack_key: "p10",
+            user_id: expect.stringMatching(/.+/),
+        }),
+    ]);
+});

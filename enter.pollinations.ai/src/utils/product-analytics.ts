@@ -5,6 +5,9 @@ import type { Context } from "hono";
 export type ProductEvent =
     | "page_viewed"
     | "checkout_started"
+    // Stripe's embedded form finished rendering in the wallet modal. Joins
+    // checkout_started and the paid stripe_event on session_id.
+    | "checkout_embedded_ready"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
     // Sign-in is two server-side counts, so the drop-off is measured without
@@ -49,6 +52,10 @@ export async function captureProductEvent(
         utm_campaign?: string;
         country?: string;
         amount_usd?: number;
+        // Checkout Session id and how it was shown ("hosted" | "embedded"),
+        // so a started, rendered and paid checkout join on one id.
+        mode?: string;
+        session_id?: string;
     } = {},
 ): Promise<void> {
     try {

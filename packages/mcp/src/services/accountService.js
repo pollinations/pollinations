@@ -7,8 +7,7 @@ import {
     fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
 
-const asJsonText = (data) =>
-    createMCPResponse([createTextContent(data, true)]);
+const asJsonText = (data) => createMCPResponse([createTextContent(data, true)]);
 
 async function getBalance(_params, context) {
     requireApiKey(context);
@@ -95,7 +94,11 @@ async function listQuests(_params, context) {
 
 async function listKeys(_params, context) {
     requireApiKey(context);
-    const data = await fetchJsonWithAuth(buildUrl("/account/keys"), {}, context);
+    const data = await fetchJsonWithAuth(
+        buildUrl("/account/keys"),
+        {},
+        context,
+    );
     return asJsonText(data);
 }
 
@@ -116,7 +119,9 @@ async function createKey(params, context) {
                 name: params.name,
                 type: params.type,
                 expiresIn: params.expiresIn,
-                allowedModels: params.models?.length ? params.models : undefined,
+                allowedModels: params.models?.length
+                    ? params.models
+                    : undefined,
                 pollenBudget: params.budget,
                 accountPermissions: params.permissions?.length
                     ? params.permissions

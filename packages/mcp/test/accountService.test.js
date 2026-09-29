@@ -56,7 +56,9 @@ test("getUsage resolves key names via /account/keys", async (t) => {
     const calls = stubFetch(t, (url) => {
         if (url.endsWith("/account/keys")) {
             return Response.json({
-                data: [{ id: "11111111-2222-3333-4444-555555555555", name: "bot" }],
+                data: [
+                    { id: "11111111-2222-3333-4444-555555555555", name: "bot" },
+                ],
             });
         }
         assert.equal(
@@ -76,9 +78,7 @@ test("getUsage resolves key names via /account/keys", async (t) => {
 test("getUsage daily hits the daily endpoint without history filters", async (t) => {
     stubFetch(t, (url) => {
         assert.ok(
-            url.startsWith(
-                "https://gen.pollinations.ai/account/usage/daily?",
-            ),
+            url.startsWith("https://gen.pollinations.ai/account/usage/daily?"),
         );
         const query = new URL(url).searchParams;
         assert.equal(query.get("days"), "7");

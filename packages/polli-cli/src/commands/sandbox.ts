@@ -1,4 +1,4 @@
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
     chmodSync,
     existsSync,
@@ -10,9 +10,14 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
-import { gen, requireKey } from "../lib/api.js";
-import { BASE_URL } from "../lib/config.js";
-import { fail, printInfo, printSuccess } from "../lib/output.js";
+import { gen, genText, requireKey } from "../lib/api.js";
+import {
+    fail,
+    printInfo,
+    printResult,
+    printSuccess,
+    printTable,
+} from "../lib/output.js";
 
 // Gen serves E2B's API here, so E2B's own CLI and SDKs work against it.
 const E2B_PATH = "/alpha/e2b";
@@ -234,49 +239,103 @@ function setupSsh() {
         chmodSync(USER_SSH_CONFIG, 0o600);
         printInfo(`Added "${INCLUDE}" to ${USER_SSH_CONFIG}`);
     }
-    printSuccess(
-        "ssh, scp and rsync now reach sandboxes as <sandbox-id>.polli, e.g.\n" +
-            "  ssh <id>.polli\n  scp file.txt <id>.polli:\n  rsync -a dir/ <id>.polli:dir/",
-    );
+}
+
+interface Sandbox {
+    sandboxID: string;
+    templateID: string;
+    alias?: string;
+    state: string;
+    cpuCount: number;
+    memoryMB: number;
+    endAt: string;
 }
 
 export const sandboxCommand = new Command("sandbox")
     .description("E2B sandboxes billed to your Pollinations account")
     .addCommand(
-        new Command("env")
-            .description(
-                "Run a command with E2B's CLI and SDKs pointed at Pollinations",
-            )
-            .argument("<command...>", "e.g. -- npx @e2b/cli sandbox list")
-            .action(async ([file, ...args]: string[]) => {
-                // Passed in the environment, never printed.
-                const env = {
-                    ...process.env,
-                    E2B_API_URL: `${BASE_URL}${E2B_PATH}`,
-                    E2B_API_KEY: requireKey(),
-                };
-                const child = spawn(file, args, {
-                    stdio: "inherit",
-                    env,
-                    shell: process.platform === "win32",
-                });
-                // Ctrl-C reaches the child, which decides when to exit.
-                process.on("SIGINT", () => {});
-                process.exitCode = await new Promise<number>((resolve) => {
-                    child.on("error", (err) => {
-                        process.stderr.write(`${err.message}\n`);
-                        resolve(127);
+        new Command("create")
+            .description("Start a sandbox you can ssh into")
+            .option("-t, --template <name>", "E2B template", "base")
+            .action(async ({ template }: { template: string }) => {
+                requireKey();
+                try {
+                    // Paused, not killed, when its paid time runs out.
+                    const { sandboxID } = await gen<Connection>(
+                        `${E2B_PATH}/sandboxes`,
+                        {
+                            method: "POST",
+                            body: {
+                                templateID: template,
+                                timeout: LEASE_SECONDS,
+                                autoPause: true,
+                            },
+                        },
+                    );
+                    setupSsh();
+                    printSuccess(
+                        `Sandbox ${sandboxID} created. It pauses about 10 minutes after the last ssh session.`,
+                    );
+                    printResult({
+                        id: sandboxID,
+                        ssh: `ssh ${sandboxID}.polli`,
                     });
-                    child.on("exit", (code) => resolve(code ?? 1));
-                });
+                } catch (err) {
+                    fail("Failed to create sandbox", err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("list")
+            .description("List your sandboxes")
+            .action(async () => {
+                requireKey();
+                try {
+                    const sandboxes = await gen<Sandbox[]>(
+                        `${E2B_PATH}/v2/sandboxes`,
+                    );
+                    printTable(
+                        sandboxes.map((s) => ({
+                            id: s.sandboxID,
+                            state: s.state,
+                            template: s.alias ?? s.templateID,
+                            size: `${s.cpuCount} vCPU, ${s.memoryMB} MB`,
+                            paid_until: new Date(s.endAt).toLocaleString(),
+                        })),
+                    );
+                } catch (err) {
+                    fail("Failed to list sandboxes", err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("kill")
+            .description("Delete a sandbox and its files")
+            .argument("<id>")
+            .action(async (id: string) => {
+                requireKey();
+                try {
+                    // E2B answers 204 with no body.
+                    await genText(`${E2B_PATH}/sandboxes/${id}`, {
+                        method: "DELETE",
+                    });
+                    printSuccess(`Sandbox ${id} killed.`);
+                } catch (err) {
+                    fail(`Failed to kill sandbox ${id}`, err);
+                }
             }),
     )
     .addCommand(
         new Command("ssh-config")
-            .description("Set up ssh, scp and rsync to <sandbox-id>.polli")
+            .description(
+                "Set up ssh to <sandbox-id>.polli (create does this for you)",
+            )
             .action(() => {
                 try {
                     setupSsh();
+                    printSuccess(
+                        "ssh, scp and rsync now reach <sandbox-id>.polli",
+                    );
                 } catch (err) {
                     fail("Failed to set up ssh", err);
                 }

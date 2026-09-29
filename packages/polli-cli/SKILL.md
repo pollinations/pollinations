@@ -50,8 +50,8 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
-| E2B sandboxes on your wallet | `polli sandbox env -- npx @e2b/cli sandbox create --detach` (any E2B CLI or SDK command) |
-| ssh / scp / rsync into a sandbox | `polli sandbox ssh-config` once, then `ssh <sandbox-id>.polli` |
+| Start a Linux sandbox | `polli sandbox create` (then `list`, `kill <id>`) |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup

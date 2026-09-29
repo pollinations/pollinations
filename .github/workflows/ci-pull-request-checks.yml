@@ -91,8 +91,10 @@ jobs:
           enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
-          operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
+          operations/deployment/*.test.cjs
+          operations/model-evals/*.test.mjs
+          operations/model-monitor/src/*.test.js
 
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts

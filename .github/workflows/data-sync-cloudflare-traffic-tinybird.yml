@@ -30,7 +30,7 @@ jobs:
 
       - name: Sync traffic
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_READ_TOKEN }}
           TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
           DAYS: ${{ inputs.days || '1' }}
         run: node operations/cloudflare/sync-traffic-to-tinybird.mjs --days "$DAYS"

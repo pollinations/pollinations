@@ -1,0 +1,36 @@
+{
+  "pr_number": 15778,
+  "title": "feat: add weekly GitHub star growth KPI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15778",
+  "merged_at": "2026-09-29T13:42:55Z",
+  "labels": [
+    "FEATURE",
+    "ECONOMICS"
+  ],
+  "pr_body_excerpt": "- Adds weekly net GitHub star growth with a total-stars toggle, using the existing graph explorer and CSV export.\n- Collects daily public totals at 00:17 UTC with the built-in Actions token; stores history on kpi-data without new credentials or per-visit GitHub API requests.\n- Counts unstars in net growth. Current week is partial; missing Monday boundaries stay blank. History starts with the first collector run after merge (manual dispatch also supported).\n- Verified: 49 tests pass, client and Worker Vite builds pass, Biome and diff checks pass. No deployment or secret changes.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Counting stars, including departures",
+    "blurb": "The KPI explorer now tracks the stars that arrive and the ones that quietly leave. There’s a total-stars toggle too, for when the net number needs context.",
+    "summary": "Added weekly net GitHub star growth and a total-stars toggle to the KPI graph explorer and CSV export, backed by daily public-total snapshots collected at 00:17 UTC.",
+    "impact": "The project team can compare weekly net growth with total stars without making GitHub API requests on each visit; the current week is partial, and history begins with the first snapshot.",
+    "keywords": [
+      "GitHub stars",
+      "KPI",
+      "weekly growth",
+      "CSV export",
+      "data snapshots"
+    ],
+    "visual_concept": "An internal KPI dashboard as a cozy retro monitor: a star-shaped graph climbs through a small garden, while a second line represents total stars. Polli tends the graph with a tiny clipboard; a few stars drift away to show that net growth includes unstars.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro monitor shows two simple star-count graph lines beside a lime green (#ecf874) code-plant; Polli, wearing a tiny analyst's visor, notes both arriving and departing stars on her clipboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15778.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro monitor shows two simple star-count graph lines beside a lime green (#ecf874) code-plant; Polli, wearing a tiny analyst's visor, notes both arriving and departing stars on her clipboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T13:43:55.840607+00:00"
+}

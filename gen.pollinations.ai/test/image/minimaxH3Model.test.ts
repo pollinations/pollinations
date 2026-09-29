@@ -276,6 +276,74 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         });
     });
 
+    it.each([
+        [5, "480p", "5", 0.0625],
+        [10, "768p", "16", 0.2],
+        [15, "1080p", "48", 0.6],
+        [5, "480p", "6.25", 0.078125],
+    ] as const)("charges provider cost at multiplier 1 for %ss at %s", async (duration, resolution, units, cost) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", units);
+        const result = await callMinimaxH3MaxTurboAPI("billing regression", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
+            duration,
+            resolution,
+        });
+        expect(requests[0]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
+        expect(result.trackingData.providerBilling).toEqual({
+            units: Number(units),
+            unitCost: 0.0125,
+        });
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-h3-max-turbo",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+            input: {
+                resolution,
+                providerBilling: result.trackingData.providerBilling,
+            },
+        });
+        expect(Object.keys(billing.cost)).toEqual(["totalCost"]);
+        expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(cost);
+        expect(billing.servedPrice).toBeCloseTo(cost);
+    });
+
+    it("rejects missing provider billing units before downloading the video", async () => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", null);
+        await expect(
+            callMinimaxH3MaxTurboAPI("invalid receipt", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "MiniMax H3 Max Turbo returned invalid billing units",
+        });
+        expect(requests.some((request) => request.url === VIDEO_URL)).toBe(
+            false,
+        );
+    });
+
+    it("keeps the reviewed registry rate when fal's pricing API changes", async () => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests, "COMPLETED", "5", 0.025);
+        const result = await callMinimaxH3MaxTurboAPI("reviewed pricing", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
+        });
+        expect(
+            requests.some((request) => request.url.includes("/models/pricing")),
+        ).toBe(false);
+        expect(result.trackingData.providerBilling).toEqual({
+            units: 5,
+            unitCost: 0.0125,
+        });
+    });
+
     it("surfaces a terminal provider failure", async () => {
         mockH3Fetch([], "FAILED");
 

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15762,
+  "title": "fix: filter daily usage by API key without Tinybird 400",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15762",
+  "merged_at": "2026-09-29T11:59:44Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "- Qualifies the source `api_key_id` in the daily-usage pipe so ClickHouse does not resolve it to the aggregate alias.\n- Fixes filtered `/account/usage/daily` JSON and CSV requests; no route or CLI changes.\n- Verified the exact qualified query against production Tinybird and validated the pipe in staging (`deployment create --check`).\n\nDeployment pending: staging already has unpromoted deployment #164, and current main also changes the unrelated `product_event` datasource. Coordinate that deployment before deploying this pipe to staging and production.\n\nFixes #15662",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The right key, this time",
+    "blurb": "Daily usage can be filtered by API key again. Tinybird was mistaking a source column for its aggregate alias; the pipe now tells them apart.",
+    "summary": "Qualified the source `api_key_id` in the daily-usage Tinybird pipe, preventing an aggregate-alias collision that returned HTTP 400 for API-key-filtered `/account/usage/daily` requests.",
+    "impact": "Users can get daily usage for a specific API key in JSON or CSV without changing their requests.",
+    "keywords": [
+      "usage",
+      "API keys",
+      "Tinybird",
+      "ClickHouse",
+      "JSON",
+      "CSV"
+    ],
+    "visual_concept": "Depict a cozy usage dashboard where Polli helps the monitor robot connect a labeled API key to the correct source column, revealing a tidy daily chart. A small code-plant and lime-green screen glow keep the database fix grounded in the garden.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli, wearing tiny librarian glasses, points the monitor robot toward an API key tag connected to the correct column on a glowing daily-usage chart, with a code-plant growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and shares the frame, strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15762.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, wearing tiny librarian glasses, points the monitor robot toward an API key tag connected to the correct column on a glowing daily-usage chart, with a code-plant growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and shares the frame, strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T12:00:49.888042+00:00"
+}

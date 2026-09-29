@@ -60,7 +60,10 @@ export function createModel3dCommand() {
 
             try {
                 const res = await fetchGen(path);
-                const contentType = res.headers.get("content-type") ?? "";
+                const contentType = (res.headers.get("content-type") ?? "")
+                    .split(";")[0]
+                    .trim()
+                    .toLowerCase();
                 const extension =
                     EXTENSION_BY_CONTENT_TYPE[contentType] ?? "glb";
                 const output = opts.output ?? `model.${extension}`;

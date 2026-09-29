@@ -57,7 +57,7 @@ polli gen image "enhance this" --image https://media.pollinations.ai/abc --model
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
-polli gen audio "Hello world" --timestamps            # also saves speech.json with character timings
+polli gen audio "Hello world" --timestamps            # also saves speech.mp3.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
 polli gen 3d "a red fox" --output fox.glb
 polli gen 3d --image https://media.pollinations.ai/abc --resolution high

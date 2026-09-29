@@ -1,5 +1,4 @@
 import { writeFileSync } from "node:fs";
-import { join, parse } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -113,10 +112,7 @@ export function createAudioCommand() {
 
             try {
                 const alignmentPath = opts.timestamps
-                    ? (() => {
-                          const { dir, name } = parse(output);
-                          return join(dir, `${name}.json`);
-                      })()
+                    ? `${output}.json`
                     : undefined;
                 const buffer = alignmentPath
                     ? await generateWithTimestamps(

@@ -46,6 +46,8 @@ export function createVoiceChangeCommand() {
                     path: output,
                     size: buffer.length,
                     voice: opts.voice,
+                    model:
+                        opts.model ?? "elevenlabs/eleven-multilingual-sts-v2",
                 });
             } catch (error) {
                 exitWithError(error);

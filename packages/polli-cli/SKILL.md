@@ -37,7 +37,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Embed text | `polli gen embeddings "<text>" ["<text2>" ...]` (one vector per line; also reads stdin) |
 | Change a voice | `polli gen voice-change talk.mp3 --voice nova` |
 | Isolate speech | `polli gen isolate interview.mp4` (strips music/noise) |
-| Speech + character timings | `polli gen audio "<text>" --timestamps` (also writes `speech.json`) |
+| Speech + character timings | `polli gen audio "<text>" --timestamps` (also writes `speech.mp3.json`) |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
@@ -158,7 +158,7 @@ polli gen isolate interview.mp4
 ```bash
 polli gen audio "Hello world" --timestamps
 ```
-Saves the audio as usual (`speech.mp3` by default) and writes `speech.json` next to it (same base name, `.json` extension) with `alignment`/`normalized_alignment` character timings. Only `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2` support this — other models fail with the API's error message.
+Saves the audio as usual (`speech.mp3` by default) and appends `.json` to its path for the `alignment`/`normalized_alignment` character timings. Only `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2` support this — other models fail with the API's error message.
 
 ### Transcribe audio to text
 ```bash

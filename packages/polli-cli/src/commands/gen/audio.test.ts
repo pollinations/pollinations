@@ -22,45 +22,47 @@ afterEach(() => {
 });
 
 describe("gen audio output", () => {
-    it.each([
-        "mp3",
-        "opus",
-        "aac",
-        "flac",
-        "wav",
-    ])("uses the requested %s format for the default filename", async (format) => {
-        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
-        try {
-            process.chdir(folder);
-            Object.defineProperty(process.stdin, "isTTY", {
-                configurable: true,
-                value: true,
-            });
-            setKeyOverride("sk_test");
-            setOutputMode("json");
-            const output: string[] = [];
-            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
-                output.push(String(value));
-                return true;
-            });
-            vi.stubGlobal(
-                "fetch",
-                async (_url: string, _init: RequestInit) =>
-                    new Response(new Uint8Array([1, 2, 3])),
-            );
+    it.each(["mp3", "opus", "aac", "flac", "wav"])(
+        "uses the requested %s format for the default filename",
+        async (format) => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+            try {
+                process.chdir(folder);
+                Object.defineProperty(process.stdin, "isTTY", {
+                    configurable: true,
+                    value: true,
+                });
+                setKeyOverride("sk_test");
+                setOutputMode("json");
+                const output: string[] = [];
+                vi.spyOn(process.stdout, "write").mockImplementation(
+                    (value) => {
+                        output.push(String(value));
+                        return true;
+                    },
+                );
+                vi.stubGlobal(
+                    "fetch",
+                    async (_url: string, _init: RequestInit) =>
+                        new Response(new Uint8Array([1, 2, 3])),
+                );
 
-            await createAudioCommand().parseAsync(["hi", "--format", format], {
-                from: "user",
-            });
+                await createAudioCommand().parseAsync(
+                    ["hi", "--format", format],
+                    {
+                        from: "user",
+                    },
+                );
 
-            const file = `speech.${format}`;
-            expect([...readFileSync(file)]).toEqual([1, 2, 3]);
-            expect(JSON.parse(output.join("")).path).toBe(file);
-        } finally {
-            process.chdir(originalCwd);
-            rmSync(folder, { recursive: true });
-        }
-    });
+                const file = `speech.${format}`;
+                expect([...readFileSync(file)]).toEqual([1, 2, 3]);
+                expect(JSON.parse(output.join("")).path).toBe(file);
+            } finally {
+                process.chdir(originalCwd);
+                rmSync(folder, { recursive: true });
+            }
+        },
+    );
 
     it("saves character timings alongside the audio with --timestamps", async () => {
         const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
@@ -96,46 +98,55 @@ describe("gen audio output", () => {
             expect(requestPath).toContain("/v1/audio/speech/with-timestamps");
             expect(requestBody?.input).toBe("hi");
             expect([...readFileSync("speech.mp3")]).toEqual([1, 2, 3]);
-            const alignment = JSON.parse(readFileSync("speech.json", "utf-8"));
+            const alignment = JSON.parse(
+                readFileSync("speech.mp3.json", "utf-8"),
+            );
             expect(alignment.alignment.characters).toEqual(["h", "i"]);
             const meta = JSON.parse(output.join(""));
-            expect(meta.timestamps).toBe("speech.json");
+            expect(meta.timestamps).toBe("speech.mp3.json");
         } finally {
             process.chdir(originalCwd);
             rmSync(folder, { recursive: true });
         }
     });
 
-    it("keeps the alignment JSON separate from an extension-less --output", async () => {
-        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
-        try {
-            process.chdir(folder);
-            Object.defineProperty(process.stdin, "isTTY", {
-                configurable: true,
-                value: true,
-            });
-            setKeyOverride("sk_test");
-            setOutputMode("json");
-            vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-            vi.stubGlobal("fetch", async () =>
-                Response.json({
-                    audio_base64: Buffer.from([1, 2, 3]).toString("base64"),
-                    alignment: { characters: ["h", "i"] },
-                    normalized_alignment: { characters: ["h", "i"] },
-                }),
-            );
+    it.each(["speech", "speech.json"])(
+        "keeps alignment separate from --output %s",
+        async (outputPath) => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+            try {
+                process.chdir(folder);
+                Object.defineProperty(process.stdin, "isTTY", {
+                    configurable: true,
+                    value: true,
+                });
+                setKeyOverride("sk_test");
+                setOutputMode("json");
+                vi.spyOn(process.stdout, "write").mockImplementation(
+                    () => true,
+                );
+                vi.stubGlobal("fetch", async () =>
+                    Response.json({
+                        audio_base64: Buffer.from([1, 2, 3]).toString("base64"),
+                        alignment: { characters: ["h", "i"] },
+                        normalized_alignment: { characters: ["h", "i"] },
+                    }),
+                );
 
-            await createAudioCommand().parseAsync(
-                ["hi", "--timestamps", "--output", "speech"],
-                { from: "user" },
-            );
+                await createAudioCommand().parseAsync(
+                    ["hi", "--timestamps", "--output", outputPath],
+                    { from: "user" },
+                );
 
-            expect([...readFileSync("speech")]).toEqual([1, 2, 3]);
-            const alignment = JSON.parse(readFileSync("speech.json", "utf-8"));
-            expect(alignment.alignment.characters).toEqual(["h", "i"]);
-        } finally {
-            process.chdir(originalCwd);
-            rmSync(folder, { recursive: true });
-        }
-    });
+                expect([...readFileSync(outputPath)]).toEqual([1, 2, 3]);
+                const alignment = JSON.parse(
+                    readFileSync(`${outputPath}.json`, "utf-8"),
+                );
+                expect(alignment.alignment.characters).toEqual(["h", "i"]);
+            } finally {
+                process.chdir(originalCwd);
+                rmSync(folder, { recursive: true });
+            }
+        },
+    );
 });

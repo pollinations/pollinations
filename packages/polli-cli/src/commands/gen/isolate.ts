@@ -34,7 +34,11 @@ export function createIsolateCommand() {
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
-                printMeta({ path: opts.output, size: buffer.length });
+                printMeta({
+                    path: opts.output,
+                    size: buffer.length,
+                    model: opts.model ?? "elevenlabs/voice-isolator",
+                });
             } catch (error) {
                 exitWithError(error);
             }

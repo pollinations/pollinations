@@ -66,7 +66,7 @@ describe("gen 3d output", () => {
     it("saves .ply when the response is a Gaussian Splat, defaulting to the image-only model", async () => {
         const { folder, request, meta } = await run(
             ["--image", "https://example.com/a.png"],
-            "model/ply",
+            "model/ply; charset=binary",
         );
         try {
             expect(

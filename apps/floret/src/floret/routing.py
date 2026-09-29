@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from floret.registry import fetch_model_catalog, find_model_meta, get_audio_endpoint
 
@@ -106,7 +106,7 @@ class RoutingPreferences:
 class RoutingInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    text: ModelPreference | None = None
+    text: ModelPreference | None = Field(default=None, alias="model")
     web_search: ModelPreference | None = None
     image_generation: ModelPreference | None = None
     image_editing: ModelPreference | None = None
@@ -120,7 +120,7 @@ class RoutingInput(BaseModel):
             null_fields = [field for field, item in value.items() if item is None]
             if null_fields:
                 raise ValueError(
-                    f"routing fields cannot be null: {', '.join(null_fields)}"
+                    f"metadata fields cannot be null: {', '.join(null_fields)}"
                 )
         return value
 
@@ -212,18 +212,16 @@ def _validation_reason(
 
 async def validate_routing(
     value: RoutingInput | None,
-    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> RoutingPreferences:
     preferences = value.to_preferences() if value is not None else RoutingPreferences()
     explicit = preferences.explicit()
     if not explicit:
         return preferences
 
-    if catalog is None:
-        try:
-            catalog = await fetch_model_catalog()
-        except Exception as exc:
-            raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
+    try:
+        catalog = await fetch_model_catalog()
+    except Exception as exc:
+        raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
 
     for field, model in explicit.items():
         meta = find_model_meta(catalog, model)

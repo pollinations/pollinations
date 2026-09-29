@@ -53,20 +53,6 @@ def _tool_call_fields(call: Any) -> tuple[str, str, str]:
     return call.id, call.function.name, call.function.arguments
 
 
-def select_brain(
-    routing: RoutingPreferences | None = None, model: str | None = None
-) -> str:
-    explicit = (routing.text if routing else None) or model
-    if registry.request_pollen() == "all":
-        return explicit or settings.brain_model
-    return registry.choose_model(
-        "text",
-        explicit,
-        endpoint="/v1/chat/completions",
-        required_capabilities=frozenset({"tool_calling"}),
-    )
-
-
 async def _run_agent_events(
     messages: list[dict[str, Any]],
     *,
@@ -81,7 +67,7 @@ async def _run_agent_events(
     {"type": "final", "text", "artifacts", "iterations"}.
     """
     routing = routing or RoutingPreferences()
-    model = select_brain(routing, model)
+    model = routing.text or model or settings.brain_model
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
@@ -239,24 +225,27 @@ async def run_agent_events(
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
-    pollen: registry.PollenPolicy = "all",
-    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
-    """Run one agent event stream with request-scoped model eligibility."""
+    """Run one agent event stream in an isolated Computer workspace."""
     from floret.tools import mcp
 
     workspace = f"/workspace/floret/{uuid.uuid4().hex}"
     used = [False]
+    catalog_token = None
     try:
-        if catalog is None and (settings.catalog_endpoint or pollen == "quest"):
+        if settings.catalog_endpoint:
             await registry.warm_registry()
-            catalog = await registry.fetch_model_catalog()
-        with registry.model_scope(catalog, pollen), mcp.workspace(workspace) as used:
+            catalog_token = registry.set_request_catalog(
+                await registry.fetch_model_catalog()
+            )
+        with mcp.workspace(workspace) as used:
             async for event in _run_agent_events(
                 messages, model=model, max_iters=max_iters, routing=routing
             ):
                 yield event
     finally:
+        if catalog_token is not None:
+            registry.reset_request_catalog(catalog_token)
         if used[0]:
             await mcp.cleanup_workspace(workspace)
 
@@ -267,8 +256,6 @@ async def run_agent(
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
-    pollen: registry.PollenPolicy = "all",
-    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Run the tool-calling loop over `messages` (OpenAI chat format).
 
@@ -279,8 +266,6 @@ async def run_agent(
         model=model,
         max_iters=max_iters,
         routing=routing,
-        pollen=pollen,
-        catalog=catalog,
     )
     try:
         async for event in events:

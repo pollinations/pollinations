@@ -59,8 +59,10 @@ def models_summary(kind: str | None = None) -> str:
     by_mod: dict[str, list[str]] = {}
     for mid, meta in catalog.items():
         for mod in meta.get("modalities", []):
-            by_mod.setdefault(mod, []).append(mid)
-    order = ["text", "image", "video", "audio", "audio_transform", "transcript"]
+            by_mod.setdefault(mod, []).append(
+                f"{mid} (paid_only={str(meta.get('paid_only', False)).lower()})"
+            )
+    order = ["text", "image", "video", "audio", "audio_transform", "transcript", "3d"]
     for mod in order:
         if kind and mod != kind:
             continue
@@ -116,6 +118,9 @@ and run shell commands — and you chain these freely to fully satisfy a request
 Available models right now: {inventory}. Call `list_models` for the full list or voices.
 
 How to work:
+- If the user asks for Quest-compatible models, call `list_models` and explicitly \
+select models with `paid_only=false` for generation; do not omit the model and \
+rely on defaults.
 - Decide what deliverables best answer the request, then produce them. "Explain X" often \
 means a clear text explanation AND supporting images AND optionally narrated audio — use your \
 judgement and be generous; the user wants a complete result, not the minimum.

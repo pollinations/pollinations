@@ -115,7 +115,7 @@ def test_omitted_and_auto_values_normalize_to_none():
     assert RoutingInput().to_preferences() == RoutingPreferences()
     assert (
         RoutingInput(
-            text="auto",
+            model="auto",
             image_generation="auto",
             audio="auto",
         ).to_preferences()
@@ -125,7 +125,7 @@ def test_omitted_and_auto_values_normalize_to_none():
 
 def test_explicit_values_are_preserved_and_frozen():
     preferences = RoutingInput(
-        text="glm",
+        model="glm",
         image_generation="opaque-image-model-7",
     ).to_preferences()
     assert preferences.text == "glm"
@@ -135,13 +135,13 @@ def test_explicit_values_are_preserved_and_frozen():
 
 
 def test_uppercase_auto_is_preserved_as_an_explicit_model_id():
-    assert RoutingInput(text="AUTO").to_preferences().text == "AUTO"
+    assert RoutingInput(model="AUTO").to_preferences().text == "AUTO"
 
 
 @pytest.mark.parametrize("value", ["", " ", 123, None])
 def test_explicit_invalid_preference_values_are_rejected(value):
     with pytest.raises(ValidationError):
-        RoutingInput.model_validate({"text": value})
+        RoutingInput.model_validate({"model": value})
 
 
 def test_unknown_routing_fields_are_rejected():
@@ -210,7 +210,7 @@ async def test_validate_routing_accepts_all_capability_overrides(monkeypatch):
 
     preferences = await validate_routing(
         RoutingInput(
-            text="glm",
+            model="glm",
             web_search="gemini-search",
             image_generation="opaque-image-model-7",
             image_editing="nanobanana",
@@ -247,7 +247,7 @@ async def test_validate_routing_rejects_unknown_models(monkeypatch, model):
     _use_catalog(monkeypatch)
 
     with pytest.raises(RoutingValidationError) as error:
-        await validate_routing(RoutingInput(text=model))
+        await validate_routing(RoutingInput(model=model))
 
     assert error.value.field == "text"
     assert error.value.model == model
@@ -297,7 +297,9 @@ async def test_validate_routing_rejects_capability_mismatches(
     _use_catalog(monkeypatch, catalog)
 
     with pytest.raises(RoutingValidationError) as error:
-        await validate_routing(RoutingInput.model_validate({field: model}))
+        await validate_routing(
+            RoutingInput.model_validate({"model" if field == "text" else field: model})
+        )
 
     assert error.value.field == field
     assert error.value.model == model
@@ -365,9 +367,9 @@ async def test_explicit_validation_fetches_every_time_and_sees_catalog_changes(
 
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
 
-    assert (await validate_routing(RoutingInput(text="glm"))).text == "glm"
+    assert (await validate_routing(RoutingInput(model="glm"))).text == "glm"
     with pytest.raises(RoutingValidationError, match="unknown model"):
-        await validate_routing(RoutingInput(text="glm"))
+        await validate_routing(RoutingInput(model="glm"))
     assert calls == 2
 
 
@@ -384,7 +386,7 @@ async def test_explicit_validation_isolates_caller_catalogs(monkeypatch):
     async def validate_for(key, model):
         token = _api_key_override.set(key)
         try:
-            return await validate_routing(RoutingInput(text=model))
+            return await validate_routing(RoutingInput(model=model))
         finally:
             _api_key_override.reset(token)
 
@@ -407,7 +409,7 @@ async def test_explicit_validation_neither_reads_nor_mutates_shared_cache(monkey
     monkeypatch.setattr(registry, "_registry_cache", shared_cache)
     _use_catalog(monkeypatch)
 
-    preferences = await validate_routing(RoutingInput(text="glm"))
+    preferences = await validate_routing(RoutingInput(model="glm"))
 
     assert preferences.text == "glm"
     assert registry._registry_cache is shared_cache
@@ -422,12 +424,12 @@ async def test_validate_routing_reports_registry_fetch_failure(monkeypatch):
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
 
     with pytest.raises(RoutingRegistryUnavailable) as error:
-        await validate_routing(RoutingInput(text="glm"))
+        await validate_routing(RoutingInput(model="glm"))
 
     assert error.value.__cause__ is failure
 
 
-@pytest.mark.parametrize("value", [None, RoutingInput(), RoutingInput(text="auto")])
+@pytest.mark.parametrize("value", [None, RoutingInput(), RoutingInput(model="auto")])
 async def test_validate_routing_skips_registry_without_explicit_preferences(
     monkeypatch, value
 ):
@@ -452,7 +454,7 @@ async def test_validate_routing_allows_omitted_endpoint_metadata(
     }
     _use_catalog(monkeypatch, catalog)
 
-    preferences = await validate_routing(RoutingInput(text="text-without-endpoints"))
+    preferences = await validate_routing(RoutingInput(model="text-without-endpoints"))
 
     assert preferences.text == "text-without-endpoints"
 

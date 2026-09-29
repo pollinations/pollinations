@@ -41,8 +41,8 @@ curl https://gen.pollinations.ai/v1/chat/completions \
     "model": "pollinations-router/floret",
     "messages": [{"role": "user", "content": "Create a narrated launch concept"}],
     "stream": true,
-    "routing": {
-      "text": "auto",
+    "metadata": {
+      "model": "auto",
       "web_search": "gemini-search",
       "image_generation": "flux",
       "image_editing": "nanobanana",
@@ -57,11 +57,11 @@ Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key
 Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
 
 Agent settings use `metadata`. `metadata.model` selects Floret's inner text model.
-`metadata.pollen: "quest"` excludes models marked `paid_only` from Floret's
-selection. It does not choose a wallet balance or prevent eligible generations
-from spending purchased Pollen.
+Ask in the conversation to use only Quest-compatible models; Floret uses the
+`paid_only` flag from `list_models` to choose eligible generation models. This is
+a preference and does not select a wallet balance or enforce a billing boundary.
 
-For the `routing` object:
+For `metadata`:
 
 - Every field is optional.
 - Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.

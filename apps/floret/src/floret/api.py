@@ -17,9 +17,8 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
-from floret import registry
 from floret.agent import run_agent, run_agent_events
 from floret.config import _api_key_override, settings
 from floret.routing import (
@@ -66,27 +65,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     stream: bool = False
     stream_options: dict[str, Any] | None = None
-    routing: RoutingInput | None = None
-    metadata: dict[str, str] | None = None
-
-    @model_validator(mode="after")
-    def validate_agent_settings(self) -> ChatRequest:
-        pollen = (self.metadata or {}).get("pollen", "all")
-        if pollen not in {"quest", "all"}:
-            raise ValueError("metadata.pollen must be quest or all")
-        model = (self.metadata or {}).get("model")
-        if model is not None and not model.strip():
-            raise ValueError("metadata.model must not be empty")
-        return self
-
-    @property
-    def pollen(self) -> registry.PollenPolicy:
-        value = (self.metadata or {}).get("pollen", "all")
-        return "quest" if value == "quest" else "all"
-
-    @property
-    def agent_model(self) -> str | None:
-        return (self.metadata or {}).get("model")
+    metadata: RoutingInput | None = None
 
 
 def _files_dir() -> str:
@@ -242,10 +221,6 @@ async def _sse_events(
     api_key: str | None,
     routing: RoutingPreferences,
     include_usage: bool,
-    *,
-    agent_model: str | None = None,
-    pollen: registry.PollenPolicy = "all",
-    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncIterator[str]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
@@ -263,13 +238,7 @@ async def _sse_events(
 
     async def _pump() -> None:
         try:
-            options: dict[str, Any] = {"routing": routing}
-            if agent_model is not None:
-                options["model"] = agent_model
-            if pollen == "quest":
-                options["pollen"] = pollen
-                options["catalog"] = catalog
-            async for event in run_agent_events(messages, **options):
+            async for event in run_agent_events(messages, routing=routing):
                 await queue.put(event)
         except Exception as exc:
             await queue.put(exc)
@@ -396,30 +365,9 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 status_code=503, detail="Model catalog unavailable."
             ) from None
 
-    catalog = (
-        {
-            model_id: dict(meta)
-            for model_id, meta in registry.get_model_catalog().items()
-        }
-        if request.pollen == "quest"
-        else None
-    )
-    agent_model = request.agent_model
     token = _api_key_override.set(api_key or None)
     try:
-        with registry.model_scope(catalog, request.pollen):
-            routing = (
-                await validate_routing(request.routing, registry.get_model_catalog())
-                if catalog is not None
-                else await validate_routing(request.routing)
-            )
-            if agent_model is not None and request.pollen == "quest":
-                agent_model = registry.choose_model(
-                    "text",
-                    agent_model,
-                    endpoint="/v1/chat/completions",
-                    required_capabilities=frozenset({"tool_calling"}),
-                )
+        routing = await validate_routing(request.metadata)
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -427,15 +375,6 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         ) from exc
     except RoutingRegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "field": "metadata.model",
-                "model": request.agent_model,
-                "reason": str(exc),
-            },
-        ) from exc
     finally:
         _api_key_override.reset(token)
 
@@ -447,22 +386,13 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 api_key or None,
                 routing,
                 _include_stream_usage(request.stream_options),
-                agent_model=agent_model,
-                pollen=request.pollen,
-                catalog=catalog,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     token = _api_key_override.set(api_key or None)
     try:
-        options: dict[str, Any] = {"routing": routing}
-        if agent_model is not None:
-            options["model"] = agent_model
-        if request.pollen == "quest":
-            options["pollen"] = request.pollen
-            options["catalog"] = catalog
-        result = await run_agent(_to_openai_messages(request.messages), **options)
+        result = await run_agent(_to_openai_messages(request.messages), routing=routing)
         markdown, content_parts = await _build_content(
             result["text"], result["artifacts"]
         )

@@ -1,228 +1,171 @@
 from __future__ import annotations
 
-from typing import Any
+import json
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
+from openai import AsyncOpenAI
 
-from floret import api, registry
+from floret import agent, api, knowledge, registry, routing
 from floret.tools import gen
-
-_HEADERS = {"Authorization": "Bearer ag_test-token"}
-
-
-def model(
-    name: str,
-    category: str,
-    endpoint: str,
-    *,
-    paid_only: bool = False,
-    aliases: list[str] | None = None,
-    capabilities: list[str] | None = None,
-) -> dict[str, Any]:
-    return {
-        "name": name,
-        "aliases": aliases or [],
-        "category": category,
-        "paid_only": paid_only,
-        "pricing": {"prompt": 1, "completion": 1},
-        "capabilities": capabilities or [],
-        "input_modalities": ["text"],
-        "output_modalities": [category],
-        "supported_endpoints": [endpoint],
-    }
 
 
 @pytest.fixture
-def catalog(monkeypatch: pytest.MonkeyPatch) -> dict[str, dict[str, Any]]:
+def catalog(monkeypatch):
     value = {
-        "quest-text": model(
-            "quest-text",
-            "text",
-            "/v1/chat/completions",
-            capabilities=["tool_calling"],
-        ),
-        "paid-text": model(
-            "paid-text",
-            "text",
-            "/v1/chat/completions",
-            paid_only=True,
-            aliases=["premium"],
-            capabilities=["tool_calling"],
-        ),
-        "quest-image": model("quest-image", "image", "/image/{prompt}"),
-        "paid-image": model("paid-image", "image", "/image/{prompt}", paid_only=True),
+        "quest-text": {
+            "id": "quest-text",
+            "category": "text",
+            "paid_only": False,
+            "input_modalities": ["text"],
+            "output_modalities": ["text"],
+            "supported_endpoints": ["/v1/chat/completions"],
+            "capabilities": ["tool_calling"],
+            "pricing": {"completion": 1},
+        },
+        "paid-text": {
+            "id": "paid-text",
+            "category": "text",
+            "paid_only": True,
+            "input_modalities": ["text"],
+            "output_modalities": ["text"],
+            "supported_endpoints": ["/v1/chat/completions"],
+            "capabilities": ["tool_calling"],
+        },
+        "quest-image": {
+            "id": "quest-image",
+            "category": "image",
+            "paid_only": False,
+            "input_modalities": ["text"],
+            "output_modalities": ["image"],
+            "supported_endpoints": ["/image/{prompt}"],
+            "pricing": {"completion": 1},
+        },
+        "paid-image": {
+            "id": "paid-image",
+            "category": "image",
+            "paid_only": True,
+            "input_modalities": ["text"],
+            "output_modalities": ["image"],
+            "supported_endpoints": ["/image/{prompt}"],
+        },
     }
-    registry.install_global_snapshot(
-        {
-            "version": "catalog-1",
-            "catalog": list(value.values()),
-            "review": {
-                "revision": "review-1",
-                "catalogRevision": "catalog-1",
-                "incumbents": {
-                    "text.general": "quest-text",
-                    "image.general": "quest-image",
-                },
-                "recommendations": [],
-            },
-        }
+    monkeypatch.setattr(
+        registry, "_registry_cache", registry._normalize({"data": list(value.values())})
     )
-
-    async def noop() -> None:
-        return None
-
-    monkeypatch.setattr(registry, "warm_registry", noop)
     return value
 
 
-def test_quest_scope_excludes_paid_only_but_not_priced_models(catalog):
-    with registry.model_scope(catalog, "quest"):
-        assert set(registry.get_model_catalog()) == {"quest-text", "quest-image"}
-        assert (
-            registry.choose_model(
-                "text",
-                endpoint="/v1/chat/completions",
-                required_capabilities=frozenset({"tool_calling"}),
-            )
-            == "quest-text"
-        )
-        with pytest.raises(ValueError, match="not available in Quest mode"):
-            registry.require_model("premium")
-
-    assert set(registry.get_model_catalog()) == set(catalog)
+def test_model_list_exposes_paid_only_without_hiding_priced_quest_models(catalog):
+    summary = knowledge.models_summary()
+    assert "quest-image (paid_only=false)" in summary
+    assert "paid-image (paid_only=true)" in summary
+    assert "quest-text (paid_only=false)" in summary
+    assert "paid-text (paid_only=true)" in summary
+    assert "paid_only" not in registry.get_model_params("paid-image")
+    assert "explicitly" in knowledge.build_system_prompt()
+    assert "select models with `paid_only=false`" in knowledge.build_system_prompt()
 
 
-def test_quest_scope_keeps_its_catalog_snapshot(catalog):
-    with registry.model_scope(catalog, "quest"):
-        replacement = {
-            **catalog,
-            "quest-text": {**catalog["quest-text"], "paid_only": True},
-        }
-        registry.install_global_snapshot(
-            {
-                "version": "catalog-2",
-                "catalog": list(replacement.values()),
-                "review": {
-                    "revision": "review-2",
-                    "catalogRevision": "catalog-2",
-                    "incumbents": {},
-                    "recommendations": [
-                        {
-                            "taskFamily": "text.general",
-                            "model": "quest-text",
-                            "action": "avoid",
-                            "reason": "new snapshot",
-                            "source": "measured",
-                        }
-                    ],
-                },
-            }
-        )
-        assert registry.require_model("quest-text") == "quest-text"
-        assert (
-            registry.choose_model(
-                "text",
-                endpoint="/v1/chat/completions",
-                required_capabilities=frozenset({"tool_calling"}),
-            )
-            == "quest-text"
-        )
-
-
-async def test_generation_tool_rejects_paid_model_before_network(catalog):
-    with registry.model_scope(catalog, "quest"):
-        with pytest.raises(ValueError, match="not available in Quest mode"):
-            await gen.generate_image("cat", model="paid-image")
-        assert "model=quest-image" in (await gen.generate_image("cat"))[0]
+async def test_paid_model_remains_available_to_generation(catalog):
+    assert (
+        "model=paid-image" in (await gen.generate_image("cat", model="paid-image"))[0]
+    )
 
 
 @pytest.mark.parametrize("stream", [False, True])
-def test_metadata_selects_quest_and_inner_model(monkeypatch, catalog, stream):
-    calls: list[dict[str, Any]] = []
+def test_conversation_preference_and_metadata_reach_real_agent(
+    monkeypatch, catalog, stream
+):
+    calls = []
 
-    async def fake_run(messages, **kwargs):
-        calls.append(kwargs)
-        return {"text": "done", "artifacts": [], "iterations": 1}
+    def respond(request):
+        body = json.loads(request.content)
+        calls.append(body)
+        message = (
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "list-1",
+                        "type": "function",
+                        "function": {
+                            "name": "list_models",
+                            "arguments": '{"kind":"image"}',
+                        },
+                    }
+                ],
+            }
+            if len(calls) == 1
+            else {"role": "assistant", "content": "Quest-compatible models selected."}
+        )
+        return httpx.Response(
+            200,
+            json={
+                "id": "chatcmpl-test",
+                "object": "chat.completion",
+                "created": 0,
+                "model": body["model"],
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": message,
+                        "finish_reason": "tool_calls" if len(calls) == 1 else "stop",
+                    }
+                ],
+            },
+        )
 
-    async def fake_events(messages, **kwargs):
-        calls.append(kwargs)
-        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+    async def fetch_catalog():
+        return catalog
 
-    monkeypatch.setattr(api, "run_agent", fake_run)
-    monkeypatch.setattr(api, "run_agent_events", fake_events)
+    monkeypatch.setattr(routing, "fetch_model_catalog", fetch_catalog)
+    monkeypatch.setattr(
+        agent,
+        "_client",
+        lambda: AsyncOpenAI(
+            api_key="test",
+            base_url="https://brain.test/v1",
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
+        ),
+    )
     response = TestClient(api.app).post(
         "/v1/chat/completions",
         json={
             "model": "floret",
-            "messages": [{"role": "user", "content": "hi"}],
             "stream": stream,
-            "metadata": {"pollen": "quest", "model": "quest-text"},
+            "messages": [
+                {"role": "user", "content": "Use only Quest-compatible models."}
+            ],
+            "metadata": {"model": "paid-text", "image_generation": "paid-image"},
         },
-        headers=_HEADERS,
+        headers={"Authorization": "Bearer ag_test-token"},
     )
 
     assert response.status_code == 200
-    assert len(calls) == 1
-    assert calls[0]["pollen"] == "quest"
-    assert calls[0]["model"] == "quest-text"
+    assert "Quest-compatible models selected." in response.text
+    assert len(calls) == 2
+    assert all(call["model"] == "paid-text" for call in calls)
+    assert calls[0]["messages"][1]["content"] == "Use only Quest-compatible models."
+    tool_message = calls[1]["messages"][-1]
+    assert tool_message["role"] == "tool"
+    assert "quest-image (paid_only=false)" in tool_message["content"]
+    assert "paid-image (paid_only=true)" in tool_message["content"]
 
 
-def test_quest_rejects_paid_routing_before_agent(monkeypatch, catalog):
-    async def unexpected(*args, **kwargs):
-        raise AssertionError("agent must not start")
-
-    monkeypatch.setattr(api, "run_agent", unexpected)
-    response = TestClient(api.app).post(
-        "/v1/chat/completions",
-        json={
-            "model": "floret",
-            "messages": [{"role": "user", "content": "hi"}],
-            "metadata": {"pollen": "quest"},
-            "routing": {"image_generation": "paid-image"},
-        },
-        headers=_HEADERS,
+def test_agent_settings_are_only_exposed_under_metadata():
+    properties = api.ChatRequest.model_json_schema()["properties"]
+    assert "metadata" in properties
+    assert "routing" not in properties
+    assert (
+        api.ChatRequest.model_validate(
+            {
+                "model": "floret",
+                "messages": [],
+                "metadata": {"model": "quest-text"},
+            }
+        ).metadata.text
+        == "quest-text"
     )
-
-    assert response.status_code == 422
-    assert response.json()["detail"]["reason"] == "unknown model"
-
-
-@pytest.mark.parametrize("stream", [False, True])
-def test_quest_rejects_paid_inner_model_before_agent(monkeypatch, catalog, stream):
-    async def unexpected(*args, **kwargs):
-        raise AssertionError("agent must not start")
-
-    monkeypatch.setattr(api, "run_agent", unexpected)
-    monkeypatch.setattr(api, "run_agent_events", unexpected)
-    response = TestClient(api.app).post(
-        "/v1/chat/completions",
-        json={
-            "model": "floret",
-            "messages": [{"role": "user", "content": "hi"}],
-            "stream": stream,
-            "metadata": {"pollen": "quest", "model": "paid-text"},
-        },
-        headers=_HEADERS,
-    )
-
-    assert response.status_code == 422
-    assert response.json()["detail"]["field"] == "metadata.model"
-
-
-@pytest.mark.parametrize(
-    "metadata",
-    [{"pollen": "invalid"}, {"model": " "}],
-)
-def test_invalid_agent_metadata_is_rejected(metadata):
-    response = TestClient(api.app).post(
-        "/v1/chat/completions",
-        json={
-            "model": "floret",
-            "messages": [{"role": "user", "content": "hi"}],
-            "metadata": metadata,
-        },
-        headers=_HEADERS,
-    )
-
-    assert response.status_code == 422

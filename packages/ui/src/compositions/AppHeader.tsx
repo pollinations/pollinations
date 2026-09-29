@@ -2,12 +2,15 @@ import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useEffect, useState } from "react";
 import logoWordmarkUrl from "../brand/lockup-horizontal.svg";
 import { cn } from "../lib/cn.ts";
+import { AppBrand } from "./AppBrand.tsx";
 
 type ScrollTargetRef = RefObject<HTMLElement | null>;
 
 export type AppHeaderProps = {
     children?: ReactNode;
     navLabel: string;
+    /** Shows the lotus + this name instead of the pollinations.ai wordmark. */
+    appName?: string;
     autoHide?: boolean;
     scrollTargetRef?: ScrollTargetRef;
     brandHref?: string;
@@ -39,9 +42,10 @@ function scrollTopFor(target: HTMLElement | Window) {
 export function AppHeader({
     children,
     navLabel,
+    appName,
     autoHide = false,
     scrollTargetRef,
-    brandHref = "https://pollinations.ai",
+    brandHref,
     brandLabel = "Pollinations",
     className,
     innerClassName,
@@ -104,19 +108,23 @@ export function AppHeader({
                     innerClassName,
                 )}
             >
-                <a
-                    href={brandHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="polli:inline-flex polli:shrink-0 polli:items-center polli:text-theme-text-strong"
-                >
-                    <span className="polli:sr-only">{brandLabel}</span>
-                    <span
-                        aria-hidden="true"
-                        className="polli:block polli:h-7 polli:w-[220px] polli:max-w-full polli:bg-current"
-                        style={brandWordmarkMask}
-                    />
-                </a>
+                {appName ? (
+                    <AppBrand appName={appName} href={brandHref} />
+                ) : (
+                    <a
+                        href={brandHref ?? "https://pollinations.ai"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="polli:inline-flex polli:shrink-0 polli:items-center polli:text-theme-text-strong"
+                    >
+                        <span className="polli:sr-only">{brandLabel}</span>
+                        <span
+                            aria-hidden="true"
+                            className="polli:block polli:h-7 polli:w-[220px] polli:max-w-full polli:bg-current"
+                            style={brandWordmarkMask}
+                        />
+                    </a>
+                )}
                 {children ? (
                     <nav
                         aria-label={navLabel}

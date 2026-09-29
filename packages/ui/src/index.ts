@@ -9,6 +9,7 @@ export {
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {

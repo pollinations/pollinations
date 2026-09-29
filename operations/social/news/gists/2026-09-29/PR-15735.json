@@ -1,0 +1,37 @@
+{
+  "pr_number": 15735,
+  "title": "feat: add Bee Census survey quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15735",
+  "merged_at": "2026-09-29T09:22:02Z",
+  "labels": [
+    "FEATURE",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Adds `.github/ISSUE_TEMPLATE/bee-census.yml`: a 3-minute survey (who you are, what you build, how you found us, other AI tools, AI spend, spending blockers, payment preferences, disappointment test, magic wand, optional roast and interview opt-in)\n- Adds the `bee_census` quest: 3 Quest Pollen, once per GitHub account, paid when the user's own `[Bee Census]` issue exists (lazy GitHub search, same pattern as reported issues)\n- Triage workflow skips `[Bee Census]` issues so the AI bot doesn't comment on or close them\n- Test covers once-only payment and ignores issues by another GitHub id\n\nAnswers can be joined to spend via GitHub id, so the survey doesn't ask what we already know.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive takes a census",
+    "blurb": "Tell us what you’re building in a three-minute Bee Census. Your own completed survey earns 3 Quest Pollen, once per GitHub account.",
+    "summary": "Added a three-minute Bee Census GitHub issue template and a quest that awards 3 Pollen once per GitHub account when that account submits its own [Bee Census] issue.",
+    "impact": "People can share how they use Pollinations and earn 3 Quest Pollen for their own survey submission; census issues are also excluded from automated issue triage.",
+    "keywords": [
+      "Bee Census",
+      "survey",
+      "quests",
+      "Pollen",
+      "GitHub issues"
+    ],
+    "visual_concept": "Polli fills out a Bee Census form beside a retro terminal showing a GitHub issue, with three Pollen tokens and small flowers marking the completed quest. The survey is a friendly invitation, not a corporate clipboard exercise.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and fills out a Bee Census form beside a retro terminal showing a GitHub issue, while three Pollen tokens rest among flowers and lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions and strictly pixel art styling. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15735.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and fills out a Bee Census form beside a retro terminal showing a GitHub issue, while three Pollen tokens rest among flowers and lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions and strictly pixel art styling. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "generated_at": "2026-09-29T09:22:57.845058+00:00"
+}

@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -50,6 +51,8 @@ export function createVideoCommand() {
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/video/${encodedPrompt}?${params}`;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            mkdirSync(dirname(opts.output), { recursive: true });
             if (isHuman)
                 printInfo("Generating video (this can take up to 60s)...");
 

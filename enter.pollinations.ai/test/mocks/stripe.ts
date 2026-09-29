@@ -58,6 +58,10 @@ type StripeCheckoutSession = {
     customer: string | null;
     url: string | null;
     status?: "open" | "complete" | "expired";
+    client_secret?: string | null;
+    metadata?: Record<string, string>;
+    payment_status?: "paid" | "unpaid";
+    payment_intent?: string | null;
 };
 
 type StripePortalSession = {
@@ -319,13 +323,24 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/checkout/sessions", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            const id = `cs_mock_${state.checkoutSessions.length + 1}`;
+            const embedded = form.get("ui_mode") === "embedded";
             const session: StripeCheckoutSession = {
-                id: `cs_mock_${state.checkoutSessions.length + 1}`,
+                id,
                 object: "checkout.session",
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
-                url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                url: embedded
+                    ? null
+                    : `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                client_secret: embedded ? `${id}_secret_mock` : null,
                 status: "open",
+                payment_status: "unpaid",
+                metadata: Object.fromEntries(
+                    [...form.entries()]
+                        .filter(([key]) => /^metadata\[[^\]]+\]$/.test(key))
+                        .map(([key, value]) => [key.slice(9, -1), value]),
+                ),
             };
             state.checkoutSessions.push(session);
             await state.onCheckoutSessionCreated?.();
@@ -345,6 +360,28 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 url: "/v1/checkout/sessions",
                 has_more: false,
                 data,
+            });
+        })
+        .get("/v1/checkout/sessions/:id", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            const expandPaymentIntent = [
+                ...new URL(c.req.url).searchParams,
+            ].some(
+                ([key, value]) =>
+                    key.startsWith("expand") && value === "payment_intent",
+            );
+            return c.json({
+                ...session,
+                payment_intent:
+                    expandPaymentIntent && session.payment_intent
+                        ? (state.paymentIntents.find(
+                              (item) => item.id === session.payment_intent,
+                          ) ?? session.payment_intent)
+                        : (session.payment_intent ?? null),
             });
         })
         .post("/v1/checkout/sessions/:id/expire", (c) => {
@@ -829,6 +866,7 @@ function stripeNotFound(c: Context) {
         {
             error: {
                 type: "invalid_request_error",
+                code: "resource_missing",
                 message: "No such object",
             },
         },

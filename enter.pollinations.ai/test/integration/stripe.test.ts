@@ -3973,3 +3973,211 @@ test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 
         ).toBe(expected);
     }
 });
+
+async function startEmbeddedCheckout(packKey: string, cookie: string) {
+    return SELF.fetch(`${base}/checkout/${packKey}/embedded`, {
+        method: "POST",
+        headers: { cookie },
+    });
+}
+
+function checkoutSessionRequests(stripeState: MockStripeState) {
+    return stripeState.requests.filter(
+        (request) =>
+            request.method === "POST" &&
+            request.path === "/v1/checkout/sessions",
+    );
+}
+
+test("embedded and hosted checkout create the same session apart from how Stripe returns the buyer", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const cookie = `better-auth.session_token=${sessionToken}`;
+
+    const hosted = await SELF.fetch(`${base}/checkout/p5?return=top-up`, {
+        headers: { cookie },
+        redirect: "manual",
+    });
+    expect(hosted.status).toBe(302);
+    const embedded = await SELF.fetch(
+        `${base}/checkout/p5/embedded?return=top-up`,
+        { method: "POST", headers: { cookie } },
+    );
+    expect(embedded.status).toBe(200);
+    expect(await embedded.json()).toEqual({
+        clientSecret: "cs_mock_2_secret_mock",
+        sessionId: "cs_mock_2",
+        publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    });
+
+    const [hostedBody, embeddedBody] = checkoutSessionRequests(
+        mocks.stripe.state,
+    ).map((request) => request.body);
+    const { success_url, cancel_url, ...hostedShared } = hostedBody ?? {};
+    const { ui_mode, redirect_on_completion, return_url, ...embeddedShared } =
+        embeddedBody ?? {};
+    expect(embeddedShared).toEqual(hostedShared);
+    expect(
+        hostedShared["saved_payment_method_options[payment_method_save]"],
+    ).toBe("enabled");
+    expect(ui_mode).toBe("embedded");
+    expect(redirect_on_completion).toBe("if_required");
+    // Redirect-based methods come back to the same page as hosted success.
+    expect(return_url).toBe(success_url);
+    expect(return_url).toContain("session_id={CHECKOUT_SESSION_ID}");
+    expect(new URL(String(return_url)).pathname).toBe("/top-up");
+    expect(cancel_url).toContain("stripe_canceled=true");
+});
+
+test("POST /api/stripe/checkout/:packKey/embedded requires a signed-in buyer who is not banned", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const signedOut = await startEmbeddedCheckout("p5", "");
+    expect(signedOut.status).toBe(401);
+    expect(
+        (
+            await startEmbeddedCheckout(
+                "invalid",
+                `better-auth.session_token=${sessionToken}`,
+            )
+        ).status,
+    ).toBe(400);
+
+    const userId = await getSeededUserId();
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ banned: true })
+        .where(eq(userTable.id, userId));
+    const banned = await startEmbeddedCheckout(
+        "p5",
+        `better-auth.session_token=${sessionToken}`,
+    );
+    expect(banned.status).toBe(403);
+    expect(checkoutSessionRequests(mocks.stripe.state)).toHaveLength(0);
+});
+
+test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await drizzle(env.DB).insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_credited",
+        eventId: "evt_credited",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+
+    const response = await SELF.fetch(`${base}/checkout/sessions/cs_credited`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "credited", pollen: 10 });
+    // A credited session never needs a Stripe round trip.
+    expect(mocks.stripe.state.requests).toHaveLength(0);
+});
+
+test("GET /api/stripe/checkout/sessions/:id maps Stripe's state for sessions not credited yet", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const cases = [
+        { id: "cs_open", status: "open", expected: "open" },
+        { id: "cs_expired", status: "expired", expected: "expired" },
+        {
+            id: "cs_paid",
+            status: "complete",
+            payment_status: "paid",
+            expected: "paid",
+        },
+        {
+            id: "cs_processing",
+            status: "complete",
+            paymentIntentStatus: "processing",
+            expected: "processing",
+        },
+        {
+            id: "cs_failed",
+            status: "complete",
+            paymentIntentStatus: "requires_payment_method",
+            expected: "failed",
+        },
+    ] as const;
+    for (const item of cases) {
+        const paymentIntentStatus =
+            "paymentIntentStatus" in item ? item.paymentIntentStatus : null;
+        if (paymentIntentStatus) {
+            mocks.stripe.state.paymentIntents.push({
+                id: `pi_${item.id}`,
+                object: "payment_intent",
+                status: paymentIntentStatus,
+            });
+        }
+        mocks.stripe.state.checkoutSessions.push({
+            id: item.id,
+            object: "checkout.session",
+            mode: "payment",
+            customer: "cus_status",
+            url: null,
+            status: item.status,
+            payment_status:
+                "payment_status" in item ? item.payment_status : "unpaid",
+            payment_intent: paymentIntentStatus ? `pi_${item.id}` : null,
+            metadata: { userId },
+        });
+    }
+
+    for (const item of cases) {
+        const response = await SELF.fetch(
+            `${base}/checkout/sessions/${item.id}`,
+            {
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+        expect(response.status, item.id).toBe(200);
+        expect(await response.json(), item.id).toEqual({
+            status: item.expected,
+        });
+    }
+});
+
+test("GET /api/stripe/checkout/sessions/:id hides other buyers' and unknown sessions", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_someone_else",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_other",
+        url: null,
+        status: "complete",
+        payment_status: "paid",
+        metadata: { userId: "another-user" },
+    });
+
+    const cookie = `better-auth.session_token=${sessionToken}`;
+    for (const id of ["cs_someone_else", "cs_missing", "not_a_session"]) {
+        const response = await SELF.fetch(`${base}/checkout/sessions/${id}`, {
+            headers: { cookie },
+        });
+        expect(response.status, id).toBe(404);
+    }
+    const signedOut = await SELF.fetch(
+        `${base}/checkout/sessions/cs_someone_else`,
+    );
+    expect(signedOut.status).toBe(401);
+});

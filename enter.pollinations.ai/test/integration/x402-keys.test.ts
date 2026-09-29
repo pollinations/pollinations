@@ -1,6 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { x402KeysRoutes } from "../../src/routes/x402-keys.ts";
 import {
     creditPurchase,
@@ -48,6 +48,34 @@ describe("x402 prepaid API keys", () => {
             .bind(ownerKey.id)
             .first<{ user_id: string }>();
         if (!owner) throw new Error("Test account is missing");
+        // The SDK needs facilitator capabilities to build the challenge.
+        const originalFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = new URL(
+                    input instanceof Request ? input.url : String(input),
+                );
+                if (
+                    url.href === "https://x402.staging.weft.network/supported"
+                ) {
+                    return Promise.resolve(
+                        Response.json({
+                            kinds: [
+                                {
+                                    x402Version: 2,
+                                    scheme: "exact",
+                                    network: "eip155:84532",
+                                },
+                            ],
+                            extensions: [],
+                            signers: {},
+                        }),
+                    );
+                }
+                return originalFetch(input, init);
+            },
+        );
         const response = await x402KeysRoutes.request(
             "http://localhost/p2",
             { method: "POST" },

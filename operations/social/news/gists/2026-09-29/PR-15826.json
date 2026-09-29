@@ -1,0 +1,36 @@
+{
+  "pr_number": 15826,
+  "title": "fix: require the Bee Census roast and drop anchoring examples",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15826",
+  "merged_at": "2026-09-29T19:00:37Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Makes the roast required and reframes it: \"🔥 Roast us: what's the one thing we get wrong?\". It was optional and answered by 6 of 18; the build-gap question lets content users answer \"nothing\".\n- The payout is unchanged: the roast isn't in the 60-character check, and the intro now says the check uses \"the two big text boxes\".\n- Removes example placeholders from three questions; answers were echoing them (\"a five dollar plan\", \"searched free api on Google\").\n- Form only: GitHub reads issue forms from `main`, so no production deploy is needed. Past responses are unaffected.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive asks for honesty",
+    "blurb": "The Bee Census now asks everyone to tell us one thing we get wrong. The example answers are gone, too; we’d rather hear yours.",
+    "summary": "The Bee Census now requires the “what’s the one thing we get wrong?” roast and removes example placeholders from three questions, while leaving the 60-character reward check and past responses unchanged.",
+    "impact": "New respondents will answer the roast question in their own words; only the two big text boxes count toward the 60-character check.",
+    "keywords": [
+      "Bee Census",
+      "issue form",
+      "feedback",
+      "GitHub",
+      "Quest"
+    ],
+    "visual_concept": "Depict the Bee Census as a friendly feedback form in a garden. Polli, wearing tiny reading glasses, holds a clipboard beside blank answer cards, inviting an honest response without suggesting one.",
+    "image_prompt": "In a cozy pixel art garden, a small bee mascot in tiny reading glasses holds a clipboard beside a friendly Bee Census form with empty answer cards; flowers and a prominent lime green (#ecf874) glow frame the scene. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15826.jpg",
+    "prompt": "In a cozy pixel art garden, a small bee mascot in tiny reading glasses holds a clipboard beside a friendly Bee Census form with empty answer cards; flowers and a prominent lime green (#ecf874) glow frame the scene. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-29T19:02:53.688455+00:00"
+}

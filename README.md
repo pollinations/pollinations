@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 GAANA BANANA](https://gaana.namansoni.in) | # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [🛠️ Calibrated Decisions](https://jonakss--calibrated-decisions-app-page.modal.run) | A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/ | [@Jonakss](https://github.com/Jonakss) |
 | [🖼️ Simple Image Generator](https://xzeyrix.github.io/Simple-Image-Generator) | A simple client-side image generator powered by Pollinations. Users sign in with their Pollinations account and generate images directly in the browser using their own Pollen balance. The app supports | [@xZeyrix](https://github.com/xZeyrix) |
 | [🖼️ image2gpt](https://image2gpt.vercel.app) | Generates images with openai/gpt-image-2. Visitors sign in with their own Pollinations account via OAuth (BYOP) and spend their own Pollen, so the app itself pays nothing. Includes a prompt box, three | [@18074148384](https://github.com/18074148384) |
@@ -37,7 +38,6 @@
 | [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
 | [🖼️ PersonaMorph](https://personamorph-ai-production.up.railway.app) | A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

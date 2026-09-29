@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "GAANA BANANA",
+    "url": "https://gaana.namansoni.in",
+    "description": "# Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, ",
+    "language": "en-HI",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "NamanSoni78",
+    "githubUserId": "170070104",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15636",
+    "approvedDate": "2026-09-29",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "Calibrated Decisions",
     "url": "https://jonakss--calibrated-decisions-app-page.modal.run",

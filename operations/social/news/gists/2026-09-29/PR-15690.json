@@ -1,0 +1,37 @@
+{
+  "pr_number": 15690,
+  "title": "fix: reject image input for text-only models",
+  "author": "danhquach",
+  "url": "https://github.com/pollinations/pollinations/pull/15690",
+  "merged_at": "2026-09-29T12:33:25Z",
+  "labels": [
+    "BUG",
+    "API"
+  ],
+  "pr_body_excerpt": "Fixes #15684\n\n- Returns 400 `This model does not support image input` when a request carries `image_url`/`input_image` and the model's `inputModalities` lacks `image`, on `/v1/chat/completions` and `/v1/responses`. Reuses `countReferenceImages` in `textCapabilityError`.\n- Skips community agents: prompt agents pass images to their base model through gen, where the check runs again; code and endpoint agents run their owner's code.\n- Adds `image` to `pollinations/midijourney`, `pollinations/midijourney-large` and `qwen/qwen3.8-2.4t-a95b`, which already read images (probes below).\n- Tests: a text-only community proxy returns 400 on both routes without calling upstream; a vision proxy and an endpoint agent are still served; unit coverage for static text-only vs vision models.\n\n**Live probes** (64×64 solid PNG, \"What color is this image? One word.\")\n\n| Model | Result |\n|---|---|\n| `community/MarcosFRG/deepseek-v4-flash-0731` | \"White\" for green, 9 prompt tokens: image dropped |\n| `meta/llama-3.3-70b-instruct`, `openai/gpt-oss-20b` | same prompt tokens with/without image: dropped |\n| `qwen/qwen3-coder-30b-a3b-instruct`, `z-ai/glm-5.3`, `amazon/nova-micro-v1` +4 more | provider 400/405 |\n| `pollinations/midijourney` | green→\"green\", blue→\"blue\": sees images |\n| `qwen/qwen3.8-2.4t-a95b` | green→\"Green\", blue→\"Blue\": sees images |\n| `pollinations/midijourney-large` | +5 prompt tokens with image; same GPT-5.5 deployment as `openai/gpt-5.5` |\n| `openai/gpt-5.4-nano` (control) | \"Green\", 64 prompt tokens |\n\nPII/secret gate: passed (security-devops audit of `origin/main..HEAD`, commit message, and PR body).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more invisible pictures",
+    "blurb": "Text-only models now say when they can’t see an image instead of quietly pretending it wasn’t there. Models that can see still get the pixels.",
+    "summary": "On /v1/chat/completions and /v1/responses, requests containing image_url or input_image now receive a 400 error when the selected model lacks image input support; Midijourney, Midijourney Large, and Qwen3.8-2.4T-A95B are correctly marked as image-capable.",
+    "impact": "Developers get a clear “This model does not support image input” response instead of a text-only model silently dropping the image, while supported vision models continue to receive it.",
+    "keywords": [
+      "API",
+      "image input",
+      "text models",
+      "vision models",
+      "chat completions",
+      "responses"
+    ],
+    "visual_concept": "Show the difference between a text-only model and a vision model as two friendly retro terminals: one clearly returns a 400 notice for a picture, while the other displays it. Polli, wearing tiny glasses, points out the distinction beside a small code-plant.",
+    "image_prompt": "In a cozy pixel art garden workstation, two chunky retro terminals sit beside a code-plant: one shows a small picture with a clear pixel-font “400” notice, while the other displays the picture successfully. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny glasses and gestures between the screens, small within the scene, amid prominent lime green (#ecf874), warm cream, mint and lavender gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15690.jpg",
+    "prompt": "In a cozy pixel art garden workstation, two chunky retro terminals sit beside a code-plant: one shows a small picture with a clear pixel-font “400” notice, while the other displays the picture successfully. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny glasses and gestures between the screens, small within the scene, amid prominent lime green (#ecf874), warm cream, mint and lavender gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-29T12:34:20.848568+00:00"
+}

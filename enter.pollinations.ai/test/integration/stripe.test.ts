@@ -4007,6 +4007,7 @@ test("embedded and hosted checkout create the same session apart from how Stripe
     );
     expect(embedded.status).toBe(200);
     expect(await embedded.json()).toEqual({
+        mode: "embedded",
         clientSecret: "cs_mock_2_secret_mock",
         sessionId: "cs_mock_2",
         publishableKey: env.STRIPE_PUBLISHABLE_KEY,
@@ -4180,4 +4181,63 @@ test("GET /api/stripe/checkout/sessions/:id hides other buyers' and unknown sess
         `${base}/checkout/sessions/cs_someone_else`,
     );
     expect(signedOut.status).toBe(401);
+});
+
+test("POST /api/stripe/checkout/:packKey/embedded confirms with a card saved at Checkout, unless the buyer asks for the form", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const cookie = `better-auth.session_token=${sessionToken}`;
+
+    // A card saved without the checkbox is not offered again.
+    const first = await startEmbeddedCheckout("p10", cookie);
+    expect(((await first.json()) as { mode: string }).mode).toBe("embedded");
+    const customerId = String(
+        checkoutSessionRequests(mocks.stripe.state)[0]?.body.customer,
+    );
+    mocks.stripe.state.paymentMethods.push({
+        ...mockCardPaymentMethod("pm_limited", customerId),
+        allow_redisplay: "limited",
+    });
+    const limited = await startEmbeddedCheckout("p10", cookie);
+    expect(((await limited.json()) as { mode: string }).mode).toBe("embedded");
+
+    mocks.stripe.state.paymentMethods.push({
+        ...mockCardPaymentMethod("pm_saved", customerId),
+        allow_redisplay: "always",
+    });
+    const saved = await startEmbeddedCheckout("p10", cookie);
+    expect(((await saved.json()) as { mode: string }).mode).toBe("custom");
+    const form = await SELF.fetch(`${base}/checkout/p10/embedded?form=stripe`, {
+        method: "POST",
+        headers: { cookie },
+    });
+    expect(((await form.json()) as { mode: string }).mode).toBe("embedded");
+
+    const bodies = checkoutSessionRequests(mocks.stripe.state).map(
+        (request) => request.body,
+    );
+    expect(bodies.map((body) => body.ui_mode)).toEqual([
+        "embedded",
+        "embedded",
+        "custom",
+        "embedded",
+    ]);
+    // The confirmation screen returns to the same page; Stripe only
+    // redirects there when the bank requires it.
+    expect(bodies[2]?.return_url).toBe(bodies[0]?.return_url);
+    expect(bodies[2]?.redirect_on_completion).toBeUndefined();
+    const {
+        ui_mode: _custom,
+        return_url: _r1,
+        ...customShared
+    } = bodies[2] ?? {};
+    const {
+        ui_mode: _embedded,
+        return_url: _r2,
+        redirect_on_completion: _roc,
+        ...embeddedShared
+    } = bodies[0] ?? {};
+    expect(customShared).toEqual(embeddedShared);
 });

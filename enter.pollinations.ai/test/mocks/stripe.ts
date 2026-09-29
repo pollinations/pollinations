@@ -59,6 +59,7 @@ type StripeCheckoutSession = {
     url: string | null;
     status?: "open" | "complete" | "expired";
     client_secret?: string | null;
+    ui_mode?: string;
     metadata?: Record<string, string>;
     payment_status?: "paid" | "unpaid";
     payment_intent?: string | null;
@@ -296,6 +297,22 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             if (!customer) return stripeNotFound(c);
             return c.json(customer);
         })
+        .get("/v1/customers/:id/payment_methods", (c) => {
+            recordRequest(c, state);
+            const allowRedisplay = c.req.query("allow_redisplay");
+            const data = state.paymentMethods.filter(
+                (method) =>
+                    method.customer === c.req.param("id") &&
+                    (!allowRedisplay ||
+                        method.allow_redisplay === allowRedisplay),
+            );
+            return c.json({
+                object: "list",
+                url: `/v1/customers/${c.req.param("id")}/payment_methods`,
+                has_more: false,
+                data,
+            });
+        })
         .post("/v1/customers/:id", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
@@ -324,7 +341,8 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
             const id = `cs_mock_${state.checkoutSessions.length + 1}`;
-            const embedded = form.get("ui_mode") === "embedded";
+            const uiMode = form.get("ui_mode") ?? "hosted";
+            const embedded = uiMode !== "hosted";
             const session: StripeCheckoutSession = {
                 id,
                 object: "checkout.session",
@@ -334,6 +352,7 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                     ? null
                     : `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
                 client_secret: embedded ? `${id}_secret_mock` : null,
+                ui_mode: uiMode,
                 status: "open",
                 payment_status: "unpaid",
                 metadata: Object.fromEntries(

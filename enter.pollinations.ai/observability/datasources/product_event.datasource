@@ -11,9 +11,9 @@ DESCRIPTION >
     key. Browser events carry where the visit came from: referrer_host
     (hostname only) and utm_* from the landing URL. country is the ISO code
     Cloudflare derives from the connection (CF-IPCountry), never the IP; empty
-    before it was recorded. Checkout events carry the Checkout Session id and
-    mode (hosted or embedded), so checkout_started, checkout_embedded_ready
-    and the paid stripe_event join on one session. No backfill; rows expire
+    before it was recorded. checkout_started carries the Checkout Session id
+    and mode (hosted, embedded form or custom saved-card confirmation), so it
+    joins the paid stripe_event on one session. No backfill; rows expire
     after 24 months.
 
 SCHEMA >

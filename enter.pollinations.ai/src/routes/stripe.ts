@@ -54,13 +54,19 @@ export const stripeRoutes = new Hono<Env>()
 
     /**
      * POST /api/stripe/checkout/:packKey/embedded
-     * The same Checkout Session, rendered by Stripe.js inside the wallet
-     * modal. Returns what the browser needs to mount it.
+     * The same Checkout Session, shown by Stripe.js inside the wallet modal.
+     * A buyer with a card saved at Checkout gets a confirmation screen
+     * ("custom"), everyone else Stripe's form ("embedded"); ?form=stripe
+     * always asks for the form. Returns what the browser needs to mount it.
      */
     .post("/checkout/:packKey/embedded", async (c) => {
-        const session = await createPackCheckoutSession(c, "embedded");
+        const session = await createPackCheckoutSession(
+            c,
+            c.req.query("form") === "stripe" ? "embedded" : "in-page",
+        );
         if (session instanceof Response) return session;
         return c.json({
+            mode: session.ui_mode as "custom" | "embedded",
             clientSecret: session.client_secret as string,
             sessionId: session.id,
             publishableKey: c.env.STRIPE_PUBLISHABLE_KEY,
@@ -237,14 +243,20 @@ export const stripeRoutes = new Hono<Env>()
         return c.json(await processAutoTopUpForUser(c.env, body.userId));
     });
 
-type CheckoutUiMode = "hosted" | "embedded";
+/**
+ * How the session is shown: Stripe's hosted page, Stripe's form in the
+ * wallet modal, or our own confirmation screen that pays with a saved card.
+ * "in-page" picks the confirmation screen when the buyer has a card saved at
+ * Checkout, else the form.
+ */
+type CheckoutUiMode = "hosted" | "embedded" | "custom";
 
 /**
- * Create a pack Checkout Session for the signed-in buyer. Hosted and embedded
- * Checkout share everything (pricing, fee, tax, 3DS rule, metadata, card
- * gate, ban checks); only how Stripe returns the buyer differs. Returns an
- * error response, or a session with a url (hosted) or client_secret
- * (embedded).
+ * Create a pack Checkout Session for the signed-in buyer. Every UI mode
+ * shares everything (pricing, fee, tax, 3DS rule, metadata, card gate, ban
+ * checks, Adaptive Pricing); only how Stripe shows it and returns the buyer
+ * differs. Returns an error response, or a session with a url (hosted) or
+ * client_secret (in the wallet).
  *
  * Path parameter is the pack key ("p2".."p100"). Pollen is the canonical
  * unit: 1 pollen ≈ $1. Checkout sends USD price_data and Stripe Adaptive
@@ -252,7 +264,7 @@ type CheckoutUiMode = "hosted" | "embedded";
  */
 async function createPackCheckoutSession(
     c: Context<Env>,
-    uiMode: CheckoutUiMode,
+    requestedMode: CheckoutUiMode | "in-page",
 ): Promise<Response | Stripe.Checkout.Session> {
     const pack = getPollenPackByKey(c.req.param("packKey") ?? "");
 
@@ -318,6 +330,12 @@ async function createPackCheckoutSession(
             c.env,
             userId,
         );
+        const uiMode =
+            requestedMode !== "in-page"
+                ? requestedMode
+                : (await hasCheckoutSavedCard(stripe, stripeCustomerId))
+                  ? "custom"
+                  : "embedded";
         const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
         // Request 3DS on first purchases and small packs. Successful
         // authentication can shift fraud liability; requesting it alone does
@@ -408,17 +426,19 @@ async function createPackCheckoutSession(
                 },
             },
             metadata: packMetadata,
-            ...(uiMode === "embedded"
+            ...(uiMode === "hosted"
                 ? {
-                      // Cards finish inside the modal; only methods that
-                      // need a bank redirect come back through return_url.
-                      ui_mode: "embedded",
-                      redirect_on_completion: "if_required",
-                      return_url: successUrl,
-                  }
-                : {
                       success_url: successUrl,
                       cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
+                  }
+                : {
+                      // Cards finish inside the modal; only methods that
+                      // need a bank redirect come back through return_url.
+                      ui_mode: uiMode,
+                      ...(uiMode === "embedded" && {
+                          redirect_on_completion: "if_required",
+                      }),
+                      return_url: successUrl,
                   }),
         });
 
@@ -427,9 +447,9 @@ async function createPackCheckoutSession(
             return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
         }
         const ready =
-            uiMode === "embedded"
-                ? checkoutSession.client_secret
-                : checkoutSession.url;
+            uiMode === "hosted"
+                ? checkoutSession.url
+                : checkoutSession.client_secret;
         if (!ready) {
             return c.json({ error: "Failed to create checkout session" }, 500);
         }
@@ -448,6 +468,23 @@ async function createPackCheckoutSession(
         // Return generic message to client - don't expose internal error details
         return c.json({ error: "Failed to create checkout session" }, 500);
     }
+}
+
+/**
+ * A card the buyer ticked "Save" for at Checkout. Checkout marks those
+ * allow_redisplay "always", and only those are offered again, so this is
+ * exactly the card the confirmation screen would pay with.
+ */
+async function hasCheckoutSavedCard(
+    stripe: Stripe,
+    customerId: string,
+): Promise<boolean> {
+    const cards = await stripe.customers.listPaymentMethods(customerId, {
+        type: "card",
+        allow_redisplay: "always",
+        limit: 1,
+    });
+    return cards.data.length > 0;
 }
 
 /**

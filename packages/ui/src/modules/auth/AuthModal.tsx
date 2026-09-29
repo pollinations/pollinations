@@ -81,9 +81,19 @@ export type AuthFlowLayoutProps = {
 const legalFootnote = (
     <>
         By continuing, you agree to the{" "}
-        <InlineLink href="https://pollinations.ai/terms">Terms</InlineLink> and
-        acknowledge the{" "}
-        <InlineLink href="https://pollinations.ai/privacy">
+        <InlineLink
+            href="https://pollinations.ai/terms"
+            tone="quiet"
+            showIcon={false}
+        >
+            Terms
+        </InlineLink>{" "}
+        and acknowledge the{" "}
+        <InlineLink
+            href="https://pollinations.ai/privacy"
+            tone="quiet"
+            showIcon={false}
+        >
             Privacy Policy
         </InlineLink>
         .
@@ -102,7 +112,8 @@ export function AuthFlowLayout({
     actions,
     footnote = legalFootnote,
     dialog,
-    size,
+    // Most auth steps are a title, a line and one action; busy steps opt into more width.
+    size = "sm",
     onClose,
 }: AuthFlowLayoutProps) {
     const generatedId = useId();
@@ -119,7 +130,7 @@ export function AuthFlowLayout({
                 bodyClassName="polli:space-y-0 polli:p-0"
             >
                 <AuthModalHeader>{headerAction}</AuthModalHeader>
-                <div className="polli:space-y-4 polli:px-6 polli:py-4">
+                <div className="polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4">
                     {title && (
                         <div className="polli:space-y-3">
                             <Heading as="h1" size="section" id={headingId}>
@@ -129,7 +140,11 @@ export function AuthFlowLayout({
                             {description && (
                                 // The step instruction: body tone, so it reads as
                                 // the sentence's second half rather than a caption.
-                                <Text size="body" tone="base">
+                                <Text
+                                    size="body"
+                                    tone="base"
+                                    className="polli:text-pretty"
+                                >
                                     {description}
                                 </Text>
                             )}
@@ -143,13 +158,16 @@ export function AuthFlowLayout({
     );
 }
 
-/** The one line under the actions: legal, dashboard, back or help. */
+/**
+ * The quiet line under the actions: legal, dashboard, back or help. Its links
+ * use the quiet tone without arrows, and wrapped text splits into even lines.
+ */
 export function AuthModalFootnote({ children }: { children: ReactNode }) {
     return (
         <Text
             size="xs"
             tone="muted"
-            className="polli:shrink-0 polli:px-6 polli:pb-5 polli:text-center polli:text-[13px]"
+            className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pb-5 polli:text-center polli:text-[13px] polli:text-balance"
         >
             {children}
         </Text>
@@ -174,7 +192,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
         </a>
     );
     return (
-        <div className="polli:shrink-0 polli:p-6 polli:pb-4">
+        <div className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pt-4 polli:pb-4 polli:sm:pt-6">
             <div className="polli:flex polli:min-h-10 polli:items-start polli:justify-between polli:gap-3">
                 {logo}
                 {children}
@@ -195,7 +213,10 @@ export function AuthModalLoading({
 }) {
     return (
         <AuthFlowLayout title={title} subject={subject}>
-            <LoadingStatus>{message}</LoadingStatus>
+            {/* Centred with room around it, so a short wait reads as one. */}
+            <div className="polli:flex polli:justify-center polli:py-10">
+                <LoadingStatus>{message}</LoadingStatus>
+            </div>
         </AuthFlowLayout>
     );
 }

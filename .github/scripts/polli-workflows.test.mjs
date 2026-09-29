@@ -60,7 +60,7 @@ test("askpolli uses the Polli Claude Code runtime with every read-only tool", ()
         .split(/^ {2}answer:\r?$/m)[1]
         .split(/^ {2}publish:\r?$/m)[0];
     assert.match(answer, /uses: anthropics\/claude-code-action@v1/);
-    assert.match(answer, /--model pollinations-router\/polli/);
+    assert.match(answer, /--model pollinations-ai\/polli/);
     assert.match(answer, /--setting-sources user/);
     assert.match(answer, /--strict-mcp-config/);
     assert.match(answer, /allowed_non_write_users: \$\{\{ github\.actor \}\}/);
@@ -68,7 +68,7 @@ test("askpolli uses the Polli Claude Code runtime with every read-only tool", ()
     assert.match(answer, /GH_TOKEN: ""\r?\n {10}GITHUB_TOKEN: ""/);
     assert.match(answer, /outputs\.structured_output/);
     assert.doesNotMatch(answer, /askpolli-run|askModel/);
-    assert.match(full, /default: "pollinations,pollinations-router\/polli"/);
+    assert.match(full, /default: "pollinations,pollinations-ai\/polli"/);
 
     const allowedTools = answer.match(/--allowedTools ([^\r\n]+)/)?.[1] ?? "";
     assert.match(
@@ -338,7 +338,7 @@ for (const [name, source, brain] of [
             const response = await invokeShim(
                 source,
                 JSON.stringify({
-                    model: "pollinations-router/polli",
+                    model: "pollinations-ai/polli",
                     messages: [
                         {
                             role: "system",
@@ -378,7 +378,7 @@ for (const [name, source, brain] of [
                 "application/json",
             );
             const body = JSON.parse(calls[0].options.body);
-            assert.equal(body.model, "pollinations-router/polli");
+            assert.equal(body.model, "pollinations-ai/polli");
             assert.equal(body.agent_model, undefined);
             assert.equal(body.metadata.model, brain);
             assert.deepEqual(body.messages, [

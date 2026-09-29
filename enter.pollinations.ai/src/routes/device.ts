@@ -1,3 +1,4 @@
+import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
@@ -17,7 +18,6 @@ type AuthedContext = Context<{
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
-const USER_CODE_LENGTH = 8;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";

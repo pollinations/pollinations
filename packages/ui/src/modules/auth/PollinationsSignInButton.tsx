@@ -26,21 +26,14 @@ export function PollinationsSignInButton({
             aria-busy={isPending}
             className={className}
             icon={
-                isPending ? (
-                    <span
-                        aria-hidden="true"
-                        className="polli:h-5 polli:w-5 polli:shrink-0 polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent"
-                    />
-                ) : (
-                    <span
-                        aria-hidden="true"
-                        className="polli:block polli:h-5 polli:w-5 polli:shrink-0 polli:bg-current"
-                        style={{
-                            mask: `url('${logoUrl}') center / contain no-repeat`,
-                            WebkitMask: `url('${logoUrl}') center / contain no-repeat`,
-                        }}
-                    />
-                )
+                <span
+                    aria-hidden="true"
+                    className="polli:block polli:h-5 polli:w-5 polli:shrink-0 polli:bg-current"
+                    style={{
+                        mask: `url('${logoUrl}') center / contain no-repeat`,
+                        WebkitMask: `url('${logoUrl}') center / contain no-repeat`,
+                    }}
+                />
             }
         >
             {children ?? "Connect with Pollinations"}

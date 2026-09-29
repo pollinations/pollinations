@@ -1,0 +1,37 @@
+{
+  "pr_number": 15650,
+  "title": "feat: sync Search Console performance to Tinybird daily",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15650",
+  "merged_at": "2026-09-29T20:55:54Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "Search Console keeps 16 months of search performance for `pollinations.ai`. This syncs it daily into Tinybird so the history is kept. Search terms only exist here.\n\n**What we get** (property `sc-domain:pollinations.ai`, all subdomains, web search, per day)\n- `totals`: clicks, impressions, CTR and position by country and device. True totals, including search terms Google hides for privacy\n- `queries`: the same by search term, country and device\n- `pages`: the same by page, country and device, for our own page routes only (Google indexes image URLs that contain prompts; those clicks still count in `totals`)\n\n**What we don't get**: search terms Google hides for privacy (rare queries), who the searcher is, other search types (image, video, Discover).\n\n**Changes**\n- `search_console_raw`: API responses as returned (`dataset, date, start_row, fetched_at, body`). A report over 25,000 rows spans several responses (`start_row`). No pipe until we decide how to analyse it\n- `data-sync-search-console-tinybird.yml`: daily at 05:45 UTC. Asks Google which days are final and syncs the latest three; days are sent again, the latest `fetched_at` wins. `days` input 1–7 for a missed run\n- `operations/search-console/sync-to-tinybird.mjs`: `--dry-run` reads without writing. Requests compact JSON (`prettyPrint=false`), the same response without whitespace\n\nThe 16-month backfill is a one-off after merge and is not part of this PR.\n\n**Keyless login**: GitHub's OIDC token is exchanged for a one-hour Google token (`google-github-actions/auth@v3`, `webmasters.readonly`). No secret is stored. Set up in the Myceli Google Cloud project `stellar-verve-465920-b7`:\n- Service account `google-data-sync@stellar-verve-465920-b7.iam.gserviceaccount.com` (shared by the Google syncs), no key\n- Workload identity pool `github`, provider `pollinations`, accepting only `pollinations/pollinations` on `main`\n- Repository variables `GOOGLE_WORKLOAD_IDENTITY_PROVIDER` and `GOOGLE_DATA_SYNC_SERVICE_ACCOUNT` are set\n\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Search history gets a nest",
+    "blurb": "Search Console's daily reports now have a place to roost in Tinybird. The raw data is saved for future analysis; the 16-month backfill is a separate job.",
+    "summary": "A 05:45 UTC workflow syncs the latest three finalized days of pollinations.ai Search Console totals, queries, and page reports into Tinybird's search_console_raw datasource, retaining daily search data beyond Search Console's 16-month window.",
+    "impact": "Maintainers get a growing raw record of clicks, impressions, CTR, and position by country and device, with search terms where Google provides them; analysis pipes and the one-off historical backfill are not included yet.",
+    "keywords": [
+      "Search Console",
+      "Tinybird",
+      "search analytics",
+      "daily sync",
+      "OIDC",
+      "observability"
+    ],
+    "visual_concept": "Depict search-performance reports arriving as three dated pixel scrolls and being filed in a small bird-shaped data archive beside a CRT terminal. Polli, wearing a tiny archivist cap, helps the monitor robot sort them; code-plants and flowers make the archive feel like a growing garden.",
+    "image_prompt": "In a cozy pixel-art garden archive, Polli wears a tiny archivist cap and helps a cheerful CRT monitor robot file three dated search-report scrolls into a little bird-shaped data cabinet beside glowing code-plants. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) and warm cream surroundings."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15650.jpg",
+    "prompt": "In a cozy pixel-art garden archive, Polli wears a tiny archivist cap and helps a cheerful CRT monitor robot file three dated search-report scrolls into a little bird-shaped data cabinet beside glowing code-plants. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) and warm cream surroundings."
+  },
+  "generated_at": "2026-09-29T20:56:59.072684+00:00"
+}

@@ -298,6 +298,10 @@ function createGenerationMocks() {
                               headers: { "content-type": "image/png" },
                           });
                 },
+                "gpt-dead-reference.test": async () => {
+                    gptImageState.imageHostRequests++;
+                    return new Response("not found", { status: 404 });
+                },
                 "content-safety.test": async () =>
                     Response.json({ categoriesAnalysis: [] }),
                 "gptimagemain1-resource.cognitiveservices.azure.com":
@@ -2751,17 +2755,21 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     });
 });
 
-test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
+// 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
+test.for([
+    429, 404,
+])("gpt-image-2 falls back to OpenAI direct on an Azure %i", async (azureStatus, {
     mocks,
 }) => {
     await mocks.enable("tinybird", "gptImage");
+    mocks.gptImage.state.azureStatus = azureStatus;
     const { key } = await createTestApiKey({
         allowedModels: ["openai/gpt-image-2"],
         user: { tierBalance: 100 },
     });
 
     const { response, wait } = await fetchWorker(
-        "/image/fallback%20probe?model=gpt-image-2&quality=low&seed=9347",
+        `/image/fallback%20probe%20${azureStatus}?model=gpt-image-2&quality=low&seed=9347`,
         { headers: { authorization: `Bearer ${key}` } },
     );
 
@@ -2830,6 +2838,25 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
         isFinal: true,
         isBilledUsage: true,
     });
+});
+
+test("gpt-image-2 does not retry a dead reference image link on OpenAI", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    const { key } = await createTestApiKey({
+        allowedModels: ["openai/gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+    const { response, wait } = await fetchWorker(
+        "/image/dead-reference?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-dead-reference.test%2Finput.png&seed=9351",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+    expect(response.status).toBe(400);
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.gptImage.state.imageHostRequests).toBe(1);
+    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
 });
 
 test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({

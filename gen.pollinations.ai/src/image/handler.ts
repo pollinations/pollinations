@@ -11,6 +11,7 @@ import {
     isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
+import { UserImageError } from "../userImage.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -283,8 +284,15 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
+            // Only failures where Azure provably generated nothing: a rate
+            // limit or a missing deployment. Timeouts and 5xx stay terminal so
+            // an image Azure may have produced is not paid for twice. A dead
+            // reference image link also reports 404 and would fail again.
             return (
-                error instanceof UpstreamError && error.upstreamStatus === 429
+                error instanceof UpstreamError &&
+                (error.upstreamStatus === 429 ||
+                    (error.upstreamStatus === 404 &&
+                        !(error instanceof UserImageError)))
             );
         }
         return isRetryableFallbackError(error);

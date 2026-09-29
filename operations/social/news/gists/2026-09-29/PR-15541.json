@@ -1,0 +1,37 @@
+{
+  "pr_number": 15541,
+  "title": "feat(polli-cli): add 3D, embeddings, and voice tools to polli gen",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15541",
+  "merged_at": "2026-09-29T07:50:36Z",
+  "labels": [
+    "API",
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15526\n\nOutcome checklist:\n- `polli gen 3d \"a red fox\"` / `polli gen 3d --image <url> --resolution high` → saves the file with the extension inferred from the response's `Content-Type` (`model/gltf-binary` → `.glb`, `model/ply` → `.ply` for `nvidia/asset-harvester`), not guessed from the model name. `--model`, `--resolution`, `--seed`, `--output`, repeatable `--image` all supported. `--model` defaults to `hyper3d/rodin-2.5` for a text-only prompt and `microsoft/trellis-2` once `--image` is given — `trellis-2` is image-to-3D only and rejects a bare prompt server-side.\n- `polli gen embeddings \"a\" \"b\"` → one JSON array per line, in input order (server responses aren't guaranteed ordered — sorted by `index` before printing). Reads stdin (one input per line, `\\r?\\n`-split) when no arguments are given. `--model`, `--dimensions`, `--task-type` (Gemini), `--input-type` (Cohere). `--json` prints the full response including `usage`.\n- `polli gen voice-change talk.mp3 --voice nova` → re-speaks a local file in another voice; `--format` picks the output format and default filename.\n- `polli gen isolate interview.mp4` → strips music/background noise from local audio or video, default `isolated.mp3`.\n- `polli gen audio \"Hello\" --timestamps` → saves the audio as usual and writes character-level timing JSON next to it (appending `.json` to the complete output path, so the files cannot collide).\n- `polli models --type 3d` (and `--type all`) now include the 3 registered 3D models.\n- Same conventions as existing `gen` commands throughout: dynamic `--output` defaults, `--json` mirrors human fields, errors surface the API's own message.\n\n## Two real bugs found along the way\n\n1. `voice-change` and `isolate` upload the local file as a multipart `Blob`. Without an explicit MIME type, Node's `FormData` sends the part as `application/octet-stream` on the wire — and both endpoints reject that outright (`audio.type && !audio.type.startsWith(\"audio/\")`, in `gen.pollinations.ai/src/routes/a",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli grows a few new tricks",
+    "blurb": "The CLI can now make 3D models, turn text into embeddings, change a recording’s voice, and clear background noise. It also gives generated speech its own character-level timing notes.",
+    "summary": "Added `polli gen 3d` with prompt-to-3D via `hyper3d/rodin-2.5` and image-to-3D via `microsoft/trellis-2`, plus ordered embeddings output, voice changing, audio isolation, and character-level timestamps for generated speech.",
+    "impact": "CLI users can save 3D files with extensions determined by their response type, stream embeddings in input order, re-voice or isolate local recordings, and get timing JSON alongside generated audio.",
+    "keywords": [
+      "polli-cli",
+      "3D",
+      "embeddings",
+      "voice-change",
+      "audio-isolation",
+      "timestamps"
+    ],
+    "visual_concept": "A cozy terminal garden shows the CLI's new tools as a small pixel fox sculpture, neatly ordered embedding cards, and a waveform being cleaned up beside a microphone. Polli wears tiny headphones and tends the tools like code-plants; a friendly CRT monitor robot displays the commands.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and helps a friendly CRT monitor robot turn terminal commands into a small pixel fox sculpture, ordered embedding cards, and a clean audio waveform among sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; use prominent lime green (#ecf874), a warm cream background, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15541.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and helps a friendly CRT monitor robot turn terminal commands into a small pixel fox sculpture, ordered embedding cards, and a clean audio waveform among sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; use prominent lime green (#ecf874), a warm cream background, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-09-29T07:51:36.734400+00:00"
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 15766,
+  "title": "feat: add optional \"other\" answers to the Bee Census",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15766",
+  "merged_at": "2026-09-29T12:08:24Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Adds an optional one-line \"other\" field under bee type, what you make, how you found us, other AI tools, blockers, and what you'd pay for.\n- Adds an optional \"which payment method would you use\" field under blockers, asking for the method and country.\n- Adds a \"🐝 Something else\" option to the required bee-type dropdown.\n- GitHub issue forms can't attach free text to an option, so each follow-up is a separate optional input. Only the issue template changes; the quest checks the issue title only.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The census has an other box",
+    "blurb": "Not every bee fits neatly in a dropdown. The Bee Census now has room for answers the form didn’t think of.",
+    "summary": "The Bee Census GitHub issue form adds optional “other” answers to six questions, a payment-method-and-country follow-up under blockers, and a “🐝 Something else” bee-type option; quest checks still use only the issue title.",
+    "impact": "People filling out the census can describe answers that don’t fit the preset choices without changing how the quest is checked.",
+    "keywords": [
+      "Bee Census",
+      "GitHub issue form",
+      "community",
+      "survey",
+      "quest"
+    ],
+    "visual_concept": "Polli helps fill out a friendly census form beside a garden of different flowers, with one open text box representing answers beyond the preset choices. Give her a tiny pencil; keep the form welcoming rather than depicting a rigid checklist.",
+    "image_prompt": "Polli, a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny pencil behind one antenna as she writes in an open field on a Bee Census form beside a garden of varied flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15766.jpg",
+    "prompt": "Polli, a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny pencil behind one antenna as she writes in an open field on a Bee Census form beside a garden of varied flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-29T12:09:27.189898+00:00"
+}

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+X-KDE-ServiceTypes=Krita/PythonPlugin
+X-Krita-ManualName=Pollinations AI
+X-Krita-Name=Pollinations AI
+X-Krita-Description=Generate and edit images with Pollinations AI inside Krita
+X-Krita-Version=5.2.0
+X-Krita-Icon=
+X-Krita-Menu=Tools
+X-Krita-DockerMode=DockRight

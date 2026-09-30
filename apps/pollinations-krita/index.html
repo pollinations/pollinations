@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pollinations Krita Plugin | Pollinations.AI</title>
+
+    <meta property="og:title" content="Pollinations Krita Plugin — AI Image Generation Inside Krita">
+    <meta property="og:description"
+        content="Generate and edit AI images directly from Krita with the Pollinations API. Text-to-image, img2img, and more. Pay with your own Pollen.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://krita.pollinations.ai">
+    <meta property="og:image"
+        content="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/pollinations-krita/og-image.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pollinations Krita Plugin — AI Inside Krita">
+    <meta name="twitter:description" content="Generate and edit images with Pollinations directly in Krita.">
+
+    <meta name="description"
+        content="Pollinations Krita plugin: AI image generation and editing inside Krita. Text-to-image, img2img, Pollen payment. Open-source plugin distributed via the Pollinations app ecosystem.">
+    <meta name="keywords"
+        content="Krita, plugin, AI art, image generation, image editing, Pollinations, Pollen, text-to-image, img2img">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="emoji-title">🎨 Pollinations Krita Plugin</h1>
+            <p class="tagline">Generate and edit images with AI directly inside Krita • Pay with your Pollen</p>
+        </header>
+
+        <!-- Auth -->
+        <div id="authContainer" class="auth-container">
+            <div id="authLoggedOut" class="auth-logged-out">
+                <div class="auth-info-text">
+                    <p class="auth-headline">Connect your <span class="auth-highlight">pollinations.ai</span> account</p>
+                    <p class="auth-subtext">Log in with Pollinations to use your Pollen balance for generation</p>
+                </div>
+                <button id="authLoginBtn" class="auth-login-btn">Log In</button>
+            </div>
+            <div id="authLoggedIn" class="auth-logged-in hidden">
+                <div class="auth-bar">
+                    <span id="authApiKey" class="hidden">-</span>
+                    <span id="authBalance" class="auth-balance-value">-</span>
+                    <span class="auth-spacer"></span>
+                    <a id="authDashboardLink" href="https://enter.pollinations.ai" target="_blank"
+                        rel="noopener" class="auth-dashboard-btn">Balance</a>
+                    <button id="authLogoutBtn" class="auth-logout-btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generator -->
+        <div class="section-card generator-section hidden">
+            <h2>Generate Image</h2>
+
+            <div class="input-group">
+                <label for="promptInput">Prompt</label>
+                <textarea id="promptInput"
+                    placeholder="e.g., A serene mountain landscape at sunset, digital painting, highly detailed, 4k"
+                    rows="3"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>Canvas Size</label>
+                <div class="preset-grid" id="presetGrid"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="modelSelect">Model</label>
+                <select id="modelSelect">
+                    <option value="auto">Auto (recommended)</option>
+                    <option value="nanobanana-2-lite">nanobanana-2-lite</option>
+                    <option value="nanobanana">nanobanana</option>
+                    <option value="gptimage">gptimage</option>
+                    <option value="kokoro">kokoro</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-row">
+                    <input type="checkbox" id="editModeCheckbox" />
+                    <span>Edit uploaded image (img2img mode)</span>
+                </label>
+            </div>
+
+            <div id="uploadContainer" class="upload-container hidden">
+                <label for="imageUpload" class="upload-btn">Upload Krita Canvas</label>
+                <input type="file" id="imageUpload" accept="image/*" class="hidden" />
+            </div>
+
+            <div id="imageThumbnailContainer" class="thumbnail-container hidden">
+                <img id="imageThumbnail" class="image-thumbnail" alt="Reference preview" />
+                <button id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">✕</button>
+            </div>
+
+            <button id="generateBtn" class="generate-btn" disabled>Generate</button>
+
+            <div id="generateError" class="generate-error hidden"></div>
+
+            <div id="resultSection" class="result-section hidden">
+                <img id="generatedImage" alt="Generated image" />
+                <div class="action-buttons">
+                    <button id="downloadBtn" class="action-btn">
+                        <span>Download</span> 💾
+                    </button>
+                    <button id="newImg2ImgBtn" class="action-btn">
+                        <span>Edit Again</span> ✏️
+                    </button>
+                </div>
+                <p class="publish-note">Generated images are public on the community gallery. Sign in with your
+                    Pollinations account to cover costs with Pollen.</p>
+            </div>
+        </div>
+
+        <!-- Krita plugin info -->
+        <div class="section-card">
+            <h2>🖥️ Krita Integration</h2>
+            <p>This plugin can run in two ways:</p>
+            <ol class="krita-steps">
+                <li><strong>Web app</strong> — use this page directly in your browser at
+                    <a href="https://krita.pollinations.ai">krita.pollinations.ai</a></li>
+                <li><strong>Native Docker</strong> — install the Python plugin to get a
+                    <code>Pollinations</code> panel inside Krita with one-click canvas export/import.</li>
+            </ol>
+            <p class="install-note">
+                Download the Python plugin files below and copy them to your Krita
+                <code>pykrita</code> directory:
+                <code>~/.local/share/krita/pykrita/</code> (Linux) or
+                <code>~/Library/Application Support/Krita/pykrita/</code> (macOS).
+            </p>
+            <p>
+                <a href="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/pollinations-krita/krita/pollinations_krita.py"
+                    class="download-link">⬇️ Download pollinations_krita.py</a> |
+                <a href="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/pollinations-krita/krita/pollinations_krita.desktop"
+                    class="download-link">⬇️ Download pollinations_krita.desktop</a>
+            </p>
+        </div>
+
+        <footer>
+            <p>Part of the <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.AI</a>
+                ecosystem — built by <a href="https://github.com/g33ky00" target="_blank" rel="noopener">g33ky00</a>
+                for the community.</p>
+            <p class="footer-small">
+                <a href="https://github.com/pollinations/pollinations/tree/main/apps/pollinations-krita"
+                    target="_blank" rel="noopener">View on GitHub</a> 🐙
+            </p>
+        </footer>
+    </div>
+
+    <script src="script.js" type="module"></script>
+</body>
+
+</html>

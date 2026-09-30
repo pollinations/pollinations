@@ -1,0 +1,5 @@
+node_modules/
+.env*
+live-results/
+*.key
+*.pem

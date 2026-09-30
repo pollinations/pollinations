@@ -1,0 +1,15 @@
+{
+  "name": "jev-context-trimmer",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "test": "node --experimental-strip-types --test agent.test.mjs",
+    "check": "tsc --noEmit --strict --target ES2023 --module NodeNext --moduleResolution NodeNext --lib ES2023,DOM agent.ts",
+    "format": "biome check --write agent.ts agent.test.mjs live.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "typescript": "5.9.3"
+  }
+}

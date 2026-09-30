@@ -8,7 +8,7 @@ body:
       value: |
         A 3-minute survey for anyone who has bought Pollen.
 
-        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 10 Quest Pollen (once per GitHub account that has bought Pollen). The Pollen is paid when the two big text boxes have at least 100 characters in total. Too short? Edit your issue and check your quests again.
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 10 Quest Pollen (once per GitHub account that has bought Pollen). The Pollen is paid when the two big text boxes have at least 100 characters in total.
 
   - type: dropdown
     id: first-buy

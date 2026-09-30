@@ -20,8 +20,8 @@ const tileBase =
     "flex cursor-pointer flex-col items-center rounded-xl border px-2 pt-3 pb-2.5 tabular-nums transition-[box-shadow,background-color] focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:ring-0";
 
 /**
- * House button rule: filled opens something (Once: the pay modal), outlined
- * saves (Automatic: choosing a pack is the setting). The current choice is
+ * House button rule: filled opens something (Buy now: the pay modal), outlined
+ * saves (Auto-refill: choosing a pack is the setting). The current choice is
  * filled in, so it still stands out among the outlined tiles.
  */
 const packTile = {

@@ -6,7 +6,7 @@ export type StatusAction =
     | { kind: "portal"; label: string };
 
 export type AutoTopUpStatus = {
-    /** The Automatic tab value: the active pack in paid Pollen, or "Off". */
+    /** The Auto-refill tab value: the active pack in paid Pollen, or "Off". */
     tab: { on: boolean; label: string; warning: boolean };
     /** A problem to act on, shown next to the tabs; null when all is well. */
     text: string | null;

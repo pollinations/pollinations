@@ -32,7 +32,7 @@ type TopUpPanelProps = {
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet (and billing) once a purchase is credited. */
     onCredited?: () => void;
-    /** Back from Stripe's setup page: show Automatic until it is on. */
+    /** Back from Stripe's setup page: show Auto-refill until it is on. */
     setupReturn?: boolean;
 };
 
@@ -40,8 +40,8 @@ const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
 
 /**
- * Top-up in one place: buy a pack now (Once) or keep the paid balance
- * topped up (Automatic). The packs stay put and the line under them always
+ * Top-up in one place: buy a pack now (Buy now) or keep the paid balance
+ * topped up (Auto-refill). The packs stay put and the line under them always
  * says what the tab does; anything that needs the buyer sits by the tabs.
  */
 export const TopUpPanel: FC<TopUpPanelProps> = ({
@@ -118,7 +118,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         );
     }
 
-    /** Choosing a tile on Automatic saves straight away. */
+    /** Choosing a tile on Auto-refill saves straight away. */
     async function saveAutoTopUp(
         enabled: boolean,
         packAmountUsd: number,
@@ -159,7 +159,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         onClick={() => setTab("once")}
                         size="lg"
                     >
-                        Once
+                        Buy now
                     </TabButton>
                     <TabButton
                         active={tab === "automatic"}
@@ -167,7 +167,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         size="lg"
                     >
                         <span className="inline-flex items-center gap-2">
-                            Automatic
+                            Auto-refill
                             {status && <AutomaticValue tab={status.tab} />}
                         </span>
                     </TabButton>
@@ -262,7 +262,10 @@ const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
                     aria-hidden="true"
                     className="mr-0.5 h-2 w-2 rounded-full bg-intent-success-text"
                 />
-                <WalletKindIcon kind="paid" />
+                {/* Both tabs fit one row on a 375px phone without it. */}
+                <span className="hidden sm:inline-flex">
+                    <WalletKindIcon kind="paid" />
+                </span>
                 <span aria-hidden="true" className="text-paid-deep">
                     {tab.label}
                 </span>
@@ -283,8 +286,8 @@ const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
 
 /**
  * What needs the buyer, or a step in progress: an error, a declined or
- * pending top-up (both tabs, the Automatic tab shows ⚠), or what automatic
- * top-up still lacks (Automatic only). Nothing when all is well.
+ * pending top-up (both tabs, the Auto-refill tab shows ⚠), or what automatic
+ * top-up still lacks (Auto-refill only). Nothing when all is well.
  */
 const TabNotice: FC<{
     tab: Tab;

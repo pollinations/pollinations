@@ -42,10 +42,13 @@ export function useRepoStars() {
 
 /**
  * The widget exposes `presence_count` — members online right now — and not
- * total membership, which needs a bot token.
+ * total membership, which needs a bot token. Discord echoes the requesting
+ * origin in its CORS header without `Vary: Origin`, so a browser-cached copy
+ * fetched from www.pollinations.ai would fail on pollinations.ai. Discord's
+ * edge caches it anyway.
  */
 export const loadDiscordPresence = cachePublic(async () => {
-    const response = await fetch(DISCORD_WIDGET);
+    const response = await fetch(DISCORD_WIDGET, { cache: "no-store" });
     if (!response.ok) throw new Error(`discord: ${response.status}`);
     const widget = (await response.json()) as {
         presence_count?: number;

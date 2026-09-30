@@ -245,7 +245,7 @@ async function generateWanVideo(
         input = withSeed(
             {
                 prompt,
-                resolution: safeParams.resolution ?? "720p",
+                resolution: safeParams.resolution,
                 aspect_ratio: pickAspect(safeParams, WAN_PRO_RATIOS),
                 duration: requestedDuration,
                 ...(safeParams.reference_images?.length

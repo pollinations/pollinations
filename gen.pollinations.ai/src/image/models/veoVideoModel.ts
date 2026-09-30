@@ -252,7 +252,7 @@ export async function callVeoReplicateAPI(
                 input: {
                     prompt,
                     duration: params.duration ?? 4,
-                    resolution: params.resolution ?? "720p",
+                    resolution: params.resolution,
                     aspect_ratio: calculateVideoResolution(params).aspectRatio,
                     generate_audio: generateAudio,
                     ...(params.image[0]

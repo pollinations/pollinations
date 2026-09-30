@@ -37,10 +37,10 @@ afterEach(() => {
 
 describe("Seedance 2.0 family via Replicate", () => {
     it.each([
-        ["bytedance/seedance-2.0", undefined, "720p", 15, 15],
-        ["bytedance/seedance-2.0-mini", undefined, "720p", 15, 10],
+        ["bytedance/seedance-2.0", "720p", "720p", 15, 15],
+        ["bytedance/seedance-2.0-mini", "720p", "720p", 15, 10],
         ["bytedance/seedance-2.0-mini", "480p", "480p", 4, 4],
-        ["bytedance/seedance-2.0-fast", undefined, "480p", 15, 5],
+        ["bytedance/seedance-2.0-fast", "480p", "480p", 15, 5],
     ] as const)("routes %s resolution %s as %s and caps duration %s at %s", async (model, resolution, expectedResolution, duration, expectedDuration) => {
         syncImageEnv(
             { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,

@@ -181,7 +181,7 @@ describe("Veo Replicate fallback", () => {
     });
 
     it.each([
-        [undefined, undefined, 0, 0.4, 0.32],
+        ["720p", undefined, 0, 0.4, 0.32],
         ["720p", true, 1, 0.6, 0.4],
         ["1080p", false, 0, 0.4, 0.4],
         ["1080p", true, 2, 0.6, 0.48],

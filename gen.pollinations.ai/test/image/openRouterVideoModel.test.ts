@@ -329,6 +329,7 @@ describe("OpenRouter Grok Video Pro", () => {
             width: 1024,
             height: 1024,
             aspectRatio: "16:9",
+            resolution: "720p",
         });
 
         expect(requests).toEqual([
@@ -352,7 +353,7 @@ describe("OpenRouter Grok Video Pro", () => {
     });
 
     it.each([
-        [undefined, "720p"],
+        ["720p", "720p"],
         ["480p", "480p"],
         ["1080p", "1080p"],
     ] as const)("routes 1.5 resolution %s as %s", async (resolution, expectedResolution) => {
@@ -396,6 +397,7 @@ describe("OpenRouter Grok Video Pro", () => {
                 dimensionsExplicit: true,
                 aspectRatio: "9:16",
                 duration: 15,
+                resolution: "720p",
                 image: ["https://example.com/start.png"],
             },
         );

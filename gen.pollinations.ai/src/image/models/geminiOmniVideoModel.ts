@@ -11,7 +11,6 @@ const logOps = debug("pollinations:gemini-omni:ops");
 
 const MODEL_ID = "gemini-omni-1.1-flash-preview";
 const PUBLIC_MODEL_ID = "google/gemini-omni-1.1-flash";
-const RESOLUTIONS = ["360p", "720p", "1080p", "4k"] as const;
 
 type ModalityTokens = {
     modality?: "text" | "image" | "audio" | "video" | "document";
@@ -74,17 +73,7 @@ export async function callGeminiOmniAPI(
         });
     }
 
-    const requestedResolution = safeParams.resolution ?? "720p";
-    if (
-        !RESOLUTIONS.includes(
-            requestedResolution as (typeof RESOLUTIONS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Gemini Omni 1.1 Flash does not support ${requestedResolution} resolution.`,
-        });
-    }
-    const resolution = requestedResolution as (typeof RESOLUTIONS)[number];
+    const resolution = safeParams.resolution;
     const aspectRatio =
         safeParams.aspectRatio === "16:9" || safeParams.aspectRatio === "9:16"
             ? safeParams.aspectRatio

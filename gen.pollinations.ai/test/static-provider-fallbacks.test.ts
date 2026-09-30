@@ -163,6 +163,7 @@ function expectInheritedRoute(
         outputModalities: parent.outputModalities,
     });
     expect(route.paidOnly).toBe(parent.paidOnly);
+    expect(route.resolutions).toEqual(parent.resolutions);
     expect(route.fallbacks).toBeUndefined();
     for (const usageType of Object.keys(route.cost ?? {})) {
         expect(

@@ -166,7 +166,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             Math.min(15, Math.max(1, Math.floor(params.duration ?? 5))),
         input: (params, duration, hasImage) => ({
             duration,
-            resolution: params.resolution ?? "720p",
+            resolution: params.resolution,
             ...(!hasImage ? { aspect_ratio: aspectRatio(params) } : {}),
         }),
     },
@@ -201,7 +201,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             Math.min(10, Math.max(2, Math.floor(params.duration ?? 5))),
         input: (params, duration) => ({
             duration,
-            resolution: params.resolution ?? "720p",
+            resolution: params.resolution,
             aspect_ratio: aspectRatio(params, SEEDANCE_RATIOS),
             camera_fixed: false,
         }),

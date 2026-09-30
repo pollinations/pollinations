@@ -23,7 +23,11 @@ import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { openBillingPortal } from "../../lib/billing-portal.ts";
 import { type AutoTopUpStatus, autoTopUpStatus } from "./auto-top-up-status.ts";
-import { PackCheckoutDialog, preloadStripe } from "./pack-checkout-dialog.tsx";
+import {
+    hostedCheckoutHref,
+    PackCheckoutDialog,
+    preloadStripe,
+} from "./pack-checkout-dialog.tsx";
 import { PollenPackButtons } from "./pollen-pack-controls.tsx";
 
 type Tab = "once" | "automatic";
@@ -72,8 +76,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         setBilling(initialBilling);
     }, [initialBilling]);
 
+    // A saved card pays in our modal; without one, Buy now goes straight to
+    // Stripe's page, which has every method (Apple Pay, PayPal, …).
+    const hasSavedCard = Boolean(
+        billing?.paymentMethods.some((method) => method.type === "card"),
+    );
     // Stripe.js is ready by the time a pack is clicked.
-    const publishableKey = billing?.publishableKey;
+    const publishableKey = hasSavedCard ? billing?.publishableKey : undefined;
     useEffect(() => {
         if (publishableKey) preloadStripe(publishableKey);
     }, [publishableKey]);
@@ -196,6 +205,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             checkoutOpen ? checkoutPack.amountUsd : undefined
                         }
                         onSelect={(pack) => {
+                            if (!hasSavedCard) {
+                                window.location.href = hostedCheckoutHref(
+                                    pack.packKey,
+                                    checkoutParams.toString(),
+                                );
+                                return;
+                            }
                             setCheckoutPack(pack);
                             setCheckoutOpen(true);
                         }}

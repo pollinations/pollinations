@@ -39,7 +39,8 @@ type StartResult =
 /** The open session for one pack, kept while the page lives. */
 type SessionSlot = { packKey: PollenPackKey; start: Promise<StartResult> };
 
-function hostedCheckoutHref(packKey: string, query: string): string {
+/** Stripe's hosted page: every method, for buyers without a saved card. */
+export function hostedCheckoutHref(packKey: string, query: string): string {
     return `/api/stripe/checkout/${packKey}${query ? `?${query}` : ""}`;
 }
 
@@ -100,9 +101,9 @@ type PackCheckoutDialogProps = {
 };
 
 /**
- * The pay modal: a saved card (Confirm), Express buttons (Apple Pay, Google
- * Pay, PayPal, Link) or Stripe's hosted page for everything else. Two clicks
- * from the pack button; reopening the same pack mounts the same session.
+ * The pay modal for buyers with a saved card: one Confirm, or Stripe's
+ * hosted page for another card or method. Two clicks from the pack button;
+ * reopening the same pack mounts the same session.
  */
 export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
     open,
@@ -264,10 +265,10 @@ type WalletActions = {
 };
 
 /**
- * Our pay screen: the pack, the localized total, the saved card with one
- * Confirm, and Express buttons. Stripe still runs the Checkout Session
- * (Adaptive Pricing, tax, 3DS when the bank asks); its currency selector
- * must stay visible next to the price.
+ * Our pay screen: the pack, the localized total and the saved card with one
+ * Confirm. Stripe still runs the Checkout Session (Adaptive Pricing, tax,
+ * 3DS when the bank asks); its currency selector must stay visible next to
+ * the price.
  */
 const WalletPay: FC<{
     pack: PollenPack;
@@ -287,12 +288,11 @@ const WalletPay: FC<{
     billingAddress,
 }) => {
     const currencySelector = useRef<HTMLDivElement>(null);
-    const expressButtons = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // Nothing shows until Stripe's own pieces are drawn, so the modal
+    // Nothing shows until Stripe's currency selector is drawn, so the modal
     // appears complete instead of building itself up.
     const [ready, setReady] = useState(false);
     const callbacks = useRef({ onComplete, onLoadError });
@@ -303,15 +303,11 @@ const WalletPay: FC<{
     useEffect(() => {
         let canceled = false;
         const cleanups: Array<() => void> = [];
-        let pending = 0;
-        const settle = () => {
-            pending -= 1;
-            if (pending <= 0 && !canceled) setReady(true);
+        const show = () => {
+            if (!canceled) setReady(true);
         };
         // A ready event that never comes must not hide the payment forever.
-        const showAnyway = setTimeout(() => {
-            if (!canceled) setReady(true);
-        }, READY_TIMEOUT_MS);
+        const showAnyway = setTimeout(show, READY_TIMEOUT_MS);
         cleanups.push(() => clearTimeout(showAnyway));
         const elements = stripe.initCheckout({
             clientSecret: checkout.clientSecret,
@@ -355,40 +351,12 @@ const WalletPay: FC<{
                         : result.error.message || "Payment didn’t go through.";
                 },
             });
-            // Counted before mounting so one fast ready can't finish early.
-            pending = 1;
             if (current.currencyOptions?.length && currencySelector.current) {
                 const selector = elements.createCurrencySelectorElement();
-                pending += 1;
-                selector.once("ready", settle);
+                selector.once("ready", show);
                 selector.mount(currencySelector.current);
                 cleanups.push(() => selector.destroy());
-            }
-            // Apple Pay, Google Pay, PayPal, Link: whichever the device and
-            // this domain offer. Shows nothing where none is available.
-            if (expressButtons.current) {
-                const express = elements.createExpressCheckoutElement();
-                express.on("confirm", async (event) => {
-                    setError(null);
-                    const result = await loaded.actions.confirm({
-                        expressCheckoutConfirmEvent: event,
-                        redirect: "if_required",
-                    });
-                    if (canceled) return;
-                    if (result.type === "success")
-                        callbacks.current.onComplete(checkout.sessionId);
-                    else
-                        setError(
-                            result.error.message ||
-                                "Payment didn’t go through.",
-                        );
-                });
-                pending += 1;
-                express.once("ready", settle);
-                express.mount(expressButtons.current);
-                cleanups.push(() => express.destroy());
-            }
-            settle();
+            } else show();
         })().catch(() => {
             if (!canceled) callbacks.current.onLoadError();
         });
@@ -437,8 +405,9 @@ const WalletPay: FC<{
                     </Button>
                 ) : (
                     session && (
+                        // A card Stripe won't show again: its own page.
                         <HostedButton href={hostedHref}>
-                            Pay with card or other method
+                            Pay on Stripe’s page
                         </HostedButton>
                     )
                 )
@@ -501,7 +470,6 @@ const WalletPay: FC<{
                         </dl>
                     )}
                     <div ref={currencySelector} />
-                    <div ref={expressButtons} />
                     {error && <ErrorLine>{error}</ErrorLine>}
                 </div>
             </div>

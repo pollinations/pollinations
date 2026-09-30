@@ -15,7 +15,7 @@ import {
 import { proxy, setupSsh } from "./ssh.js";
 
 export const sandboxCommand = new Command("sandbox")
-    .description("E2B sandboxes billed to your Pollinations account")
+    .description("E2B sandboxes billed to your Pollinations account (alpha)")
     .addCommand(
         new Command("create")
             .description("Start a sandbox you can ssh into")

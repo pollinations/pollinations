@@ -15,7 +15,7 @@ const permissions = [
     },
     {
         id: "machines",
-        label: "Run hosted sandboxes, paid in advance.",
+        label: "Run hosted sandboxes (alpha), paid in advance.",
     },
 ] as const;
 

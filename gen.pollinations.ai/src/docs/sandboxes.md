@@ -1,6 +1,6 @@
 ## Sandboxes
 
-Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet. Alpha.
+Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet (alpha).
 
 ### Use a sandbox
 

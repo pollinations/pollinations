@@ -176,7 +176,7 @@ See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CO
 
 ## Sandboxes
 
-Linux VMs from E2B, paid from your wallet.
+Linux VMs from E2B, paid from your wallet (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh

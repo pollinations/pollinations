@@ -2,6 +2,7 @@ import {
     AccountIcon,
     AccountMenu,
     BookIcon,
+    BrandMark,
     BugIcon,
     CheckIcon,
     Chip,
@@ -24,7 +25,6 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
@@ -61,11 +61,6 @@ type DashboardNavItem = {
     to: DashboardPath;
     label: string;
     icon: ComponentType<{ className?: string }>;
-};
-
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
 };
 
 type DashboardShellProps = PropsWithChildren<{
@@ -357,7 +352,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     >
                         <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                             <div className="flex items-center justify-between gap-2">
-                                <BrandMark size="drawer" />
+                                <DashboardBrand size="drawer" />
                                 <button
                                     type="button"
                                     className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
@@ -488,7 +483,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
-            <BrandMark size="desktop" />
+            <DashboardBrand size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
         <ScrollArea
@@ -550,7 +545,7 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -559,13 +554,9 @@ const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <span className="sr-only">Pollinations</span>
-        <span
-            aria-hidden="true"
-            className={cn(
-                "block shrink-0 bg-current",
-                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
-            )}
-            style={brandWordmarkMask}
+        <BrandMark
+            variant="lockup"
+            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
         />
     </a>
 );

@@ -6,9 +6,9 @@ import {
     useAuthState,
 } from "@pollinations/sdk/react";
 import { useEffect } from "react";
-import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
+import { BrandMark } from "../../primitives/BrandMark.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
@@ -124,17 +124,13 @@ export function AppUserMenu({
                             connectSize === "lg" ? "polli:w-12" : "polli:w-10",
                         )}
                     >
-                        <span
+                        <BrandMark
                             className={cn(
-                                "polli:relative polli:-top-px polli:left-px polli:block polli:bg-current",
+                                "polli:relative polli:-top-px polli:left-px",
                                 connectSize === "lg"
                                     ? "polli:h-7 polli:w-7"
                                     : "polli:h-6 polli:w-6",
                             )}
-                            style={{
-                                mask: `url('${markUrl}') center / contain no-repeat`,
-                                WebkitMask: `url('${markUrl}') center / contain no-repeat`,
-                            }}
                         />
                     </span>
                     <span

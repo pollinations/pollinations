@@ -115,8 +115,9 @@ const beeCensusQuest: QuestDefinition = {
     rewardAmount: 3,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=bee-census.yml`,
-    // Paused on 2026-09-30 after 55 responses: off the board, while late
-    // answers through the form still pay. Delete this line to reopen it.
+    // Paused on 2026-09-30 after 55 responses: the form is removed and the
+    // card is off the board; answers already given still pay. To reopen,
+    // restore .github/ISSUE_TEMPLATE/bee-census.yml and delete this line.
     state: "completed",
 };
 

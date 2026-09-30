@@ -264,7 +264,12 @@ export const stripeRoutes = new Hono<Env>()
      */
     .get("/billing", async (c) => {
         const user = await requireSessionUser(c);
-        return c.json(await getBillingOverview(c.env, user.id));
+        return c.json({
+            ...(await getBillingOverview(c.env, user.id)),
+            // Checkout localizes by the same IP country; the buy panel uses
+            // it to show the buyer's local payment methods.
+            ipCountry: c.req.header("cf-ipcountry") ?? null,
+        });
     })
 
     /**

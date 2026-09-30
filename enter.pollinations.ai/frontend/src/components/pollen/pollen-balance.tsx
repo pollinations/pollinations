@@ -308,6 +308,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 selectedPackAmount={selectedPackAmount}
                 onSelectedPackAmountChange={onSelectedPackAmountChange}
                 returnToTopUp={returnToTopUp}
+                ipCountry={initialBillingState?.ipCountry}
             />
             <Surface>
                 <AutoTopUpPanel

@@ -67,6 +67,8 @@ export type BillingState = {
         country: string | null;
     } | null;
     billingDetailsComplete: boolean;
+    /** Cloudflare's country for this request (ISO code, XX unknown). */
+    ipCountry: string | null;
 };
 
 type AutoTopUpPanelProps = {

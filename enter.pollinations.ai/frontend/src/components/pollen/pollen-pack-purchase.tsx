@@ -17,6 +17,8 @@ type PollenPackPurchaseProps = {
     onSelectedPackAmountChange: (amount: number) => void;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
+    /** The buyer's IP country, for the local payment logos. */
+    ipCountry?: string | null;
 };
 
 /** The pack slider and Buy button: the one thing a top-up needs. */
@@ -24,6 +26,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
     returnToTopUp,
+    ipCountry,
 }) => {
     const topUpBonus = useTopUpBonus();
     const selectedPackIndex = Math.max(
@@ -83,7 +86,7 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
                 Includes {formatUsdCentsCompact(serviceFeeCents)}{" "}
                 {SERVICE_FEE_NAME.toLowerCase()} · Tax calculated at checkout
             </p>
-            <PaymentTrustBadge className="mt-0 pt-0" />
+            <PaymentTrustBadge className="mt-0 pt-0" country={ipCountry} />
         </Surface>
     );
 };

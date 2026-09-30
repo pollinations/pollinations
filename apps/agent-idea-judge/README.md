@@ -5,7 +5,7 @@ and a text model writes the reasoning. Send it an idea and Jev answers
 **KILL**, **FIX**, or **SHIP**, plus the biggest risk and a novelty probability.
 
 - Source repository: https://github.com/Guest453/pollinations-idea-judge
-- Callable model: `<your-github-username>/idea-judge` (the repository name)
+- Callable model: `Guest453/idea-judge` (the repository name)
 
 ## How it decides
 

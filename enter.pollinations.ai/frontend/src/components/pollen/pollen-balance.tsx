@@ -298,7 +298,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 />
                 <span>
                     Auto top-up buys its pack when your paid balance reaches{" "}
-                    {AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
                 </span>
             </p>
             <p className="flex items-start gap-1.5">

@@ -59,12 +59,12 @@ export const PollenPackButtons: FC<{
                     {auto && (
                         <span
                             aria-hidden="true"
-                            // A corner tab in the switch's own greens (this is
-                            // what it buys): flush with the tile's corner and
-                            // its radius, the inner corner rounded.
-                            className="absolute top-0 right-0 inline-flex h-[18px] w-[18px] items-center justify-center rounded-tr-xl rounded-bl-lg bg-tier-soft text-intent-success-text-on-bright"
+                            // A corner tab in the Paid card's gold (auto top-up
+                            // buys paid Pollen): flush with the tile's corner
+                            // and its radius, the inner corner rounded.
+                            className="absolute top-0 right-0 inline-flex h-5 w-5 items-center justify-center rounded-tr-xl rounded-bl-lg bg-paid-soft text-paid-deep"
                         >
-                            <RefreshIcon className="h-2.5 w-2.5" />
+                            <RefreshIcon className="h-3 w-3" />
                         </span>
                     )}
                     <span className="text-2xl font-bold leading-none tracking-tight">

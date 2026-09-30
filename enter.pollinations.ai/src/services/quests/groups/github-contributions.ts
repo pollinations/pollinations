@@ -36,8 +36,23 @@ const REPO = `${REPO_OWNER}/${REPO_NAME}`;
 // Matches `### Reward\n<number>` in an issue body. Kept identical to the legacy
 // GitHub Actions parser so already-parsed bounties keep their reward amount.
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
+// An approved app submission can close a quest. The bot opens that catalog PR
+// on an auto/app-<issue>- branch and credits the submitter as commit co-author.
+// A GitHub user also owns the login "pollinations-ai", so the type must be Bot.
+const APP_PUBLISH_BOT = "pollinations-ai";
+const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
+// The issue form applies this label; responders can rename the title.
+const SURVEY_LABEL = "BEE-CENSUS";
+// Issue forms can only mark fields required, so the minimum length of the
+// written answers is checked here. The wishlist heading is the pre-2026-09-29 form.
+const SURVEY_WRITTEN_ANSWERS = [
+    "What did you last try to build that Pollinations couldn't do?",
+    "What would make you pay this month?",
+    "🪄 Wishlist — features or models you'd like on Pollinations",
+];
+const SURVEY_MIN_WRITTEN_CHARS = 60;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -53,11 +68,10 @@ const firstMergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description:
-        "Report a bug or suggest an improvement in the Pollinations repository. Earn 4 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.",
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 4,
+    rewardAmount: 3,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new/choose`,
 };
@@ -72,6 +86,17 @@ const solveGithubIssueQuest: QuestDefinition = {
     rewardAmount: 0,
     balanceBucket: "tier",
     state: "coming_soon",
+};
+
+const beeCensusQuest: QuestDefinition = {
+    id: "bee_census",
+    title: "Take the Bee Census",
+    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${SURVEY_MIN_WRITTEN_CHARS} characters in total. One response per GitHub account.`,
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 3,
+    balanceBucket: "tier",
+    url: `https://github.com/${REPO}/issues/new?template=bee-census.yml`,
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -90,6 +115,27 @@ type GitHubUser = {
     databaseId?: number | null;
 };
 
+type ClosingPullRequest = {
+    number: number;
+    mergedAt: string | null;
+    headRefName: string;
+    author: (GitHubUser & { __typename: string; login: string }) | null;
+};
+
+type CommitAuthorsData = {
+    repository: {
+        pullRequest: {
+            commits: {
+                nodes: {
+                    commit: {
+                        authors: { nodes: { user: GitHubUser | null }[] };
+                    };
+                }[];
+            };
+        };
+    };
+};
+
 type GitHubIssueNode = {
     number: number;
     state: "OPEN" | "CLOSED";
@@ -98,13 +144,7 @@ type GitHubIssueNode = {
     body: string | null;
     labels: { nodes: { name: string }[] };
     assignees: { nodes: GitHubUser[] };
-    closedByPullRequestsReferences: {
-        nodes: {
-            number: number;
-            mergedAt: string | null;
-            author: GitHubUser | null;
-        }[];
-    };
+    closedByPullRequestsReferences: { nodes: ClosingPullRequest[] };
 };
 
 type GitHubPullRequestNode = {
@@ -119,6 +159,11 @@ type ReportedIssueNode = {
     author: GitHubUser | null;
     labels: { nodes: { name: string }[] };
     closedByPullRequestsReferences: { nodes: { mergedAt: string | null }[] };
+};
+
+type SurveyIssueNode = {
+    body: string;
+    author: GitHubUser | null;
 };
 
 type SearchData<TNode> = {
@@ -143,9 +188,20 @@ query($query:String!){
         labels(first:100){ nodes{ name } }
         assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:100){
-          nodes{ number mergedAt author{ ... on User{ databaseId } } }
+          nodes{ number mergedAt headRefName author{ __typename login ... on User{ databaseId } } }
         }
       }
+    }
+  }
+}`;
+
+// Asked only for app-publish PRs: adding commit authors to the issue search
+// multiplies its rate-limit cost about 200 times.
+const COMMIT_AUTHORS_QUERY = `
+query($number:Int!){
+  repository(owner:"${REPO_OWNER}",name:"${REPO_NAME}"){
+    pullRequest(number:$number){
+      commits(first:1){ nodes{ commit{ authors(first:5){ nodes{ user{ databaseId } } } } } }
     }
   }
 }`;
@@ -175,6 +231,13 @@ query($query:String!,$after:String){
         }
       }
     }
+  }
+}`;
+
+const SURVEY_QUERY = `
+query($query:String!){
+  search(query:$query,type:ISSUE,first:10){
+    nodes{ ... on Issue{ body author{ ... on User{ databaseId } } } }
   }
 }`;
 
@@ -229,7 +292,40 @@ function mergedClosers(issue: GitHubIssueNode) {
     );
 }
 
-function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
+function isAppPublishPr(pr: ClosingPullRequest): boolean {
+    return (
+        pr.author?.__typename === "Bot" &&
+        pr.author.login === APP_PUBLISH_BOT &&
+        APP_PUBLISH_BRANCH.test(pr.headRefName)
+    );
+}
+
+function githubIds(users: (GitHubUser | null)[]): number[] {
+    return users.flatMap((user) =>
+        typeof user?.databaseId === "number" ? [user.databaseId] : [],
+    );
+}
+
+// The commit authors of an app-publish PR are the bot and the submitter; the
+// bot has no Pollinations account, so only the submitter can be paid.
+async function commitAuthorIds(
+    token: string,
+    number: number,
+): Promise<number[]> {
+    const data = await graphql<CommitAuthorsData>(token, COMMIT_AUTHORS_QUERY, {
+        number,
+    });
+    return githubIds(
+        data.repository.pullRequest.commits.nodes.flatMap((node) =>
+            node.commit.authors.nodes.map((author) => author.user),
+        ),
+    );
+}
+
+function toDerivedQuestIssue(
+    issue: GitHubIssueNode,
+    appPublishPayees: Map<number, number[]>,
+): DerivedQuestIssue {
     const body = issue.body ?? "";
     const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
@@ -244,9 +340,9 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
         rewardAmount: parseReward(body),
         state,
         completedByGithubIds: closers.flatMap((pr) =>
-            typeof pr.author?.databaseId === "number"
-                ? [pr.author.databaseId]
-                : [],
+            isAppPublishPr(pr)
+                ? (appPublishPayees.get(pr.number) ?? [])
+                : githubIds([pr.author]),
         ),
     };
 }
@@ -258,13 +354,26 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         { query: `repo:${REPO} label:${QUEST_LABEL} is:issue` },
     );
 
-    return data.search.nodes
+    const issues = data.search.nodes
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
-        )
-        .map(toDerivedQuestIssue)
+        );
+    const appPublishPrs = issues
+        .flatMap(mergedClosers)
+        .filter(isAppPublishPr)
+        .map((pr) => pr.number);
+    const appPublishPayees = new Map(
+        await Promise.all(
+            appPublishPrs.map(
+                async (number) =>
+                    [number, await commitAuthorIds(token, number)] as const,
+            ),
+        ),
+    );
+    return issues
+        .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);
 }
 
@@ -292,6 +401,7 @@ export async function listQuestCards(
         questToCard(firstMergedPrQuest),
         questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
+        questToCard(beeCensusQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
@@ -352,6 +462,37 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
     return data.search.nodes.some((pr) => pr.mergedAt !== null);
 }
 
+async function answeredSurvey(
+    token: string,
+    user: QuestUser,
+): Promise<boolean> {
+    if (!user.githubUsername) return false;
+    const data = await graphql<SearchData<SurveyIssueNode>>(
+        token,
+        SURVEY_QUERY,
+        {
+            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${SURVEY_LABEL}`,
+        },
+    );
+    return data.search.nodes.some(
+        (issue) =>
+            issue.author?.databaseId === user.githubId &&
+            writtenAnswerLength(issue.body) >= SURVEY_MIN_WRITTEN_CHARS,
+    );
+}
+
+// Characters written under the survey's free-text headings ("### <label>").
+function writtenAnswerLength(body: string): number {
+    let length = 0;
+    for (const section of body.split(/^### /m).slice(1)) {
+        const [heading, ...answer] = section.split("\n");
+        if (SURVEY_WRITTEN_ANSWERS.includes(heading.trim())) {
+            length += answer.join("\n").trim().length;
+        }
+    }
+    return length;
+}
+
 export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
@@ -360,10 +501,11 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, reportedIssues] = await Promise.all([
+    const [issues, mergedPr, reportedIssues, surveyed] = await Promise.all([
         loadQuestIssues(token),
         hasMergedPr(token, user),
         reportedIssueProposals(token, user),
+        answeredSurvey(token, user),
     ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
@@ -386,6 +528,7 @@ export async function evaluateUser(
             ...(mergedPr
                 ? [{ quest: firstMergedPrQuest, userId: user.id }]
                 : []),
+            ...(surveyed ? [{ quest: beeCensusQuest, userId: user.id }] : []),
         ],
     };
 }

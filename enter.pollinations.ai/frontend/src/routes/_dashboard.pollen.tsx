@@ -12,9 +12,12 @@ import {
     redirect,
     useNavigate,
 } from "@tanstack/react-router";
-import { useDeferredValue } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -60,14 +63,19 @@ function PollenPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Wallet">
-                <Await promise={balance} fallback={null}>
+                <Await promise={balance} fallback={<PageStatus />}>
                     {(balances) =>
                         balances ? (
                             <Await
                                 promise={earnings}
-                                fallback={<PollenBalance {...balances} />}
+                                fallback={
+                                    <>
+                                        <PollenBalance {...balances} />
+                                        <PageStatus />
+                                    </>
+                                }
                             >
                                 {(earnings) => (
                                     <PollenBalance
@@ -85,16 +93,20 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <Await promise={billing} fallback={null}>
-                    {(billingState) => (
-                        <BuyPollenPanel
-                            initialBillingState={billingState}
-                            selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                            onSelectedPackAmountChange={selectPack}
-                        />
-                    )}
-                </Await>
+                <Suspense fallback={<PageStatus />}>
+                    <Await promise={billing}>
+                        {(billingState) => (
+                            <BuyPollenPanel
+                                initialBillingState={billingState}
+                                selectedPackAmount={
+                                    selectedPack?.amountUsd ?? 5
+                                }
+                                onSelectedPackAmountChange={selectPack}
+                            />
+                        )}
+                    </Await>
+                </Suspense>
             </Section>
-        </div>
+        </>
     );
 }

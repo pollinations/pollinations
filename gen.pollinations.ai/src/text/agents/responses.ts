@@ -1,10 +1,10 @@
-import { parseFunctionName } from "@shared/agents/function-items.ts";
 import {
     AgentResponsesRequestError,
     agentResponsesError,
     handleAgentResponsesRequest,
 } from "@shared/agents/responses.ts";
 import { CreateResponseRequestSchema } from "@shared/schemas/openai.ts";
+import { jsonSchema, type ToolSet } from "ai";
 import { z } from "zod";
 import {
     type PromptAgentRuntime,
@@ -24,34 +24,43 @@ export async function handlePromptAgentResponsesRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    // Prompt agents only expose hosted MCP tools. Reject unsupported history
-    // before starting a stream; code agents may replay ordinary SDK tools.
-    if (
-        Array.isArray(request.input) &&
-        request.input.some(
-            (item) =>
-                item != null &&
-                typeof item === "object" &&
-                "type" in item &&
-                item.type === "function_call" &&
-                "name" in item &&
-                typeof item.name === "string" &&
-                !parseFunctionName(item.name),
-        )
-    ) {
-        return agentResponsesError(
-            new AgentResponsesRequestError(
-                "Tool history must contain unique completed function calls",
-                "input",
+    const callerTools: ToolSet = Object.create(null);
+    for (const definition of request.tools ?? []) {
+        if (
+            !/^[a-zA-Z0-9_-]{1,64}$/.test(definition.name) ||
+            definition.name.startsWith("mcp__") ||
+            Object.hasOwn(callerTools, definition.name)
+        ) {
+            return agentResponsesError(
+                new AgentResponsesRequestError(
+                    "Caller tool names must be unique, use 1–64 letters, digits, underscores or hyphens, and not start with mcp__",
+                    "tools",
+                ),
+            );
+        }
+        // No execute: the SDK returns these calls for the client to fulfill.
+        callerTools[definition.name] = {
+            description: definition.description,
+            inputSchema: jsonSchema(
+                definition.parameters ?? { type: "object", properties: {} },
             ),
-        );
+            ...(definition.strict == null ? {} : { strict: definition.strict }),
+        };
     }
     return handleAgentResponsesRequest(
         request,
         signal,
         ({ messages, settings, signal, stream, onPart }) => {
             const run = stream ? streamPromptAgent : runPromptAgent;
-            return run(runtime, messages, signal, onPart, settings);
+            return run(
+                runtime,
+                messages,
+                signal,
+                onPart,
+                settings,
+                callerTools,
+            );
         },
+        callerTools,
     );
 }

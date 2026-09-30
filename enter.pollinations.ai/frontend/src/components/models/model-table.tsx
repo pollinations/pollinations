@@ -12,6 +12,7 @@ import {
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
+    getModelDescriptionWithoutName,
     getModelInputModalities,
     getModelModalityLabel,
     hasPollinationsTools,
@@ -160,6 +161,7 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
+    const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -202,6 +204,11 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             showCopyIcon
                         />
                     </div>
+                    {modelDescription && (
+                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
+                            {modelDescription}
+                        </p>
+                    )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
@@ -257,7 +264,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         }
                         hasTools={pollinationsTools}
                         requestEstimate={
-                            <PerPollenEstimate model={model} ledger />
+                            !model.agent && (
+                                <PerPollenEstimate model={model} ledger />
+                            )
                         }
                     />
                 </div>

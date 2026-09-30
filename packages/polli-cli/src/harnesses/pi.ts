@@ -21,7 +21,7 @@ import type {
 const ID = "pi";
 const LABEL = "Pi";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 
 export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;

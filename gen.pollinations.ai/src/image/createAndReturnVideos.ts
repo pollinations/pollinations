@@ -12,6 +12,7 @@ import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import {
     callMinimaxH3API,
+    callMinimaxH3MaxAPI,
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
@@ -130,6 +131,9 @@ export async function createAndReturnVideo(
             break;
         case "minimax/minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);
+            break;
+        case "minimax/minimax-h3-max":
+            result = await callMinimaxH3MaxAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3-max-turbo":
             result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);

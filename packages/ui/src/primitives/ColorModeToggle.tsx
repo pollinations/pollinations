@@ -163,7 +163,7 @@ export const ColorModeToggle: FC = () => {
             )}
             <span
                 className={cn(
-                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-soft polli:shadow-sm polli:transition-transform",
+                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-soft polli:transition-transform",
                     isDark ? "polli:translate-x-[26px]" : "polli:translate-x-0",
                 )}
             >

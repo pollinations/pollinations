@@ -14,6 +14,8 @@ Look for issues that interest you and feel free to tackle them!
 
 Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated reward.
 
+If a quest asks for an app, submit it with the [app submission form](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) and enter the quest number in its Quest field. Approving the app completes the quest, and you can claim the reward.
+
 ### 2. Understand the Issue and Build an MVP
 
 Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.

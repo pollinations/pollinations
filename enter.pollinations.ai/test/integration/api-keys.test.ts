@@ -26,6 +26,29 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("allows an expiry beyond one year", async ({ sessionToken }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "long-lived-key",
+                        expiresIn: 366 * 86400,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(new Date(created.expiresAt).getTime()).toBeGreaterThan(
+                Date.now() + 365 * 86400 * 1000,
+            );
+        });
+
         test("preserves Generate off through creation, listing, authentication and editing", async ({
             sessionToken,
         }) => {

@@ -86,7 +86,7 @@ function ActivityPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Usage" framed>
                 <UsageSection
                     period={usagePeriod}
@@ -160,9 +160,9 @@ function ActivityPage() {
             <Section title="Last events" framed>
                 <LastEventsPanel />
             </Section>
-            <p className="text-micro text-theme-text-muted">
+            <p className="px-4 text-micro text-theme-text-muted sm:px-0">
                 Times shown in UTC.
             </p>
-        </div>
+        </>
     );
 }

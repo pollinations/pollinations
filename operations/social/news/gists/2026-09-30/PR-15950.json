@@ -1,0 +1,36 @@
+{
+  "pr_number": 15950,
+  "title": "fix: declare the fixed resolution on five video models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15950",
+  "merged_at": "2026-09-30T16:35:19Z",
+  "labels": [
+    "BUG",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Five video models always produce a single resolution but don't declare it in the registry, so `/models` shows no `resolutions` for them and a caller who passes the resolution they actually get receives a 400 (`params.ts` only accepts values listed in `resolutions`).\n\n| Model | Adapter always sends | Now declares |\n|---|---|---|\n| `alibaba/happyhorse-1.1` | 720p | `[\"720p\"]` |\n| `bytedance/seedance-2.0` | 720p | `[\"720p\"]` |\n| `alibaba/wan-2.2-fast` | 480p (primary + fal fallback) | `[\"480p\"]` |\n| `x-ai/grok-imagine-video` | 720p (primary + OpenRouter fallback) | `[\"720p\"]` |\n| `alibaba/wan-2.6` | 720p (all three routes) | `[\"720p\"]` |\n\n- Output, pricing and fallbacks are unchanged. The only runtime reader besides validation is Seedance's `resolutions?.[0] ?? \"720p\"`, which still yields 720p.\n- Adds a registry test that every visible video model declares `resolutions`, and a params test that the fixed resolution is accepted.\n- Tests: gen image suite (729), catalog/OpenAPI/fallback/docs tests and typecheck; Enter pricing, catalog and effective-price snapshot tests.\n- No conflict with #15861 (different registry entries and fields).\n\nAddresses #15599 — first step; image size and audio limits follow separately.\n\n**Local E2E through gen (this branch, shared local D1, Tinybird events captured locally):**\n\n| Request | HTTP | Output (ffprobe) | Billed | Event |\n|---|---|---|---|---|\n| wan-2.2-fast `resolution=480p` 5s | 200 | 832×480, 5.07s | 5s × 0.01 = 0.05 | replicate, no fallback |\n| grok-imagine-video `resolution=720p` 1s | 200 | 720×720, 1.04s, audio | 1s × 0.07 = 0.07 | fal, no fallback |\n| happyhorse-1.1 `resolution=720p` 3s | 200 | 960×960, 3.16s, audio | 3s × 0.104234 = 0.312702 | openrouter, no fallback |\n| wan-2.6 `resolution=720p` 5s | 200 | 1280×720, 5.01s, audio | 5s × 0.1 = 0.5 | alibaba, no fallback |\n| seedance-2.0 `resolution=720p` 4s | 200 | 1280×720, 4.06s, audio | 4s × 0.18 = 0.72 | replicate, no fallback |\n| seedance-2.0 no `resolution` 4s | 200 | 1280",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Five videos find their pixels",
+    "blurb": "Five video models finally say what resolution they make. Asking for that same resolution no longer confuses the API.",
+    "summary": "The video model registry declares fixed resolutions for alibaba/happyhorse-1.1, bytedance/seedance-2.0, x-ai/grok-imagine-video, and alibaba/wan-2.6 at 720p, plus alibaba/wan-2.2-fast at 480p, so /models lists them and validation accepts matching requests.",
+    "impact": "Callers can specify 720p for the four 720p models or 480p for wan-2.2-fast without a resolution-validation 400; video output, pricing, and fallbacks stay unchanged.",
+    "keywords": [
+      "video models",
+      "resolutions",
+      "model registry",
+      "/models",
+      "request validation"
+    ],
+    "visual_concept": "Polli helps a friendly CRT monitor robot label five little video screens in a garden workspace: four marked 720p and one marked 480p. A lime-green code-plant ties the screens together, representing registry metadata that agrees with what the models produce.",
+    "image_prompt": "In a cozy pixel art garden workspace, five tiny video screens glow beside a code-plant, four labeled '720p' and one '480p'; a friendly chunky CRT monitor robot holds the labels while Polli helps attach them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears a tiny tool belt and is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Soft lime green (#ecf874) features prominently against a warm cream and pastel gradient background, with dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15950.jpg",
+    "prompt": "In a cozy pixel art garden workspace, five tiny video screens glow beside a code-plant, four labeled '720p' and one '480p'; a friendly chunky CRT monitor robot holds the labels while Polli helps attach them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears a tiny tool belt and is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Soft lime green (#ecf874) features prominently against a warm cream and pastel gradient background, with dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T16:36:47.890188+00:00"
+}

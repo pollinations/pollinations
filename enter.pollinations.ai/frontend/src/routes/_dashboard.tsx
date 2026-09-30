@@ -4,6 +4,7 @@ import {
     createFileRoute,
     Outlet,
     useRouter,
+    useRouterState,
 } from "@tanstack/react-router";
 import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -15,7 +16,7 @@ import {
 } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
-import { SidebarWallet } from "../components/pollen";
+import { OutOfPollenBanner, SidebarWallet } from "../components/pollen";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
@@ -103,6 +104,9 @@ export function useDashboardRetry(resource: "balance" | "profile") {
 function DashboardLayout() {
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
+    const pathname = useRouterState({
+        select: (state) => state.location.pathname,
+    });
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     async function handleSignOut(): Promise<void> {
@@ -161,6 +165,16 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
+            {/* The buy page itself needs no pointer to the buy page. */}
+            {data.user && pathname !== "/pollen" && (
+                <Suspense fallback={null}>
+                    <Await promise={data.balance}>
+                        {(balance) =>
+                            balance && <OutOfPollenBanner {...balance} />
+                        }
+                    </Await>
+                </Suspense>
+            )}
             <Outlet />
         </DashboardShell>
     );

@@ -279,6 +279,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             }
             size="md"
             checked={Boolean(billing?.autoTopUp.enabled)}
+            // On but stuck: the bank is waiting for the buyer to approve.
+            status={
+                billing?.autoTopUp.enabled &&
+                billing.autoTopUp.lastIssue?.kind === "pending_payment"
+                    ? "invalid"
+                    : undefined
+            }
             disabled={
                 !billing ||
                 saving ||

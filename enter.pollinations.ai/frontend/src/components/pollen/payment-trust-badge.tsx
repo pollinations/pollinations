@@ -19,15 +19,17 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "mt-2 flex w-full flex-wrap items-center gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-theme-text-muted",
+                "mt-2 flex w-full flex-wrap items-start gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-theme-text-muted",
                 className,
             )}
         >
-            <span className="inline-flex items-center gap-1.5">
-                <LockIcon className="h-3.5 w-3.5" />
+            {/* Placed like every footnote line; the taller logos hang
+                below the text instead of pushing the line down. */}
+            <span className="inline-flex items-start gap-1.5">
+                <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>Secure checkout by Stripe</span>
             </span>
-            <span className="inline-flex flex-wrap items-center gap-1.5">
+            <span className="-mb-1.5 inline-flex flex-wrap items-center gap-1.5">
                 {paymentMethods.map((method) => (
                     <img
                         key={method.name}

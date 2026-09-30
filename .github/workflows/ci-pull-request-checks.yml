@@ -77,6 +77,9 @@ jobs:
       - name: Test SDK
         run: npm test --workspace @pollinations/sdk
 
+      - name: Test UI
+        run: npm test --workspace @pollinations/ui
+
       - name: Test maintenance scripts
         run: >-
           node --test

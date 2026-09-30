@@ -23,7 +23,6 @@ import {
 } from "./models/ideogramReplicateModel.ts";
 import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
-import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
@@ -987,9 +986,6 @@ const generateImage = async (
 
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
-
-        case "amazon/nova-canvas-v1":
-            return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
             return await callAlibabaImage(prompt, safeParams, "wan2.7-image");

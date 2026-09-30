@@ -29,6 +29,11 @@ describe("video duration registry fields", () => {
         expect(def).toBeLessThanOrEqual(max);
     });
 
+    it.each(videoModelIds)("%s declares its output resolutions", (name) => {
+        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+        expect(info.resolutions?.length).toBeGreaterThan(0);
+    });
+
     it.each(nonVideoModelIds)("%s omits duration fields", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
         expect(info.min_duration).toBeUndefined();

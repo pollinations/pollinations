@@ -65,19 +65,20 @@ const sizes: Record<
 
 // On/off reads at a glance: grey when off, the palette's own green (the Quest
 // card's) when on, red when on but needing attention. A two-way choice
-// (icons) keeps the outlined Button's accent look, since neither side is off.
+// (icons, the light/dark toggle) keeps its neutral look: a page-coloured
+// thumb carrying the accent icon on a plain track.
 type SwitchLook = SwitchStatus | "choice";
 const trackClasses: Record<SwitchLook, string> = {
     off: "polli:border-theme-text-strong/15 polli:bg-theme-bg-subtle polli:hover:border-theme-text-strong/30",
     on: "polli:border-tier-soft polli:bg-tier-soft",
     invalid: "polli:border-intent-danger-text polli:bg-intent-danger-bg-light",
-    choice: "polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:hover:bg-theme-bg-active/60 polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-theme-text-soft/10",
+    choice: "polli:border-theme-text-strong/10 polli:bg-surface-opaque",
 };
 const thumbClasses: Record<SwitchLook, string> = {
     off: "polli:bg-theme-text-muted/60 polli:text-app-bg",
     on: "polli:bg-intent-success-text-on-bright",
     invalid: "polli:bg-intent-danger-text polli:text-app-bg",
-    choice: "polli:bg-theme-text-soft polli:text-app-bg",
+    choice: "polli:bg-app-bg polli:text-theme-text-soft",
 };
 
 /**
@@ -121,7 +122,7 @@ export const Switch: FC<SwitchProps> = ({
                 <span
                     aria-hidden="true"
                     className={cn(
-                        "polli:absolute polli:top-1/2 polli:flex polli:-translate-y-1/2 polli:text-theme-text-soft/50 polli:[&>svg]:h-full polli:[&>svg]:w-full",
+                        "polli:absolute polli:top-1/2 polli:flex polli:-translate-y-1/2 polli:text-theme-text-strong/40 polli:[&>svg]:h-full polli:[&>svg]:w-full",
                         geometry.icon,
                         checked ? geometry.ghostOn : geometry.ghostOff,
                     )}

@@ -17,6 +17,7 @@ import {
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
+    PRICE_UNITS,
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
@@ -185,6 +186,18 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    pricing_units: z
+        .record(
+            z.string(),
+            z.object({
+                unit: z.enum(PRICE_UNITS),
+                quantity: z.number().positive().optional(),
+            }),
+        )
+        .optional()
+        .describe(
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field; quantity usage units make one billed unit.",
+        ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),
 });
@@ -303,6 +316,7 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        pricing_units: service.priceUnits,
         added_date: service.addedDate,
     };
 }

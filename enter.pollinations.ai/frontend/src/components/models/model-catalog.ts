@@ -1,6 +1,5 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
-import { MODEL_PRICE_UNITS } from "@shared/registry/price-units.ts";
 import { formatPriceFlat, formatPricePer1M } from "./formatters.ts";
 import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
@@ -233,7 +232,6 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const pricing = model.pricing;
     if (!pricing) return price;
 
-    const units = model.community ? undefined : MODEL_PRICE_UNITS[price.name];
     const imageIsFlat =
         model.flat_rate ?? !priceNumber(pricing, "promptTextTokens");
     price.prices = (
@@ -265,7 +263,7 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
                   ? "character"
                   : "token";
         }
-        const declared = units?.[field];
+        const declared = model.pricing_units?.[field];
         if (declared) {
             unit = declared.unit;
             quantity = declared.quantity ?? 1;

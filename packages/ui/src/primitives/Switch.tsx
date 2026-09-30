@@ -20,8 +20,6 @@ export type SwitchProps = {
      * track looks the same in both positions.
      */
     icons?: { off: ReactNode; on: ReactNode };
-    /** A short value shown in the thumb, e.g. the amount a switch turns on. */
-    thumbContent?: ReactNode;
     className?: string;
 };
 
@@ -35,7 +33,6 @@ const sizes: Record<
         thumb: string;
         travel: string;
         icon: string;
-        text: string;
         ghostOff: string;
         ghostOn: string;
     }
@@ -45,7 +42,6 @@ const sizes: Record<
         thumb: "polli:h-5 polli:w-5",
         travel: "polli:translate-x-6",
         icon: "polli:h-3.5 polli:w-3.5",
-        text: "polli:text-[9px]",
         ghostOff: "polli:right-2",
         ghostOn: "polli:left-2",
     },
@@ -54,7 +50,6 @@ const sizes: Record<
         thumb: "polli:h-7 polli:w-7",
         travel: "polli:translate-x-7",
         icon: "polli:h-4 polli:w-4",
-        text: "polli:text-[11px]",
         ghostOff: "polli:right-[9px]",
         ghostOn: "polli:left-[9px]",
     },
@@ -63,26 +58,24 @@ const sizes: Record<
         thumb: "polli:h-10 polli:w-10",
         travel: "polli:translate-x-10",
         icon: "polli:h-5 polli:w-5",
-        text: "polli:text-sm",
         ghostOff: "polli:right-[13px]",
         ghostOn: "polli:left-[13px]",
     },
 };
 
-// On/off reads at a glance: grey when off, green when on, red when on but
-// needing attention. A two-way choice (icons) keeps the outlined Button's
-// accent look, since neither side is "off". Thumbs carry their own text
-// colour; the green one stays dark on the white thumb in both modes.
+// On/off reads at a glance: grey when off, the palette's own green (the Quest
+// card's) when on, red when on but needing attention. A two-way choice
+// (icons) keeps the outlined Button's accent look, since neither side is off.
 type SwitchLook = SwitchStatus | "choice";
 const trackClasses: Record<SwitchLook, string> = {
     off: "polli:border-theme-text-strong/15 polli:bg-theme-bg-subtle polli:hover:border-theme-text-strong/30",
-    on: "polli:border-intent-success-bg-bright polli:bg-intent-success-bg-bright",
+    on: "polli:border-tier-soft polli:bg-tier-soft",
     invalid: "polli:border-intent-danger-text polli:bg-intent-danger-bg-light",
     choice: "polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:hover:bg-theme-bg-active/60 polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-theme-text-soft/10",
 };
 const thumbClasses: Record<SwitchLook, string> = {
     off: "polli:bg-theme-text-muted/60 polli:text-app-bg",
-    on: "polli:bg-intent-success-text-on-bright polli:text-[oklch(0.42_0.17_140)]",
+    on: "polli:bg-intent-success-text-on-bright",
     invalid: "polli:bg-intent-danger-text polli:text-app-bg",
     choice: "polli:bg-theme-text-soft polli:text-app-bg",
 };
@@ -100,7 +93,6 @@ export const Switch: FC<SwitchProps> = ({
     disabled = false,
     size = "md",
     icons,
-    thumbContent,
     className,
 }) => {
     const geometry = sizes[size];
@@ -154,17 +146,6 @@ export const Switch: FC<SwitchProps> = ({
                         )}
                     >
                         {checked ? icons.on : icons.off}
-                    </span>
-                )}
-                {thumbContent != null && (
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            "polli:font-bold polli:leading-none polli:tabular-nums",
-                            geometry.text,
-                        )}
-                    >
-                        {thumbContent}
                     </span>
                 )}
             </span>

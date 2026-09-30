@@ -200,7 +200,7 @@ async function askJev(
                     verdict: {
                         type: "choice",
                         instructions:
-                            "Should a builder kill, fix, or ship this idea, given the demand, feasibility, and novelty it shows?",
+                            "Should a builder kill, fix, or ship this idea? Judge the idea itself: its demand, feasibility, and novelty.",
                         criteria: {
                             kill: "not worth building in its current form",
                             fix: "promising, but needs a concrete change before building",

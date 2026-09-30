@@ -1535,6 +1535,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
+    "respan/span-01-lite": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Respan",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Same reasoning as Jev and Kev 4B: Quest Pollen must reach the
+        // decisions route, and OpenRouter lists this tier at zero cost.
+        paidOnly: false,
+        cost: {
+            // Free tier: OpenRouter lists $0/M in and $0/M out.
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Span-01 Lite",
+        description:
+            "Scores how likely plain-language behaviours are present in an " +
+            "agent span; accepts only noul questions with plain-string " +
+            "instructions, and Respan retains prompts (no training). Post " +
+            "state and questions to /alpha/decisions, or send the same JSON " +
+            "in the last user message on /v1/chat/completions",
+        // Shares Jev's native request shape, so the decisions route and the
+        // chat adapter are the only surfaces that can carry it.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 64000,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

@@ -70,10 +70,11 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it("resolves jaredpalmer/kev-4b to its own canonical model", () => {
-        expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
-            "jaredpalmer/kev-4b",
-        );
+    it.each([
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ])("resolves %s to its own canonical model", (name) => {
+        expect(findModelByName(name)?.name).toBe(name);
     });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
@@ -176,7 +177,10 @@ describe("System One adapter", () => {
         expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 
-    it("routes jaredpalmer/kev-4b to the decisions endpoint with its upstream id", async () => {
+    it.each([
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ])("routes %s to the decisions endpoint with its upstream id", async (model) => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
@@ -184,12 +188,12 @@ describe("System One adapter", () => {
                     "https://openrouter.ai/api/alpha/decisions",
                 );
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "jaredpalmer/kev-4b",
+                    model,
                     state: nativeState,
                     questions: nativeQuestions,
                 });
                 return Response.json({
-                    model: "kev-4b",
+                    model,
                     answers,
                     usage: { input_tokens: 312, output_tokens: 48 },
                 });
@@ -198,11 +202,11 @@ describe("System One adapter", () => {
         await generateTextPortkey(
             [{ role: "user", content: nativeContent }],
             {
-                model: "jaredpalmer/kev-4b",
+                model,
                 modelConfig: {
                     authKey: "test-key",
                     directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-                    model: "jaredpalmer/kev-4b",
+                    model,
                 },
             },
             portkeyFetcher,
@@ -211,16 +215,18 @@ describe("System One adapter", () => {
         expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 
-    it("names the requested model in decision errors", async () => {
+    it.each([
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ])("names the requested model %s in decision errors", async (model) => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
             callSystemOne([{ role: "user", content: nativeContent }], {
-                requestedModel: "jaredpalmer/kev-4b",
+                requestedModel: model,
             }),
         ).rejects.toMatchObject({
             status: 500,
-            message:
-                "The decisions route is not configured for jaredpalmer/kev-4b.",
+            message: `The decisions route is not configured for ${model}.`,
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

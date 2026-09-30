@@ -46,11 +46,11 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - Use getModelStatus for recent health and latency, not model discovery.
 
 ## Account tools
-getBalance, getUsage, getDailyUsage, getEarnings and getQuests report on the authenticated account
-(usage history, aggregated daily spend, developer earnings, and quest status); they require the API key
-to carry the 'account:usage' permission. listApiKeys, createApiKey, revokeApiKey and getApiKeyInfo manage
-API keys and require the 'account:keys' permission. Check listApiKeys before creating or revoking keys,
-and never guess a key id — use the ids returned by listApiKeys or createApiKey.
+getUsage (with daily=true for the daily summary), getEarnings and listQuests report on the
+authenticated account and require the API key to carry the 'account:usage' permission. listKeys,
+createKey and revokeKey manage API keys and require the 'account:keys' permission. Check listKeys
+before creating or revoking keys, and never guess a key id — use the ids returned by listKeys or
+createKey.
 
 ## API Endpoint
 All requests go through: ${validateApiBaseUrl()}`;

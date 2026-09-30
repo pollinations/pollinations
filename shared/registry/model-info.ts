@@ -12,6 +12,7 @@ import {
     getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    IMAGE_SIZE_MODES,
     MODEL_CATEGORIES,
     MODEL_INPUT_MODALITIES,
     MODEL_OUTPUT_MODALITIES,
@@ -133,6 +134,36 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     resolutions: z.array(z.string()).optional(),
+    aspect_ratios: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "`aspectRatio` values the output follows; the first is the default. Omitted when the model ignores `aspectRatio` or it is unverified.",
+        ),
+    image_size: z
+        .object({
+            mode: z
+                .enum(IMAGE_SIZE_MODES)
+                .describe(
+                    "`pixels`: width × height sets the output within the limits. `presets`: the output is the listed size nearest the request. `provider`: only the ratio is used and the provider picks the pixels.",
+                ),
+            default: z
+                .string()
+                .optional()
+                .describe(
+                    "Output size (`WxH`) when width and height are omitted.",
+                ),
+            min_side: z.number().int().positive().optional(),
+            max_side: z.number().int().positive().optional(),
+            multiple_of: z.number().int().positive().optional(),
+            min_pixels: z.number().int().positive().optional(),
+            max_pixels: z.number().int().positive().optional(),
+            sizes: z.array(z.string()).optional(),
+        })
+        .optional()
+        .describe(
+            "How width and height apply to text-to-image requests; edits may follow the input image. Unverified limits are omitted.",
+        ),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
@@ -270,6 +301,19 @@ export function modelInfoFromDefinition(
             pricingAdjustmentInfoFromRule(rule, service),
         ),
         resolutions: service.resolutions ? [...service.resolutions] : undefined,
+        aspect_ratios: service.aspectRatios
+            ? [...service.aspectRatios]
+            : undefined,
+        image_size: service.imageSize && {
+            mode: service.imageSize.mode,
+            default: service.imageSize.default,
+            min_side: service.imageSize.minSide,
+            max_side: service.imageSize.maxSide,
+            multiple_of: service.imageSize.multipleOf,
+            min_pixels: service.imageSize.minPixels,
+            max_pixels: service.imageSize.maxPixels,
+            sizes: service.imageSize.sizes && [...service.imageSize.sizes],
+        },
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

@@ -1021,6 +1021,19 @@ export interface ModelInfo {
     output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
     resolutions?: string[];
+    /** `aspectRatio` values the output follows; the first is the default. */
+    aspect_ratios?: string[];
+    /** How width and height apply to text-to-image requests. Unverified limits are omitted. */
+    image_size?: {
+        mode: "pixels" | "presets" | "provider";
+        default?: string;
+        min_side?: number;
+        max_side?: number;
+        multiple_of?: number;
+        min_pixels?: number;
+        max_pixels?: number;
+        sizes?: string[];
+    };
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;

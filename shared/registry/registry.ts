@@ -115,6 +115,22 @@ export const VIDEO_CAPABILITIES = [
 
 export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
+export const IMAGE_SIZE_MODES = ["pixels", "presets", "provider"] as const;
+
+// "pixels": width×height sets the output within the limits.
+// "presets": the output is the listed size nearest the request.
+// "provider": only a ratio is sent; the provider picks the pixels.
+export type ImageSize = {
+    mode: (typeof IMAGE_SIZE_MODES)[number];
+    default?: string; // "WxH" when width/height are omitted
+    minSide?: number;
+    maxSide?: number;
+    multipleOf?: number;
+    minPixels?: number;
+    maxPixels?: number;
+    sizes?: string[];
+};
+
 export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
@@ -225,6 +241,10 @@ export type ModelDefinition = {
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
+    // `aspectRatio` values the output follows; first entry is the default.
+    aspectRatios?: string[];
+    // What width/height do on text-to-image requests. Omit unknown limits.
+    imageSize?: ImageSize;
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     minDuration?: number; // Video-only: minimum accepted duration in seconds
     maxDuration?: number; // Video-only: maximum accepted duration in seconds

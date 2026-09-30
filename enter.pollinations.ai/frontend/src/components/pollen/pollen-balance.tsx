@@ -36,8 +36,8 @@ type PollenBalanceProps = {
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
-const TERMS_URL = "https://pollinations.ai/terms";
-const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
+export const TERMS_URL = "https://pollinations.ai/terms";
+export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
@@ -264,8 +264,6 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;
-    /** More footnote lines under the trust line (the standalone page). */
-    footnotes?: ReactNode;
     /** Back from Stripe's setup page for automatic top-up. */
     setupReturn?: boolean;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
@@ -276,7 +274,6 @@ type BuyPollenPanelProps = {
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBilling,
-    footnotes,
     setupReturn,
     returnToTopUp,
     onCredited,
@@ -312,7 +309,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 </span>
             </p>
             <PaymentTrustBadge className="mt-0 pt-0" />
-            {footnotes}
         </Footnotes>
     </>
 );
@@ -336,8 +332,8 @@ export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
 );
 
 /**
- * Who to ask and the terms of buying: in Billing on the Pollen page, under
- * the Top-up card on the standalone top-up page.
+ * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * standalone top-up page says it in its footer instead.
  */
 export const PaymentHelp: FC = () => (
     <p className="flex items-start gap-1.5">

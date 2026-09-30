@@ -33,7 +33,6 @@ export type AutoTopUpInput = {
 export type AutoTopUpIssue =
     | {
           kind: "failed";
-          reason: string;
           /** Stripe's decline reason (insufficient_funds, expired_card, …). */
           declineCode: string | null;
           occurredAt: string;
@@ -47,15 +46,8 @@ export type AutoTopUpIssue =
 export type BillingOverview = {
     autoTopUp: {
         enabled: boolean;
-        thresholdPollen: number;
         packAmountUsd: number;
-        serviceFeeCents: number;
         lastIssue: AutoTopUpIssue | null;
-    };
-    paymentMethod: {
-        hasDefault: boolean;
-        brand: string | null;
-        last4: string | null;
     };
     /** Every method Stripe saved for the buyer, default first. */
     paymentMethods: SavedPaymentMethod[];

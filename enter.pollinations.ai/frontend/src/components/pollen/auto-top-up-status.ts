@@ -13,6 +13,10 @@ export type AutoTopUpStatus = {
     action: StatusAction | null;
 };
 
+/** Auto-refill charges the default payment method. */
+export const hasDefaultPaymentMethod = (billing: BillingOverview) =>
+    billing.paymentMethods.some((method) => method.isDefault);
+
 /** What automatic top-up is doing: on the tab label, plus any problem. */
 export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
     const { autoTopUp } = billing;

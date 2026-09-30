@@ -1,5 +1,3 @@
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
-import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
 import {
@@ -50,18 +48,9 @@ export async function getBillingOverview(
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
-            thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
             packAmountUsd,
-            serviceFeeCents: calculateServiceFeeCents(packAmountUsd * 100),
             lastIssue,
         },
-        paymentMethod: paymentMethod
-            ? {
-                  hasDefault: true,
-                  brand: paymentMethod.card?.brand ?? "card",
-                  last4: paymentMethod.card?.last4 ?? null,
-              }
-            : { hasDefault: false, brand: null, last4: null },
         paymentMethods: (savedMethods?.data ?? [])
             .map((method) => toSavedPaymentMethod(method, paymentMethod?.id))
             .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),
@@ -101,7 +90,7 @@ async function getLastAutoTopUpIssue(
 ): Promise<AutoTopUpIssue | null> {
     const row = await db
         .prepare(
-            `SELECT status, failure_reason, completed_at, updated_at, created_at, stripe_invoice_id
+            `SELECT status, completed_at, updated_at, created_at, stripe_invoice_id
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
                 ORDER BY COALESCE(completed_at, updated_at, created_at) DESC
@@ -110,7 +99,6 @@ async function getLastAutoTopUpIssue(
         .bind(userId)
         .first<{
             status: string;
-            failure_reason: string | null;
             completed_at: number | null;
             updated_at: number | null;
             created_at: number;
@@ -147,7 +135,6 @@ async function getLastAutoTopUpIssue(
     }
     return {
         kind: "failed",
-        reason: row.failure_reason ?? "Auto top-up could not be completed.",
         declineCode: row.stripe_invoice_id
             ? await findDeclineCode(stripe, row.stripe_invoice_id)
             : null,

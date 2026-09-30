@@ -38,7 +38,6 @@ const declined = (declineCode: string) => ({
     enabled: false,
     lastIssue: {
         kind: "failed" as const,
-        reason: "Stripe could not charge the default payment method.",
         declineCode,
         occurredAt: new Date().toISOString(),
     },
@@ -58,13 +57,10 @@ function withCard(
     return {
         autoTopUp: {
             enabled: false,
-            thresholdPollen: real?.autoTopUp.thresholdPollen ?? 5,
             packAmountUsd: 10,
-            serviceFeeCents: real?.autoTopUp.serviceFeeCents ?? 0,
             lastIssue: null,
             ...autoTopUp,
         },
-        paymentMethod: { hasDefault: true, brand: "visa", last4: "4242" },
         paymentMethods: [CARD],
         billingDetails: ADDRESS,
         billingDetailsComplete: true,
@@ -88,7 +84,6 @@ export const BILLING_PREVIEWS: Preview[] = [
         label: "No card",
         billing: (real) => ({
             ...withCard(real),
-            paymentMethod: { hasDefault: false, brand: null, last4: null },
             paymentMethods: [],
             billingDetails: null,
             billingDetailsComplete: false,

@@ -11,25 +11,30 @@ import {
 function billing(
     overrides: {
         autoTopUp?: Partial<BillingOverview["autoTopUp"]>;
-        paymentMethod?: BillingOverview["paymentMethod"];
+        paymentMethods?: BillingOverview["paymentMethods"];
         billingDetailsComplete?: boolean;
     } = {},
 ): BillingOverview {
     return {
         autoTopUp: {
             enabled: false,
-            thresholdPollen: 5,
             packAmountUsd: 20,
-            serviceFeeCents: 100,
             lastIssue: null,
             ...overrides.autoTopUp,
         },
-        paymentMethod: overrides.paymentMethod ?? {
-            hasDefault: true,
-            brand: "visa",
-            last4: "4242",
-        },
-        paymentMethods: [],
+        paymentMethods: overrides.paymentMethods ?? [
+            {
+                id: "pm_card",
+                type: "card",
+                brand: "visa",
+                last4: "4242",
+                expMonth: 12,
+                expYear: 2030,
+                wallet: null,
+                email: null,
+                isDefault: true,
+            },
+        ],
         billingDetails: null,
         billingDetailsComplete: overrides.billingDetailsComplete ?? true,
         publishableKey: "pk_test_wallet",
@@ -47,9 +52,7 @@ describe("automatic top-up on the tab label", () => {
         });
         for (const state of [
             billing(),
-            billing({
-                paymentMethod: { hasDefault: false, brand: null, last4: null },
-            }),
+            billing({ paymentMethods: [] }),
             billing({ billingDetailsComplete: false }),
         ])
             expect(autoTopUpStatus(state)).toEqual({
@@ -85,7 +88,7 @@ describe("automatic top-up on the tab label", () => {
 
         const declinedIssue = {
             kind: "failed" as const,
-            reason: "declined",
+            declineCode: null,
             occurredAt: "2026-09-29T12:00:00.000Z",
         };
         expect(

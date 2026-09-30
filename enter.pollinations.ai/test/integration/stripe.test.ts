@@ -902,7 +902,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
-        paymentMethod: { hasDefault: boolean };
+        paymentMethods: { isDefault: boolean }[];
         billingDetails: {
             name: string | null;
             email: string | null;
@@ -914,7 +914,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
             country: string | null;
         } | null;
     };
-    expect(data.paymentMethod.hasDefault).toBe(true);
+    expect(data.paymentMethods.some((m) => m.isDefault)).toBe(true);
     // The company is its own field; the name is the person's.
     expect(data.billingDetails).toEqual({
         name: "Ada Lovelace",
@@ -967,11 +967,11 @@ test("GET /api/stripe/billing derives disabled auto top-up when default card is 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
         autoTopUp: { enabled: boolean };
-        paymentMethod: { hasDefault: boolean };
+        paymentMethods: { isDefault: boolean }[];
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.paymentMethod.hasDefault).toBe(false);
+    expect(data.paymentMethods.some((m) => m.isDefault)).toBe(false);
     expect(data.billingDetailsComplete).toBe(true);
 
     const [updatedUser] = await db
@@ -1025,11 +1025,11 @@ test("GET /api/stripe/billing derives disabled auto top-up when billing address 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
         autoTopUp: { enabled: boolean };
-        paymentMethod: { hasDefault: boolean };
+        paymentMethods: { isDefault: boolean }[];
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.paymentMethod.hasDefault).toBe(true);
+    expect(data.paymentMethods.some((m) => m.isDefault)).toBe(true);
     expect(data.billingDetailsComplete).toBe(false);
 
     const [updatedUser] = await db
@@ -1211,9 +1211,10 @@ test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pac
 
     expect(customThresholdResponse.status).toBe(200);
     const customThresholdData = (await customThresholdResponse.json()) as {
-        autoTopUp: { thresholdPollen: number; packAmountUsd: number };
+        autoTopUp: { packAmountUsd: number };
     };
-    expect(customThresholdData.autoTopUp.thresholdPollen).toBe(5);
+    // The threshold is fixed (shared constant); nothing the client sends.
+    expect(customThresholdData.autoTopUp).not.toHaveProperty("thresholdPollen");
     expect(customThresholdData.autoTopUp.packAmountUsd).toBe(20);
 
     const db = drizzle(env.DB);

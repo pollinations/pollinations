@@ -11,7 +11,10 @@ import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
 import { openBillingPortal } from "../../lib/billing-portal.ts";
-import { autoTopUpStatus } from "./auto-top-up-status.ts";
+import {
+    autoTopUpStatus,
+    hasDefaultPaymentMethod,
+} from "./auto-top-up-status.ts";
 import {
     describePaymentMethod,
     formatAddress,
@@ -29,7 +32,7 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
 export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
     const { text, action } = autoTopUpStatus(billing);
     const needsAddress =
-        billing.paymentMethod.hasDefault && !billing.billingDetailsComplete;
+        hasDefaultPaymentMethod(billing) && !billing.billingDetailsComplete;
     return (
         <>
             <div className="grid gap-3 sm:grid-cols-2">

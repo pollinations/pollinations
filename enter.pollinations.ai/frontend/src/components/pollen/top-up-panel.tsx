@@ -22,7 +22,11 @@ import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
-import { type AutoTopUpStatus, autoTopUpStatus } from "./auto-top-up-status.ts";
+import {
+    type AutoTopUpStatus,
+    autoTopUpStatus,
+    hasDefaultPaymentMethod,
+} from "./auto-top-up-status.ts";
 import {
     hostedCheckoutHref,
     PackCheckoutDialog,
@@ -119,11 +123,10 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             checkoutParams.set("redirect", returnToTopUp.redirect);
     }
     const status = billing ? autoTopUpStatus(billing) : null;
-    const autoReady = Boolean(
-        billing?.paymentMethod.hasDefault && billing.billingDetailsComplete,
-    );
+    const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
+    const autoReady = hasDefault && Boolean(billing?.billingDetailsComplete);
     // No card yet: a pack opens Stripe's setup page (card check, no charge).
-    const needsCard = Boolean(billing && !billing.paymentMethod.hasDefault);
+    const needsCard = Boolean(billing) && !hasDefault;
     const setupHref = (pack: PollenPack) =>
         `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
@@ -331,7 +334,7 @@ const TabNotice: FC<{
         Boolean(status?.text) ||
         (tab === "automatic" &&
             (!billing ||
-                (billing.paymentMethod.hasDefault &&
+                (hasDefaultPaymentMethod(billing) &&
                     !billing.billingDetailsComplete)));
     if (!needsBilling) return null;
     return (
@@ -346,9 +349,7 @@ function automaticText(billing: BillingOverview | null): string {
     const pack = billing?.autoTopUp.enabled
         ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
         : "a pack";
-    const threshold =
-        billing?.autoTopUp.thresholdPollen ?? AUTO_TOP_UP_THRESHOLD_POLLEN;
-    return `Automatically purchase ${pack} every time your paid balance reaches ${threshold} Pollen.`;
+    return `Automatically purchase ${pack} every time your paid balance reaches ${AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen.`;
 }
 
 /**

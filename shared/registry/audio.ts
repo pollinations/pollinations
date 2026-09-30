@@ -545,6 +545,29 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "google/gemini-3.5-transcribe": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vertex global: published audio-input and text-output rates.
+            promptAudioTokens: 2 / 1_000_000,
+            completionTextTokens: 12 / 1_000_000,
+            // Vertex reports extra text usage with timestamps; no input-text
+            // rate is published. Preserve this usage separately from audio.
+            promptTextTokens: 0,
+        },
+        title: "Gemini 3.5 Transcribe",
+        description:
+            "Speech recognition with word timestamps and speaker labels for up to eight speakers",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "x-ai/grok-tts": {
         aliases: ["grok-tts"],
         provider: "xai",
@@ -563,6 +586,40 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 15 / 1_000_000 },
+        title: "OpenAI TTS",
+        description:
+            "Low-latency speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1-hd": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 30 / 1_000_000 },
+        title: "OpenAI TTS HD",
+        description:
+            "Higher-quality speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "google/gemini-3.8-flash-tts": {

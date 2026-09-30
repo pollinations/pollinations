@@ -6,9 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Help us decide what to build next. Most questions are a quick pick; two ask for a sentence.
+        Help us decide what to build next. Most questions are a quick pick; three ask for a sentence.
 
-        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account). The Pollen is paid when your two written answers have at least 60 characters in total. Too short? Edit your issue and check your quests again.
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 3 Quest Pollen (once per GitHub account). The Pollen is paid when the two big text boxes have at least 60 characters in total. Too short? Edit your issue and check your quests again.
 
   - type: dropdown
     id: bee-type
@@ -79,7 +79,6 @@ body:
     id: found-us-other
     attributes:
       label: Where exactly? Which assistant, search, video, post or app
-      placeholder: e.g. searched “free image API” on Google, Claude recommended you, a YouTube video by …
     validations:
       required: true
 
@@ -193,7 +192,6 @@ body:
     attributes:
       label: What would make you pay this month?
       description: A sentence is plenty.
-      placeholder: e.g. a $5 plan that includes the image models I use
     validations:
       required: true
 
@@ -216,14 +214,16 @@ body:
     attributes:
       label: What did you last try to build that Pollinations couldn't do?
       description: A model, feature or integration you missed. A sentence or two.
-      placeholder: e.g. a Discord bot that answers by voice; realtime speech was too slow
     validations:
       required: true
 
   - type: input
     id: roast
     attributes:
-      label: 🔥 Roast us in one sentence (optional)
+      label: "🔥 Roast us: what's the one thing we get wrong?"
+      description: One sentence. Be blunt; it's the answer we read first.
+    validations:
+      required: true
 
   - type: input
     id: call

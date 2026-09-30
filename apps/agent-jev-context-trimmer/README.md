@@ -8,11 +8,11 @@ This is a bounded one-step loop: one batched Jev request and one answer request 
 
 1. Fork the [public source repository](https://github.com/ale-rls/jev-context-trimmer), keeping `agent.ts` at its root.
 2. In [My Models](https://enter.pollinations.ai/my-models), choose Code agent and your public repository URL. Private visibility is sufficient for owner-only testing. Public listing requires community publisher access.
-3. After deployment, call the repository-derived model name, such as `ale-rls/jev-context-trimmer`, through `/v1/responses` or Chat Completions. Use non-streaming requests. Place the task JSON in the final user message; previous conversation messages are not forwarded.
+3. After deployment, call the repository-derived model name, such as `community/ale-rls/jev-context-trimmer`, through `/v1/responses` or Chat Completions. Use non-streaming requests. Place the task JSON in the final user message; previous conversation messages are not forwarded.
 
 ```json
 {
-  "model": "ale-rls/jev-context-trimmer",
+  "model": "community/ale-rls/jev-context-trimmer",
   "input": "{\"task\":\"Which test failed?\",\"outputs\":[{\"id\":\"tests\",\"content\":\"FAIL billing: expected 12, got 11\\n\"},{\"id\":\"weather\",\"content\":\"Sunny, 22°C\"}]}",
   "stream": false,
   "store": false

@@ -19,6 +19,11 @@ import {
     EditOnStripeLink,
     PollenBalance,
 } from "../components/pollen";
+import {
+    BillingPreviewSwitch,
+    billingPreviewSearch,
+    previewBilling,
+} from "../components/pollen/billing-preview.tsx";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
 import {
     autoTopUpSetupSearch,
@@ -33,6 +38,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
         pack?: PollenPackKey;
         session_id?: string;
         auto_top_up_setup?: true;
+        preview?: string;
     } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
@@ -40,6 +46,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
                 : undefined,
         ...checkoutReturnSearch(search),
         ...autoTopUpSetupSearch(search),
+        ...(import.meta.env.DEV ? billingPreviewSearch(search) : {}),
     }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -49,12 +56,18 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
-    loader: () => ({
-        billing: apiClient.stripe.billing
+    loaderDeps: ({ search }) => ({ preview: search.preview }),
+    loader: ({ deps: { preview } }) => {
+        const billing = apiClient.stripe.billing
             .$get()
             .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null),
-    }),
+            .catch(() => null);
+        return {
+            billing: preview
+                ? billing.then((real) => previewBilling(preview, real))
+                : billing,
+        };
+    },
     component: PollenPage,
 });
 
@@ -64,6 +77,7 @@ function PollenPage() {
         pack,
         session_id: checkoutSessionId,
         auto_top_up_setup: setupReturn,
+        preview,
     } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const router = useRouter();
@@ -136,6 +150,16 @@ function PollenPage() {
                     </Await>
                 </Suspense>
             </Section>
+            {import.meta.env.DEV && (
+                <BillingPreviewSwitch
+                    value={preview}
+                    onChange={(id) =>
+                        void navigate({
+                            search: (prev) => ({ ...prev, preview: id }),
+                        })
+                    }
+                />
+            )}
         </>
     );
 }

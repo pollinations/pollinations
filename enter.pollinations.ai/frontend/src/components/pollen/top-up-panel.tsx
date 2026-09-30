@@ -17,11 +17,11 @@ import {
     type PollenPack,
 } from "@shared/pollen-packs.ts";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
-import type { FC, ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
-import { openBillingPortal } from "../../lib/billing-portal.ts";
 import { type AutoTopUpStatus, autoTopUpStatus } from "./auto-top-up-status.ts";
 import {
     hostedCheckoutHref,
@@ -70,7 +70,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         POLLEN_PACKS[0] as PollenPack,
     );
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [saveFailed, setSaveFailed] = useState(false);
 
     useEffect(() => {
         setBilling(initialBilling);
@@ -127,19 +127,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const setupHref = (pack: PollenPack) =>
         `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
-    function openPortal(): void {
-        void openBillingPortal(returnToTopUp).then((message) =>
-            setError(message || null),
-        );
-    }
-
     /** Choosing a tile on Auto-refill saves straight away. */
     async function saveAutoTopUp(
         enabled: boolean,
         packAmountUsd: number,
     ): Promise<void> {
         setSaving(true);
-        setError(null);
+        setSaveFailed(false);
         try {
             const response = await apiClient.stripe["auto-top-up"].$patch({
                 json: { enabled, packAmountUsd },
@@ -147,18 +141,10 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             const payload = (await response.json().catch(() => ({}))) as
                 | BillingOverview
                 | { error?: string };
-            if (!response.ok || !("autoTopUp" in payload))
-                throw new Error(
-                    ("error" in payload && payload.error) ||
-                        "Couldn’t save automatic top-up.",
-                );
+            if (!response.ok || !("autoTopUp" in payload)) throw new Error();
             setBilling(payload);
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "Couldn’t save automatic top-up.",
-            );
+        } catch {
+            setSaveFailed(true);
         } finally {
             setSaving(false);
         }
@@ -186,18 +172,38 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             {status && <AutomaticValue tab={status.tab} />}
                         </span>
                     </TabButton>
-                    {/* Beside the tabs when it fits; below them on a phone. */}
-                    <div className="basis-full text-[13px] leading-5 sm:ml-auto sm:basis-auto sm:text-right">
+                    {/* Right after the tabs; wraps under them if no room. */}
+                    <div className="text-sm">
                         <TabNotice
                             tab={tab}
                             confirmingSetup={confirmingSetup}
                             billing={billing}
                             status={status}
-                            error={error}
-                            onPortal={openPortal}
+                            saveFailed={saveFailed}
                         />
                     </div>
                 </div>
+
+                {/* What the tab does, read before picking: brighter than the
+                    footnotes, with its own icon. */}
+                <p className="flex min-h-5 items-start gap-1.5 px-1 text-[13px] leading-5 font-medium text-theme-text-soft">
+                    {tab === "once" ? (
+                        <PlusIcon
+                            aria-hidden="true"
+                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+                        />
+                    ) : (
+                        <RefreshIcon
+                            aria-hidden="true"
+                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+                        />
+                    )}
+                    <span>
+                        {tab === "once"
+                            ? "Pick a pack to buy it now."
+                            : automaticText(billing)}
+                    </span>
+                </p>
 
                 {tab === "once" ? (
                     <PollenPackButtons
@@ -250,27 +256,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         }
                     />
                 )}
-
-                {/* What the tab does: brighter than the footnotes under it,
-                    with its own icon, the same height on both tabs. */}
-                <p className="flex min-h-5 items-start gap-1.5 px-1 text-[13px] leading-5 font-medium text-theme-text-soft">
-                    {tab === "once" ? (
-                        <PlusIcon
-                            aria-hidden="true"
-                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-                        />
-                    ) : (
-                        <RefreshIcon
-                            aria-hidden="true"
-                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-                        />
-                    )}
-                    <span>
-                        {tab === "once"
-                            ? "Pick a pack to buy it now."
-                            : automaticText(billing)}
-                    </span>
-                </p>
             </div>
 
             <PackCheckoutDialog
@@ -321,68 +306,39 @@ const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
 );
 
 /**
- * What needs the buyer, or a step in progress: an error, a declined or
- * pending top-up (both tabs, the Auto-refill tab shows ⚠), or what automatic
- * top-up still lacks (Auto-refill only). Nothing when all is well.
+ * One short line by the tabs, always the same: the details and what to do
+ * sit in Billing, next to the card or address they concern.
  */
 const TabNotice: FC<{
     tab: Tab;
     confirmingSetup: boolean;
     billing: BillingOverview | null;
     status: AutoTopUpStatus | null;
-    error: string | null;
-    onPortal: () => void;
-}> = ({ tab, confirmingSetup, billing, status, error, onPortal }) => {
-    if (error) return <Warning>{error}</Warning>;
+    saveFailed: boolean;
+}> = ({ tab, confirmingSetup, billing, status, saveFailed }) => {
+    // No icon: the Auto-refill tab carries the ⚠.
+    if (saveFailed)
+        return (
+            <span role="alert" className="text-intent-danger-text">
+                Couldn’t save, try again
+            </span>
+        );
     if (tab === "automatic" && confirmingSetup)
-        return <p className="text-theme-text-muted">Saving your card…</p>;
-    if (status?.text) {
-        const { action } = status;
-        return (
-            <Warning>
-                {status.text}
-                {action?.kind === "link" && (
-                    <>
-                        {" · "}
-                        <InlineLink href={action.href} external>
-                            {action.label}
-                        </InlineLink>
-                    </>
-                )}
-                {action?.kind === "portal" && (
-                    <>
-                        {" · "}
-                        <InlineLink
-                            as="button"
-                            type="button"
-                            external
-                            onClick={onPortal}
-                        >
-                            {action.label}
-                        </InlineLink>
-                    </>
-                )}
-            </Warning>
-        );
-    }
-    if (tab === "once") return null;
-    if (!billing) return <Warning>Couldn’t load automatic top-up</Warning>;
-    // Without a card, Stripe's setup page asks for the address too.
-    if (billing.paymentMethod.hasDefault && !billing.billingDetailsComplete)
-        return (
-            <Warning>
-                Needs your billing address ·{" "}
-                <InlineLink
-                    as="button"
-                    type="button"
-                    external
-                    onClick={onPortal}
-                >
-                    Add on Stripe
-                </InlineLink>
-            </Warning>
-        );
-    return null;
+        return <span className="text-theme-text-muted">Saving your card…</span>;
+    // A declined or pending top-up shows on both tabs; what auto-refill
+    // still lacks only on its own.
+    const needsBilling =
+        Boolean(status?.text) ||
+        (tab === "automatic" &&
+            (!billing ||
+                (billing.paymentMethod.hasDefault &&
+                    !billing.billingDetailsComplete)));
+    if (!needsBilling) return null;
+    return (
+        <InlineLink as={Link} to="/pollen" hash="billing" external={false}>
+            Check billing
+        </InlineLink>
+    );
 };
 
 /** "paid balance": Quest Pollen does not trigger it. */
@@ -394,19 +350,6 @@ function automaticText(billing: BillingOverview | null): string {
         billing?.autoTopUp.thresholdPollen ?? AUTO_TOP_UP_THRESHOLD_POLLEN;
     return `Automatically purchase ${pack} every time your paid balance reaches ${threshold} Pollen.`;
 }
-
-const Warning: FC<{ children: ReactNode }> = ({ children }) => (
-    <p
-        role="alert"
-        className="inline-flex items-start gap-1.5 text-left text-intent-danger-text"
-    >
-        <WarningIcon
-            aria-hidden="true"
-            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-        />
-        <span>{children}</span>
-    </p>
-);
 
 /**
  * The customer's Stripe address, in the shape Stripe.js takes it. Empty

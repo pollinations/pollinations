@@ -1,14 +1,17 @@
 import {
     CardIcon,
+    cn,
     InlineLink,
     LockIcon,
     Surface,
     WalletIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
 import { openBillingPortal } from "../../lib/billing-portal.ts";
+import { autoTopUpStatus } from "./auto-top-up-status.ts";
 import {
     describePaymentMethod,
     formatAddress,
@@ -19,36 +22,63 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
 
 /**
  * What Stripe holds for the buyer: the card(s) and the details invoices and
- * tax use. Shown here, edited only on Stripe (EditOnStripeLink).
+ * tax use. Shown here, edited only on Stripe (EditOnStripeLink). A problem
+ * with auto-refill shows on the card or address it concerns; Top-up only
+ * points here.
  */
-export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => (
-    <>
-        <div className="grid gap-3 sm:grid-cols-2">
-            <Surface className="flex flex-col gap-2">
-                <CardHeading>Payment method</CardHeading>
-                <PaymentMethods methods={billing.paymentMethods} />
-            </Surface>
-            <Surface className="flex flex-col gap-2">
-                <CardHeading>Details</CardHeading>
-                <Details details={billing.billingDetails} />
-            </Surface>
-        </div>
-        {/* Where this data lives: true as written, no broader claim. */}
-        <Footnotes>
-            <p className="flex items-start gap-1.5">
-                <LockIcon
-                    aria-hidden="true"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                />
-                <span>
-                    Your card and billing details are stored by Stripe.
-                    Pollinations never sees your card number.
-                </span>
-            </p>
-            <PaymentHelp />
-        </Footnotes>
-    </>
-);
+export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
+    const { text, action } = autoTopUpStatus(billing);
+    const needsAddress =
+        billing.paymentMethod.hasDefault && !billing.billingDetailsComplete;
+    return (
+        <>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <Surface className="flex flex-col gap-2">
+                    <CardHeading>Payment method</CardHeading>
+                    <PaymentMethods methods={billing.paymentMethods} />
+                    {text && (
+                        <Warning>
+                            {text} ·{" "}
+                            {action?.kind === "link" ? (
+                                <InlineLink href={action.href} external>
+                                    {action.label}
+                                </InlineLink>
+                            ) : (
+                                <PortalLink inline>
+                                    {action?.label ?? "Update card"}
+                                </PortalLink>
+                            )}
+                        </Warning>
+                    )}
+                </Surface>
+                <Surface className="flex flex-col gap-2">
+                    <CardHeading>Details</CardHeading>
+                    <Details details={billing.billingDetails} />
+                    {needsAddress && (
+                        <Warning>
+                            Auto-refill needs your billing address ·{" "}
+                            <PortalLink inline>Add</PortalLink>
+                        </Warning>
+                    )}
+                </Surface>
+            </div>
+            {/* Where this data lives: true as written, no broader claim. */}
+            <Footnotes>
+                <p className="flex items-start gap-1.5">
+                    <LockIcon
+                        aria-hidden="true"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    />
+                    <span>
+                        Your card and billing details are stored by Stripe.
+                        Pollinations never sees your card number.
+                    </span>
+                </p>
+                <PaymentHelp />
+            </Footnotes>
+        </>
+    );
+};
 
 const CardHeading: FC<{ children: ReactNode }> = ({ children }) => (
     <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
@@ -131,19 +161,26 @@ export const EditOnStripeLink: FC<{
     <PortalLink returnToTopUp={returnToTopUp}>Edit on Stripe</PortalLink>
 );
 
+/** Header link, or inline in a sentence (a problem line in a card). */
 const PortalLink: FC<{
     returnToTopUp?: { redirect?: string };
+    inline?: boolean;
     children: ReactNode;
-}> = ({ returnToTopUp, children }) => {
+}> = ({ returnToTopUp, inline = false, children }) => {
     const [opening, setOpening] = useState(false);
     const [error, setError] = useState<string | null>(null);
     return (
-        <div className="flex flex-col items-end gap-1">
+        <span
+            className={cn(
+                "flex-col gap-1",
+                inline ? "inline-flex" : "flex items-end",
+            )}
+        >
             <InlineLink
                 as="button"
                 type="button"
                 external
-                size="sm"
+                size={inline ? undefined : "sm"}
                 disabled={opening}
                 onClick={async () => {
                     setOpening(true);
@@ -157,10 +194,24 @@ const PortalLink: FC<{
                 {opening ? "Opening…" : children}
             </InlineLink>
             {error && (
-                <p role="alert" className="text-xs text-intent-danger-text">
+                <span role="alert" className="text-xs text-intent-danger-text">
                     {error}
-                </p>
+                </span>
             )}
-        </div>
+        </span>
     );
 };
+
+/** A problem on the card or address it concerns, with what to do. */
+const Warning: FC<{ children: ReactNode }> = ({ children }) => (
+    <p
+        role="alert"
+        className="flex items-start gap-1.5 text-[13px] leading-5 text-intent-danger-text"
+    >
+        <WarningIcon
+            aria-hidden="true"
+            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+        />
+        <span>{children}</span>
+    </p>
+);

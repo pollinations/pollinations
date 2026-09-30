@@ -141,7 +141,7 @@ function PollenPage() {
                 </Suspense>
             </Section>
             {/* The Top-up section above shows the page's one loading status. */}
-            <Section title="Billing" action={<EditOnStripeLink />}>
+            <Section title="Billing" id="billing" action={<EditOnStripeLink />}>
                 <Suspense fallback={null}>
                     <Await promise={billing}>
                         {(billingState) =>

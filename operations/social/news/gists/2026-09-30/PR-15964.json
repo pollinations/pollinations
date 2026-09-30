@@ -1,0 +1,37 @@
+{
+  "pr_number": 15964,
+  "title": "feat: show community model creators in the key model picker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15964",
+  "merged_at": "2026-09-30T15:07:46Z",
+  "labels": [
+    "FEATURE",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "The model picker used for creating keys, editing keys and app consent now makes community models easy to tell apart from official ones.\n\n- Community models show their creator's GitHub username (`@user`) after the name\n- Selected community models use the Quest Pollen green; selected official models use the pale paid amber, so both read at the same strength (the full-strength amber was overpowering next to the green)\n- Adds `amber` / `green` intents and a `detail` slot to `TabButton` in `@pollinations/ui`, so Enter passes semantic props instead of its own classes; both are shown in the showcase\n- Other tab buttons keep their current colours\n\n| | Before | After |\n|---|---|---|\n| Selected official | strong amber | pale amber |\n| Selected community | strong amber, name only | pale Quest green + `@user` |\n| Unselected community | neutral | green label + `@user` |",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Give the gardeners credit",
+    "blurb": "Community models get a name tag in the key and consent pickers: their creator’s GitHub handle. A little Quest Pollen green helps distinguish them from official models without making either selection shout.",
+    "summary": "The model picker for key creation, key editing, and app consent adds creators’ GitHub @user handles to community models and distinguishes selected community models with pale Quest Pollen green from official models with pale amber.",
+    "impact": "People choosing models can identify community creators at a glance, while the two selected states remain equally readable and other tab buttons keep their existing colors.",
+    "keywords": [
+      "model picker",
+      "community models",
+      "GitHub creators",
+      "key creation",
+      "app consent",
+      "TabButton"
+    ],
+    "visual_concept": "Depict a cozy model-picker screen with two balanced tabs: a pale amber official model and a lime-green community model labeled with a small @user handle. Polli, wearing tiny reading glasses, points out the creator credit; a code-plant and flowers bring the garden motif into the interface.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli points at a retro model-picker screen showing a pale amber official tab beside a soft lime green (#ecf874) community tab with a small pixel-font '@user' detail, while code-plants bloom around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny reading glasses; she is small-to-medium within the scene, strictly pixel art and never realistic, against a prominent soft lime green (#ecf874) and pastel gradient background with warm cream and dark purple (#110518) accents — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15964.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli points at a retro model-picker screen showing a pale amber official tab beside a soft lime green (#ecf874) community tab with a small pixel-font '@user' detail, while code-plants bloom around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny reading glasses; she is small-to-medium within the scene, strictly pixel art and never realistic, against a prominent soft lime green (#ecf874) and pastel gradient background with warm cream and dark purple (#110518) accents — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-09-30T15:08:57.251725+00:00"
+}

@@ -1,0 +1,250 @@
+{
+  "verified_date": "2026-09-30",
+  "source_commit_deployed": "c4a0d64",
+  "model": "community/ale-rls/jev-context-trimmer",
+  "visibility": "private, owner-callable",
+  "fixture_note": "The two archived outputs are synthetic fixtures. The three deployed-agent calls and Jev/Nano responses are real.",
+  "assertions": "All three expected selections and exact retained-string comparisons passed.",
+  "runs": [
+    {
+      "case": "billing",
+      "completed_at_utc": "2026-09-30T14:05:51.489Z",
+      "request": {
+        "model": "community/ale-rls/jev-context-trimmer",
+        "stream": false,
+        "store": false,
+        "metadata": {
+          "evidence_run": "1790777143201-billing"
+        },
+        "input": "{\"task\":\"Which billing test failed and what numeric mismatch did it report?\",\"outputs\":[{\"id\":\"billing_test\",\"content\":\"npm test billing\\r\\nFAIL test_charge: expected balance 12, got 11\\ninvoice rounding: 1.5 rounded down to 1\\n  retained whitespace  \\n\"},{\"id\":\"paris_forecast\",\"content\":\"Paris forecast, 2026-09-30: rain, 17°C, wind 12 km/h.\\nOutdoor picnic advice: bring a raincoat and use covered seating.\\n\"}]}"
+      },
+      "response_id": "resp_082d360df9b595da016abd173d26108193bd38fc8c597a5c51",
+      "reported_usage": {
+        "input_tokens": 731,
+        "output_tokens": 89,
+        "total_tokens": 820
+      },
+      "result": {
+        "answer": "The billing test that failed was **`test_charge`**. It reported a numeric mismatch of **expected balance 12, got 11** (a difference of 1). (Output ID: **billing_test**)",
+        "decisions": [
+          {
+            "id": "billing_test",
+            "relevance_probability": 0.98,
+            "keep": true
+          },
+          {
+            "id": "paris_forecast",
+            "relevance_probability": 0.02,
+            "keep": false
+          }
+        ],
+        "retained_outputs": [
+          {
+            "id": "billing_test",
+            "content": "npm test billing\r\nFAIL test_charge: expected balance 12, got 11\ninvoice rounding: 1.5 rounded down to 1\n  retained whitespace  \n"
+          }
+        ],
+        "dropped_ids": [
+          "paris_forecast"
+        ],
+        "context_characters": {
+          "before": 247,
+          "after": 128,
+          "removed": 119
+        },
+        "jev": {
+          "id": "dec-707b8593-b7d4-4004-a014-8c334c9f4380",
+          "model": "typesafe/jev-1.13",
+          "threshold": 0.5,
+          "usage": {
+            "input_tokens": 599,
+            "output_tokens": 41
+          }
+        },
+        "answer_model": {
+          "model": "gpt-5.4-nano",
+          "usage": {
+            "input_tokens": 132,
+            "output_tokens": 48
+          }
+        }
+      }
+    },
+    {
+      "case": "weather",
+      "completed_at_utc": "2026-09-30T14:06:02.266Z",
+      "request": {
+        "model": "community/ale-rls/jev-context-trimmer",
+        "stream": false,
+        "store": false,
+        "metadata": {
+          "evidence_run": "1790777151495-weather"
+        },
+        "input": "{\"task\":\"Describe the Paris forecast and suggest a precaution for an outdoor picnic.\",\"outputs\":[{\"id\":\"billing_test\",\"content\":\"npm test billing\\r\\nFAIL test_charge: expected balance 12, got 11\\ninvoice rounding: 1.5 rounded down to 1\\n  retained whitespace  \\n\"},{\"id\":\"paris_forecast\",\"content\":\"Paris forecast, 2026-09-30: rain, 17°C, wind 12 km/h.\\nOutdoor picnic advice: bring a raincoat and use covered seating.\\n\"}]}"
+      },
+      "response_id": "resp_01c5b791f8e0e6aa016abd17478a5c8197a58ed352153eef13",
+      "reported_usage": {
+        "input_tokens": 735,
+        "output_tokens": 123,
+        "total_tokens": 858
+      },
+      "result": {
+        "answer": "**Paris forecast (2026-09-30):** Rain is expected, with a temperature around **17°C** and winds around **12 km/h**. *(Output: paris_forecast)*\n\n**Precaution for an outdoor picnic:** Bring a **raincoat** and choose **covered seating** (or a covered spot) to stay dry. *(Output: paris_forecast)*",
+        "decisions": [
+          {
+            "id": "billing_test",
+            "relevance_probability": 0.01,
+            "keep": false
+          },
+          {
+            "id": "paris_forecast",
+            "relevance_probability": 0.96,
+            "keep": true
+          }
+        ],
+        "retained_outputs": [
+          {
+            "id": "paris_forecast",
+            "content": "Paris forecast, 2026-09-30: rain, 17°C, wind 12 km/h.\nOutdoor picnic advice: bring a raincoat and use covered seating.\n"
+          }
+        ],
+        "dropped_ids": [
+          "billing_test"
+        ],
+        "context_characters": {
+          "before": 247,
+          "after": 119,
+          "removed": 128
+        },
+        "jev": {
+          "id": "dec-9c481841-177b-401a-8185-b2f5c96fd14c",
+          "model": "typesafe/jev-1.13",
+          "threshold": 0.5,
+          "usage": {
+            "input_tokens": 600,
+            "output_tokens": 41
+          }
+        },
+        "answer_model": {
+          "model": "gpt-5.4-nano",
+          "usage": {
+            "input_tokens": 135,
+            "output_tokens": 82
+          }
+        }
+      }
+    },
+    {
+      "case": "unrelated",
+      "completed_at_utc": "2026-09-30T14:06:14.025Z",
+      "request": {
+        "model": "community/ale-rls/jev-context-trimmer",
+        "stream": false,
+        "store": false,
+        "metadata": {
+          "evidence_run": "1790777162267-unrelated"
+        },
+        "input": "{\"task\":\"Using the available evidence, identify the author and publication year of the novel The Left Hand of Darkness.\",\"outputs\":[{\"id\":\"billing_test\",\"content\":\"npm test billing\\r\\nFAIL test_charge: expected balance 12, got 11\\ninvoice rounding: 1.5 rounded down to 1\\n  retained whitespace  \\n\"},{\"id\":\"paris_forecast\",\"content\":\"Paris forecast, 2026-09-30: rain, 17°C, wind 12 km/h.\\nOutdoor picnic advice: bring a raincoat and use covered seating.\\n\"}]}"
+      },
+      "response_id": "resp_06c9881d4e3b1a64016abd17539bbc819484a9dd2bd7e8426c",
+      "reported_usage": {
+        "input_tokens": 700,
+        "output_tokens": 123,
+        "total_tokens": 823
+      },
+      "result": {
+        "answer": "I don’t have any archived tool outputs available for this task (the `outputs` list is empty), so I can’t reliably cite evidence for the author or publication year of **_The Left Hand of Darkness_**.\n\nIf you can provide the relevant archived output(s) (or paste their contents), I can extract the author and year from that evidence and cite the corresponding output IDs.",
+        "decisions": [
+          {
+            "id": "billing_test",
+            "relevance_probability": 0.01,
+            "keep": false
+          },
+          {
+            "id": "paris_forecast",
+            "relevance_probability": 0.01,
+            "keep": false
+          }
+        ],
+        "retained_outputs": [],
+        "dropped_ids": [
+          "billing_test",
+          "paris_forecast"
+        ],
+        "context_characters": {
+          "before": 247,
+          "after": 0,
+          "removed": 247
+        },
+        "jev": {
+          "id": "dec-6d944197-7eda-43d0-8c62-7d93aec9df4c",
+          "model": "typesafe/jev-1.13",
+          "threshold": 0.5,
+          "usage": {
+            "input_tokens": 607,
+            "output_tokens": 41
+          }
+        },
+        "answer_model": {
+          "model": "gpt-5.4-nano",
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 82
+          }
+        }
+      }
+    }
+  ],
+  "billing_verification": {
+    "source": "Signed-in usage UI filtered to the temporary proof key, plus usage CSV export.",
+    "quest_pollen_displayed": 0.000333,
+    "paid_pollen_displayed": 0,
+    "exported_cost_usd_sum": "0.00033279",
+    "note": "UI total and each CSV event are rounded. This records displayed/exported precision, not an unrounded ledger balance.",
+    "events": [
+      {
+        "timestamp": "2026-09-30 14:06:10",
+        "model": "openai/gpt-5.4-nano",
+        "input_text_tokens": "93",
+        "output_text_tokens": "82",
+        "cost_usd": "0.00009083"
+      },
+      {
+        "timestamp": "2026-09-30 14:06:05",
+        "model": "typesafe/jev-1.13",
+        "input_text_tokens": "607",
+        "output_text_tokens": "41",
+        "cost_usd": "0.0000269"
+      },
+      {
+        "timestamp": "2026-09-30 14:05:58",
+        "model": "openai/gpt-5.4-nano",
+        "input_text_tokens": "135",
+        "output_text_tokens": "82",
+        "cost_usd": "0.00009713"
+      },
+      {
+        "timestamp": "2026-09-30 14:05:55",
+        "model": "typesafe/jev-1.13",
+        "input_text_tokens": "600",
+        "output_text_tokens": "41",
+        "cost_usd": "0.00002659"
+      },
+      {
+        "timestamp": "2026-09-30 14:05:48",
+        "model": "openai/gpt-5.4-nano",
+        "input_text_tokens": "132",
+        "output_text_tokens": "48",
+        "cost_usd": "0.0000648"
+      },
+      {
+        "timestamp": "2026-09-30 14:05:46",
+        "model": "typesafe/jev-1.13",
+        "input_text_tokens": "599",
+        "output_text_tokens": "41",
+        "cost_usd": "0.00002654"
+      }
+    ]
+  },
+  "post_verification_changes": "Formatting-only changes to match upstream four-space Biome style; no behavior change."
+}

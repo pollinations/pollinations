@@ -25,7 +25,7 @@ The caller needs generation access to `jev` and `openai/gpt-5.4-nano`, plus the 
 
 ## Checks and live evidence
 
-Requires Node.js 22 with TypeScript stripping support; development dependencies are used only for formatting and type checking, never by deployment.
+Requires Node.js 22 with TypeScript stripping support; CI uses Node.js 24. The local Biome configuration follows Pollinations’ four-space style; development dependencies are used only for formatting and type checking, never by deployment.
 
 ```sh
 npm ci --ignore-scripts

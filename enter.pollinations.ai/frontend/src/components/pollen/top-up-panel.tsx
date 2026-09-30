@@ -80,9 +80,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     }, [initialBilling]);
 
     // A saved card pays in our modal; without one, Buy now goes straight to
-    // Stripe's page, which has every method (Apple Pay, PayPal, …).
+    // Stripe's page, which has every method (Apple Pay, PayPal, …). Cards
+    // saved through a wallet (Link) are not offered as saved cards by
+    // Checkout, only through the wallet on Stripe's page.
     const hasSavedCard = Boolean(
-        billing?.paymentMethods.some((method) => method.type === "card"),
+        billing?.paymentMethods.some(
+            (method) => method.type === "card" && !method.wallet,
+        ),
     );
     // Stripe.js is ready by the time a pack is clicked.
     const publishableKey = hasSavedCard ? billing?.publishableKey : undefined;

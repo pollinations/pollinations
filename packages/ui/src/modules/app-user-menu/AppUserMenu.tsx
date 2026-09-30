@@ -34,7 +34,7 @@ export type AppUserMenuProps = {
     /** Optional caller-owned dashboard destination for the linked avatar. */
     dashboardHref?: string;
     /** Larger logged-out action for prominent placements such as a page hero. */
-    connectSize?: "md" | "lg";
+    connectSize?: keyof typeof CONNECT_SIZES;
     labels?: Partial<AppUserMenuLabels>;
 };
 
@@ -46,12 +46,28 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Disconnect",
 };
 
+const CONNECT_SIZES = {
+    md: {
+        button: "polli:h-10",
+        cell: "polli:w-10",
+        mark: "polli:h-6 polli:w-6",
+        label: "polli:px-3",
+    },
+    lg: {
+        button: "polli:h-12 polli:text-base",
+        cell: "polli:w-12",
+        mark: "polli:h-7 polli:w-7",
+        label: "polli:px-4",
+    },
+};
+
 export function AppUserMenu({
     dashboardHref,
     connectSize = "md",
     labels: labelOverrides,
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
+    const size = CONNECT_SIZES[connectSize];
     const { logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
@@ -111,9 +127,7 @@ export function AppUserMenu({
                 <LoginButton
                     className={cn(
                         "polli:gap-0 polli:overflow-hidden polli:border polli:border-theme-bg-active polli:bg-surface-white polli:p-0 polli:text-theme-text-strong polli:whitespace-nowrap polli:hover:bg-surface-white polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-transparent",
-                        connectSize === "lg"
-                            ? "polli:h-12 polli:text-base"
-                            : "polli:h-10",
+                        size.button,
                     )}
                 >
                     {/* Amber cell with the mark, then a light cell with the label. */}
@@ -121,25 +135,17 @@ export function AppUserMenu({
                         aria-hidden="true"
                         className={cn(
                             "polli:flex polli:h-full polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active",
-                            connectSize === "lg" ? "polli:w-12" : "polli:w-10",
+                            size.cell,
                         )}
                     >
                         <BrandMark
                             className={cn(
                                 "polli:relative polli:-top-px polli:left-px",
-                                connectSize === "lg"
-                                    ? "polli:h-7 polli:w-7"
-                                    : "polli:h-6 polli:w-6",
+                                size.mark,
                             )}
                         />
                     </span>
-                    <span
-                        className={
-                            connectSize === "lg" ? "polli:px-4" : "polli:px-3"
-                        }
-                    >
-                        {labels.authorize}
-                    </span>
+                    <span className={size.label}>{labels.authorize}</span>
                 </LoginButton>
             ) : (
                 <AccountMenu

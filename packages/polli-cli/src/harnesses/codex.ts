@@ -11,7 +11,7 @@ const ID = "codex";
 const LABEL = "Codex";
 const PROVIDER = "pollinations";
 const OWNER_MARKER = "managed-by=polli-harness-codex";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const MIN_ROUTER_VERSION = [0, 6, 0] as const;
 const ROUTER_INSTALL =
     "https://github.com/duolahypercho/codex-router#install-everything-recommended";

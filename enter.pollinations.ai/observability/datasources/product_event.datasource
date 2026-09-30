@@ -11,10 +11,7 @@ DESCRIPTION >
     key. Browser events carry where the visit came from: referrer_host
     (hostname only) and utm_* from the landing URL. country is the ISO code
     Cloudflare derives from the connection (CF-IPCountry), never the IP; empty
-    before it was recorded. checkout_started carries the Checkout Session id
-    and mode (hosted, embedded form or custom saved-card confirmation), so it
-    joins the paid stripe_event on one session. No backfill; rows expire
-    after 24 months.
+    before it was recorded. No backfill; rows expire after 24 months.
 
 SCHEMA >
     `timestamp` DateTime64(3) `json:$.timestamp`,
@@ -30,9 +27,7 @@ SCHEMA >
     `utm_medium` String `json:$.utm_medium` DEFAULT '',
     `utm_campaign` String `json:$.utm_campaign` DEFAULT '',
     `country` LowCardinality(String) `json:$.country` DEFAULT '',
-    `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0,
-    `mode` LowCardinality(String) `json:$.mode` DEFAULT '',
-    `session_id` String `json:$.session_id` DEFAULT ''
+    `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "environment, timestamp, event, user_id"

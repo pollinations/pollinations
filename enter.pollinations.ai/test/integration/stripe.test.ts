@@ -4157,44 +4157,25 @@ test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1", as
     expect(mocks.stripe.state.requests).toHaveLength(0);
 });
 
-test("GET /api/stripe/checkout/sessions/:id maps Stripe's state for sessions not credited yet", async ({
+test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless expired", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
+    // Paid but not credited yet, or a bank payment still settling.
     const cases = [
-        { id: "cs_open", status: "open", expected: "open" },
+        { id: "cs_open", status: "open", expected: "pending" },
         { id: "cs_expired", status: "expired", expected: "expired" },
         {
             id: "cs_paid",
             status: "complete",
             payment_status: "paid",
-            expected: "paid",
+            expected: "pending",
         },
-        {
-            id: "cs_processing",
-            status: "complete",
-            paymentIntentStatus: "processing",
-            expected: "processing",
-        },
-        {
-            id: "cs_failed",
-            status: "complete",
-            paymentIntentStatus: "requires_payment_method",
-            expected: "failed",
-        },
+        { id: "cs_processing", status: "complete", expected: "pending" },
     ] as const;
     for (const item of cases) {
-        const paymentIntentStatus =
-            "paymentIntentStatus" in item ? item.paymentIntentStatus : null;
-        if (paymentIntentStatus) {
-            mocks.stripe.state.paymentIntents.push({
-                id: `pi_${item.id}`,
-                object: "payment_intent",
-                status: paymentIntentStatus,
-            });
-        }
         mocks.stripe.state.checkoutSessions.push({
             id: item.id,
             object: "checkout.session",
@@ -4204,7 +4185,7 @@ test("GET /api/stripe/checkout/sessions/:id maps Stripe's state for sessions not
             status: item.status,
             payment_status:
                 "payment_status" in item ? item.payment_status : "unpaid",
-            payment_intent: paymentIntentStatus ? `pi_${item.id}` : null,
+            payment_intent: null,
             metadata: { userId },
         });
     }

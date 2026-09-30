@@ -49,10 +49,6 @@ export async function captureProductEvent(
         utm_campaign?: string;
         country?: string;
         amount_usd?: number;
-        // Checkout Session id and how it was shown ("hosted", "embedded" or
-        // "custom"), so a started and a paid checkout join on one id.
-        mode?: string;
-        session_id?: string;
     } = {},
 ): Promise<void> {
     try {

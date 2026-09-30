@@ -8,13 +8,17 @@ import {
 
 const POLL_INTERVAL_MS = 1500;
 const POLL_ATTEMPTS = 20;
-const SETTLED = new Set(["credited", "processing", "failed", "expired"]);
+
+/** GET /api/stripe/checkout/sessions/:id */
+type SessionStatus =
+    | { status: "credited"; pollen: number }
+    | { status: "pending" | "expired" };
 
 type CheckoutConfirmationProps = {
     sessionId: string;
     /** Reload the wallet and billing once the Pollen is in. */
     onCredited?: () => void;
-    /** Start a new checkout after a failed or expired one. */
+    /** Start a new checkout after an expired one. */
     onRetry?: () => void;
 };
 
@@ -41,20 +45,18 @@ export const CheckoutConfirmation: FC<CheckoutConfirmationProps> = ({
             const next = await apiClient.stripe.checkout.sessions[":sessionId"]
                 .$get({ param: { sessionId } })
                 .then(
-                    async (
-                        response,
-                    ): Promise<CheckoutConfirmationState | null> =>
+                    async (response): Promise<SessionStatus | null> =>
                         response.ok ? await response.json() : null,
                 )
                 .catch(() => null);
             if (canceled) return;
-            if (next && "status" in next) {
+            if (next?.status === "credited") {
                 setState(next);
-                if (SETTLED.has(next.status)) {
-                    if (next.status === "credited") onCreditedRef.current?.();
-                    return;
-                }
+                onCreditedRef.current?.();
+                return;
             }
+            if (next?.status === "expired")
+                return setState({ status: "expired" });
             if (attempt + 1 >= POLL_ATTEMPTS) {
                 setState({ status: "timeout" });
                 return;

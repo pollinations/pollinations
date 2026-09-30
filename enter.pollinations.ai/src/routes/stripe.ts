@@ -95,9 +95,7 @@ export const stripeRoutes = new Hono<Env>()
 
         const session = sessionId.startsWith("cs_")
             ? await createStripeClient(c.env)
-                  .checkout.sessions.retrieve(sessionId, {
-                      expand: ["payment_intent"],
-                  })
+                  .checkout.sessions.retrieve(sessionId)
                   .catch((error) => {
                       if (error?.code === "resource_missing") return null;
                       throw error;
@@ -107,7 +105,14 @@ export const stripeRoutes = new Hono<Env>()
         if (!session || session.metadata?.userId !== user.id) {
             return c.json({ error: "Checkout session not found" }, 404);
         }
-        return c.json({ status: checkoutSessionStatus(session) });
+        // Anything else is on its way: the webhook has not credited it
+        // yet, or a bank payment (SEPA, Multibanco) is still settling.
+        return c.json({
+            status:
+                session.status === "expired"
+                    ? ("expired" as const)
+                    : ("pending" as const),
+        });
     })
 
     /**
@@ -508,8 +513,6 @@ async function createPackCheckoutSession(
         }
         captureFromRequest(c, "checkout_started", userId, {
             pack_key: pack.packKey,
-            mode: uiMode,
-            session_id: checkoutSession.id,
             // Where the buyer came from, so checkouts divide by views of that
             // same page, as sign-ins already do.
             ...referringSource(c.req.raw.headers, c.env.BETTER_AUTH_URL),
@@ -543,21 +546,6 @@ function walletReturnUrl(c: Context<Env>): URL {
  * whose payment is still settling (bank debits, some local methods) is
  * "processing" until Stripe reports success or failure.
  */
-function checkoutSessionStatus(
-    session: Stripe.Checkout.Session,
-): "open" | "expired" | "paid" | "processing" | "failed" {
-    if (session.status === "open") return "open";
-    if (session.status === "expired") return "expired";
-    if (session.payment_status === "paid") return "paid";
-    const paymentIntent = session.payment_intent;
-    const paymentStatus =
-        typeof paymentIntent === "object" ? paymentIntent?.status : undefined;
-    return paymentStatus === "requires_payment_method" ||
-        paymentStatus === "canceled"
-        ? "failed"
-        : "processing";
-}
-
 async function requireSessionUser(c: Context<Env>) {
     const auth = createAuth(c.env, c.executionCtx);
     const session = await auth.api.getSession({

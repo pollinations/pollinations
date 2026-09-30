@@ -4,16 +4,18 @@ import {
     ClockIcon,
     LoadingStatus,
     RefreshIcon,
-    WarningIcon,
 } from "@pollinations/ui";
 import { formatPollenPackValue } from "@shared/pollen-packs.ts";
 import type { FC, ReactNode } from "react";
 
-/** What the wallet knows about a Checkout Session, newest first. */
+/**
+ * What the buyer sees after paying: waiting, added, an old expired link, or
+ * a payment that takes longer (a bank payment, a slow webhook).
+ */
 export type CheckoutConfirmationState =
     | { status: "checking" }
     | { status: "credited"; pollen: number }
-    | { status: "open" | "paid" | "processing" | "failed" | "expired" }
+    | { status: "expired" }
     | { status: "timeout" };
 
 export const CheckoutStatusMessage: FC<{
@@ -22,14 +24,7 @@ export const CheckoutStatusMessage: FC<{
 }> = ({ state, onRetry }) => {
     switch (state.status) {
         case "checking":
-        case "open":
-            return <LoadingStatus>Confirming your payment…</LoadingStatus>;
-        case "paid":
-            return (
-                <LoadingStatus>
-                    Payment received — adding your Pollen…
-                </LoadingStatus>
-            );
+            return <LoadingStatus>Adding your Pollen…</LoadingStatus>;
         case "credited":
             return (
                 <StatusLine icon={<CheckIcon />}>
@@ -38,33 +33,18 @@ export const CheckoutStatusMessage: FC<{
                     </strong>
                 </StatusLine>
             );
-        case "processing":
-            return (
-                <StatusLine icon={<ClockIcon />}>
-                    <strong className="font-semibold text-theme-text-base">
-                        Payment processing
-                    </strong>{" "}
-                    — your bank is confirming it. Pollen is added once it
-                    succeeds.
-                </StatusLine>
-            );
-        case "failed":
-            return (
-                <RetryMessage
-                    icon={<WarningIcon />}
-                    message="Payment didn’t go through."
-                    action="Try again"
-                    onRetry={onRetry}
-                />
-            );
         case "expired":
             return (
-                <RetryMessage
-                    icon={<ClockIcon />}
-                    message="Checkout expired."
-                    action="Buy again"
-                    onRetry={onRetry}
-                />
+                <div className="flex flex-col items-start gap-3">
+                    <StatusLine icon={<ClockIcon />}>
+                        Checkout expired.
+                    </StatusLine>
+                    {onRetry && (
+                        <Button icon={<RefreshIcon />} onClick={onRetry}>
+                            Buy again
+                        </Button>
+                    )}
+                </div>
             );
         case "timeout":
             return (
@@ -88,20 +68,4 @@ const StatusLine: FC<{ icon: ReactNode; children: ReactNode }> = ({
         </span>
         <span>{children}</span>
     </p>
-);
-
-const RetryMessage: FC<{
-    icon: ReactNode;
-    message: string;
-    action: string;
-    onRetry?: () => void;
-}> = ({ icon, message, action, onRetry }) => (
-    <div className="flex flex-col items-start gap-3">
-        <StatusLine icon={icon}>{message}</StatusLine>
-        {onRetry && (
-            <Button icon={<RefreshIcon />} onClick={onRetry}>
-                {action}
-            </Button>
-        )}
-    </div>
 );

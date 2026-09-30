@@ -14,34 +14,21 @@ function render(state: CheckoutConfirmationState, onRetry?: () => void) {
 
 describe("checkout confirmation", () => {
     it.each([
-        [{ status: "checking" }, "Confirming your payment"],
-        [{ status: "open" }, "Confirming your payment"],
-        [{ status: "paid" }, "Payment received — adding your Pollen"],
+        [{ status: "checking" }, "Adding your Pollen"],
         [{ status: "credited", pollen: 1000 }, "+1,000 Pollen added"],
-        [{ status: "processing" }, "Pollen is added once it succeeds"],
         [{ status: "timeout" }, "appear when Stripe confirms the payment"],
     ] as const)("says what %j means for the buyer", (state, text) => {
         expect(render(state)).toContain(text);
     });
 
     it("says added only once the session is credited", () => {
-        for (const status of [
-            "checking",
-            "open",
-            "paid",
-            "processing",
-        ] as const)
+        for (const status of ["checking", "timeout"] as const)
             expect(render({ status })).not.toContain("Pollen added");
     });
 
-    it("offers a new checkout after a failed or expired one", () => {
-        const retry = () => {};
-        expect(render({ status: "failed" }, retry)).toContain(
-            "Payment didn’t go through",
-        );
-        expect(render({ status: "failed" }, retry)).toContain("Try again");
-        expect(render({ status: "expired" }, retry)).toContain("Buy again");
-        expect(render({ status: "failed" })).not.toContain("<button");
+    it("offers a new checkout after an expired one", () => {
+        expect(render({ status: "expired" }, () => {})).toContain("Buy again");
+        expect(render({ status: "expired" })).not.toContain("<button");
     });
 });
 

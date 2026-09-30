@@ -1,0 +1,37 @@
+{
+  "pr_number": 15917,
+  "title": "feat(sdk): send speech inputs and add audioTransform",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15917",
+  "merged_at": "2026-09-30T10:49:50Z",
+  "labels": [
+    "FEATURE",
+    "API"
+  ],
+  "pr_body_excerpt": "Split out of #14472 (website v2 Play), which needs these methods.\n\n- Fix: `audioSpeech` now sends `duration` and `seed`. Before, it dropped both even though its options type accepted them.\n- Adds `referenceAudio` on a new `AudioSpeechOptions` type (sent as `reference_audio`). It is not on the shared `AudioGenerateOptions`, because GET `/audio/{text}` and `generateAudio` don't accept it.\n- Adds `audioTransform(file, { operation, model?, voice? })`, which posts multipart `audio` to `/v1/audio/voice-changer` or `/v1/audio/voice-isolator`. `voice` is sent only to the voice changer.\n- No version bump. The website uses the SDK through `file:`, and npm releases get bumped separately.\n\nChange from Elliot's branch: it sent `reference_audio` on the GET route, where gen's query schema silently strips it.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive gets a soundboard",
+    "blurb": "The SDK can now send a reference clip for speech and turn uploaded audio into a different voice or an isolated one. It also remembers the duration and seed you asked for.",
+    "summary": "The SDK now sends duration, seed, and reference_audio in audioSpeech requests and adds audioTransform(file, { operation, model?, voice? }) for multipart voice-changer and voice-isolator requests.",
+    "impact": "Developers can control speech generation as intended and upload audio to /v1/audio/voice-changer or /v1/audio/voice-isolator, with voice applied only to voice-changing requests.",
+    "keywords": [
+      "SDK",
+      "audio",
+      "speech",
+      "reference audio",
+      "voice changer",
+      "voice isolator"
+    ],
+    "visual_concept": "The pollinations.ai bee operates a cozy pixel-art audio workbench: a reference recording and duration/seed controls feed a speech terminal, while two paths lead to voice-changing and voice-isolating tools. A CRT monitor robot listens nearby, with code-plants growing around the equipment.",
+    "image_prompt": "In a cozy pixel-art garden studio, Polli wears tiny headphones and guides a glowing audio waveform between a speech terminal and two friendly sound tools, while a chunky CRT monitor robot listens beside lime green (#ecf874) code-plants and soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art and never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15917.jpg",
+    "prompt": "In a cozy pixel-art garden studio, Polli wears tiny headphones and guides a glowing audio waveform between a speech terminal and two friendly sound tools, while a chunky CRT monitor robot listens beside lime green (#ecf874) code-plants and soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art and never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-30T10:50:52.727689+00:00"
+}

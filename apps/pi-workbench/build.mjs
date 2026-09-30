@@ -30,6 +30,7 @@ await cp(
 for (const [name, directory] of [
     ["@xterm/xterm", "xterm"],
     ["@xterm/addon-fit", "fit"],
+    ["@xterm/addon-webgl", "webgl"],
 ]) {
     for (const path of ["lib", "LICENSE"])
         await cp(

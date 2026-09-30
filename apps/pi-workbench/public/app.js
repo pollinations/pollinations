@@ -10,6 +10,56 @@ import {
 import { Wasmer } from "./vendor/wasmer/dist/index.js";
 
 const $ = (id) => document.getElementById(id);
+const terminalPanel = $("pi-terminal-panel");
+const fullscreenButton = $("pi-terminal-fullscreen");
+function terminalFullscreen(active) {
+    terminalPanel.classList.toggle("terminal-fullscreen", active);
+    fullscreenButton.textContent = active
+        ? "Exit fullscreen"
+        : "Fullscreen terminal";
+    fullscreenButton.setAttribute("aria-pressed", String(active));
+}
+function exitTerminalFullscreen() {
+    if (!terminalPanel.classList.contains("terminal-fullscreen")) return false;
+    if (document.fullscreenElement === terminalPanel) {
+        document.exitFullscreen().catch((error) => status(error.message));
+    } else terminalFullscreen(false);
+    fullscreenButton.focus();
+    return true;
+}
+fullscreenButton.onclick = handle(async () => {
+    if (document.fullscreenElement === terminalPanel) {
+        await document.exitFullscreen();
+    } else if (terminalPanel.classList.contains("terminal-fullscreen")) {
+        terminalFullscreen(false);
+    } else {
+        terminalFullscreen(true);
+        if (document.fullscreenEnabled) {
+            try {
+                await terminalPanel.requestFullscreen();
+            } catch {
+                /* Embedded browsers can deny native fullscreen; the expanded view still works. */
+            }
+        }
+    }
+});
+document.addEventListener("fullscreenchange", () => {
+    terminalFullscreen(document.fullscreenElement === terminalPanel);
+});
+document.addEventListener(
+    "keydown",
+    (event) => {
+        if (
+            event.key === "Escape" &&
+            terminalPanel.classList.contains("terminal-fullscreen")
+        ) {
+            event.preventDefault();
+            event.stopPropagation();
+            exitTerminalFullscreen();
+        }
+    },
+    { capture: true },
+);
 let key = "";
 let wasmer;
 let sandbox;
@@ -632,18 +682,18 @@ async function startPi(mode = "guided") {
             });
         if (interactive) {
             const { openPiTerminal } = await import("./pi-terminal.js");
-            terminal = openPiTerminal($("pi-terminal"), process);
+            terminal = openPiTerminal(
+                $("pi-terminal"),
+                process,
+                exitTerminalFullscreen,
+            );
         }
         const stdout = (async () => {
             if (interactive) {
                 const decoder = new TextDecoder();
-                run.terminalOutput = "";
                 for await (const chunk of process.stdout) {
                     const text = redact(
                         decoder.decode(chunk, { stream: true }),
-                    );
-                    run.terminalOutput = (run.terminalOutput + text).slice(
-                        -200000,
                     );
                     await terminal.write(text);
                 }
@@ -659,8 +709,11 @@ async function startPi(mode = "guided") {
         })();
         const stderr = (async () => {
             if (interactive) {
+                const decoder = new TextDecoder();
                 for await (const chunk of process.stderr)
-                    await terminal.write(chunk);
+                    await terminal.write(
+                        redact(decoder.decode(chunk, { stream: true })),
+                    );
             } else
                 for await (const line of process.stderr.lines())
                     activity("PI DIAGNOSTIC", line);
@@ -687,7 +740,8 @@ async function startPi(mode = "guided") {
         run.error = redact(error.message || String(error));
         if (!stopping) throw error;
     } finally {
-        terminal?.close();
+        await terminal?.close();
+        if (terminal) run.terminalOutput = terminal.output();
         pumping = false;
         if (pump) await pump;
         run.finishedAt = new Date().toISOString();

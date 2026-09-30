@@ -209,6 +209,16 @@ kpiRoutes.get("/usage", async (c) => {
     return c.json({ data: result.data });
 });
 
+// Tinybird: requests and cost across every traffic group, incl. legacy
+kpiRoutes.get("/traffic-totals", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_traffic_totals",
+        parseWeeksBack(c),
+    );
+    return c.json({ data: result.data });
+});
+
 // Tinybird: Agent/MCP usage — separate from existing model KPIs.
 kpiRoutes.get("/agent-mcp-usage", async (c) => {
     const result = await fetchTinybirdByWeek(

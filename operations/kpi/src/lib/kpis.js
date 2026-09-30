@@ -7,9 +7,10 @@ const margin = (week) =>
 
 // Cash in against cost incurred. The two are not matched — packs are bought in
 // one week and burned over later ones — so this is a coverage ratio, not margin.
+// Cash is company-wide, so the cost side covers every traffic group.
 const coverage = (week) =>
-    week.costUsd > 0 && Number.isFinite(week.revenue)
-        ? (week.revenue / week.costUsd) * 100
+    week.costUsdAll > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.costUsdAll) * 100
         : null;
 
 const failuresPerThousand = (availability) =>
@@ -133,6 +134,34 @@ export const KPIS = [
         })),
     },
     {
+        key: "legacyRequests",
+        category: "Usage",
+        // Migration progress: less legacy traffic is the goal.
+        lowerIsBetter: true,
+        views: [
+            {
+                name: "Legacy · requests",
+                format: "compact",
+                tooltip:
+                    "Requests through the two legacy API bridges this week. Legacy is excluded from every other usage row. Source: Tinybird (weekly_traffic_totals).",
+            },
+            {
+                name: "Legacy · share of requests",
+                format: "percent",
+                calc: (w) => (w.legacyRequests / w.requestsAll) * 100,
+                tooltip:
+                    "Legacy requests / all requests (regular, legacy, operations and dev) × 100. The migration trend: falls as legacy callers move to the current API.",
+            },
+            {
+                key: "legacyCostUsd",
+                name: "Legacy · compute cost",
+                format: "currency",
+                tooltip:
+                    "Compute cost of legacy requests this week, from the registry rate cards. Included in cash coverage, excluded from gross margin.",
+            },
+        ],
+    },
+    {
         key: "packPurchases",
         category: "Revenue",
         views: [
@@ -174,7 +203,7 @@ export const KPIS = [
         format: "percent",
         calc: coverage,
         tooltip:
-            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
+            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Cost covers all traffic — regular, legacy, operations and dev — because cash is company-wide. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted. Source: Tinybird (weekly_traffic_totals).",
     },
     {
         key: "availability",

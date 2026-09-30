@@ -1,5 +1,6 @@
 import {
     Button,
+    cn,
     InlineLink,
     Switch,
     Tooltip,
@@ -10,7 +11,11 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
-import { POLLEN_PACKS, type PollenPack } from "@shared/pollen-packs.ts";
+import {
+    formatPollenPackValue,
+    POLLEN_PACKS,
+    type PollenPack,
+} from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
@@ -40,6 +45,47 @@ type TopUpPanelProps = {
     /** Back from Stripe's setup page: wait for the webhook to enable it. */
     setupReturn?: boolean;
 };
+
+const buyLabel = (pack: PollenPack | null) =>
+    pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} Pollen` : "Buy now";
+const refillLabel = (pack: PollenPack | null) =>
+    pack
+        ? `Auto top-up ${formatPollenPackValue(pack.amountUsd)} Pollen`
+        : "Enable auto top-up";
+// Every text each label can show, so it keeps the widest one's size.
+const BUY_LABELS = [null, ...POLLEN_PACKS].map(buyLabel);
+const REFILL_LABELS = [
+    "Auto top-up",
+    ...[null, ...POLLEN_PACKS.filter(isAutoTopUpPack)].map(refillLabel),
+];
+
+/**
+ * Text that changes without moving anything: every option is stacked in one
+ * grid cell, the unused ones invisible, so the widest sets the size.
+ */
+const StableLabel: FC<{
+    text: string;
+    options: readonly string[];
+    align?: "start" | "center";
+}> = ({ text, options, align = "center" }) => (
+    <span
+        className={cn(
+            "inline-grid",
+            align === "center" ? "justify-items-center" : "justify-items-start",
+        )}
+    >
+        {options.map((option) => (
+            <span
+                key={option}
+                aria-hidden="true"
+                className="invisible col-start-1 row-start-1"
+            >
+                {option}
+            </span>
+        ))}
+        <span className="col-start-1 row-start-1">{text}</span>
+    </span>
+);
 
 const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
@@ -214,13 +260,18 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         disabled={!selectedPack}
                         onClick={startCheckout}
                     >
-                        Buy now
+                        <StableLabel
+                            text={buyLabel(selectedPack)}
+                            options={BUY_LABELS}
+                        />
                     </Button>
                     <div className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-theme-text-strong">
                         {packTooSmall ? (
                             <Tooltip
                                 triggerAs="span"
                                 tapEnabled
+                                // No inline wrapper: the switch stays put.
+                                displayContents
                                 ariaLabel="Why auto top-up is unavailable"
                                 content="Choose 5 Pollen or more to enable auto top-up."
                             >
@@ -229,17 +280,30 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         ) : (
                             autoTopUpSwitch
                         )}
-                        <span>
-                            {billing?.autoTopUp.enabled
-                                ? "Auto top-up"
-                                : "Enable auto top-up"}
-                        </span>
-                        {status?.tab.warning && (
-                            <WarningIcon
-                                aria-label="Needs attention"
-                                className="h-4 w-4 text-intent-danger-text"
-                            />
-                        )}
+                        {/* Off: what the switch would turn on. On: the thumb
+                            already shows the active pack. */}
+                        <StableLabel
+                            text={
+                                billing?.autoTopUp.enabled
+                                    ? "Auto top-up"
+                                    : refillLabel(selectedRefillPack)
+                            }
+                            options={REFILL_LABELS}
+                            align="start"
+                        />
+                        {/* Its space is always kept, so ⚠ moves nothing. */}
+                        <WarningIcon
+                            aria-label={
+                                status?.tab.warning
+                                    ? "Needs attention"
+                                    : undefined
+                            }
+                            aria-hidden={status?.tab.warning ? undefined : true}
+                            className={cn(
+                                "h-4 w-4 text-intent-danger-text",
+                                !status?.tab.warning && "invisible",
+                            )}
+                        />
                     </div>
                 </div>
                 {confirmingSetup && (

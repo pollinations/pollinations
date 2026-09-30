@@ -176,28 +176,15 @@ See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CO
 
 ## Sandboxes
 
-Linux VMs from [E2B](https://e2b.dev), billed to your Pollinations wallet.
+Linux VMs from E2B, paid from your wallet.
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
-ssh <id>.polli                    # scp and rsync work too; resumes a paused sandbox
-polli sandbox list
+ssh <id>.polli                    # scp and rsync work too
 polli sandbox kill <id>
 ```
 
-A sandbox pauses about 10 minutes after the last ssh session ends; your
-files stay. The first ssh installs `sshd`, `rsync` and `websocat` in the
-sandbox (Debian-based templates) and allows only polli's key
-(`~/.pollinations/ssh/id_ed25519`). Needs Node.js 22 or newer.
-
-E2B's own CLI and SDKs work too. Point them at Pollinations with a key that
-has the `machines` permission, and run `polli sandbox ssh-config` once to ssh
-into the sandboxes they create:
-
-```bash
-export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
-export E2B_API_KEY=sk_...
-```
+See [Sandboxes](https://github.com/pollinations/pollinations/blob/main/SANDBOXES.md) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

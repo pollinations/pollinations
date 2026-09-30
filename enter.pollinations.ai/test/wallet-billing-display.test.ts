@@ -88,7 +88,6 @@ describe("automatic top-up on the tab label", () => {
 
         const declinedIssue = {
             kind: "failed" as const,
-            declineCode: null,
             occurredAt: "2026-09-29T12:00:00.000Z",
         };
         expect(

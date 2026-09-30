@@ -33,8 +33,6 @@ export type AutoTopUpInput = {
 export type AutoTopUpIssue =
     | {
           kind: "failed";
-          /** Stripe's decline reason (insufficient_funds, expired_card, …). */
-          declineCode: string | null;
           occurredAt: string;
       }
     | {

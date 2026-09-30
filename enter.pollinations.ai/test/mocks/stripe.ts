@@ -140,8 +140,7 @@ type StripeInvoicePayment = {
     livemode: boolean;
     payment: {
         type: "payment_intent";
-        /** An object when the test stands in for an expanded list. */
-        payment_intent: string | Record<string, unknown>;
+        payment_intent: string;
     };
     status: string;
 };

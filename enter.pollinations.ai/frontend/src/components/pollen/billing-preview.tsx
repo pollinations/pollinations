@@ -34,15 +34,14 @@ const ADDRESS: NonNullable<BillingOverview["billingDetails"]> = {
     country: "FR",
 };
 
-// A decline as billing reports it: Stripe's reason from the failed charge.
-const declined = (declineCode: string) => ({
+// A decline as billing reports it; auto-refill is off after one.
+const declined = {
     enabled: false,
     lastIssue: {
         kind: "failed" as const,
-        declineCode,
         occurredAt: new Date().toISOString(),
     },
-});
+};
 
 type Preview = {
     id: string;
@@ -108,18 +107,8 @@ const BILLING_PREVIEWS: Preview[] = [
     },
     {
         id: "declined",
-        label: "Declined · generic",
-        billing: (real) => withCard(real, declined("generic_decline")),
-    },
-    {
-        id: "declined-funds",
-        label: "Declined · insufficient funds",
-        billing: (real) => withCard(real, declined("insufficient_funds")),
-    },
-    {
-        id: "declined-expired",
-        label: "Declined · expired card",
-        billing: (real) => withCard(real, declined("expired_card")),
+        label: "Card declined",
+        billing: (real) => withCard(real, declined),
     },
     {
         id: "bank-approval",

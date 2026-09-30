@@ -1,0 +1,37 @@
+{
+  "pr_number": 15895,
+  "title": "docs: update README — 2026-09-30",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15895",
+  "merged_at": "2026-09-30T07:30:34Z",
+  "labels": [
+    "DOCS",
+    "NEWS",
+    "AUTOMATED"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden log gets a refresh",
+    "blurb": "The README has today’s news and refreshed star-history charts. Even the garden log needs a new page now and then.",
+    "summary": "The September 30 README update refreshes Latest News and the light and dark GitHub star-history charts, keeping the project overview current.",
+    "impact": "README readers can see the latest project news and updated star-history charts in either theme.",
+    "keywords": [
+      "README",
+      "documentation",
+      "latest news",
+      "star history",
+      "automated update"
+    ],
+    "visual_concept": "Show the pollinations.ai bee updating a garden noticeboard labeled README, with a small news sheet and two star-chart cards for light and dark themes. Polli wears a tiny editor’s visor; flowers and a growing vine make the routine update feel like tending a garden.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli pins a fresh news sheet beside two tiny star-history charts on a README noticeboard, while lime green (#ecf874) vines curl around the frame. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny editor’s visor and shares the scene with the board and flowers, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15895.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli pins a fresh news sheet beside two tiny star-history charts on a README noticeboard, while lime green (#ecf874) vines curl around the frame. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny editor’s visor and shares the scene with the board and flowers, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T07:31:33.950804+00:00"
+}

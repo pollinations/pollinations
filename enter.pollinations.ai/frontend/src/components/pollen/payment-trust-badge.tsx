@@ -33,7 +33,7 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
                         key={method.name}
                         src={method.src}
                         alt={method.name}
-                        className="h-6 w-auto opacity-70 transition-opacity hover:opacity-100"
+                        className="h-6 w-auto opacity-70"
                         loading="lazy"
                     />
                 ))}

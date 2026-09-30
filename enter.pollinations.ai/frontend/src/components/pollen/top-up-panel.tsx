@@ -121,7 +121,7 @@ const StableSlot: FC<{
 );
 
 const SAVE_FAILED = "Couldn’t save";
-const PORTAL_FAILED = "Couldn’t open Stripe";
+const PORTAL_FAILED = "Stripe error";
 
 const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
@@ -305,7 +305,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     selectedAmount={selectedPack?.amountUsd}
                     onSelect={setChosenPack}
                 />
-                <div className="flex w-full flex-wrap items-center justify-between gap-x-5 gap-y-3">
+                <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">
                     <Button
                         intent="commit"
                         size="lg"
@@ -339,11 +339,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                     aria-hidden="true"
                                                     className="h-3.5 w-3.5 text-intent-danger-text"
                                                 />
-                                                <span className="text-intent-danger-text">
-                                                    {status?.text}
-                                                </span>
-                                                <span aria-hidden="true">
-                                                    ·
+                                                {/* The icon says something is
+                                                    wrong, the link what to do;
+                                                    the problem is read aloud. */}
+                                                <span className="sr-only">
+                                                    {status?.text}:
                                                 </span>
                                                 {status?.action?.kind ===
                                                 "link" ? (
@@ -351,7 +351,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                         href={
                                                             status.action.href
                                                         }
-                                                        external
                                                     >
                                                         {status.action.label}
                                                     </InlineLink>
@@ -359,7 +358,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                     <InlineLink
                                                         as="button"
                                                         type="button"
-                                                        external
                                                         onClick={openPortal}
                                                     >
                                                         {status?.action
@@ -371,7 +369,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                         ),
                                         saving: (
                                             <span className="text-theme-text-muted">
-                                                Saving your card…
+                                                Saving…
                                             </span>
                                         ),
                                         failed: (

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15879,
+  "title": "docs(cli): fix API key env claim, add staging line",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15879",
+  "merged_at": "2026-09-30T04:54:01Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "- Fix README: polli never read `POLLINATIONS_API_KEY`; one-off runs use `--key`\n- Adds the `POLLINATIONS_ENV=staging` login line to the polli skill (follow-up to #15877)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_011LgiC2X1edxD4TcXeX9sXo\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The right key for the door",
+    "blurb": "Polli’s instructions now point to the key that actually works. There’s a staging login line, too, for anyone testing before heading into the garden.",
+    "summary": "Corrected the polli CLI README to use `--key` for one-off runs instead of the unsupported `POLLINATIONS_API_KEY` variable, and added `POLLINATIONS_ENV=staging` login guidance to its skill file.",
+    "impact": "CLI users can supply a key with `--key` for one-off runs and follow the documented `POLLINATIONS_ENV=staging` login line when testing against staging.",
+    "keywords": [
+      "polli-cli",
+      "documentation",
+      "API key",
+      "staging",
+      "login"
+    ],
+    "visual_concept": "Depict the polli CLI as a friendly retro terminal, with a small key labeled `--key` and a path to a staging garden. Polli checks the directions while code-plants grow beside the screen; no separate CLI mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli holds a tiny `--key` beside a retro terminal showing `POLLINATIONS_ENV=staging`, with code-plants growing around a prominent lime green (#ecf874) screen against warm cream and soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15879.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli holds a tiny `--key` beside a retro terminal showing `POLLINATIONS_ENV=staging`, with code-plants growing around a prominent lime green (#ecf874) screen against warm cream and soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a subtle CRT glow."
+  },
+  "generated_at": "2026-09-30T04:54:55.985873+00:00"
+}

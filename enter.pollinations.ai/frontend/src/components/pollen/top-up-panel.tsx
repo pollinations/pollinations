@@ -6,6 +6,7 @@ import {
     Tooltip,
     WarningIcon,
 } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -17,7 +18,7 @@ import {
     type PollenPack,
 } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
@@ -68,7 +69,9 @@ const StableLabel: FC<{
     text: string;
     options: readonly string[];
     align?: "center" | "end";
-}> = ({ text, options, align = "center" }) => (
+    /** Drawn before the text in every option, so it stays beside it. */
+    prefix?: ReactNode;
+}> = ({ text, options, align = "center", prefix }) => (
     <span
         className={cn(
             "inline-grid",
@@ -79,12 +82,16 @@ const StableLabel: FC<{
             <span
                 key={option}
                 aria-hidden="true"
-                className="invisible col-start-1 row-start-1"
+                className="invisible col-start-1 row-start-1 inline-flex items-center gap-1"
             >
+                {prefix}
                 {option}
             </span>
         ))}
-        <span className="col-start-1 row-start-1">{text}</span>
+        <span className="col-start-1 row-start-1 inline-flex items-center gap-1">
+            {prefix}
+            {text}
+        </span>
     </span>
 );
 
@@ -285,18 +292,29 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             or would buy (off). */}
                         <span className="flex flex-col items-end leading-tight">
                             <span>Auto top-up</span>
-                            {/* Green like the switch while it is on, grey
-                                while off. Same weight both ways, so the
-                                width never changes. */}
+                            {/* It buys paid Pollen: the Paid card's icon and
+                                colour while on, greyed while off. Same weight
+                                and icon both ways, so nothing moves. */}
                             <span
                                 className={cn(
                                     "text-xs font-semibold tabular-nums transition-colors",
                                     billing?.autoTopUp.enabled
-                                        ? "text-tier-deep"
+                                        ? "text-paid-deep"
                                         : "text-theme-text-muted",
                                 )}
                             >
                                 <StableLabel
+                                    prefix={
+                                        <span
+                                            className={cn(
+                                                "inline-flex",
+                                                !billing?.autoTopUp.enabled &&
+                                                    "opacity-60 grayscale",
+                                            )}
+                                        >
+                                            <WalletKindIcon kind="paid" />
+                                        </span>
+                                    }
                                     text={refillLabel(
                                         billing?.autoTopUp.enabled
                                             ? billing.autoTopUp.packAmountUsd

@@ -1,5 +1,4 @@
 export { LastEventsPanel } from "./last-events-panel.tsx";
-export { OutOfPollenBanner } from "./out-of-pollen-banner.tsx";
 export {
     BuyPollenPanel,
     PollenBalance,

@@ -16,7 +16,8 @@ import {
 } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
-import { OutOfPollenBanner, SidebarWallet } from "../components/pollen";
+import { SidebarWallet } from "../components/pollen";
+import { OutOfPollenBanner } from "../components/pollen/out-of-pollen-banner.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;

@@ -4,7 +4,11 @@ import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
-import { POLLEN_PACKS, type PollenPack } from "@shared/pollen-packs.ts";
+import {
+    formatPollenPackValue,
+    POLLEN_PACKS,
+    type PollenPack,
+} from "@shared/pollen-packs.ts";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -290,9 +294,13 @@ const FooterText: FC<{
                 </InlineLink>
             </>
         );
-    // Same line on or off: the tab and the ringed tile show the state.
+    // "paid balance": Quest Pollen does not trigger it.
     else
-        text = `Pick a pack to add when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
+        text = `Automatically purchase ${
+            billing.autoTopUp.enabled
+                ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
+                : "a pack"
+        } every time your paid balance reaches ${billing.autoTopUp.thresholdPollen} Pollen.`;
     return <p className="text-theme-text-muted">{text}</p>;
 };
 

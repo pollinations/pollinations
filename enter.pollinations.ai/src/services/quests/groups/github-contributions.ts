@@ -180,8 +180,9 @@ type PaginatedSearchData<TNode> = {
 
 // Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
-query($query:String!){
-  search(query:$query,type:ISSUE,first:100){
+query($query:String!,$after:String){
+  search(query:$query,type:ISSUE,first:100,after:$after){
+    pageInfo{ hasNextPage endCursor }
     nodes{
       ... on Issue{
         number state title url body
@@ -348,19 +349,28 @@ function toDerivedQuestIssue(
 }
 
 async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
-    const data = await graphql<SearchData<GitHubIssueNode>>(
-        token,
-        QUEST_ISSUES_QUERY,
-        { query: `repo:${REPO} label:${QUEST_LABEL} is:issue` },
-    );
+    const issues: GitHubIssueNode[] = [];
+    let after: string | null = null;
+    do {
+        const data: PaginatedSearchData<GitHubIssueNode> = await graphql<
+            PaginatedSearchData<GitHubIssueNode>
+        >(token, QUEST_ISSUES_QUERY, {
+            query: `repo:${REPO} label:${QUEST_LABEL} is:issue`,
+            after,
+        });
+        issues.push(...data.search.nodes);
+        after = data.search.pageInfo.hasNextPage
+            ? data.search.pageInfo.endCursor
+            : null;
+    } while (after);
 
-    const issues = data.search.nodes
+    const filteredIssues = issues
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
         );
-    const appPublishPrs = issues
+    const appPublishPrs = filteredIssues
         .flatMap(mergedClosers)
         .filter(isAppPublishPr)
         .map((pr) => pr.number);
@@ -372,7 +382,7 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
             ),
         ),
     );
-    return issues
+    return filteredIssues
         .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);
 }

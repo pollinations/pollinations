@@ -78,6 +78,13 @@ describe("System One adapter", () => {
         expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
     });
 
+    it.each([
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ])("resolves %s as a canonical decision model", (name) => {
+        expect(findModelByName(name)?.name).toBe(name);
+    });
+
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

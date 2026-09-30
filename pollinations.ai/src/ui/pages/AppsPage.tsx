@@ -263,6 +263,8 @@ export default function AppsPage() {
                 return next;
             },
             replace: true,
+            // Filters sit below the hero; stay where the reader is.
+            resetScroll: false,
         });
     const setFilter = (f: string) => updateParams({ filter: f });
     const setSort = (s: string) => updateParams({ sort: sort === s ? "" : s });

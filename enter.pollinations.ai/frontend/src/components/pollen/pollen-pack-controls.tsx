@@ -57,30 +57,15 @@ export const PollenPackButtons: FC<{
                     )}
                 >
                     {auto && (
-                        // A corner tab flush with the tile's corner and its
-                        // radius, the inner corner rounded, in the other
-                        // tile colour: honey on a grey tile, grey on the
-                        // honey one. The grey is a tint, so it is laid over
-                        // the section's own colour to match the idle tiles.
                         <span
                             aria-hidden="true"
-                            className={cn(
-                                "absolute top-0 right-0 flex h-5 w-5 overflow-hidden rounded-tr-xl rounded-bl-lg",
-                                selected
-                                    ? "bg-surface-block"
-                                    : "bg-theme-bg-active",
-                            )}
+                            // A corner tab in the selected tile's colour: flush
+                            // with the tile's corner and its radius, the inner
+                            // corner rounded. On the selected tile only the
+                            // icon shows.
+                            className="absolute top-0 right-0 inline-flex h-5 w-5 items-center justify-center rounded-tr-xl rounded-bl-lg bg-theme-bg-active text-theme-text-strong"
                         >
-                            <span
-                                className={cn(
-                                    "flex flex-1 items-center justify-center",
-                                    selected
-                                        ? "bg-theme-text-strong/[0.06] text-theme-text-base"
-                                        : "text-theme-text-strong",
-                                )}
-                            >
-                                <RefreshIcon className="h-3 w-3" />
-                            </span>
+                            <RefreshIcon className="h-3 w-3" />
                         </span>
                     )}
                     <span className="text-2xl font-bold leading-none tracking-tight">

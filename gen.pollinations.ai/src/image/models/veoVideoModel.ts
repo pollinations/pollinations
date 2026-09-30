@@ -38,6 +38,16 @@ async function processImageForVeo(
     }
 }
 
+// The gateway always fills width/height (1024×1024 by default), so only
+// dimensions the caller set pick the ratio; otherwise aspectRatio, then 16:9.
+function veoAspectRatio(params: ImageParams): "16:9" | "9:16" {
+    return calculateVideoResolution(
+        params.dimensionsExplicit
+            ? { width: params.width, height: params.height }
+            : { aspectRatio: params.aspectRatio },
+    ).aspectRatio;
+}
+
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
 const MODEL_ID = "veo-3.1-fast-generate-001";
@@ -103,12 +113,7 @@ const generateVeoVideo = async (
     const durationSeconds = safeParams.duration || 4;
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
-
-    const { aspectRatio } = calculateVideoResolution({
-        width: safeParams.width,
-        height: safeParams.height,
-        aspectRatio: safeParams.aspectRatio,
-    });
+    const aspectRatio = veoAspectRatio(safeParams);
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -253,7 +258,7 @@ export async function callVeoReplicateAPI(
                     prompt,
                     duration: params.duration ?? 4,
                     resolution: params.resolution ?? "720p",
-                    aspect_ratio: calculateVideoResolution(params).aspectRatio,
+                    aspect_ratio: veoAspectRatio(params),
                     generate_audio: generateAudio,
                     ...(params.image[0]
                         ? { image: await toDataUri(params.image[0]) }

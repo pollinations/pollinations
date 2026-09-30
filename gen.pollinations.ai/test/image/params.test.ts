@@ -96,6 +96,15 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("leaves audio unset when the caller omits it", () => {
+        const parse = (audio?: string) =>
+            ImageParamsSchema.parse({ model: "google/veo-3.1-fast", audio })
+                .audio;
+        expect(parse()).toBeUndefined();
+        expect(parse("false")).toBe(false);
+        expect(parse("true")).toBe(true);
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({

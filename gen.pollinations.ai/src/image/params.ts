@@ -135,7 +135,8 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Unset when omitted, so each model applies its own audio default.
+        audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {

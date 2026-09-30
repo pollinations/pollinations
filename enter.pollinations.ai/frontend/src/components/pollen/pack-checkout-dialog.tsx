@@ -136,7 +136,6 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
             {open && (
                 <CheckoutBody
                     key={`${pack.packKey}:${attempt}`}
-                    pack={pack}
                     hostedHref={hostedCheckoutHref(pack.packKey, checkoutQuery)}
                     start={() => sessionFor(pack.packKey)}
                     onFinished={() => {
@@ -167,22 +166,13 @@ const LOAD_ERROR = {
 } as const;
 
 const CheckoutBody: FC<{
-    pack: PollenPack;
     hostedHref: string;
     start: () => Promise<StartResult>;
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
     onClose: () => void;
-}> = ({
-    pack,
-    hostedHref,
-    start,
-    onFinished,
-    onRetry,
-    onCredited,
-    onClose,
-}) => {
+}> = ({ hostedHref, start, onFinished, onRetry, onCredited, onClose }) => {
     const [state, setState] = useState<BodyState>({ phase: "loading" });
     // Read once on mount: a new pack or retry remounts this body.
     const startOnMount = useRef(start);
@@ -247,7 +237,6 @@ const CheckoutBody: FC<{
         case "ready":
             return (
                 <WalletPay
-                    pack={pack}
                     stripe={state.stripe}
                     checkout={state.checkout}
                     hostedHref={hostedHref}
@@ -267,28 +256,19 @@ type WalletActions = {
 };
 
 /**
- * Our pay screen: the pack, the localized total and the saved card with one
- * Confirm. Stripe still runs the Checkout Session (Adaptive Pricing, tax,
+ * Our pay screen: the localized total and the saved card with one Confirm
+ * (the dialog title names the pack). Stripe still runs the Checkout Session (Adaptive Pricing, tax,
  * 3DS when the bank asks); its currency selector must stay visible next to
  * the price.
  */
 const WalletPay: FC<{
-    pack: PollenPack;
     stripe: Stripe;
     checkout: WalletCheckout;
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
     onClose: () => void;
-}> = ({
-    pack,
-    stripe,
-    checkout,
-    hostedHref,
-    onComplete,
-    onLoadError,
-    onClose,
-}) => {
+}> = ({ stripe, checkout, hostedHref, onComplete, onLoadError, onClose }) => {
     const currencySelector = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
@@ -386,44 +366,49 @@ const WalletPay: FC<{
     return (
         <DialogBody
             actions={
-                <>
-                    <CloseButton onClick={onClose} disabled={submitting} />
-                    {ready &&
-                        (card ? (
-                            <Button
-                                intent="commit"
-                                size="lg"
-                                disabled={!canConfirm || submitting}
-                                onClick={() => void confirmWithCard()}
-                                className="tabular-nums"
-                            >
-                                {submitting
-                                    ? "Confirming…"
-                                    : session
-                                      ? `Confirm · ${session.total.total.amount}`
-                                      : "Confirm"}
-                            </Button>
-                        ) : (
-                            session && (
-                                // A card Stripe won't show again: its own page.
-                                <HostedButton href={hostedHref}>
-                                    Pay on Stripe’s page
-                                </HostedButton>
-                            )
-                        ))}
-                </>
+                // With a saved card, Confirm is the one action and fills the
+                // row; Cancel moves to the quiet line below it.
+                ready && card ? (
+                    <Button
+                        intent="commit"
+                        size="lg"
+                        disabled={!canConfirm || submitting}
+                        onClick={() => void confirmWithCard()}
+                        className="w-full tabular-nums"
+                    >
+                        {submitting
+                            ? "Confirming…"
+                            : session
+                              ? `Confirm · ${session.total.total.amount}`
+                              : "Confirm"}
+                    </Button>
+                ) : (
+                    <>
+                        <CloseButton onClick={onClose} disabled={submitting} />
+                        {ready && session && (
+                            // A card Stripe won't show again: its own page.
+                            <HostedButton href={hostedHref}>
+                                Pay on Stripe’s page
+                            </HostedButton>
+                        )}
+                    </>
+                )
             }
             footnote={
                 ready && card ? (
-                    <p className="flex items-start gap-1.5 px-(--polli-dialog-gutter) pb-6 text-[13px] leading-snug text-theme-text-muted">
-                        <ExternalLinkIcon
-                            aria-hidden="true"
-                            className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                        />
-                        <InlineLink href={hostedHref} showIcon={false}>
-                            Pay with another card or method
+                    <div className="flex items-center justify-between gap-4 px-(--polli-dialog-gutter) pb-6 text-[13px] leading-snug">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={submitting}
+                            className="cursor-pointer text-theme-text-muted transition-colors hover:text-theme-text-strong disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <InlineLink href={hostedHref} external>
+                            Another card or method
                         </InlineLink>
-                    </p>
+                    </div>
                 ) : undefined
             }
         >
@@ -433,42 +418,30 @@ const WalletPay: FC<{
                     className={cn("flex flex-col gap-3", !ready && "invisible")}
                     aria-hidden={!ready}
                 >
+                    {/* The total is the headline (the title names the pack);
+                        what it includes and the card fit one line under it. */}
                     {session && (
-                        <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm tabular-nums">
-                            <dt className="text-theme-text-muted">Pack</dt>
-                            <dd className="text-right font-semibold">
-                                {formatPollenPackValue(pack.amountUsd)} Pollen
-                            </dd>
-                            {taxReady && tax && tax.minorUnitsAmount > 0 && (
-                                <>
-                                    <dt className="text-theme-text-muted">
-                                        Tax
-                                    </dt>
-                                    <dd className="text-right">{tax.amount}</dd>
-                                </>
-                            )}
-                            <dt className="text-theme-text-muted">
-                                {taxReady
-                                    ? "Total, incl. service fee"
-                                    : "Total before tax, incl. service fee"}
-                            </dt>
-                            <dd className="text-right text-base font-bold">
+                        <div className="flex flex-col gap-1 tabular-nums">
+                            <p className="text-3xl font-bold leading-none text-theme-text-strong">
                                 {session.total.total.amount}
-                            </dd>
-                            {card && (
-                                <>
-                                    <dt className="text-theme-text-muted">
-                                        Pay with
-                                    </dt>
-                                    <dd className="text-right">
-                                        {formatCard(
+                            </p>
+                            <p className="text-[13px] text-theme-text-muted">
+                                {[
+                                    !taxReady
+                                        ? "Includes service fee, before tax"
+                                        : tax && tax.minorUnitsAmount > 0
+                                          ? `Includes service fee and ${tax.amount} tax`
+                                          : "Includes service fee",
+                                    card &&
+                                        formatCard(
                                             card.card.brand,
                                             card.card.last4,
-                                        )}
-                                    </dd>
-                                </>
-                            )}
-                        </dl>
+                                        ),
+                                ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                            </p>
+                        </div>
                     )}
                     <div ref={currencySelector} />
                     {error && <ErrorLine>{error}</ErrorLine>}

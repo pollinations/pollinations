@@ -157,6 +157,7 @@ test("Azure models use the approved public-price multipliers", () => {
         ["openai/gpt-6-astra", 1],
         ["openai/gpt-6-astra:azure:datazone", 1],
         ["openai/gpt-6-sol", 1],
+        ["openai/gpt-6.1-sol", 1],
         ["openai/gpt-6-luna", 1],
         ["openai/tts-1", 1],
         ["openai/tts-1-hd", 1],

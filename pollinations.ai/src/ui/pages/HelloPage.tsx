@@ -1,6 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { Fragment } from "react";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useDiscordPresence, useRepoStars } from "../../data/community";
+import { compact } from "../../data/publicStats";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -22,6 +25,23 @@ function HelloPage() {
         "description",
     );
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
+
+    // Live counts join the fixed stats once loaded and stay hidden on failure.
+    const { data: repoStars } = useRepoStars();
+    const { data: discordOnline } = useDiscordPresence();
+    const heroStats = [
+        { value: pageCopy.heroStat1, label: pageCopy.heroStat1Label },
+        { value: pageCopy.heroStat2, label: pageCopy.heroStat2Label },
+        { value: pageCopy.heroStat3, label: pageCopy.heroStat3Label },
+        repoStars !== null && {
+            value: compact(repoStars),
+            label: pageCopy.heroStarsLabel,
+        },
+        discordOnline !== null && {
+            value: compact(discordOnline),
+            label: pageCopy.heroDiscordLabel,
+        },
+    ].filter((stat) => stat !== false);
 
     const quietLinkClass =
         "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2 inline-flex items-center gap-1";
@@ -88,20 +108,21 @@ function HelloPage() {
                     </Button>
                 </div>
                 <p className="font-body text-base text-subtle mb-4">
-                    <span className="font-headline text-xs font-black text-muted">
-                        {pageCopy.heroStat1}
-                    </span>{" "}
-                    {pageCopy.heroStat1Label}
-                    <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-muted">
-                        {pageCopy.heroStat2}
-                    </span>{" "}
-                    {pageCopy.heroStat2Label}
-                    <span className="mx-2 text-border-subtle">·</span>
-                    <span className="font-headline text-xs font-black text-muted">
-                        {pageCopy.heroStat3}
-                    </span>{" "}
-                    {pageCopy.heroStat3Label}
+                    {heroStats.map((stat, index) => (
+                        <Fragment key={stat.label}>
+                            {index > 0 && (
+                                <span className="mx-2 text-border-subtle">
+                                    ·
+                                </span>
+                            )}
+                            <span className="inline-block">
+                                <span className="font-headline text-xs font-black text-muted">
+                                    {stat.value}
+                                </span>{" "}
+                                {stat.label}
+                            </span>
+                        </Fragment>
+                    ))}
                 </p>
 
                 <Divider />
@@ -127,16 +148,16 @@ function HelloPage() {
                             ) => {
                                 const accents = [
                                     {
-                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)/0.3)]",
                                     },
                                 ];
                                 const accent = accents[i % accents.length];

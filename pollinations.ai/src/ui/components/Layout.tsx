@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -67,7 +67,7 @@ function SocialIcons() {
 }
 
 const tertiaryBtn =
-    "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
+    "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:bg-[rgb(var(--tertiary-strong)/0.8)]! hover:text-dark! hover:*:text-dark!";
 const labelCls = "font-body text-[11px] font-semibold";
 const desktopFooterLabelCls = "font-body text-xs font-semibold";
 
@@ -128,7 +128,7 @@ function EnterButton({
             rel="noopener noreferrer"
             variant="iconText"
             size={null}
-            className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
+            className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)]! hover:text-dark! hover:*:text-dark!"
         >
             <span className={labelClassName}>
                 {isLoggedIn ? authCopy.enterButton : authCopy.registerButton}
@@ -161,7 +161,7 @@ function Layout() {
                         {/* Header: Logo + Nav + Social + Enter — wraps naturally */}
                         <div className="flex items-start gap-3">
                             {/* Logo */}
-                            <Link to="/" className="flex-shrink-0">
+                            <Link to="/" className="shrink-0">
                                 <Logo
                                     className="w-20 h-20 object-contain"
                                     mainColor="rgb(var(--dark))"
@@ -171,10 +171,12 @@ function Layout() {
                             {/* Nav + Social + Enter — wraps into rows as needed */}
                             <div className="flex-1 flex flex-wrap gap-1 items-center justify-end pt-1">
                                 {tabKeys.map((tab) => (
-                                    <NavLink
+                                    <Link
                                         key={tab.path}
                                         to={tab.path}
-                                        end={tab.path === "/"}
+                                        activeOptions={{
+                                            exact: tab.path === "/",
+                                        }}
                                         className="no-underline"
                                     >
                                         {({ isActive }) => (
@@ -186,7 +188,7 @@ function Layout() {
                                                 {layoutCopy[tab.copyKey]}
                                             </Button>
                                         )}
-                                    </NavLink>
+                                    </Link>
                                 ))}
                                 {Object.entries(SOCIAL_LINKS)
                                     .filter(
@@ -218,7 +220,7 @@ function Layout() {
                                     rel="noopener noreferrer"
                                     variant="iconText"
                                     size={null}
-                                    className="bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
+                                    className="bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)]! hover:text-dark! hover:*:text-dark!"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider">
                                         {authCopy.enterButton}
@@ -269,7 +271,7 @@ function Layout() {
                     <div className="max-w-4xl mx-auto">
                         <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
-                            <div className="text-left flex-shrink-0">
+                            <div className="text-left shrink-0">
                                 <p className="font-body text-xs font-bold text-dark">
                                     {layoutCopy.footerBranding}
                                 </p>
@@ -279,7 +281,7 @@ function Layout() {
                             </div>
 
                             {/* Center: Links */}
-                            <div className="flex items-center flex-shrink-0 gap-2">
+                            <div className="flex items-center shrink-0 gap-2">
                                 <FooterLinks
                                     layoutCopy={layoutCopy}
                                     labelClassName={desktopFooterLabelCls}

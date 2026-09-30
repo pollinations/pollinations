@@ -119,6 +119,8 @@ export function ConsentModelPicker({
                             active={active}
                             size="xs"
                             variant="ghost"
+                            intent={model.owner ? "green" : "amber"}
+                            detail={model.owner && `@${model.owner}`}
                             disabled={disabled}
                             onClick={() =>
                                 onChange(

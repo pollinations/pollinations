@@ -68,6 +68,26 @@ describe("model categories", () => {
         ]);
     });
 
+    it("names the creator of community models only", () => {
+        const models = getModelCategoriesFromCatalog([
+            {
+                name: "community/alice/tiny-llm",
+                category: "text",
+                community: true,
+            },
+            { name: "openai/gpt", category: "text" },
+        ]).flatMap(({ models }) => models);
+
+        expect(models).toEqual([
+            { id: "openai/gpt", label: "openai/gpt", owner: undefined },
+            {
+                id: "community/alice/tiny-llm",
+                label: "community/alice/tiny-llm",
+                owner: "alice",
+            },
+        ]);
+    });
+
     it("accepts categories independently of the model query", () => {
         expect(validateModelSearch({})).toEqual({
             category: undefined,

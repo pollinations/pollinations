@@ -1,3 +1,4 @@
+import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import {
     type ApiModelInfo,
     getCatalogCategory,
@@ -17,7 +18,12 @@ export type ModelCategoryLabel =
     | "Community Text"
     | "Community Image"
     | "Community Agents";
-export type ModelCategoryModel = { id: string; label: string };
+export type ModelCategoryModel = {
+    id: string;
+    label: string;
+    /** GitHub username of a community model's creator. */
+    owner?: string;
+};
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
     label: ModelCategoryLabel;
@@ -105,6 +111,9 @@ export function getModelCategoriesFromCatalog(
                 return {
                     id,
                     label: getCatalogDisplayName(model, id),
+                    owner: model.community
+                        ? parseCommunityModelId(id)?.ownerGithubUsername
+                        : undefined,
                 };
             })
             .filter((model) => model.id)

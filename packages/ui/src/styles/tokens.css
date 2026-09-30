@@ -19,7 +19,8 @@
      - `neutral` is the one no-hue member, for chrome that must carry no accent.
 
    DARK: add class `dark` to <html> (color-scheme owned here: :root=light,
-   .dark=dark). INVARIANT: --polli-color-border === --polli-color-bg-hover.
+   .dark=dark). Hover is a tint of the active accent (one yellow, two
+   strengths), not a separate amber; borders keep their own value.
    ========================================================================== */
 
 :root {
@@ -87,7 +88,7 @@
    The accent keeps the v3 recipe form, so recoloring the whole app = change
    --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
    lightness for the new hue). --polli-hue is mode-agnostic — both the light
-   (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
+   (:root) and dark (.dark) recipes read it. Hover tints bg-active.
    `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below;
    `data-theme="accent"` re-asserts the accent INSIDE a neutral subtree (e.g.
    accent nav buttons in the neutral rail). ─── */
@@ -98,14 +99,14 @@
 
 /* The accent recipe — reads --polli-hue/--polli-nudge from its scope. `:root`
    carries the app default; `data-theme="accent"` re-asserts the live accent inside
-   a neutral subtree. INVARIANT: border === bg-hover. */
+   a neutral subtree. Hover tints bg-active; border has its own value. */
 :root,
 [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.955 0.022 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
-    --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
-    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-bg-active) 55%, transparent);
+    --polli-color-border:          oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
     --polli-color-text-hover:      var(--polli-color-text-strong);
@@ -293,8 +294,8 @@
     --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.33 0.014 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
-    --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
-    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-bg-active) 55%, transparent);
+    --polli-color-border:          oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
 }

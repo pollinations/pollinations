@@ -8,6 +8,7 @@ import {
     InlineLink,
     MailIcon,
     ReceiptIcon,
+    RefreshIcon,
     SproutIcon,
     Surface,
     WalletIcon,
@@ -17,6 +18,7 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
@@ -287,6 +289,18 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             onCredited={onCredited}
         />
         <Footnotes>
+            {/* When auto top-up charges, stated before anyone turns it on.
+                "Paid": Quest Pollen doesn't trigger it. */}
+            <p className="flex items-start gap-1.5">
+                <RefreshIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Auto top-up buys its pack when your paid balance reaches{" "}
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen
+                </span>
+            </p>
             <p className="flex items-start gap-1.5">
                 <ReceiptIcon
                     aria-hidden="true"

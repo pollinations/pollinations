@@ -1,7 +1,7 @@
 import {
     CardIcon,
+    EyeOffIcon,
     InlineLink,
-    LockIcon,
     Surface,
     WalletIcon,
 } from "@pollinations/ui";
@@ -50,7 +50,7 @@ export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
             {/* Where this data lives: true as written, no broader claim. */}
             <Footnotes>
                 <p className="flex items-start gap-1.5">
-                    <LockIcon
+                    <EyeOffIcon
                         aria-hidden="true"
                         className="mt-0.5 h-3.5 w-3.5 shrink-0"
                     />

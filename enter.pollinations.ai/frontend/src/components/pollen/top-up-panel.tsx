@@ -10,7 +10,6 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
-    AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import {
     formatPollenPackValue,
@@ -300,13 +299,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     return (
         <div className="flex flex-col gap-3">
             <section className="flex flex-col gap-3">
-                {/* Both modes in one line: what each does, and when auto
-                    top-up buys ("paid": Quest Pollen doesn't trigger it). */}
-                <p className="text-sm text-theme-text-muted">
-                    Pick a pack to buy it now, or turn on auto top-up to buy it
-                    every time your paid balance reaches{" "}
-                    {AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen.
-                </p>
                 <PollenPackButtons
                     packs={POLLEN_PACKS}
                     selectedAmount={selectedPack?.amountUsd}

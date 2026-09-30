@@ -178,6 +178,38 @@ describe("System One adapter", () => {
         expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 
+    it("routes Kev with its pinned upstream id and model-specific validation", async () => {
+        const kevConfig = { ...modelConfig, model: "jaredpalmer/kev-4b" };
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "jaredpalmer/kev-4b",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b",
+                    answers,
+                    usage: { input_tokens: 42, output_tokens: 0 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: kevConfig,
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+        await expect(
+            callSystemOne([{ role: "user", content: "not json" }], {
+                modelConfig: kevConfig,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("jaredpalmer/kev-4b"),
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("wraps the finished answers in an SSE stream with terminal usage", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({

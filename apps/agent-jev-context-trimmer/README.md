@@ -36,7 +36,7 @@ npm run format
 node live.mjs
 ```
 
-`live.mjs` makes three owner-authenticated calls over the same two archived outputs: a billing question, a weather question and an unrelated question. It saves exact inputs, decisions, reported usage and answers under ignored `live-results/`. Assertions check task-dependent selection and exact retained content. No retry is performed. Inspect saved results before publishing evidence; an expected selection is not a fabricated result or a guarantee of model behavior. A 0.01–0.05 Pollen cap is a proposed test budget, not measured spend.
+`live.mjs` makes three owner-authenticated calls over the same two illustrative tool archives: a billing question, a weather question and an unrelated question. The fixture text is example data; the harness does not execute billing commands or fetch weather. It saves exact inputs, decisions, reported usage and answers under ignored `live-results/`. Assertions check task-dependent selection and exact retained content. No retry is performed. Inspect saved results before publishing evidence; an expected selection is not a fabricated result or a guarantee of model behavior. A 0.01–0.05 Pollen cap is a proposed test budget, not measured spend.
 
 Limits: nonempty task up to 2,000 characters; 1–8 outputs with unique 1–64 character IDs (`A–Z`, `a–z`, digits, `_`, `-`); each content 1–12,000 characters, total 48,000. Invalid input returns 400 before calling a model. Missing or invalid Jev probabilities and usage stop the run before the answer call. Provider errors, incomplete answer generation and invalid answer usage return 502; calls are not retried.
 

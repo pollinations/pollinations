@@ -7,6 +7,7 @@ if (!key)
 		"Set POLLINATIONS_API_KEY in the environment; never commit it.",
 	);
 const model = "ale-rls/jev-context-trimmer";
+// Illustrative archives: the harness does not execute billing commands or fetch weather.
 const outputs = [
 	{
 		id: "billing_test",

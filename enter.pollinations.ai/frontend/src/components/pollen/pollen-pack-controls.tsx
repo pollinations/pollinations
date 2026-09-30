@@ -61,13 +61,9 @@ export const PollenPackButtons: FC<{
                             aria-hidden="true"
                             // A corner tab in the selected tile's colour: flush
                             // with the tile's corner and its radius, the inner
-                            // corner rounded. On the selected tile a line on
-                            // its two inner edges keeps its shape visible.
-                            className={cn(
-                                "absolute top-0 right-0 inline-flex h-5 w-5 items-center justify-center rounded-tr-xl rounded-bl-lg bg-theme-bg-active text-theme-text-strong",
-                                selected &&
-                                    "border-b border-l border-theme-text-muted",
-                            )}
+                            // corner rounded. On the selected tile only the
+                            // icon shows.
+                            className="absolute top-0 right-0 inline-flex h-5 w-5 items-center justify-center rounded-tr-xl rounded-bl-lg bg-theme-bg-active text-theme-text-strong"
                         >
                             <RefreshIcon className="h-3 w-3" />
                         </span>

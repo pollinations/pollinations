@@ -1,0 +1,38 @@
+{
+  "pr_number": 15934,
+  "title": "feat: pause the Bee Census and add the Honey Census for Pollen buyers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15934",
+  "merged_at": "2026-09-30T13:37:32Z",
+  "labels": [
+    "FEATURE",
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "The Bee Census reached 55 respondents. Only 9 had ever paid, and some answers were gamed. This asks people who have paid instead.\n\n- Adds the **Honey Census** issue form: why people first bought, what got in the way, who pays, how they use Pollinations now, price feel, plan preference, what would make them use it more and which other AI tools they pay for. Pick lists have an optional free-text box for other answers\n- Adds a 10 Quest Pollen quest, payable only to accounts that have bought Pollen: a Stripe checkout, a paid auto top-up or a Polar order. The two written answers need 100 characters in total\n- Pauses the Bee Census (`state: \"completed\"`): it leaves the board, and late answers still pay. Deleting that line reopens it\n- Counts only visible characters in written answers. One response passed the 60-character minimum with invisible U+200E filler\n- Skips `HONEY-CENSUS` issues in triage and on the project board\n\n**Before merging:** create the `HONEY-CENSUS` label. An issue form applies only labels that already exist.\n\nTests: the quest suite passes (43/43), including the new purchase-gate and invisible-filler cases. Typecheck is clean.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A census for the honey jar",
+    "blurb": "The Bee Census makes room for the Honey Census, a survey for people who’ve bought Pollen. Eligible buyers can earn 10 Quest Pollen for answers with a little substance.",
+    "summary": "The Honey Census adds a survey about Pollen purchases and usage, plus a 10 Quest Pollen reward for buyers with a Stripe checkout, paid auto top-up, or Polar order; its two written answers must contain 100 visible characters in total.",
+    "impact": "Pollen buyers get a dedicated way to share what led them to buy and what would help them use Pollinations more, while the Bee Census leaves the quest board and still rewards late answers.",
+    "keywords": [
+      "Honey Census",
+      "Bee Census",
+      "Pollen",
+      "Quests",
+      "buyer survey",
+      "billing"
+    ],
+    "visual_concept": "A cozy garden polling station replaces a Bee Census sign with a Honey Census sign. Polli, wearing a tiny census-taker visor, welcomes a visitor carrying a Pollen jar; a small lime-green reward token and blooming question-mark flowers represent the survey and its 10 Quest Pollen reward.",
+    "image_prompt": "At a cozy garden polling station, Polli welcomes a visitor carrying a Pollen jar beside a small sign reading 'HONEY CENSUS', a lime-green reward token, and blooming question-mark flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny census-taker visor and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and mint surroundings, and dark purple #110518 outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15934.jpg",
+    "prompt": "At a cozy garden polling station, Polli welcomes a visitor carrying a Pollen jar beside a small sign reading 'HONEY CENSUS', a lime-green reward token, and blooming question-mark flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny census-taker visor and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and mint surroundings, and dark purple #110518 outlines."
+  },
+  "generated_at": "2026-09-30T13:38:52.612144+00:00"
+}

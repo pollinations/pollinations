@@ -11,10 +11,7 @@ import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
 import { openBillingPortal } from "../../lib/billing-portal.ts";
-import {
-    autoTopUpStatus,
-    hasDefaultPaymentMethod,
-} from "./auto-top-up-status.ts";
+import { hasDefaultPaymentMethod } from "./auto-top-up-status.ts";
 import {
     describePaymentMethod,
     formatAddress,
@@ -30,7 +27,10 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
  * points here.
  */
 export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
-    const { text, action } = autoTopUpStatus(billing);
+    // Auto top-up's own problems are told in Top-up; here only the card
+    // that was declined carries a tag.
+    const lastIssue = billing.autoTopUp.lastIssue;
+    const declined = lastIssue?.kind === "failed" && !billing.autoTopUp.enabled;
     const needsAddress =
         hasDefaultPaymentMethod(billing) && !billing.billingDetailsComplete;
     return (
@@ -38,28 +38,17 @@ export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
             <div className="grid gap-3 sm:grid-cols-2">
                 <Surface className="flex flex-col gap-2">
                     <CardHeading>Payment method</CardHeading>
-                    <PaymentMethods methods={billing.paymentMethods} />
-                    {text && (
-                        <Warning>
-                            {text} ·{" "}
-                            {action?.kind === "link" ? (
-                                <InlineLink href={action.href} external>
-                                    {action.label}
-                                </InlineLink>
-                            ) : (
-                                <PortalLink inline>
-                                    {action?.label ?? "Update card"}
-                                </PortalLink>
-                            )}
-                        </Warning>
-                    )}
+                    <PaymentMethods
+                        methods={billing.paymentMethods}
+                        declined={declined}
+                    />
                 </Surface>
                 <Surface className="flex flex-col gap-2">
                     <CardHeading>Details</CardHeading>
                     <Details details={billing.billingDetails} />
                     {needsAddress && (
                         <Warning>
-                            Auto-refill needs your billing address ·{" "}
+                            Auto top-up needs your billing address ·{" "}
                             <PortalLink inline>Add</PortalLink>
                         </Warning>
                     )}
@@ -89,9 +78,11 @@ const CardHeading: FC<{ children: ReactNode }> = ({ children }) => (
     </h3>
 );
 
-const PaymentMethods: FC<{ methods: BillingOverview["paymentMethods"] }> = ({
-    methods,
-}) =>
+const PaymentMethods: FC<{
+    methods: BillingOverview["paymentMethods"];
+    /** Auto top-up was declined on the default card. */
+    declined?: boolean;
+}> = ({ methods, declined = false }) =>
     methods.length === 0 ? (
         <p className="text-sm text-theme-text-muted">
             None saved yet: tick “Save” at your next card payment
@@ -123,6 +114,11 @@ const PaymentMethods: FC<{ methods: BillingOverview["paymentMethods"] }> = ({
                     {method.isDefault && methods.length > 1 && (
                         <span className="text-xs font-semibold text-theme-text-soft">
                             Default
+                        </span>
+                    )}
+                    {method.isDefault && declined && (
+                        <span className="rounded-full bg-intent-danger-bg-light px-2 py-0.5 text-xs font-semibold text-intent-danger-text">
+                            Declined
                         </span>
                     )}
                 </li>

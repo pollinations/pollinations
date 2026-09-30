@@ -82,7 +82,7 @@ describe("automatic top-up on the tab label", () => {
         });
         expect(pending.action).toEqual({
             kind: "link",
-            label: "Complete payment",
+            label: "Approve",
             href: "https://invoice.stripe.com/i/test",
         });
 
@@ -99,7 +99,7 @@ describe("automatic top-up on the tab label", () => {
         ).toEqual({
             tab: { on: false, label: "Off", warning: true },
             // The attempt doesn't record which card; the default may be new.
-            text: "Card declined Sep 29",
+            text: "Card declined",
             action: { kind: "portal", label: "Update card" },
         });
 

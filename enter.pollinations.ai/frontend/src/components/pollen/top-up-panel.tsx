@@ -17,11 +17,11 @@ import {
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
+import { openBillingPortal } from "../../lib/billing-portal.ts";
 import {
     autoTopUpStatus,
     hasDefaultPaymentMethod,
@@ -120,6 +120,9 @@ const StableSlot: FC<{
     </span>
 );
 
+const SAVE_FAILED = "Couldn’t save";
+const PORTAL_FAILED = "Couldn’t open Stripe";
+
 const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
 
@@ -136,7 +139,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [saveFailed, setSaveFailed] = useState(false);
+    // A save or Stripe-portal failure, shown in the status slot.
+    const [slotError, setSlotError] = useState<string | null>(null);
 
     useEffect(() => {
         setBilling(initialBilling);
@@ -199,13 +203,22 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         !billing?.autoTopUp.enabled && selectedPack && !selectedRefillPack,
     );
     // The one status the row shows under "Auto top-up".
-    const refillStatus = saveFailed
+    // Only auto top-up's own problems show here; missing billing details
+    // and a failed billing load are shown in Billing.
+    const refillStatus = slotError
         ? "failed"
         : confirmingSetup
           ? "saving"
-          : status?.text || (hasDefault && !autoReady) || !billing
-            ? "check"
+          : status?.text
+            ? "issue"
             : "pack";
+
+    function openPortal(): void {
+        setSlotError(null);
+        void openBillingPortal(returnToTopUp).then((message) => {
+            if (message) setSlotError(PORTAL_FAILED);
+        });
+    }
     const setupHref = (pack: PollenPack) =>
         `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
@@ -214,7 +227,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         packAmountUsd: number,
     ): Promise<void> {
         setSaving(true);
-        setSaveFailed(false);
+        setSlotError(null);
         try {
             const response = await apiClient.stripe["auto-top-up"].$patch({
                 json: { enabled, packAmountUsd },
@@ -225,7 +238,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             if (!response.ok || !("autoTopUp" in payload)) throw new Error();
             setBilling(payload);
         } catch {
-            setSaveFailed(true);
+            setSlotError(SAVE_FAILED);
         } finally {
             setSaving(false);
         }
@@ -318,20 +331,40 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 <StableSlot
                                     active={refillStatus}
                                     items={{
-                                        check: (
+                                        issue: (
                                             <>
                                                 <WarningIcon
                                                     aria-hidden="true"
                                                     className="h-3.5 w-3.5 text-intent-danger-text"
                                                 />
-                                                <InlineLink
-                                                    as={Link}
-                                                    to="/pollen"
-                                                    hash="billing"
-                                                    external={false}
-                                                >
-                                                    Check billing
-                                                </InlineLink>
+                                                <span className="text-intent-danger-text">
+                                                    {status?.text}
+                                                </span>
+                                                <span aria-hidden="true">
+                                                    ·
+                                                </span>
+                                                {status?.action?.kind ===
+                                                "link" ? (
+                                                    <InlineLink
+                                                        href={
+                                                            status.action.href
+                                                        }
+                                                        external
+                                                    >
+                                                        {status.action.label}
+                                                    </InlineLink>
+                                                ) : (
+                                                    <InlineLink
+                                                        as="button"
+                                                        type="button"
+                                                        external
+                                                        onClick={openPortal}
+                                                    >
+                                                        {status?.action
+                                                            ?.label ??
+                                                            "Update card"}
+                                                    </InlineLink>
+                                                )}
                                             </>
                                         ),
                                         saving: (
@@ -348,7 +381,16 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                     aria-hidden="true"
                                                     className="h-3.5 w-3.5"
                                                 />
-                                                Couldn’t save
+                                                <StableLabel
+                                                    text={
+                                                        slotError ?? SAVE_FAILED
+                                                    }
+                                                    options={[
+                                                        SAVE_FAILED,
+                                                        PORTAL_FAILED,
+                                                    ]}
+                                                    align="end"
+                                                />
                                             </span>
                                         ),
                                         pack: (

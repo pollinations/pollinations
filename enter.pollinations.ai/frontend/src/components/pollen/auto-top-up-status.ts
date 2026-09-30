@@ -32,10 +32,10 @@ export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
     if (autoTopUp.enabled && issue?.kind === "pending_payment") {
         return {
             tab: tab(true),
-            text: "Your bank asked to approve a top-up",
+            text: "Bank approval needed",
             action: {
                 kind: "link",
-                label: "Complete payment",
+                label: "Approve",
                 href: issue.invoiceUrl,
             },
         };
@@ -44,16 +44,9 @@ export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
     if (issue?.kind === "failed" && !autoTopUp.enabled) {
         return {
             tab: tab(true),
-            text: `Card declined ${formatDay(issue.occurredAt)}`,
+            text: "Card declined",
             action: { kind: "portal", label: "Update card" },
         };
     }
     return { tab: tab(false), text: null, action: null };
-}
-
-function formatDay(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-    });
 }

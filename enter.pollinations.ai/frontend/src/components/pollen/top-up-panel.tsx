@@ -292,7 +292,7 @@ const FooterText: FC<{
         );
     // Same line on or off: the tab and the ringed tile show the state.
     else
-        text = `Pick a pack to add automatically when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
+        text = `Pick a pack to add when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
     return <p className="text-theme-text-muted">{text}</p>;
 };
 

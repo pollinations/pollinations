@@ -30,10 +30,10 @@ const packTile = {
     chosen: "border-paid-soft bg-paid-pale ring-2 ring-paid-soft",
 } as const;
 
-/** Off turns a feature off, not an amount: neutral, not Pollen yellow. */
+/** Off turns a feature off, not an amount: a light red, not Pollen yellow. */
 const offTileClasses = {
-    idle: "border-theme-text-soft/40 bg-transparent text-theme-text-muted hover:bg-theme-bg-subtle focus-visible:ring-theme-text-soft",
-    chosen: "border-theme-text-soft/60 bg-theme-bg-subtle text-theme-text-strong ring-2 ring-theme-text-soft/60",
+    idle: "border-intent-danger-border bg-transparent text-intent-danger-text hover:bg-intent-danger-bg-light focus-visible:ring-intent-danger-border",
+    chosen: "border-intent-danger-border bg-intent-danger-bg-light text-intent-danger-text ring-2 ring-intent-danger-border",
 } as const;
 
 /**

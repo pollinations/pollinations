@@ -294,8 +294,22 @@ export const ImageParamsSchema = z
         )
             ? (data.quality as (typeof validQualities)[number])
             : "medium";
+        // The registry's first resolution is the model's default. Resolving it
+        // here lets handlers and billing see the tier that is generated.
+        const resolution =
+            data.resolution ??
+            ((IMAGE_SERVICES[data.model] as ModelDefinition).resolutions?.[0] as
+                | typeof data.resolution
+                | undefined);
 
-        return { ...data, quality, width, height, dimensionsExplicit };
+        return {
+            ...data,
+            quality,
+            width,
+            height,
+            dimensionsExplicit,
+            ...(resolution && { resolution }),
+        };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

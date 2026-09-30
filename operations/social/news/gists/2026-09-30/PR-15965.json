@@ -1,0 +1,36 @@
+{
+  "pr_number": 15965,
+  "title": "fix: correct BYOP device-flow guide",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15965",
+  "merged_at": "2026-09-30T14:41:16Z",
+  "labels": [
+    "BUG",
+    "DOCS"
+  ],
+  "pr_body_excerpt": "- Shows the absolute verification URLs returned by the device-code endpoint.\n- Directs clients to share `verification_uri_complete` without adding a host.\n- Condenses the device-flow use cases.\n\nChecks: `npx biome check --write BRING_YOUR_OWN_POLLEN.md`, `git diff --check`.\n\nAddresses #15665",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One URL, no assembly required",
+    "blurb": "The BYOP device-flow guide lets verification links be themselves. Clients share the complete URL returned by the device-code endpoint—no extra host required.",
+    "summary": "Corrected the Bring Your Own Pollen device-flow guide to show the absolute verification URLs returned by the device-code endpoint, direct clients to share `verification_uri_complete` without adding a host, and condense the use cases.",
+    "impact": "Developers get a clearer device-flow example and can pass along `verification_uri_complete` as returned instead of constructing a verification link.",
+    "keywords": [
+      "BYOP",
+      "device flow",
+      "documentation",
+      "verification_uri_complete",
+      "authentication"
+    ],
+    "visual_concept": "Depict the BYOP device flow as a complete paper URL carried from a retro terminal to a waiting device. Polli, wearing tiny librarian glasses, helps the eager Monitor Robot pass it along intact; small code-plants and lime-green flowers make the documentation scene feel like a cozy garden.",
+    "image_prompt": "In a cozy pixel art garden workspace, a cute chunky CRT monitor robot hands over a paper link labeled `verification_uri_complete` while Polli, wearing tiny librarian glasses, helps guide it intact toward a waiting device among code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, and dark purple #110518 details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15965.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a cute chunky CRT monitor robot hands over a paper link labeled `verification_uri_complete` while Polli, wearing tiny librarian glasses, helps guide it intact toward a waiting device among code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, and dark purple #110518 details."
+  },
+  "generated_at": "2026-09-30T14:42:13.751751+00:00"
+}

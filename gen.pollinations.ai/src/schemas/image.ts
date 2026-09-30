@@ -143,7 +143,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     audio: z.coerce.boolean().optional().meta({
         description:
-            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. Other video models with audio output generate it unless set to `false`; `google/gemini-omni-1.1-flash`, `wan`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
+            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),
 });
 

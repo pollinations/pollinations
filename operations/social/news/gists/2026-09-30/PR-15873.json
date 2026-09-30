@@ -1,0 +1,40 @@
+{
+  "pr_number": 15873,
+  "title": "Add Aizen to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15873",
+  "merged_at": "2026-09-30T04:30:41Z",
+  "labels": [
+    "FEATURE",
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [Aizen](https://aizensuske718-ctrl.github.io/Aizen) to video_audio\n- App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. \n\nFixes #15819",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Aizen joins the garden",
+    "blurb": "Aizen is now listed in video_audio. Its Arabic, right-to-left interface handles Pollinations login in the browser—no backend required.",
+    "summary": "Added Aizen to the video_audio app listing, featuring an Arabic RTL interface and a client-side Pollinations.ai BYOP OAuth 2.1 PKCE login flow.",
+    "impact": "Visitors can discover an Arabic RTL app that completes BYOP login entirely in the browser, without a backend server.",
+    "keywords": [
+      "Aizen",
+      "community app",
+      "Arabic",
+      "RTL",
+      "BYOP",
+      "OAuth 2.1",
+      "PKCE"
+    ],
+    "visual_concept": "Depict Aizen as a friendly browser window with a right-to-left Arabic interface, rather than inventing a mascot or logo. Polli, wearing tiny reading glasses, helps guide a pixel key through a browser-only login path; flowers and code-plants surround the screen.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli guides a small pixel key toward an Aizen browser window showing a simple right-to-left Arabic interface, with no server in sight. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and stays small beside the screen and code-plants, against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15873.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli guides a small pixel key toward an Aizen browser window showing a simple right-to-left Arabic interface, with no server in sight. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and stays small beside the screen and code-plants, against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T04:31:44.187955+00:00",
+  "app_name": "Aizen",
+  "app_url": "https://aizensuske718-ctrl.github.io/Aizen"
+}

@@ -1,9 +1,8 @@
 /**
  * Anonymous community signals and a daily refreshed build-history archive.
  *
- * Most GitHub feeds are requested anonymously from each visitor's browser.
- * The small header signals use cached same-site endpoints so they remain
- * reliable without credentials. Failures surface as `failed`; the page shows
+ * GitHub feeds and the Discord widget are requested anonymously from each
+ * visitor's browser. Failures surface as `failed`; the page shows
  * what could not load, and live counts hide. The diary labels its archive
  * timestamp and explicitly identifies the bundled snapshot during an outage.
  */
@@ -15,6 +14,8 @@ const GITHUB = "https://api.github.com";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const DISCORD_URL =
     "https://discord.gg/pollinations-ai-885844321461485618";
+const DISCORD_WIDGET =
+    "https://discord.com/api/guilds/885844321461485618/widget.json";
 
 const loadGithub = cachePublic(async (path: string): Promise<unknown> => {
     const response = await fetch(`${GITHUB}${path}`, {
@@ -26,15 +27,12 @@ const loadGithub = cachePublic(async (path: string): Promise<unknown> => {
 
 /* ── Stars ──────────────────────────────────────────────────────────────── */
 
-const loadRepoStars = cachePublic(async () => {
-    const response = await fetch("/api/github-stars");
-    if (!response.ok) throw new Error(`github: ${response.status}`);
-    const repo = (await response.json()) as {
+async function loadRepoStars() {
+    const repo = (await loadGithub(`/repos/${REPO}`)) as {
         stargazers_count?: number;
     };
-    if (typeof repo.stargazers_count !== "number") return null;
-    return repo.stargazers_count;
-});
+    return repo.stargazers_count ?? null;
+}
 
 export function useRepoStars() {
     return useAsync(loadRepoStars, null);
@@ -44,11 +42,10 @@ export function useRepoStars() {
 
 /**
  * The widget exposes `presence_count` — members online right now — and not
- * total membership, which needs a bot token. The website worker proxies this
- * public value because Discord's widget response does not allow browser CORS.
+ * total membership, which needs a bot token.
  */
 export const loadDiscordPresence = cachePublic(async () => {
-    const response = await fetch("/api/discord-presence");
+    const response = await fetch(DISCORD_WIDGET);
     if (!response.ok) throw new Error(`discord: ${response.status}`);
     const widget = (await response.json()) as {
         presence_count?: number;

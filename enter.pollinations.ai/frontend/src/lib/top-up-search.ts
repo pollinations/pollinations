@@ -18,8 +18,19 @@ export function checkoutReturnSearch(search: Record<string, unknown>): {
         : {};
 }
 
+/** Back from Stripe's setup page that starts automatic top-up. */
+export function autoTopUpSetupSearch(search: Record<string, unknown>): {
+    auto_top_up_setup?: true;
+} {
+    return search.auto_top_up_setup === true ||
+        search.auto_top_up_setup === "true"
+        ? { auto_top_up_setup: true }
+        : {};
+}
+
 type TopUpSearch = {
     pack?: PollenPackKey;
+    auto_top_up_setup?: true;
     session_id?: string;
     redirect?: string;
     stripe_success?: boolean;
@@ -49,5 +60,6 @@ export function validateTopUpSearch(
             search.stripe_canceled === "true" ||
             undefined,
         ...checkoutReturnSearch(search),
+        ...autoTopUpSetupSearch(search),
     };
 }

@@ -28,6 +28,7 @@ import {
 import {
     getDefaultPaymentMethod,
     getOrCreateStripeCustomerId,
+    getStripeId,
     getUserStripeBillingRow,
     retrieveActiveCustomer,
 } from "./customer.ts";
@@ -124,6 +125,48 @@ export async function updateAutoTopUpSettings(
     }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
+}
+
+/** Metadata marking a setup-mode Checkout Session opened to start auto top-up. */
+export const AUTO_TOP_UP_SETUP_PURPOSE = "auto_top_up_setup";
+
+/**
+ * A buyer checked and saved a card on Stripe's setup page to start automatic
+ * top-up: make that card their default and turn it on with the chosen pack.
+ * Nothing is charged here; the next billed call below the threshold buys the
+ * pack, as for every automatic top-up.
+ */
+export async function enableAutoTopUpFromSetup(
+    env: CloudflareBindings,
+    stripe: Stripe,
+    session: Stripe.Checkout.Session,
+): Promise<void> {
+    const userId = session.metadata?.userId;
+    const packAmountUsd = Number(session.metadata?.packAmountUsd);
+    const customerId = getStripeId(session.customer);
+    const setupIntentId = getStripeId(session.setup_intent);
+    if (!userId || !customerId || !setupIntentId) return;
+
+    // Only the buyer's own customer: metadata alone is not trusted.
+    const user = await getUserStripeBillingRow(env.DB, userId);
+    if (user.stripeCustomerId !== customerId) return;
+
+    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+    const paymentMethodId = getStripeId(setupIntent.payment_method);
+    if (setupIntent.status !== "succeeded" || !paymentMethodId) return;
+
+    await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+    });
+    const result = await updateAutoTopUpSettings(env, userId, {
+        enabled: true,
+        packAmountUsd,
+    });
+    if (!result.ok)
+        console.warn("[auto-top-up] setup saved the card but not the setting", {
+            userId,
+            error: result.error,
+        });
 }
 
 export async function processAutoTopUpForUser(

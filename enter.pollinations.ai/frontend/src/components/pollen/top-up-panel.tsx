@@ -31,7 +31,12 @@ type TopUpPanelProps = {
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet (and billing) once a purchase is credited. */
     onCredited?: () => void;
+    /** Back from Stripe's setup page: show Automatic until it is on. */
+    setupReturn?: boolean;
 };
+
+const SETUP_POLL_MS = 1500;
+const SETUP_POLL_TRIES = 10;
 
 /**
  * Top-up in one place: buy a pack now (Once) or keep the paid balance
@@ -42,9 +47,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     initialBilling,
     returnToTopUp,
     onCredited,
+    setupReturn = false,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
-    const [tab, setTab] = useState<Tab>("once");
+    const [tab, setTab] = useState<Tab>(setupReturn ? "automatic" : "once");
+    const [confirmingSetup, setConfirmingSetup] = useState(
+        setupReturn && !initialBilling?.autoTopUp.enabled,
+    );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [checkoutPack, setCheckoutPack] = useState<PollenPack>(
         POLLEN_PACKS[0] as PollenPack,
@@ -62,6 +71,31 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (publishableKey) preloadStripe(publishableKey);
     }, [publishableKey]);
 
+    // The webhook turns automatic top-up on shortly after Stripe's setup page;
+    // reload billing until it has.
+    useEffect(() => {
+        if (!confirmingSetup) return;
+        let canceled = false;
+        let tries = 0;
+        const timer = setInterval(async () => {
+            tries += 1;
+            const next = await apiClient.stripe.billing
+                .$get()
+                .then((r) => (r.ok ? r.json() : null))
+                .catch(() => null);
+            if (canceled) return;
+            if (next) setBilling(next);
+            if (next?.autoTopUp.enabled || tries >= SETUP_POLL_TRIES) {
+                clearInterval(timer);
+                setConfirmingSetup(false);
+            }
+        }, SETUP_POLL_MS);
+        return () => {
+            canceled = true;
+            clearInterval(timer);
+        };
+    }, [confirmingSetup]);
+
     const checkoutParams = new URLSearchParams();
     if (returnToTopUp) {
         checkoutParams.set("return", "top-up");
@@ -72,6 +106,10 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const autoReady = Boolean(
         billing?.paymentMethod.hasDefault && billing.billingDetailsComplete,
     );
+    // No card yet: a pack opens Stripe's setup page (card check, no charge).
+    const needsCard = Boolean(billing && !billing.paymentMethod.hasDefault);
+    const setupHref = (pack: PollenPack) =>
+        `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
     function openPortal(): void {
         void openBillingPortal(returnToTopUp).then((message) =>
@@ -79,7 +117,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         );
     }
 
-    /** Choosing a tile on Automatic saves straight away; nothing is charged. */
+    /** Choosing a tile on Automatic saves straight away. */
     async function saveAutoTopUp(
         enabled: boolean,
         packAmountUsd: number,
@@ -152,11 +190,16 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 : undefined
                         }
                         isDisabled={(pack) =>
-                            !isAutoTopUpPack(pack) || !autoReady || saving
+                            !isAutoTopUpPack(pack) ||
+                            (!autoReady && !needsCard) ||
+                            saving ||
+                            confirmingSetup
                         }
-                        onSelect={(pack) =>
-                            void saveAutoTopUp(true, pack.amountUsd)
-                        }
+                        onSelect={(pack) => {
+                            if (needsCard)
+                                window.location.href = setupHref(pack);
+                            else void saveAutoTopUp(true, pack.amountUsd);
+                        }}
                         offTile={{
                             selected: !billing?.autoTopUp.enabled,
                             disabled: !autoReady || saving,
@@ -178,6 +221,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 <div className="min-h-5 text-[13px] leading-5">
                     <FooterText
                         tab={tab}
+                        confirmingSetup={confirmingSetup}
                         billing={billing}
                         status={status}
                         error={error}
@@ -233,12 +277,15 @@ const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
 /** An error or a problem wins; otherwise the tab's own sentence. */
 const FooterText: FC<{
     tab: Tab;
+    confirmingSetup: boolean;
     billing: BillingOverview | null;
     status: AutoTopUpStatus | null;
     error: string | null;
     onPortal: () => void;
-}> = ({ tab, billing, status, error, onPortal }) => {
+}> = ({ tab, confirmingSetup, billing, status, error, onPortal }) => {
     if (error) return <Warning>{error}</Warning>;
+    if (tab === "automatic" && confirmingSetup)
+        return <p className="text-theme-text-muted">Saving your card…</p>;
     if (status?.text) {
         const { action } = status;
         return (
@@ -268,8 +315,6 @@ const FooterText: FC<{
             </Warning>
         );
     }
-    // The card's one line says what happens: what a price includes (Once),
-    // and when automatic top-up buys (Automatic).
     // The card's one line says what the packs do; what a price includes is
     // a footnote under the card.
     if (tab === "once")
@@ -278,9 +323,11 @@ const FooterText: FC<{
         );
     let text: ReactNode = null;
     if (!billing) text = "Couldn’t load automatic top-up.";
-    else if (!billing.paymentMethod.hasDefault)
-        text = "Needs a saved card: tick “Save” when you pay";
-    else if (!billing.billingDetailsComplete)
+    // Without a card, Stripe's setup page asks for the address too.
+    else if (
+        billing.paymentMethod.hasDefault &&
+        !billing.billingDetailsComplete
+    )
         text = (
             <>
                 Needs your billing address ·{" "}

@@ -7,7 +7,9 @@
  * directory entry point.
  */
 export {
+    AUTO_TOP_UP_SETUP_PURPOSE,
     creditAutoTopUpInvoice,
+    enableAutoTopUpFromSetup,
     markAutoTopUpInvoiceFailed,
     processAutoTopUpForUser,
     updateAutoTopUpSettings,

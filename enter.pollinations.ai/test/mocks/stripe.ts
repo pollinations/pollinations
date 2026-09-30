@@ -176,6 +176,12 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     taxIds: Record<string, unknown>[];
+    setupIntents: {
+        id: string;
+        object: "setup_intent";
+        status: string;
+        payment_method: string | null;
+    }[];
     fraudCharges: Record<string, unknown>[];
     // Charges retrievable by id but outside the listed scan window.
     archivedCharges: Record<string, unknown>[];
@@ -643,6 +649,14 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 data,
             });
         })
+        .get("/v1/setup_intents/:id", (c) => {
+            recordRequest(c, state);
+            const setupIntent = state.setupIntents.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!setupIntent) return stripeNotFound(c);
+            return c.json(setupIntent);
+        })
         .get("/v1/payment_intents/:id", (c) => {
             recordRequest(c, state);
             const paymentIntent = state.paymentIntents.find(
@@ -713,6 +727,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         taxIds: [],
+        setupIntents: [],
         fraudCharges: [],
         archivedCharges: [],
         fraudDisputes: [],

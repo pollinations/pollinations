@@ -20,18 +20,26 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
-import { checkoutReturnSearch } from "../lib/top-up-search.ts";
+import {
+    autoTopUpSetupSearch,
+    checkoutReturnSearch,
+} from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
         search: Record<string, unknown>,
-    ): { pack?: PollenPackKey; session_id?: string } => ({
+    ): {
+        pack?: PollenPackKey;
+        session_id?: string;
+        auto_top_up_setup?: true;
+    } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack
                 : undefined,
         ...checkoutReturnSearch(search),
+        ...autoTopUpSetupSearch(search),
     }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -52,7 +60,11 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const { pack, session_id: checkoutSessionId } = Route.useSearch();
+    const {
+        pack,
+        session_id: checkoutSessionId,
+        auto_top_up_setup: setupReturn,
+    } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
@@ -107,6 +119,7 @@ function PollenPage() {
                         {(billingState) => (
                             <BuyPollenPanel
                                 initialBilling={billingState}
+                                setupReturn={setupReturn}
                                 onCredited={reloadWallet}
                             />
                         )}

@@ -8,7 +8,9 @@ import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
+    AUTO_TOP_UP_SETUP_PURPOSE,
     creditAutoTopUpInvoice,
+    enableAutoTopUpFromSetup,
     markAutoTopUpInvoiceFailed,
     saveCheckoutCardAsDefault,
 } from "../utils/stripe-billing/index.ts";
@@ -667,6 +669,13 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "checkout.session.completed": {
                 const session = event.data.object as Stripe.Checkout.Session;
+
+                // A card saved to start automatic top-up: no payment here.
+                if (session.mode === "setup") {
+                    if (session.metadata?.purpose === AUTO_TOP_UP_SETUP_PURPOSE)
+                        await enableAutoTopUpFromSetup(c.env, stripe, session);
+                    break;
+                }
 
                 if (session.payment_status === "paid") {
                     const result = await handleCheckoutSessionCompleted(

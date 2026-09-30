@@ -1,5 +1,9 @@
 import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
+    AUTO_TOP_UP_PACK_MAX_USD,
+    AUTO_TOP_UP_PACK_MIN_USD,
+} from "@shared/billing/auto-top-up.ts";
+import {
     calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
@@ -22,6 +26,7 @@ import {
 import { createStripeClient } from "../utils/stripe.ts";
 import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
+    AUTO_TOP_UP_SETUP_PURPOSE,
     createBillingPortalSession,
     getBillingOverview,
     getOrCreateStripeCustomerId,
@@ -170,6 +175,80 @@ export const stripeRoutes = new Hono<Env>()
     })
 
     /**
+     * GET /api/stripe/auto-top-up/setup/:packKey
+     * First automatic top-up for a buyer with no saved card: Stripe's page in
+     * setup mode checks and saves the card without charging. The webhook then
+     * makes it the default card and turns automatic top-up on with this pack.
+     */
+    .get("/auto-top-up/setup/:packKey", async (c) => {
+        const pack = getPollenPackByKey(c.req.param("packKey"));
+        if (
+            !pack ||
+            pack.amountUsd < AUTO_TOP_UP_PACK_MIN_USD ||
+            pack.amountUsd > AUTO_TOP_UP_PACK_MAX_USD
+        ) {
+            return c.json({ error: "Invalid auto top-up pack" }, 400);
+        }
+        const user = await requireSessionUser(c);
+        const stripe = createStripeClient(c.env);
+        const buyer = await getUserStripeBillingRow(c.env.DB, user.id);
+        if (isUserBanned(buyer)) {
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+        }
+        const pmcId = c.env.STRIPE_AUTO_TOP_UP_PMC_ID;
+        if (!pmcId) {
+            console.error(
+                `Missing required env var STRIPE_AUTO_TOP_UP_PMC_ID on ${c.env.ENVIRONMENT}`,
+            );
+            return c.json({ error: "Checkout configuration error" }, 500);
+        }
+
+        const returnUrl = walletReturnUrl(c);
+        const cancelUrl = returnUrl.toString();
+        returnUrl.searchParams.set("auto_top_up_setup", "true");
+        const metadata = {
+            userId: user.id,
+            purpose: AUTO_TOP_UP_SETUP_PURPOSE,
+            packAmountUsd: String(pack.amountUsd),
+        };
+        try {
+            const stripeCustomerId = await getOrCreateStripeCustomerId(
+                c.env,
+                user.id,
+            );
+            const session = await stripe.checkout.sessions.create({
+                mode: "setup",
+                currency: "usd",
+                payment_method_configuration: pmcId,
+                customer: stripeCustomerId,
+                // Later charges are taxed, so the address is required here.
+                billing_address_collection: "required",
+                customer_update: { address: "auto", name: "auto" },
+                setup_intent_data: { metadata },
+                metadata,
+                success_url: returnUrl.toString(),
+                cancel_url: cancelUrl,
+            });
+            if (
+                isUserBanned(await getUserStripeBillingRow(c.env.DB, user.id))
+            ) {
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    stripeCustomerId,
+                );
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
+            if (!session.url) {
+                return c.json({ error: "Failed to create setup session" }, 500);
+            }
+            return c.redirect(session.url);
+        } catch (error) {
+            console.error("Stripe auto top-up setup error:", error);
+            return c.json({ error: "Failed to create setup session" }, 500);
+        }
+    })
+
+    /**
      * PATCH /api/stripe/auto-top-up
      * Save current user's auto top-up preferences. Charging is triggered by
      * the internal usage flow after future billing deductions, not on enable.
@@ -289,16 +368,7 @@ async function createPackCheckoutSession(
         return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
     }
 
-    // Return the buyer to the standalone top-up page when checkout started
-    // there, else to the Pollen dashboard. Both paths are fixed here, so the
-    // return URL is always on this origin.
-    const baseUrl = c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-    const pollenUrl = new URL(
-        c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
-        baseUrl,
-    );
-    const appRedirect = c.req.query("redirect");
-    if (appRedirect) pollenUrl.searchParams.set("redirect", appRedirect);
+    const pollenUrl = walletReturnUrl(c);
     pollenUrl.searchParams.set("pack", pack.packKey);
     const pollenReturnUrl = pollenUrl.toString();
     const successUrl = `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`;
@@ -451,6 +521,21 @@ async function createPackCheckoutSession(
         // Return generic message to client - don't expose internal error details
         return c.json({ error: "Failed to create checkout session" }, 500);
     }
+}
+
+/**
+ * Where Stripe sends the buyer back: the standalone top-up page when they
+ * started there, else the Pollen dashboard. Both paths are fixed here, so the
+ * return URL is always on this origin.
+ */
+function walletReturnUrl(c: Context<Env>): URL {
+    const url = new URL(
+        c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
+        c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production,
+    );
+    const appRedirect = c.req.query("redirect");
+    if (appRedirect) url.searchParams.set("redirect", appRedirect);
+    return url;
 }
 
 /**

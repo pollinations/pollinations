@@ -264,6 +264,8 @@ type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;
     /** More footnote lines under the trust line (the standalone page). */
     footnotes?: ReactNode;
+    /** Back from Stripe's setup page for automatic top-up. */
+    setupReturn?: boolean;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet and billing once a purchase is credited. */
@@ -273,12 +275,14 @@ type BuyPollenPanelProps = {
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBilling,
     footnotes,
+    setupReturn,
     returnToTopUp,
     onCredited,
 }) => (
     <>
         <TopUpPanel
             initialBilling={initialBilling}
+            setupReturn={setupReturn}
             returnToTopUp={returnToTopUp}
             onCredited={onCredited}
         />

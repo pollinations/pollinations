@@ -33,7 +33,7 @@ import {
 } from "./pack-checkout-dialog.tsx";
 import { PollenPackButtons } from "./pollen-pack-controls.tsx";
 
-type Tab = "once" | "automatic";
+type Tab = "buy" | "refill";
 
 const isAutoTopUpPack = (pack: PollenPack) =>
     pack.amountUsd >= AUTO_TOP_UP_PACK_MIN_USD &&
@@ -64,7 +64,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     setupReturn = false,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
-    const [tab, setTab] = useState<Tab>(setupReturn ? "automatic" : "once");
+    const [tab, setTab] = useState<Tab>(setupReturn ? "refill" : "buy");
     const [confirmingSetup, setConfirmingSetup] = useState(
         setupReturn && !initialBilling?.autoTopUp.enabled,
     );
@@ -158,20 +158,20 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
                     <TabButton
-                        active={tab === "once"}
-                        onClick={() => setTab("once")}
+                        active={tab === "buy"}
+                        onClick={() => setTab("buy")}
                         size="lg"
                     >
                         Buy now
                     </TabButton>
                     <TabButton
-                        active={tab === "automatic"}
-                        onClick={() => setTab("automatic")}
+                        active={tab === "refill"}
+                        onClick={() => setTab("refill")}
                         size="lg"
                     >
                         <span className="inline-flex items-center gap-2">
                             Auto-refill
-                            {status && <AutomaticValue tab={status.tab} />}
+                            {status && <RefillValue tab={status.tab} />}
                         </span>
                     </TabButton>
                     {/* Right after the tabs; wraps under them if no room. */}
@@ -189,7 +189,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 {/* What the tab does, read before picking: brighter than the
                     footnotes, with its own icon. */}
                 <p className="flex min-h-5 items-start gap-1.5 px-1 text-[13px] leading-5 font-medium text-theme-text-soft">
-                    {tab === "once" ? (
+                    {tab === "buy" ? (
                         <PlusIcon
                             aria-hidden="true"
                             className="mt-[3px] h-3.5 w-3.5 shrink-0"
@@ -201,13 +201,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         />
                     )}
                     <span>
-                        {tab === "once"
+                        {tab === "buy"
                             ? "Pick a pack to buy it now."
-                            : automaticText(billing)}
+                            : refillText(billing)}
                     </span>
                 </p>
 
-                {tab === "once" ? (
+                {tab === "buy" ? (
                     <PollenPackButtons
                         selectedAmount={
                             checkoutOpen ? checkoutPack.amountUsd : undefined
@@ -275,7 +275,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
  * On: a green dot and the refill pack as paid Pollen (the wallet's paid icon
  * and number). Off: "Off". Plus ⚠ when it needs you.
  */
-const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
+const RefillValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
     <span className="inline-flex items-center gap-1 text-sm">
         {tab.on ? (
             <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
@@ -324,13 +324,13 @@ const TabNotice: FC<{
                 Couldn’t save, try again
             </span>
         );
-    if (tab === "automatic" && confirmingSetup)
+    if (tab === "refill" && confirmingSetup)
         return <span className="text-theme-text-muted">Saving your card…</span>;
     // A declined or pending top-up shows on both tabs; what auto-refill
     // still lacks only on its own.
     const needsBilling =
         Boolean(status?.text) ||
-        (tab === "automatic" &&
+        (tab === "refill" &&
             (!billing ||
                 (hasDefaultPaymentMethod(billing) &&
                     !billing.billingDetailsComplete)));
@@ -343,7 +343,7 @@ const TabNotice: FC<{
 };
 
 /** "paid balance": Quest Pollen does not trigger it. */
-function automaticText(billing: BillingOverview | null): string {
+function refillText(billing: BillingOverview | null): string {
     const pack = billing?.autoTopUp.enabled
         ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
         : "a pack";

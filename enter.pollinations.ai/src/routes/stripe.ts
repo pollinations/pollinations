@@ -60,7 +60,7 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * POST /api/stripe/checkout/:packKey/session
      * The same Checkout Session for the wallet's pay modal: our own screen,
-     * with Stripe.js paying through a saved card or an Express button.
+     * with Stripe.js paying through the buyer's saved card.
      */
     .post("/checkout/:packKey/session", async (c) => {
         const session = await createPackCheckoutSession(c, "custom");
@@ -323,7 +323,7 @@ export const stripeRoutes = new Hono<Env>()
 
 /**
  * How the session is shown: Stripe's hosted page, or our pay modal
- * (`custom`: saved card or Express buttons, rendered by Stripe.js).
+ * (`custom`: the saved card, rendered by Stripe.js).
  */
 type CheckoutUiMode = "hosted" | "custom";
 
@@ -541,11 +541,6 @@ function walletReturnUrl(c: Context<Env>): URL {
     return url;
 }
 
-/**
- * Checkout's own state for a session not credited yet. A completed session
- * whose payment is still settling (bank debits, some local methods) is
- * "processing" until Stripe reports success or failure.
- */
 async function requireSessionUser(c: Context<Env>) {
     const auth = createAuth(c.env, c.executionCtx);
     const session = await auth.api.getSession({

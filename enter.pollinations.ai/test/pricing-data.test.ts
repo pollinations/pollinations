@@ -1195,9 +1195,14 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
-// input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
+// Jev, Kev and Span are the OpenRouter decision routes free-tier accounts may
+// select (Quest Pollen reaches them at zero marginal cost), so they are
+// visible to both paid and free keys and cannot take part in this comparison.
+const OPENROUTER_FREE_TIER_MODELS = new Set([
+    "typesafe/jev-1.13",
+    "jaredpalmer/kev-4b",
+    "respan/span-01-lite",
+]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {

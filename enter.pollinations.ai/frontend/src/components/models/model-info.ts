@@ -36,6 +36,8 @@ const BRAND_LOGOS: Record<string, string> = {
     Qwen: "qwen",
     Recraft: "recraft",
     Sesame: "sesame",
+    Kev: "kev",
+    Span: "span",
     "Stability AI": "stability",
     StepFun: "stepfun",
     Tencent: "tencent",

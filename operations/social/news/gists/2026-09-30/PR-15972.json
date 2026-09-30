@@ -1,0 +1,38 @@
+{
+  "pr_number": 15972,
+  "title": "fix(website): keep scroll and plain-text search params",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15972",
+  "merged_at": "2026-09-30T15:11:29Z",
+  "labels": [
+    "BUG",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Follow-up to #15958, part of landing #14472 in steps.\n\n- Fix: typing in the Apps search or changing a filter no longer jumps the page to the top (`resetScroll: false`, as v2 already does)\n- Fix: search values stay plain text. `?query=123` stays `123`, and typing `true` no longer writes `%22true%22`\n- Route search validators become typed casts; the `text()` helper is gone\n\nVerified against the pre-router build: Apps search keeps scrollY 600 (was reset to 0), and all 10 behaviour checks match (navigation, search replace, deep links, `?model=` preselect, unknown route, footer, api_key hash).\n\nThe same router setting lands on `feat/website-v2`, where Play keeps its inputs in the URL.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Search stays put",
+    "blurb": "The Apps page stops jumping to the top when you search or change a filter. Search terms also stay plain text in the URL, with no surprise quotation marks.",
+    "summary": "Apps search and filter navigation now use `resetScroll: false`, while typed route casts keep values such as `?query=123` and `true` as plain text instead of adding encoded quotes.",
+    "impact": "Searching or filtering Apps preserves your scroll position, and URL search values remain readable for navigation and deep links.",
+    "keywords": [
+      "website",
+      "Apps",
+      "search",
+      "filters",
+      "routing",
+      "scroll",
+      "URL parameters"
+    ],
+    "visual_concept": "Depict a cozy Apps search screen held at the same scroll position by a small anchor, with a URL ribbon showing unquoted 123 and true. Polli, wearing tiny reading glasses, checks the search field beside a code-plant; the visual joke is that the page finally stays put.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and checks an Apps search screen anchored halfway down a page, while a small URL ribbon reads '123' and 'true' without quotation marks and code-plants grow nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, mint, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15972.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and checks an Apps search screen anchored halfway down a page, while a small URL ribbon reads '123' and 'true' without quotation marks and code-plants grow nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, mint, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-09-30T15:12:33.925190+00:00"
+}

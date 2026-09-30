@@ -1,0 +1,36 @@
+{
+  "pr_number": 15887,
+  "title": "fix: default harnesses to GPT-6 Sol",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15887",
+  "merged_at": "2026-09-30T06:38:32Z",
+  "labels": [
+    "FEATURE",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Switch all nine Polli-managed model defaults to `openai/gpt-6-sol`, including OpenClaw. Keep explicit `--model` choices unchanged.\n- Update the harness guide and CLI docs; Bloom stays key-only because Polli does not manage its model selection.\n- Bump Polli to 0.1.21. Existing local configs are not automatically migrated.\n- Verified live catalog/tool support, 265 CLI tests, build and formatting. No credentials changed or paid generation requests made.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nine terminals, one Sol",
+    "blurb": "Polli now points nine coding harnesses at GPT-6 Sol by default, OpenClaw included. Your explicit model choices still get the last word.",
+    "summary": "Polli CLI 0.1.21 sets `openai/gpt-6-sol` as the default for all nine Polli-managed harnesses, including OpenClaw, while preserving explicit `--model` choices and Bloom's key-only setup.",
+    "impact": "Newly configured harnesses use GPT-6 Sol by default; existing local configs are not automatically migrated, and `--model` overrides still work.",
+    "keywords": [
+      "Polli CLI",
+      "GPT-6 Sol",
+      "coding harnesses",
+      "OpenClaw",
+      "model defaults"
+    ],
+    "visual_concept": "Depict Polli connecting a cluster of nine small retro coding terminals to a warm, sun-shaped GPT-6 Sol icon, with one terminal labeled OpenClaw. A tiny garden of code-plants ties the harnesses together; her tool belt makes her look like she is setting them up.",
+    "image_prompt": "In a cozy pixel-art garden shed, nine small retro terminals, including one labeled 'OpenClaw,' glow beneath a warm sun-shaped 'GPT-6 Sol' icon while code-plants grow between them; lime green (#ecf874) fills the screens and accents a soft pastel-gradient background. Polli wears a tiny tool belt and connects a terminal: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a warm cream glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15887.jpg",
+    "prompt": "In a cozy pixel-art garden shed, nine small retro terminals, including one labeled 'OpenClaw,' glow beneath a warm sun-shaped 'GPT-6 Sol' icon while code-plants grow between them; lime green (#ecf874) fills the screens and accents a soft pastel-gradient background. Polli wears a tiny tool belt and connects a terminal: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a warm cream glow."
+  },
+  "generated_at": "2026-09-30T06:39:29.669989+00:00"
+}

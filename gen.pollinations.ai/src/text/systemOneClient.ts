@@ -12,6 +12,15 @@ const DOCS_URL = "https://docs.typesafe.ai/api";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
+/**
+ * The public model name decision errors are attributed to. Routes that resolve
+ * through the registry set `requestedModel`; direct calls may only carry the
+ * resolved `model`.
+ */
+function decisionModelName(options: TransformOptions): string {
+    return options.requestedModel ?? options.model ?? "the requested model";
+}
+
 type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
@@ -36,7 +45,10 @@ function nativeRequestError(detail: string): ServiceError {
     );
 }
 
-function parseNativeRequest(messages: ChatMessage[]): {
+function parseNativeRequest(
+    messages: ChatMessage[],
+    model: string,
+): {
     state: unknown;
     questions: Record<string, unknown>;
 } {
@@ -45,7 +57,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev-1.13 requires a user message with string content.",
+            `${model} requires a user message with string content.`,
         );
     }
     let payload: unknown;
@@ -53,7 +65,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev-1.13 could not parse the user message content as JSON.",
+            `${model} could not parse the user message content as JSON.`,
         );
     }
     if (
@@ -62,7 +74,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev-1.13 expects a JSON object with "state" and a "questions" map.',
+            `${model} expects a JSON object with "state" and a "questions" map.`,
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -110,15 +122,16 @@ export async function requestDecision(
     options: TransformOptions,
 ): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
     const { state, questions } = request;
+    const model = decisionModelName(options);
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev-1.13.",
+            `The decisions route is not configured for ${model}.`,
             500,
         );
     }
-    const model = options.modelConfig?.model;
+    const upstreamModel = options.modelConfig?.model;
     const requestUrl = new URL(endpoint);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -129,7 +142,7 @@ export async function requestDecision(
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ state, model, questions }),
+            body: JSON.stringify({ state, model: upstreamModel, questions }),
             signal: controller.signal,
         });
         await ensureUpstreamOk(response, requestUrl);
@@ -141,7 +154,7 @@ export async function requestDecision(
             typeof result?.usage?.output_tokens !== "number"
         ) {
             throw serviceError(
-                "Jev returned a response without valid answers or usage.",
+                `${model} returned a response without valid answers or usage.`,
                 502,
             );
         }
@@ -169,7 +182,7 @@ export async function callSystemOne(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     const { result, requestUrl } = await requestDecision(
-        parseNativeRequest(messages),
+        parseNativeRequest(messages, decisionModelName(options)),
         options,
     );
     const completion: ChatCompletion = {

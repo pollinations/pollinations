@@ -1500,6 +1500,41 @@ const TEXT_BASE_SERVICES = {
         contextLength: 64000,
         isSpecialized: true,
     },
+    "jaredpalmer/kev-4b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Jared Palmer",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Same reasoning as Jev: Quest Pollen must reach the decisions route,
+        // and $0.042/M in with free output bounds what a free-tier account
+        // can spend.
+        paidOnly: false,
+        cost: {
+            // OpenRouter list price (openrouter.ai/jaredpalmer/kev-4b, checked
+            // 2026-09-30) plus OpenRouter's 5.5% credit fee, as every
+            // OpenRouter route records.
+            promptTextTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Kev 4B",
+        description:
+            "Typed decisions with calibrated confidence instead of free " +
+            "text; post state and questions to /alpha/decisions, or send " +
+            "the same JSON in the last user message on " +
+            "/v1/chat/completions",
+        // Shares Jev's native request shape, so the decisions route and the
+        // chat adapter are the only surfaces that can carry it.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 8192,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

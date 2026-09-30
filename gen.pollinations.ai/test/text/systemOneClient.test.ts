@@ -70,12 +70,10 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it.each([
-        "typesafe/jev-1.13",
-        "typesafe/jev",
-        "jev",
-    ])("resolves %s to the versioned canonical model", (name) => {
-        expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+    it("resolves jaredpalmer/kev-4b to its own canonical model", () => {
+        expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
+            "jaredpalmer/kev-4b",
+        );
     });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
@@ -176,6 +174,55 @@ describe("System One adapter", () => {
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);
         expect(portkeyFetcher).not.toHaveBeenCalled();
+    });
+
+    it("routes jaredpalmer/kev-4b to the decisions endpoint with its upstream id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "jaredpalmer/kev-4b",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "kev-4b",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        const portkeyFetcher = vi.fn();
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "jaredpalmer/kev-4b",
+                modelConfig: {
+                    authKey: "test-key",
+                    directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+                    model: "jaredpalmer/kev-4b",
+                },
+            },
+            portkeyFetcher,
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+    });
+
+    it("names the requested model in decision errors", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                requestedModel: "jaredpalmer/kev-4b",
+            }),
+        ).rejects.toMatchObject({
+            status: 500,
+            message:
+                "The decisions route is not configured for jaredpalmer/kev-4b.",
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("wraps the finished answers in an SSE stream with terminal usage", async () => {
@@ -308,7 +355,9 @@ describe("System One adapter", () => {
     it("reports missing credentials as server misconfiguration", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], {}),
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                requestedModel: "typesafe/jev-1.13",
+            }),
         ).rejects.toMatchObject({
             status: 500,
             message:

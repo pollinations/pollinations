@@ -25,6 +25,13 @@ declare module "@tanstack/react-router" {
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
+// The Worker supplies metadata for crawlers. Hand ownership to the router
+// before mounting so client navigation cannot retain the initial page's tags.
+for (const tag of document.head.querySelectorAll("[data-route-meta]")) {
+    tag.remove();
+}
+
+// The old Apps and Play pages still sign in through AuthProvider.
 createRoot(rootElement).render(
     <AuthProvider>
         <RouterProvider router={router} />

@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
-import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -30,7 +29,6 @@ function PlayPage() {
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
-    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const allModels = useMemo(() => {
         const typeOrder: Record<string, number> = {
@@ -76,7 +74,9 @@ function PlayPage() {
             : "border-secondary-strong focus:ring-secondary-strong";
 
     return (
-        <PageContainer>
+        // The old site clipped horizontal overflow on <body>; the new frame
+        // doesn't, so edge tooltips would widen the page on phones.
+        <PageContainer className="overflow-x-clip">
             <PageCard isTranslating={isTranslating}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
                     <Title spacing="none">{pageCopy.createTitle}</Title>

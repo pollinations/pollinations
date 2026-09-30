@@ -101,6 +101,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         "gpt-6-sol",
+        "gpt-6.1-sol",
         "gpt-6-luna",
     ])("routes %s through Azure with direct OpenAI fallback", (model) => {
         const canonical = `openai/${model}`;

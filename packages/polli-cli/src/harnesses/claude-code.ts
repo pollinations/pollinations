@@ -25,7 +25,7 @@ const LABEL = "Claude Code";
 const PROVIDER_ID = "pollinations-polli-harness";
 const PROVIDER_NAME = "Pollinations";
 const PROFILE_ID = "pollinations-claude-code";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const MIN_CCR_VERSION = [3, 1, 1] as const;
 
 export const ccrVersionCompatible = (value: string) => {

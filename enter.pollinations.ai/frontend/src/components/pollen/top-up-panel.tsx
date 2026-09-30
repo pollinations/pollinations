@@ -95,6 +95,31 @@ const StableLabel: FC<{
     </span>
 );
 
+/**
+ * One of several contents in a fixed slot: all stacked in one grid cell, only
+ * `active` shown, so the widest sets the size and switching moves nothing.
+ * Hidden ones are `invisible`, which also takes their links out of tab order.
+ */
+const StableSlot: FC<{
+    active: string;
+    items: Record<string, ReactNode>;
+}> = ({ active, items }) => (
+    <span className="inline-grid justify-items-end">
+        {Object.entries(items).map(([key, node]) => (
+            <span
+                key={key}
+                aria-hidden={key === active ? undefined : true}
+                className={cn(
+                    "col-start-1 row-start-1 inline-flex items-center gap-1",
+                    key !== active && "invisible",
+                )}
+            >
+                {node}
+            </span>
+        ))}
+    </span>
+);
+
 const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
 
@@ -173,6 +198,14 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const packTooSmall = Boolean(
         !billing?.autoTopUp.enabled && selectedPack && !selectedRefillPack,
     );
+    // The one status the row shows under "Auto top-up".
+    const refillStatus = saveFailed
+        ? "failed"
+        : confirmingSetup
+          ? "saving"
+          : status?.text || (hasDefault && !autoReady) || !billing
+            ? "check"
+            : "pack";
     const setupHref = (pack: PollenPack) =>
         `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
@@ -272,57 +305,89 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         </span>
                     </Button>
                     {/* A settings row: the label, then the switch flush with
-                        the grid's right edge. The label keeps its widest
-                        text's width and ⚠ its space, so the switch never
-                        moves. */}
+                        the grid's right edge. The second line is the one
+                        status slot (pack, problem, saving), sized for its
+                        widest content, so the switch never moves. */}
                     <div className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-theme-text-strong">
-                        <WarningIcon
-                            aria-label={
-                                status?.tab.warning
-                                    ? "Needs attention"
-                                    : undefined
-                            }
-                            aria-hidden={status?.tab.warning ? undefined : true}
-                            className={cn(
-                                "h-4 w-4 text-intent-danger-text",
-                                !status?.tab.warning && "invisible",
-                            )}
-                        />
-                        {/* Two lines: what it is, then the pack it buys (on)
-                            or would buy (off). */}
                         <span className="flex flex-col items-end leading-tight">
                             <span>Auto top-up</span>
                             {/* It buys paid Pollen: the Paid card's icon and
                                 colour while on, greyed while off. Same weight
                                 and icon both ways, so nothing moves. */}
-                            <span
-                                className={cn(
-                                    "text-xs font-semibold tabular-nums transition-colors",
-                                    billing?.autoTopUp.enabled
-                                        ? "text-paid-deep"
-                                        : "text-theme-text-muted",
-                                )}
-                            >
-                                <StableLabel
-                                    prefix={
-                                        <span
-                                            className={cn(
-                                                "inline-flex",
-                                                !billing?.autoTopUp.enabled &&
-                                                    "opacity-60 grayscale",
-                                            )}
-                                        >
-                                            <WalletKindIcon kind="paid" />
-                                        </span>
-                                    }
-                                    text={refillLabel(
-                                        billing?.autoTopUp.enabled
-                                            ? billing.autoTopUp.packAmountUsd
-                                            : (selectedRefillPack?.amountUsd ??
-                                                  null),
-                                    )}
-                                    options={REFILL_LABELS}
-                                    align="end"
+                            <span className="text-xs font-semibold tabular-nums">
+                                <StableSlot
+                                    active={refillStatus}
+                                    items={{
+                                        check: (
+                                            <>
+                                                <WarningIcon
+                                                    aria-hidden="true"
+                                                    className="h-3.5 w-3.5 text-intent-danger-text"
+                                                />
+                                                <InlineLink
+                                                    as={Link}
+                                                    to="/pollen"
+                                                    hash="billing"
+                                                    external={false}
+                                                >
+                                                    Check billing
+                                                </InlineLink>
+                                            </>
+                                        ),
+                                        saving: (
+                                            <span className="text-theme-text-muted">
+                                                Saving your card…
+                                            </span>
+                                        ),
+                                        failed: (
+                                            <span
+                                                role="alert"
+                                                className="inline-flex items-center gap-1 text-intent-danger-text"
+                                            >
+                                                <WarningIcon
+                                                    aria-hidden="true"
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                Couldn’t save
+                                            </span>
+                                        ),
+                                        pack: (
+                                            <span
+                                                className={cn(
+                                                    "transition-colors",
+                                                    billing?.autoTopUp.enabled
+                                                        ? "text-paid-deep"
+                                                        : "text-theme-text-muted",
+                                                )}
+                                            >
+                                                <StableLabel
+                                                    prefix={
+                                                        <span
+                                                            className={cn(
+                                                                "inline-flex",
+                                                                !billing
+                                                                    ?.autoTopUp
+                                                                    .enabled &&
+                                                                    "opacity-60 grayscale",
+                                                            )}
+                                                        >
+                                                            <WalletKindIcon kind="paid" />
+                                                        </span>
+                                                    }
+                                                    text={refillLabel(
+                                                        billing?.autoTopUp
+                                                            .enabled
+                                                            ? billing.autoTopUp
+                                                                  .packAmountUsd
+                                                            : (selectedRefillPack?.amountUsd ??
+                                                                  null),
+                                                    )}
+                                                    options={REFILL_LABELS}
+                                                    align="end"
+                                                />
+                                            </span>
+                                        ),
+                                    }}
                                 />
                             </span>
                         </span>
@@ -342,26 +407,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         )}
                     </div>
                 </div>
-                {confirmingSetup && (
-                    <p className="text-sm text-theme-text-muted">
-                        Saving your card…
-                    </p>
-                )}
-                {saveFailed && (
-                    <p role="alert" className="text-sm text-intent-danger-text">
-                        Couldn’t save. Try again.
-                    </p>
-                )}
-                {(status?.text || (hasDefault && !autoReady) || !billing) && (
-                    <InlineLink
-                        as={Link}
-                        to="/pollen"
-                        hash="billing"
-                        external={false}
-                    >
-                        Check billing
-                    </InlineLink>
-                )}
             </section>
 
             <PackCheckoutDialog

@@ -1,6 +1,12 @@
 import { env, SELF } from "cloudflare:test";
+import { SESSION_TOKEN_HEADER } from "@shared/auth/session.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
+import { session } from "@shared/db/better-auth.ts";
+import {
+    createTestApiKey,
+    createTestUser,
+    test,
+} from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 
@@ -59,10 +65,14 @@ function stubE2b() {
                     { status: 400 },
                 );
             }
+            // One clock reading, so the lease is exactly `timeout` long.
+            const now = Date.now();
             const sandbox: Sandbox = {
                 sandboxID: `sbx${++created}`,
-                startedAt: inSeconds(0),
-                endAt: inSeconds(body.timeout ?? 300),
+                startedAt: new Date(now).toISOString(),
+                endAt: new Date(
+                    now + (body.timeout ?? 300) * 1000,
+                ).toISOString(),
                 cpuCount: 2,
                 memoryMB: 512,
                 state: "running",
@@ -338,4 +348,54 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     expect((await createSandbox(owner.key)).status).toBe(429);
     expect(e2b.sandboxes).toHaveLength(3);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+});
+
+test("the dashboard session enter forwards pays from the wallet", async () => {
+    const e2b = stubE2b();
+    const userId = await createTestUser({ tierBalance: 10 });
+    const login = async (expiresInSeconds: number) => {
+        const token = crypto.randomUUID();
+        await drizzle(env.DB)
+            .insert(session)
+            .values({
+                id: crypto.randomUUID(),
+                token,
+                userId,
+                expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        return token;
+    };
+    const asSession = (token: string, path: string, init?: RequestInit) =>
+        SELF.fetch(`https://gen.pollinations.ai/alpha/e2b${path}`, {
+            ...init,
+            headers: {
+                [SESSION_TOKEN_HEADER]: token,
+                "content-type": "application/json",
+            },
+        });
+
+    const token = await login(60);
+    const created = await asSession(token, "/v2/sandboxes", {
+        method: "POST",
+        body: JSON.stringify({ templateID: "base" }),
+    });
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    expect(await questPollen(userId)).toBeCloseTo(10 - LEASE_300S, 8);
+    const listed = await asSession(token, "/v2/sandboxes");
+    expect(await listed.json()).toMatchObject([{ sandboxID }]);
+    const killed = await asSession(token, `/sandboxes/${sandboxID}`, {
+        method: "DELETE",
+    });
+    expect(killed.status).toBe(204);
+
+    // An unknown or expired session is no login.
+    expect((await asSession("not-a-session", "/v2/sandboxes")).status).toBe(
+        401,
+    );
+    const expired = await login(-60);
+    expect((await asSession(expired, "/v2/sandboxes")).status).toBe(401);
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
 });

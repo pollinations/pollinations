@@ -302,17 +302,18 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
         });
     }
     c.var.auth.requireUser();
+    // Without a key, the caller is the account owner's dashboard session.
     const apiKey = c.var.auth.apiKey;
-    if (!apiKey?.permissions?.account?.includes("machines")) {
+    if (apiKey && !apiKey.permissions?.account?.includes("machines")) {
         throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
+            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}`,
         });
     }
     await next();
 }
 
 export const e2bRoutes = new Hono<Env>()
-    .use("*", edgeRateLimit, auth(), requireSandboxAccess)
+    .use("*", edgeRateLimit, auth({ session: true }), requireSandboxAccess)
     // E2B's CLI still creates and connects through the deprecated v1 paths,
     // which take the same bodies as v2.
     .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {

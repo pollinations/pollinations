@@ -15,7 +15,11 @@ import {
     getUserStripeBillingRow,
     retrieveActiveCustomer,
 } from "./customer.ts";
-import type { AutoTopUpIssue, BillingOverview } from "./types.ts";
+import type {
+    AutoTopUpIssue,
+    BillingOverview,
+    SavedPaymentMethod,
+} from "./types.ts";
 
 export async function getBillingOverview(
     env: CloudflareBindings,
@@ -26,9 +30,13 @@ export async function getBillingOverview(
     const customer = user.stripeCustomerId
         ? await retrieveActiveCustomer(stripe, user.stripeCustomerId)
         : null;
-    const paymentMethod = customer
-        ? await getDefaultPaymentMethod(stripe, customer)
-        : null;
+    const [paymentMethod, savedMethods, taxIds] = customer
+        ? await Promise.all([
+              getDefaultPaymentMethod(stripe, customer),
+              stripe.customers.listPaymentMethods(customer.id, { limit: 20 }),
+              stripe.customers.listTaxIds(customer.id, { limit: 10 }),
+          ])
+        : [null, null, null];
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
@@ -54,10 +62,35 @@ export async function getBillingOverview(
                   last4: paymentMethod.card?.last4 ?? null,
               }
             : { hasDefault: false, brand: null, last4: null },
+        paymentMethods: (savedMethods?.data ?? [])
+            .map((method) => toSavedPaymentMethod(method, paymentMethod?.id))
+            .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),
         billingDetails: customer
-            ? getBillingDetailsSummary(customer, paymentMethod)
+            ? getBillingDetailsSummary(
+                  customer,
+                  paymentMethod,
+                  taxIds?.data ?? [],
+              )
             : null,
         billingDetailsComplete,
+        publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    };
+}
+
+function toSavedPaymentMethod(
+    method: Stripe.PaymentMethod,
+    defaultId: string | undefined,
+): SavedPaymentMethod {
+    return {
+        id: method.id,
+        type: method.type,
+        brand: method.card?.brand ?? null,
+        last4: method.card?.last4 ?? method.sepa_debit?.last4 ?? null,
+        expMonth: method.card?.exp_month ?? null,
+        expYear: method.card?.exp_year ?? null,
+        wallet: method.card?.wallet?.type ?? null,
+        email: method.paypal?.payer_email ?? method.link?.email ?? null,
+        isDefault: method.id === defaultId,
     };
 }
 

@@ -129,6 +129,6 @@ PR body excerpt:
 - Written for people who use the tools — skip internal details
 - **Pick the load-bearing specifics out of the PR body and put them in the message**: names (models, endpoints, packages, providers, features), numbers (versions, defaults, prices, limits, sizes, timeouts), and before/after values when behavior changes. Don't substitute them with category labels ("updated plans", "new model added", "API improvements"). If the PR is about changing a value or naming a thing, the message must include that value or name.
 - Plain language, no hype
-- Say what the change does and that it lands with the next release. Never claim it is already live or that users can use or see it now
+- Describe what the change does. Don't claim it is live or that users can use or see it now, and don't mention release timing
 
 Return ONLY the announcement text. No JSON, no markdown fences, no explanation.

@@ -17,7 +17,7 @@ Given a PR's title, description, labels, file changes, and deploy status, produc
   "publish_tier": "daily",
   "importance": "major",
   "headline": "The hive has ears",
-  "blurb": "Whisper Large V3 is on its way to the API. With the next release, your spoken buzzing turns into perfectly transcribed text.",
+  "blurb": "Whisper Large V3 joins the API, turning your spoken buzzing into perfectly transcribed text.",
   "summary": "One sentence explaining what changed and why it matters.",
   "impact": "One sentence explaining what users/devs will notice.",
   "keywords": ["billing", "api", "models"],
@@ -28,7 +28,7 @@ Given a PR's title, description, labels, file changes, and deploy status, produc
 
 ## Deploy Status
 
-The PR has just merged to `main`. Users get it with the next production release, so it is not live yet. Describe what the change does and that it arrives with the next release. Never claim it is already live or that users can see or use it now ("now shows", "is live", "you can now").
+The PR has just merged to `main` and reaches users with the next production release, so it is not live yet. Describe what the change does ("Enter's rail gets a bolder lotus") without claiming it is live or visible now ("now shows", "is live", "you can now"). Don't mention release timing either; every post is a merge, so it would repeat in all of them.
 
 ## File Path Classification
 
@@ -94,7 +94,7 @@ Examples: "The hive has ears", "Rectangles are free", "Welcome, Polli!", "Fresh 
 
 ### `blurb`
 Whimsical 1-2 sentence description for the website diary. Fun and approachable, not corporate.
-Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory. It arrives with the next release; don't say it is already live.
+Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory.
 
 ### `summary`
 One clear sentence. Focus on WHAT changed and WHY. Written for a technical audience who follows the project.
@@ -112,7 +112,7 @@ Examples — vague vs. specific:
 - ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for publishable keys"
 
 ### `impact`
-One sentence about the practical effect once it ships with the next release. "With the next release, users will see...", "This means...", "Previously X; after the next release, Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
+One sentence about the practical effect. "Users get...", "This means...", "Previously X; with this change, Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.

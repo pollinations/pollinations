@@ -16,6 +16,7 @@ polli sandbox kill <id>
 - To keep it running without ssh, pay for the time up front with `polli sandbox create --timeout <seconds>` or `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time.
 - The first `ssh` installs `sshd`, `rsync` and `websocat` in the sandbox (Debian-based templates) and allows only polli's key, `~/.pollinations/ssh/id_ed25519`.
 - `polli sandbox create <template>` starts another E2B template, for example `claude`.
+- Every other `polli sandbox` command, such as `exec <id> <cmd>`, `logs <id>`, `pause <id>` or `resume <id>`, runs [E2B's CLI](https://e2b.dev/docs/cli) with your key.
 - Needs Node.js 22 or newer.
 - [My Models](https://enter.pollinations.ai/my-models) in the dashboard also lists, creates and kills sandboxes.
 

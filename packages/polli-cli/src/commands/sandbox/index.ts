@@ -1,19 +1,21 @@
+import { spawnSync } from "node:child_process";
 import { Command, InvalidArgumentError } from "commander";
 import { requireKey } from "../../lib/api.js";
-import {
-    fail,
-    printResult,
-    printSuccess,
-    printTable,
-} from "../../lib/output.js";
+import { BASE_URL, setKeyOverride } from "../../lib/config.js";
+import { fail, printResult, printSuccess } from "../../lib/output.js";
 import {
     createSandbox,
-    killSandbox,
+    E2B_PATH,
     LEASE_SECONDS,
-    listSandboxes,
     setSandboxTimeout,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
+
+// E2B's own CLI runs every command polli doesn't add. Pinned, so it calls
+// only the endpoints gen forwards.
+const E2B_CLI = "@e2b/cli@2.20.0";
+// E2B commands that can print JSON, for polli's --json.
+const JSON_COMMANDS = ["list", "info", "logs", "metrics"];
 
 // Whole seconds, as in `e2b sandbox create --timeout`.
 function parseSeconds(value: string): number {
@@ -62,27 +64,6 @@ export const sandboxCommand = new Command("sandbox")
             ),
     )
     .addCommand(
-        new Command("list")
-            .description("List your sandboxes")
-            .action(async () => {
-                requireKey();
-                try {
-                    const sandboxes = await listSandboxes();
-                    printTable(
-                        sandboxes.map((s) => ({
-                            id: s.sandboxID,
-                            state: s.state,
-                            template: s.alias ?? s.templateID,
-                            size: `${s.cpuCount} vCPU, ${s.memoryMB} MB`,
-                            paid_until: new Date(s.endAt).toLocaleString(),
-                        })),
-                    );
-                } catch (err) {
-                    fail("Failed to list sandboxes", err);
-                }
-            }),
-    )
-    .addCommand(
         new Command("timeout")
             .description(
                 "Keep a sandbox running until <seconds> from now, paid in advance",
@@ -98,20 +79,6 @@ export const sandboxCommand = new Command("sandbox")
                     );
                 } catch (err) {
                     fail(`Failed to set the timeout of sandbox ${id}`, err);
-                }
-            }),
-    )
-    .addCommand(
-        new Command("kill")
-            .description("Delete a sandbox and its files")
-            .argument("<id>")
-            .action(async (id: string) => {
-                requireKey();
-                try {
-                    await killSandbox(id);
-                    printSuccess(`Sandbox ${id} killed.`);
-                } catch (err) {
-                    fail(`Failed to kill sandbox ${id}`, err);
                 }
             }),
     )
@@ -144,4 +111,33 @@ export const sandboxCommand = new Command("sandbox")
                 }
             }),
         { hidden: true },
-    );
+    )
+    .addHelpText(
+        "after",
+        `
+Any other command runs E2B's CLI (npx ${E2B_CLI}) with your key:
+  polli sandbox list | kill <id> | exec <id> <cmd> | logs <id>
+  polli sandbox pause <id> | resume <id> | info <id> | metrics <id>`,
+    )
+    .on("command:*", (operands: string[], unknown: string[]) => {
+        const { json, key } = sandboxCommand.optsWithGlobals();
+        if (key) setKeyOverride(key);
+        const args = [...operands, ...unknown];
+        if (json && JSON_COMMANDS.includes(args[0])) {
+            args.push("--format", "json");
+        }
+        const { status } = spawnSync(
+            "npx",
+            ["-y", E2B_CLI, "sandbox", ...args],
+            {
+                stdio: "inherit",
+                shell: process.platform === "win32",
+                env: {
+                    ...process.env,
+                    E2B_API_URL: `${BASE_URL}${E2B_PATH}`,
+                    E2B_API_KEY: requireKey(),
+                },
+            },
+        );
+        process.exit(status ?? 1);
+    });

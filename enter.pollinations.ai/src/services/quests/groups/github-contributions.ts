@@ -3,9 +3,11 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
+import { sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestDb,
     type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
@@ -43,16 +45,32 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
-// The issue form applies this label; responders can rename the title.
-const SURVEY_LABEL = "BEE-CENSUS";
+// Each survey issue form applies its label; responders can rename the title.
 // Issue forms can only mark fields required, so the minimum length of the
-// written answers is checked here. The wishlist heading is the pre-2026-09-29 form.
-const SURVEY_WRITTEN_ANSWERS = [
-    "What did you last try to build that Pollinations couldn't do?",
-    "What would make you pay this month?",
-    "🪄 Wishlist — features or models you'd like on Pollinations",
-];
-const SURVEY_MIN_WRITTEN_CHARS = 60;
+// written answers (matched by their "### <label>" headings) is checked here.
+type Survey = {
+    label: string;
+    writtenAnswers: string[];
+    minWrittenChars: number;
+};
+const BEE_CENSUS: Survey = {
+    label: "BEE-CENSUS",
+    // The wishlist heading is the pre-2026-09-29 form.
+    writtenAnswers: [
+        "What did you last try to build that Pollinations couldn't do?",
+        "What would make you pay this month?",
+        "🪄 Wishlist — features or models you'd like on Pollinations",
+    ],
+    minWrittenChars: 60,
+};
+const HONEY_CENSUS: Survey = {
+    label: "HONEY-CENSUS",
+    writtenAnswers: [
+        "What would make you spend twice as much with us?",
+        "What do you pay someone else for that you'd rather buy here?",
+    ],
+    minWrittenChars: 100,
+};
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -91,12 +109,26 @@ const solveGithubIssueQuest: QuestDefinition = {
 const beeCensusQuest: QuestDefinition = {
     id: "bee_census",
     title: "Take the Bee Census",
-    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${SURVEY_MIN_WRITTEN_CHARS} characters in total. One response per GitHub account.`,
+    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${BEE_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 3,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=bee-census.yml`,
+    // Paused on 2026-09-30 after 55 responses: off the board, while late
+    // answers through the form still pay. Delete this line to reopen it.
+    state: "completed",
+};
+
+const honeyCensusQuest: QuestDefinition = {
+    id: "honey_census",
+    title: "Take the Honey Census",
+    description: `For anyone who has bought Pollen: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml) about buying Pollen. Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 10,
+    balanceBucket: "tier",
+    url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -402,6 +434,7 @@ export async function listQuestCards(
         questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
         questToCard(beeCensusQuest),
+        questToCard(honeyCensusQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
@@ -465,32 +498,52 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
 async function answeredSurvey(
     token: string,
     user: QuestUser,
+    survey: Survey,
 ): Promise<boolean> {
     if (!user.githubUsername) return false;
     const data = await graphql<SearchData<SurveyIssueNode>>(
         token,
         SURVEY_QUERY,
         {
-            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${SURVEY_LABEL}`,
+            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${survey.label}`,
         },
     );
     return data.search.nodes.some(
         (issue) =>
             issue.author?.databaseId === user.githubId &&
-            writtenAnswerLength(issue.body) >= SURVEY_MIN_WRITTEN_CHARS,
+            writtenAnswerLength(issue.body, survey) >= survey.minWrittenChars,
     );
 }
 
-// Characters written under the survey's free-text headings ("### <label>").
-function writtenAnswerLength(body: string): number {
+// Visible characters written under the survey's free-text headings. Invisible
+// format characters (e.g. U+200E) and repeated whitespace don't count.
+function writtenAnswerLength(body: string, survey: Survey): number {
     let length = 0;
     for (const section of body.split(/^### /m).slice(1)) {
         const [heading, ...answer] = section.split("\n");
-        if (SURVEY_WRITTEN_ANSWERS.includes(heading.trim())) {
-            length += answer.join("\n").trim().length;
+        if (survey.writtenAnswers.includes(heading.trim())) {
+            length += answer
+                .join("\n")
+                .replace(/\p{Cf}/gu, "")
+                .replace(/\s+/g, " ")
+                .trim().length;
         }
     }
     return length;
+}
+
+// Anyone who has paid for Pollen: a Stripe checkout, a paid auto top-up, or a
+// Polar order from before Stripe.
+async function hasBoughtPollen(db: QuestDb, userId: string): Promise<boolean> {
+    const rows = await db.all(sql`
+        SELECT 1 FROM stripe_checkout_credits WHERE user_id = ${userId}
+        UNION ALL
+        SELECT 1 FROM stripe_auto_top_up_attempt
+        WHERE user_id = ${userId} AND status = 'paid'
+        UNION ALL
+        SELECT 1 FROM polar_checkout_credits WHERE user_id = ${userId}
+        LIMIT 1`);
+    return rows.length > 0;
 }
 
 export async function evaluateUser(
@@ -501,12 +554,16 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, reportedIssues, surveyed] = await Promise.all([
-        loadQuestIssues(token),
-        hasMergedPr(token, user),
-        reportedIssueProposals(token, user),
-        answeredSurvey(token, user),
-    ]);
+    const [issues, mergedPr, reportedIssues, beeCensus, honeyCensus] =
+        await Promise.all([
+            loadQuestIssues(token),
+            hasMergedPr(token, user),
+            reportedIssueProposals(token, user),
+            answeredSurvey(token, user, BEE_CENSUS),
+            hasBoughtPollen(ctx.db, user.id).then(
+                (bought) => bought && answeredSurvey(token, user, HONEY_CENSUS),
+            ),
+        ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
     // user's linked GitHub account, with a positive reward.
@@ -528,7 +585,10 @@ export async function evaluateUser(
             ...(mergedPr
                 ? [{ quest: firstMergedPrQuest, userId: user.id }]
                 : []),
-            ...(surveyed ? [{ quest: beeCensusQuest, userId: user.id }] : []),
+            ...(beeCensus ? [{ quest: beeCensusQuest, userId: user.id }] : []),
+            ...(honeyCensus
+                ? [{ quest: honeyCensusQuest, userId: user.id }]
+                : []),
         ],
     };
 }

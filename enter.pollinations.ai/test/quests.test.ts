@@ -2196,6 +2196,11 @@ test("Bee Census quest pays 3 Pollen once for the user's own labelled survey iss
             ],
             [],
         ),
+        // Invisible characters don't count towards the written minimum.
+        survey(9205, "[Bee Census] filler", user.githubId ?? 0, [
+            "\u200e\u200e ".repeat(40),
+            "\u200e\u200e ".repeat(40),
+        ]),
     );
     await checkQuestsForUser(env, user.id);
     expect(await beeCensusRewards()).toEqual([]);
@@ -2213,6 +2218,66 @@ test("Bee Census quest pays 3 Pollen once for the user's own labelled survey iss
         {
             idempotencyKey: `quest:bee_census:github:${user.githubId}`,
             pollenAmount: 3,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
+test("Honey Census quest pays 10 Pollen only once the survey author has bought Pollen", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    mocks.github.state.questIssues.push({
+        number: 9301,
+        state: "open" as const,
+        title: "[Honey Census] ",
+        labels: [{ name: "HONEY-CENSUS" }],
+        html_url: "https://github.com/pollinations/pollinations/issues/9301",
+        body: [
+            "### What made you buy Pollen the first time?\n\nI ran out of Quest Pollen",
+            "### What would make you spend twice as much with us?\n\nCheaper video models and a monthly invoice for my company.",
+            "### What do you pay someone else for that you'd rather buy here?\n\nElevenLabs for character voices, about $22 a month.",
+        ].join("\n\n"),
+        created_at: "2026-09-30T00:00:00Z",
+        updated_at: "2026-09-30T00:00:00Z",
+        closed_at: null,
+        user: {
+            login: user.githubUsername ?? "",
+            databaseId: user.githubId ?? 0,
+        },
+    });
+    const honeyCensusRewards = async () =>
+        (
+            await db
+                .select({
+                    idempotencyKey: schema.rewards.idempotencyKey,
+                    pollenAmount: schema.rewards.pollenAmount,
+                    balanceBucket: schema.rewards.balanceBucket,
+                })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).filter((reward) => reward.idempotencyKey.includes("honey_census"));
+
+    await checkQuestsForUser(env, user.id);
+    expect(await honeyCensusRewards()).toEqual([]);
+
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_test_honey_census",
+        eventId: "evt_test_honey_census",
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 5,
+    });
+    await checkQuestsForUser(env, user.id);
+
+    expect(await honeyCensusRewards()).toEqual([
+        {
+            idempotencyKey: `quest:honey_census:github:${user.githubId}`,
+            pollenAmount: 10,
             balanceBucket: "tier",
         },
     ]);

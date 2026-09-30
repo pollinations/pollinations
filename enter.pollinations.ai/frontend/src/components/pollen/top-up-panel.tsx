@@ -1,28 +1,23 @@
 import {
+    Button,
+    InfoTip,
     InlineLink,
-    PlusIcon,
-    RefreshIcon,
-    TabButton,
+    Switch,
+    Tooltip,
     WarningIcon,
 } from "@pollinations/ui";
-import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
-import {
-    formatPollenPackValue,
-    POLLEN_PACKS,
-    type PollenPack,
-} from "@shared/pollen-packs.ts";
+import { POLLEN_PACKS, type PollenPack } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import {
-    type AutoTopUpStatus,
     autoTopUpStatus,
     hasDefaultPaymentMethod,
 } from "./auto-top-up-status.ts";
@@ -32,8 +27,6 @@ import {
     preloadStripe,
 } from "./pack-checkout-dialog.tsx";
 import { PollenPackButtons } from "./pollen-pack-controls.tsx";
-
-type Tab = "buy" | "refill";
 
 const isAutoTopUpPack = (pack: PollenPack) =>
     pack.amountUsd >= AUTO_TOP_UP_PACK_MIN_USD &&
@@ -45,18 +38,13 @@ type TopUpPanelProps = {
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet (and billing) once a purchase is credited. */
     onCredited?: () => void;
-    /** Back from Stripe's setup page: show Auto-refill until it is on. */
+    /** Back from Stripe's setup page: wait for the webhook to enable it. */
     setupReturn?: boolean;
 };
 
 const SETUP_POLL_MS = 1500;
 const SETUP_POLL_TRIES = 10;
 
-/**
- * Top-up in one place: buy a pack now (Buy now) or keep the paid balance
- * topped up (Auto-refill). The packs stay put and the line under them always
- * says what the tab does; anything that needs the buyer sits by the tabs.
- */
 export const TopUpPanel: FC<TopUpPanelProps> = ({
     initialBilling,
     returnToTopUp,
@@ -64,14 +52,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     setupReturn = false,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
-    const [tab, setTab] = useState<Tab>(setupReturn ? "refill" : "buy");
+    const [chosenPack, setChosenPack] = useState<PollenPack | null>(null);
     const [confirmingSetup, setConfirmingSetup] = useState(
         setupReturn && !initialBilling?.autoTopUp.enabled,
     );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
-    const [checkoutPack, setCheckoutPack] = useState<PollenPack>(
-        POLLEN_PACKS[0] as PollenPack,
-    );
     const [saving, setSaving] = useState(false);
     const [saveFailed, setSaveFailed] = useState(false);
 
@@ -79,23 +64,17 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         setBilling(initialBilling);
     }, [initialBilling]);
 
-    // A saved card pays in our modal; without one, Buy now goes straight to
-    // Stripe's page, which has every method (Apple Pay, PayPal, …). Cards
-    // saved through a wallet (Link) are not offered as saved cards by
-    // Checkout, only through the wallet on Stripe's page.
     const hasSavedCard = Boolean(
         billing?.paymentMethods.some(
             (method) => method.type === "card" && !method.wallet,
         ),
     );
-    // Stripe.js is ready by the time a pack is clicked.
     const publishableKey = hasSavedCard ? billing?.publishableKey : undefined;
     useEffect(() => {
         if (publishableKey) preloadStripe(publishableKey);
     }, [publishableKey]);
 
-    // The webhook turns automatic top-up on shortly after Stripe's setup page;
-    // reload billing until it has.
+    // Stripe's setup webhook enables auto-refill shortly after the return.
     useEffect(() => {
         if (!confirmingSetup) return;
         let canceled = false;
@@ -126,14 +105,24 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             checkoutParams.set("redirect", returnToTopUp.redirect);
     }
     const status = billing ? autoTopUpStatus(billing) : null;
+    const selectedPack =
+        chosenPack ??
+        POLLEN_PACKS.find(
+            (pack) => pack.amountUsd === billing?.autoTopUp.packAmountUsd,
+        ) ??
+        POLLEN_PACKS.find((pack) => pack.packKey === "p20") ??
+        null;
     const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
     const autoReady = hasDefault && Boolean(billing?.billingDetailsComplete);
-    // No card yet: a pack opens Stripe's setup page (card check, no charge).
     const needsCard = Boolean(billing) && !hasDefault;
+    const selectedRefillPack =
+        selectedPack && isAutoTopUpPack(selectedPack) ? selectedPack : null;
+    const packTooSmall = Boolean(
+        !billing?.autoTopUp.enabled && selectedPack && !selectedRefillPack,
+    );
     const setupHref = (pack: PollenPack) =>
         `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
-    /** Choosing a tile on Auto-refill saves straight away. */
     async function saveAutoTopUp(
         enabled: boolean,
         packAmountUsd: number,
@@ -156,200 +145,134 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         }
     }
 
+    function startCheckout() {
+        if (!selectedPack) return;
+        if (!hasSavedCard) {
+            window.location.href = hostedCheckoutHref(
+                selectedPack.packKey,
+                checkoutParams.toString(),
+            );
+            return;
+        }
+        setCheckoutOpen(true);
+    }
+
+    function changeAutoTopUp(enabled: boolean) {
+        if (!billing) return;
+        if (enabled) {
+            if (!selectedRefillPack) return;
+            if (needsCard) window.location.href = setupHref(selectedRefillPack);
+            else void saveAutoTopUp(true, selectedRefillPack.amountUsd);
+        } else {
+            void saveAutoTopUp(false, billing.autoTopUp.packAmountUsd);
+        }
+    }
+
+    const autoTopUpSwitch = (
+        <Switch
+            ariaLabel="Auto top-up"
+            checked={Boolean(billing?.autoTopUp.enabled)}
+            disabled={
+                !billing ||
+                saving ||
+                confirmingSetup ||
+                (!billing.autoTopUp.enabled &&
+                    (!selectedRefillPack || (!autoReady && !needsCard)))
+            }
+            className={packTooSmall ? "pointer-events-none" : undefined}
+            onChange={changeAutoTopUp}
+        />
+    );
+
     return (
-        <div className="flex flex-col gap-4">
-            {/* No card of its own: the tabs and packs sit on the section. */}
-            <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                    <TabButton
-                        active={tab === "buy"}
-                        onClick={() => setTab("buy")}
+        <div className="flex flex-col gap-3">
+            <section className="flex flex-col gap-3">
+                <div>
+                    <h3 className="text-lg font-semibold text-theme-text-strong">
+                        Choose a pack
+                    </h3>
+                    <p className="text-sm text-theme-text-muted">
+                        Buy it now or set up auto top-up.
+                    </p>
+                </div>
+                <PollenPackButtons
+                    packs={POLLEN_PACKS}
+                    selectedAmount={selectedPack?.amountUsd}
+                    onSelect={setChosenPack}
+                />
+                <div className="flex w-full flex-wrap items-center justify-between gap-x-5 gap-y-3">
+                    <Button
+                        intent="commit"
                         size="lg"
+                        disabled={!selectedPack}
+                        onClick={startCheckout}
                     >
                         Buy now
-                    </TabButton>
-                    <TabButton
-                        active={tab === "refill"}
-                        onClick={() => setTab("refill")}
-                        size="lg"
-                    >
-                        <span className="inline-flex items-center gap-2">
-                            Auto-refill
-                            {status && <RefillValue tab={status.tab} />}
+                    </Button>
+                    <div className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-theme-text-strong">
+                        {packTooSmall ? (
+                            <Tooltip
+                                triggerAs="span"
+                                tapEnabled
+                                ariaLabel="Why auto top-up is unavailable"
+                                content="Choose 5 Pollen or more to enable auto top-up."
+                            >
+                                {autoTopUpSwitch}
+                            </Tooltip>
+                        ) : (
+                            autoTopUpSwitch
+                        )}
+                        <span>
+                            {billing?.autoTopUp.enabled
+                                ? "Auto top-up"
+                                : "Enable auto top-up"}
                         </span>
-                    </TabButton>
-                    {/* Right after the tabs; wraps under them if no room. */}
-                    <div className="text-sm">
-                        <TabNotice
-                            tab={tab}
-                            confirmingSetup={confirmingSetup}
-                            billing={billing}
-                            status={status}
-                            saveFailed={saveFailed}
+                        <InfoTip
+                            label="When auto top-up runs"
+                            text={`After usage, auto top-up runs when your paid balance is ${AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen or less.`}
                         />
+                        {billing?.autoTopUp.enabled && (
+                            <span className="rounded-lg bg-paid-pale px-2 py-1 font-bold tabular-nums text-paid-deep">
+                                {status?.tab.label} Pollen
+                            </span>
+                        )}
+                        {status?.tab.warning && (
+                            <WarningIcon
+                                aria-label="Needs attention"
+                                className="h-4 w-4 text-intent-danger-text"
+                            />
+                        )}
                     </div>
                 </div>
-
-                {/* What the tab does, read before picking: brighter than the
-                    footnotes, with its own icon. */}
-                <p className="flex min-h-5 items-start gap-1.5 px-1 text-[13px] leading-5 font-medium text-theme-text-soft">
-                    {tab === "buy" ? (
-                        <PlusIcon
-                            aria-hidden="true"
-                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-                        />
-                    ) : (
-                        <RefreshIcon
-                            aria-hidden="true"
-                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-                        />
-                    )}
-                    <span>
-                        {tab === "buy"
-                            ? "Pick a pack to buy it now."
-                            : refillText(billing)}
-                    </span>
-                </p>
-
-                {tab === "buy" ? (
-                    <PollenPackButtons
-                        selectedAmount={
-                            checkoutOpen ? checkoutPack.amountUsd : undefined
-                        }
-                        onSelect={(pack) => {
-                            if (!hasSavedCard) {
-                                window.location.href = hostedCheckoutHref(
-                                    pack.packKey,
-                                    checkoutParams.toString(),
-                                );
-                                return;
-                            }
-                            setCheckoutPack(pack);
-                            setCheckoutOpen(true);
-                        }}
-                    />
-                ) : (
-                    <PollenPackButtons
-                        selectedAmount={
-                            billing?.autoTopUp.enabled
-                                ? billing.autoTopUp.packAmountUsd
-                                : undefined
-                        }
-                        isDisabled={(pack) =>
-                            !isAutoTopUpPack(pack) ||
-                            (!autoReady && !needsCard) ||
-                            saving ||
-                            confirmingSetup
-                        }
-                        onSelect={(pack) => {
-                            if (needsCard)
-                                window.location.href = setupHref(pack);
-                            else void saveAutoTopUp(true, pack.amountUsd);
-                        }}
-                        offTile={{
-                            selected: !billing?.autoTopUp.enabled,
-                            disabled: !autoReady || saving,
-                            onSelect: () => {
-                                if (billing?.autoTopUp.enabled)
-                                    void saveAutoTopUp(
-                                        false,
-                                        billing.autoTopUp.packAmountUsd,
-                                    );
-                            },
-                        }}
-                        describe={(pollen, price) =>
-                            `Top up ${pollen} Pollen (${price}) automatically`
-                        }
-                    />
+                {confirmingSetup && (
+                    <p className="text-sm text-theme-text-muted">
+                        Saving your card…
+                    </p>
                 )}
-            </div>
+                {saveFailed && (
+                    <p role="alert" className="text-sm text-intent-danger-text">
+                        Couldn’t save. Try again.
+                    </p>
+                )}
+                {(status?.text || (hasDefault && !autoReady) || !billing) && (
+                    <InlineLink
+                        as={Link}
+                        to="/pollen"
+                        hash="billing"
+                        external={false}
+                    >
+                        Check billing
+                    </InlineLink>
+                )}
+            </section>
 
             <PackCheckoutDialog
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
-                pack={checkoutPack}
+                pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
                 checkoutQuery={checkoutParams.toString()}
                 onCredited={onCredited}
             />
         </div>
     );
 };
-
-/**
- * On: a green dot and the refill pack as paid Pollen (the wallet's paid icon
- * and number). Off: "Off". Plus ⚠ when it needs you.
- */
-const RefillValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
-    <span className="inline-flex items-center gap-1 text-sm">
-        {tab.on ? (
-            <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
-                <span className="sr-only">On, {tab.label} paid Pollen</span>
-                <span
-                    aria-hidden="true"
-                    className="mr-0.5 h-2 w-2 rounded-full bg-intent-success-text"
-                />
-                {/* Both tabs fit one row on a 375px phone without it. */}
-                <span className="hidden sm:inline-flex">
-                    <WalletKindIcon kind="paid" />
-                </span>
-                <span aria-hidden="true" className="text-paid-deep">
-                    {tab.label}
-                </span>
-            </span>
-        ) : (
-            <span className="font-semibold text-theme-text-muted">
-                {tab.label}
-            </span>
-        )}
-        {tab.warning && (
-            <WarningIcon
-                aria-label="Needs attention"
-                className="h-4 w-4 text-intent-danger-text"
-            />
-        )}
-    </span>
-);
-
-/**
- * One short line by the tabs, always the same: the details and what to do
- * sit in Billing, next to the card or address they concern.
- */
-const TabNotice: FC<{
-    tab: Tab;
-    confirmingSetup: boolean;
-    billing: BillingOverview | null;
-    status: AutoTopUpStatus | null;
-    saveFailed: boolean;
-}> = ({ tab, confirmingSetup, billing, status, saveFailed }) => {
-    // No icon: the Auto-refill tab carries the ⚠.
-    if (saveFailed)
-        return (
-            <span role="alert" className="text-intent-danger-text">
-                Couldn’t save, try again
-            </span>
-        );
-    if (tab === "refill" && confirmingSetup)
-        return <span className="text-theme-text-muted">Saving your card…</span>;
-    // A declined or pending top-up shows on both tabs; what auto-refill
-    // still lacks only on its own.
-    const needsBilling =
-        Boolean(status?.text) ||
-        (tab === "refill" &&
-            (!billing ||
-                (hasDefaultPaymentMethod(billing) &&
-                    !billing.billingDetailsComplete)));
-    if (!needsBilling) return null;
-    return (
-        <InlineLink as={Link} to="/pollen" hash="billing" external={false}>
-            Check billing
-        </InlineLink>
-    );
-};
-
-/** "paid balance": Quest Pollen does not trigger it. */
-function refillText(billing: BillingOverview | null): string {
-    const pack = billing?.autoTopUp.enabled
-        ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
-        : "a pack";
-    return `Automatically purchase ${pack} every time your paid balance reaches ${AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen.`;
-}

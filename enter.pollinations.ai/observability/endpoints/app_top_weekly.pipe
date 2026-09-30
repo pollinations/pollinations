@@ -81,11 +81,8 @@ SQL >
     INNER JOIN matched_apps apps ON requests.api_key_client_id = apps.app_key_id
     WHERE
         requests.start_time > now() - INTERVAL 7 DAY
-        AND requests.start_time <= now()
-        AND requests.environment = 'production'
         AND requests.api_key_created_via = 'redirect-auth'
         AND requests.is_final
-        AND requests.is_billed_usage
         AND requests.response_status >= 200
         AND requests.response_status < 300
         AND requests.total_price > 0

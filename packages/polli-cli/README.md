@@ -175,7 +175,7 @@ install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode u
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
 
-See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+See [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) for what each profile changes.
 
 ## Links
 

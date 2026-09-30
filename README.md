@@ -118,7 +118,7 @@ Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime
 npx @pollinations/cli harness dsh on
 ```
 
-See [Coding Harnesses](./CODING_HARNESSES.md) for supported harnesses and how to add one.
+See [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) for supported harnesses.
 
 ## 🧩 Community Models
 

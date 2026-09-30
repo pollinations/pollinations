@@ -39,19 +39,22 @@ export const PollenPackButtons: FC<{
                     aria-pressed={selected}
                     onClick={() => onSelect(pack)}
                     aria-label={describe(pollen, price)}
-                    // A value, not an action: no border, the fill says which
-                    // is chosen. The ring shows keyboard focus only.
+                    // A value, not an action: never a border. Idle it is an
+                    // inner card like Billing's (surface-opaque); chosen it
+                    // takes the accent fill, as selected tabs do. The ring
+                    // shows keyboard focus only.
                     className={cn(
-                        "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paid-soft",
+                        "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
                         selected
-                            ? "bg-paid-deep text-paid-pale"
-                            : "bg-paid-pale text-paid-deep hover:bg-paid-soft/50",
+                            ? "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover"
+                            : "bg-surface-opaque text-theme-text-base hover:bg-theme-bg-active/40",
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">
                         {pollen}
                     </span>
-                    <span className="mt-1 text-xs">pollen</span>
+                    {/* Faded, not grey: readable on both fills. */}
+                    <span className="mt-1 text-xs opacity-70">pollen</span>
                     <span className="mt-2 text-sm font-semibold">{price}</span>
                 </button>
             );

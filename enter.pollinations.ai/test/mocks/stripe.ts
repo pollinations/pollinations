@@ -182,6 +182,7 @@ export type MockStripeState = {
         object: "setup_intent";
         status: string;
         payment_method: string | null;
+        metadata: Record<string, string>;
     }[];
     fraudCharges: Record<string, unknown>[];
     // Charges retrievable by id but outside the listed scan window.
@@ -656,6 +657,16 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 (item) => item.id === c.req.param("id"),
             );
             if (!setupIntent) return stripeNotFound(c);
+            return c.json(setupIntent);
+        })
+        .post("/v1/setup_intents/:id", async (c) => {
+            const form = await parseForm(c.req.raw);
+            recordRequest(c, state, form);
+            const setupIntent = state.setupIntents.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!setupIntent) return stripeNotFound(c);
+            Object.assign(setupIntent.metadata, parseMetadata(form));
             return c.json(setupIntent);
         })
         .get("/v1/payment_intents/:id", (c) => {

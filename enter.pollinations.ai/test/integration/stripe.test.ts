@@ -4379,15 +4379,19 @@ async function completeAutoTopUpSetup(
         userId,
     }: { id: string; customerId: string; userId: string },
 ) {
-    stripeState.setupIntents.push({
-        id: `seti_${id}`,
-        object: "setup_intent",
-        status: "succeeded",
-        payment_method: `pm_${id}`,
-    });
-    stripeState.paymentMethods.push(
-        mockCardPaymentMethod(`pm_${id}`, customerId),
-    );
+    // Seeded once, so the same webhook can be delivered again.
+    if (!stripeState.setupIntents.some((item) => item.id === `seti_${id}`)) {
+        stripeState.setupIntents.push({
+            id: `seti_${id}`,
+            object: "setup_intent",
+            status: "succeeded",
+            payment_method: `pm_${id}`,
+            metadata: {},
+        });
+        stripeState.paymentMethods.push(
+            mockCardPaymentMethod(`pm_${id}`, customerId),
+        );
+    }
     return postSignedStripeWebhook({
         id: `evt_${id}`,
         type: "checkout.session.completed",
@@ -4445,6 +4449,45 @@ test("POST /api/webhooks/stripe turns automatic top-up on once the setup card is
     expect(user).toEqual({ enabled: true, amount: 20 });
     // Saving the card charges nothing.
     expect(mocks.stripe.state.invoices).toHaveLength(0);
+});
+
+test("POST /api/webhooks/stripe applies a setup session once, so a replay keeps later choices", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_setup_replay");
+    mocks.stripe.state.customers.push(customer);
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id })
+        .where(eq(userTable.id, userId));
+    const setup = { id: "setup_replay", customerId: customer.id, userId };
+
+    expect(
+        (await completeAutoTopUpSetup(mocks.stripe.state, setup)).status,
+    ).toBe(200);
+    // Later the buyer turns auto-refill off, picks another pack and card.
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ autoTopUpEnabled: false, autoTopUpAmountUsd: 50 })
+        .where(eq(userTable.id, userId));
+    customer.invoice_settings.default_payment_method = "pm_later";
+
+    expect(
+        (await completeAutoTopUpSetup(mocks.stripe.state, setup)).status,
+    ).toBe(200);
+    const [user] = await drizzle(env.DB)
+        .select({
+            enabled: userTable.autoTopUpEnabled,
+            amount: userTable.autoTopUpAmountUsd,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    expect(user).toEqual({ enabled: false, amount: 50 });
+    expect(customer.invoice_settings.default_payment_method).toBe("pm_later");
 });
 
 test("POST /api/webhooks/stripe ignores a setup session for another buyer's customer", async ({

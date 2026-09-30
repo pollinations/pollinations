@@ -63,14 +63,14 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border-r-2 border-b-2 border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]"
+        ? "border-r-2 border-b-2 border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)/0.3)]"
         : badges.pollen(app)
-          ? "border-r-2 border-b-2 border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]"
-          : "border-r-2 border-b-2 border-tan shadow-[1px_1px_0_rgb(var(--tan)_/_0.3)]";
+          ? "border-r-2 border-b-2 border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)/0.3)]"
+          : "border-r-2 border-b-2 border-tan shadow-[1px_1px_0_rgb(var(--tan)/0.3)]";
 
     return (
         <div
-            className={`flex flex-col h-full overflow-visible transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
+            className={`flex flex-col h-full overflow-visible transition hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${cardBorder}`}
         >
             <a
                 href={app.url}
@@ -80,7 +80,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
             >
                 <span className="font-headline text-xs font-black uppercase text-dark flex items-center">
                     {app.emoji && (
-                        <span className="flex-shrink-0 mr-2 text-base leading-none">
+                        <span className="shrink-0 mr-2 text-base leading-none">
                             {app.emoji}
                         </span>
                     )}
@@ -185,7 +185,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             <span className="truncate text-dark">
                                 {app.github}
                             </span>
-                            <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
+                            <GithubIcon className="w-3 h-3 text-dark opacity-60 shrink-0" />
                         </a>
                     )}
                     {!repoName && !githubUsername && app.github && (
@@ -213,7 +213,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                 <span className="truncate flex-1 min-w-0 text-dark">
                                     {repoName}
                                 </span>
-                                <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
+                                <GithubIcon className="w-3 h-3 text-dark opacity-60 shrink-0" />
                             </span>
                             {(app.stars || 0) > 0 && (
                                 <span className="text-muted">

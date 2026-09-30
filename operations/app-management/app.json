@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Pollinations for Godot 4",
+    "url": "https://github.com/davealan74/godot-pollinations",
+    "description": "A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "davealan74",
+    "githubUserId": "148321410",
+    "repositoryUrl": "https://github.com/davealan74/godot-pollinations",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-27",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15585",
+    "approvedDate": "2026-09-30",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎬",
     "name": "STT",
     "url": "https://fantasyreincarnation1-bit.github.io/my-pollinations-ap",

@@ -11,9 +11,8 @@ import { MoonIcon, SunIcon } from "./icons/index.tsx";
  *
  * The chosen mode is persisted to localStorage (per-origin), which also powers
  * the cross-tab `storage` sync below. Read priority: localStorage → system
- * preference. With nothing stored, the page follows the system live; choosing
- * the mode the system already uses clears the stored choice, so toggling back
- * returns a visitor to following the system.
+ * preference. Choosing the mode the system already uses clears the stored
+ * choice, so later visits follow the system again.
  *
  * Host apps should set the initial class pre-paint (a tiny inline script in the
  * document head, reading the same key) to avoid a flash of light before React
@@ -36,15 +35,11 @@ function readStored(): ColorMode | null {
     }
 }
 
-// One shared MediaQueryList: matchMedia returns a new object per call, so the
-// change listener must be removed from the same object it was added to.
-const systemQuery =
-    typeof window === "undefined"
-        ? undefined
-        : window.matchMedia?.("(prefers-color-scheme: dark)");
-
 function systemMode(): ColorMode {
-    return systemQuery?.matches ? "dark" : "light";
+    return typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-color-scheme: dark)").matches === true
+        ? "dark"
+        : "light";
 }
 
 let current: ColorMode = readStored() ?? systemMode();
@@ -78,33 +73,25 @@ function emit(): void {
     for (const listener of listeners) listener();
 }
 
-function update(next: ColorMode): void {
+function handleStorage(event: StorageEvent): void {
+    if (event.key !== STORAGE_KEY) return;
+    const next = readStored() ?? systemMode();
     if (next === current) return;
     current = next;
     apply();
     emit();
 }
 
-function handleStorage(event: StorageEvent): void {
-    if (event.key === STORAGE_KEY) update(readStored() ?? systemMode());
-}
-
-function handleSystemChange(): void {
-    if (!readStored()) update(systemMode());
-}
-
 function subscribe(listener: () => void): () => void {
     if (listeners.size === 0 && typeof window !== "undefined") {
         apply(); // safety-net sync once a consumer mounts
         window.addEventListener("storage", handleStorage);
-        systemQuery?.addEventListener("change", handleSystemChange);
     }
     listeners.add(listener);
     return () => {
         listeners.delete(listener);
         if (listeners.size === 0 && typeof window !== "undefined") {
             window.removeEventListener("storage", handleStorage);
-            systemQuery?.removeEventListener("change", handleSystemChange);
         }
     };
 }
@@ -120,18 +107,19 @@ function getServerSnapshot(): ColorMode {
 /**
  * Set the color mode programmatically. Updates the shared store (so every
  * `useColorMode()` consumer re-renders), flips the `.dark` class, and persists
- * the choice to localStorage — or clears it when the choice matches the
- * system, so the page goes back to following the system.
+ * to localStorage, or clears it when the mode matches the system.
  */
 export function setColorMode(mode: ColorMode): void {
     if (mode === current) return;
+    current = mode;
+    apply();
     try {
         if (mode === systemMode()) localStorage.removeItem(STORAGE_KEY);
         else localStorage.setItem(STORAGE_KEY, mode);
     } catch {
         // ignore write failures (private mode / storage disabled)
     }
-    update(mode);
+    emit();
 }
 
 export function useColorMode(): {

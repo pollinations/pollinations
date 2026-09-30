@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "STT",
+    "url": "https://fantasyreincarnation1-bit.github.io/my-pollinations-ap",
+    "description": "Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri,",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "fantasyreincarnation1-bit",
+    "githubUserId": "309429471",
+    "repositoryUrl": "https://github.com/fantasyreincarnation1-bit/my-pollinations-ap",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15703",
+    "approvedDate": "2026-09-30",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Mmm",
     "url": "https://dwakatmahmoud-cmd.github.io/Mahmoud",

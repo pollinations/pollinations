@@ -68,7 +68,7 @@ function withCard(
     };
 }
 
-export const BILLING_PREVIEWS: Preview[] = [
+const BILLING_PREVIEWS: Preview[] = [
     {
         id: "card-on",
         label: "Card · automatic on",

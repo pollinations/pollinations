@@ -9,7 +9,7 @@ import {
 import type { FC } from "react";
 
 /** Pack plus service fee: the price before tax, as Checkout charges it. */
-export function packChargeCents(pack: PollenPack): number {
+function packChargeCents(pack: PollenPack): number {
     return (
         pack.amountUsd * 100 + calculateServiceFeeCents(pack.amountUsd * 100)
     );

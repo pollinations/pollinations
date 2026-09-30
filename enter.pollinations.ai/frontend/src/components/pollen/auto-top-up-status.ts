@@ -1,7 +1,7 @@
 import { formatPollenPackValue } from "@shared/pollen-packs.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 
-export type StatusAction =
+type StatusAction =
     | { kind: "link"; label: string; href: string }
     | { kind: "portal"; label: string };
 

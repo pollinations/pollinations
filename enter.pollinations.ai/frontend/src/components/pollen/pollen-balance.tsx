@@ -1,7 +1,8 @@
 import {
     CardIcon,
+    CheckIcon,
+    ClipboardIcon,
     CopyButton,
-    GlobeIcon,
     InfoTip,
     InlineLink,
     MailIcon,
@@ -16,9 +17,9 @@ import {
 } from "@pollinations/ui/wallet";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
-import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
+import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
+import { TopUpPanel } from "./top-up-panel.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -258,66 +259,79 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 };
 
 type BuyPollenPanelProps = {
-    initialBillingState: BillingState | null;
-    selectedPackAmount: number;
-    onSelectedPackAmountChange: (amount: number) => void;
+    initialBilling: BillingOverview | null;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
+    /** Reload the wallet and billing once a purchase is credited. */
+    onCredited?: () => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
-    initialBillingState,
-    selectedPackAmount,
-    onSelectedPackAmountChange,
+    initialBilling,
     returnToTopUp,
-}) => {
-    return (
-        <>
-            <PollenPackPurchase
-                selectedPackAmount={selectedPackAmount}
-                onSelectedPackAmountChange={onSelectedPackAmountChange}
-                returnToTopUp={returnToTopUp}
+    onCredited,
+}) => (
+    <>
+        <TopUpPanel
+            initialBilling={initialBilling}
+            returnToTopUp={returnToTopUp}
+            onCredited={onCredited}
+        />
+        <PaymentFootnotes />
+    </>
+);
+
+/** Who handles the payment, who to ask, and the terms of buying. */
+const PaymentFootnotes: FC = () => (
+    <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
+        <PaymentTrustBadge className="mt-0 pt-0" />
+        <p className="flex items-start gap-1.5">
+            <MailIcon
+                aria-hidden="true"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0"
             />
-            <Surface>
-                <AutoTopUpPanel
-                    initialBillingState={initialBillingState}
-                    returnToTopUp={returnToTopUp}
-                />
-            </Surface>
-            <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon
-                        aria-hidden="true"
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
-                    <span>
-                        Taxes added at checkout.{" "}
-                        <InlineLink href={TERMS_URL}>Terms</InlineLink>
-                        {" · "}
-                        <InlineLink href={REFUND_POLICY_URL}>
-                            Refund Policy
-                        </InlineLink>
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon
-                        aria-hidden="true"
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
-                    <span>
-                        Payment help:{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="polli-link"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>
-                    </span>
-                </p>
-            </div>
-        </>
-    );
-};
+            <span>
+                Payment help:{" "}
+                {/* Styled like Terms and Refund; a copy icon where theirs
+                    has the arrow. */}
+                <CopyButton
+                    value="billing@pollinations.ai"
+                    className="polli-link"
+                    data-tone="accent"
+                    // The icon says copy and the text says email copied: no tooltip.
+                    tooltip={null}
+                >
+                    {(copied) => (
+                        <>
+                            {copied
+                                ? "email copied"
+                                : "billing@pollinations.ai"}
+                            {copied ? (
+                                <CheckIcon
+                                    aria-hidden="true"
+                                    className="polli-link-external-icon"
+                                />
+                            ) : (
+                                <ClipboardIcon
+                                    aria-hidden="true"
+                                    className="polli-link-external-icon"
+                                />
+                            )}
+                        </>
+                    )}
+                </CopyButton>
+                <LinkSeparator />
+                <InlineLink href={TERMS_URL}>Terms</InlineLink>
+                <LinkSeparator />
+                <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+            </span>
+        </p>
+    </div>
+);
+
+/** A dot between links, with room around it. */
+const LinkSeparator: FC = () => (
+    <span aria-hidden="true" className="mx-2 text-theme-text-muted">
+        ·
+    </span>
+);

@@ -27,7 +27,6 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
                 <LockIcon className="h-3.5 w-3.5" />
                 <span>Secure checkout by Stripe</span>
             </span>
-            <span aria-hidden>—</span>
             <span className="inline-flex flex-wrap items-center gap-1.5">
                 {paymentMethods.map((method) => (
                     <img

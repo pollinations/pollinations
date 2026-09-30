@@ -1,18 +1,14 @@
 import { Button, RefreshIcon } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
-import {
-    getPollenPackByAmount,
-    getPollenPackByKey,
-    POLLEN_PACKS,
-} from "@shared/pollen-packs.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import type { BillingOverview as BillingState } from "../backend-types.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
-import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
+import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
 import { validateTopUpSearch } from "../lib/top-up-search.ts";
@@ -34,6 +30,26 @@ export const Route = createFileRoute("/top-up")({
     component: TopUpPage,
 });
 
+function fetchWallet(): Promise<WalletState> {
+    return apiClient.customer.balance
+        .$get()
+        .then((r) => {
+            if (!r.ok) throw new Error("Failed to load wallet");
+            return r.json();
+        })
+        .then((data) => ({
+            tierBalance: data.tierBalance ?? 0,
+            packBalance: data.packBalance ?? 0,
+        }));
+}
+
+function fetchBilling(): Promise<BillingState | null> {
+    return apiClient.stripe.billing
+        .$get()
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+}
+
 function TopUpPage() {
     const search = Route.useSearch();
     const navigate = useNavigate({ from: "/top-up" });
@@ -46,8 +62,6 @@ function TopUpPage() {
         undefined,
     );
     const returnUrl = search.redirect ?? null;
-    const selectedPack =
-        getPollenPackByKey(search.pack ?? "p5") ?? POLLEN_PACKS[0];
 
     // Remember which app sent us before Stripe overwrites the referrer.
     useEffect(() => {
@@ -80,33 +94,30 @@ function TopUpPage() {
         setWalletError(false);
         setBilling(undefined);
 
-        apiClient.customer.balance
-            .$get()
-            .then((r) => {
-                if (!r.ok) throw new Error("Failed to load wallet");
-                return r.json();
-            })
+        fetchWallet()
             .then((data) => {
-                if (canceled) return;
-                setWallet({
-                    tierBalance: data.tierBalance ?? 0,
-                    packBalance: data.packBalance ?? 0,
-                });
+                if (!canceled) setWallet(data);
             })
             .catch(() => {
                 if (!canceled) setWalletError(true);
             });
-        apiClient.stripe.billing
-            .$get()
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null)
-            .then((data) => {
-                if (!canceled) setBilling(data);
-            });
+        fetchBilling().then((data) => {
+            if (!canceled) setBilling(data);
+        });
         return () => {
             canceled = true;
         };
     }, [user, loadAttempt]);
+
+    // After a credit: update in place, so the open checkout stays mounted.
+    function refreshWallet(): void {
+        fetchWallet()
+            .then(setWallet)
+            .catch(() => {});
+        fetchBilling().then((data) => {
+            if (data) setBilling(data);
+        });
+    }
 
     if (isPending) return <AuthModalLoading title="Top-up" />;
 
@@ -124,7 +135,11 @@ function TopUpPage() {
             <AuthFlowScreen
                 footnote="back"
                 title="Top-up"
-                description="Your Pollen will appear when Stripe confirms the payment."
+                description={
+                    search.session_id
+                        ? undefined
+                        : "Your Pollen will appear when Stripe confirms the payment."
+                }
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -132,7 +147,22 @@ function TopUpPage() {
                         <ReturnToApp returnUrl={returnUrl} />
                     ) : undefined
                 }
-            />
+            >
+                {search.session_id && (
+                    <CheckoutConfirmation
+                        sessionId={search.session_id}
+                        onCredited={refreshWallet}
+                        onRetry={() =>
+                            void navigate({
+                                search: (prev) => ({
+                                    pack: prev.pack,
+                                    redirect: prev.redirect,
+                                }),
+                            })
+                        }
+                    />
+                )}
+            </AuthFlowScreen>
         );
     }
 
@@ -175,20 +205,9 @@ function TopUpPage() {
         >
             {billing === undefined ? null : (
                 <BuyPollenPanel
-                    initialBillingState={billing}
-                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                    onSelectedPackAmountChange={(amount) => {
-                        const pack = getPollenPackByAmount(amount);
-                        if (pack) {
-                            void navigate({
-                                search: (prev) => ({
-                                    ...prev,
-                                    pack: pack.packKey,
-                                }),
-                            });
-                        }
-                    }}
+                    initialBilling={billing}
                     returnToTopUp={{ redirect: search.redirect }}
+                    onCredited={refreshWallet}
                 />
             )}
         </AuthFlowScreen>

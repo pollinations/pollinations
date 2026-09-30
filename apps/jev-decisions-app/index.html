@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Ask Jev anything — yes/no, multiple choice, or scored questions with probability answers. Pay with your own Pollen." />
+    <meta property="og:title" content="Jev Decisions | Pollinations" />
+    <meta property="og:description" content="Ask Jev anything — yes/no, multiple choice, or scored questions with probability answers. Pay with your own Pollen." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://decisions.pollinations.ai" />
+    <meta property="og:image" content="https://decisions.pollinations.ai/og-image.png" />
+    <title>Jev Decisions — Ask Anything with Probabilistic Answers</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+</head>
+<body>
+    <header>
+        <div class="logo">🧠 <span>Jev Decisions</span></div>
+        <p class="tagline">Ask yes/no, multiple choice, or scored questions — get probabilistic answers powered by Jev via Pollen</p>
+    </header>
+
+    <!-- Auth: Logged Out -->
+    <section id="authLoggedOut" class="auth-section">
+        <div class="auth-card">
+            <h2>🔐 Log in to ask Jev</h2>
+            <p>Log in with your Pollinations account to use your own Pollen for decision-making.</p>
+            <button id="authLoginBtn" class="btn btn-primary">Log In with Pollinations</button>
+            <div class="pollen-info">
+                <span class="pollen-badge">🏵️ POLLEN</span>
+                <span>Jev bills input tokens only — cheap, accurate decisions.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Auth: Logged In -->
+    <section id="authLoggedIn" class="auth-section hidden">
+        <div class="auth-bar">
+            <span id="authBalance" class="pollen-amount">-- pollen</span>
+            <button id="authLogoutBtn" class="btn btn-ghost">Log Out</button>
+        </div>
+    </section>
+
+    <!-- Decision Builder -->
+    <main id="generatorSection" class="main-section hidden">
+        <div class="builder">
+            <!-- State -->
+            <div class="form-group">
+                <label for="stateInput">Context / Facts 🧠</label>
+                <textarea id="stateInput" placeholder="What should Jev know before deciding? E.g. 'My server has been down for 3 hours, the disk is at 91% capacity, and I have 2 developers on call.'" rows="4"></textarea>
+                <p class="hint">Supply what's relevant — confidence stays high even with partial facts.</p>
+            </div>
+
+            <!-- Questions -->
+            <div id="questionsContainer">
+                <h3>Questions <span class="hint">+ Add as many as you want</span></h3>
+                <button id="addQuestionBtn" class="btn btn-outline">＋ Add Question</button>
+            </div>
+
+            <!-- Submit -->
+            <button id="submitBtn" class="btn btn-primary btn-lg" disabled>Ask Jev</button>
+            <p id="submitHint" class="hint">Each question is answered independently under its own key.</p>
+        </div>
+
+        <!-- Results -->
+        <section id="resultSection" class="result-section hidden">
+            <h3>🧠 Jev's Answer</h3>
+            <div class="result-meta">
+                <span id="resultModel" class="badge">--</span>
+                <span id="resultTokens" class="hint"></span>
+            </div>
+            <div id="answersContainer" class="answers"></div>
+            <button id="newDecisionBtn" class="btn btn-outline">New Decision</button>
+        </section>
+
+        <p id="errorBox" class="error hidden"></p>
+    </main>
+
+    <!-- Notification -->
+    <div id="notification" class="notification hidden"></div>
+
+    <footer>
+        <p>Built for <a href="https://pollinations.ai">Pollinations</a> · <a href="https://github.com/pollinations/pollinations/blob/main/apps/jev-decisions-app">View source</a> · Quest #15722</p>
+    </footer>
+
+    <script type="module" src="/script.js"></script>
+</body>
+</html>

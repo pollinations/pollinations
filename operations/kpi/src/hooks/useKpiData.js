@@ -37,6 +37,11 @@ const SOURCES = [
         load: (weeks) => api.weekly("usage", weeks),
     },
     {
+        label: "Traffic totals",
+        key: "trafficTotals",
+        load: (weeks) => api.weekly("traffic-totals", weeks),
+    },
+    {
         label: "Retention",
         key: "retention",
         load: () => api.weekly("retention", RETENTION_WEEKS),
@@ -65,6 +70,7 @@ const REQUIRED = {
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
+    trafficTotals: "Tinybird (traffic totals)",
     agentMcpUsage: "Tinybird (agent/MCP usage)",
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
@@ -178,6 +184,14 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     communityUserPctAll: row.community_user_pct,
                     communityRequestPct: row.community_request_pct,
                     communityAvailability: row.community_availability,
+                }));
+                // Every traffic group, not just regular: the cost side of cash
+                // coverage and the legacy migration row.
+                mergeInto(weekMap, raw.trafficTotals, (row) => ({
+                    requestsAll: row.total_requests,
+                    costUsdAll: row.total_cost_usd,
+                    legacyRequests: row.legacy_requests,
+                    legacyCostUsd: row.legacy_cost_usd,
                 }));
                 mergeInto(weekMap, raw.revenue, (row) => ({
                     revenue: row.revenue,

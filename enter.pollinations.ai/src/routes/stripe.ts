@@ -24,7 +24,10 @@ import {
     referringSource,
 } from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
-import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
+import {
+    getStripeId,
+    getUserStripeBillingRow,
+} from "../utils/stripe-billing/customer.ts";
 import {
     AUTO_TOP_UP_SETUP_PURPOSE,
     createBillingPortalSession,
@@ -93,9 +96,10 @@ export const stripeRoutes = new Hono<Env>()
             });
         }
 
+        const stripe = createStripeClient(c.env);
         const session = sessionId.startsWith("cs_")
-            ? await createStripeClient(c.env)
-                  .checkout.sessions.retrieve(sessionId)
+            ? await stripe.checkout.sessions
+                  .retrieve(sessionId)
                   .catch((error) => {
                       if (error?.code === "resource_missing") return null;
                       throw error;
@@ -105,14 +109,31 @@ export const stripeRoutes = new Hono<Env>()
         if (!session || session.metadata?.userId !== user.id) {
             return c.json({ error: "Checkout session not found" }, 404);
         }
-        // Anything else is on its way: the webhook has not credited it
-        // yet, or a bank payment (SEPA, Multibanco) is still settling.
-        return c.json({
-            status:
-                session.status === "expired"
-                    ? ("expired" as const)
-                    : ("pending" as const),
-        });
+        if (session.status === "expired") {
+            return c.json({ status: "expired" as const });
+        }
+        // Checkout completes before a bank payment (SEPA, Multibanco)
+        // settles; if the bank then refuses it, the payment falls back to
+        // needing a method (or is canceled), and nothing will be credited.
+        // Still processing or awaiting authentication stays pending.
+        const paymentIntentId = getStripeId(session.payment_intent);
+        if (
+            session.status === "complete" &&
+            session.payment_status === "unpaid" &&
+            paymentIntentId
+        ) {
+            const payment =
+                await stripe.paymentIntents.retrieve(paymentIntentId);
+            if (
+                payment.status === "requires_payment_method" ||
+                payment.status === "canceled"
+            ) {
+                return c.json({ status: "failed" as const });
+            }
+        }
+        // Otherwise it is on its way: the webhook has not credited it yet,
+        // or the payment is still settling.
+        return c.json({ status: "pending" as const });
     })
 
     /**

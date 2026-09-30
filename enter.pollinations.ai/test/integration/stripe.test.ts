@@ -4087,13 +4087,14 @@ test("GET /api/stripe/checkout/sessions/:id reports credited Pollen from D1", as
     expect(mocks.stripe.state.requests).toHaveLength(0);
 });
 
-test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless expired", async ({
+test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless expired or failed", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
-    // Paid but not credited yet, or a bank payment still settling.
+    // Paid but not credited yet, a bank payment still settling or waiting
+    // on authentication, or one the bank refused after Checkout completed.
     const cases = [
         { id: "cs_open", status: "open", expected: "pending" },
         { id: "cs_expired", status: "expired", expected: "expired" },
@@ -4104,8 +4105,41 @@ test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless ex
             expected: "pending",
         },
         { id: "cs_processing", status: "complete", expected: "pending" },
+        {
+            id: "cs_settling",
+            status: "complete",
+            payment: "processing",
+            expected: "pending",
+        },
+        {
+            id: "cs_authenticating",
+            status: "complete",
+            payment: "requires_action",
+            expected: "pending",
+        },
+        {
+            id: "cs_refused",
+            status: "complete",
+            payment: "requires_payment_method",
+            expected: "failed",
+        },
+        {
+            id: "cs_canceled",
+            status: "complete",
+            payment: "canceled",
+            expected: "failed",
+        },
     ] as const;
     for (const item of cases) {
+        const paymentIntent =
+            "payment" in item ? `pi_${item.id.slice(3)}` : null;
+        if ("payment" in item && paymentIntent) {
+            mocks.stripe.state.paymentIntents.push({
+                id: paymentIntent,
+                object: "payment_intent",
+                status: item.payment,
+            });
+        }
         mocks.stripe.state.checkoutSessions.push({
             id: item.id,
             object: "checkout.session",
@@ -4115,7 +4149,7 @@ test("GET /api/stripe/checkout/sessions/:id is pending until credited, unless ex
             status: item.status,
             payment_status:
                 "payment_status" in item ? item.payment_status : "unpaid",
-            payment_intent: null,
+            payment_intent: paymentIntent,
             metadata: { userId },
         });
     }

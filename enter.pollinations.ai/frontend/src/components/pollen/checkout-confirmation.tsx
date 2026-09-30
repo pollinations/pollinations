@@ -12,13 +12,13 @@ const POLL_ATTEMPTS = 20;
 /** GET /api/stripe/checkout/sessions/:id */
 type SessionStatus =
     | { status: "credited"; pollen: number }
-    | { status: "pending" | "expired" };
+    | { status: "pending" | "expired" | "failed" };
 
 type CheckoutConfirmationProps = {
     sessionId: string;
     /** Reload the wallet and billing once the Pollen is in. */
     onCredited?: () => void;
-    /** Start a new checkout after an expired one. */
+    /** Start a new checkout after an expired or failed one. */
     onRetry?: () => void;
 };
 
@@ -55,8 +55,8 @@ export const CheckoutConfirmation: FC<CheckoutConfirmationProps> = ({
                 onCreditedRef.current?.();
                 return;
             }
-            if (next?.status === "expired")
-                return setState({ status: "expired" });
+            if (next?.status === "expired" || next?.status === "failed")
+                return setState({ status: next.status });
             if (attempt + 1 >= POLL_ATTEMPTS) {
                 setState({ status: "timeout" });
                 return;

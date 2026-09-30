@@ -4,18 +4,21 @@ import {
     ClockIcon,
     LoadingStatus,
     RefreshIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import { formatPollenPackValue } from "@shared/pollen-packs.ts";
 import type { FC, ReactNode } from "react";
 
 /**
- * What the buyer sees after paying: waiting, added, an old expired link, or
- * a payment that takes longer (a bank payment, a slow webhook).
+ * What the buyer sees after paying: waiting, added, an old expired link, a
+ * bank payment the bank refused, or one that takes longer (a bank payment
+ * still settling, a slow webhook).
  */
 export type CheckoutConfirmationState =
     | { status: "checking" }
     | { status: "credited"; pollen: number }
     | { status: "expired" }
+    | { status: "failed" }
     | { status: "timeout" };
 
 export const CheckoutStatusMessage: FC<{
@@ -38,6 +41,19 @@ export const CheckoutStatusMessage: FC<{
                 <div className="flex flex-col items-start gap-3">
                     <StatusLine icon={<ClockIcon />}>
                         Checkout expired.
+                    </StatusLine>
+                    {onRetry && (
+                        <Button icon={<RefreshIcon />} onClick={onRetry}>
+                            Buy again
+                        </Button>
+                    )}
+                </div>
+            );
+        case "failed":
+            return (
+                <div className="flex flex-col items-start gap-3">
+                    <StatusLine icon={<WarningIcon />}>
+                        The payment didn’t go through. No Pollen was added.
                     </StatusLine>
                     {onRetry && (
                         <Button icon={<RefreshIcon />} onClick={onRetry}>

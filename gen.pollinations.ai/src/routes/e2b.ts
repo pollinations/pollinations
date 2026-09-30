@@ -388,6 +388,8 @@ export const e2bRoutes = new Hono<Env>()
     .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
     .delete("/sandboxes/:id", ownerOnly)
     .get("/sandboxes/:id/metrics", ownerOnly)
+    // `e2b sandbox logs` reads this deprecated v1 path.
+    .get("/sandboxes/:id/logs", ownerOnly)
     .post("/sandboxes/:id/pause", ownerOnly)
     .put("/sandboxes/:id/network", ownerOnly)
     .post("/sandboxes/:id/timeout", async (c) => {

@@ -23,10 +23,10 @@ export interface Sandbox {
 }
 
 // Paused, not killed, when its paid time runs out.
-export const createSandbox = (templateID: string) =>
+export const createSandbox = (templateID: string, timeout: number) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
-        body: { templateID, timeout: LEASE_SECONDS, autoPause: true },
+        body: { templateID, timeout, autoPause: true },
     });
 
 export const listSandboxes = () => gen<Sandbox[]>(`${E2B_PATH}/v2/sandboxes`);
@@ -34,6 +34,14 @@ export const listSandboxes = () => gen<Sandbox[]>(`${E2B_PATH}/v2/sandboxes`);
 // E2B answers 204 with no body.
 export const killSandbox = (id: string) =>
     genText(`${E2B_PATH}/sandboxes/${id}`, { method: "DELETE" });
+
+// Keeps the sandbox running until `timeout` seconds from now, paying in
+// advance for time not yet paid. E2B answers 204 with no body.
+export const setSandboxTimeout = (id: string, timeout: number) =>
+    genText(`${E2B_PATH}/sandboxes/${id}/timeout`, {
+        method: "POST",
+        body: { timeout },
+    });
 
 // Resumes a paused sandbox and makes sure it is paid for LEASE_SECONDS.
 export const connectSandbox = (id: string) =>

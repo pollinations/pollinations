@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { requireKey } from "../../lib/api.js";
 import {
     fail,
@@ -11,31 +11,55 @@ import {
     killSandbox,
     LEASE_SECONDS,
     listSandboxes,
+    setSandboxTimeout,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
+
+// Whole seconds, as in `e2b sandbox create --timeout`.
+function parseSeconds(value: string): number {
+    const seconds = Number(value);
+    if (!Number.isInteger(seconds) || seconds < 1) {
+        throw new InvalidArgumentError("Give a whole number of seconds.");
+    }
+    return seconds;
+}
+
+const time = (secondsFromNow: number) =>
+    new Date(Date.now() + secondsFromNow * 1000).toLocaleString();
 
 export const sandboxCommand = new Command("sandbox")
     .description("E2B sandboxes billed to your Pollinations account (alpha)")
     .addCommand(
         new Command("create")
             .description("Start a sandbox you can ssh into")
-            .option("-t, --template <name>", "E2B template", "base")
-            .action(async ({ template }: { template: string }) => {
-                requireKey();
-                try {
-                    const { sandboxID } = await createSandbox(template);
-                    setupSsh();
-                    printSuccess(
-                        `Sandbox ${sandboxID} created. It pauses about ${LEASE_SECONDS / 60} minutes after the last ssh session.`,
-                    );
-                    printResult({
-                        id: sandboxID,
-                        ssh: `ssh ${sandboxID}.polli`,
-                    });
-                } catch (err) {
-                    fail("Failed to create sandbox", err);
-                }
-            }),
+            .argument("[template]", "E2B template", "base")
+            .option(
+                "--timeout <seconds>",
+                "keep it running this long, paid in advance",
+                parseSeconds,
+                LEASE_SECONDS,
+            )
+            .action(
+                async (template: string, { timeout }: { timeout: number }) => {
+                    requireKey();
+                    try {
+                        const { sandboxID } = await createSandbox(
+                            template,
+                            timeout,
+                        );
+                        setupSsh();
+                        printSuccess(
+                            `Sandbox ${sandboxID} created. It runs until ${time(timeout)}, or ${LEASE_SECONDS / 60} minutes after the last ssh session, then pauses.`,
+                        );
+                        printResult({
+                            id: sandboxID,
+                            ssh: `ssh ${sandboxID}.polli`,
+                        });
+                    } catch (err) {
+                        fail("Failed to create sandbox", err);
+                    }
+                },
+            ),
     )
     .addCommand(
         new Command("list")
@@ -55,6 +79,25 @@ export const sandboxCommand = new Command("sandbox")
                     );
                 } catch (err) {
                     fail("Failed to list sandboxes", err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("timeout")
+            .description(
+                "Keep a sandbox running until <seconds> from now, paid in advance",
+            )
+            .argument("<id>")
+            .argument("<seconds>", "seconds from now", parseSeconds)
+            .action(async (id: string, seconds: number) => {
+                requireKey();
+                try {
+                    await setSandboxTimeout(id, seconds);
+                    printSuccess(
+                        `Sandbox ${id} runs until ${time(seconds)}, then pauses.`,
+                    );
+                } catch (err) {
+                    fail(`Failed to set the timeout of sandbox ${id}`, err);
                 }
             }),
     )

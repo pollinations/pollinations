@@ -124,6 +124,10 @@ function stubE2b() {
             sandbox.endAt = inSeconds(body.timeout ?? 0);
             return new Response(null, { status: 204 });
         }
+        if (call === "GET /logs") {
+            const start = url.searchParams.get("start");
+            return Response.json({ logs: [{ line: `since ${start}` }] });
+        }
         if (call === "POST /pause") {
             // Like E2B, a paused sandbox reports its pause time as endAt.
             sandbox.state = "paused";
@@ -217,6 +221,11 @@ test("create pays the lease up front and hides the sandbox from other users", as
         method: "DELETE",
     });
     expect(kill.status).toBe(404);
+    const logs = `/sandboxes/${sandboxID}/logs?start=5`;
+    expect((await call(other.key, logs)).status).toBe(404);
+    expect(await (await call(owner.key, logs)).json()).toEqual({
+        logs: [{ line: "since 5" }],
+    });
 
     const own = await call(owner.key, "/v2/sandboxes");
     expect(await own.json()).toMatchObject([{ sandboxID }]);

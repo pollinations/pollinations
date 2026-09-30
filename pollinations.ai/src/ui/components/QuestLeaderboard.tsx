@@ -89,7 +89,7 @@ export function QuestLeaderboardContent({
                             href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-[1px] hover:translate-y-[1px]"
+                            className="flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-px hover:translate-y-px"
                         >
                             <span
                                 aria-hidden="true"

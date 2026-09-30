@@ -24,9 +24,9 @@ const badgeVariants = cva(
                 brand: "bg-white text-dark border border-dark shadow-brand-sm",
                 muted: "bg-white text-muted border border-tan",
                 // Per-badge accent colors — synesthesia mapping
-                fresh: "bg-tertiary-strong/25 text-dark border-r-4 border-b-4 border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-                pollen: "bg-accent-strong/25 text-dark border-r-4 border-b-4 border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
-                buzz: "bg-primary-strong/25 text-dark border-r-4 border-b-4 border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+                fresh: "bg-tertiary-strong/25 text-dark border-r-4 border-b-4 border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)/0.3)]",
+                pollen: "bg-accent-strong/25 text-dark border-r-4 border-b-4 border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)/0.3)]",
+                buzz: "bg-primary-strong/25 text-dark border-r-4 border-b-4 border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)/0.3)]",
             },
         },
         defaultVariants: {

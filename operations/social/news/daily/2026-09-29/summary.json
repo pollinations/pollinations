@@ -1,0 +1,175 @@
+{
+  "date": "2026-09-29",
+  "period_start": "2026-09-29",
+  "period_end": "2026-09-29",
+  "title": "More ways to make and work with images and audio",
+  "summary": "New image, audio, and chat options landed alongside sturdier client integrations, community-made plugins, and a Bee Census that asks what to build next.\n\nLightning Image Turbo adds text-to-image generation with up to two reference images. GPT Image 1.5 can try another Azure region, then OpenAI direct, when a deployment refuses a request. Audio gained Gemini 3.5 transcription with timestamps and speaker labels, ElevenLabs stem separation, and two Azure-backed speech models. Claude Sonnet 5.5 also arrived for long-context chat with images and tools.\n\nAn Anthropic-compatible /v1/messages route lets Anthropic SDKs and Claude Code use chat-capable models, while a Fireworks fix handles cache markers those models cannot accept. Floret accepts ag_, sk_, and pk_ bearer keys; API keys can have longer or no expiry; and daily usage filters work by key again. Vision requests now get a clear error when a model cannot read images, and concurrent Stripe webhooks add just one wallet pack per completed auto top-up.\n\npolli gen now covers prompt-to-3D, image-to-3D, embeddings, voice changing, audio isolation, and speech timing. Hermes Agent gained a Pollinations harness and MCP server management; Hermes, DSH, Pi, and Prime harnesses now start with available tool-calling defaults. The generated API reference was synced with the deployed spec.",
+  "pr_count": 41,
+  "prs": [
+    {
+      "number": 14797,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15097,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15497,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15512,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15541,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15553,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15564,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15601,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15610,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15637,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15650,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15654,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15671,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15680,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15690,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15700,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15718,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15735,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15738,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15739,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15746,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15747,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15750,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15755,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15756,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15761,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15762,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15766,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15768,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15773,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15774,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15775,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15778,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15779,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15785,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15800,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15809,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15814,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15824,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15826,
+      "date": "2026-09-29"
+    },
+    {
+      "number": 15842,
+      "date": "2026-09-29"
+    }
+  ],
+  "generated_at": "2026-09-30T06:31:48.436160+00:00"
+}

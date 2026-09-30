@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
+- **2026-09-29** – **🔗 Claude Code, meet Pollinations** The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`.
+- **2026-09-29** – **🎨 Lightning Image Turbo** Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models).
+- **2026-09-29** – **🎵 Audio gets more useful** Transcribe with Gemini 3.5 for word timestamps and speaker labels, or split a recording into two or six stems with ElevenLabs. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-09-29** – **🎵 More voices for speech** `openai/tts-1` and `openai/tts-1-hd` are now available through the existing speech endpoints. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-09-29** – **✨ Polli CLI grows a third dimension** Generate 3D files from text or images with `polli gen 3d`; the CLI also adds voice changing, audio isolation, and speech timestamps. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
+- **2026-09-29** – **🎨 Pollinations inside Figma** Generate and edit images on the canvas with a community-built plugin using your own Pollen. [View repo](https://github.com/xiaotian1171/pollinations-figma) <!-- app -->
 - **2026-09-28** – **🤖 Frugal code-agent routing** Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools.
 - **2026-09-28** – **🎯 Code reviews with Prism** `cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget.
 - **2026-09-28** – **🔗 Polli connects to Codex and Claude Code** Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login.
-- **2026-09-28** – **✨ Prompt agents can call your tools** Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)
-- **2026-09-27** – **🎯 Apps can complete Quests** Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward.
-- **2026-09-27** – **🎨 Try image2gpt** Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app) <!-- app -->
-- **2026-09-27** – **✨ Generate images in your browser** Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator) <!-- app -->
-- **2026-09-26** – **🎨 MiniMax H3 Max makes longer videos** Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-09-26** – **🎵 Gemini 3.8 finds its voice** Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs).
-- **2026-09-26** – **🤖 GPT-6 Sol and Luna join the lineup** Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models).
 ---
 
 ## 🌱 Introduction

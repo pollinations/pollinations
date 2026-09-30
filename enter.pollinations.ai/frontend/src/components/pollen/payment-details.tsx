@@ -10,31 +10,22 @@ import {
     paymentMethodDetails,
 } from "./payment-method-format.ts";
 
-type BillingPanelProps = {
-    billing: BillingOverview | null;
-    returnToTopUp?: { redirect?: string };
-};
-
 /**
  * What Stripe holds for the buyer: the card(s) and the details invoices and
- * tax use. Shown here, edited only on Stripe.
+ * tax use. Shown here, edited only on Stripe (EditOnStripeLink).
  */
-export const BillingPanel: FC<BillingPanelProps> = ({
+export const BillingPanel: FC<{ billing: BillingOverview | null }> = ({
     billing,
-    returnToTopUp,
 }) => (
-    <div className="flex flex-col gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-            <Surface className="flex flex-col gap-2">
-                <CardHeading>Payment method</CardHeading>
-                <PaymentMethods methods={billing?.paymentMethods ?? []} />
-            </Surface>
-            <Surface className="flex flex-col gap-2">
-                <CardHeading>Details</CardHeading>
-                <Details details={billing?.billingDetails ?? null} />
-            </Surface>
-        </div>
-        <PortalLink returnToTopUp={returnToTopUp}>Edit on Stripe</PortalLink>
+    <div className="grid gap-3 sm:grid-cols-2">
+        <Surface className="flex flex-col gap-2">
+            <CardHeading>Payment method</CardHeading>
+            <PaymentMethods methods={billing?.paymentMethods ?? []} />
+        </Surface>
+        <Surface className="flex flex-col gap-2">
+            <CardHeading>Details</CardHeading>
+            <Details details={billing?.billingDetails ?? null} />
+        </Surface>
     </div>
 );
 
@@ -111,6 +102,13 @@ const Details: FC<{ details: BillingOverview["billingDetails"] }> = ({
         </address>
     );
 };
+
+/** Opens the Stripe Billing Portal; sits top right of the Billing section. */
+export const EditOnStripeLink: FC<{
+    returnToTopUp?: { redirect?: string };
+}> = ({ returnToTopUp }) => (
+    <PortalLink returnToTopUp={returnToTopUp}>Edit on Stripe</PortalLink>
+);
 
 const PortalLink: FC<{
     returnToTopUp?: { redirect?: string };

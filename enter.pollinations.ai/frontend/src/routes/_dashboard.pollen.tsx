@@ -16,6 +16,7 @@ import {
 import {
     BillingPanel,
     BuyPollenPanel,
+    EditOnStripeLink,
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
@@ -113,7 +114,7 @@ function PollenPage() {
                 </Suspense>
             </Section>
             {/* The Top-up section above shows the page's one loading status. */}
-            <Section title="Billing">
+            <Section title="Billing" action={<EditOnStripeLink />}>
                 <Suspense fallback={null}>
                     <Await promise={billing}>
                         {(billingState) => (

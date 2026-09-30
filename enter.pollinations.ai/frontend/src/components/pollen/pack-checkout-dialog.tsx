@@ -16,7 +16,6 @@ import {
 import {
     loadStripe,
     type Stripe,
-    type StripeCheckoutContact,
     type StripeCheckoutSession,
 } from "@stripe/stripe-js";
 import type { FC, ReactNode } from "react";
@@ -95,8 +94,6 @@ type PackCheckoutDialogProps = {
     pack: PollenPack;
     /** return/redirect for the standalone top-up page, as a query string. */
     checkoutQuery: string;
-    /** The buyer's address on Stripe: prices tax without a round trip. */
-    billingAddress?: StripeCheckoutContact;
     onCredited?: () => void;
 };
 
@@ -110,7 +107,6 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
     onOpenChange,
     pack,
     checkoutQuery,
-    billingAddress,
     onCredited,
 }) => {
     const slot = useRef<SessionSlot | null>(null);
@@ -140,7 +136,6 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
                 <CheckoutBody
                     key={`${pack.packKey}:${attempt}`}
                     pack={pack}
-                    billingAddress={billingAddress}
                     hostedHref={hostedCheckoutHref(pack.packKey, checkoutQuery)}
                     start={() => sessionFor(pack.packKey)}
                     onFinished={() => {
@@ -176,16 +171,7 @@ const CheckoutBody: FC<{
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
-    billingAddress?: StripeCheckoutContact;
-}> = ({
-    pack,
-    hostedHref,
-    start,
-    onFinished,
-    onRetry,
-    onCredited,
-    billingAddress,
-}) => {
+}> = ({ pack, hostedHref, start, onFinished, onRetry, onCredited }) => {
     const [state, setState] = useState<BodyState>({ phase: "loading" });
     // Read once on mount: a new pack or retry remounts this body.
     const startOnMount = useRef(start);
@@ -246,7 +232,6 @@ const CheckoutBody: FC<{
             return (
                 <WalletPay
                     pack={pack}
-                    billingAddress={billingAddress}
                     stripe={state.stripe}
                     checkout={state.checkout}
                     hostedHref={hostedHref}
@@ -277,16 +262,7 @@ const WalletPay: FC<{
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
-    billingAddress?: StripeCheckoutContact;
-}> = ({
-    pack,
-    stripe,
-    checkout,
-    hostedHref,
-    onComplete,
-    onLoadError,
-    billingAddress,
-}) => {
+}> = ({ pack, stripe, checkout, hostedHref, onComplete, onLoadError }) => {
     const currencySelector = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
@@ -296,8 +272,6 @@ const WalletPay: FC<{
     // appears complete instead of building itself up.
     const [ready, setReady] = useState(false);
     const callbacks = useRef({ onComplete, onLoadError });
-    // Read once: the session starts with the address it was opened with.
-    const initialAddress = useRef(billingAddress);
     callbacks.current = { onComplete, onLoadError };
 
     useEffect(() => {
@@ -312,9 +286,6 @@ const WalletPay: FC<{
         const elements = stripe.initCheckout({
             clientSecret: checkout.clientSecret,
             adaptivePricing: { allowed: true },
-            ...(initialAddress.current && {
-                defaultValues: { billingAddress: initialAddress.current },
-            }),
         });
         elements.on("change", (next) => {
             if (!canceled) setSession(next);

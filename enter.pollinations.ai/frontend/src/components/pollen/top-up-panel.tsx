@@ -16,7 +16,6 @@ import {
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import { Link } from "@tanstack/react-router";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
@@ -266,7 +265,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 onOpenChange={setCheckoutOpen}
                 pack={checkoutPack}
                 checkoutQuery={checkoutParams.toString()}
-                billingAddress={stripeBillingAddress(billing)}
                 onCredited={onCredited}
             />
         </div>
@@ -350,32 +348,4 @@ function automaticText(billing: BillingOverview | null): string {
         ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
         : "a pack";
     return `Automatically purchase ${pack} every time your paid balance reaches ${AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen.`;
-}
-
-/**
- * The customer's Stripe address, in the shape Stripe.js takes it. Empty
- * fields are left out: Stripe.js rejects nulls here.
- */
-function stripeBillingAddress(
-    billing: BillingOverview | null,
-): StripeCheckoutContact | undefined {
-    const details = billing?.billingDetails;
-    if (!details?.country) return undefined;
-    const fields = {
-        line1: details.line1,
-        line2: details.line2,
-        city: details.city,
-        postal_code: details.postalCode,
-        state: details.state,
-    };
-    const name = details.company ?? details.name;
-    return {
-        ...(name && { name }),
-        address: {
-            country: details.country,
-            ...Object.fromEntries(
-                Object.entries(fields).filter(([, value]) => value),
-            ),
-        },
-    };
 }

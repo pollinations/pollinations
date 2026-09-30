@@ -257,7 +257,13 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
         ) {
             unit = direction === "input" ? "image" : "request";
         } else if (price.type === "audio" && field.endsWith("AudioTokens")) {
-            unit = model.flat_rate ? "request" : "character";
+            // TTS output is billed per input character; audio input stays in
+            // tokens (e.g. transcription).
+            unit = model.flat_rate
+                ? "request"
+                : field === "completionAudioTokens"
+                  ? "character"
+                  : "token";
         }
         const declared = units?.[field];
         if (declared) {

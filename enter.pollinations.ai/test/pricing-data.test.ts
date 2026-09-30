@@ -1920,6 +1920,10 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
             unit: "byte",
         },
     ]);
+    expect(get("google/gemini-3.5-transcribe")).toEqual([
+        { direction: "input", kind: "audioIn", price: "2.0", unit: "token" },
+        { direction: "output", kind: "text", price: "12.0", unit: "token" },
+    ]);
 });
 
 test("every positive catalog rate survives conversion for every category and variant", () => {

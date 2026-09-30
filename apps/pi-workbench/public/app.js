@@ -61,6 +61,7 @@ document.addEventListener(
     { capture: true },
 );
 let key = "";
+let clientId = "";
 let wasmer;
 let sandbox;
 let running = false;
@@ -105,6 +106,7 @@ function controls() {
     ])
         $(id).disabled = running;
     $("run").disabled = !sandbox || !key || running;
+    $("oauth").disabled = running || !clientId;
     $("pi-terminal-start").disabled = !sandbox || running;
     $("stop").disabled = !running;
 }
@@ -166,7 +168,10 @@ $("key-file").onchange = handle(async () => {
     await connect((await file.text()).trim());
     $("key-file").value = "";
 });
-$("oauth").onclick = handle(() => connectWallet($("client-id").value.trim()));
+$("oauth").onclick = handle(async () => {
+    if (sandbox) await exportProject("pi-before-wallet-connect.zip");
+    await connectWallet(clientId);
+});
 try {
     const token = await finishWallet();
     if (token) await connect(token);
@@ -177,15 +182,16 @@ try {
     const response = await fetch("./config.json");
     if (response.ok) {
         const config = await response.json();
-        if (config.clientId) {
-            $("client-id").value = config.clientId;
+        if (config.clientId?.startsWith("pk_")) {
+            clientId = config.clientId;
             $("oauth-help").textContent =
-                "Authorize Pi Workbench to use your own wallet. No developer key is used for your generations.";
+                "Authorize Pi Workbench to use your own Pollen. Pollinations shows the app and requested access before you approve. Your current project is downloaded before leaving this page.";
         }
     }
 } catch {
     /* No registered client in a local checkout. Existing-key connection works. */
 }
+controls();
 function modelPrice() {
     const model = models.find((item) => item.name === $("model").value);
     const prices = model?.pricing;

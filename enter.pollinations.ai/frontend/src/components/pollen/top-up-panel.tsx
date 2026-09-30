@@ -4,11 +4,7 @@ import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
-import {
-    formatPollenPackValue,
-    POLLEN_PACKS,
-    type PollenPack,
-} from "@shared/pollen-packs.ts";
+import { POLLEN_PACKS, type PollenPack } from "@shared/pollen-packs.ts";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -294,10 +290,9 @@ const FooterText: FC<{
                 </InlineLink>
             </>
         );
+    // Same line on or off: the tab and the ringed tile show the state.
     else
-        text = billing.autoTopUp.enabled
-            ? `We’ll add ${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen whenever your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`
-            : `Pick a pack to top up automatically when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
+        text = `Pick a pack to add automatically when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
     return <p className="text-theme-text-muted">{text}</p>;
 };
 

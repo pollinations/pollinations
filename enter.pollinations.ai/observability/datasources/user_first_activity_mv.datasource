@@ -2,7 +2,8 @@ DESCRIPTION >
     Per-user first regular API activity time, maintained incrementally from
     generation_event_v2. Used by kpi_activations so the endpoint does not compute
     min(start_time) across the raw generation_event_v2 table on every dashboard
-    request.
+    request. First activity recorded before the regular-only filter is kept
+    as migrated.
 
 TOKEN "tinybird_read" READ
 
@@ -12,3 +13,6 @@ SCHEMA >
 
 ENGINE AggregatingMergeTree
 ENGINE_SORTING_KEY user_id
+
+FORWARD_QUERY >
+    SELECT *

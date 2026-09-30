@@ -2,6 +2,7 @@ DESCRIPTION >
     Regular-traffic daily BYOP app usage for app rankings and selected-app drill-downs.
     Production is the live scope; debug-prod-copy is an isolated staging
     fixture. BYOP attribution requires a populated api_key_client_id.
+    Rows written before the regular-only filter are kept as migrated.
 
 TOKEN "tinybird_read" READ
 
@@ -25,3 +26,6 @@ SCHEMA >
 ENGINE AggregatingMergeTree
 ENGINE_PARTITION_KEY toYYYYMM(day)
 ENGINE_SORTING_KEY day, environment, app_id, owner_user_id, model, is_community, funding_source
+
+FORWARD_QUERY >
+    SELECT *

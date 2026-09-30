@@ -1,5 +1,235 @@
 # Pollinations Model Changelog
 
+## 2026-09-30
+
+### Added
+- `anthropic/claude-sonnet-5.5` (Anthropic, text) — image input, reasoning and tool calling.
+- `openai/gpt-5.3-codex` (OpenAI, text) — coding-focused reasoning, image input and tool calling.
+- `xiaomi/mimo-v2.6-flash` (Xiaomi, text) — image input, reasoning and tool calling.
+- `xiaomi/mimo-v2.6-pro` (Xiaomi, text) — image input, reasoning and tool calling.
+- `inclusionai/ling-3.0-flash-vl` (inclusionAI, text) — image and video input with tool calling.
+- `community/tomdacatto/Humanish-Roleplay-Llama-3.1-8B` (TomdacatAI, text) — roleplay model with tool calling.
+- `community/tomdacatto/gemma-4-31B-it-uncensored` (TomdacatAI, text) — text input and tool calling.
+- `community/tomdacatto/Qwen3.8-Flash-Next` (TomdacatAI, text) — image input, reasoning and tool calling.
+- `community/vendouple/claude-sonnet-5.5:stable` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/Creatneworld/pen` (Community, text) — agent that adds a paragraph to a collective-memory story.
+- `community/vendouple/claude-opus-5.5:stable` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/vendouple/gpt-6-sol:stable` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/Guest453/show-your-work` (Community, text) — agent that independently reviews collective-memory maths claims.
+- `community/tomdacatto/gotcha-scout` (TomdacatAI, text) — agent that re-verifies collective-memory entries.
+- `community/afanasevmylife/gazette` (Community, text) — collective-memory news agent.
+- `community/afanasevmylife/polyrouter` (afanasevmylife, text) — price- and health-aware model router.
+- `community/pollinations-ai/midijourney` (Pollinations, text) — agent that produces MIDI arrangements in YAML and CSV.
+- `community/ZapGaming/llama3.1-8b-ultrafast` (Failure AI, text) — text-only chat.
+- `community/MarcosFRG/glm-5.3:paid` (JankRouter, text) — reasoning and tool calling.
+- `community/pollinations-ai/floret` (Pollinations, text) — agent with text input and output.
+- `community/iotserver24/kimi-k2.7-code-nitro` (R3AP3R editz, text) — image input, reasoning and tool calling.
+- `community/vendouple/glm-5.3` (OrchidLLM Proxy, text) — text-only chat.
+- `community/Takax62/minimax-m3-429b-vml` (Community, text) — image input.
+- `community/gggff123/Inkling` (Community, text) — text-only chat.
+- `community/gggff123/step-3.7-flash` (Community, text) — text-only chat.
+- `community/pollinations-ai/polli` (Pollinations, text) — platform-support agent.
+- `community/chirag-gamer/gpt-oss-120b` (Community, text) — text-only chat.
+- `black-forest-labs/flux.1.1-pro` (Black Forest Labs, image) — text-to-image generation.
+- `microsoft/mai-image-2.6` (Microsoft, image) — generation and single-reference editing.
+- `recraft/recraft-v4.1-flash` (Recraft, image) — text-to-image generation.
+- `microsoft/mai-image-2.6-flash` (Microsoft, image) — generation and single-reference editing.
+- `qwen/qwen-image-2.1` (Qwen, image) — generation and editing with up to ten references.
+- `inferenceport-ai/lightning-image-turbo` (InferencePort, image) — generation with up to two reference images.
+- `minimax/minimax-h3-max` (MiniMax, video) — 5–15-second video with synchronized audio and reference-media input.
+- `openai/tts-1` (OpenAI, audio) — text-to-speech with six voices.
+- `openai/tts-1-hd` (OpenAI, audio) — text-to-speech with six voices.
+- `elevenlabs/stem-separation` (ElevenLabs, audio) — separates input audio into two or six tracks.
+- `google/gemini-3.5-transcribe` (Google, audio) — speech-to-text with word timestamps and speaker labels.
+- `google/lyria-3.5` (Google, audio) — song generation from text.
+- `google/gemini-3.8-flash-lite-tts` (Google, audio) — text-to-speech with 30 voices.
+- `google/gemini-3.8-flash-tts` (Google, audio) — text-to-speech with 30 voices.
+
+### Changed
+- `openai/gpt-6-luna` — now free; image-input pricing tokens and `/v1/messages` were also added.
+- `openai/gpt-6-sol` — now free; image-input pricing tokens and `/v1/messages` were also added.
+- `deepseek/deepseek-v4-flash-vision-exp` — now paid-only; listed token rates fell approximately 2%.
+- `meta/muse-glimmer-30b` — now paid-only; completion-text token rate fell 20%.
+- `moonshotai/kimi-k2.7-code` — now paid-only; completion-text token rate rose approximately 5%.
+- `deepseek/deepseek-v4-pro` — now paid-only; completion-text token rate fell approximately 10%, while cached-input pricing rose.
+- `z-ai/glm-5.2` — now paid-only; completion-text token rate rose approximately 5%, while cached-input pricing rose further.
+- `perplexity/sonar` — now paid-only; completion-text token rate rose 150%, while prompt-text and search-request rates fell. Aliases for the removed Sonar Pro and Sonar Reasoning Pro routes were added.
+- `community/sharktide/inferenceport-ai-kimi-k2.7-code-deep-logician` — now paid-only.
+- `community/sharktide/inferenceport-ai-minimax-m3` — now paid-only.
+- `community/vendouple/anima` — now paid-only; image rate fell approximately 10%.
+- `openai/gpt-image-2.5-flare` — image-output and listed input-token rates fell 25%.
+- `openai/gpt-image-2.5-sunburst` — image-output and listed input-token rates fell 25%.
+- `community/iotserver24/supercharge` — completion-text token rate fell 25%; other listed token rates also fell.
+- `community/MarcosFRG/glm-5.3-flash` — completion-text token rate fell 25%; other listed token rates also fell.
+- `community/MarcosFRG/metraxai` — completion-text token rate fell 25%; other listed token rates also fell.
+- `openai/gpt-6-astra` — completion-text and other listed token rates rose approximately 35%.
+- `minimax/minimax-m2.7` — completion-text token rate rose approximately 10%.
+- `deepseek/deepseek-v4-flash` — completion-text and other listed token rates rose 50%.
+- `community/MarcosFRG/gemma-4-31b:paid` — completion-text and other listed token rates doubled.
+- `community/MarcosFRG/deepseek-v4-flash-0731:paid` — completion-text token rate rose 125%.
+- `community/MarcosFRG/gemma-4-26b-a4b:paid` — completion-text token rate rose approximately 15%; image-input pricing rose further.
+- `community/MarcosFRG/qwen3.8-27b:paid` — completion-text token rate rose approximately 115%.
+- `community/MarcosFRG/deepseek-v4-flash-0731` — completion-text token rate rose 50%.
+- `community/MarcosFRG/gemma-4-31b` — completion-text token rate rose approximately 10%.
+- `community/vendouple/uncensored-image-v2` — image rate rose approximately 10%; it remains free-access in the snapshot.
+- `minimax/minimax-h3-max-turbo` — video rate quadrupled at 480p, 768p and 1080p.
+- `qwen/qwen3.8-2.4t-a95b` — added image input.
+- `pollinations/midijourney-large` — added image input.
+- `pollinations/midijourney` — added image input.
+- `community/voodoohop/airforce-grok-4-fast` — added image input.
+
+### Removed
+- `perplexity/sonar-pro` (was: text)
+- `perplexity/sonar-reasoning-pro` (was: text)
+- `community/NamanSoni78/gpt-5.4-nano` (was: text)
+- `community/Catniti/agnes-3.0-flash` (was: text)
+- `community/aikhusus2025-ctrl/place-painter` (was: text)
+- `community/scriptsnsenses-sys/gpt-5.6-sol-free` (was: text)
+- `community/AkshayCoder48/gpt-5` (was: text)
+- `community/AkshayCoder48/gpt-4o-latest` (was: text)
+- `community/AkshayCoder48/gpt-oss-120b` (was: text)
+- `community/AkshayCoder48/gemini-2.5-flash` (was: text)
+- `community/AkshayCoder48/gemini-2.5-pro` (was: text)
+- `community/AkshayCoder48/gemini-3-flash` (was: text)
+- `community/AkshayCoder48/gemini-3.1-flash-lite` (was: text)
+- `community/AkshayCoder48/gemini-3.6-flash` (was: text)
+- `community/AkshayCoder48/deepseek-r1` (was: text)
+- `community/AkshayCoder48/deepseek-v3` (was: text)
+- `community/AkshayCoder48/deepseek-v3.1` (was: text)
+- `community/AkshayCoder48/grok-4-fast` (was: text)
+- `community/AkshayCoder48/L3-70B-Euryale-v2.1` (was: text)
+- `community/AkshayCoder48/midnight-rose` (was: text)
+- `community/AkshayCoder48/llama3-8b` (was: text)
+- `community/AkshayCoder48/chat-model-reasoning` (was: text)
+- `community/AkshayCoder48/chat-model-reasoning-with-search` (was: text)
+- `community/AkshayCoder48/poolside-laguna-s-2.1:free` (was: text)
+- `community/AkshayCoder48/cohere-north-mini-code:free` (was: text)
+- `community/AkshayCoder48/kilo-auto-free` (was: text)
+- `community/AkshayCoder48/kilo-auto-small` (was: text)
+- `community/AkshayCoder48/v3` (was: text)
+- `community/AkshayCoder48/vexa` (was: text)
+- `community/AkshayCoder48/grok-4-6` (was: text)
+- `community/AkshayCoder48/gpt-5-6-luna` (was: text)
+- `community/AkshayCoder48/qwen3-coder-480b` (was: text)
+- `community/AkshayCoder48/grok-4-3` (was: text)
+- `community/AkshayCoder48/nvidia-nemotron-3-ultra-550b-a55b-free` (was: text)
+- `community/AkshayCoder48/nvidia-nemotron-3-super-120b-a12b-free` (was: text)
+- `community/AkshayCoder48/nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free` (was: text)
+- `community/AkshayCoder48/stepfun-step-3.7-flash-free` (was: text)
+- `community/AkshayCoder48/codestral-latest` (was: text)
+- `community/AkshayCoder48/minimax-m2.7` (was: text)
+- `community/AkshayCoder48/lfm-7b` (was: text)
+- `community/AkshayCoder48/sft-7b` (was: text)
+- `community/AkshayCoder48/toolbaz-v4.5-fast` (was: text)
+- `community/AkshayCoder48/toolbaz_v4` (was: text)
+- `community/AkshayCoder48/gpt-5.2` (was: text)
+- `community/AkshayCoder48/o3-mini` (was: text)
+- `community/AkshayCoder48/claude-sonnet-4` (was: text)
+- `community/AkshayCoder48/gemini-3.5-flash` (was: text)
+- `community/gggff123/qwen3.8-27b:free` (was: text)
+- `community/YoannDev90/ling-3.0-flash-vl` (was: text)
+- `community/NamanSoni78/devin-agi-agent` (was: text)
+- `community/MarcosFRG/qwen3.8-max` (was: text)
+- `community/vendouple/glm-5.3-flash` (was: text)
+- `community/scriptsnsenses-sys/gpt-5.6-luna` (was: text)
+- `community/pegalink/jimmy` (was: text)
+- `community/pollinations-router/midijourney` (was: text)
+- `community/NamanSoni78/Glm-5.3-Thinking-Max` (was: text)
+- `community/pegalink/hy4-preview` (was: text)
+- `community/CloudCompile/agnes-3.0-flash` (was: text)
+- `community/CloudCompile/auto` (was: text)
+- `community/CloudCompile/gemma-4-26b` (was: text)
+- `community/MarcosFRG/gpt-6-astra:paid` (was: text)
+- `community/NamanSoni78/gpt-6-astra-pro` (was: text)
+- `community/vendouple/deepseek-v3.2` (was: text)
+- `community/MarcosFRG/gemma-4-26b-a4b` (was: text)
+- `community/MarcosFRG/qwen3.8-27b` (was: text)
+- `community/MarcosFRG/qwen3.8-flash:paid` (was: text)
+- `community/chigwell/gpt-6-astra` (was: text)
+- `community/NamanSoni78/opus-5-max` (was: text)
+- `community/tomdacatto/qwen-3.8-27B-fast` (was: text)
+- `community/NamanSoni78/gpt-5.6-Luna` (was: text)
+- `community/NamanSoni78/devin-ai` (was: text)
+- `community/NamanSoni78/gemini-3.8-flash` (was: text)
+- `community/MarcosFRG/glm-5.3` (was: text)
+- `community/NamanSoni78/Claude-Fable-5.1` (was: text)
+- `community/chigwell/kimi-k3` (was: text)
+- `community/vendouple/claude-opus-5` (was: text)
+- `community/pollinations-router/floret` (was: text)
+- `community/NamanSoni78/DeepSeek-V4.1-Flash` (was: text)
+- `community/NamanSoni78/fugu-ultra-v2` (was: text)
+- `community/JustScriptzz/glm-5.3-flash` (was: text)
+- `community/MarcosFRG/moondream-3.1` (was: text)
+- `community/chigwell/gemini-3.1-flash-lite` (was: text)
+- `community/chigwell/minimax-m2.7` (was: text)
+- `community/MarcosFRG/gpt-5.6-luna:paid` (was: text)
+- `community/JustScriptzz/kimi-k2-7-code` (was: text)
+- `community/iotserver24/route-r3ap3r` (was: text)
+- `community/iotserver24/deepseek-fast` (was: text)
+- `community/gggff123/gpt-5-nano` (was: text)
+- `community/chigwell/gpt-5.6-sol` (was: text)
+- `community/chigwell/glm-5.3` (was: text)
+- `community/gggff123/Glm-5.3` (was: text)
+- `community/JustScriptzz/agnes-2.5-flash` (was: text)
+- `community/JustScriptzz/grok-4.6` (was: text)
+- `community/Spit-fires/muse-glimmer` (was: text)
+- `community/MarcosFRG/deepseek-v4-pro-0813` (was: text)
+- `community/vendouple/gemini-3.8-flash` (was: text)
+- `community/chigwell/claude-sonnet-4-6` (was: text)
+- `community/chigwell/llm7-fast` (was: text)
+- `community/chigwell/claude-opus-5` (was: text)
+- `community/chigwell/claude-fable-5` (was: text)
+- `community/chigwell/claude-opus-4-8` (was: text)
+- `community/chigwell/grok-4.6` (was: text)
+- `community/vendouple/grok-4.6` (was: text)
+- `community/chigwell/gpt-5.5` (was: text)
+- `community/chigwell/grok-4.5` (was: text)
+- `community/chigwell/gpt-5.6-terra` (was: text)
+- `community/chigwell/claude-sonnet-5` (was: text)
+- `community/YoannDev90/muse-glimmer-30b:free` (was: text)
+- `community/pollinations-router/polli` (was: text)
+- `community/morriszdweck/osaii-api-smart` (was: text)
+- `community/MarcosFRG/gemini-3.1-pro-preview` (was: text)
+- `community/vendouple/gemma-4-31b-isometry-rp` (was: text)
+- `community/sharktide/inferenceport-ai-codestral-2508` (was: text)
+- `community/Minor-fun/deepseek-v3.2` (was: text)
+- `community/CloudCompile/agnes-2.5-flash` (was: text)
+- `community/sharktide/inferenceport.ai-gpt-oss-20b` (was: text)
+- `community/vendouple/muse-glimmer-30b:free` (was: text)
+- `community/sharktide/inferenceport-ai-kimi-k2.7-code` (was: text)
+- `community/Minor-fun/gemma-4-31B-it` (was: text)
+- `community/MarcosFRG/glm-5.2:paid` (was: text)
+- `community/mikl-shortcuts/ministral-3` (was: text)
+- `community/Bakhshi7889/gemma-4-31b-it` (was: text)
+- `community/MarcosFRG/gemini-3-flash-preview:paid` (was: text)
+- `community/sharktide/inferenceport-ai-mimo-v2.5` (was: text)
+- `community/sharktide/inferenceport-ai-command-r-plus` (was: text)
+- `community/voodoohop/anyvm-deepseek-chat` (was: text)
+- `amazon/nova-canvas-v1` (was: image)
+- `community/CloudCompile/sdxl-lightning` (was: image)
+- `community/MarcosFRG/phoenix-1.0` (was: image)
+- `community/MarcosFRG/lucid-origin:paid` (was: image)
+- `community/NamanSoni78/Imagine-4-low` (was: image)
+- `community/NamanSoni78/Z-Image-Turbo` (was: image)
+- `community/vendouple/qwen-image-3.0-pro` (was: image)
+- `community/JustScriptzz/qwen-image-3.0-pro` (was: image)
+- `community/MarcosFRG/phoenix-1.0:paid` (was: image)
+- `community/MarcosFRG/lucid-origin` (was: image)
+- `community/chigwell/firefly-gpt-image-2` (was: image)
+- `community/vendouple/lucid-origin` (was: image)
+- `community/CloudCompile/agnes-image-2.0-flash` (was: image)
+- `community/vendouple/grok-imagine` (was: image)
+- `community/vendouple/luma-photon-1` (was: image)
+- `community/tomdacatto/grok-imagine` (was: image)
+- `community/tomdacatto/nano-banana-pro` (was: image)
+- `amazon/nova-reel-v1` (was: video)
+- `community/NamanSoni78/Seedance-2.5` (was: video)
+- `community/NamanSoni78/FISH-AUDIO-S2.1-PRO` (was: audio)
+- `community/NamanSoni78/flux-jack-en` (was: audio)
+- `community/NamanSoni78/whisper-large-v3` (was: audio)
+- `community/NamanSoni78/whisper-large-v3-turbo` (was: audio)
+- `community/NamanSoni78/llama-nemotron-embed-vl-1b-v2` (was: embeddings)
+
 ## 2026-09-23
 
 ### Added

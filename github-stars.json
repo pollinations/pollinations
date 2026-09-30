@@ -1,5 +1,152 @@
 [
   {
+    "date": "2026-05-11",
+    "stars": 4378,
+    "capturedAt": "2026-05-11T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-05-18",
+    "stars": 4420,
+    "capturedAt": "2026-05-18T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-05-25",
+    "stars": 4467,
+    "capturedAt": "2026-05-25T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-06-01",
+    "stars": 4503,
+    "capturedAt": "2026-06-01T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-06-08",
+    "stars": 4551,
+    "capturedAt": "2026-06-08T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-06-15",
+    "stars": 4596,
+    "capturedAt": "2026-06-15T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-06-22",
+    "stars": 4640,
+    "capturedAt": "2026-06-22T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-06-29",
+    "stars": 4677,
+    "capturedAt": "2026-06-29T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-07-06",
+    "stars": 4728,
+    "capturedAt": "2026-07-06T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-07-13",
+    "stars": 4765,
+    "capturedAt": "2026-07-13T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-07-20",
+    "stars": 4810,
+    "capturedAt": "2026-07-20T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-07-27",
+    "stars": 4844,
+    "capturedAt": "2026-07-27T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-08-03",
+    "stars": 4877,
+    "capturedAt": "2026-08-03T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-08-10",
+    "stars": 4901,
+    "capturedAt": "2026-08-10T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-08-17",
+    "stars": 4931,
+    "capturedAt": "2026-08-17T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-08-24",
+    "stars": 4962,
+    "capturedAt": "2026-08-24T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-08-31",
+    "stars": 4998,
+    "capturedAt": "2026-08-31T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-09-07",
+    "stars": 5020,
+    "capturedAt": "2026-09-07T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-09-14",
+    "stars": 5057,
+    "capturedAt": "2026-09-14T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-09-21",
+    "stars": 5095,
+    "capturedAt": "2026-09-21T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
+    "date": "2026-09-28",
+    "stars": 5137,
+    "capturedAt": "2026-09-28T00:00:00.000Z",
+    "reconstructed": true,
+    "reconstructedAt": "2026-09-30T05:12:35.790Z"
+  },
+  {
     "date": "2026-09-29",
     "stars": 5144,
     "capturedAt": "2026-09-29T17:10:53.095Z"

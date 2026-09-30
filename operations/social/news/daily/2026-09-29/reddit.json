@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-29",
+  "period_start": "2026-09-29",
+  "period_end": "2026-09-29",
+  "generated_at": "2026-09-30T06:31:48.436160+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-29/images/reddit.jpg"
+    }
+  ],
+  "title": "41 PRs merged: media tools, client fixes, and polli updates",
+  "text": "41 PRs merged today. The useful bits, rather than the full changelog:\n\n- Image and audio: Lightning Image Turbo now accepts reference-image guidance ([#14797](https://github.com/pollinations/pollinations/pull/14797)). We also added ElevenLabs stem separation, Gemini 3.5 transcription with timestamps and speaker labels, and Azure-backed `tts-1` and `tts-1-hd`.\n- API compatibility: Floret accepts `ag_`, `sk_`, and `pk_` bearer keys. There’s now an Anthropic-compatible `/v1/messages` endpoint ([#15680](https://github.com/pollinations/pollinations/pull/15680)), and text-only models explicitly reject image input instead of leaving clients to guess what happened. API keys can be set to expire after 365 days or not expire. The API docs were synced with the deployed spec.\n- Local tooling: `polli gen` gained 3D, embeddings, and voice tools. `polli` also gained a Hermes Agent harness and MCP management ([#15601](https://github.com/pollinations/pollinations/pull/15601)); default models were fixed for four harnesses.\n- Community and maintenance: The Bee Census survey Quest opened, and community apps including Pollinations for Obsidian and Figma were listed. Daily GitHub, Cloudflare host-traffic, and Search Console archives started. Product events now include country codes without storing IPs.\n\nOne caveat: token-free reads for public GitHub KPI data are merged, but production resolution hasn’t been verified yet. If you’re using `/v1/messages` with an existing Anthropic client, compatibility gaps are especially useful to hear about."
+}

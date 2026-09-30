@@ -69,22 +69,26 @@ const sizes: Record<
     },
 };
 
-// The outlined Button's language: accent border, pale fill (none in dark).
-// On takes the button's hover fill and a solid accent thumb; invalid (on, but
-// needs attention) turns red.
-const trackClasses: Record<SwitchStatus, string> = {
-    off: "polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:hover:bg-theme-bg-active/60 polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-theme-text-soft/10",
-    on: "polli:border-theme-text-soft polli:bg-theme-bg-active",
+// On/off reads at a glance: grey when off, green when on, red when on but
+// needing attention. A two-way choice (icons) keeps the outlined Button's
+// accent look, since neither side is "off". Thumbs carry their own text
+// colour; the green one stays dark on the white thumb in both modes.
+type SwitchLook = SwitchStatus | "choice";
+const trackClasses: Record<SwitchLook, string> = {
+    off: "polli:border-theme-text-strong/15 polli:bg-theme-bg-subtle polli:hover:border-theme-text-strong/30",
+    on: "polli:border-intent-success-bg-bright polli:bg-intent-success-bg-bright",
     invalid: "polli:border-intent-danger-text polli:bg-intent-danger-bg-light",
+    choice: "polli:border-theme-text-soft polli:bg-theme-bg-active/30 polli:hover:bg-theme-bg-active/60 polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-theme-text-soft/10",
 };
-const thumbClasses: Record<SwitchStatus, string> = {
-    off: "polli:bg-theme-text-soft/40",
-    on: "polli:bg-theme-text-soft",
-    invalid: "polli:bg-intent-danger-text",
+const thumbClasses: Record<SwitchLook, string> = {
+    off: "polli:bg-theme-text-muted/60 polli:text-app-bg",
+    on: "polli:bg-intent-success-text-on-bright polli:text-[oklch(0.42_0.17_140)]",
+    invalid: "polli:bg-intent-danger-text polli:text-app-bg",
+    choice: "polli:bg-theme-text-soft polli:text-app-bg",
 };
 
 /**
- * Binary toggle, in `Button`'s sizes and colours. `checked` moves the thumb;
+ * Binary toggle, in `Button`'s sizes: grey off, green on. `checked` moves the thumb;
  * `status` colours it, so `checked status="invalid"` is thumb-right in red.
  * With `icons` it is a two-way choice with a solid thumb on both sides.
  */
@@ -100,8 +104,9 @@ export const Switch: FC<SwitchProps> = ({
     className,
 }) => {
     const geometry = sizes[size];
-    const track = icons ? "off" : (status ?? (checked ? "on" : "off"));
-    const thumb = icons ? "on" : track;
+    const look: SwitchLook = icons
+        ? "choice"
+        : (status ?? (checked ? "on" : "off"));
 
     return (
         <button
@@ -116,7 +121,7 @@ export const Switch: FC<SwitchProps> = ({
             className={cn(
                 "polli-control polli:relative polli:inline-block polli:shrink-0 polli:cursor-pointer polli:rounded-full polli:border polli:transition-colors polli:disabled:cursor-not-allowed polli:disabled:opacity-60",
                 geometry.track,
-                trackClasses[track],
+                trackClasses[look],
                 className,
             )}
         >
@@ -134,9 +139,9 @@ export const Switch: FC<SwitchProps> = ({
             )}
             <span
                 className={cn(
-                    "polli:absolute polli:top-1/2 polli:left-[3px] polli:flex polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:text-app-bg polli:transition-[transform,background-color]",
+                    "polli:absolute polli:top-1/2 polli:left-[3px] polli:flex polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:transition-[transform,background-color]",
                     geometry.thumb,
-                    thumbClasses[thumb],
+                    thumbClasses[look],
                     checked ? geometry.travel : "polli:translate-x-0",
                 )}
             >

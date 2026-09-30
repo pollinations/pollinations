@@ -1,0 +1,36 @@
+{
+  "pr_number": 15486,
+  "title": "[2026-09-30] fix: retire Nova Canvas and Reel",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15486",
+  "merged_at": "2026-09-30T09:51:20Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Removes Nova Canvas and Nova Reel, including their four aliases, from the registry and generation dispatch; no fallback is added.\n- Removes obsolete handlers and pricing while preserving historical migration records and the AWS binding. No endpoint route or method is removed.\n- Rejects all six retired IDs in model lookup and generation, and omits them from catalogs.\n- Validation: 239 Gen, 539 Enter, 58 SDK, 433 shared-provider and 7 Floret tests passed; Gen/Enter/SDK typechecks, Biome and diff checks passed. After incorporating MiniMax pricing, 474 additional pricing/alias checks passed.\n- The September 30 08:00 UTC gate has passed; maintainer authorized merge and production deployment. Refreshed against current main without conflicts; fresh full CI runs before merge. [AWS retirement notice](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html).\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Two models leave the shelf",
+    "blurb": "Nova Canvas and Nova Reel have left the model shelf, along with their four aliases. The catalog shows the models still available; old IDs get a clear rejection, not an unexpected substitute.",
+    "summary": "Retired Nova Canvas, Nova Reel, and their four aliases from the model registry and generation dispatch after the AWS retirement gate; catalogs omit all six IDs, and lookup and generation reject them without fallback.",
+    "impact": "Catalogs now show the available models; requests using any of the six retired IDs are rejected, so callers can select another listed model without changing API routes.",
+    "keywords": [
+      "Nova Canvas",
+      "Nova Reel",
+      "AWS Bedrock",
+      "model registry",
+      "image generation",
+      "video generation"
+    ],
+    "visual_concept": "A cozy model-library garden: Polli, wearing a tiny librarian hat, places two labeled model cards, Nova Canvas and Nova Reel, into an archive box while the remaining model cards stay on a lime-green shelf. The archive represents retirement rather than a replacement or fallback.",
+    "image_prompt": "In a cozy pixel art model-library garden, Polli wears a tiny librarian hat and gently files cards labeled 'NOVA CANVAS' and 'NOVA REEL' into an archive box beside a shelf of model cards and flowering code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15486.jpg",
+    "prompt": "In a cozy pixel art model-library garden, Polli wears a tiny librarian hat and gently files cards labeled 'NOVA CANVAS' and 'NOVA REEL' into an archive box beside a shelf of model cards and flowering code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-30T09:52:24.844654+00:00"
+}

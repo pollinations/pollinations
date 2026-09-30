@@ -65,8 +65,10 @@ export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
     );
 };
 
+// The dashboard's in-card label (as PAID / QUEST / TOTAL): the sans, not
+// the serif every h3 gets by default.
 const CardHeading: FC<{ children: ReactNode }> = ({ children }) => (
-    <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+    <h3 className="font-body text-sm font-bold uppercase tracking-wide text-theme-text-muted">
         {children}
     </h3>
 );

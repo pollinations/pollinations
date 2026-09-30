@@ -13,11 +13,13 @@ import {
 } from "@shared/billing/auto-top-up.ts";
 import {
     formatPollenPackValue,
+    getPollenPackByKey,
     POLLEN_PACKS,
     type PollenPack,
+    type PollenPackKey,
 } from "@shared/pollen-packs.ts";
 import type { FC, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { openBillingPortal } from "../../lib/billing-portal.ts";
@@ -40,10 +42,16 @@ type TopUpPanelProps = {
     initialBilling: BillingOverview | null;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
-    /** Reload the wallet (and billing) once a purchase is credited. */
-    onCredited?: () => void;
+    /**
+     * Reload the wallet and billing after anything here changed them (a
+     * credited purchase, a saved setting, a finished card setup), so
+     * Billing never shows an older state than Top-up.
+     */
+    onWalletChange?: () => void;
     /** Back from Stripe's setup page: wait for the webhook to enable it. */
     setupReturn?: boolean;
+    /** The pack a link or Stripe's return asked for, selected first. */
+    initialPack?: PollenPackKey;
 };
 
 const buyLabel = (pack: PollenPack | null) =>
@@ -128,11 +136,14 @@ const SETUP_POLL_TRIES = 10;
 export const TopUpPanel: FC<TopUpPanelProps> = ({
     initialBilling,
     returnToTopUp,
-    onCredited,
+    onWalletChange,
     setupReturn = false,
+    initialPack,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
-    const [chosenPack, setChosenPack] = useState<PollenPack | null>(null);
+    const [chosenPack, setChosenPack] = useState<PollenPack | null>(
+        () => (initialPack && getPollenPackByKey(initialPack)) || null,
+    );
     const [confirmingSetup, setConfirmingSetup] = useState(
         setupReturn && !initialBilling?.autoTopUp.enabled,
     );
@@ -156,6 +167,9 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     }, [publishableKey]);
 
     // Stripe's setup webhook enables auto-refill shortly after the return.
+    // Read by the setup poll without restarting it on every render.
+    const walletChanged = useRef(onWalletChange);
+    walletChanged.current = onWalletChange;
     useEffect(() => {
         if (!confirmingSetup) return;
         let canceled = false;
@@ -168,9 +182,16 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 .catch(() => null);
             if (canceled) return;
             if (next) setBilling(next);
-            if (next?.autoTopUp.enabled || tries >= SETUP_POLL_TRIES) {
+            if (next?.autoTopUp.enabled) {
                 clearInterval(timer);
                 setConfirmingSetup(false);
+                walletChanged.current?.();
+            } else if (tries >= SETUP_POLL_TRIES) {
+                // The card may be saved, but auto top-up didn't turn on:
+                // say so rather than going quiet.
+                clearInterval(timer);
+                setConfirmingSetup(false);
+                setSlotError(SAVE_FAILED);
             }
         }, SETUP_POLL_MS);
         return () => {
@@ -238,6 +259,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 | { error?: string };
             if (!response.ok || !("autoTopUp" in payload)) throw new Error();
             setBilling(payload);
+            onWalletChange?.();
         } catch {
             setSlotError(SAVE_FAILED);
         } finally {
@@ -335,15 +357,36 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                     items={{
                                         issue: (
                                             <>
-                                                <WarningIcon
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5 text-intent-danger-text"
-                                                />
                                                 {/* The icon says something is
                                                     wrong, the link what to do;
-                                                    the problem is read aloud. */}
+                                                    the problem is read aloud.
+                                                    When the short text can't
+                                                    say what it means (off, but
+                                                    a payment still waits), the
+                                                    icon explains on hover or
+                                                    tap. */}
+                                                {status?.detail ? (
+                                                    <Tooltip
+                                                        triggerAs="span"
+                                                        tapEnabled
+                                                        ariaLabel="What this means"
+                                                        content={status.detail}
+                                                    >
+                                                        <WarningIcon
+                                                            aria-hidden="true"
+                                                            className="h-3.5 w-3.5 text-intent-danger-text"
+                                                        />
+                                                    </Tooltip>
+                                                ) : (
+                                                    <WarningIcon
+                                                        aria-hidden="true"
+                                                        className="h-3.5 w-3.5 text-intent-danger-text"
+                                                    />
+                                                )}
                                                 <span className="sr-only">
-                                                    {status?.text}:
+                                                    {status?.detail ??
+                                                        status?.text}
+                                                    :
                                                 </span>
                                                 {status?.action?.kind ===
                                                 "link" ? (
@@ -456,7 +499,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 onOpenChange={setCheckoutOpen}
                 pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
                 checkoutQuery={checkoutParams.toString()}
-                onCredited={onCredited}
+                onCredited={onWalletChange}
             />
         </div>
     );

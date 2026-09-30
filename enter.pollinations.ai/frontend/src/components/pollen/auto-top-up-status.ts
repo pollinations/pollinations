@@ -10,6 +10,8 @@ export type AutoTopUpStatus = {
     tab: { on: boolean; label: string; warning: boolean };
     /** A problem to act on, shown next to the tabs; null when all is well. */
     text: string | null;
+    /** What the problem means for the buyer, when the short text can't say. */
+    detail?: string;
     action: StatusAction | null;
 };
 
@@ -29,10 +31,15 @@ export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
         warning,
     });
 
-    if (autoTopUp.enabled && issue?.kind === "pending_payment") {
+    // A payment waiting on the bank stays payable whatever the switch says:
+    // turning auto top-up off only stops the next purchases.
+    if (issue?.kind === "pending_payment") {
         return {
             tab: tab(true),
             text: "Bank approval needed",
+            ...(!autoTopUp.enabled && {
+                detail: "Auto top-up is off, so it won’t buy again. This payment still needs your bank’s approval.",
+            }),
             action: {
                 kind: "link",
                 label: "Approve",

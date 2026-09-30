@@ -211,7 +211,8 @@ function TopUpPage() {
                     initialBilling={billing}
                     setupReturn={search.auto_top_up_setup}
                     returnToTopUp={{ redirect: search.redirect }}
-                    onCredited={refreshWallet}
+                    onWalletChange={refreshWallet}
+                    initialPack={search.pack}
                 />
             )}
         </AuthFlowScreen>

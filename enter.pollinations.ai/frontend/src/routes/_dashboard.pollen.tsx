@@ -134,7 +134,8 @@ function PollenPage() {
                             <BuyPollenPanel
                                 initialBilling={billingState}
                                 setupReturn={setupReturn}
-                                onCredited={reloadWallet}
+                                onWalletChange={reloadWallet}
+                                initialPack={pack}
                             />
                         )}
                     </Await>

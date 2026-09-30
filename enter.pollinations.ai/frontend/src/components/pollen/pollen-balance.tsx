@@ -19,7 +19,7 @@ import {
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
-import { SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
+import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
@@ -268,22 +268,25 @@ type BuyPollenPanelProps = {
     setupReturn?: boolean;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
-    /** Reload the wallet and billing once a purchase is credited. */
-    onCredited?: () => void;
+    /** Reload the wallet and billing after Top-up changed them. */
+    onWalletChange?: () => void;
+    initialPack?: PollenPackKey;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBilling,
     setupReturn,
     returnToTopUp,
-    onCredited,
+    onWalletChange,
+    initialPack,
 }) => (
     <>
         <TopUpPanel
             initialBilling={initialBilling}
             setupReturn={setupReturn}
             returnToTopUp={returnToTopUp}
-            onCredited={onCredited}
+            onWalletChange={onWalletChange}
+            initialPack={initialPack}
         />
         <Footnotes>
             {/* When auto top-up charges, stated before anyone turns it on.

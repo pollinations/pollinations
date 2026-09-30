@@ -85,6 +85,24 @@ describe("automatic top-up on the tab label", () => {
             label: "Approve",
             href: "https://invoice.stripe.com/i/test",
         });
+        expect(pending.detail).toBeUndefined();
+
+        // Turned off while the bank waits: no new purchases, but this one
+        // is still payable, so Approve stays and says why.
+        const pendingOff = autoTopUpStatus(
+            billing({
+                autoTopUp: {
+                    enabled: false,
+                    lastIssue: {
+                        kind: "pending_payment",
+                        invoiceUrl: "https://invoice.stripe.com/i/test",
+                        occurredAt: "2026-09-29T22:30:00.000Z",
+                    },
+                },
+            }),
+        );
+        expect(pendingOff.action).toEqual(pending.action);
+        expect(pendingOff.detail).toMatch(/won’t buy again.*still needs/);
 
         const declinedIssue = {
             kind: "failed" as const,

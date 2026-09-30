@@ -145,6 +145,9 @@ Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
 key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
 
+The default is `openai/gpt-6-sol`; pass `--model <id>` to choose another model.
+Bloom is key-only and keeps its own model selection.
+
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI

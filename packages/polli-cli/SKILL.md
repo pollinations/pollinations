@@ -242,6 +242,8 @@ polli keys revoke <id>                                             # id comes fr
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness
+Polli defaults to `openai/gpt-6-sol`; `--model <id>` overrides it. Bloom is key-only and keeps its own model selection.
+
 ```bash
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI

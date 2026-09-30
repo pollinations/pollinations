@@ -220,6 +220,13 @@ afterEach(async () => {
 });
 
 describe("Claude Code harness", () => {
+    it("defaults to GPT-6 Sol without changing the native profile", async () => {
+        const result = await claudeCode.on(ctx, {});
+        expect(result.model).toBe("openai/gpt-6-sol");
+        expect(smokeBodies[0].model).toBe("openai/openai/gpt-6-sol");
+        expect(config.profile.profiles).toContainEqual(nativeProfile);
+    });
+
     it("checks the supported Claude Code Router version", () => {
         expect(ccrVersionCompatible("3.1.1")).toBe(true);
         expect(ccrVersionCompatible("3.2.0")).toBe(true);

@@ -47,12 +47,12 @@ type TopUpPanelProps = {
 };
 
 const buyLabel = (pack: PollenPack | null) =>
-    pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} Pollen` : "Buy now";
+    pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} pollen` : "Buy now";
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `${formatPollenPackValue(amountUsd)} Pollen`
-        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} Pollen`;
+        ? `${formatPollenPackValue(amountUsd)} pollen`
+        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} pollen`;
 // Every text each label can show, so it keeps the widest one's size.
 const BUY_LABELS = [null, ...POLLEN_PACKS].map(buyLabel);
 const REFILL_LABELS = [
@@ -257,10 +257,12 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         disabled={!selectedPack}
                         onClick={startCheckout}
                     >
-                        <StableLabel
-                            text={buyLabel(selectedPack)}
-                            options={BUY_LABELS}
-                        />
+                        <span className="font-bold">
+                            <StableLabel
+                                text={buyLabel(selectedPack)}
+                                options={BUY_LABELS}
+                            />
+                        </span>
                     </Button>
                     {/* A settings row: the label, then the switch flush with
                         the grid's right edge. The label keeps its widest
@@ -283,7 +285,17 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             or would buy (off). */}
                         <span className="flex flex-col items-end leading-tight">
                             <span>Auto top-up</span>
-                            <span className="text-xs font-medium text-theme-text-muted tabular-nums">
+                            {/* Green like the switch while it is on, grey
+                                while off. Same weight both ways, so the
+                                width never changes. */}
+                            <span
+                                className={cn(
+                                    "text-xs font-semibold tabular-nums transition-colors",
+                                    billing?.autoTopUp.enabled
+                                        ? "text-tier-deep"
+                                        : "text-theme-text-muted",
+                                )}
+                            >
                                 <StableLabel
                                     text={refillLabel(
                                         billing?.autoTopUp.enabled

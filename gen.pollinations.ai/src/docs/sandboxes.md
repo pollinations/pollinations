@@ -13,16 +13,16 @@ polli sandbox kill <id>
 ```
 
 - A sandbox pauses about 10 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it.
-- To keep it running without ssh, pay for the time up front with `polli sandbox create --timeout <seconds>` or `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time.
+- To keep it running without ssh, pay for the time up front with `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time. It also resumes a paused sandbox.
 - The first `ssh` installs `sshd`, `rsync` and `websocat` in the sandbox (Debian-based templates) and allows only polli's key, `~/.pollinations/ssh/id_ed25519`.
 - `polli sandbox create <template>` starts one of E2B's public templates instead of `base`: `claude-code`, `codex`, `amp`, `opencode`, `code-interpreter-v1` or `desktop`. Bigger templates cost more per second.
-- `polli sandbox` also has `info`, `logs`, `pause` and `resume`, named as in [E2B's CLI](https://e2b.dev/docs/cli); `kill --all` kills every sandbox. Instead of `exec`, run `ssh <id>.polli <command>`.
+- `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.
 - [My Models](https://enter.pollinations.ai/my-models) in the dashboard also lists, creates and kills sandboxes.
 
 ### Cost and limits
 
-- Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: the timeout you set, then 10 minutes at a time while an ssh session is open.
+- Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open, and the time you add with `polli sandbox timeout`.
 - Pausing and resuming within paid time is free. Unused time is not refunded.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
 - At most 3 sandboxes run at once per account.

@@ -30,18 +30,14 @@ export interface LogEntry {
 }
 
 // Paused, not killed, when its paid time runs out.
-export const createSandbox = (templateID: string, timeout: number) =>
+export const createSandbox = (templateID: string) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
-        body: { templateID, timeout, autoPause: true },
+        body: { templateID, timeout: LEASE_SECONDS, autoPause: true },
     });
 
-// `state` is "running", "paused" or both, comma-separated. E2B lists both
-// when it is left out.
-export const listSandboxes = (state?: string) =>
-    gen<Sandbox[]>(
-        `${E2B_PATH}/v2/sandboxes${state ? `?${new URLSearchParams({ state })}` : ""}`,
-    );
+// Running and paused ones.
+export const listSandboxes = () => gen<Sandbox[]>(`${E2B_PATH}/v2/sandboxes`);
 
 export const getSandbox = (id: string) =>
     gen<Sandbox>(`${E2B_PATH}/sandboxes/${id}`);
@@ -50,23 +46,12 @@ export const getSandbox = (id: string) =>
 export const killSandbox = (id: string) =>
     genText(`${E2B_PATH}/sandboxes/${id}`, { method: "DELETE" });
 
-// E2B answers 204 with no body.
-export const pauseSandbox = (id: string) =>
-    genText(`${E2B_PATH}/sandboxes/${id}/pause`, { method: "POST" });
-
-// Keeps the sandbox running until `timeout` seconds from now, paying in
-// advance for time not yet paid. E2B answers 204 with no body.
-export const setSandboxTimeout = (id: string, timeout: number) =>
-    genText(`${E2B_PATH}/sandboxes/${id}/timeout`, {
-        method: "POST",
-        body: { timeout },
-    });
-
-// Resumes a paused sandbox and makes sure it is paid for LEASE_SECONDS.
-export const connectSandbox = (id: string) =>
+// Resumes a paused sandbox and keeps it running for at least `timeout`
+// seconds, paying in advance for time not yet paid.
+export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
     gen<Connection>(`${E2B_PATH}/sandboxes/${id}/connect`, {
         method: "POST",
-        body: { timeout: LEASE_SECONDS },
+        body: { timeout },
     });
 
 // E2B's system log: sandbox start, and each process started through it.

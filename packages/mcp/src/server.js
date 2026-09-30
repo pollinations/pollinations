@@ -45,6 +45,9 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - For pricing, quote the returned pricing fields and currency; do not estimate.
 - Use getModelStatus for recent health and latency, not model discovery.
 
+## Account
+getBalance, getUsage, getEarnings, listQuests, listKeys, createKey and revokeKey mirror the Polli CLI account commands. getUsage, getEarnings, listQuests and getBalance require the \`account:usage\` permission; listKeys, createKey and revokeKey require \`account:keys\`. Call listModels before choosing a model, and never print a freshly created key to a place it could be logged.
+
 ## API Endpoint
 All requests go through: ${validateApiBaseUrl()}`;
 

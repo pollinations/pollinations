@@ -37,6 +37,17 @@ For all Pollinations-hosted MCP servers, see the
 | `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+| `getUsage` | Per-request history or a daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
+| `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |
+| `listQuests` | Quest catalog with this account's status and rewards; requires `account:usage` | `/account/quests` |
+| `listKeys` | List the account's API keys; requires `account:keys` | `/account/keys` |
+| `createKey` | Create a secret or publishable key; requires `account:keys` | `/account/keys` |
+| `revokeKey` | Revoke a key by id; requires `account:keys` | `/account/keys/{id}` |
+
+The account tools mirror the Polli CLI (`polli usage`, `polli earnings`,
+`polli quests`, `polli keys`) and use the same endpoints and parameters. The
+read tools need the `account:usage` permission and the key tools need
+`account:keys`; the API's error message is returned when a key lacks one.
 
 Generated media is returned as an MCP resource link using the API's existing
 public Media URL. No download or re-upload is needed, and binary data does not

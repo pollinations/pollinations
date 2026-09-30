@@ -1,6 +1,5 @@
 import {
     Button,
-    InfoTip,
     InlineLink,
     Switch,
     Tooltip,
@@ -187,14 +186,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     return (
         <div className="flex flex-col gap-3">
             <section className="flex flex-col gap-3">
-                <div>
-                    <h3 className="text-lg font-semibold text-theme-text-strong">
-                        Choose a pack
-                    </h3>
-                    <p className="text-sm text-theme-text-muted">
-                        Buy it now or set up auto top-up.
-                    </p>
-                </div>
+                {/* Both modes in one line: what each does, and when auto
+                    top-up buys ("paid": Quest Pollen doesn't trigger it). */}
+                <p className="text-sm text-theme-text-muted">
+                    Pick a pack to buy it now, or turn on auto top-up to buy it
+                    every time your paid balance reaches{" "}
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen.
+                </p>
                 <PollenPackButtons
                     packs={POLLEN_PACKS}
                     selectedAmount={selectedPack?.amountUsd}
@@ -227,10 +225,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 ? "Auto top-up"
                                 : "Enable auto top-up"}
                         </span>
-                        <InfoTip
-                            label="When auto top-up runs"
-                            text={`After usage, auto top-up runs when your paid balance is ${AUTO_TOP_UP_THRESHOLD_POLLEN} Pollen or less.`}
-                        />
                         {billing?.autoTopUp.enabled && (
                             <span className="rounded-lg bg-paid-pale px-2 py-1 font-bold tabular-nums text-paid-deep">
                                 {status?.tab.label} Pollen

@@ -69,6 +69,9 @@ export function SiteFooter() {
                             </Button>
                         ))}
                     </nav>
+                    <p className="text-xs text-theme-text-muted">
+                        © {new Date().getFullYear()} Myceli.AI OÜ
+                    </p>
                 </div>
                 <div className="flex flex-wrap gap-12">
                     {COLUMNS.map((column) => (

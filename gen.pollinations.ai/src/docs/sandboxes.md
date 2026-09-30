@@ -14,8 +14,9 @@ polli sandbox kill <id>
 
 - A sandbox pauses about 10 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it.
 - To keep it running without ssh, pay for the time up front with `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time. It also resumes a paused sandbox.
-- The first `ssh` installs `sshd`, `rsync` and `websocat` in the sandbox (Debian-based templates) and allows only polli's key, `~/.pollinations/ssh/id_ed25519`.
-- `polli sandbox create <template>` starts one of E2B's public templates instead of `base`: `claude-code`, `codex`, `amp`, `opencode`, `code-interpreter-v1` or `desktop`. Bigger templates cost more per second.
+- The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
+- The default template, `pollinations`, is E2B's `base` (Debian 12, Python 3.11) with Node.js 24 and polli. Run `polli auth login` inside to use your account.
+- `polli sandbox create <template>` starts one of E2B's public templates instead: `base`, `claude-code`, `codex`, `amp`, `opencode`, `code-interpreter-v1` or `desktop`. Bigger templates cost more per second.
 - `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.
 - [My Models](https://enter.pollinations.ai/my-models) in the dashboard also lists, creates and kills sandboxes.

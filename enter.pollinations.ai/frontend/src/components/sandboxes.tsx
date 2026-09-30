@@ -45,7 +45,7 @@ export function Sandboxes() {
     const [sandboxes, setSandboxes] = useState<Sandbox[] | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-    const [template, setTemplate] = useState("base");
+    const [template, setTemplate] = useState("pollinations");
     const [pending, setPending] = useState<string | null>(null);
     const [killing, setKilling] = useState<Sandbox | null>(null);
 

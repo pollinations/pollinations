@@ -51,7 +51,7 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("create")
             .description("Start a sandbox you can ssh into")
-            .argument("[template]", "E2B template", "base")
+            .argument("[template]", "E2B template", "pollinations")
             .action(async (template: string) => {
                 requireKey();
                 try {

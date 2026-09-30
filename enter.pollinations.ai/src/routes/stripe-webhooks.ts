@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { creditTopUpQuestRewards } from "../services/quest-checker.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -387,6 +388,27 @@ function emitCheckoutSessionAnalytics(
 }
 
 /**
+ * Credit the top-up quest bonus with a newly credited checkout. Runs in
+ * waitUntil so a quest failure never fails the pack credit or the ACK.
+ */
+function creditTopUpQuestRewardsLater(
+    c: {
+        env: CloudflareBindings;
+        executionCtx: { waitUntil(p: Promise<unknown>): void };
+    },
+    session: Stripe.Checkout.Session,
+    result: CheckoutSessionResult,
+): void {
+    const userId = session.metadata?.userId;
+    if (!result.success || !userId) return;
+    c.executionCtx.waitUntil(
+        creditTopUpQuestRewards(c.env, userId).catch((error) =>
+            console.error("Top-up quest reward failed:", error),
+        ),
+    );
+}
+
+/**
  * Emit a payment_intent analytics event to Tinybird (shared by
  * payment_intent.succeeded and payment_intent.payment_failed). Fetches the
  * latest Charge for card_country + Radar fields, then sends. Fetch + send run
@@ -659,6 +681,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         break;
                     }
 
+                    creditTopUpQuestRewardsLater(c, session, result);
                     emitCheckoutSessionAnalytics(
                         c,
                         event,
@@ -687,6 +710,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     break;
                 }
 
+                creditTopUpQuestRewardsLater(c, session, result);
                 emitCheckoutSessionAnalytics(
                     c,
                     event,

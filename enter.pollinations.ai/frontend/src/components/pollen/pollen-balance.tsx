@@ -1,4 +1,5 @@
 import {
+    Alert,
     CardIcon,
     CopyButton,
     GlobeIcon,
@@ -17,7 +18,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
-import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
 
 type PollenBalanceProps = {
@@ -257,6 +257,37 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     );
 };
 
+type OutOfPollenBannerProps = {
+    tierBalance: number;
+    packBalance: number;
+};
+
+/** An empty wallet fails every request with 402; point at both refills. */
+export const OutOfPollenBanner: FC<OutOfPollenBannerProps> = ({
+    tierBalance,
+    packBalance,
+}) => {
+    if (tierBalance + packBalance >= BALANCE_DISPLAY_EPSILON) return null;
+    return (
+        <Alert intent="advisory" title="Out of Pollen" className="mb-4">
+            API requests fail until you add Pollen.{" "}
+            <InlineLink
+                as={Link}
+                to="/pollen"
+                hash="buy-pollen"
+                external={false}
+            >
+                Buy Pollen
+            </InlineLink>{" "}
+            or{" "}
+            <InlineLink as={Link} to="/quests" external={false}>
+                earn some with Quests
+            </InlineLink>
+            .
+        </Alert>
+    );
+};
+
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
     selectedPackAmount: number;
@@ -285,7 +316,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 />
             </Surface>
             <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
                     <GlobeIcon
                         aria-hidden="true"

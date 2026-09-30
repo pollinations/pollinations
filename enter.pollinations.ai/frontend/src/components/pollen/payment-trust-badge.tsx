@@ -39,6 +39,14 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
                     />
                 ))}
             </span>
+            {/* Checkout offers local methods by the buyer's currency (live
+                Stripe payment method configuration); PayPal only shows in
+                the currencies it supports, USD among them. */}
+            <p className="w-full">
+                Also UPI, Pix, Alipay, Klarna, iDEAL, BLIK, Revolut Pay and
+                more, depending on your country. No PayPal? Switch the checkout
+                currency to USD.
+            </p>
         </div>
     );
 };

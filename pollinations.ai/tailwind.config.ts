@@ -1,5 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 /**
+ * Legacy theme for the old Apps, Community and Play pages, loaded beside
+ * @pollinations/ui's theme until those pages move to it. Names the shared
+ * theme also defines (font-body, rounded-card, font-pixel) are left to it,
+ * so the new pages render exactly as designed. Delete with the last old page.
+ *
  * THEME GUIDE:
  * - To change colors: Edit src/theme/palette.ts
  * - CSS variables are defined in palette.ts (15 colors)
@@ -8,10 +13,10 @@
 import plugin from "tailwindcss/plugin";
 import { CSS_VARIABLES } from "./src/theme/palette";
 
+// Pixel headings use the shared pixel font, so no web font is loaded here.
 const Fonts = {
-    title: "'Press Start 2P'",
-    headline: "'Press Start 2P'",
-    body: "'IBM Plex Mono'",
+    title: "var(--polli-font-pixel)",
+    headline: "var(--polli-font-pixel)",
 };
 
 export default {
@@ -51,9 +56,8 @@ export default {
                 charcoal: "rgb(var(--dark))",
             },
             fontFamily: {
-                title: [Fonts.title, "sans-serif"],
-                headline: [Fonts.headline, "sans-serif"],
-                body: [Fonts.body, "sans-serif"],
+                title: [Fonts.title],
+                headline: [Fonts.headline],
             },
             boxShadow: {
                 "brand-sm": "2px 2px 0px 0px rgb(var(--accent-strong))",
@@ -68,7 +72,6 @@ export default {
             },
             borderRadius: {
                 button: "0px",
-                card: "0px",
                 input: "0px",
                 "sub-card": "0px",
                 tag: "0px",
@@ -120,10 +123,6 @@ export default {
                 },
             });
             addUtilities({
-                ".font-pixel": {
-                    "-webkit-font-smoothing": "none",
-                    "-moz-osx-font-smoothing": "grayscale",
-                },
                 ".render-pixelated": {
                     "image-rendering": "pixelated",
                 },

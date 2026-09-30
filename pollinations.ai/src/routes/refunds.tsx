@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import RefundsPage from "../ui/pages/RefundsPage";
+import { routeHead } from "../routeMeta";
+import { LegalPage } from "../ui/site/LegalPage";
 
 export const Route = createFileRoute("/refunds")({
-    component: RefundsPage,
+    head: () => routeHead("/refunds"),
+    component: () => (
+        <LegalPage
+            markdownPath="/legal/REFUNDS_AND_CANCELLATIONS.md"
+            errorLabel="refunds policy"
+        />
+    ),
 });

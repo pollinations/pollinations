@@ -10,7 +10,6 @@ import {
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { useAuth } from "../../hooks/useAuth";
-import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -273,7 +272,6 @@ export default function AppsPage() {
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
-    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
     const { translated: translatedGenre } = useTranslate(
         GENRE_FILTERS,
         "label",

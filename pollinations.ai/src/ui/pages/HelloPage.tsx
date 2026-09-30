@@ -127,16 +127,16 @@ function HelloPage() {
                             ) => {
                                 const accents = [
                                     {
-                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)/0.3)]",
                                     },
                                     {
-                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)/0.3)]",
                                     },
                                 ];
                                 const accent = accents[i % accents.length];

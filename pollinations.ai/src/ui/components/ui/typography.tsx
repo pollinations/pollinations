@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-4xl md:text-5xl font-black text-dark leading-tight pt-1 pb-1",
+    "font-title text-4xl md:text-5xl font-black text-dark leading-tight md:leading-none pt-1 pb-1",
     {
         variants: {
             spacing: {

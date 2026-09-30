@@ -42,19 +42,30 @@ Get an API key at https://enter.pollinations.ai/keys. Options: run
 
 ## Semantics
 
-- **Errors, timeouts and exhausted rate-limit retries count as failures** —
+- **Errors and timeouts count as failures** —
   a model is never skipped for misbehaving. Unanswered questions lower the
   score.
 - **429 rate limits are our limit, not the model's**: the runner backs off
-  and retries slowly (15s, 30s, 60s, 120s) before giving up on a question.
-- **Margin of error**: each score is a binomial proportion over the
-  question set, so every score carries a 95% Wilson-interval half-width.
-  Two models whose intervals overlap are not distinguishable.
-- **Pollen cost**: computed from the catalog pricing and the `usage` block
-  of each response (uncached prompt, cached prompt and completion tokens
-  priced separately). A full run (188 models, 9 questions each) costs
-  around 2.5 Pollen; the runner refuses to exceed the `--max-cost` budget
-  (default 20 Pollen) and marks unscored models `over_cost_cap`.
+  and retries slowly (15s, 30s, 60s, 120s). Exhausting that account quota
+  marks the run incomplete, not the model bad. Incomplete runs are retained
+  as diagnostics but are not published as the weekly leaderboard.
+- **Margin of error**: scores include the actual 95% Wilson interval.
+  The displayed ± margin is the larger distance from the observed score to
+  either Wilson bound, conservatively containing the interval even at 0%
+  and 100%. Gaps are highlighted only beyond the combined margins.
+- **Pollen cost**: catalog pricing times provider-reported usage, including
+  cached prompt, cache writes, and reasoning tokens. This is not a wallet
+  reconciliation. Missing usage is unknown, never silently free, and is
+  reported separately with a conservative reserved estimate.
+- **Budget**: requests reserve estimated worst-case prompt/output cost
+  synchronously before dispatch, so workers cannot spend the same remaining
+  budget. Default budget is 19 Pollen (always below 20), with `max_tokens`
+  limited to 2048. A request that cannot fit is not sent; the run is
+  incomplete and does not replace the weekly leaderboard. Reservations
+  assume providers honor the token cap and catalog pricing. They are not a
+  provider-enforced spending limit; providers can violate those assumptions.
+  A full-catalog cost still needs to be demonstrated by a real run, not
+  inferred from unit tests.
 - **Community models shadowing official ones**: models are matched by name
   (exact base-name match first, then shared name series like `gpt-6`), and
   the leaderboard shows each community model directly beneath the official
@@ -64,7 +75,8 @@ Get an API key at https://enter.pollinations.ai/keys. Options: run
 ## Outputs
 
 - `--out latest.json` — the full run: per-model score, margin of error,
-  per-family breakdown, cost, latency, plus each question's parsed answer.
+  per-family breakdown, cost, latency, plus generated prompts, each question's raw response, usage, parsed answer,
+  and expected answer for reproducible review.
 - `--history history.json` — one summary entry per run, capped at the most
   recent 26 runs.
 - The [model-monitor](../model-monitor/) Evals tab fetches these files from
@@ -74,7 +86,7 @@ Get an API key at https://enter.pollinations.ai/keys. Options: run
 
 [`.github/workflows/evals-weekly-model-evals.yml`](../../.github/workflows/evals-weekly-model-evals.yml)
 runs the CLI every Monday at 05:00 UTC once the `PLN_GITHUB_EVALS_KEY`
-secret is set, commits `latest.json`/`history.json` into
+secret is set, commits only complete `latest.json`/`history.json` into
 `operations/model-monitor/public/evals/` on an auto-merge branch, and
 opens a tracking issue on failure.
 
@@ -93,3 +105,18 @@ Tests: `node --test "operations/model-evals/*.test.mjs"` (also part of the
 PR check workflow). The question generators are verified against
 independent prompt-parsing solvers in the tests, so the ground truth is
 cross-checked, not self-asserted.
+
+## Exit codes and adding an eval
+
+Exit 0 means a complete run, 1 an execution/configuration error, 2 exhausted
+account rate limits (or missing key), and 3 budget exhaustion. The workflow
+uploads diagnostics on failure without publishing incomplete standings.
+
+To add an eval, add its generator to the `FAMILIES` registry in `questions.mjs`.
+It returns `{ prompt, answer, meta }`; the runner and leaderboard need no changes.
+For non-numeric answers, add the corresponding deterministic grader to
+`grading.mjs` and route by family. No LLM judge is used.
+
+Real-run evidence (at least five models including a community model) must be
+attached to the PR before this quest can be considered complete. No fabricated
+scores or cost estimates are presented as an executed run.

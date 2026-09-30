@@ -6,6 +6,7 @@ import {
     leaderboardRows,
     pairCommunityModels,
     scoreModel,
+    wilsonInterval,
     wilsonMargin,
 } from "./stats.mjs";
 
@@ -146,4 +147,15 @@ test("leaderboard places community models beneath their official namesake", () =
     );
     assert.equal(stableRow.paired.name, "openai/gpt-6-sol");
     assert.equal(stableRow.gap.significant, true);
+});
+
+test("extreme scores display margins containing the true Wilson bounds", () => {
+    for (const correct of [0, 9]) {
+        const bounds = wilsonInterval(correct, 9);
+        const margin = wilsonMargin(correct, 9);
+        const score = correct / 9;
+        assert.ok(score - margin <= bounds.lower + 1e-12);
+        assert.ok(score + margin >= bounds.upper - 1e-12);
+        assert.ok(margin > 0.299 && margin < 0.3);
+    }
 });

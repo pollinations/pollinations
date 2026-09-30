@@ -4,16 +4,29 @@
 // model score carries this margin of error; a community model only differs
 // meaningfully from an official model when the score gap exceeds the
 // combined margins.
+export function wilsonInterval(successes, total) {
+    if (!total || total <= 0) return { lower: 0, upper: 1 };
+    const z = 1.96;
+    const p = successes / total;
+    const denominator = 1 + (z * z) / total;
+    const center = (p + (z * z) / (2 * total)) / denominator;
+    const spread =
+        (z * Math.sqrt((p * (1 - p)) / total + (z * z) / (4 * total * total))) /
+        denominator;
+    return {
+        lower: Math.max(0, center - spread),
+        upper: Math.min(1, center + spread),
+    };
+}
+
+// Wilson is centered away from the observed score, particularly at 0/n
+// and n/n. A symmetric score ± half-width is wrong there. Use the larger
+// distance to the true bounds for the displayed conservative ± margin.
 export function wilsonMargin(successes, total) {
     if (!total || total <= 0) return 0;
-    const z = 1.96;
-    const n = total;
-    const p = successes / n;
-    const denominator = 1 + (z * z) / n;
-    const spread =
-        (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) /
-        denominator;
-    return spread;
+    const score = successes / total;
+    const { lower, upper } = wilsonInterval(successes, total);
+    return Math.max(score - lower, upper - score);
 }
 
 // Summarises one model's question results into a score with its margin of
@@ -41,6 +54,7 @@ export function scoreModel(questionResults) {
         errors,
         score,
         marginOfError: wilsonMargin(correct, total),
+        confidenceInterval: wilsonInterval(correct, total),
         costPollen,
         avgLatencyMs,
     };

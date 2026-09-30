@@ -63,7 +63,9 @@ export function selectModels(models, { names, scope } = {}) {
         if (missing.length > 0) {
             throw new Error(`Unknown model(s): ${missing.join(", ")}`);
         }
-        return selected;
+        return [
+            ...new Map(selected.map((model) => [model.name, model])).values(),
+        ];
     }
 
     if (scope === "community") {
@@ -75,22 +77,81 @@ export function selectModels(models, { names, scope } = {}) {
     return selected;
 }
 
-// Pollen cost of one request computed from the catalog pricing and the
-// usage block of the response.
+// Catalog-priced token cost, not a wallet reconciliation. Null means the
+// response did not report usable usage; never silently label that as free.
 export function requestCostPollen(model, usage) {
     const pricing = model.pricing;
-    if (!pricing || !usage) return 0;
-    const promptTokens = usage.prompt_tokens ?? 0;
-    const completionTokens = usage.completion_tokens ?? 0;
-    const cachedTokens =
-        usage.prompt_tokens_details?.cached_tokens ??
-        usage.prompt_cache_tokens ??
-        0;
-    const uncachedPromptTokens = Math.max(promptTokens - cachedTokens, 0);
+    if (!pricing || !usage) return null;
+    const prompt = usage.prompt_tokens;
+    const completion = usage.completion_tokens;
+    if (![prompt, completion].every((n) => Number.isFinite(n) && n >= 0))
+        return null;
+    const cached = Math.min(
+        prompt,
+        Math.max(
+            0,
+            usage.prompt_tokens_details?.cached_tokens ??
+                usage.prompt_cache_tokens ??
+                0,
+        ),
+    );
+    const written = Math.min(
+        prompt - cached,
+        Math.max(
+            0,
+            usage.prompt_tokens_details?.cache_write_tokens ??
+                usage.cache_creation_input_tokens ??
+                0,
+        ),
+    );
+    const reasoning = Math.max(
+        0,
+        usage.completion_tokens_details?.reasoning_tokens ?? 0,
+    );
+    // OpenAI includes reasoning in completion_tokens; some providers add it
+    // separately, as indicated by total_tokens.
+    const additive =
+        usage.total_tokens === prompt + completion + reasoning && reasoning > 0;
+    const reasoningTokens = additive
+        ? reasoning
+        : Math.min(completion, reasoning);
+    const textTokens = additive ? completion : completion - reasoningTokens;
+    const rate = (key, fallback = 0) => Number(pricing[key] ?? fallback);
+    const cost =
+        (prompt - cached - written) * rate("promptTextTokens") +
+        cached * rate("promptCachedTokens", pricing.promptTextTokens) +
+        written * rate("promptCacheWriteTokens", pricing.promptTextTokens) +
+        textTokens * rate("completionTextTokens") +
+        reasoningTokens *
+            rate("completionReasoningTokens", pricing.completionTextTokens);
+    return Number.isFinite(cost) && cost >= 0 ? cost : null;
+}
+
+// Conservative reservation before dispatch, shared by concurrent workers.
+// Byte count bounds ordinary text tokenization; headroom covers chat wrappers.
+// This is an estimate, not a provider-enforced spending limit. A provider that
+// ignores max_tokens or bills extra work can exceed it, so report that clearly.
+export function estimateRequestCost(model, question, maxTokens) {
+    if (!model.pricing) return Infinity;
+    const rates = (keys) => keys.map((key) => Number(model.pricing[key] ?? 0));
+    const promptRates = rates([
+        "promptTextTokens",
+        "promptCachedTokens",
+        "promptCacheWriteTokens",
+    ]);
+    const completionRates = rates([
+        "completionTextTokens",
+        "completionReasoningTokens",
+    ]);
+    if (
+        ![...promptRates, ...completionRates].every(
+            (n) => Number.isFinite(n) && n >= 0,
+        )
+    )
+        return Infinity;
     return (
-        uncachedPromptTokens *
-            Number.parseFloat(pricing.promptTextTokens ?? 0) +
-        cachedTokens * Number.parseFloat(pricing.promptCachedTokens ?? 0) +
-        completionTokens * Number.parseFloat(pricing.completionTextTokens ?? 0)
+        (new TextEncoder().encode(question.prompt).length + 1024) *
+            Math.max(...promptRates) +
+        maxTokens * Math.max(...completionRates)
     );
 }

@@ -104,7 +104,7 @@ test("a 429 is retried slowly instead of counting as failed", async () => {
     assert.equal(entries[0].questionResults[0].error, null);
 });
 
-test("an exhausted 429 retry budget counts the question as failed", async () => {
+test("an exhausted 429 retry budget marks the run incomplete, not a model score", async () => {
     const questions = makeQuestions(1);
     const { entries } = await runEval({
         models: [MODEL],
@@ -116,6 +116,7 @@ test("an exhausted 429 retry budget counts the question as failed", async () => 
     const result = entries[0].questionResults[0];
     assert.equal(result.correct, false);
     assert.equal(result.error, "rate_limited");
+    assert.equal(entries[0].status, "rate_limited");
 });
 
 test("a timeout counts as failed, not skipped", async () => {
@@ -159,34 +160,36 @@ test("an HTTP error counts as failed with the error recorded", async () => {
     assert.equal(result.error, "upstream down");
 });
 
-test("the Pollen cost cap stops the run and marks models unscored", async () => {
-    const questions = makeQuestions(2);
-    const models = [MODEL, { name: "community/x/model-b", community: true }];
-    const { entries, capReached } = await runEval({
-        models,
-        questions,
-        costPollenOf: () => 100,
+test("concurrent requests reserve the remaining budget before dispatch", async () => {
+    let calls = 0;
+    const result = await runEval({
+        models: [MODEL, { ...MODEL, name: "other" }],
+        questions: makeQuestions(2),
+        costPollenOf: () => 0.6,
+        estimateCostPollenOf: () => 0.6,
         runSeed: 6,
-        options: baseOverrides({ maxCostPollen: 150 }),
-        fetchFn: async () =>
-            jsonResponse(200, {
+        options: baseOverrides({ maxCostPollen: 1, concurrency: 2 }),
+        fetchFn: async () => {
+            calls++;
+            await new Promise((r) => setTimeout(r, 5));
+            return jsonResponse(200, {
                 choices: [{ message: { content: "### Answer: 1" } }],
                 usage: { prompt_tokens: 1, completion_tokens: 1 },
-            }),
+            });
+        },
     });
-    assert.equal(capReached, true);
-    // Model A finished just as the cap was crossed; model B never started.
-    assert.equal(entries[0].status, "scored");
-    assert.equal(entries[0].questionResults.length, 2);
-    assert.equal(entries[1].status, "over_cost_cap");
-    assert.equal(entries[1].questionResults.length, 0);
+    assert.equal(calls, 1);
+    assert.equal(result.capReached, true);
+    assert.equal(result.totalCostPollen, 0.6);
+    assert.ok(
+        result.entries.every((entry) => entry.status === "over_cost_cap"),
+    );
 });
 
-test("missing usage is tolerated and costs nothing", async () => {
-    const questions = makeQuestions(1);
-    const { totalCostPollen, entries } = await runEval({
-        models: [{ ...MODEL, pricing: undefined }],
-        questions,
+test("missing usage is unknown, never reported as free", async () => {
+    const result = await runEval({
+        models: [MODEL],
+        questions: makeQuestions(1),
         runSeed: 8,
         options: baseOverrides(),
         fetchFn: async () =>
@@ -194,8 +197,28 @@ test("missing usage is tolerated and costs nothing", async () => {
                 choices: [{ message: { content: "### Answer: 1" } }],
             }),
     });
-    assert.equal(totalCostPollen, 0);
-    assert.equal(entries[0].status, "scored");
+    assert.equal(result.unknownCostRequests, 1);
+    assert.ok(result.costUpperBoundPollen > 0);
+    assert.equal(result.entries[0].questionResults[0].costPollen, null);
+});
+
+test("raw content and usage survive even when response model is null", async () => {
+    const result = await runEval({
+        models: [MODEL],
+        questions: makeQuestions(1),
+        runSeed: 9,
+        options: baseOverrides(),
+        fetchFn: async () =>
+            jsonResponse(200, {
+                model: null,
+                choices: [{ message: { content: "### Answer: 2" } }],
+                usage: { prompt_tokens: 10, completion_tokens: 5 },
+            }),
+    });
+    const q = result.entries[0].questionResults[0];
+    assert.equal(q.response, "### Answer: 2");
+    assert.deepEqual(q.usage, { prompt_tokens: 10, completion_tokens: 5 });
+    assert.ok(q.costPollen > 0);
 });
 
 test("request seeds are stable for the same inputs and vary across them", () => {

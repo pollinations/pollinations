@@ -5,6 +5,7 @@
 // errors counted as failures, and Pollen cost accounting from the catalog
 // pricing.
 
+import { estimateRequestCost, requestCostPollen } from "./catalog.mjs";
 import { isCorrect, parseAnswer } from "./grading.mjs";
 import { requestSeed, sleep } from "./rng.mjs";
 
@@ -16,8 +17,8 @@ export const DEFAULT_OPTIONS = {
     concurrency: 3,
     timeoutMs: 120_000,
     retryDelaysMs: [15_000, 30_000, 60_000, 120_000],
-    maxCostPollen: 20,
-    maxTokens: 4000,
+    maxCostPollen: 19,
+    maxTokens: 2048,
 };
 
 async function askModel({
@@ -102,7 +103,7 @@ async function runQuestion({
                 error: aborted ? "timeout" : String(error).slice(0, 300),
                 attempt,
                 latencyMs: Date.now() - startedAt,
-                costPollen: 0,
+                costPollen: null,
             };
         }
         clearTimeout(timer);
@@ -121,7 +122,7 @@ async function runQuestion({
                     error: "rate_limited",
                     attempt,
                     latencyMs,
-                    costPollen: 0,
+                    costPollen: null,
                     seed,
                 };
             }
@@ -144,7 +145,7 @@ async function runQuestion({
                 error: extractError(payload, response.status),
                 attempt,
                 latencyMs,
-                costPollen: 0,
+                costPollen: null,
                 seed,
             };
         }
@@ -158,11 +159,13 @@ async function runQuestion({
             family: question.family,
             correct: isCorrect(parsed, question.answer),
             parsedAnswer: parsed,
+            response: typeof content === "string" ? content : null,
+            usage: payload?.usage ?? null,
             expectedAnswer: question.answer,
             error: null,
             attempt,
             latencyMs,
-            costPollen: model.costPollenOf?.(payload?.usage) ?? 0,
+            costPollen: model.costPollenOf(payload?.usage),
             seed,
         };
     }
@@ -177,20 +180,23 @@ export async function runEval({
     models,
     questions,
     costPollenOf,
+    estimateCostPollenOf = estimateRequestCost,
     runSeed,
     options = {},
     fetchFn = fetch,
     log = () => {},
 }) {
     const opts = { ...DEFAULT_OPTIONS, ...options };
-    const costPollenOfModel = costPollenOf ?? (() => 0);
+    const costPollenOfModel = costPollenOf ?? requestCostPollen;
 
     const prepared = models.map((model) => ({
         ...model,
         costPollenOf: (usage) => costPollenOfModel(model, usage),
     }));
 
-    const totalCost = { pollen: 0 };
+    const totalCost = { pollen: 0, reserved: 0, uncertain: 0 };
+    let unknownCostRequests = 0;
+    let rateLimited = false;
     const entries = [];
     let queueIndex = 0;
     let capReached = false;
@@ -199,6 +205,15 @@ export async function runEval({
         while (queueIndex < prepared.length) {
             const model = prepared[queueIndex];
             queueIndex += 1;
+
+            if (rateLimited) {
+                entries.push({
+                    model,
+                    status: "rate_limited",
+                    questionResults: [],
+                });
+                continue;
+            }
 
             if (capReached) {
                 entries.push({
@@ -211,13 +226,29 @@ export async function runEval({
 
             const questionResults = [];
             for (const question of questions) {
-                if (totalCost.pollen >= opts.maxCostPollen) {
+                const reservation = estimateCostPollenOf(
+                    model,
+                    question,
+                    opts.maxTokens,
+                );
+                if (
+                    !Number.isFinite(reservation) ||
+                    reservation < 0 ||
+                    totalCost.pollen +
+                        totalCost.uncertain +
+                        totalCost.reserved +
+                        reservation >
+                        opts.maxCostPollen
+                ) {
                     capReached = true;
                     log(
-                        `Cost cap ${opts.maxCostPollen} Pollen reached at ${model.name}`,
+                        `Budget reservation cannot fit for ${model.name}; stopping before dispatch`,
                     );
                     break;
                 }
+                // Reserve synchronously before awaiting: concurrent workers
+                // cannot spend the same remaining budget.
+                totalCost.reserved += reservation;
                 const result = await runQuestion({
                     model,
                     question,
@@ -226,10 +257,32 @@ export async function runEval({
                     fetchFn,
                     log,
                 });
-                totalCost.pollen += result.costPollen;
+                totalCost.reserved -= reservation;
+                if (result.error === "rate_limited") {
+                    // Our quota is not a model-quality failure. Do not publish
+                    // a comparable score for an incomplete rate-limited run.
+                    rateLimited = true;
+                } else if (result.costPollen === null) {
+                    unknownCostRequests += 1;
+                    totalCost.uncertain += reservation;
+                } else {
+                    totalCost.pollen += result.costPollen;
+                    if (
+                        totalCost.pollen + totalCost.uncertain >
+                        opts.maxCostPollen
+                    )
+                        capReached = true;
+                }
                 questionResults.push(result);
+                if (rateLimited) break;
             }
-            if (questionResults.length === questions.length) {
+            if (questionResults.some((r) => r.error === "rate_limited")) {
+                entries.push({
+                    model,
+                    status: "rate_limited",
+                    questionResults,
+                });
+            } else if (questionResults.length === questions.length) {
                 entries.push({ model, status: "scored", questionResults });
                 const correct = questionResults.filter((r) => r.correct).length;
                 log(
@@ -255,5 +308,8 @@ export async function runEval({
         totalCostPollen: totalCost.pollen,
         entries,
         capReached,
+        rateLimited,
+        unknownCostRequests,
+        costUpperBoundPollen: totalCost.pollen + totalCost.uncertain,
     };
 }

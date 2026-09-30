@@ -12,8 +12,10 @@
 // https://enter.pollinations.ai/keys). Results are written as JSON with
 // --out, and --history appends the run to a capped history file.
 
+import { randomInt } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
     DEFAULT_BASE_URL,
@@ -27,13 +29,13 @@ import {
     generateQuestionSet,
     isValidFamily,
 } from "./questions.mjs";
-import { createRng, requestSeed } from "./rng.mjs";
+import { createRng } from "./rng.mjs";
 import { DEFAULT_OPTIONS, runEval } from "./runner.mjs";
 import { scoreModel } from "./stats.mjs";
 
 const HISTORY_RUN_LIMIT = 26;
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
     const args = {
         baseUrl: process.env.POLLINATIONS_BASE_URL ?? DEFAULT_BASE_URL,
         apiKey: process.env.POLLINATIONS_API_KEY ?? null,
@@ -91,19 +93,19 @@ function parseArgs(argv) {
                 break;
             }
             case "--questions":
-                args.questionsPerFamily = Number.parseInt(next(), 10);
+                args.questionsPerFamily = Number(next());
                 break;
             case "--concurrency":
-                args.concurrency = Number.parseInt(next(), 10);
+                args.concurrency = Number(next());
                 break;
             case "--timeout-ms":
-                args.timeoutMs = Number.parseInt(next(), 10);
+                args.timeoutMs = Number(next());
                 break;
             case "--max-cost":
-                args.maxCostPollen = Number.parseFloat(next());
+                args.maxCostPollen = Number(next());
                 break;
             case "--max-tokens":
-                args.maxTokens = Number.parseInt(next(), 10);
+                args.maxTokens = Number(next());
                 break;
             case "--out":
                 args.out = next();
@@ -112,7 +114,7 @@ function parseArgs(argv) {
                 args.history = next();
                 break;
             case "--seed":
-                args.seed = Number.parseInt(next(), 10);
+                args.seed = Number(next());
                 break;
             case "--base-url":
                 args.baseUrl = next();
@@ -134,9 +136,44 @@ function parseArgs(argv) {
                 throw new Error(`Unknown argument: ${arg}`);
         }
     }
-    if (args.questionsPerFamily < 1) {
-        throw new Error("--questions must be at least 1");
+    if (args.help) return args;
+    for (const [key, flag] of [
+        ["questionsPerFamily", "questions"],
+        ["concurrency", "concurrency"],
+        ["timeoutMs", "timeout-ms"],
+        ["maxTokens", "max-tokens"],
+    ]) {
+        if (!Number.isSafeInteger(args[key]) || args[key] < 1)
+            throw new Error(`--${flag} must be a positive integer`);
     }
+    if (
+        !Number.isFinite(args.maxCostPollen) ||
+        args.maxCostPollen <= 0 ||
+        args.maxCostPollen >= 20
+    ) {
+        throw new Error("--max-cost must be positive and below 20 Pollen");
+    }
+    if (
+        args.seed !== null &&
+        (!Number.isSafeInteger(args.seed) ||
+            args.seed < 0 ||
+            args.seed > 0xffffffff)
+    ) {
+        throw new Error("--seed must be an unsigned 32-bit integer");
+    }
+    if (args.models?.length === 0 || args.families.length === 0)
+        throw new Error("Model/eval selections cannot be empty");
+    args.families = [...new Set(args.families)];
+    const url = new URL(args.baseUrl);
+    if (
+        url.protocol !== "https:" &&
+        !(
+            url.protocol === "http:" &&
+            ["localhost", "127.0.0.1"].includes(url.hostname)
+        )
+    )
+        throw new Error("--base-url must use HTTPS");
+    args.baseUrl = args.baseUrl.replace(/\/$/, "");
     return args;
 }
 
@@ -152,7 +189,7 @@ Options:
   --questions n         Questions per family (default ${DEFAULT_OPTIONS.questionsPerFamily})
   --concurrency n       Parallel in-flight requests (default ${DEFAULT_OPTIONS.concurrency})
   --timeout-ms n        Per-request timeout (default ${DEFAULT_OPTIONS.timeoutMs})
-  --max-cost pollen     Abort beyond this Pollen budget (default ${DEFAULT_OPTIONS.maxCostPollen})
+  --max-cost pollen     Reserve requests within this Pollen budget (default ${DEFAULT_OPTIONS.maxCostPollen})
   --max-tokens n        Completion token cap (default ${DEFAULT_OPTIONS.maxTokens})
   --seed n              Run seed for reproducible questions and request seeds
   --out file.json       Write the full run result as JSON
@@ -175,8 +212,9 @@ async function readHistory(path) {
         const raw = await readFile(path, "utf8");
         const parsed = JSON.parse(raw);
         return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
+    } catch (error) {
+        if (error.code === "ENOENT") return [];
+        throw error;
     }
 }
 
@@ -211,9 +249,11 @@ export async function main(argv = process.argv.slice(2)) {
         `Scoring ${selected.length} of ${models.length} text models (${selected.filter((m) => m.community).length} community)`,
     );
 
+    if (selected.length === 0)
+        throw new Error("No text models matched the selection");
+
     const startedAt = new Date();
-    const runSeed =
-        args.seed ?? requestSeed(startedAt.getTime(), "model-evals");
+    const runSeed = args.seed ?? randomInt(0x100000000);
     const rng = createRng(runSeed);
     const questions = generateQuestionSet({
         families: args.families,
@@ -246,7 +286,14 @@ export async function main(argv = process.argv.slice(2)) {
         return 2;
     }
 
-    const { totalCostPollen, entries, capReached } = await runEval({
+    const {
+        totalCostPollen,
+        entries,
+        capReached,
+        rateLimited,
+        unknownCostRequests,
+        costUpperBoundPollen,
+    } = await runEval({
         models: selected,
         questions,
         costPollenOf: requestCostPollen,
@@ -274,6 +321,7 @@ export async function main(argv = process.argv.slice(2)) {
                 aliases: entry.model.aliases ?? [],
                 status: "scored",
                 ...summary,
+                questionResults: entry.questionResults,
                 families: familyBreakdown(entry.questionResults, args.families),
             };
         })
@@ -285,6 +333,14 @@ export async function main(argv = process.argv.slice(2)) {
             community: entry.model.community === true,
         }));
 
+    const incomplete = entries
+        .filter((entry) => entry.status === "rate_limited")
+        .map((entry) => ({
+            name: entry.model.name,
+            community: entry.model.community === true,
+            status: entry.status,
+            questionResults: entry.questionResults,
+        }));
     const run = {
         schema: 1,
         runId: startedAt.toISOString().replace(/[:.]/g, "-"),
@@ -300,8 +356,17 @@ export async function main(argv = process.argv.slice(2)) {
         costPollen: totalCostPollen,
         maxCostPollen: args.maxCostPollen,
         capReached,
+        rateLimited,
+        complete: !capReached && !rateLimited,
+        unknownCostRequests,
+        costUpperBoundPollen,
+        costMethod:
+            "catalog pricing times provider-reported usage; unknown charges reserved conservatively",
+        questions,
+        maxTokens: args.maxTokens,
         models: [
             ...scored,
+            ...incomplete,
             ...overCap.map((m) => ({ ...m, status: "over_cost_cap" })),
         ],
     };
@@ -326,15 +391,24 @@ export async function main(argv = process.argv.slice(2)) {
         );
     }
     console.log(
-        `\nTotal cost: ${totalCostPollen.toFixed(2)} Pollen of ${args.maxCostPollen} cap` +
+        `\nTotal cost: ${totalCostPollen.toFixed(6)} Pollen of ${args.maxCostPollen} cap` +
             ` (${((finishedAt - startedAt) / 60000).toFixed(1)} min)`,
     );
+
+    if (unknownCostRequests > 0)
+        console.log(
+            `Cost incomplete: ${unknownCostRequests} requests without usable billing usage; conservative accounted estimate ${costUpperBoundPollen.toFixed(6)} Pollen`,
+        );
+    if (rateLimited)
+        console.error(
+            "Run incomplete: account rate limit exhausted. No weekly leaderboard will be published.",
+        );
 
     if (args.out) {
         await writeJson(args.out, run);
         console.log(`Results written to ${args.out}`);
     }
-    if (args.history) {
+    if (args.history && run.complete) {
         const history = await readHistory(args.history);
         history.push({
             runId: run.runId,
@@ -355,12 +429,19 @@ export async function main(argv = process.argv.slice(2)) {
         await writeJson(args.history, history.slice(-HISTORY_RUN_LIMIT));
         console.log(`History updated: ${args.history}`);
     }
-    return capReached ? 1 : 0;
+    return rateLimited ? 2 : capReached ? 3 : 0;
 }
 
-if (process.argv[1]?.endsWith("cli.mjs")) {
-    main().catch((error) => {
-        console.error(error.message ?? error);
-        process.exit(1);
-    });
+if (
+    process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+    main()
+        .then((code) => {
+            process.exitCode = code;
+        })
+        .catch((error) => {
+            console.error(error.message ?? error);
+            process.exitCode = 1;
+        });
 }

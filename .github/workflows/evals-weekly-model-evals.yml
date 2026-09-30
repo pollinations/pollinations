@@ -29,6 +29,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: model-evals
@@ -67,7 +68,7 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_EVALS_KEY }}
         run: |
           if [ -z "$POLLINATIONS_API_KEY" ]; then
-            echo "PLN_GITHUB_EVALS_KEY is not set. Ask a maintainer to add a Pollinations API key (https://enter.pollinations.ai/keys) as the PLN_GITHUB_EVALS_KEY secret."
+            echo "::error::PLN_GITHUB_EVALS_KEY is not set. Ask a maintainer to add a Pollinations API key (https://enter.pollinations.ai/keys) as the PLN_GITHUB_EVALS_KEY secret."
             exit 1
           fi
 
@@ -75,41 +76,37 @@ jobs:
         id: eval
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_EVALS_KEY }}
+          MODELS: ${{ inputs.models }}
+          ONLY: ${{ inputs.only }}
+          QUESTIONS: ${{ inputs.questions }}
+        shell: bash
         run: |
-          ARGS=""
-          if [ -n "${{ github.event.inputs.models }}" ]; then
-            ARGS="$ARGS --models '${{ github.event.inputs.models }}'"
-          fi
-          if [ -n "${{ github.event.inputs.only }}" ]; then
-            ARGS="$ARGS --only ${{ github.event.inputs.only }}"
-          fi
-          if [ -n "${{ github.event.inputs.questions }}" ]; then
-            ARGS="$ARGS --questions ${{ github.event.inputs.questions }}"
-          fi
-
-          # Exit code 1 means the Pollen cost cap was reached: results are
-          # still written for the models that scored, so keep going and
-          # flag it in the summary.
-          set +e
+          # Untrusted dispatch inputs are data, never interpolated shell code.
+          ARGS=()
+          if [ -n "$MODELS" ]; then ARGS+=(--models "$MODELS"); fi
+          if [ -n "$ONLY" ]; then ARGS+=(--only "$ONLY"); fi
+          if [ -n "$QUESTIONS" ]; then ARGS+=(--questions "$QUESTIONS"); fi
           node operations/model-evals/cli.mjs \
             --out operations/model-monitor/public/evals/latest.json \
             --history operations/model-monitor/public/evals/history.json \
-            $ARGS
-          EXIT_CODE=$?
-          set -e
-          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
-            exit "$EXIT_CODE"
-          fi
-          if [ "$EXIT_CODE" -eq 1 ]; then
-            echo "::warning::Pollen cost cap reached; some models were not scored"
-          fi
+            "${ARGS[@]}"
+          # Any nonzero exit is incomplete or failed: preserve diagnostics but
+          # never replace the last complete weekly leaderboard with that run.
+
+      - name: Upload eval diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-eval-results
+          path: operations/model-monitor/public/evals/
+          if-no-files-found: ignore
 
       - name: Check for changes
         id: changes
         run: |
           if [ ! -f operations/model-monitor/public/evals/latest.json ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet -- operations/model-monitor/public/evals/; then
+          elif [ -z "$(git status --porcelain -- operations/model-monitor/public/evals/)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -122,7 +119,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add operations/model-monitor/public/evals/
           git commit -m "chore: weekly model eval results $(date -u +%Y-%m-%d)"
-          git push -f origin "$BRANCH"
+          git push --force-with-lease origin "$BRANCH"
 
       - name: Create or update PR
         if: steps.changes.outputs.changed == 'true'
@@ -137,6 +134,7 @@ jobs:
             PR_URL="$EXISTING_PR"
           else
             PR_URL=$(gh pr create \
+              --base "${{ github.event.repository.default_branch }}" --head "$BRANCH" \
               --title "chore: weekly model eval results $(date -u +%Y-%m-%d)" \
               --body "Automated update of the AIW model eval leaderboard and run history. See operations/model-evals/README.md for details.")
             echo "Created PR: $PR_URL"
@@ -151,5 +149,4 @@ jobs:
         run: |
           gh issue create \
             --title "Weekly model eval failed ($(date -u +%Y-%m-%d))" \
-            --body "The scheduled model eval workflow failed. Check the run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --label "evals"
+            --body "The scheduled model eval workflow failed. Check the run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

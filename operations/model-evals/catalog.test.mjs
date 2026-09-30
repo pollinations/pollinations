@@ -105,11 +105,53 @@ test("requestCostPollen prices prompt, cached and completion tokens", () => {
     });
     // 600 uncached * 0.00000015 + 400 cached * 0.000000015 + 200 * 0.0000009375
     assert.ok(Math.abs(cost - 0.0002835) < 1e-9, `got ${cost}`);
-    assert.equal(requestCostPollen(CATALOG[1], {}), 0);
+    assert.equal(requestCostPollen(CATALOG[1], {}), null);
 });
 
 test("name helpers strip paths and variants", () => {
     assert.equal(shortName("community/Saauf/gpt-6-luna"), "gpt-6-luna");
     assert.equal(baseName("community/vendouple/gpt-6-sol:stable"), "gpt-6-sol");
     assert.equal(baseName("openai/gpt-6-astra"), "gpt-6-astra");
+});
+
+test("reasoning and cache writes use their own rates without double-counting", () => {
+    const model = {
+        pricing: {
+            promptTextTokens: 1,
+            promptCachedTokens: 0.1,
+            promptCacheWriteTokens: 2,
+            completionTextTokens: 3,
+            completionReasoningTokens: 4,
+        },
+    };
+    assert.equal(
+        requestCostPollen(model, {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            total_tokens: 150,
+            prompt_tokens_details: {
+                cached_tokens: 10,
+                cache_write_tokens: 20,
+            },
+            completion_tokens_details: { reasoning_tokens: 30 },
+        }),
+        291,
+    );
+    assert.equal(
+        requestCostPollen(model, {
+            prompt_tokens: 100,
+            completion_tokens: 20,
+            total_tokens: 150,
+            completion_tokens_details: { reasoning_tokens: 30 },
+        }),
+        280,
+    );
+});
+
+test("duplicate aliases resolve to one model", () => {
+    assert.equal(
+        selectModels(CATALOG, { names: ["gpt-6-astra", "openai/gpt-6-astra"] })
+            .length,
+        1,
+    );
 });

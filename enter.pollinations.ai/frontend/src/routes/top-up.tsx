@@ -7,7 +7,7 @@ import { authClient } from "../auth.ts";
 import type { BillingOverview as BillingState } from "../backend-types.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
-import { BuyPollenPanel } from "../components/pollen";
+import { BuyPollenPanel, PaymentHelp } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
@@ -206,6 +206,8 @@ function TopUpPage() {
             {billing === undefined ? null : (
                 <BuyPollenPanel
                     initialBilling={billing}
+                    // No Billing section here: help and terms stay by the packs.
+                    footnotes={<PaymentHelp />}
                     returnToTopUp={{ redirect: search.redirect }}
                     onCredited={refreshWallet}
                 />

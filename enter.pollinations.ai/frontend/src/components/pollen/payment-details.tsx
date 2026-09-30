@@ -15,6 +15,7 @@ import {
     formatTaxId,
     paymentMethodDetails,
 } from "./payment-method-format.ts";
+import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
 
 /**
  * What Stripe holds for the buyer: the card(s) and the details invoices and
@@ -23,7 +24,7 @@ import {
 export const BillingPanel: FC<{ billing: BillingOverview | null }> = ({
     billing,
 }) => (
-    <div className="flex flex-col gap-3">
+    <>
         <div className="grid gap-3 sm:grid-cols-2">
             <Surface className="flex flex-col gap-2">
                 <CardHeading>Payment method</CardHeading>
@@ -35,17 +36,20 @@ export const BillingPanel: FC<{ billing: BillingOverview | null }> = ({
             </Surface>
         </div>
         {/* Where this data lives: true as written, no broader claim. */}
-        <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-            <LockIcon
-                aria-hidden="true"
-                className="mt-0.5 h-3.5 w-3.5 shrink-0"
-            />
-            <span>
-                Your card and billing details are stored by Stripe. Pollinations
-                never sees your card number.
-            </span>
-        </p>
-    </div>
+        <Footnotes>
+            <p className="flex items-start gap-1.5">
+                <LockIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Your card and billing details are stored by Stripe.
+                    Pollinations never sees your card number.
+                </span>
+            </p>
+            <PaymentHelp />
+        </Footnotes>
+    </>
 );
 
 const CardHeading: FC<{ children: ReactNode }> = ({ children }) => (

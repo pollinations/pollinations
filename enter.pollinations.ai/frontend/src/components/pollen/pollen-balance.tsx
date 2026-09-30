@@ -3,9 +3,11 @@ import {
     CheckIcon,
     ClipboardIcon,
     CopyButton,
+    cn,
     InfoTip,
     InlineLink,
     MailIcon,
+    ReceiptIcon,
     SproutIcon,
     Surface,
     WalletIcon,
@@ -15,6 +17,7 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
+import { SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
@@ -180,7 +183,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </Surface>
 
                     {/* Footer: learn more */}
-                    <div className="mt-2 space-y-2 text-[13px] leading-snug text-theme-text-muted">
+                    <Footnotes className="mt-2">
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
@@ -195,7 +198,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 </InlineLink>
                             </span>
                         </p>
-                    </div>
+                    </Footnotes>
                 </>
             )}
         </div>
@@ -259,6 +262,8 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;
+    /** More footnote lines under the trust line (the standalone page). */
+    footnotes?: ReactNode;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet and billing once a purchase is credited. */
@@ -267,6 +272,7 @@ type BuyPollenPanelProps = {
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBilling,
+    footnotes,
     returnToTopUp,
     onCredited,
 }) => (
@@ -276,56 +282,82 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             returnToTopUp={returnToTopUp}
             onCredited={onCredited}
         />
-        <PaymentFootnotes />
+        <Footnotes>
+            <p className="flex items-start gap-1.5">
+                <ReceiptIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Prices include the {SERVICE_FEE_NAME.toLowerCase()}, plus
+                    tax at payment
+                </span>
+            </p>
+            <PaymentTrustBadge className="mt-0 pt-0" />
+            {footnotes}
+        </Footnotes>
     </>
 );
 
-/** Who handles the payment, who to ask, and the terms of buying. */
-const PaymentFootnotes: FC = () => (
-    <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
-        <PaymentTrustBadge className="mt-0 pt-0" />
-        <p className="flex items-start gap-1.5">
-            <MailIcon
-                aria-hidden="true"
-                className="mt-0.5 h-3.5 w-3.5 shrink-0"
-            />
-            <span>
-                Payment help:{" "}
-                {/* Styled like Terms and Refund; a copy icon where theirs
-                    has the arrow. */}
-                <CopyButton
-                    value="billing@pollinations.ai"
-                    className="polli-link"
-                    data-tone="accent"
-                    // The icon says copy and the text says email copied: no tooltip.
-                    tooltip={null}
-                >
-                    {(copied) => (
-                        <>
-                            {copied
-                                ? "email copied"
-                                : "billing@pollinations.ai"}
-                            {copied ? (
-                                <CheckIcon
-                                    aria-hidden="true"
-                                    className="polli-link-external-icon"
-                                />
-                            ) : (
-                                <ClipboardIcon
-                                    aria-hidden="true"
-                                    className="polli-link-external-icon"
-                                />
-                            )}
-                        </>
-                    )}
-                </CopyButton>
-                <LinkSeparator />
-                <InlineLink href={TERMS_URL}>Terms</InlineLink>
-                <LinkSeparator />
-                <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
-            </span>
-        </p>
+/**
+ * The dashboard's footnote block: 8px between lines, 4px inset. The section's
+ * own gap sets the space above it, as on every other page.
+ */
+export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
+    className,
+    children,
+}) => (
+    <div
+        className={cn(
+            "space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted",
+            className,
+        )}
+    >
+        {children}
     </div>
+);
+
+/**
+ * Who to ask and the terms of buying: in Billing on the Pollen page, under
+ * the Top-up card on the standalone top-up page.
+ */
+export const PaymentHelp: FC = () => (
+    <p className="flex items-start gap-1.5">
+        <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+            Payment help:{" "}
+            {/* Styled like Terms and Refund; a copy icon where theirs has
+                the arrow. The icon says copy and the text says email
+                copied, so no tooltip. */}
+            <CopyButton
+                value="billing@pollinations.ai"
+                className="polli-link"
+                data-tone="accent"
+                tooltip={null}
+            >
+                {(copied) => (
+                    <>
+                        {copied ? "email copied" : "billing@pollinations.ai"}
+                        {copied ? (
+                            <CheckIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        ) : (
+                            <ClipboardIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        )}
+                    </>
+                )}
+            </CopyButton>
+            <LinkSeparator />
+            <InlineLink href={TERMS_URL}>Terms</InlineLink>
+            <LinkSeparator />
+            <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+        </span>
+    </p>
 );
 
 /** A dot between links, with room around it. */

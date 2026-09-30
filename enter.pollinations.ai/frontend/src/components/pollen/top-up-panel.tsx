@@ -8,7 +8,6 @@ import {
     formatPollenPackValue,
     POLLEN_PACKS,
     type PollenPack,
-    SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import type { FC, ReactNode } from "react";
@@ -271,12 +270,11 @@ const FooterText: FC<{
     }
     // The card's one line says what happens: what a price includes (Once),
     // and when automatic top-up buys (Automatic).
-    const prices = `Prices include the ${SERVICE_FEE_NAME.toLowerCase()}, plus tax at payment`;
+    // The card's one line says what the packs do; what a price includes is
+    // a footnote under the card.
     if (tab === "once")
         return (
-            <p className="text-theme-text-muted">
-                Pick a pack to buy it now. {prices}
-            </p>
+            <p className="text-theme-text-muted">Pick a pack to buy it now.</p>
         );
     let text: ReactNode = null;
     if (!billing) text = "Couldn’t load automatic top-up.";
@@ -298,8 +296,8 @@ const FooterText: FC<{
         );
     else
         text = billing.autoTopUp.enabled
-            ? `We’ll add ${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen whenever your paid balance falls to ${billing.autoTopUp.thresholdPollen}. ${prices}`
-            : `Pick a pack to top up automatically when your paid balance falls to ${billing.autoTopUp.thresholdPollen}. ${prices}`;
+            ? `We’ll add ${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen whenever your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`
+            : `Pick a pack to top up automatically when your paid balance falls to ${billing.autoTopUp.thresholdPollen}.`;
     return <p className="text-theme-text-muted">{text}</p>;
 };
 

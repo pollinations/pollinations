@@ -44,6 +44,7 @@ const EXPORT_COLUMNS = [
     ["pollenCommunity", "Community Pollen spent (USD)"],
     ["pollenOther", "Tools / other Pollen spent (USD)"],
     ["packPurchases", "Pack purchases"],
+    ["newPayers", "New Stripe payers"],
     ["communityUserPct", "Community models user %"],
     ["communityRequestPct", "Community models request %"],
     ["communityAvailability", "Community models availability %"],

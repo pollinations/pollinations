@@ -61,8 +61,14 @@ it("publishes each source, distinguishes pending from failed, and ignores an old
     expect(requests).toHaveLength(5);
 
     for (let i = 0; i < SOURCE_LABELS.length; i++) {
-        await reply(4 + i, i === 0 ? { stars: 456 } : { data: [] });
+        const body = requests[4 + i].url.includes("/new-payers")
+            ? { data: [{ week: "2026-09-21", new_payers: 52 }] }
+            : { data: [] };
+        await reply(4 + i, i === 0 ? { stars: 456 } : body);
     }
+    expect(
+        state.weeklyData.find((row) => row.week === "2026-09-21").newPayers,
+    ).toBe(52);
     expect(state.loading).toBe(false);
     expect(state.done).toEqual(SOURCE_LABELS);
     expect(state.github.stars).toBe(456);

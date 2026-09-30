@@ -20,6 +20,7 @@ const SOURCES = [
         load: api.dailyRegistrations,
     },
     { label: "Revenue", key: "revenue", load: api.revenue },
+    { label: "New Stripe payers", key: "newPayers", load: api.newPayers },
     {
         label: "Daily revenue",
         key: "dailyRevenue",
@@ -67,6 +68,7 @@ const REQUIRED = {
     usage: "Tinybird (usage)",
     agentMcpUsage: "Tinybird (agent/MCP usage)",
     revenue: "Revenue (Stripe)",
+    newPayers: "New payers (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
     // A failed GitHub call returns an empty list, which is indistinguishable
@@ -182,6 +184,9 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 mergeInto(weekMap, raw.revenue, (row) => ({
                     revenue: row.revenue,
                     packPurchases: row.purchases,
+                }));
+                mergeInto(weekMap, raw.newPayers, (row) => ({
+                    newPayers: row.new_payers,
                 }));
                 mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
                     agentRequests: row.agent_requests,

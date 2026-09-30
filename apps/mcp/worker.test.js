@@ -8,15 +8,23 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
+    "createApiKey",
     "createEmbeddings",
     "generate3D",
     "generateAudio",
     "generateImage",
     "generateText",
     "generateVideo",
+    "getApiKeyInfo",
     "getBalance",
+    "getDailyUsage",
+    "getEarnings",
     "getModelStatus",
+    "getQuests",
+    "getUsage",
+    "listApiKeys",
     "listModels",
+    "revokeApiKey",
     "transcribeAudio",
 ];
 
@@ -438,6 +446,144 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
         mimeType: "audio/mpeg",
     });
     assert.deepEqual(cancelled, ["3d", "video", "audio"]);
+
+    assert.ok(
+        seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),
+    );
+    await client.close();
+});
+
+test("account tools proxy usage, earnings, quests and key management", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const seen = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        const method = init.method || "GET";
+        const authorization = new Headers(init.headers).get("authorization");
+        seen.push({ url, method, authorization });
+        if (method === "GET" && url.includes("/account/usage/daily")) {
+            return Response.json({
+                usage: [{ date: "2026-09-30", requests: 12, cost_usd: 0.3 }],
+                count: 1,
+            });
+        }
+        if (method === "GET" && url.includes("/account/usage?")) {
+            return Response.json({
+                usage: [
+                    {
+                        timestamp: "2026-09-30 12:00:00",
+                        type: "generate.text",
+                        model: "openai",
+                        cost_usd: 0.1,
+                    },
+                ],
+                count: 1,
+            });
+        }
+        if (method === "GET" && url.includes("/account/earnings?")) {
+            return Response.json({
+                daily: [
+                    {
+                        date: "2026-09-30",
+                        entity_name: "my-app",
+                        pollen_earned: 5,
+                    },
+                ],
+                perEntity: [{ entity_name: "my-app", pollen_earned: 5 }],
+            });
+        }
+        if (method === "GET" && url.includes("/account/quests")) {
+            return Response.json({
+                quests: [{ id: "q1", title: "Quest 1", status: "open" }],
+            });
+        }
+        if (method === "POST" && url.endsWith("/account/keys")) {
+            assert.deepEqual(JSON.parse(init.body), {
+                name: "test-key",
+                type: "secret",
+            });
+            return Response.json({
+                id: "key_1",
+                name: "test-key",
+                key: "sk_test_created",
+            });
+        }
+        if (method === "DELETE" && url.endsWith("/account/keys/key_1")) {
+            return Response.json({ success: true });
+        }
+        if (method === "GET" && url.includes("/account/keys")) {
+            return Response.json({
+                data: [{ id: "key_1", name: "test-key", enabled: true }],
+            });
+        }
+        if (method === "GET" && url.includes("/account/key")) {
+            return Response.json({
+                id: "key_1",
+                type: "secret",
+                enabled: true,
+                pollenBalance: 42,
+            });
+        }
+        throw new Error(`Unexpected request: ${method} ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+
+    const usage = await client.callTool({
+        name: "getUsage",
+        arguments: { days: 7, limit: 5 },
+    });
+    assert.match(usage.content[0].text, /generate\.text/);
+    assert.match(usage.content[0].text, /"count": 1/);
+
+    const daily = await client.callTool({
+        name: "getDailyUsage",
+        arguments: { days: 7 },
+    });
+    assert.match(daily.content[0].text, /"requests": 12/);
+
+    const earnings = await client.callTool({
+        name: "getEarnings",
+        arguments: { days: 30 },
+    });
+    assert.match(earnings.content[0].text, /my-app/);
+    assert.match(earnings.content[0].text, /"pollen_earned": 5/);
+
+    const quests = await client.callTool({
+        name: "getQuests",
+        arguments: {},
+    });
+    assert.match(quests.content[0].text, /Quest 1/);
+
+    const created = await client.callTool({
+        name: "createApiKey",
+        arguments: { name: "test-key", type: "secret" },
+    });
+    assert.match(created.content[0].text, /sk_test_created/);
+
+    const revoked = await client.callTool({
+        name: "revokeApiKey",
+        arguments: { id: "key_1" },
+    });
+    assert.match(revoked.content[0].text, /"success": true/);
+
+    const listed = await client.callTool({
+        name: "listApiKeys",
+        arguments: {},
+    });
+    assert.match(listed.content[0].text, /test-key/);
+
+    const info = await client.callTool({
+        name: "getApiKeyInfo",
+        arguments: {},
+    });
+    assert.match(info.content[0].text, /"pollenBalance": 42/);
 
     assert.ok(
         seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),

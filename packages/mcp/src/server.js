@@ -9,7 +9,7 @@ import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
-const SERVER_VERSION = "2.5.1";
+const SERVER_VERSION = "2.6.0";
 
 const tools = [
     ...imageTools,
@@ -44,6 +44,13 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - transcribeAudio converts spoken audio from a public HTTPS URL into text.
 - For pricing, quote the returned pricing fields and currency; do not estimate.
 - Use getModelStatus for recent health and latency, not model discovery.
+
+## Account tools
+getBalance, getUsage, getDailyUsage, getEarnings and getQuests report on the authenticated account
+(usage history, aggregated daily spend, developer earnings, and quest status); they require the API key
+to carry the 'account:usage' permission. listApiKeys, createApiKey, revokeApiKey and getApiKeyInfo manage
+API keys and require the 'account:keys' permission. Check listApiKeys before creating or revoking keys,
+and never guess a key id — use the ids returned by listApiKeys or createApiKey.
 
 ## API Endpoint
 All requests go through: ${validateApiBaseUrl()}`;

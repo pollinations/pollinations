@@ -1,4 +1,10 @@
-import { CardIcon, InlineLink, Surface, WalletIcon } from "@pollinations/ui";
+import {
+    CardIcon,
+    InlineLink,
+    LockIcon,
+    Surface,
+    WalletIcon,
+} from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
@@ -17,15 +23,28 @@ import {
 export const BillingPanel: FC<{ billing: BillingOverview | null }> = ({
     billing,
 }) => (
-    <div className="grid gap-3 sm:grid-cols-2">
-        <Surface className="flex flex-col gap-2">
-            <CardHeading>Payment method</CardHeading>
-            <PaymentMethods methods={billing?.paymentMethods ?? []} />
-        </Surface>
-        <Surface className="flex flex-col gap-2">
-            <CardHeading>Details</CardHeading>
-            <Details details={billing?.billingDetails ?? null} />
-        </Surface>
+    <div className="flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+            <Surface className="flex flex-col gap-2">
+                <CardHeading>Payment method</CardHeading>
+                <PaymentMethods methods={billing?.paymentMethods ?? []} />
+            </Surface>
+            <Surface className="flex flex-col gap-2">
+                <CardHeading>Details</CardHeading>
+                <Details details={billing?.billingDetails ?? null} />
+            </Surface>
+        </div>
+        {/* Where this data lives: true as written, no broader claim. */}
+        <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+            <LockIcon
+                aria-hidden="true"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+            />
+            <span>
+                Your card and billing details are stored by Stripe. Pollinations
+                never sees your card number.
+            </span>
+        </p>
     </div>
 );
 

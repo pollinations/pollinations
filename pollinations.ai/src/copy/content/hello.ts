@@ -15,6 +15,8 @@ export const HELLO_PAGE = {
     heroStat2Label: "daily requests",
     heroStat3: "500+",
     heroStat3Label: "live apps",
+    heroStarsLabel: "GitHub stars",
+    heroDiscordLabel: "online in Discord",
     startBuildingButton: "Register",
     joinDiscordButton: "Join the Discord",
 

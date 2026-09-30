@@ -13,7 +13,7 @@ body:
   - type: dropdown
     id: first-buy
     attributes:
-      label: What made you buy Pollen the first time?
+      label: Why did you first buy Pollen?
       description: Pick all that apply.
       multiple: true
       options:
@@ -26,28 +26,33 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: first-buy-other
+    attributes:
+      label: Another reason? (optional)
+
   - type: dropdown
     id: checkout
     attributes:
-      label: What almost stopped you at checkout?
+      label: Did anything get in the way when you bought it?
       description: Pick all that apply.
       multiple: true
       options:
-        - Nothing, it went smoothly
+        - No, it went smoothly
         - The price or pack sizes
         - The service fee
         - My payment method or currency was missing
         - My card was declined or the bank check failed
         - Not sure what Pollen buys
         - Not sure I could trust you
+        - Something else
     validations:
       required: true
 
   - type: input
-    id: payment-method
+    id: checkout-other
     attributes:
-      label: Payment method you'd rather use (optional)
-      placeholder: the method and your country
+      label: Something else, or a payment method you'd rather use? (optional)
 
   - type: dropdown
     id: who-pays
@@ -59,25 +64,35 @@ body:
         - Me, personally
         - My company or a client
         - My app's revenue covers it
+        - Someone else
+    validations:
+      required: true
+
+  - type: input
+    id: who-pays-other
+    attributes:
+      label: Someone else? Who (optional)
+
+  - type: dropdown
+    id: now
+    attributes:
+      label: How do you use Pollinations these days?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - I'm still using the Pollen I bought
+        - I top up when I run out
+        - Quest Pollen covers what I need
+        - My project ended or paused
+        - I mostly use another service now
         - Something else
     validations:
       required: true
 
-  - type: dropdown
-    id: buy-again
+  - type: input
+    id: now-other
     attributes:
-      label: What keeps you from buying more?
-      description: Pick all that apply.
-      multiple: true
-      options:
-        - I still have Pollen left
-        - Quest Pollen covers me now
-        - My project ended or paused
-        - I found something cheaper or better
-        - Errors or reliability
-        - Nothing, I top up regularly
-    validations:
-      required: true
+      label: Anything else about how you use it? (optional)
 
   - type: dropdown
     id: prices
@@ -96,7 +111,7 @@ body:
   - type: dropdown
     id: plan
     attributes:
-      label: Imagine a plan that refills your Pollen every month. Which would you pick?
+      label: If we offered a monthly plan, which would suit you?
       description: Pick one.
       multiple: true
       options:
@@ -105,23 +120,23 @@ body:
         - $20 a month
         - $50 a month
         - $100+ a month
-        - None, I'd rather buy packs or use auto top-up
+        - None, I'd rather pay as I go
     validations:
       required: true
 
   - type: textarea
-    id: spend-double
+    id: use-more
     attributes:
-      label: What would make you spend twice as much with us?
-      description: A model, a feature, a price, anything. A sentence or two.
+      label: What would make you use Pollinations more?
+      description: A model, a feature, a fix, anything. A sentence or two.
     validations:
       required: true
 
   - type: textarea
-    id: pay-elsewhere
+    id: other-tools
     attributes:
-      label: What do you pay someone else for that you'd rather buy here?
-      description: Name the tool and roughly what it costs you a month.
+      label: Which other AI tools or services do you pay for, and what for?
+      description: Name the tool and what you use it for.
     validations:
       required: true
 
@@ -142,7 +157,7 @@ body:
   - type: input
     id: roast
     attributes:
-      label: "🔥 Roast us: what's the one thing that makes you hold back?"
+      label: "🔥 Roast us: what's the one thing we get wrong?"
       description: One sentence. Be blunt; it's the answer we read first.
     validations:
       required: true

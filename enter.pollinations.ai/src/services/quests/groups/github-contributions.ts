@@ -66,8 +66,8 @@ const BEE_CENSUS: Survey = {
 const HONEY_CENSUS: Survey = {
     label: "HONEY-CENSUS",
     writtenAnswers: [
-        "What would make you spend twice as much with us?",
-        "What do you pay someone else for that you'd rather buy here?",
+        "What would make you use Pollinations more?",
+        "Which other AI tools or services do you pay for, and what for?",
     ],
     minWrittenChars: 100,
 };
@@ -123,7 +123,7 @@ const beeCensusQuest: QuestDefinition = {
 const honeyCensusQuest: QuestDefinition = {
     id: "honey_census",
     title: "Take the Honey Census",
-    description: `For anyone who has bought Pollen: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml) about buying Pollen. Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    description: `For anyone who has bought Pollen: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 10,

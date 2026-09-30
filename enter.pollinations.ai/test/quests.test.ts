@@ -2238,9 +2238,9 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
         labels: [{ name: "HONEY-CENSUS" }],
         html_url: "https://github.com/pollinations/pollinations/issues/9301",
         body: [
-            "### What made you buy Pollen the first time?\n\nI ran out of Quest Pollen",
-            "### What would make you spend twice as much with us?\n\nCheaper video models and a monthly invoice for my company.",
-            "### What do you pay someone else for that you'd rather buy here?\n\nElevenLabs for character voices, about $22 a month.",
+            "### Why did you first buy Pollen?\n\nI ran out of Quest Pollen",
+            "### What would make you use Pollinations more?\n\nCheaper video models and a monthly invoice for my company.",
+            "### Which other AI tools or services do you pay for, and what for?\n\nElevenLabs for character voices, about $22 a month.",
         ].join("\n\n"),
         created_at: "2026-09-30T00:00:00Z",
         updated_at: "2026-09-30T00:00:00Z",

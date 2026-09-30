@@ -20,6 +20,8 @@ export type SwitchProps = {
      * track looks the same in both positions.
      */
     icons?: { off: ReactNode; on: ReactNode };
+    /** A short value shown in the thumb, e.g. the amount a switch turns on. */
+    thumbContent?: ReactNode;
     className?: string;
 };
 
@@ -33,6 +35,7 @@ const sizes: Record<
         thumb: string;
         travel: string;
         icon: string;
+        text: string;
         ghostOff: string;
         ghostOn: string;
     }
@@ -42,6 +45,7 @@ const sizes: Record<
         thumb: "polli:h-5 polli:w-5",
         travel: "polli:translate-x-6",
         icon: "polli:h-3.5 polli:w-3.5",
+        text: "polli:text-[9px]",
         ghostOff: "polli:right-2",
         ghostOn: "polli:left-2",
     },
@@ -50,6 +54,7 @@ const sizes: Record<
         thumb: "polli:h-7 polli:w-7",
         travel: "polli:translate-x-7",
         icon: "polli:h-4 polli:w-4",
+        text: "polli:text-[11px]",
         ghostOff: "polli:right-[9px]",
         ghostOn: "polli:left-[9px]",
     },
@@ -58,6 +63,7 @@ const sizes: Record<
         thumb: "polli:h-10 polli:w-10",
         travel: "polli:translate-x-10",
         icon: "polli:h-5 polli:w-5",
+        text: "polli:text-sm",
         ghostOff: "polli:right-[13px]",
         ghostOn: "polli:left-[13px]",
     },
@@ -90,6 +96,7 @@ export const Switch: FC<SwitchProps> = ({
     disabled = false,
     size = "md",
     icons,
+    thumbContent,
     className,
 }) => {
     const geometry = sizes[size];
@@ -142,6 +149,17 @@ export const Switch: FC<SwitchProps> = ({
                         )}
                     >
                         {checked ? icons.on : icons.off}
+                    </span>
+                )}
+                {thumbContent != null && (
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            "polli:font-bold polli:leading-none polli:tabular-nums",
+                            geometry.text,
+                        )}
+                    >
+                        {thumbContent}
                     </span>
                 )}
             </span>

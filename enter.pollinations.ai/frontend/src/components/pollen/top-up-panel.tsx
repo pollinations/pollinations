@@ -169,8 +169,16 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
 
     const autoTopUpSwitch = (
         <Switch
-            ariaLabel="Auto top-up"
+            ariaLabel={
+                billing?.autoTopUp.enabled
+                    ? `Auto top-up, ${status?.tab.label} Pollen`
+                    : "Auto top-up"
+            }
             size="md"
+            // The pack it buys, on the thumb once it's on.
+            thumbContent={
+                billing?.autoTopUp.enabled ? status?.tab.label : undefined
+            }
             checked={Boolean(billing?.autoTopUp.enabled)}
             disabled={
                 !billing ||
@@ -226,11 +234,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 ? "Auto top-up"
                                 : "Enable auto top-up"}
                         </span>
-                        {billing?.autoTopUp.enabled && (
-                            <span className="rounded-lg bg-paid-pale px-2 py-1 font-bold tabular-nums text-paid-deep">
-                                {status?.tab.label} Pollen
-                            </span>
-                        )}
                         {status?.tab.warning && (
                             <WarningIcon
                                 aria-label="Needs attention"

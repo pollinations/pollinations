@@ -21,18 +21,16 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
  * What Stripe holds for the buyer: the card(s) and the details invoices and
  * tax use. Shown here, edited only on Stripe (EditOnStripeLink).
  */
-export const BillingPanel: FC<{ billing: BillingOverview | null }> = ({
-    billing,
-}) => (
+export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => (
     <>
         <div className="grid gap-3 sm:grid-cols-2">
             <Surface className="flex flex-col gap-2">
                 <CardHeading>Payment method</CardHeading>
-                <PaymentMethods methods={billing?.paymentMethods ?? []} />
+                <PaymentMethods methods={billing.paymentMethods} />
             </Surface>
             <Surface className="flex flex-col gap-2">
                 <CardHeading>Details</CardHeading>
-                <Details details={billing?.billingDetails ?? null} />
+                <Details details={billing.billingDetails} />
             </Surface>
         </div>
         {/* Where this data lives: true as written, no broader claim. */}

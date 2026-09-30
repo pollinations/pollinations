@@ -144,9 +144,16 @@ function PollenPage() {
             <Section title="Billing" action={<EditOnStripeLink />}>
                 <Suspense fallback={null}>
                     <Await promise={billing}>
-                        {(billingState) => (
-                            <BillingPanel billing={billingState} />
-                        )}
+                        {(billingState) =>
+                            billingState ? (
+                                <BillingPanel billing={billingState} />
+                            ) : (
+                                // Not "none saved": it may well be there.
+                                <LoadError onRetry={reloadWallet}>
+                                    Couldn’t load your billing details.
+                                </LoadError>
+                            )
+                        }
                     </Await>
                 </Suspense>
             </Section>

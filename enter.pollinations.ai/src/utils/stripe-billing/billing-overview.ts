@@ -148,6 +148,38 @@ async function getLastAutoTopUpIssue(
     return {
         kind: "failed",
         reason: row.failure_reason ?? "Auto top-up could not be completed.",
+        declineCode: row.stripe_invoice_id
+            ? await findDeclineCode(stripe, row.stripe_invoice_id)
+            : null,
         occurredAt: new Date(occurredAtMs).toISOString(),
     };
+}
+
+/**
+ * Why the bank declined. The charge keeps it after the failed invoice is
+ * voided; the payment intent's own error is cleared by then.
+ */
+async function findDeclineCode(
+    stripe: Stripe,
+    invoiceId: string,
+): Promise<string | null> {
+    try {
+        const payments = await stripe.invoicePayments.list({
+            invoice: invoiceId,
+            expand: ["data.payment.payment_intent.latest_charge"],
+        });
+        const paymentIntent = payments.data[0]?.payment.payment_intent;
+        const charge =
+            paymentIntent && typeof paymentIntent === "object"
+                ? paymentIntent.latest_charge
+                : null;
+        if (!charge || typeof charge !== "object") return null;
+        return charge.outcome?.reason ?? charge.failure_code ?? null;
+    } catch (error) {
+        console.warn("[auto-top-up] decline lookup failed", {
+            invoiceId,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+    }
 }

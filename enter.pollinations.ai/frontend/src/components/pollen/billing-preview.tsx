@@ -33,12 +33,13 @@ const ADDRESS: NonNullable<BillingOverview["billingDetails"]> = {
     country: "FR",
 };
 
-// Stripe's own decline messages, stored as the attempt's failure reason.
-const declined = (reason: string) => ({
+// A decline as billing reports it: Stripe's reason from the failed charge.
+const declined = (declineCode: string) => ({
     enabled: false,
     lastIssue: {
         kind: "failed" as const,
-        reason,
+        reason: "Stripe could not charge the default payment method.",
+        declineCode,
         occurredAt: new Date().toISOString(),
     },
 });
@@ -112,18 +113,17 @@ export const BILLING_PREVIEWS: Preview[] = [
     {
         id: "declined",
         label: "Declined · generic",
-        billing: (real) => withCard(real, declined("Your card was declined.")),
+        billing: (real) => withCard(real, declined("generic_decline")),
     },
     {
         id: "declined-funds",
         label: "Declined · insufficient funds",
-        billing: (real) =>
-            withCard(real, declined("Your card has insufficient funds.")),
+        billing: (real) => withCard(real, declined("insufficient_funds")),
     },
     {
         id: "declined-expired",
         label: "Declined · expired card",
-        billing: (real) => withCard(real, declined("Your card has expired.")),
+        billing: (real) => withCard(real, declined("expired_card")),
     },
     {
         id: "bank-approval",

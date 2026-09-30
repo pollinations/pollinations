@@ -3,6 +3,7 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import {
     formatPollenPackValue,
@@ -40,8 +41,8 @@ const SETUP_POLL_TRIES = 10;
 
 /**
  * Top-up in one place: buy a pack now (Once) or keep the paid balance
- * topped up (Automatic). The packs stay put and one footer line holds the
- * only text, so switching tabs moves nothing.
+ * topped up (Automatic). The packs stay put and the line under them always
+ * says what the tab does; anything that needs the buyer sits by the tabs.
  */
 export const TopUpPanel: FC<TopUpPanelProps> = ({
     initialBilling,
@@ -152,7 +153,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         <div className="flex flex-col gap-4">
             {/* The tabs sit in the card with the packs they switch. */}
             <Surface className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
                     <TabButton
                         active={tab === "once"}
                         onClick={() => setTab("once")}
@@ -170,6 +171,17 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             {status && <AutomaticValue tab={status.tab} />}
                         </span>
                     </TabButton>
+                    {/* Beside the tabs when it fits; below them on a phone. */}
+                    <div className="basis-full text-[13px] leading-5 sm:ml-auto sm:basis-auto sm:text-right">
+                        <TabNotice
+                            tab={tab}
+                            confirmingSetup={confirmingSetup}
+                            billing={billing}
+                            status={status}
+                            error={error}
+                            onPortal={openPortal}
+                        />
+                    </div>
                 </div>
 
                 {tab === "once" ? (
@@ -218,16 +230,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 )}
 
                 {/* One line of text, the same height on both tabs. */}
-                <div className="min-h-5 text-[13px] leading-5">
-                    <FooterText
-                        tab={tab}
-                        confirmingSetup={confirmingSetup}
-                        billing={billing}
-                        status={status}
-                        error={error}
-                        onPortal={openPortal}
-                    />
-                </div>
+                <p className="min-h-5 text-[13px] leading-5 text-theme-text-muted">
+                    {tab === "once"
+                        ? "Pick a pack to buy it now."
+                        : automaticText(billing)}
+                </p>
             </Surface>
 
             <PackCheckoutDialog
@@ -274,8 +281,12 @@ const AutomaticValue: FC<{ tab: AutoTopUpStatus["tab"] }> = ({ tab }) => (
     </span>
 );
 
-/** An error or a problem wins; otherwise the tab's own sentence. */
-const FooterText: FC<{
+/**
+ * What needs the buyer, or a step in progress: an error, a declined or
+ * pending top-up (both tabs, the Automatic tab shows ⚠), or what automatic
+ * top-up still lacks (Automatic only). Nothing when all is well.
+ */
+const TabNotice: FC<{
     tab: Tab;
     confirmingSetup: boolean;
     billing: BillingOverview | null;
@@ -315,21 +326,12 @@ const FooterText: FC<{
             </Warning>
         );
     }
-    // The card's one line says what the packs do; what a price includes is
-    // a footnote under the card.
-    if (tab === "once")
-        return (
-            <p className="text-theme-text-muted">Pick a pack to buy it now.</p>
-        );
-    let text: ReactNode = null;
-    if (!billing) text = "Couldn’t load automatic top-up.";
+    if (tab === "once") return null;
+    if (!billing) return <Warning>Couldn’t load automatic top-up</Warning>;
     // Without a card, Stripe's setup page asks for the address too.
-    else if (
-        billing.paymentMethod.hasDefault &&
-        !billing.billingDetailsComplete
-    )
-        text = (
-            <>
+    if (billing.paymentMethod.hasDefault && !billing.billingDetailsComplete)
+        return (
+            <Warning>
                 Needs your billing address ·{" "}
                 <InlineLink
                     as="button"
@@ -339,24 +341,30 @@ const FooterText: FC<{
                 >
                     Add on Stripe
                 </InlineLink>
-            </>
+            </Warning>
         );
-    // "paid balance": Quest Pollen does not trigger it.
-    else
-        text = `Automatically purchase ${
-            billing.autoTopUp.enabled
-                ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
-                : "a pack"
-        } every time your paid balance reaches ${billing.autoTopUp.thresholdPollen} Pollen.`;
-    return <p className="text-theme-text-muted">{text}</p>;
+    return null;
 };
+
+/** "paid balance": Quest Pollen does not trigger it. */
+function automaticText(billing: BillingOverview | null): string {
+    const pack = billing?.autoTopUp.enabled
+        ? `${formatPollenPackValue(billing.autoTopUp.packAmountUsd)} Pollen`
+        : "a pack";
+    const threshold =
+        billing?.autoTopUp.thresholdPollen ?? AUTO_TOP_UP_THRESHOLD_POLLEN;
+    return `Automatically purchase ${pack} every time your paid balance reaches ${threshold} Pollen.`;
+}
 
 const Warning: FC<{ children: ReactNode }> = ({ children }) => (
     <p
         role="alert"
-        className="flex items-center gap-1.5 text-intent-danger-text"
+        className="inline-flex items-start gap-1.5 text-left text-intent-danger-text"
     >
-        <WarningIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+        <WarningIcon
+            aria-hidden="true"
+            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+        />
         <span>{children}</span>
     </p>
 );

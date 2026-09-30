@@ -38,14 +38,22 @@ export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
     }
     // A decline turns automatic top-up off; turning it back on clears it.
     if (issue?.kind === "failed" && !autoTopUp.enabled) {
+        const detail = issue.declineCode && DECLINE_DETAIL[issue.declineCode];
         return {
             tab: tab(true),
-            text: `Card declined ${formatDay(issue.occurredAt)}`,
+            text: `Card declined ${formatDay(issue.occurredAt)}${detail ? `: ${detail}` : ""}`,
             action: { kind: "portal", label: "Update card" },
         };
     }
     return { tab: tab(false), text: null, action: null };
 }
+
+// Declines the buyer can fix. The rest, lost or stolen cards among them
+// (Stripe asks sellers not to say so), read "Card declined".
+const DECLINE_DETAIL: Record<string, string> = {
+    insufficient_funds: "insufficient funds",
+    expired_card: "card expired",
+};
 
 function formatDay(iso: string): string {
     return new Date(iso).toLocaleDateString("en-US", {

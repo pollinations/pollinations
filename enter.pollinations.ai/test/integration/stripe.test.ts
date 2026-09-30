@@ -1119,6 +1119,77 @@ test("GET /api/stripe/billing shows pending auto top-up invoice payment link", a
     ).toBe(true);
 });
 
+test("GET /api/stripe/billing reports the bank's decline reason", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_declined_invoice");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+    await db
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id, autoTopUpEnabled: false })
+        .where(eq(userTable.id, user.id));
+
+    // Voided by now: only the failed charge still says why.
+    const invoiceId = "in_declined_insufficient_funds";
+    await insertAutoTopUpAttempt({
+        userId: user.id,
+        invoiceId,
+        status: "failed",
+    });
+    mocks.stripe.state.invoicePayments.push({
+        id: "inpay_declined",
+        object: "invoice_payment",
+        invoice: invoiceId,
+        amount_paid: null,
+        amount_requested: 1000,
+        currency: "usd",
+        is_default: true,
+        livemode: false,
+        payment: {
+            type: "payment_intent",
+            payment_intent: {
+                id: "pi_declined",
+                status: "canceled",
+                last_payment_error: null,
+                latest_charge: {
+                    id: "ch_declined",
+                    status: "failed",
+                    failure_code: "card_declined",
+                    outcome: { reason: "insufficient_funds" },
+                },
+            },
+        },
+        status: "canceled",
+    });
+
+    const response = await SELF.fetch(`${base}/billing`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        autoTopUp: { lastIssue: { kind: string; declineCode?: string } };
+    };
+    expect(data.autoTopUp.lastIssue).toMatchObject({
+        kind: "failed",
+        declineCode: "insufficient_funds",
+    });
+});
+
 test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pack values", async ({
     sessionToken,
     mocks,

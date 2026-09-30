@@ -1,0 +1,36 @@
+{
+  "pr_number": 15958,
+  "title": "chore(website): move routing to TanStack Router",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15958",
+  "merged_at": "2026-09-30T14:32:37Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Step 2 of moving pollinations.ai to the website v2 (#14472): switch the old site from React Router to TanStack Router, matching v2's setup, so v2 pages can move over later with few changes.\n\n- Adds one TanStack file route per page. `main.tsx` and the vite plugin/chunk config match v2, and `routeTree.gen.ts` is byte-identical to v2's.\n- `/docs` redirects to `gen.pollinations.ai/docs` in the Worker, copied from v2. It used to go to `/play`.\n- Removes the class-based `ErrorBoundary`. Page errors now show the router's default error screen, as on v2.\n- Apps and Play read `?filter/sort/query` and `?model` through validated route search params.\n\n**Verification** (main and this branch side by side, same data, 1440px and 390px)\n- Every element on all 7 pages matches in position, size and colour.\n- Same behaviour for: nav links and active state, scroll reset, back button, Apps search URL updates in place, `?model=` preselect, unknown path → `/`, footer links, `#api_key` cleanup.\n- One URL difference: a numeric-looking search value is quoted in the URL (`?query=%22123%22`); the page reads it the same.\n- Bundle: vendor JS 77 → 97 kB gzip (router).\n- Remaining site diff to v2: 220 → 216 files, +13,432 → +12,878 lines.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New paths through the garden",
+    "blurb": "The website gets TanStack Router under the hood, lining up its paths with website v2. The pages look the same; the route to the docs gets shorter.",
+    "summary": "The website replaces React Router with TanStack file routes matching website v2, redirects /docs to gen.pollinations.ai/docs instead of /play, and validates Apps and Play search parameters.",
+    "impact": "The seven pages keep their existing layout and navigation behavior, while /docs leads directly to the API docs and Apps and Play retain URL-based search and model selection.",
+    "keywords": [
+      "website",
+      "TanStack Router",
+      "website v2",
+      "docs redirect",
+      "Apps",
+      "Play"
+    ],
+    "visual_concept": "Depict the routing change as a friendly garden junction with signs for Apps, Play, and Docs; the Docs path leads to a small glowing API manual. Polli tends the paths while a CRT monitor robot holds a tidy route map, suggesting a careful under-the-hood change rather than a visual redesign.",
+    "image_prompt": "In a cozy pixel garden, three lime green (#ecf874) paths branch toward little signs reading 'APPS', 'PLAY', and 'DOCS', with a glowing API manual at the end of the Docs path; a chunky CRT monitor robot holds the route map beside Polli, who wears a tiny cartographer's hat and adjusts a sign. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream backdrop, mint and lavender flowers, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15958.jpg",
+    "prompt": "In a cozy pixel garden, three lime green (#ecf874) paths branch toward little signs reading 'APPS', 'PLAY', and 'DOCS', with a glowing API manual at the end of the Docs path; a chunky CRT monitor robot holds the route map beside Polli, who wears a tiny cartographer's hat and adjusts a sign. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream backdrop, mint and lavender flowers, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-30T14:34:13.165742+00:00"
+}

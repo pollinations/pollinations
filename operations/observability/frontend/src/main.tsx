@@ -121,7 +121,7 @@ function Dashboards({
     const src = dashboardSrc(uid);
     return (
         <div className="flex h-dvh flex-col bg-app-bg">
-            <AppHeader navLabel="Observability links">
+            <AppHeader appName="Observability" navLabel="Observability links">
                 <DashboardPicker
                     dashboards={dashboards}
                     selected={uid}

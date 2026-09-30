@@ -105,9 +105,39 @@ describe("/openapi.json", () => {
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/v1/responses"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "responses",
+            "200",
+            "content",
+            "application/json",
+            "schema",
+        ]);
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "responses",
+            "200",
+            "content",
+            "text/event-stream",
+        ]);
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();
+        expect(schema.paths["/audio/stem-separation"]).toBeUndefined();
         for (const path of [
             "/models",
             "/v1/models",
@@ -143,6 +173,7 @@ describe("/openapi.json", () => {
             ["/v1/audio/speech", "post"],
             ["/v1/audio/voice-changer", "post"],
             ["/v1/audio/voice-isolator", "post"],
+            ["/alpha/audio/stem-separation", "post"],
         ]) {
             expect(schema).toHaveProperty(
                 ["paths", path, method, "responses", "200", "headers", "Link"],

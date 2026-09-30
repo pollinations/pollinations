@@ -249,7 +249,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-A bot labels every new issue and PR using the rules in `operations/github/project-manager.md`. Workflow labels (`APP-*`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
+A bot labels every new issue and PR using the rules in `operations/github/project-manager.md`. Workflow labels (`APP-*`, `BEE-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
 
 ## Contributor Attribution
 

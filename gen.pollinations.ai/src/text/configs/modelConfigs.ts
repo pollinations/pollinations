@@ -719,6 +719,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",

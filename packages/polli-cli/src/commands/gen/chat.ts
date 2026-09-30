@@ -6,7 +6,12 @@ import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import {
+    ExitSignal,
+    getOutputMode,
+    printError,
+    printResult,
+} from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface Message {
@@ -100,7 +105,11 @@ export function createChatCommand() {
                         if (hint) {
                             printError(hint);
                             rl.close();
-                            process.exit(1);
+                            // Set the code and let the loop unwind: an
+                            // immediate process.exit() aborts libuv on
+                            // Windows after network I/O (nodejs/node#56645).
+                            process.exitCode = 1;
+                            return;
                         }
                         throw new Error(`${res.status}: ${errText}`);
                     }
@@ -169,7 +178,7 @@ export function createChatCommand() {
                         );
                     }
                     rl.close();
-                    process.exit(0);
+                    process.exitCode = 0;
                 }
 
                 if (input === "/clear") {
@@ -200,7 +209,7 @@ export function createChatCommand() {
 
             rl.on("close", () => {
                 if (opts.save) saveTranscript(opts.save);
-                process.exit(0);
+                process.exitCode = 0;
             });
         });
 }

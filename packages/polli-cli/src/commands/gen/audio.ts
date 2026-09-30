@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -10,6 +11,68 @@ import {
 } from "../../lib/output.js";
 import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
+
+interface AudioOptions {
+    voice: string;
+    format: string;
+    model?: string;
+    speed?: string;
+    duration?: string;
+    instrumental?: boolean;
+    seed?: string;
+}
+
+async function generateSimple(
+    text: string,
+    opts: AudioOptions,
+): Promise<Buffer> {
+    const params = new URLSearchParams({ voice: opts.voice });
+    if (opts.format !== "mp3") params.set("response_format", opts.format);
+    if (opts.model) params.set("model", opts.model);
+    if (opts.speed) params.set("speed", opts.speed);
+    if (opts.duration) params.set("duration", opts.duration);
+    if (opts.instrumental) params.set("instrumental", "true");
+    if (opts.seed) params.set("seed", opts.seed);
+
+    const res = await fetchGen(`/audio/${encodeURIComponent(text)}?${params}`);
+    return Buffer.from(await res.arrayBuffer());
+}
+
+/** Character-level timing needs the JSON+base64 endpoint; writes the
+ * alignment data to `alignmentPath` and returns the decoded audio. */
+async function generateWithTimestamps(
+    text: string,
+    opts: AudioOptions,
+    alignmentPath: string,
+): Promise<Buffer> {
+    const body: Record<string, unknown> = { input: text, voice: opts.voice };
+    if (opts.model) body.model = opts.model;
+    if (opts.format !== "mp3") body.response_format = opts.format;
+    if (opts.seed) body.seed = Number(opts.seed);
+
+    const res = await fetchGen("/v1/audio/speech/with-timestamps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const data = (await res.json()) as {
+        audio_base64: string;
+        alignment: unknown;
+        normalized_alignment: unknown;
+    };
+    writeFileSync(
+        alignmentPath,
+        JSON.stringify(
+            {
+                alignment: data.alignment,
+                normalized_alignment: data.normalized_alignment,
+            },
+            null,
+            2,
+        ),
+    );
+    return Buffer.from(data.audio_base64, "base64");
+}
 
 export function createAudioCommand() {
     return new Command("audio")
@@ -30,6 +93,10 @@ export function createAudioCommand() {
         .option("--seed <n>", "Seed for deterministic output")
         .option("--output <path>", "Save to file")
         .option("--play", "Play the audio after saving (platform player)")
+        .option(
+            "--timestamps",
+            "Also save character-level timing as JSON next to the audio",
+        )
         .action(async (textArg, opts) => {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
@@ -38,32 +105,29 @@ export function createAudioCommand() {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
                 );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
-
-            const params = new URLSearchParams({ voice: opts.voice });
-            if (opts.format !== "mp3")
-                params.set("response_format", opts.format);
-            if (opts.model) params.set("model", opts.model);
-            if (opts.speed) params.set("speed", opts.speed);
-            if (opts.duration) params.set("duration", opts.duration);
-            if (opts.instrumental) params.set("instrumental", "true");
-            if (opts.seed) params.set("seed", opts.seed);
-
-            const encodedText = encodeURIComponent(inputText);
-            const path = `/audio/${encodedText}?${params}`;
 
             if (isHuman) printInfo("Generating audio...");
 
             try {
-                const res = await fetchGen(path);
+                const alignmentPath = opts.timestamps
+                    ? `${output}.json`
+                    : undefined;
+                const buffer = alignmentPath
+                    ? await generateWithTimestamps(
+                          inputText,
+                          opts,
+                          alignmentPath,
+                      )
+                    : await generateSimple(inputText, opts);
 
-                const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(output, buffer);
                 printMeta({
                     path: output,
                     size: buffer.length,
                     voice: opts.voice,
+                    ...(alignmentPath && { timestamps: alignmentPath }),
                 });
 
                 if (opts.play) {

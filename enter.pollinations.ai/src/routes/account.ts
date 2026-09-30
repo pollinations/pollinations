@@ -107,9 +107,15 @@ const CreateKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .refine(
+            (seconds) =>
+                Number.isFinite(
+                    new Date(Date.now() + seconds * 1000).getTime(),
+                ),
+            "Expiry is outside the supported date range",
+        )
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()

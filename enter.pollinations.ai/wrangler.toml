@@ -179,6 +179,7 @@ id = "ba22195551794751b9792e4e67eb074a"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
 WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
 WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"
 WEFT_NETWORK = "eip155:84532"

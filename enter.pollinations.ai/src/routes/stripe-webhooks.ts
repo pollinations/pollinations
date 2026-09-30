@@ -771,7 +771,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                     invoice,
                     "Stripe could not charge the default payment method.",
-                    { disableAutoTopUp: false },
                 );
                 break;
             }

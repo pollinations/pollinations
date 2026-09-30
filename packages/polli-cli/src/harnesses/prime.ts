@@ -21,7 +21,7 @@ import type {
 const ID = "prime";
 const LABEL = "Prime Agent";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 
 /** Prime Agent resolves its agent dir from this override, tilde included. */
 export const primeAgentDir = (ctx: HarnessContext) => {

@@ -19,6 +19,12 @@
         @apply border-ink-800;
     }
 
+    /* Every app on the package reads in the body face, not the browser's
+       system font; headings and components still set their own. */
+    html.polli-ui-root body {
+        @apply font-body;
+    }
+
     body.polli-ui-body {
         max-width: 800px;
         @apply mx-auto min-h-screen overflow-x-hidden bg-app-bg px-4 pt-4 pb-8 font-body font-medium text-base text-theme-text-strong sm:px-6 md:px-8;

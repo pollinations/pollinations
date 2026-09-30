@@ -308,6 +308,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
+| `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, typesafe/jev-1.13, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
@@ -336,6 +337,51 @@ Community text models and endpoint agents declare one upstream API and one exact
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
+
+### Anthropic Messages API
+
+Models that list `/v1/messages` in `supported_endpoints` — every text model that supports Chat Completions — also accept Anthropic Messages requests. Point Claude Code or an Anthropic SDK at `https://gen.pollinations.ai` and authenticate with a bearer token:
+
+```bash
+export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
+export ANTHROPIC_AUTH_TOKEN=$POLLINATIONS_API_KEY
+export ANTHROPIC_MODEL=openai
+claude
+```
+
+```python
+import os
+
+import anthropic
+
+client = anthropic.Anthropic(
+    base_url="https://gen.pollinations.ai",
+    auth_token=os.environ["POLLINATIONS_API_KEY"],
+)
+message = client.messages.create(
+    model="openai",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+    baseURL: "https://gen.pollinations.ai",
+    authToken: process.env.POLLINATIONS_API_KEY,
+});
+const message = await client.messages.create({
+    model: "openai",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: "Hello" }],
+});
+```
+
+Requests run as Chat Completions requests: balance checks, key permissions, rate limits, caching and billing are the same. Streaming, tools, images, system prompts and stop sequences depend on the selected model's capabilities; see [`/text/models`](/text/models). `cache_control` uses the same provider support as Chat Completions (see Prompt caching below); custom cache TTLs are not supported. `thinking` sets `reasoning_effort` (`output_config.effort` for adaptive thinking), and provider reasoning returns as `thinking` blocks. Usage reports `input_tokens`, `output_tokens`, `cache_read_input_tokens` and `cache_creation_input_tokens`; a response without provider usage fails, and a stream ends with an `error` event. Errors use Anthropic's error shape. `/v1/messages/count_tokens`, batches, files, server tools and `x-api-key` authentication are not supported.
+
+Claude Code sends `cache_control` automatically. Fireworks-hosted models that reject this field cannot currently be used with Claude Code; see [the compatibility issue](https://github.com/pollinations/pollinations/issues/15682).
 
 ### Media models in conversations
 
@@ -471,6 +517,60 @@ The same model is also reachable from an OpenAI client on `/v1/chat/completions`
 Supply relevant facts in `state`; Jev can be confident even when facts are missing. Interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
 
 The context limit is 64k tokens for `state` and all questions together, and 32k for `state` plus the longest question.
+
+#### `POST` `/v1/messages` — Create Message (Anthropic-compatible)
+
+Anthropic Messages API for Claude Code, the Anthropic SDKs, and other Messages clients. Point the client's base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.
+
+Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.
+
+Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools, and `x-api-key` auth are not supported.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
+| `max_tokens` * | `integer` | min: `1` |
+| `messages` * | `object`[] | — |
+| `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
+| `messages[].content` * | `string` \| `object`[] | — |
+| `system` | `string` \| `object`[] | — |
+| `stream` | `boolean` | — |
+| `stop_sequences` | `string`[] | — |
+| `temperature` | `number` | — |
+| `top_p` | `number` | — |
+| `tools` | `object`[] | — |
+| `tools[].type` | `string` | — |
+| `tools[].name` * | `string` | — |
+| `tools[].description` | `string` | — |
+| `tools[].input_schema` | `object` | — |
+| `tool_choice` | `object` | — |
+| `tool_choice.type` * | `"auto"` \| `"any"` \| `"tool"` \| `"none"` | — |
+| `tool_choice.name` | `string` | — |
+| `tool_choice.disable_parallel_tool_use` | `boolean` | — |
+| `thinking` | `object` | — |
+| `thinking.type` * | `string` | — |
+| `thinking.budget_tokens` | `integer` | — |
+| `output_config` | `object` | — |
+| `output_config.effort` | `string` | — |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/json`, `text/event-stream` — Message JSON or Messages SSE stream
+
+Returns [`CreateMessageResponse`](#createmessageresponse).
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/messages" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user"}]}'
+```
+
+---
 
 #### `POST` `/v1/chat/completions` — Chat Completions
 
@@ -620,7 +720,7 @@ Built-in models use their configured Responses URL. Community text models and en
 
 OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
 
-Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.
+Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.
 
 Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.
 
@@ -992,7 +1092,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -1192,6 +1292,32 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./audio.mp3" \
   -F "model=openai/whisper-large-v3"
+```
+
+---
+
+#### `POST` `/alpha/audio/stem-separation` — Separate Audio Stems
+
+Separate an uploaded audio file into vocals and instrumental, or vocals, drums, bass, guitar, piano, and other. Returns a ZIP of stereo 44.1 kHz MP3 files at 128 kbps. Pricing uses input duration and the selected stem variation; see /audio/models. This native alpha endpoint has no OpenAI-compatible equivalent; its request and response may change.
+
+📥 **Request body** · `multipart/form-data`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | `string` | default: `"elevenlabs/stem-separation"` |
+| `file` * | `string · binary` | Source audio, up to 50 MB, with a readable duration. |
+| `stem_variation_id` | `"two_stems_v1"` \| `"six_stems_v1"` | default: `"six_stems_v1"` |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/zip` — ZIP containing the separated MP3 tracks
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/audio/stem-separation" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -F "file=@./input.bin"
 ```
 
 ---
@@ -3114,7 +3240,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 |---|---|---|
 | `name` * | `string` | Name for the API key · length: `1…253` |
 | `type` | `"secret"` \| `"publishable"` | Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key. · default: `"secret"` |
-| `expiresIn` | `integer` | Expiry in seconds from now (max 365 days) · max: `31536000` |
+| `expiresIn` | `integer` | Expiry in seconds from now |
 | `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too. |
@@ -3684,6 +3810,56 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 
 <sub>`*` = required field</sub>
 
+### `CreateMessageRequest`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` * | `string` | Pollinations text model. Models that support this endpoint list `/v1/messages` in `supported_endpoints`. |
+| `max_tokens` * | `integer` | min: `1` |
+| `messages` * | `object`[] | — |
+| `messages[].role` * | `"user"` \| `"assistant"` \| `"system"` | — |
+| `messages[].content` * | `string` \| `object`[] | — |
+| `system` | `string` \| `object`[] | — |
+| `stream` | `boolean` | — |
+| `stop_sequences` | `string`[] | — |
+| `temperature` | `number` | — |
+| `top_p` | `number` | — |
+| `tools` | `object`[] | — |
+| `tools[].type` | `string` | — |
+| `tools[].name` * | `string` | — |
+| `tools[].description` | `string` | — |
+| `tools[].input_schema` | `object` | — |
+| `tool_choice` | `object` | — |
+| `tool_choice.type` * | `"auto"` \| `"any"` \| `"tool"` \| `"none"` | — |
+| `tool_choice.name` | `string` | — |
+| `tool_choice.disable_parallel_tool_use` | `boolean` | — |
+| `thinking` | `object` | — |
+| `thinking.type` * | `string` | — |
+| `thinking.budget_tokens` | `integer` | — |
+| `output_config` | `object` | — |
+| `output_config.effort` | `string` | — |
+
+<sub>`*` = required field</sub>
+
+### `CreateMessageResponse`
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `type` * | `"message"` | — |
+| `role` * | `"assistant"` | — |
+| `model` * | `string` | — |
+| `content` * | `object`[] | — |
+| `stop_reason` * | `any` | — |
+| `stop_sequence` * | `any` | — |
+| `usage` * | `object` | — |
+| `usage.input_tokens` * | `integer` | — |
+| `usage.output_tokens` * | `integer` | — |
+| `usage.cache_read_input_tokens` * | `integer` | — |
+| `usage.cache_creation_input_tokens` * | `integer` | — |
+
+<sub>`*` = required field</sub>
+
 ### `CreateResponseResponse`
 
 | Field | Type | Description |
@@ -3755,6 +3931,17 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 - `type: "input_audio"` — fields: `input_audio`, `cache_control`, `prompt_cache_breakpoint`
 - `type: "file"` — fields: `file`, `cache_control`, `prompt_cache_breakpoint`
 - `object`
+
+### `MessagesError`
+
+| Field | Type | Description |
+|---|---|---|
+| `type` * | `"error"` | — |
+| `error` * | `object` | — |
+| `error.type` * | `string` | — |
+| `error.message` * | `string` | — |
+
+<sub>`*` = required field</sub>
 
 ### `PromptCacheBreakpoint`
 

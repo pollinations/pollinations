@@ -1,4 +1,7 @@
-import { parseCommunityModelId } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_MODEL_PREFIX,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
 import {
     type ApiModelInfo,
     getCatalogCategory,
@@ -18,12 +21,7 @@ export type ModelCategoryLabel =
     | "Community Text"
     | "Community Image"
     | "Community Agents";
-export type ModelCategoryModel = {
-    id: string;
-    label: string;
-    /** GitHub username of a community model's creator. */
-    owner?: string;
-};
+export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
     label: ModelCategoryLabel;
@@ -92,6 +90,17 @@ export function getModelDisplayCategory(
     return category;
 }
 
+/**
+ * Creator of a community model, read from its canonical ID
+ * (`community/<user>/<model>`), so it also works for requested IDs the public
+ * catalog does not list.
+ */
+export function getCommunityModelOwner(id: string): string | undefined {
+    return id.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? parseCommunityModelId(id)?.ownerGithubUsername
+        : undefined;
+}
+
 export function getModelCategoriesFromCatalog(
     models: ApiModelInfo[],
 ): ModelCategoryGroup[] {
@@ -111,9 +120,6 @@ export function getModelCategoriesFromCatalog(
                 return {
                     id,
                     label: getCatalogDisplayName(model, id),
-                    owner: model.community
-                        ? parseCommunityModelId(id)?.ownerGithubUsername
-                        : undefined,
                 };
             })
             .filter((model) => model.id)

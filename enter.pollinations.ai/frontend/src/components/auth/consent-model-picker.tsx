@@ -13,7 +13,10 @@ import {
     type ApiModelInfo,
     getModelPricesFromCatalog,
 } from "../models/model-catalog.ts";
-import type { ModelCategoryModel } from "../models/model-categories.ts";
+import {
+    getCommunityModelOwner,
+    type ModelCategoryModel,
+} from "../models/model-categories.ts";
 import { useModelQuerySearch } from "../models/use-model-query-search.tsx";
 
 export function ConsentModelPicker({
@@ -113,14 +116,15 @@ export function ConsentModelPicker({
                 {visibleModels.map((model) => {
                     const active =
                         selected === null || selected.includes(model.id);
+                    const owner = getCommunityModelOwner(model.id);
                     return (
                         <TabButton
                             key={model.id}
                             active={active}
                             size="xs"
                             variant="ghost"
-                            intent={model.owner ? "green" : "amber"}
-                            detail={model.owner && `@${model.owner}`}
+                            intent={owner ? "green" : "amber"}
+                            detail={owner && `@${owner}`}
                             disabled={disabled}
                             onClick={() =>
                                 onChange(

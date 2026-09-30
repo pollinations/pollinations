@@ -184,6 +184,27 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("routes Kev 4B under its own id and publisher", async ({
+    apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/alpha/decisions", apiKey, {
+        model: "jaredpalmer/kev-4b",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "jaredpalmer/kev-4b",
+        provider: "Jared Palmer",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "jaredpalmer/kev-4b" },
+    });
+    await wait();
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",

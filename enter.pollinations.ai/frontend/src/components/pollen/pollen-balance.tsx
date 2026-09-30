@@ -184,8 +184,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Your Pollen: what you've purchased plus what
-                                you've earned.{" "}
+                                What you've purchased plus what you've earned.{" "}
                                 <InlineLink
                                     as={Link}
                                     to="/news"

@@ -190,6 +190,8 @@ export type MockStripeState = {
     fraudDisputes: Record<string, unknown>[];
     fraudWarnings: Record<string, unknown>[];
     failFraudWarnings: boolean;
+    /** "METHOD /path" requests that fail once, as a Stripe error would. */
+    failOnce: string[];
     requests: StripeRequest[];
     onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
@@ -232,6 +234,18 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         });
     }
     const stripeAPI = new Hono()
+        // 4xx, not 5xx: the Stripe SDK retries server errors by itself.
+        .use(async (c, next) => {
+            const index = state.failOnce.indexOf(
+                `${c.req.method} ${new URL(c.req.url).pathname}`,
+            );
+            if (index === -1) return next();
+            state.failOnce.splice(index, 1);
+            return c.json(
+                { error: { type: "api_error", message: "Stripe failed" } },
+                400,
+            );
+        })
         .get("/v1/account", (c) =>
             c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
         )
@@ -745,6 +759,7 @@ function createInitialState(): MockStripeState {
         fraudDisputes: [],
         fraudWarnings: [],
         failFraudWarnings: false,
+        failOnce: [],
         requests: [],
         onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},

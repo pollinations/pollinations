@@ -154,9 +154,14 @@ export async function enableAutoTopUpFromSetup(
     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
     const paymentMethodId = getStripeId(setupIntent.payment_method);
     if (setupIntent.status !== "succeeded" || !paymentMethodId) return;
-    // Stripe redelivers webhooks. Each setup applies once, so a replay can't
-    // undo what the buyer chose since (auto-refill off, another pack or card).
-    if (setupIntent.metadata?.[SETUP_APPLIED_KEY]) return;
+    // Stripe redelivers webhooks. Each setup is claimed before it is applied,
+    // so no retry can undo what the buyer chose since (auto-refill off,
+    // another pack or card). If applying then fails, auto-refill just stays
+    // off and the buyer turns it on from the page.
+    if (setupIntent.metadata?.[SETUP_CLAIMED_KEY]) return;
+    await stripe.setupIntents.update(setupIntentId, {
+        metadata: { [SETUP_CLAIMED_KEY]: new Date().toISOString() },
+    });
 
     await stripe.customers.update(customerId, {
         invoice_settings: { default_payment_method: paymentMethodId },
@@ -170,13 +175,10 @@ export async function enableAutoTopUpFromSetup(
             userId,
             error: result.error,
         });
-    await stripe.setupIntents.update(setupIntentId, {
-        metadata: { [SETUP_APPLIED_KEY]: new Date().toISOString() },
-    });
 }
 
-/** SetupIntent metadata: when its auto-refill setup was applied. */
-const SETUP_APPLIED_KEY = "auto_top_up_applied_at";
+/** SetupIntent metadata: when its auto-refill setup was claimed. */
+const SETUP_CLAIMED_KEY = "auto_top_up_applied_at";
 
 export async function processAutoTopUpForUser(
     env: CloudflareBindings,

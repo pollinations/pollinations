@@ -4490,6 +4490,89 @@ test("POST /api/webhooks/stripe applies a setup session once, so a replay keeps 
     expect(customer.invoice_settings.default_payment_method).toBe("pm_later");
 });
 
+test("POST /api/webhooks/stripe does not replay a claimed setup whose apply failed", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_setup_apply_fails");
+    mocks.stripe.state.customers.push(customer);
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id })
+        .where(eq(userTable.id, userId));
+    const setup = { id: "setup_apply_fails", customerId: customer.id, userId };
+
+    // Claimed, then setting the default card fails: Stripe will retry.
+    mocks.stripe.state.failOnce.push(`POST /v1/customers/${customer.id}`);
+    expect((await completeAutoTopUpSetup(mocks.stripe.state, setup)).ok).toBe(
+        false,
+    );
+    // Meanwhile the buyer picks another pack, auto-refill still off.
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ autoTopUpAmountUsd: 50 })
+        .where(eq(userTable.id, userId));
+
+    expect((await completeAutoTopUpSetup(mocks.stripe.state, setup)).ok).toBe(
+        true,
+    );
+    const [user] = await drizzle(env.DB)
+        .select({
+            enabled: userTable.autoTopUpEnabled,
+            amount: userTable.autoTopUpAmountUsd,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    expect(user).toEqual({ enabled: false, amount: 50 });
+});
+
+test("POST /api/webhooks/stripe applies nothing when the setup can't be claimed", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const customer = mockCustomer("cus_setup_claim_fails");
+    mocks.stripe.state.customers.push(customer);
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id })
+        .where(eq(userTable.id, userId));
+    const setup = { id: "setup_claim_fails", customerId: customer.id, userId };
+    const readUser = async () =>
+        (
+            await drizzle(env.DB)
+                .select({
+                    enabled: userTable.autoTopUpEnabled,
+                    amount: userTable.autoTopUpAmountUsd,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, userId))
+        )[0];
+
+    mocks.stripe.state.failOnce.push(
+        "POST /v1/setup_intents/seti_setup_claim_fails",
+    );
+    expect((await completeAutoTopUpSetup(mocks.stripe.state, setup)).ok).toBe(
+        false,
+    );
+    expect((await readUser())?.enabled).toBe(false);
+    expect(customer.invoice_settings.default_payment_method).toBeNull();
+
+    // Stripe's retry completes the setup.
+    expect((await completeAutoTopUpSetup(mocks.stripe.state, setup)).ok).toBe(
+        true,
+    );
+    expect(await readUser()).toEqual({ enabled: true, amount: 20 });
+    expect(customer.invoice_settings.default_payment_method).toBe(
+        "pm_setup_claim_fails",
+    );
+});
+
 test("POST /api/webhooks/stripe ignores a setup session for another buyer's customer", async ({
     sessionToken,
     mocks,

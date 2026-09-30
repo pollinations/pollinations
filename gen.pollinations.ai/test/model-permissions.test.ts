@@ -506,7 +506,11 @@ test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"] as const;
+    const models = [
+        "openai/gpt-6-sol",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-luna",
+    ] as const;
     const [freeResponse, paidResponse] = await Promise.all([
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${apiKey}` },

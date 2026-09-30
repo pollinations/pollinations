@@ -16,7 +16,7 @@
     "install:services": "npm install",
     "install:packages": "npm install --prefix packages/sdk && npm install --prefix packages/mcp",
     "build:sdk": "npm run build --prefix packages/sdk",
-    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,gen' -c 'auto' 'npm run dev --workspace pollinations-enter' 'npm run dev --workspace pollinations-gen'",
+    "dev": "npm run migrate:development --workspace pollinations-enter && concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,gen' -c 'auto' 'npm run dev --workspace pollinations-enter' 'npm run dev --workspace pollinations-gen'",
     "dev:enter": "npm run dev --workspace pollinations-enter",
     "dev:gen": "npm run dev --workspace pollinations-gen",
     "dev:gen-stack": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter-worker,gen' -c 'auto' 'npm run dev:worker --workspace pollinations-enter' 'sleep 12 && npm run dev --workspace pollinations-gen'",

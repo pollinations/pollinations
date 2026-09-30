@@ -151,6 +151,7 @@ export const ColorModeToggle: FC = () => {
             checked={isDark}
             onChange={toggle}
             ariaLabel="Toggle dark mode"
+            size="sm"
             icons={{ off: <SunIcon />, on: <MoonIcon /> }}
         />
     );

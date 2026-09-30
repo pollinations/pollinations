@@ -170,6 +170,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const autoTopUpSwitch = (
         <Switch
             ariaLabel="Auto top-up"
+            size="md"
             checked={Boolean(billing?.autoTopUp.enabled)}
             disabled={
                 !billing ||

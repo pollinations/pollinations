@@ -1500,6 +1500,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 64000,
         isSpecialized: true,
     },
+    "jaredpalmer/kev-4b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Jared Palmer",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1,
+        // OpenRouter's current listing is $0.042/M input and free output;
+        // include its 5.5% credit fee in our reported cost, as for Jev above.
+        paidOnly: false,
+        cost: {
+            promptTextTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Kev 4B",
+        description:
+            "A small, low-cost model for typed decisions; post state and " +
+            "questions to /alpha/decisions, or send the same JSON in the " +
+            "last user message on /v1/chat/completions",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 8192,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

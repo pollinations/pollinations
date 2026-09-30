@@ -184,6 +184,43 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("Kev is available to Quest-Pollen keys and uses the Kev upstream model", async ({
+    apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/alpha/decisions", apiKey, {
+        model: "jaredpalmer/kev-4b",
+        state: "Sort this short support request.",
+        questions,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "jaredpalmer/kev-4b",
+        publisher: "Jared Palmer",
+        answers,
+        usage: { input_tokens: 452, output_tokens: 73 },
+    });
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: {
+            model: "jaredpalmer/kev-4b",
+            state: "Sort this short support request.",
+            questions,
+        },
+    });
+
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "jaredpalmer/kev-4b",
+        tokenCountPromptText: 452,
+        tokenCountCompletionText: 73,
+        isBilledUsage: true,
+    });
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",

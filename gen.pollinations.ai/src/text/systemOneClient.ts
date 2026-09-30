@@ -31,12 +31,15 @@ function serviceError(message: string, status: number): ServiceError {
 
 function nativeRequestError(detail: string): ServiceError {
     return serviceError(
-        `${detail} The last user message's content must be the native TypeSafe request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
+        `${detail} The last user message's content must be the native request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
         400,
     );
 }
 
-function parseNativeRequest(messages: ChatMessage[]): {
+function parseNativeRequest(
+    messages: ChatMessage[],
+    model: string,
+): {
     state: unknown;
     questions: Record<string, unknown>;
 } {
@@ -45,7 +48,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev-1.13 requires a user message with string content.",
+            `${model} requires a user message with string content.`,
         );
     }
     let payload: unknown;
@@ -53,7 +56,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev-1.13 could not parse the user message content as JSON.",
+            `${model} could not parse the user message content as JSON.`,
         );
     }
     if (
@@ -62,7 +65,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev-1.13 expects a JSON object with "state" and a "questions" map.',
+            `${model} expects a JSON object with "state" and a "questions" map.`,
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -114,7 +117,7 @@ export async function requestDecision(
     const endpoint = options.modelConfig?.directEndpoint;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev-1.13.",
+            `The decisions route is not configured for ${options.modelConfig?.model ?? "the requested model"}.`,
             500,
         );
     }
@@ -141,7 +144,7 @@ export async function requestDecision(
             typeof result?.usage?.output_tokens !== "number"
         ) {
             throw serviceError(
-                "Jev returned a response without valid answers or usage.",
+                `${model} returned a response without valid answers or usage.`,
                 502,
             );
         }
@@ -168,8 +171,12 @@ export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
+    const model =
+        typeof options.modelConfig?.model === "string"
+            ? options.modelConfig.model
+            : "typesafe/jev-1.13";
     const { result, requestUrl } = await requestDecision(
-        parseNativeRequest(messages),
+        parseNativeRequest(messages, model),
         options,
     );
     const completion: ChatCompletion = {

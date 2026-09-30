@@ -1,0 +1,37 @@
+{
+  "pr_number": 15546,
+  "title": "fix: keep non-ASCII and binary bytes intact in the computer shell",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15546",
+  "merged_at": "2026-09-30T09:39:12Z",
+  "labels": [
+    "BUG",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Agents writing files with heredocs or `base64 -d` on the computer got garbled text (`café` → `cafÃ©`) in their files and pushed commits. Reported in #15075, #15310 and #15419. Addresses #15519.\n\n- Fix: patch `@cloudflare/computer` 0.3's bundled shell adapter to honour the `\"binary\"` encoding just-bash passes on writes and appends.\n- Fix: decode UTF-8 in just-bash's `read` and `mapfile`, which stored raw bytes in variables, so `echo \"$line\"` encoded them again.\n- Adds byte-level tests: stdin, heredoc, printf, tee, `<` redirect, `>>` append, `base64 -d`, a git commit of the result, and `read`/`mapfile` from stdin, pipes and here-strings.\n- Pass `stdin` through `runtime.exec` again; the `/tmp` file workaround from #14741 is no longer needed.\n- Bump the shell loader revision so cached shell isolates pick up the new code.\n\n| Path | Before | After |\n|---|---|---|\n| heredoc, `tee` | 33 bytes | 23 |\n| `cat < f > g` | 53 bytes | 23 |\n| `base64 -d` (10-byte PNG header) | 12 bytes | 10 |\n| `read`/`mapfile` then `echo` | 33 bytes | 23 |\n\nThe patches throw at startup if they stop applying. Remove them once upstream honours the encoding.\n\nStaging (`pollinations-computer-mcp-staging` 8d75781d, via staging gen): all seven write paths store the exact bytes, and jq, curl, xan and `/tmp` cleanup still work.\n\nStill broken (upstream):\n- `$(…)` command substitution of non-ASCII bytes, and raw bytes piped into the bundled `jq`; `jq --arg` is unsupported.\n- `git show HEAD:<binary>` prints binary bytes as U+FFFD. Stored blobs and `git checkout` are correct.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015gaZMPA4B8YxdxdSPxFFHr\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The bytes made it home",
+    "blurb": "voodoohop fixed the computer shell’s habit of turning `café` into `cafÃ©`. Heredocs, decoded files, and git commits can now keep the bytes they were given.",
+    "summary": "voodoohop patched the computer-mcp shell’s binary writes and UTF-8 handling in `read` and `mapfile`, so heredocs, `base64 -d`, redirects, and commits preserve their original bytes.",
+    "impact": "Agents using the computer shell can write non-ASCII text and binary files without those bytes changing on the way to disk or into a git commit.",
+    "keywords": [
+      "computer-mcp",
+      "shell",
+      "UTF-8",
+      "binary files",
+      "git",
+      "community"
+    ],
+    "visual_concept": "Depict the computer-mcp shell as a cozy retro terminal. Polli guides a tiny file marked 'café' and a pixelated image file through it; the monitor robot checks that both emerge unchanged. A code-plant and lime-green glow keep the byte-level fix warm rather than abstract.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro terminal glows lime green (#ecf874) as Polli, wearing a tiny tool belt, passes a 'café' file and a pixelated image file to a cheerful CRT monitor robot, which holds up their matching copies beside a code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15546.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro terminal glows lime green (#ecf874) as Polli, wearing a tiny tool belt, passes a 'café' file and a pixelated image file to a cheerful CRT monitor robot, which holds up their matching copies beside a code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-30T09:40:56.111028+00:00"
+}

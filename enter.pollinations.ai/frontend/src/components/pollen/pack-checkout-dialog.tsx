@@ -7,6 +7,7 @@ import {
     InlineLink,
     LoadingStatus,
     WarningIcon,
+    XIcon,
 } from "@pollinations/ui";
 import {
     formatPollenPackValue,
@@ -146,6 +147,7 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
                         setAttempt((value) => value + 1);
                     }}
                     onCredited={onCredited}
+                    onClose={() => onOpenChange(false)}
                 />
             )}
         </Dialog>
@@ -171,7 +173,16 @@ const CheckoutBody: FC<{
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
-}> = ({ pack, hostedHref, start, onFinished, onRetry, onCredited }) => {
+    onClose: () => void;
+}> = ({
+    pack,
+    hostedHref,
+    start,
+    onFinished,
+    onRetry,
+    onCredited,
+    onClose,
+}) => {
     const [state, setState] = useState<BodyState>({ phase: "loading" });
     // Read once on mount: a new pack or retry remounts this body.
     const startOnMount = useRef(start);
@@ -200,13 +211,15 @@ const CheckoutBody: FC<{
     switch (state.phase) {
         case "loading":
             return (
-                <DialogBody>
+                <DialogBody actions={<CloseButton onClick={onClose} />}>
                     <CheckoutLoading />
                 </DialogBody>
             );
         case "complete":
             return (
-                <DialogBody>
+                <DialogBody
+                    actions={<CloseButton onClick={onClose} label="Close" />}
+                >
                     <CheckoutConfirmation
                         sessionId={state.sessionId}
                         onCredited={onCredited}
@@ -218,11 +231,14 @@ const CheckoutBody: FC<{
             return (
                 <DialogBody
                     actions={
-                        state.offerHosted ? (
-                            <HostedButton href={hostedHref}>
-                                Pay on Stripe’s page
-                            </HostedButton>
-                        ) : undefined
+                        <>
+                            <CloseButton onClick={onClose} />
+                            {state.offerHosted && (
+                                <HostedButton href={hostedHref}>
+                                    Pay on Stripe’s page
+                                </HostedButton>
+                            )}
+                        </>
                     }
                 >
                     <ErrorLine>{state.message}</ErrorLine>
@@ -240,6 +256,7 @@ const CheckoutBody: FC<{
                         setState({ phase: "complete", sessionId });
                     }}
                     onLoadError={() => setState(LOAD_ERROR)}
+                    onClose={onClose}
                 />
             );
     }
@@ -262,7 +279,16 @@ const WalletPay: FC<{
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
-}> = ({ pack, stripe, checkout, hostedHref, onComplete, onLoadError }) => {
+    onClose: () => void;
+}> = ({
+    pack,
+    stripe,
+    checkout,
+    hostedHref,
+    onComplete,
+    onLoadError,
+    onClose,
+}) => {
     const currencySelector = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
@@ -360,28 +386,32 @@ const WalletPay: FC<{
     return (
         <DialogBody
             actions={
-                !ready ? undefined : card ? (
-                    <Button
-                        intent="commit"
-                        size="lg"
-                        disabled={!canConfirm || submitting}
-                        onClick={() => void confirmWithCard()}
-                        className="tabular-nums"
-                    >
-                        {submitting
-                            ? "Confirming…"
-                            : session
-                              ? `Confirm · ${session.total.total.amount}`
-                              : "Confirm"}
-                    </Button>
-                ) : (
-                    session && (
-                        // A card Stripe won't show again: its own page.
-                        <HostedButton href={hostedHref}>
-                            Pay on Stripe’s page
-                        </HostedButton>
-                    )
-                )
+                <>
+                    <CloseButton onClick={onClose} disabled={submitting} />
+                    {ready &&
+                        (card ? (
+                            <Button
+                                intent="commit"
+                                size="lg"
+                                disabled={!canConfirm || submitting}
+                                onClick={() => void confirmWithCard()}
+                                className="tabular-nums"
+                            >
+                                {submitting
+                                    ? "Confirming…"
+                                    : session
+                                      ? `Confirm · ${session.total.total.amount}`
+                                      : "Confirm"}
+                            </Button>
+                        ) : (
+                            session && (
+                                // A card Stripe won't show again: its own page.
+                                <HostedButton href={hostedHref}>
+                                    Pay on Stripe’s page
+                                </HostedButton>
+                            )
+                        ))}
+                </>
             }
             footnote={
                 ready && card ? (
@@ -449,6 +479,26 @@ const WalletPay: FC<{
 };
 
 const READY_TIMEOUT_MS = 4000;
+
+/**
+ * Every state can be left: on a phone the modal fills the screen and has no
+ * backdrop to tap. "Close" once the payment went through.
+ */
+const CloseButton: FC<{
+    onClick: () => void;
+    label?: "Cancel" | "Close";
+    disabled?: boolean;
+}> = ({ onClick, label = "Cancel", disabled }) => (
+    <Button
+        icon={<XIcon />}
+        type="button"
+        intent="neutral"
+        onClick={onClick}
+        disabled={disabled}
+    >
+        {label}
+    </Button>
+);
 
 /**
  * The one loading state, as tall as the summary it stands in for, so the

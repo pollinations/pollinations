@@ -100,6 +100,13 @@ export default {
             return Response.redirect("https://pollinations.ai/", 301);
         }
 
+        if (
+            (request.method === "GET" || request.method === "HEAD") &&
+            (url.pathname === "/docs" || url.pathname === "/docs/")
+        ) {
+            return Response.redirect("https://gen.pollinations.ai/docs", 301);
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
 

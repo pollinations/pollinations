@@ -299,16 +299,12 @@ describe("OpenRouter Grok Video Pro", () => {
         const { result, index, candidate } = await withModelFallback(
             candidates,
             ({ id }) =>
-                createAndReturnVideo(
-                    "move",
-                    {
-                        ...baseParams,
-                        model: id,
-                        duration: 15,
-                        image: ["https://example.com/start.png"],
-                    },
-                    "grok-fallback-test",
-                ),
+                createAndReturnVideo("move", {
+                    ...baseParams,
+                    model: id,
+                    duration: 15,
+                    image: ["https://example.com/start.png"],
+                }),
             attempts,
         );
         expect(index).toBe(1);
@@ -326,18 +322,14 @@ describe("OpenRouter Grok Video Pro", () => {
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
 
-        const result = await createAndReturnVideo(
-            "a calm ocean at sunrise",
-            {
-                ...baseParams,
-                model: "x-ai/grok-imagine-video:openrouter",
-                dimensionsExplicit: false,
-                width: 1024,
-                height: 1024,
-                aspectRatio: "16:9",
-            },
-            "grok-fallback-test",
-        );
+        const result = await createAndReturnVideo("a calm ocean at sunrise", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video:openrouter",
+            dimensionsExplicit: false,
+            width: 1024,
+            height: 1024,
+            aspectRatio: "16:9",
+        });
 
         expect(requests).toEqual([
             {
@@ -464,16 +456,12 @@ describe("OpenRouter Grok Video Pro", () => {
             return completedFetch(url, init);
         });
 
-        const resultPromise = createAndReturnVideo(
-            "animate this frame",
-            {
-                ...baseParams,
-                model: "x-ai/grok-imagine-video:openrouter",
-                duration: 15,
-                image: ["https://example.com/start.png"],
-            },
-            "grok-late-completion",
-        );
+        const resultPromise = createAndReturnVideo("animate this frame", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video:openrouter",
+            duration: 15,
+            image: ["https://example.com/start.png"],
+        });
         await vi.advanceTimersByTimeAsync(195_000);
         const result = await resultPromise;
         expect(result.trackingData).toEqual({

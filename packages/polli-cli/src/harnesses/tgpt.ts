@@ -7,7 +7,7 @@ import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "tgpt";
 const LABEL = "tgpt";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const MANAGED_KEYS = [
     "AI_PROVIDER",
     "POLLINATIONS_API_KEY",

@@ -57,6 +57,7 @@ type StripeCheckoutSession = {
     customer: string | null;
     url: string | null;
     status?: "open" | "complete" | "expired";
+    payment_intent?: string;
 };
 
 type StripePortalSession = {
@@ -333,10 +334,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             recordRequest(c, state);
             const customer = c.req.query("customer");
             const status = c.req.query("status");
+            const paymentIntent = c.req.query("payment_intent");
             const data = state.checkoutSessions.filter(
                 (session) =>
                     (!customer || session.customer === customer) &&
-                    (!status || session.status === status),
+                    (!status || session.status === status) &&
+                    (!paymentIntent ||
+                        session.payment_intent === paymentIntent),
             );
             return c.json({
                 object: "list",

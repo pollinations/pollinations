@@ -1,5 +1,4 @@
-import { cn } from "@pollinations/ui";
-import { WalletKindIcon } from "@pollinations/ui/wallet";
+import { cn, RefreshIcon } from "@pollinations/ui";
 import {
     calculateServiceFeeCents,
     formatPollenPackValue,
@@ -12,7 +11,7 @@ import type { FC } from "react";
 export const PollenPackButtons: FC<{
     packs: readonly PollenPack[];
     selectedAmount?: number;
-    /** The pack auto top-up buys while on: marked with the paid icon. */
+    /** The pack auto top-up buys while on: marked with its icon, as in the footnote. */
     autoTopUpAmount?: number;
     onSelect: (pack: PollenPack) => void;
     describe?: (pollen: string, price: string) => string;
@@ -62,7 +61,7 @@ export const PollenPackButtons: FC<{
                             aria-hidden="true"
                             className="absolute top-1.5 right-1.5 inline-flex"
                         >
-                            <WalletKindIcon kind="paid" />
+                            <RefreshIcon className="h-3.5 w-3.5" />
                         </span>
                     )}
                     <span className="text-2xl font-bold leading-none tracking-tight">

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Aizen",
+    "url": "https://aizensuske718-ctrl.github.io/Aizen",
+    "description": "App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. ",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "aizensuske718-ctrl",
+    "githubUserId": "318239870",
+    "repositoryUrl": "https://github.com/aizensuske718-ctrl/Aizen",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15819",
+    "approvedDate": "2026-09-30",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations for Figma",
     "url": "https://github.com/xiaotian1171/pollinations-figma",

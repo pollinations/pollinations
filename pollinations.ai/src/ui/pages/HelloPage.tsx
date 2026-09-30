@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";

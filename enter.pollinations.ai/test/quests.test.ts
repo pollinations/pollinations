@@ -2134,7 +2134,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
 });
 
-test("Bee Census quest pays 3 Pollen once for the user's own survey issue", async ({
+test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2142,39 +2142,74 @@ test("Bee Census quest pays 3 Pollen once for the user's own survey issue", asyn
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
-    const survey = (number: number, title: string, databaseId: number) => ({
+    const survey = (
+        number: number,
+        title: string,
+        databaseId: number,
+        written: [string, string],
+        labels = [{ name: "BEE-CENSUS" }],
+    ) => ({
         number,
         state: "open" as const,
         title,
+        labels,
         html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
-        body: "### What kind of bee are you?\n\n🧪 Hobbyist / tinkerer",
+        body: [
+            "### What kind of bee are you?\n\n🧪 Hobbyist / tinkerer",
+            `### What would make you pay this month?\n\n${written[0]}`,
+            `### What did you last try to build that Pollinations couldn't do?\n\n${written[1]}`,
+            "### 🔥 Roast us in one sentence (optional)\n\n_No response_",
+        ].join("\n\n"),
         created_at: "2026-09-29T00:00:00Z",
         updated_at: "2026-09-29T00:00:00Z",
         closed_at: null,
         user: { login: user.githubUsername ?? "", databaseId },
     });
+    const beeCensusRewards = async () =>
+        (
+            await db
+                .select({
+                    idempotencyKey: schema.rewards.idempotencyKey,
+                    pollenAmount: schema.rewards.pollenAmount,
+                    balanceBucket: schema.rewards.balanceBucket,
+                })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).filter((reward) => reward.idempotencyKey.includes("bee_census"));
+
     mocks.github.state.questIssues.push(
-        survey(9201, "[Bee Census] hello", user.githubId ?? 0),
-        survey(9202, "[Bee Census] second answer", user.githubId ?? 0),
-        survey(9203, "[Bee Census] renamed account", 999999),
-    );
-
-    await checkQuestsForUser(env, user.id);
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            pollenAmount: schema.rewards.pollenAmount,
-            balanceBucket: schema.rewards.balanceBucket,
-        })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.userId, user.id));
-    expect(
-        rewards.filter((reward) =>
-            reward.idempotencyKey.includes("bee_census"),
+        survey(9201, "[Bee Census] hello", user.githubId ?? 0, [
+            "cheaper",
+            "all good",
+        ]),
+        survey(9203, "[Bee Census] renamed account", 999999, [
+            "A $5 plan that includes the image models I use every day.",
+            "A Discord bot that answers by voice.",
+        ]),
+        survey(
+            9204,
+            "[Bee Census] typed without the form",
+            user.githubId ?? 0,
+            [
+                "A $5 plan that includes the image models I use every day.",
+                "A Discord bot that answers by voice.",
+            ],
+            [],
         ),
-    ).toEqual([
+    );
+    await checkQuestsForUser(env, user.id);
+    expect(await beeCensusRewards()).toEqual([]);
+
+    mocks.github.state.questIssues.push(
+        survey(9202, "developer", user.githubId ?? 0, [
+            "A $5 plan that includes the image models I use every day.",
+            "A Discord bot that answers by voice.",
+        ]),
+    );
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, user.id);
+
+    expect(await beeCensusRewards()).toEqual([
         {
             idempotencyKey: `quest:bee_census:github:${user.githubId}`,
             pollenAmount: 3,

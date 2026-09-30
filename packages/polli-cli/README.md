@@ -35,7 +35,9 @@ polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+
+Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
 ```bash
 polli update    # npm install -g @pollinations/cli@latest, if installed globally

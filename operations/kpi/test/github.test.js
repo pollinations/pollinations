@@ -18,9 +18,15 @@ it.each([
     undefined,
     "test-only-github-token",
 ])("reads public GitHub stats without depending on credentials (%s)", async (token) => {
-    const upstream = vi
-        .fn()
-        .mockResolvedValue(Response.json({ stargazers_count: 12 }));
+    const upstream = vi.fn().mockResolvedValue(
+        Response.json([
+            {
+                date: "2026-09-28",
+                stars: 12,
+                capturedAt: "2026-09-28T00:17:00Z",
+            },
+        ]),
+    );
     vi.stubGlobal("fetch", upstream);
     const result = await kpiRoutes.request(
         "https://kpi.test/github",
@@ -29,8 +35,23 @@ it.each([
     );
     expect(result.status).toBe(200);
     expect(await result.json()).toMatchObject({ stars: 12 });
+    expect(upstream.mock.calls[0][0]).toBe(
+        "https://raw.githubusercontent.com/pollinations/pollinations/kpi-data/github-stars.json",
+    );
     const headers = new Headers(upstream.mock.calls[0][1].headers);
     expect(headers.get("Authorization")).toBeNull();
+});
+
+it("reports unavailable star snapshots instead of a fake zero", async () => {
+    vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(new Response("Not found", { status: 404 })),
+    );
+    const response = await kpiRoutes.request("https://kpi.test/github");
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+        error: "GitHub star snapshots unavailable",
+    });
 });
 
 it("paginates submissions, ignores PRs and older issues, and caches successful pages", async () => {

@@ -365,6 +365,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
+  "anthropic/claude-sonnet-5.5": {
+    "cost": {
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000002,
+    },
+  },
   "assemblyai/universal-2": {
     "cost": {
       "promptAudioSeconds": 0.0000416666666666667,
@@ -1169,6 +1183,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000003165,
     },
   },
+  "google/gemini-3.5-transcribe": {
+    "cost": {
+      "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
+      "promptTextTokens": 0,
+    },
+  },
+  "google/gemini-3.5-transcribe:openrouter": {
+    "cost": {
+      "completionTextTokens": 0.00001266,
+      "promptAudioTokens": 0.00000211,
+    },
+    "price": {
+      "completionTextTokens": 0.00001266,
+      "promptAudioTokens": 0.00000211,
+    },
+  },
   "google/gemini-3.7-flash": {
     "cost": {
       "completionTextTokens": 0.00000375,
@@ -1499,6 +1535,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000000633,
     },
   },
+  "inferenceport-ai/lightning-image-turbo": {
+    "cost": {
+      "completionImageTokens": 0.02,
+    },
+    "price": {
+      "completionImageTokens": 0.02,
+    },
+  },
   "krea/krea-2-medium": {
     "cost": {
       "completionImageTokens": 0.03,
@@ -1731,18 +1775,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax/minimax-h3-max-turbo": {
     "cost": {
-      "completionVideoSeconds": 0.0125,
+      "completionVideoSeconds": 0.025,
     },
     "costVariants": {
       "1080p": {
-        "completionVideoSeconds": 0.04,
+        "completionVideoSeconds": 0.08,
       },
       "768p": {
-        "completionVideoSeconds": 0.02,
+        "completionVideoSeconds": 0.04,
       },
     },
     "price": {
-      "completionVideoSeconds": 0.0125,
+      "completionVideoSeconds": 0.025,
     },
   },
   "minimax/minimax-m2.7": {
@@ -2555,6 +2599,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptTextTokens": 0.000000015,
+    },
+  },
+  "openai/tts-1": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
+  "openai/tts-1-hd": {
+    "cost": {
+      "completionAudioTokens": 0.00003,
+    },
+    "price": {
+      "completionAudioTokens": 0.00003,
     },
   },
   "openai/whisper-large-v3": {

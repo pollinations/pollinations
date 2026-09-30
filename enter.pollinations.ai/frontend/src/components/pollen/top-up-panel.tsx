@@ -1,4 +1,10 @@
-import { InlineLink, TabButton, WarningIcon } from "@pollinations/ui";
+import {
+    InlineLink,
+    PlusIcon,
+    RefreshIcon,
+    TabButton,
+    WarningIcon,
+} from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
@@ -229,11 +235,25 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     />
                 )}
 
-                {/* One line of text, the same height on both tabs. */}
-                <p className="min-h-5 text-[13px] leading-5 text-theme-text-muted">
-                    {tab === "once"
-                        ? "Pick a pack to buy it now."
-                        : automaticText(billing)}
+                {/* What the tab does: brighter than the footnotes under it,
+                    with its own icon, the same height on both tabs. */}
+                <p className="flex min-h-5 items-start gap-1.5 px-1 text-[13px] leading-5 font-medium text-theme-text-soft">
+                    {tab === "once" ? (
+                        <PlusIcon
+                            aria-hidden="true"
+                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+                        />
+                    ) : (
+                        <RefreshIcon
+                            aria-hidden="true"
+                            className="mt-[3px] h-3.5 w-3.5 shrink-0"
+                        />
+                    )}
+                    <span>
+                        {tab === "once"
+                            ? "Pick a pack to buy it now."
+                            : automaticText(billing)}
+                    </span>
                 </p>
             </div>
 

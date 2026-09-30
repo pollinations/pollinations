@@ -486,6 +486,59 @@ describe("media.pollinations.ai", () => {
         expect(dup.id).not.toBe(upload.id);
     });
 
+    it("streams a raw upload and preserves its file metadata", async () => {
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/png",
+                    "Content-Length": String(TINY_PNG.length),
+                    "X-File-Name": "large-image.png",
+                },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.size).toBe(TINY_PNG.length);
+        expect(upload.contentType).toBe("image/png");
+
+        const getRes = await SELF.fetch(upload.url);
+        expect(getRes.headers.get("content-disposition")).toContain(
+            "large-image.png",
+        );
+        expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("rejects raw uploads without a known size or above the configured limit", async () => {
+        const bucket = createTestR2Bucket();
+        const mediaEnv = { ...createMediaEnv(bucket), MAX_FILE_SIZE: "3" };
+        for (const [length, status] of [
+            [undefined, 400],
+            ["4", 413],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const res = await app.fetch(
+                new Request("https://media.pollinations.ai/upload", {
+                    method: "POST",
+                    body: new Uint8Array([1, 2, 3, 4]),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/octet-stream",
+                        ...(length && { "Content-Length": length }),
+                    },
+                }),
+                mediaEnv,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(res.status).toBe(status);
+        }
+        expect(bucket.putCount).toBe(0);
+    });
+
     it("uploads via base64 JSON", async () => {
         const base64 = btoa(String.fromCharCode(...TINY_PNG));
         const uploadRes = await SELF.fetch(
@@ -769,14 +822,11 @@ describe("media.pollinations.ai", () => {
         const res = await SELF.fetch("https://media.pollinations.ai/upload", {
             method: "POST",
             body: TINY_PNG,
-            headers: {
-                Authorization: `Bearer ${VALID_KEY}`,
-                "Content-Type": "image/png",
-            },
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
         });
         expect(res.status).toBe(400);
         const body = (await res.json()) as { error: string };
-        expect(body.error).toContain("multipart/form-data");
+        expect(body.error).toContain("Unsupported content type");
     });
 
     it("applies the size limit to file bytes, not total request bytes", async () => {
@@ -809,6 +859,33 @@ describe("media.pollinations.ai", () => {
 
         expect(res.status).toBe(200);
         expect(((await res.json()) as UploadResponse).size).toBe(2);
+    });
+
+    it("rejects oversized buffered requests before reading their bodies", async () => {
+        for (const contentType of [
+            "multipart/form-data; boundary=test",
+            "application/json",
+        ]) {
+            const ctx = createExecutionContext();
+            const res = await app.fetch(
+                new Request("https://media.pollinations.ai/upload", {
+                    method: "POST",
+                    body: "invalid body",
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": contentType,
+                        "Content-Length": String(200 * 1024 * 1024),
+                    },
+                }),
+                {
+                    ...createMediaEnv(),
+                    MAX_FILE_SIZE: String(400 * 1024 * 1024),
+                },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(res.status).toBe(413);
+        }
     });
 
     it("rejects empty files, invalid base64, and malformed JSON with 400", async () => {

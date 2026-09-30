@@ -76,4 +76,4 @@ export const ENTER_URL =
 export const LOGIN_CLIENT_ID = STAGING ? undefined : "pk_VZF38YW4tQX36SEn";
 
 export const MEDIA_URL =
-    process.env.POLLINATIONS_MEDIA_URL ?? "https://media.pollinations.ai";
+    process.env.POLLINATIONS_MEDIA_URL ?? "https://media.myceli.ai";

@@ -24,6 +24,13 @@ curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
   -F "file=@image.jpg"
 
+# Stream a large file through the Enterprise upload hostname
+curl -X POST https://media.myceli.ai/upload \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: video/mp4" \
+  -H "X-File-Name: video.mp4" \
+  --data-binary @video.mp4
+
 # Base64 JSON
 curl -X POST https://media.pollinations.ai/upload \
   -H "Authorization: Bearer <your-api-key>" \
@@ -116,7 +123,7 @@ Publishing requires a key attached to a user account.
 
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
-- `413` - File too large (max 100MB of decoded/file bytes)
+- `413` - File too large (max 400 MiB for raw uploads; 100 MiB for multipart/JSON)
 
 ### `GET /:id`
 
@@ -217,7 +224,7 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 100MB of decoded/file bytes
+- **Max file size:** 400 MiB for streamed raw uploads through `media.myceli.ai` (the Enterprise zone); 100 MiB for buffered multipart/JSON uploads. The `media.pollinations.ai` zone has a 100 MB request limit, so large one-request uploads must use the Enterprise hostname. Its maximum upload setting must be at least 425 MB to accept 400 MiB. Retrieval URLs still use `media.pollinations.ai`.
 - **Storage:** Cloudflare R2
 - **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
 

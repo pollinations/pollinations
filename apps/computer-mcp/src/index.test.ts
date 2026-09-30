@@ -161,6 +161,26 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("reads UTF-8 lines into variables unchanged", async () => {
+        const client = await connect("user-read");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const reads = await bash(
+            client,
+            [
+                'read -r a; echo "$a" | wc -c',
+                `printf '%s\\n' '${line}' | { read -r b; echo "$b" | wc -c; }`,
+                `read -r c <<< '${line}'; echo "$c" | wc -c`,
+                `printf '%s\\n' '${line}' | { mapfile -t d; echo "\${d[0]}" | wc -c; }`,
+            ].join("\n"),
+            `${line}\n`,
+        );
+        expect(reads.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(4).fill("23"),
+            "",
+        ]);
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(

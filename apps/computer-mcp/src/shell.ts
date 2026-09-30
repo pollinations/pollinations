@@ -4,9 +4,10 @@ import coreModules from "@cloudflare/computer/shell/core";
 // encoding just-bash passes. `cat >`, heredocs, `tee`, `<` and `base64 -d`
 // write latin1 byte strings marked "binary", and the adapter UTF-8 encoded
 // them again, so every non-ASCII byte was stored as two or more. This patches
-// the bundled adapter until upstream honours the encoding. A patch that no
-// longer applies throws at startup; the byte test in index.test.ts covers
-// every write path.
+// the bundled adapter until upstream honours the encoding. just-bash's `read`
+// and `mapfile` also store stdin's byte string in variables without decoding
+// it, so `echo "$line"` encoded each byte again. A patch that no longer
+// applies throws at startup; the byte tests in index.test.ts cover every path.
 const PATCHES: [string, string][] = [
     [
         "await this.#fs.writeFile(path, content);",
@@ -15,6 +16,16 @@ const PATCHES: [string, string][] = [
     [
         'const addition = typeof content === "string" ? new TextEncoder().encode(content) : content;',
         "const addition = contentBytes(content, _options);",
+    ],
+    // read: the line it collected, before it is split into variables.
+    [
+        "g === `\n` && w.endsWith(`\n`) && (w = w.slice(0, -1));",
+        "g === `\n` && w.endsWith(`\n`) && (w = w.slice(0, -1));\n  w = textFromBytes(w);",
+    ],
+    // mapfile: each line, before it becomes an array element.
+    [
+        '"string_length");\n    f3.push(g);',
+        '"string_length");\n    f3.push(textFromBytes(g));',
     ],
 ];
 
@@ -28,6 +39,18 @@ function contentBytes(content, options) {
   const bytes = new Uint8Array(content.length);
   for (let i = 0; i < content.length; i++) bytes[i] = content.charCodeAt(i);
   return bytes;
+}
+
+// Decodes a byte string as UTF-8; text or invalid UTF-8 stays unchanged.
+function textFromBytes(value) {
+  if (!/[\\x80-\\xff]/.test(value) || /[^\\x00-\\xff]/.test(value)) return value;
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+      Uint8Array.from(value, (char) => char.charCodeAt(0)),
+    );
+  } catch {
+    return value;
+  }
 }
 `;
 

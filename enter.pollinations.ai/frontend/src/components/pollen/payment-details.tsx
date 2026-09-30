@@ -1,11 +1,9 @@
 import {
     CardIcon,
-    cn,
     InlineLink,
     LockIcon,
     Surface,
     WalletIcon,
-    WarningIcon,
 } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
@@ -23,15 +21,13 @@ import { Footnotes, PaymentHelp } from "./pollen-balance.tsx";
 /**
  * What Stripe holds for the buyer: the card(s) and the details invoices and
  * tax use. Shown here, edited only on Stripe (EditOnStripeLink). A problem
- * with auto-refill shows on the card or address it concerns; Top-up only
- * points here.
+ * is a badge on the card or address it concerns; what it blocks and how to
+ * fix it is said in Top-up.
  */
 export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
-    // Auto top-up's own problems are told in Top-up; here only the card
-    // that was declined carries a tag.
     const lastIssue = billing.autoTopUp.lastIssue;
     const declined = lastIssue?.kind === "failed" && !billing.autoTopUp.enabled;
-    const needsAddress =
+    const incomplete =
         hasDefaultPaymentMethod(billing) && !billing.billingDetailsComplete;
     return (
         <>
@@ -45,13 +41,10 @@ export const BillingPanel: FC<{ billing: BillingOverview }> = ({ billing }) => {
                 </Surface>
                 <Surface className="flex flex-col gap-2">
                     <CardHeading>Details</CardHeading>
-                    <Details details={billing.billingDetails} />
-                    {needsAddress && (
-                        <Warning>
-                            Auto top-up needs your billing address ·{" "}
-                            <PortalLink inline>Add</PortalLink>
-                        </Warning>
-                    )}
+                    <Details
+                        details={billing.billingDetails}
+                        incomplete={incomplete}
+                    />
                 </Surface>
             </div>
             {/* Where this data lives: true as written, no broader claim. */}
@@ -116,39 +109,46 @@ const PaymentMethods: FC<{
                             Default
                         </span>
                     )}
-                    {method.isDefault && declined && (
-                        <span className="rounded-full bg-intent-danger-bg-light px-2 py-0.5 text-xs font-semibold text-intent-danger-text">
-                            Declined
-                        </span>
-                    )}
+                    {method.isDefault && declined && <Badge>Declined</Badge>}
                 </li>
             ))}
         </ul>
     );
 
-const Details: FC<{ details: BillingOverview["billingDetails"] }> = ({
-    details,
-}) => {
+const Details: FC<{
+    details: BillingOverview["billingDetails"];
+    /** Missing the name or tax location auto top-up needs. */
+    incomplete?: boolean;
+}> = ({ details, incomplete = false }) => {
+    const address = details ? formatAddress(details) : null;
     const lines = details
         ? [
               details.company,
               details.name,
               ...details.taxIds.map(formatTaxId),
-              formatAddress(details),
+              address,
               details.email,
           ].filter((line): line is string => Boolean(line))
         : [];
+    // The badge sits on the address, or alone when there is none.
+    const badge = incomplete && <Badge>Incomplete</Badge>;
     return lines.length === 0 ? (
-        <p className="text-sm text-theme-text-muted">
+        <p className="flex flex-wrap items-center gap-2 text-sm text-theme-text-muted">
             Added at your first purchase
+            {badge}
         </p>
     ) : (
-        <address className="flex flex-col gap-0.5 text-sm not-italic text-theme-text-strong">
+        <address className="flex flex-col items-start gap-0.5 text-sm not-italic text-theme-text-strong">
             {lines.map((line) => (
-                <span key={line} className="break-words">
+                <span
+                    key={line}
+                    className="flex flex-wrap items-center gap-x-2 break-words"
+                >
                     {line}
+                    {line === address && badge}
                 </span>
             ))}
+            {!address && badge}
         </address>
     );
 };
@@ -160,26 +160,19 @@ export const EditOnStripeLink: FC<{
     <PortalLink returnToTopUp={returnToTopUp}>Edit on Stripe</PortalLink>
 );
 
-/** Header link, or inline in a sentence (a problem line in a card). */
 const PortalLink: FC<{
     returnToTopUp?: { redirect?: string };
-    inline?: boolean;
     children: ReactNode;
-}> = ({ returnToTopUp, inline = false, children }) => {
+}> = ({ returnToTopUp, children }) => {
     const [opening, setOpening] = useState(false);
     const [error, setError] = useState<string | null>(null);
     return (
-        <span
-            className={cn(
-                "flex-col gap-1",
-                inline ? "inline-flex" : "flex items-end",
-            )}
-        >
+        <span className="flex flex-col items-end gap-1">
             <InlineLink
                 as="button"
                 type="button"
                 external
-                size={inline ? undefined : "sm"}
+                size="sm"
                 disabled={opening}
                 onClick={async () => {
                     setOpening(true);
@@ -201,16 +194,9 @@ const PortalLink: FC<{
     );
 };
 
-/** A problem on the card or address it concerns, with what to do. */
-const Warning: FC<{ children: ReactNode }> = ({ children }) => (
-    <p
-        role="alert"
-        className="flex items-start gap-1.5 text-[13px] leading-5 text-intent-danger-text"
-    >
-        <WarningIcon
-            aria-hidden="true"
-            className="mt-[3px] h-3.5 w-3.5 shrink-0"
-        />
-        <span>{children}</span>
-    </p>
+/** A problem on the card or address it concerns, as one word. */
+const Badge: FC<{ children: ReactNode }> = ({ children }) => (
+    <span className="rounded-full bg-intent-danger-bg-light px-2 py-0.5 text-xs font-semibold text-intent-danger-text">
+        {children}
+    </span>
 );

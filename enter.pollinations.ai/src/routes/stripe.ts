@@ -181,8 +181,9 @@ export const stripeRoutes = new Hono<Env>()
 
     /**
      * GET /api/stripe/auto-top-up/setup/:packKey
-     * First automatic top-up for a buyer with no saved card: Stripe's page in
-     * setup mode checks and saves the card without charging. The webhook then
+     * Turning automatic top-up on without a saved card or billing details:
+     * Stripe's page in setup mode takes both and saves the card without
+     * charging. The webhook then
      * makes it the default card and turns automatic top-up on with this pack.
      */
     .get("/auto-top-up/setup/:packKey", async (c) => {

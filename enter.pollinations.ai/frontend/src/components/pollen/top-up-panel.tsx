@@ -195,16 +195,18 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         POLLEN_PACKS.find((pack) => pack.packKey === "p20") ??
         null;
     const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
-    const autoReady = hasDefault && Boolean(billing?.billingDetailsComplete);
-    const needsCard = Boolean(billing) && !hasDefault;
+    // Missing a card or billing details: Stripe's setup page asks for both,
+    // then turns auto top-up on. Otherwise the switch saves at once.
+    const needsSetup =
+        Boolean(billing) && !(hasDefault && billing?.billingDetailsComplete);
     const selectedRefillPack =
         selectedPack && isAutoTopUpPack(selectedPack) ? selectedPack : null;
     const packTooSmall = Boolean(
         !billing?.autoTopUp.enabled && selectedPack && !selectedRefillPack,
     );
     // The one status the row shows under "Auto top-up".
-    // Only auto top-up's own problems show here; missing billing details
-    // and a failed billing load are shown in Billing.
+    // Every problem that stops auto top-up, with its fix; Billing only
+    // badges the card or address concerned.
     const refillStatus = slotError
         ? "failed"
         : confirmingSetup
@@ -260,7 +262,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (!billing) return;
         if (enabled) {
             if (!selectedRefillPack) return;
-            if (needsCard) window.location.href = setupHref(selectedRefillPack);
+            if (needsSetup)
+                window.location.href = setupHref(selectedRefillPack);
             else void saveAutoTopUp(true, selectedRefillPack.amountUsd);
         } else {
             void saveAutoTopUp(false, billing.autoTopUp.packAmountUsd);
@@ -280,8 +283,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 !billing ||
                 saving ||
                 confirmingSetup ||
-                (!billing.autoTopUp.enabled &&
-                    (!selectedRefillPack || (!autoReady && !needsCard)))
+                (!billing.autoTopUp.enabled && !selectedRefillPack)
             }
             className={packTooSmall ? "pointer-events-none" : undefined}
             onChange={changeAutoTopUp}

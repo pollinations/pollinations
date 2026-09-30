@@ -65,7 +65,6 @@ const answers = {
 };
 
 afterEach(() => {
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
     vi.useRealTimers();
 });
@@ -102,10 +101,12 @@ describe("System One adapter", () => {
                     usage: { input_tokens: 44, output_tokens: 76 },
                 });
             });
-        vi.stubEnv("OPENROUTER_API_KEY", "test-key");
         await generateTextPortkey(
             [{ role: "user", content: nativeContent }],
-            { model: "jaredpalmer/kev-4b" },
+            {
+                model: "jaredpalmer/kev-4b",
+                modelConfig: { ...modelConfig, model: "jaredpalmer/kev-4b" },
+            },
             vi.fn(),
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);

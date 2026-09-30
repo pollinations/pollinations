@@ -1,5 +1,6 @@
 import { cn } from "@pollinations/ui";
 import type { FC } from "react";
+import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
 
 /**
@@ -156,32 +157,52 @@ export function previewBilling(
     return preview ? preview.billing(real) : real;
 }
 
-/** Floating, bottom right: pick a state, or Real for the account's own. */
+/**
+ * One "Debug" button, bottom right, naming the state shown; it opens the
+ * list, and picking a state folds it again so the page is in view.
+ */
 export const BillingPreviewSwitch: FC<{
     value?: string;
     onChange: (id?: string) => void;
-}> = ({ value, onChange }) => (
-    <div className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-1 rounded-2xl bg-surface-menu/90 p-2 text-xs shadow-lg backdrop-blur-md sm:max-w-md">
-        <span className="px-1.5 font-bold uppercase tracking-wide text-theme-text-muted">
-            Preview
-        </span>
-        {[{ id: undefined, label: "Real" }, ...BILLING_PREVIEWS].map(
-            ({ id, label }) => (
-                <button
-                    key={label}
-                    type="button"
-                    aria-pressed={value === id}
-                    onClick={() => onChange(id)}
-                    className={cn(
-                        "rounded-full px-2.5 py-1 font-semibold",
-                        value === id
-                            ? "bg-theme-text-strong text-surface-menu"
-                            : "text-theme-text-soft hover:bg-theme-text-strong/10",
-                    )}
-                >
-                    {label}
-                </button>
-            ),
-        )}
-    </div>
-);
+}> = ({ value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const current = BILLING_PREVIEWS.find(({ id }) => id === value);
+    return (
+        <div className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2 text-xs sm:max-w-md">
+            {open && (
+                <div className="flex flex-wrap justify-end gap-1 rounded-2xl bg-surface-menu/90 p-2 shadow-lg backdrop-blur-md">
+                    {[
+                        { id: undefined, label: "Real" },
+                        ...BILLING_PREVIEWS,
+                    ].map(({ id, label }) => (
+                        <button
+                            key={label}
+                            type="button"
+                            aria-pressed={value === id}
+                            onClick={() => {
+                                onChange(id);
+                                setOpen(false);
+                            }}
+                            className={cn(
+                                "rounded-full px-2.5 py-1 font-semibold",
+                                value === id
+                                    ? "bg-theme-text-strong text-surface-menu"
+                                    : "text-theme-text-soft hover:bg-theme-text-strong/10",
+                            )}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+                className="rounded-full bg-surface-menu/90 px-3 py-1.5 font-bold text-theme-text-soft shadow-lg backdrop-blur-md hover:text-theme-text-strong"
+            >
+                Debug{current && ` · ${current.label}`}
+            </button>
+        </div>
+    );
+};

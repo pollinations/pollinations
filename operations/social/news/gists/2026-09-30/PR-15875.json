@@ -1,0 +1,39 @@
+{
+  "pr_number": 15875,
+  "title": "Add STT to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15875",
+  "merged_at": "2026-09-30T04:39:08Z",
+  "labels": [
+    "FEATURE",
+    "APPS"
+  ],
+  "pr_body_excerpt": "- Adds [STT](https://fantasyreincarnation1-bit.github.io/my-pollinations-ap) to video_audio\n- Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri,\n\nFixes #15703",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Video gets subtitles, sort of",
+    "blurb": "video_audio now includes speech-to-text. Spoken words can become text, which is considerably easier to search than a waveform.",
+    "summary": "Added the video_audio app to the app listing with speech-to-text support and Pollinations BYOP authorization using a public app key as the authorize flow's client_id.",
+    "impact": "People can discover video_audio for speech-to-text, with access handled through Pollinations' BYOP authorization flow.",
+    "keywords": [
+      "community app",
+      "video_audio",
+      "speech-to-text",
+      "STT",
+      "BYOP",
+      "authorization"
+    ],
+    "visual_concept": "Depict video_audio as a friendly retro workstation where a video-and-audio timeline turns spoken sound into a short text transcript. Polli, wearing tiny headphones, helps guide the sound toward the transcript; lime-green code-plants and flowers make the workspace feel like part of the Pollinations garden.",
+    "image_prompt": "In a cozy pixel art garden workstation, a retro screen shows a video-and-audio timeline becoming a short text transcript, while Polli in tiny headphones listens beside lime green (#ecf874) code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art and never realistic, in a cozy pixel art, 8-bit aesthetic with chunky retro sprites, soft pastel gradients, warm lighting, and retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15875.jpg",
+    "prompt": "In a cozy pixel art garden workstation, a retro screen shows a video-and-audio timeline becoming a short text transcript, while Polli in tiny headphones listens beside lime green (#ecf874) code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art and never realistic, in a cozy pixel art, 8-bit aesthetic with chunky retro sprites, soft pastel gradients, warm lighting, and retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T04:40:27.160996+00:00",
+  "app_name": "STT",
+  "app_url": "https://fantasyreincarnation1-bit.github.io/my-pollinations-ap"
+}

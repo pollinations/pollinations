@@ -1,5 +1,16 @@
-import { Alert, Button, RefreshIcon } from "@pollinations/ui";
-import { type ReactNode, useState } from "react";
+import { Alert, Button, RefreshIcon, Section } from "@pollinations/ui";
+import { type ReactNode, useContext, useEffect, useState } from "react";
+import { PendingCount } from "./dashboard-shell.tsx";
+
+/** Render while something on the page is still loading; the shell shows one status until none remain. */
+export function PageStatus() {
+    const setPendingCount = useContext(PendingCount);
+    useEffect(() => {
+        setPendingCount((count) => count + 1);
+        return () => setPendingCount((count) => count - 1);
+    }, [setPendingCount]);
+    return null;
+}
 
 /** Keep section headings and controls outside the content that waits for data. */
 export function SectionContent({
@@ -9,7 +20,21 @@ export function SectionContent({
     loading: boolean;
     children?: ReactNode;
 }) {
-    return loading ? null : children;
+    return loading ? <PageStatus /> : children;
+}
+
+/** Every card title of a page that is still loading, with the page status. */
+export function PageLoading({ titles }: { titles: readonly string[] }) {
+    return (
+        <>
+            <PageStatus />
+            {titles.map((title) => (
+                <Section key={title} title={title}>
+                    {null}
+                </Section>
+            ))}
+        </>
+    );
 }
 
 export function LoadError({

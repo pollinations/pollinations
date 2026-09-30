@@ -54,6 +54,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-6-sol": {
+        "openai/gpt-6-sol:openai": { provider: "openai" },
+    },
+    "openai/gpt-6-luna": {
+        "openai/gpt-6-luna:openai": { provider: "openai" },
+    },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",

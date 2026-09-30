@@ -482,7 +482,7 @@ export const Models: FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section
                 title={
                     activePrimaryTab === "agent"
@@ -552,7 +552,7 @@ export const Models: FC = () => {
                         </div>
                     )}
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="catalog-search min-w-0 flex-1 basis-[240px]">
+                        <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
                             <div>
                                 <EditableCombobox
                                     value={visibleSearch}
@@ -730,6 +730,6 @@ export const Models: FC = () => {
                     </div>
                 )}
             </Section>
-        </div>
+        </>
     );
 };

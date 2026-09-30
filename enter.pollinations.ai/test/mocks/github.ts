@@ -33,7 +33,12 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
-            author: { databaseId?: number | null } | null;
+            headRefName?: string;
+            author: {
+                __typename?: string;
+                login?: string;
+                databaseId?: number | null;
+            } | null;
         }>;
     }>;
     mergedPullRequests: Array<{
@@ -41,6 +46,8 @@ export type MockGithubState = {
         authorLogin: string;
         mergedAt: string;
     }>;
+    // Commit author GitHub ids per PR number, including co-authors.
+    commitAuthors: Record<number, number[]>;
     repos: Array<{
         name: string;
         fork?: boolean;
@@ -64,6 +71,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         },
         questIssues: [],
         mergedPullRequests: [],
+        commitAuthors: {},
         repos: [],
         requests: [],
         failQuestSearch: false,
@@ -106,8 +114,35 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ errors: [{ message: "rate limited" }] }, 200);
             }
             const body = (await c.req.json()) as {
-                variables?: { query?: string; after?: string | null };
+                variables?: {
+                    query?: string;
+                    after?: string | null;
+                    number?: number;
+                };
             };
+            const prNumber = body.variables?.number;
+            if (prNumber !== undefined) {
+                const authors = (state.commitAuthors[prNumber] ?? []).map(
+                    (databaseId) => ({ user: { databaseId } }),
+                );
+                return c.json({
+                    data: {
+                        repository: {
+                            pullRequest: {
+                                commits: {
+                                    nodes: [
+                                        {
+                                            commit: {
+                                                authors: { nodes: authors },
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                });
+            }
             const search = body.variables?.query ?? "";
             if (search.includes("is:pr")) {
                 const author = search.match(/\bauthor:([^\s]+)/)?.[1];
@@ -122,13 +157,12 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+            const label = search.match(/\blabel:([^\s]+)/)?.[1];
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
-                    (!search.includes("label:POLLEN-QUEST") ||
-                        issue.labels?.some(
-                            (label) => label.name === "POLLEN-QUEST",
-                        )),
+                    (!label ||
+                        issue.labels?.some(({ name }) => name === label)),
             );
             const start = Number(body.variables?.after ?? 0);
             const nodes = issues.slice(start, start + 100).map((issue) => ({

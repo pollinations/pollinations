@@ -6,8 +6,8 @@ import {
     useAuthState,
 } from "@pollinations/sdk/react";
 import { useEffect } from "react";
-import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
+import { BrandMark } from "../../primitives/BrandMark.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
@@ -110,13 +110,7 @@ export function AppUserMenu({
                         aria-hidden="true"
                         className="polli:flex polli:h-full polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active"
                     >
-                        <span
-                            className="polli:relative polli:-top-px polli:left-px polli:block polli:h-6 polli:w-6 polli:bg-current"
-                            style={{
-                                mask: `url('${markUrl}') center / contain no-repeat`,
-                                WebkitMask: `url('${markUrl}') center / contain no-repeat`,
-                            }}
-                        />
+                        <BrandMark className="polli:relative polli:-top-px polli:left-px polli:h-6 polli:w-6" />
                     </span>
                     <span className="polli:px-3">{labels.authorize}</span>
                 </LoginButton>

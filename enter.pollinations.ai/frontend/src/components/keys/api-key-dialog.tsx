@@ -144,7 +144,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ]);
 
     return (
-        <ResourceDialog open={isOpen} onOpenChange={setIsOpen} size="lg">
+        <ResourceDialog
+            open={isOpen}
+            onOpenChange={setIsOpen}
+            size="lg"
+            // The created key is one card: show it compact, like a confirmation.
+            fullscreenOnMobile={!createdKey}
+        >
             <KeyDialogContent
                 mode="create"
                 app={simplified}

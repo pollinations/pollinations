@@ -377,9 +377,10 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    // Per-unit Pollen price sheet actually applied (effective cost ×
-    // multiplier). Telemetry must record THIS sheet, not the request-time
-    // base sheet, so recorded rates always reproduce the billed totals.
+    // Effective per-unit Pollen price sheet (cost variant × multiplier), not
+    // the request-time base sheet. Provider-reported billing units can differ
+    // from public usage units, so this sheet alone may not reproduce totals
+    // overridden by providerBilling; those use its units and unitCost.
     priceDefinition: PriceDefinition;
     // Name of the applied cost variant, if any (financial identity — distinct
     // from modelUsed, which stays observational).
@@ -481,10 +482,9 @@ function rateAgainst(
 /**
  * What the generation cost us, and what the caller pays for it.
  *
- * These come apart exactly when a fallback served: the caller is charged the
- * listing they asked for, while cost — and the serving owner's reward — follow
- * the model that actually ran. Charging the server's price instead would let
- * the amount on the invoice depend on which upstream happened to be up.
+ * Trusted provider billing units and their rate replace estimated cost;
+ * price is that cost times the serving model's multiplier. A fallback still
+ * charges the requested listing's price.
  */
 export function calculateUsageBilling({
     model,
@@ -495,6 +495,18 @@ export function calculateUsageBilling({
     input,
 }: UsageBillingInput): UsageBilling {
     const served = rateAgainst(model, usage, servedBy, output, input);
+    // Provider units need not match public usage units (e.g. weighted video
+    // seconds), so the receipt gives a total, not a per-usage-type breakdown.
+    if (input?.providerBilling) {
+        const totalCost =
+            input.providerBilling.units * input.providerBilling.unitCost;
+        served.cost = { totalCost };
+        served.price = {
+            totalPrice: roundPollenLedgerAmount(
+                totalCost * servedBy.priceMultiplier,
+            ),
+        };
+    }
     if (quotedBy === servedBy) {
         return { ...served, servedPrice: served.price.totalPrice };
     }

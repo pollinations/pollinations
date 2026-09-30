@@ -256,6 +256,10 @@ test("each second of a lease is paid once", async () => {
     // Pausing and resuming within the 300 s paid at create costs nothing.
     expect((await pause()).status).toBe(204);
     expect((await connect(200)).status).toBe(201);
+    // Resuming keeps the paid 300 s running, not just the 200 s asked for.
+    expect(Date.parse(e2b.sandboxes[0].endAt)).toBeGreaterThan(
+        Date.now() + 250_000,
+    );
     // 600 s from now extends the paid 300 s by about 300 s.
     expect((await timeout(600)).status).toBe(204);
     // Shortening, then extending again within the paid 600 s, costs nothing.

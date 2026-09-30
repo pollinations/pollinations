@@ -270,6 +270,7 @@ async function extendLease(
     c: E2bContext,
     sandbox: SandboxDetail,
     timeout: unknown,
+    { keepPaidTime = false } = {},
 ) {
     const startTime = new Date();
     if (typeof timeout !== "number" || !(timeout >= 0)) {
@@ -279,15 +280,24 @@ async function extendLease(
     }
     const now = startTime.getTime();
     const paidUntil = await readPaidUntil(c, sandbox, now);
-    const endAt = now + timeout * 1000;
+    // E2B resumes a sandbox for `timeout` alone; connect keeps it running
+    // through the time it is already paid for.
+    const seconds = keepPaidTime
+        ? Math.max(timeout, Math.floor((paidUntil - now) / 1000))
+        : timeout;
+    const endAt = now + seconds * 1000;
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (bill.price > 0) await requireFunds(c, bill.price);
-    const response = await forward(c);
+    const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ timeout: seconds }),
+    });
     if (response.ok && bill.price > 0) {
         await charge(c, bill, startTime);
         await savePaidUntil(c, sandbox.sandboxID, endAt);
     }
-    return response;
+    return new Response(response.body, response);
 }
 
 async function ownerOnly(c: E2bContext) {
@@ -404,7 +414,9 @@ export const e2bRoutes = new Hono<Env>()
             const sandbox = await ownedSandbox(c);
             if (sandbox.state === "paused") await requireCapacity(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
-            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
+            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS, {
+                keepPaidTime: true,
+            });
         },
     )
     // Everything else (templates, snapshots, forks, volumes, secrets,

@@ -1,0 +1,14 @@
+{
+  "name": "com.pollinations.unity",
+  "version": "1.0.0",
+  "displayName": "Pollinations Unity SDK",
+  "description": "C# package for Unity game developers to generate text, images, and audio with Pollinations AI.",
+  "unity": "2021.3",
+  "author": {
+    "name": "g33ky00",
+    "email": "g33ky@users.noreply.github.com",
+    "url": "https://github.com/g33ky00"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}

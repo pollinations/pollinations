@@ -475,7 +475,11 @@ export interface AudioGenerateOptions extends RequestOptions {
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
-    /** Public audio URL for models that support reference-audio input. */
+}
+
+/** Options for POST /v1/audio/speech */
+export interface AudioSpeechOptions extends AudioGenerateOptions {
+    /** Public audio URL for models that support reference audio */
     referenceAudio?: string;
 }
 

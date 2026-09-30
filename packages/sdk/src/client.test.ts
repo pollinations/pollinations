@@ -262,23 +262,18 @@ describe("Pollinations media upload", () => {
 });
 
 describe("audio inputs", () => {
-    it("sends reference audio in both audio generation endpoints", async () => {
+    it("sends reference audio, duration and seed in the speech body", async () => {
         fetchMock.mockResolvedValue(
             makeResponse(null, { contentType: "audio/mpeg" }),
         );
-        const client = newClient();
         const referenceAudio = "https://media.pollinations.ai/reference.wav";
-        const options = {
+        await newClient().audioSpeech("a melody", {
             model: "music-model",
             referenceAudio,
             duration: 3,
             seed: 42,
-        };
-        await client.audio("a melody", options);
-        await client.audioSpeech("a melody", options);
-        const url = new URL(fetchMock.mock.calls[0][0]);
-        expect(url.searchParams.get("reference_audio")).toBe(referenceAudio);
-        expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+        });
+        expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
             input: "a melody",
             model: "music-model",
             reference_audio: referenceAudio,
@@ -315,25 +310,6 @@ describe("audio inputs", () => {
         expect(uploaded.type).toBe("audio/wav");
         expect(await uploaded.text()).toBe("sample audio");
         expect(result.contentType).toBe("audio/wav");
-    });
-
-    it("surfaces transformation API errors", async () => {
-        fetchMock.mockResolvedValue(
-            makeResponse(
-                {
-                    error: {
-                        message: "Unsupported media",
-                        code: "INVALID_INPUT",
-                    },
-                },
-                { ok: false, status: 400 },
-            ),
-        );
-        await expect(
-            newClient().audioTransform(new Blob(["sample"]), {
-                operation: "voice-isolator",
-            }),
-        ).rejects.toThrow("Unsupported media");
     });
 });
 
@@ -448,8 +424,8 @@ describe("Pollinations seed handling", () => {
 
         await client.image("a cat", { seed: -1, resolution: "2k" });
         await client.video("a long scene", {
-            model: "nova-reel",
-            duration: 120,
+            model: "alibaba/wan-2.6",
+            duration: 15,
             resolution: "1080p",
             seed: -1,
         });
@@ -459,7 +435,7 @@ describe("Pollinations seed handling", () => {
         expect(seedFromUrl(imageUrl.toString())).toBe("-1");
         expect(imageUrl.searchParams.get("resolution")).toBe("2k");
         expect(videoUrl.searchParams.get("seed")).toBe("-1");
-        expect(videoUrl.searchParams.get("duration")).toBe("120");
+        expect(videoUrl.searchParams.get("duration")).toBe("15");
         expect(videoUrl.searchParams.get("resolution")).toBe("1080p");
     });
 

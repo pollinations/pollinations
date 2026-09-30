@@ -89,6 +89,7 @@ export type {
     // Audio
     AudioModel,
     AudioResponse,
+    AudioSpeechOptions,
     AudioTransformOptions,
     AudioVoice,
     AuthorizeDeviceOptions,

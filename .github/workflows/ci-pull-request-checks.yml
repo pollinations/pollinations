@@ -80,6 +80,9 @@ jobs:
       - name: Test SDK
         run: npm test --workspace @pollinations/sdk
 
+      - name: Test UI
+        run: npm test --workspace @pollinations/ui
+
       - name: Test maintenance scripts
         run: >-
           node --test
@@ -267,11 +270,9 @@ jobs:
         working-directory: pollinations.ai
         run: npm run build
 
-      - name: Test pollinations.ai and @pollinations/ui
+      - name: Test pollinations.ai
         if: steps.website-files.outputs.any_changed == 'true'
-        run: |
-          npm test --prefix pollinations.ai
-          npm test --workspace @pollinations/ui
+        run: npm test --prefix pollinations.ai
 
   # Carries the status-check name required by the main branch ruleset so the
   # jobs above gate merges without a ruleset change.

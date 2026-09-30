@@ -7,6 +7,7 @@ import type {
     AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
+    AudioSpeechOptions,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -1003,7 +1004,6 @@ export class Pollinations {
             model: options.model,
             duration: options.duration,
             seed: options.seed,
-            reference_audio: options.referenceAudio,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -1038,7 +1038,7 @@ export class Pollinations {
      */
     async audioSpeech(
         text: string,
-        options: AudioGenerateOptions = {},
+        options: AudioSpeechOptions = {},
     ): Promise<AudioBinaryResponse> {
         if (!text || typeof text !== "string") {
             throw new PollinationsError(

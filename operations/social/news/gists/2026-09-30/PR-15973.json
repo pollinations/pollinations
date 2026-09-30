@@ -1,0 +1,37 @@
+{
+  "pr_number": 15973,
+  "title": "feat: show GitHub stars and Discord online on the homepage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15973",
+  "merged_at": "2026-09-30T15:36:10Z",
+  "labels": [
+    "FEATURE",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Part of landing #14472 in steps.\n\n- Adds the GitHub star count and the number of people online in Discord to the homepage stats line.\n- The visitor's browser fetches both directly from GitHub and Discord, so there is no new Worker endpoint.\n- A count stays hidden while it loads or if the request fails.\n- `cachePublic.ts` and `useAsync.ts` are copied unchanged from `feat/website-v2`, and so is the stars/Discord part of `community.ts`. `.gitignore` now matches v2's, so `src/data/` is tracked.\n- Discord's CORS header echoes the page's origin but doesn't send `Vary: Origin`, so the widget fetch skips the browser cache. Otherwise, after visiting www.pollinations.ai, a visitor to pollinations.ai would get a cached response that fails CORS.\n\n| | Before | After |\n|---|---|---|\n| Stats line | 10K devs · 1.5M requests · 500+ apps | + 5.2K GitHub stars · 1.2K online in Discord |\n\nChecked in a local build at 1280px and 390px. Each stat stays on one line, the page doesn't scroll sideways, and there are no CORS errors, including when the page is opened from a second origin.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden has company",
+    "blurb": "The homepage stats line gets two more neighbors: GitHub stars and people online in Discord. If either count is unavailable, it quietly stays out of the way.",
+    "summary": "The homepage adds GitHub star and Discord online counts beside its existing stats, fetching both directly in the visitor's browser without a new Worker endpoint.",
+    "impact": "Visitors get a quick view of community activity; counts stay hidden while loading or if a request fails, and the Discord fetch avoids a cross-origin browser-cache issue.",
+    "keywords": [
+      "homepage",
+      "community",
+      "GitHub stars",
+      "Discord",
+      "live counts",
+      "CORS"
+    ],
+    "visual_concept": "Show the pollinations.ai homepage as a cozy garden noticeboard with GitHub stars and Discord online visitors represented by a star counter and a small gathering of friendly sprites. Polli tends the display; lime-green code-plants connect it to the existing stats line.",
+    "image_prompt": "In a cozy pixel art garden, a retro homepage noticeboard glows with a GitHub star counter and a small group of friendly sprites representing people online in Discord, while lime-green (#ecf874) code-plants grow around it. Polli wears tiny gardener's gloves and adjusts the board: the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15973.jpg",
+    "prompt": "In a cozy pixel art garden, a retro homepage noticeboard glows with a GitHub star counter and a small group of friendly sprites representing people online in Discord, while lime-green (#ecf874) code-plants grow around it. Polli wears tiny gardener's gloves and adjusts the board: the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T15:37:25.037090+00:00"
+}

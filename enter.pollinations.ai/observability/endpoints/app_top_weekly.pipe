@@ -1,9 +1,10 @@
 DESCRIPTION >
     Listed apps ranked by successful, billable Pollen Pay (BYOP) requests in
-    the rolling last 7 days. A registered App Key must map to exactly one
-    catalog listing with the same owner and a matching URL or callback below
-    that URL. Ambiguous matches are excluded, not credited to every app on a
-    shared host. Multiple keys for one listing are combined before ranking.
+    the rolling last 7 days. A registered App Key is credited to the one
+    catalog listing of the same owner whose URL covers the key's redirect URI.
+    Without a URL match, it is credited to the owner's listing only when the
+    owner has exactly one. Ambiguous keys are excluded. Multiple keys for one
+    listing are combined before ranking.
     Returns catalog URLs and names, public owner handles, and aggregate counts
     only. No user IDs, App Keys, wallet, revenue, or cost data is exposed.
 
@@ -51,19 +52,22 @@ NODE matched_apps
 SQL >
     SELECT
         registered.app_key_id,
-        any (catalog.web_url) AS app_url,
-        any (catalog.name) AS app_name,
-        any (catalog.github_username) AS owner
+        uniqExactIf(
+            tuple(catalog.web_url, catalog.name),
+            registered.redirect_uri = catalog.base_url
+            OR startsWith(registered.redirect_uri, concat(catalog.base_url, '/'))
+            OR startsWith(registered.redirect_uri, concat(catalog.base_url, '?'))
+            OR startsWith(registered.redirect_uri, concat(catalog.base_url, '#')) AS url_match
+        ) AS url_matches,
+        uniqExact(tuple(catalog.web_url, catalog.name)) AS owner_listings,
+        if(url_matches = 1, anyIf(catalog.web_url, url_match), any(catalog.web_url)) AS app_url,
+        if(url_matches = 1, anyIf(catalog.name, url_match), any(catalog.name)) AS app_name,
+        any(catalog.github_username) AS owner
     FROM registered_apps registered
     INNER JOIN latest_users users ON registered.owner_user_id = users.user_id
     INNER JOIN catalog_apps catalog ON users.github_user_id = catalog.github_user_id
-    WHERE
-        registered.redirect_uri = catalog.base_url
-        OR startsWith(registered.redirect_uri, concat(catalog.base_url, '/'))
-        OR startsWith(registered.redirect_uri, concat(catalog.base_url, '?'))
-        OR startsWith(registered.redirect_uri, concat(catalog.base_url, '#'))
     GROUP BY registered.app_key_id
-    HAVING uniqExact(tuple(catalog.web_url, catalog.name)) = 1
+    HAVING url_matches = 1 OR owner_listings = 1
 
 NODE app_top_weekly_node
 SQL >
@@ -77,11 +81,8 @@ SQL >
     INNER JOIN matched_apps apps ON requests.api_key_client_id = apps.app_key_id
     WHERE
         requests.start_time > now() - INTERVAL 7 DAY
-        AND requests.start_time <= now()
-        AND requests.environment = 'production'
         AND requests.api_key_created_via = 'redirect-auth'
         AND requests.is_final
-        AND requests.is_billed_usage
         AND requests.response_status >= 200
         AND requests.response_status < 300
         AND requests.total_price > 0

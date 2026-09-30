@@ -812,7 +812,8 @@ function App() {
                     <div className="flex min-w-0 flex-col gap-1">
                         <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
-                            models.
+                            models, based on real user requests. Our own tests
+                            and monitoring probes are not counted.
                         </Text>
                         <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}

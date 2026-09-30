@@ -275,7 +275,7 @@ export function AgentDialog({
                     <div
                         className={
                             form.type === "prompt_agent"
-                                ? "grid gap-4 md:grid-cols-2"
+                                ? "grid gap-3 md:grid-cols-2"
                                 : undefined
                         }
                     >

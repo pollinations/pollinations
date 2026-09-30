@@ -17,6 +17,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
+    InferencePort: "inferenceport",
     inclusionAI: "inclusionai",
     Krea: "krea",
     Lykon: "lykon",

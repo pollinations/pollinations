@@ -1,38 +1,28 @@
 DESCRIPTION >
-    Reporting categories: regular, legacy, operations (company workflows,
-    automated or manual), and dev (development and experiments). Classified
-    by purpose, not frequency. Exact key IDs, including trusted client attribution for
-    delegated app keys. Names and account ownership never determine the group.
-    Keep deleted IDs for historical reporting. Changing these rules requires
-    repopulating the dependent usage, BYOP and first-activity aggregates.
+    Reporting categories by requesting account: regular, legacy, operations
+    (pollinationsagent: bots, monitors, automation) and dev (staff accounts).
+    user_id is the key owner, so staff testing through an app counts as dev.
+    Legacy is matched by its two bridge keys first because they live on the
+    pollinationsagent account. Update the dev accounts when the team changes.
+    Changing these rules requires repopulating the dependent usage, BYOP and
+    first-activity aggregates.
 
 NODE classified_events
 SQL >
     SELECT
         *,
         multiIf(
-            hasAny([api_key_id, api_key_client_id], [
+            api_key_id IN (
                 'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image
                 '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps' -- legacy text
-            ]), 'legacy',
-            hasAny([api_key_id, api_key_client_id], [
-                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- quixotic-hare: community model monitor
-                '6jQv2VwRvCc5GbWpu1ZQqBTFAyhSuyIc', -- e2e-tests-prod
-                'I5jnMf7tp5HrkWnjHgexYya1SI6UthK4', -- POLLI VECTOR DB
-                'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE: GitHub bot
-                '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY
-                '0JUUkMirP86ZkeBs82h721NTajBv51K8', -- PLN_GITHUB_AUTOPOLLY_KEY
-                'kS0FWTaWOPLO9kCiFGGO7zo356bhTKeG', -- Pollinations / KPIs
-                'S30ZmRxlZ2YcR35DlMCslC4eFQBoETfr', -- Pollinations / Observability
-                'gW91jqzHRALr3ywf4hTUUd5w83H1jE95' -- Pollinations / Economics
-            ]), 'operations',
-            hasAny([api_key_id, api_key_client_id], [
-                'mjOXmaf8SPr1qF934NlXciCqRVOfL9Ut', -- DEV_ELLIOT
-                'okEg1Bb2vlXyg5o4O28UWRhtM88w2FRt', -- historical DEV_ELLIOT
-                'uQx4i6Fee3st84fJHhwDxCivNRXWji3O', -- historical TEST DEV
-                'POtjGzxhQ7BhrCJXnsc8Y9i6sb259GVh', -- ITACHI-DEV
-                'XwIJkNmGGRxhVqVUI1aV15Micb7PoYP8' -- Internal Operations (local)
-            ]), 'dev',
+            ), 'legacy',
+            user_id = 'LJVtOPiUl0C4uRku8kL8prpp95m8jLnt', 'operations', -- pollinationsagent
+            user_id IN (
+                '328eJMEXiBAhRskZcmKINOx3CoidBc6x', -- ElliotEtag
+                'ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh', -- elliot@pollinations.ai
+                'pSuZFfxdFpRIDq0MJKwvT1y4LZ7cyA9n', -- voodoohop (Thomas)
+                'oUHeC9bMreSyrFhF9OYwF0vIJvkBugw3' -- thomashmyceli (Thomas)
+            ), 'dev',
             'regular'
         ) AS traffic_group
     FROM generation_event_v2

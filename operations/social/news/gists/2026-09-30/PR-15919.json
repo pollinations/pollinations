@@ -1,0 +1,37 @@
+{
+  "pr_number": 15919,
+  "title": "feat: rank listed apps in app_top_weekly and trim catalog descriptions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15919",
+  "merged_at": "2026-09-30T12:03:14Z",
+  "labels": [
+    "FEATURE",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Split out of #14472 (website v2). Its home page \"Live apps\" and the /apps page show the top 8 apps from `app_top_weekly`.\n\n- **`app_top_weekly`:** credits each App Key to the owner's catalog listing whose URL covers its redirect URI. Without a URL match, it credits the owner's listing when the owner has exactly one. Before, the ranking returned the key's own redirect URL, so unreviewed apps could appear. Counts only final, billed, successful production requests. Adds `limit` (default 10). Output columns are unchanged.\n- **`app.json`:** shortens 132 descriptions that were cut off mid-word at 200 characters or were marketing copy.\n- **Docs:** updates the `app_top_weekly` row in `public-stats.md`.\n\nProd, last 7 days (read-only SQL), paid BYOP requests from listed owners:\n\n| Rule | Covered |\n|---|---|\n| URL match only | 1,018 of 18,773 (5%) |\n| URL match + only-listing fallback | ~99% |\n\nNew top 3: OpenCode Pollinations Plugin (8,619), URV AI Chat (7,571), Pollinations AI Studio (1,411). Trade-off: an owner with one listing gets all their app traffic credited to it, including unlisted side apps (97 requests in this sample).\n\nFollow-up: #15924 (link App Keys in `app.json`).\n\n- Tinybird `deployment create --check` on staging: valid, only `app_top_weekly` modified, no data copied\n- `app.js validate`: 856 apps OK\n- After merge: deploy the pipe to staging, then prod\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A tidier app garden",
+    "blurb": "The app charts get better at finding the actual app behind an App Key. And 132 catalog descriptions get to finish their sentences.",
+    "summary": "The `app_top_weekly` ranking credits successful, final, billed production requests to owners’ catalog listings instead of App Key redirect URLs, adds a `limit` parameter defaulting to 10, and trims 132 app descriptions.",
+    "impact": "The home page’s top eight Live apps and the /apps page will draw from ranked catalog listings, with shorter descriptions that do not end mid-word.",
+    "keywords": [
+      "apps",
+      "app_top_weekly",
+      "catalog",
+      "rankings",
+      "App Keys",
+      "descriptions"
+    ],
+    "visual_concept": "Depict an app catalog as a cozy garden display: App Key tags lead to listed app cards, with eight cards arranged on a small leaderboard and neatly trimmed description labels. Polli tends the display with tiny gardening shears; flowers and code-plants reinforce the catalog-as-garden metaphor.",
+    "image_prompt": "In a cozy pixel art garden shop, eight little app cards sit on a lime green (#ecf874) display while Polli, wearing a tiny gardener’s apron, trims a too-long description label and connects an App Key tag to its catalog card. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream space and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15919.jpg",
+    "prompt": "In a cozy pixel art garden shop, eight little app cards sit on a lime green (#ecf874) display while Polli, wearing a tiny gardener’s apron, trims a too-long description label and connects an App Key tag to its catalog card. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream space and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-30T12:04:17.069206+00:00"
+}

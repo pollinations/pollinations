@@ -1,4 +1,4 @@
-import { InlineLink, Surface, TabButton, WarningIcon } from "@pollinations/ui";
+import { InlineLink, TabButton, WarningIcon } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
@@ -151,8 +151,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
 
     return (
         <div className="flex flex-col gap-4">
-            {/* The tabs sit in the card with the packs they switch. */}
-            <Surface className="flex flex-col gap-3">
+            {/* No card of its own: the tabs and packs sit on the section. */}
+            <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
                     <TabButton
                         active={tab === "once"}
@@ -235,7 +235,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         ? "Pick a pack to buy it now."
                         : automaticText(billing)}
                 </p>
-            </Surface>
+            </div>
 
             <PackCheckoutDialog
                 open={checkoutOpen}

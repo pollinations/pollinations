@@ -1,5 +1,5 @@
+import { useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -16,10 +16,8 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [searchParams] = useSearchParams();
-    const [selectedModel, setSelectedModel] = useState(
-        searchParams.get("model") ?? "flux",
-    );
+    const { model } = useSearch({ from: "/play" });
+    const [selectedModel, setSelectedModel] = useState(model ?? "flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {

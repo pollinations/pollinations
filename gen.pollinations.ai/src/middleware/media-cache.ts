@@ -98,7 +98,7 @@ export const imageCache = createGenerationCache(imageAdapter);
 export const imageExecutionCache = createGenerationExecutionCache(imageAdapter);
 
 const audioAdapter = mediaCacheAdapter({
-    mediaTypes: ["audio/"],
+    mediaTypes: ["audio/", "application/zip"],
     label: "audio-cache",
 });
 export const audioCache = createGenerationCache(audioAdapter);

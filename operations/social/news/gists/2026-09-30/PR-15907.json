@@ -1,0 +1,36 @@
+{
+  "pr_number": 15907,
+  "title": "feat(ui): bring the remaining shared UI changes from website v2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15907",
+  "merged_at": "2026-09-30T10:52:44Z",
+  "labels": [
+    "FEATURE",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "Brings the remaining `packages/ui` changes from #14472 (website v2) to main, so the site PRs only touch `pollinations.ai/`. Earlier UI extractions: #14843, #14855. The SDK audio methods moved to #15917.\n\n- **Colour mode:** choosing the mode the system already uses now clears the stored choice, so later visits follow the system again. Before, one click pinned the mode forever. No live system listener.\n- **Connect button:** `AppUserMenu` gets `connectSize=\"lg\"` for the v2 Play page, as one md/lg size table. The default is unchanged.\n- **Enter:** removes the unused Pixelify Sans Google Fonts link. `font-pixel` is the self-hosted Geist Pixel Square.\n- **CI:** runs the `@pollinations/ui` tests next to the SDK tests.\n\nEnter looks the same; only the toggle's saved choice changes.\n\nTests:\n- `@pollinations/ui` 90 passed (also without an SDK build, as in CI)\n- Enter typecheck; Enter `build:frontend`\n- Local Enter: click to the non-system mode → stored; click back → cleared; reload under the other system mode follows it; no Google Fonts request\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A toggle that lets go",
+    "blurb": "The colour toggle now knows when to let the system decide again. One less preference to manage forever.",
+    "summary": "The shared UI colour toggle now clears its saved choice when you select the current system mode, while AppUserMenu gains an optional large Connect button for the v2 Play page.",
+    "impact": "After switching back to the system’s current mode, your next visit follows the system preference; the Connect button keeps its existing size unless the new option is used.",
+    "keywords": [
+      "ui",
+      "colour mode",
+      "system preference",
+      "AppUserMenu",
+      "Play page"
+    ],
+    "visual_concept": "Polli helps a small retro computer hand control of a sun-and-moon colour toggle back to a system-settings dial. A larger Connect button sits nearby as a secondary detail, with code-plants around the desk; the mood is a small, satisfying UI fix rather than a site redesign.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli gently turns a sun-and-moon colour toggle toward a little system-settings dial on a retro computer, beside a lime green (#ecf874) Connect button and sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny wizard glasses, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15907.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli gently turns a sun-and-moon colour toggle toward a little system-settings dial on a retro computer, beside a lime green (#ecf874) Connect button and sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny wizard glasses, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-30T10:53:41.439914+00:00"
+}

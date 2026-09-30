@@ -8,23 +8,21 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
-    "createApiKey",
     "createEmbeddings",
+    "createKey",
     "generate3D",
     "generateAudio",
     "generateImage",
     "generateText",
     "generateVideo",
-    "getApiKeyInfo",
     "getBalance",
-    "getDailyUsage",
     "getEarnings",
     "getModelStatus",
-    "getQuests",
     "getUsage",
-    "listApiKeys",
+    "listKeys",
     "listModels",
-    "revokeApiKey",
+    "listQuests",
+    "revokeKey",
     "transcribeAudio",
 ];
 
@@ -129,7 +127,7 @@ test("keeps bearer tokens scoped to each request", async (t) => {
         const authorization = new Headers(init?.headers).get("authorization");
         seenAuthorizations.add(authorization);
         return Response.json({
-            balance: authorization === "Bearer pk_first" ? 1 : 2,
+            pollen: authorization === "Bearer pk_first" ? 1 : 2,
         });
     };
 
@@ -520,14 +518,6 @@ test("account tools proxy usage, earnings, quests and key management", async (t)
                 data: [{ id: "key_1", name: "test-key", enabled: true }],
             });
         }
-        if (method === "GET" && url.includes("/account/key")) {
-            return Response.json({
-                id: "key_1",
-                type: "secret",
-                enabled: true,
-                pollenBalance: 42,
-            });
-        }
         throw new Error(`Unexpected request: ${method} ${url}`);
     };
 
@@ -543,8 +533,8 @@ test("account tools proxy usage, earnings, quests and key management", async (t)
     assert.match(usage.content[0].text, /"count": 1/);
 
     const daily = await client.callTool({
-        name: "getDailyUsage",
-        arguments: { days: 7 },
+        name: "getUsage",
+        arguments: { days: 7, daily: true },
     });
     assert.match(daily.content[0].text, /"requests": 12/);
 
@@ -556,34 +546,28 @@ test("account tools proxy usage, earnings, quests and key management", async (t)
     assert.match(earnings.content[0].text, /"pollen_earned": 5/);
 
     const quests = await client.callTool({
-        name: "getQuests",
+        name: "listQuests",
         arguments: {},
     });
     assert.match(quests.content[0].text, /Quest 1/);
 
     const created = await client.callTool({
-        name: "createApiKey",
+        name: "createKey",
         arguments: { name: "test-key", type: "secret" },
     });
     assert.match(created.content[0].text, /sk_test_created/);
 
     const revoked = await client.callTool({
-        name: "revokeApiKey",
+        name: "revokeKey",
         arguments: { id: "key_1" },
     });
     assert.match(revoked.content[0].text, /"success": true/);
 
     const listed = await client.callTool({
-        name: "listApiKeys",
+        name: "listKeys",
         arguments: {},
     });
     assert.match(listed.content[0].text, /test-key/);
-
-    const info = await client.callTool({
-        name: "getApiKeyInfo",
-        arguments: {},
-    });
-    assert.match(info.content[0].text, /"pollenBalance": 42/);
 
     assert.ok(
         seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),

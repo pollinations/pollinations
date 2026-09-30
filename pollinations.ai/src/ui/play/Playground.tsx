@@ -38,14 +38,17 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { categoryLabel } from "@pollinations/ui/gen";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type CSSProperties,
+    useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
 } from "react";
 import { API_BASE_URL } from "../../config";
+import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { Chat } from "./Chat";
 import { errorMessage } from "./chat-models";
 import { MediaFact, MediaModelOption } from "./MediaModelDetails";
@@ -54,7 +57,6 @@ import {
     type MediaModelMetadata,
     mediaModelSettings,
 } from "./media-model-settings";
-import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
     audioEndpoint,
     audioInputError,
@@ -64,6 +66,7 @@ import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
 type PlaygroundModel = MediaModelMetadata & {
     id: string;
+    aliases: string[];
     title: string;
     description: string;
     category: ModelCategory;
@@ -93,6 +96,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
 
     return {
         id,
+        aliases: model.aliases ?? [],
         title: model.title ?? model.name,
         description: model.description ?? "",
         category: model.category,
@@ -639,44 +643,26 @@ export function Playground() {
         enabled: isHydrated,
     });
     const { isLoading, error: catalogError } = catalog;
-    const [restoredDraft] = useState(() =>
-        readPlayDraft("media", {
-            activeCategory: "text",
-            audioTask: "speech-generation",
-            selectedModel: "",
-            prompt: "",
-            selectedResolution: "",
-            duration: 0,
-            selectedVoice: "",
-            hadAttachments: false,
-        }),
-    );
+    const search = useSearch({ from: "/play" });
+    const navigate = useNavigate({ from: "/play" });
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
-        CATEGORY_ORDER.find(
-            (value) => value === restoredDraft.activeCategory,
-        ) ?? "text",
+        CATEGORY_ORDER.find((value) => value === search.tab) ?? "text",
     );
     const [audioTask, setAudioTask] = useState<AudioTask>(
-        AUDIO_TASK_ORDER.find((value) => value === restoredDraft.audioTask) ??
+        AUDIO_TASK_ORDER.find((value) => value === search.task) ??
             "speech-generation",
     );
-    const [selectedModel, setSelectedModel] = useState(
-        restoredDraft.selectedModel,
-    );
-    const [prompt, setPrompt] = useState(restoredDraft.prompt);
+    const [selectedModel, setSelectedModel] = useState(search.model ?? "");
+    const [prompt, setPrompt] = useState(search.prompt ?? "");
     const [selectedResolution, setSelectedResolution] = useState(
-        restoredDraft.selectedResolution,
+        search.size ?? "",
     );
-    const [duration, setDuration] = useState(restoredDraft.duration);
+    const [duration, setDuration] = useState(Number(search.duration) || 0);
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
-    const [selectedVoice, setSelectedVoice] = useState(
-        restoredDraft.selectedVoice,
-    );
-    const [needsAttachments, setNeedsAttachments] = useState<boolean>(
-        restoredDraft.hadAttachments,
-    );
-    const configuredModelRef = useRef(restoredDraft.selectedModel);
+    const [selectedVoice, setSelectedVoice] = useState(search.voice ?? "");
+    const configuredModelRef = useRef(search.model ?? "");
+    const linkedModelRef = useRef(search.model ?? "");
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -686,7 +672,40 @@ export function Playground() {
         ): NonNullable<FileUploadProps["onReject"]> =>
         (rejected) =>
             setError(messages[rejected[0].reason]);
-    const draftSaveFailed = useRememberPlayDraft("media", {
+    // Writes one tab's inputs and clears the other tab's from the URL.
+    const showInUrl = useCallback(
+        (values: PlaySearch) => {
+            void navigate({
+                replace: true,
+                // Typing must not scroll the page.
+                resetScroll: false,
+                search: (prev) => ({
+                    ...prev,
+                    ...Object.fromEntries(
+                        PLAY_SEARCH_KEYS.map((key) => [
+                            key,
+                            values[key] || undefined,
+                        ]),
+                    ),
+                }),
+            });
+        },
+        [navigate],
+    );
+    // Chat writes the Agent tab's inputs; this writes a media tab's.
+    useEffect(() => {
+        if (activeCategory === "text") return;
+        showInUrl({
+            tab: activeCategory,
+            task: activeCategory === "audio" ? audioTask : undefined,
+            model: selectedModel,
+            prompt,
+            size: selectedResolution,
+            duration: duration ? String(duration) : undefined,
+            voice: selectedVoice,
+        });
+    }, [
+        showInUrl,
         activeCategory,
         audioTask,
         selectedModel,
@@ -694,15 +713,7 @@ export function Playground() {
         selectedResolution,
         duration,
         selectedVoice,
-        hadAttachments:
-            referenceImages.length > 0 ||
-            audioFiles.length > 0 ||
-            needsAttachments,
-    });
-    useEffect(() => {
-        if (referenceImages.length > 0 || audioFiles.length > 0)
-            setNeedsAttachments(false);
-    }, [referenceImages.length, audioFiles.length]);
+    ]);
 
     // Community models stay off the playground menu: this page pitches the
     // official catalog, and owner/model entries would double the list. Every
@@ -720,6 +731,24 @@ export function Playground() {
         () => visibleModels.find((model) => model.id === selectedModel),
         [visibleModels, selectedModel],
     );
+
+    // A linked ?model= opens that model's tab once the catalog knows it.
+    // Older links use an alias, such as ?model=flux.
+    useEffect(() => {
+        const linked = linkedModelRef.current;
+        const model = visibleModels.find(
+            (candidate) =>
+                candidate.id === linked || candidate.aliases.includes(linked),
+        );
+        const category = CATEGORY_ORDER.find(
+            (value) => value === model?.category,
+        );
+        if (!model || !category) return;
+        linkedModelRef.current = "";
+        setSelectedModel(model.id);
+        setActiveCategory(category);
+        if (category === "audio") setAudioTask(audioTaskForModel(model));
+    }, [visibleModels]);
     const categoryModels = useMemo(
         () =>
             visibleModels.filter(
@@ -864,7 +893,6 @@ export function Playground() {
 
     function selectCategory(category: PlaygroundCategory) {
         if (category === activeCategory) return;
-        setNeedsAttachments(false);
         setActiveCategory(category);
         setAudioFiles([]);
         if (category === "text") return;
@@ -878,7 +906,6 @@ export function Playground() {
 
     function selectAudioTask(task: AudioTask) {
         if (task === audioTask) return;
-        setNeedsAttachments(false);
         setAudioTask(task);
         setSelectedModel(
             visibleModels.find(
@@ -891,7 +918,6 @@ export function Playground() {
     }
 
     function selectModel(modelId: string) {
-        setNeedsAttachments(false);
         setSelectedModel(modelId);
         setAudioFiles([]);
     }
@@ -1063,7 +1089,13 @@ export function Playground() {
                 onSelectCategory={selectCategory}
             />
 
-            <Chat catalog={catalog} active={activeCategory === "text"} />
+            <Chat
+                catalog={catalog}
+                active={activeCategory === "text"}
+                initialAgentId={search.agent ?? null}
+                initialDraft={search.message ?? ""}
+                onDraftChange={showInUrl}
+            />
 
             {activeCategory !== "text" && (
                 <div className="grid overflow-clip">
@@ -1108,18 +1140,6 @@ export function Playground() {
                                     another model to continue.
                                 </Alert>
                             )}
-                        {needsAttachments && (
-                            <Text size="sm" tone="muted">
-                                Your draft was restored. Please reattach your
-                                files.
-                            </Text>
-                        )}
-                        {draftSaveFailed && (
-                            <Alert intent="warning">
-                                Your browser couldn’t save this draft. Copy your
-                                text before connecting.
-                            </Alert>
-                        )}
                         {isAudioTranscription && audioInput}
                         {showPromptInput && (
                             <FieldStack label={promptLabel}>

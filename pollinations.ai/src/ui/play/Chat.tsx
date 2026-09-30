@@ -51,6 +51,7 @@ import {
     useState,
 } from "react";
 import { API_BASE_URL } from "../../config";
+import type { PlaySearch } from "../../routes/-play-search";
 import {
     type AgentChoice,
     agentChoices,
@@ -63,7 +64,6 @@ import {
     isCancellation,
     selectedAgentChoice,
 } from "./chat-models";
-import { readPlayDraft, useRememberPlayDraft } from "./play-draft";
 import {
     type PollinationsUIMessage,
     type PreparedAttachment,
@@ -475,9 +475,16 @@ function AgentPicker({
 export function Chat({
     catalog,
     active,
+    initialAgentId = null,
+    initialDraft = "",
+    onDraftChange,
 }: {
     catalog: UseModelCatalogValue;
     active: boolean;
+    initialAgentId?: string | null;
+    initialDraft?: string;
+    /** Receives the agent and message while this tab is visible. */
+    onDraftChange?: (search: PlaySearch) => void;
 }) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
@@ -485,21 +492,11 @@ export function Chat({
         () => agentChoices(catalog.models),
         [catalog.models],
     );
-    const [restoredDraft] = useState(() =>
-        readPlayDraft("chat", {
-            selectedAgentId: null as string | null,
-            draft: "",
-            hadAttachments: false,
-        }),
-    );
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(
-        restoredDraft.selectedAgentId,
+        initialAgentId,
     );
-    const [draft, setDraft] = useState(restoredDraft.draft);
+    const [draft, setDraft] = useState(initialDraft);
     const [files, setFiles] = useState<File[]>([]);
-    const [needsAttachments, setNeedsAttachments] = useState<boolean>(
-        restoredDraft.hadAttachments,
-    );
     const [uploading, setUploading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -545,11 +542,13 @@ export function Chat({
     });
     const streaming = status === "submitted" || status === "streaming";
     const sending = uploading || streaming;
-    const draftSaveFailed = useRememberPlayDraft("chat", {
-        selectedAgentId,
-        draft,
-        hadAttachments: files.length > 0 || needsAttachments,
-    });
+    useEffect(() => {
+        if (active)
+            onDraftChange?.({
+                agent: selectedAgentId ?? undefined,
+                message: draft,
+            });
+    }, [active, selectedAgentId, draft, onDraftChange]);
 
     useEffect(
         () => () => {
@@ -573,7 +572,6 @@ export function Chat({
         if (switchingAgent) {
             setDraft("");
             setFiles([]);
-            setNeedsAttachments(false);
         }
         setLocalError(null);
         clearError();
@@ -616,7 +614,6 @@ export function Chat({
             controller.signal.throwIfAborted();
             setDraft("");
             setFiles([]);
-            setNeedsAttachments(false);
             followOutputRef.current = true;
             setUploading(false);
             uploadAbortRef.current = null;
@@ -670,7 +667,6 @@ export function Chat({
         }
 
         setFiles(accepted);
-        if (accepted.length > 0) setNeedsAttachments(false);
         setLocalError(problems.length > 0 ? problems.join(" ") : null);
     }
 
@@ -785,7 +781,6 @@ export function Chat({
                                       ]);
                                       setDraft("");
                                       setFiles([]);
-                                      setNeedsAttachments(false);
                                       setLocalError(null);
                                       clearError();
                                       composerRef.current?.focus();
@@ -869,17 +864,6 @@ export function Chat({
                                     Retry catalog
                                 </Button>
                             </div>
-                        </Alert>
-                    )}
-                    {needsAttachments && (
-                        <Text size="sm" tone="muted">
-                            Your draft was restored. Please reattach your files.
-                        </Text>
-                    )}
-                    {draftSaveFailed && (
-                        <Alert intent="warning">
-                            Your browser couldn’t save this draft. Copy your
-                            text before connecting.
                         </Alert>
                     )}
                     {localError && (

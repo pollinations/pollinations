@@ -8,9 +8,11 @@ import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene } from "../ui/site/HeroScene";
 import { PageCard } from "../ui/site/PageCard";
+import { validatePlaySearch } from "./-play-search";
 
 export const Route = createFileRoute("/play")({
     head: () => routeHead("/play"),
+    validateSearch: validatePlaySearch,
     component: PlayPage,
 });
 

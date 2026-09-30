@@ -34,7 +34,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range BYOM community-model totals from generation_usage_hourly. Calls and users include direct and BYOP traffic. Direct BYOM Paid consumption excludes BYOP so it matches the mutually exclusive product-path view. Owner rewards are credited public model-owner value.",
+      "description": "Selected-range BYOM community-model totals from generation_usage_hourly. Calls and users include direct and BYOP traffic. Direct BYOM Paid consumption excludes BYOP so it matches the mutually exclusive product-path view. Owner rewards are credited public model-owner value. Owner rewards include operations traffic (such as the community model probe) because they are paid out; dev traffic and every usage figure are regular only.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -183,7 +183,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  uniqIf(model, model != 'unknown') AS active_models,\n  uniqMerge(users) AS community_users,\n  sumMerge(successful_calls) AS community_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_consumption,\n  round(sumMerge(community_reward), 2) AS owner_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND is_community = 1",
+          "rawSql": "WITH traffic_group = 'regular' AS regular\nSELECT\n  uniqIf(model, model != 'unknown' AND regular) AS active_models,\n  uniqMergeIf(users, regular) AS community_users,\n  sumMergeIf(successful_calls, regular) AS community_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1 AND regular)\n    / nullIf(sumMergeIf(successful_calls, regular), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid' AND regular),\n    2\n  ) AS direct_paid_consumption,\n  -- Payouts: regular + operations\n  round(sumMerge(community_reward), 2) AS owner_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group IN ('regular', 'operations')\n  AND is_community = 1",
           "refId": "A"
         }
       ],
@@ -195,7 +195,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily successful community-model calls split into direct traffic and BYOP traffic. This source query also supplies the following five charts so the dashboard makes only three Tinybird requests per refresh.",
+      "description": "Daily successful community-model calls split into direct traffic and BYOP traffic. This source query also supplies the following five charts so the dashboard makes only three Tinybird requests per refresh. Owner rewards include operations traffic (such as the community model probe) because they are paid out; dev traffic and every usage figure are regular only.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -284,7 +284,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 0) AS direct_calls,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 1) AS byop_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_community = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    2\n  ) AS community_share_pct,\n  uniqIf(model, is_community = 1 AND model != 'unknown') AS active_models,\n  uniqMergeIf(users, is_community = 1) AS community_users,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'paid') AS paid_consumption,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'quest') AS quest_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'paid'\n  ) AS direct_paid_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'quest'\n  ) AS direct_quest_consumption,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\nGROUP BY time\nORDER BY time",
+          "rawSql": "WITH traffic_group = 'regular' AS regular\nSELECT\n  toStartOfDay(hour) AS time,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 0 AND regular) AS direct_calls,\n  sumMergeIf(successful_calls, is_community = 1 AND is_byop = 1 AND regular) AS byop_calls,\n  round(\n    100 * sumMergeIf(successful_calls, is_community = 1 AND regular)\n    / nullIf(sumMergeIf(successful_calls, regular), 0),\n    2\n  ) AS community_share_pct,\n  uniqIf(model, is_community = 1 AND model != 'unknown' AND regular) AS active_models,\n  uniqMergeIf(users, is_community = 1 AND regular) AS community_users,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'paid' AND regular) AS paid_consumption,\n  sumMergeIf(gross_consumption, is_community = 1 AND funding_source = 'quest' AND regular) AS quest_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'paid' AND regular\n  ) AS direct_paid_consumption,\n  sumMergeIf(\n    gross_consumption,\n    is_community = 1 AND is_byop = 0 AND funding_source = 'quest' AND regular\n  ) AS direct_quest_consumption,\n  -- Payouts: regular + operations\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'paid') AS paid_rewards,\n  sumMergeIf(community_reward, is_community = 1 AND funding_source = 'quest') AS quest_rewards\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group IN ('regular', 'operations')\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -869,7 +869,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-BYOM product path; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value.",
+      "description": "Community models ranked over the selected range. BYOP share shows ecosystem overlap. Direct Paid is the mutually exclusive direct-BYOM product path; total Paid includes community calls made through BYOP. Owner reward is credited public model-owner value. Owner rewards include operations traffic (such as the community model probe) because they are paid out; dev traffic and every usage figure are regular only.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -1026,7 +1026,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1)\n    / nullIf(sumMerge(successful_calls), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid'),\n    2\n  ) AS direct_paid_pollen,\n  round(sumMerge(community_reward), 2) AS owner_reward\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND (${traffic:sqlstring} = 'all' OR traffic_group = ${traffic:sqlstring})\n  AND is_community = 1\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "WITH traffic_group = 'regular' AS regular\nSELECT\n  model,\n  sumMergeIf(successful_calls, regular) AS calls,\n  uniqMergeIf(users, regular) AS users,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid' AND regular), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest' AND regular), 2) AS quest_pollen,\n  round(\n    100 * sumMergeIf(successful_calls, is_byop = 1 AND regular)\n    / nullIf(sumMergeIf(successful_calls, regular), 0),\n    1\n  ) AS byop_share_pct,\n  round(\n    sumMergeIf(gross_consumption, is_byop = 0 AND funding_source = 'paid' AND regular),\n    2\n  ) AS direct_paid_pollen,\n  -- Payouts: regular + operations\n  round(sumMerge(community_reward), 2) AS owner_reward\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group IN ('regular', 'operations')\n  AND is_community = 1\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1042,36 +1042,7 @@
     "models"
   ],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "text": "Everything else",
-          "value": "everything_else"
-        },
-        "hide": 2,
-        "name": "traffic",
-        "label": "Traffic",
-        "options": [
-          {
-            "selected": true,
-            "text": "Everything else",
-            "value": "everything_else"
-          },
-          {
-            "selected": false,
-            "text": "Legacy",
-            "value": "legacy"
-          },
-          {
-            "selected": false,
-            "text": "Both",
-            "value": "all"
-          }
-        ],
-        "query": "Everything else : everything_else, Legacy : legacy, Both : all",
-        "type": "custom"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-30d",

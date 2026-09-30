@@ -39,11 +39,13 @@ export const PollenPackButtons: FC<{
                     aria-pressed={selected}
                     onClick={() => onSelect(pack)}
                     aria-label={describe(pollen, price)}
+                    // A value, not an action: no border, the fill says which
+                    // is chosen. The ring shows keyboard focus only.
                     className={cn(
-                        "flex cursor-pointer flex-col items-center rounded-xl border px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paid-soft",
+                        "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paid-soft",
                         selected
-                            ? "border-paid-soft bg-paid-pale text-paid-deep ring-2 ring-paid-soft"
-                            : "border-paid-soft bg-transparent text-paid-deep hover:bg-paid-pale/50",
+                            ? "bg-paid-deep text-paid-pale"
+                            : "bg-paid-pale text-paid-deep hover:bg-paid-soft/50",
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">

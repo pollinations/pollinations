@@ -494,6 +494,69 @@ test("returns 404 for an unknown model", async () => {
     expect(response.status).toBe(404);
 });
 
+test("retired Nova models and aliases disappear from catalogs and cannot generate", async ({
+    paidApiKey,
+}) => {
+    const retiredModels = [
+        {
+            category: "image",
+            ids: ["amazon/nova-canvas-v1", "amazon-nova-canvas", "nova-canvas"],
+        },
+        {
+            category: "video",
+            ids: ["amazon/nova-reel-v1", "amazon-nova-reel", "nova-reel"],
+        },
+    ] as const;
+
+    for (const path of [
+        "/models",
+        "/image/models",
+        "/video/models",
+        "/v1/models",
+    ]) {
+        const response = await fetchWorker(path);
+        expect(response.status, path).toBe(200);
+        const body = (await response.json()) as
+            | { data: { id: string }[] }
+            | { name: string }[];
+        const ids = Array.isArray(body)
+            ? body.map((model) => model.name)
+            : body.data.map((model) => model.id);
+        for (const retired of retiredModels) {
+            for (const id of retired.ids) {
+                expect(ids, path).not.toContain(id);
+            }
+        }
+    }
+
+    for (const retired of retiredModels) {
+        for (const id of retired.ids) {
+            const lookup = await fetchWorker(
+                `/v1/models/${encodeURIComponent(id)}`,
+            );
+            expect(lookup.status, id).toBe(404);
+
+            const generation = await fetchWorker(
+                `/${retired.category}/retired-model?model=${encodeURIComponent(id)}`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(generation.status, id).toBe(400);
+            expect(await generation.text()).toContain("Invalid model or alias");
+
+            const compatible = await fetchWorker("/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ model: id, prompt: "retired model" }),
+            });
+            expect(compatible.status, id).toBe(400);
+            expect(await compatible.text()).toContain("Invalid model or alias");
+        }
+    }
+});
+
 test("returns 404 when API key permissions exclude the model", async ({
     restrictedApiKey,
 }) => {

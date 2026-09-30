@@ -15,6 +15,7 @@ polli sandbox kill <id>
 - The first `ssh` installs `sshd`, `rsync` and `websocat` in the sandbox (Debian-based templates) and allows only polli's key, `~/.pollinations/ssh/id_ed25519`.
 - `polli sandbox create --template <name>` starts another E2B template, for example `claude`.
 - Needs Node.js 22 or newer.
+- [My Models](https://enter.pollinations.ai/my-models) in the dashboard also lists, creates and kills sandboxes.
 
 ### Cost and limits
 

@@ -303,11 +303,17 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 <PollenPackButtons
                     packs={POLLEN_PACKS}
                     selectedAmount={selectedPack?.amountUsd}
+                    autoTopUpAmount={
+                        billing?.autoTopUp.enabled
+                            ? billing.autoTopUp.packAmountUsd
+                            : undefined
+                    }
                     onSelect={setChosenPack}
                 />
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">
+                    {/* Filled: Buy only opens the checkout; its Confirm
+                        (or Stripe's page) is the write. */}
                     <Button
-                        intent="commit"
                         size="lg"
                         disabled={!selectedPack}
                         onClick={startCheckout}

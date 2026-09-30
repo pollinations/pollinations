@@ -184,6 +184,27 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("routes Span-01 Lite under its own id and publisher", async ({
+    apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/alpha/decisions", apiKey, {
+        model: "respan/span-01-lite",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "respan/span-01-lite",
+        provider: "Respan",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "respan/span-01-lite" },
+    });
+    await wait();
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",

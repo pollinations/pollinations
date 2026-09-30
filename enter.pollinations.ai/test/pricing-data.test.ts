@@ -1195,9 +1195,12 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
-// input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
+// Decision models are the exception: Quest Pollen must pay for them, and
+// their input-only pricing bounds what a free-tier account can spend.
+const isDecisionModel = (model: string) =>
+    getRegistryModelDefinition(model).supportedEndpoints?.includes(
+        "/alpha/decisions",
+    );
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
@@ -1205,7 +1208,7 @@ test("caller-selectable OpenRouter models require paid balance", () => {
         if (
             definition.provider === "openrouter" &&
             definition.fallbackOnly !== true &&
-            !OPENROUTER_FREE_TIER_MODELS.has(model)
+            !isDecisionModel(model)
         ) {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }

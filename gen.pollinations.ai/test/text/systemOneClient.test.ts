@@ -65,6 +65,7 @@ const answers = {
 };
 
 afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
     vi.useRealTimers();
 });
@@ -76,6 +77,31 @@ describe("System One adapter", () => {
         "jev",
     ])("resolves %s to the versioned canonical model", (name) => {
         expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+    });
+
+    it("routes respan/span-01-lite to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite-20260925",
+                    answers,
+                    usage: { input_tokens: 27, output_tokens: 0 },
+                });
+            });
+        vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            { model: "respan/span-01-lite" },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
@@ -308,13 +334,28 @@ describe("System One adapter", () => {
     it("reports missing credentials as server misconfiguration", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], {}),
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { model: "respan/span-01-lite" },
+            }),
         ).rejects.toMatchObject({
             status: 500,
             message:
-                "The decisions route is not configured for typesafe/jev-1.13.",
+                "The decisions route is not configured for respan/span-01-lite.",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("names the requested model when the request is malformed", async () => {
+        await expect(
+            callSystemOne([{ role: "user", content: "not json" }], {
+                modelConfig: { ...modelConfig, model: "respan/span-01-lite" },
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(
+                "respan/span-01-lite could not parse",
+            ),
+        });
     });
 
     it("preserves upstream status and sanitized response headers", async () => {

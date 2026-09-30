@@ -157,7 +157,7 @@ export const KPIS = [
                 name: "Legacy · compute cost",
                 format: "currency",
                 tooltip:
-                    "Compute cost of legacy requests this week, from the registry rate cards. Included in cash coverage, excluded from gross margin.",
+                    "Legacy is free for callers; this is what the requests cost us to serve, from the registry rate cards. Included in cash coverage, excluded from gross margin.",
             },
         ],
     },

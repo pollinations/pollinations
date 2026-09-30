@@ -1,5 +1,5 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
 import { COPY_CONSTANTS } from "../../copy/constants";
 import {
     APPS_PAGE,
@@ -247,18 +247,23 @@ const sortApps = (a: App, b: App) => {
 // --- Page ---
 
 export default function AppsPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const filter = searchParams.get("filter") || "all";
-    const sort = searchParams.get("sort") || "new";
-    const query = searchParams.get("query") || "";
-    const updateParams = (patch: Record<string, string>) => {
-        const next = new URLSearchParams(searchParams);
-        for (const [key, value] of Object.entries(patch)) {
-            if (value) next.set(key, value);
-            else next.delete(key);
-        }
-        setSearchParams(next, { replace: true });
-    };
+    const search = useSearch({ from: "/apps" });
+    const navigate = useNavigate({ from: "/apps" });
+    const filter = search.filter || "all";
+    const sort = search.sort || "new";
+    const query = search.query || "";
+    // An empty value removes the parameter from the URL.
+    const updateParams = (patch: Record<string, string>) =>
+        navigate({
+            search: (prev) => {
+                const next = { ...prev };
+                for (const [key, value] of Object.entries(patch)) {
+                    next[key as keyof typeof next] = value || undefined;
+                }
+                return next;
+            },
+            replace: true,
+        });
     const setFilter = (f: string) => updateParams({ filter: f });
     const setSort = (s: string) => updateParams({ sort: sort === s ? "" : s });
     const setQuery = (q: string) => updateParams({ query: q });

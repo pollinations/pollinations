@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -171,10 +171,12 @@ function Layout() {
                             {/* Nav + Social + Enter — wraps into rows as needed */}
                             <div className="flex-1 flex flex-wrap gap-1 items-center justify-end pt-1">
                                 {tabKeys.map((tab) => (
-                                    <NavLink
+                                    <Link
                                         key={tab.path}
                                         to={tab.path}
-                                        end={tab.path === "/"}
+                                        activeOptions={{
+                                            exact: tab.path === "/",
+                                        }}
                                         className="no-underline"
                                     >
                                         {({ isActive }) => (
@@ -186,7 +188,7 @@ function Layout() {
                                                 {layoutCopy[tab.copyKey]}
                                             </Button>
                                         )}
-                                    </NavLink>
+                                    </Link>
                                 ))}
                                 {Object.entries(SOCIAL_LINKS)
                                     .filter(

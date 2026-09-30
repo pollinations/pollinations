@@ -51,6 +51,7 @@ import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
+import SANDBOXES_MD from "../docs/sandboxes.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
@@ -67,6 +68,7 @@ const DOC_TAGS = {
     cli: "CLI",
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
+    sandboxes: "Sandboxes",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -142,6 +144,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
+    [DOC_TAGS.sandboxes]: docsIcon(
+        '<rect x="3" y="4" width="18" height="16" rx="2" /><polyline points="7 9 10 12 7 15" /><line x1="13" y1="15" x2="17" y2="15" />',
+    ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -200,6 +205,7 @@ const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
+const SANDBOXES_DOCS = stripLeadingHeading(SANDBOXES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -332,6 +338,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -341,6 +348,7 @@ const LLM_DOC_TEXT = [
     CLI_SECTION,
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
+    SANDBOXES_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -351,6 +359,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     cli: CLI_SECTION,
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
+    sandboxes: SANDBOXES_SECTION,
 };
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
@@ -474,6 +483,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
                     DOC_TAGS.codingHarnesses,
+                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -545,6 +555,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.mcpServers,
                 description: MCP_DOCS,
+            },
+            {
+                name: DOC_TAGS.sandboxes,
+                description: SANDBOXES_DOCS,
             },
             {
                 name: DOC_TAGS.errors,

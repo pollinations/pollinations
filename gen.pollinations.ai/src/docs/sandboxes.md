@@ -1,8 +1,8 @@
-# Sandboxes
+## Sandboxes
 
 Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet. Alpha.
 
-## Use a sandbox
+### Use a sandbox
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
@@ -16,14 +16,14 @@ polli sandbox kill <id>
 - `polli sandbox create --template <name>` starts another E2B template, for example `claude`.
 - Needs Node.js 22 or newer.
 
-## Cost and limits
+### Cost and limits
 
 - Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, in 10-minute blocks paid in advance. An open ssh session renews the block.
 - Pausing and resuming within paid time is free. Unused time is not refunded.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
 - At most 3 sandboxes run at once per account.
 
-## E2B CLI and SDKs
+### E2B CLI and SDKs
 
 E2B's own CLI and SDKs work unchanged. Use a Pollinations key with the `machines` permission:
 

@@ -184,7 +184,7 @@ ssh <id>.polli                    # scp and rsync work too
 polli sandbox kill <id>
 ```
 
-See [Sandboxes](https://github.com/pollinations/pollinations/blob/main/SANDBOXES.md) for cost, limits, and using E2B's own CLI and SDKs.
+See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

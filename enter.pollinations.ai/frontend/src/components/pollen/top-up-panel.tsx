@@ -302,11 +302,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 <PollenPackButtons
                     packs={POLLEN_PACKS}
                     selectedAmount={selectedPack?.amountUsd}
-                    autoTopUpAmount={
-                        billing?.autoTopUp.enabled
-                            ? billing.autoTopUp.packAmountUsd
-                            : undefined
-                    }
                     onSelect={setChosenPack}
                 />
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">

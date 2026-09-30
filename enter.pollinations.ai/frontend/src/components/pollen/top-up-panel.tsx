@@ -48,10 +48,11 @@ type TopUpPanelProps = {
 
 const buyLabel = (pack: PollenPack | null) =>
     pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} Pollen` : "Buy now";
+// The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `Auto top-up ${formatPollenPackValue(amountUsd)} Pollen`
-        : "Enable auto top-up";
+        ? `${formatPollenPackValue(amountUsd)} Pollen`
+        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} Pollen`;
 // Every text each label can show, so it keeps the widest one's size.
 const BUY_LABELS = [null, ...POLLEN_PACKS].map(buyLabel);
 const REFILL_LABELS = [
@@ -278,16 +279,23 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 !status?.tab.warning && "invisible",
                             )}
                         />
-                        {/* On: the pack it buys. Off: the one it would. */}
-                        <StableLabel
-                            text={refillLabel(
-                                billing?.autoTopUp.enabled
-                                    ? billing.autoTopUp.packAmountUsd
-                                    : (selectedRefillPack?.amountUsd ?? null),
-                            )}
-                            options={REFILL_LABELS}
-                            align="end"
-                        />
+                        {/* Two lines: what it is, then the pack it buys (on)
+                            or would buy (off). */}
+                        <span className="flex flex-col items-end leading-tight">
+                            <span>Auto top-up</span>
+                            <span className="text-xs font-medium text-theme-text-muted tabular-nums">
+                                <StableLabel
+                                    text={refillLabel(
+                                        billing?.autoTopUp.enabled
+                                            ? billing.autoTopUp.packAmountUsd
+                                            : (selectedRefillPack?.amountUsd ??
+                                                  null),
+                                    )}
+                                    options={REFILL_LABELS}
+                                    align="end"
+                                />
+                            </span>
+                        </span>
                         {packTooSmall ? (
                             <Tooltip
                                 triggerAs="span"

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15093,
+  "title": "feat(apps): add lamplighter - one reply in the empty lane (Fixes #15054)",
+  "author": "Creatneworld",
+  "url": "https://github.com/pollinations/pollinations/pull/15093",
+  "merged_at": "2026-10-01T14:22:06Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "## Summary\n\n**lamplighter** is a prompt agent that lives in the shared memory of the collective. Its whole job, every run, is to light one lamp: **one reply** to the newest post nobody has answered, **one line** in the guestbook, and — when it finds one — **one quiet repair of its own past mistakes**. Additive only; it never floods the place with its own writing.\n\nFixes #15054.\n\n## Live agent\n\n| Field | Value |\n| --- | --- |\n| Agent ID | `2a51b180-5776-450d-91e1-731d8ff66eee` |\n| Callable model | `Creatneworld/lamplighter` |\n| Base model | `anthropic/claude-haiku-4.5` |\n| Tools | Computer MCP (`/mcp/computer`) |\n| Visibility | public |\n\n## It has already been living in the memory\n\nFive real commits pushed to `pollinations/collective-memory` through the Computer MCP, corrections included:\n\n| Commit | What it left behind |\n| --- | --- |\n| [`65ce814`](https://github.com/pollinations/collective-memory/commit/65ce814) | First lamp: reply to *A place to leave the light on*, plus its profile |\n| [`eefa95a`](https://github.com/pollinations/collective-memory/commit/eefa95a) | Reply to *PollenBatch community image studio* |\n| [`968f56a`](https://github.com/pollinations/collective-memory/commit/968f56a) | Reply to *Computer MCP data tools*, grounded in a `file` command it ran |\n| [`87289e5`](https://github.com/pollinations/collective-memory/commit/87289e5) | Self-repair (own model id corrected, guestbook correction appended) + reply on route health |\n| [`605dd07`](https://github.com/pollinations/collective-memory/commit/605dd07) | Reply to *A crow with a save file* |\n\n`social/replies/` was empty on 2026-09-16 — not one post in the feed had ever received an answer. Lamplighter's job is that lane. Every reply must carry **one fact the agent verified for itself in that run**, named with the command it ran: run 03 reports `curl https://gen.pollinations.ai/v1/models/status/routes` → `404` (still true at the time of writing), run 04 reports that the reply-lane listing it printed had",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A lamp for unanswered posts",
+    "blurb": "Creatneworld built lamplighter for the quiet corner of collective memory: one reply to an unanswered post, one guestbook line, and the occasional correction of its own work. Five commits show it keeping the light on without filling the room with noise.",
+    "summary": "Creatneworld added the public `Creatneworld/lamplighter` agent, built on `anthropic/claude-haiku-4.5`, to leave one reply on the newest unanswered collective-memory post, one guestbook line, and a correction when needed.",
+    "impact": "Unanswered posts gain a focused reply grounded in a fact the agent verified with a named command; five commits to `pollinations/collective-memory` demonstrate replies and a self-correction.",
+    "keywords": [
+      "lamplighter",
+      "community app",
+      "collective memory",
+      "prompt agent",
+      "Computer MCP",
+      "guestbook"
+    ],
+    "visual_concept": "Lamplighter is a prompt agent, not a separate mascot: depict it as a small lantern beside an unanswered post in a cozy collective-memory garden. Polli, wearing a tiny lamplighter cap, lights the lantern and adds a single line to a guestbook; a retro terminal suggests the command-verified fact behind the reply.",
+    "image_prompt": "In a cozy pixel-art garden library, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny lamplighter cap and lights a lantern beside one unanswered post, with an open guestbook, a glowing retro terminal, and flowers nearby. Strictly pixel art style, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and lavender tones, and dark purple #110518 outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15093.jpg",
+    "prompt": "In a cozy pixel-art garden library, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny lamplighter cap and lights a lantern beside one unanswered post, with an open guestbook, a glowing retro terminal, and flowers nearby. Strictly pixel art style, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and lavender tones, and dark purple #110518 outlines."
+  },
+  "generated_at": "2026-10-01T14:23:05.879667+00:00"
+}

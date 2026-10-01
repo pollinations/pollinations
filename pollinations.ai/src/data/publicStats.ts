@@ -96,6 +96,9 @@ export const isFresh = (app: DirectoryApp) => {
     return Number.isFinite(approved) && approved >= Date.now() - THIRTY_DAYS_MS;
 };
 
+export const newestFirst = (a: DirectoryApp, b: DirectoryApp) =>
+    (b.approved_date || "").localeCompare(a.approved_date || "");
+
 /** The community app directory; exact duplicates collapse, same-named apps stay. */
 const loadDirectory = cachePublic(async () => {
     const rows = await tinybird<DirectoryApp>(
@@ -158,6 +161,14 @@ export const loadWeeklyApps = cachePublic(async () => {
 /** Hello and Apps use the exact same cached seven-day BYOP ranking. */
 export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
+}
+
+const loadNewestApps = cachePublic(async () =>
+    [...(await loadDirectory())].sort(newestFirst).slice(0, 8),
+);
+
+export function useNewestApps() {
+    return useAsync<DirectoryApp[]>(loadNewestApps, []);
 }
 
 type PlatformStats = {
@@ -250,6 +261,26 @@ export const loadMcpServers = cachePublic(async (): Promise<string[]> => {
 
 export function useMcpServers() {
     return useAsync<string[]>(loadMcpServers, []);
+}
+
+/** Requests gen settled in the last hour, across every model. */
+export const loadRequestsLastHour = cachePublic(async (): Promise<number> => {
+    const response = await fetch(
+        "https://gen.pollinations.ai/models/status?minutes=60",
+    );
+    if (!response.ok) throw new Error(`models/status: ${response.status}`);
+    const body = (await response.json()) as {
+        data?: { is_rollup: number; total_requests: number }[];
+    };
+    // A model's rollup row counts each request once; its route rows also
+    // count the attempts that were retried on a fallback.
+    return (body.data ?? [])
+        .filter((row) => row.is_rollup === 1)
+        .reduce((sum, row) => sum + row.total_requests, 0);
+});
+
+export function useRequestsLastHour() {
+    return useAsync<number | null>(loadRequestsLastHour, null);
 }
 
 /**

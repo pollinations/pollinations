@@ -3,7 +3,6 @@ import {
     EarningsIcon,
     Heading,
     InlineLink,
-    Surface,
     TargetIcon,
     Text,
 } from "@pollinations/ui";
@@ -16,73 +15,68 @@ export function MoneyMoves() {
     const scene = artFor("home", "quests", "night");
 
     return (
-        <section className="dark -mx-5 flex flex-col gap-10 overflow-hidden rounded-none bg-brand-dark px-5 py-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14">
-            <div className="grid items-center gap-8 lg:grid-cols-2">
+        <section className="dark relative -mx-5 flex flex-col overflow-hidden rounded-none bg-brand-dark px-5 pt-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14 lg:min-h-[30rem] lg:justify-center lg:py-14">
+            <div className="relative z-10 flex flex-col gap-10 lg:max-w-[46%]">
                 <ContentHeader
                     eyebrow="Pricing"
                     title="Prepaid credits, priced in dollars."
                     subtitle="Pollen is our API credit: 1 Pollen = $1. Pay only for what you use."
                 />
-                {/* Bleeds to the panel's edges: full width on phones, the
-                    top-right corner on wide screens. */}
-                <div className="-mx-5 sm:-mx-8 md:-mx-14 lg:-mt-14 lg:ml-0 lg:self-start">
-                    <img
-                        src={scene.src}
-                        srcSet={scene.srcSet}
-                        sizes="(min-width: 1024px) 480px, 100vw"
-                        alt=""
-                        aria-hidden="true"
-                        width={2048}
-                        height={1024}
-                        loading="lazy"
-                        decoding="async"
-                        className="pricing-scene pointer-events-none h-auto w-full select-none"
-                    />
-                </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-                <Surface variant="card" className="flex flex-col gap-3 p-5">
-                    <CardTitle icon={TargetIcon}>Free credits</CardTitle>
-                    <Text size="sm">
+                <ul className="flex flex-col gap-6">
+                    <Item icon={TargetIcon} title="Free credits">
                         Get free Quest Pollen for solving GitHub Quests, trying
-                        models, or building an app or agent.
-                    </Text>
-                    <InlineLink
-                        href="https://enter.pollinations.ai/quests"
-                        className="self-start text-brand-accent"
-                    >
-                        Explore Quests
-                    </InlineLink>
-                </Surface>
-
-                <Surface variant="card" className="flex flex-col gap-3 p-5">
-                    <CardTitle icon={EarningsIcon}>Earnings</CardTitle>
-                    <Text size="sm">
+                        models, or building an app or agent.{" "}
+                        <InlineLink
+                            href="https://enter.pollinations.ai/quests"
+                            className="text-brand-accent"
+                        >
+                            Explore Quests
+                        </InlineLink>
+                    </Item>
+                    <Item icon={EarningsIcon} title="Earnings">
                         Get a share of what others spend on your models and
                         apps.
-                    </Text>
-                </Surface>
+                    </Item>
+                </ul>
             </div>
+            {/* Under the copy on phones, reaching the bottom edge; the right
+                side of the panel on wide screens. */}
+            <img
+                src={scene.src}
+                srcSet={scene.srcSet}
+                sizes="(min-width: 1024px) 640px, 100vw"
+                alt=""
+                aria-hidden="true"
+                width={2048}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="pricing-scene pointer-events-none -mx-5 mt-8 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-8 sm:w-[calc(100%+4rem)] md:-mx-14 md:w-[calc(100%+7rem)] lg:absolute lg:right-0 lg:bottom-0 lg:m-0 lg:w-[58%]"
+            />
         </section>
     );
 }
 
-function CardTitle({
+function Item({
     icon: Icon,
+    title,
     children,
 }: {
     icon: ComponentType<{ className?: string }>;
+    title: string;
     children: ReactNode;
 }) {
     return (
-        <div className="flex items-center gap-3">
+        <li className="flex gap-4">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">
                 <Icon className="size-5" />
             </div>
-            <Heading as="h3" size="card" className="text-brand-accent">
-                {children}
-            </Heading>
-        </div>
+            <div className="flex flex-col gap-1">
+                <Heading as="h3" size="card" className="text-brand-accent">
+                    {title}
+                </Heading>
+                <Text size="sm">{children}</Text>
+            </div>
+        </li>
     );
 }

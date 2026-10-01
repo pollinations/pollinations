@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { evmPaywall } from "@x402/paywall/evm";
 
@@ -5,6 +6,55 @@ import { evmPaywall } from "@x402/paywall/evm";
 const illustration = readFileSync(
     new URL("./assets/weft-paywall.webp", import.meta.url),
 ).toString("base64");
+
+// Split the pinned SDK page once: its CSS goes inline, and its 2.3 MB wallet
+// bundle is served as a cacheable script instead of inside every 402 page.
+const sdkPage = evmPaywall.generateHtml({ network: "eip155:8453" }, {}, {});
+const sdkStyle = sdkPage.match(/<style>[\s\S]*?<\/style>/)?.[0];
+const moduleTag = '<script type="module">';
+const bundleStart = sdkPage.indexOf(moduleTag);
+const bundleEnd = sdkPage.lastIndexOf("</script></body>");
+const walletBundle =
+    sdkStyle && bundleStart >= 0 && bundleEnd > bundleStart
+        ? Buffer.from(sdkPage.slice(bundleStart + moduleTag.length, bundleEnd))
+        : null;
+if (!walletBundle)
+    console.error(
+        "weft-paywall: unexpected @x402/paywall template; wallet checkout disabled",
+    );
+
+export const WEFT_WALLET_SCRIPT_PATH = walletBundle
+    ? `/weft-paywall/${createHash("sha256").update(walletBundle).digest("hex").slice(0, 16)}.js`
+    : null;
+
+/** Serve the wallet bundle; returns false when the request is not for it. */
+export function serveWeftWalletScript(req, res) {
+    if (
+        !walletBundle ||
+        req.url !== WEFT_WALLET_SCRIPT_PATH ||
+        (req.method !== "GET" && req.method !== "HEAD")
+    )
+        return false;
+    res.writeHead(200, {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "Content-Length": walletBundle.length,
+        "Cache-Control": "public, max-age=31536000, immutable",
+    });
+    res.end(req.method === "HEAD" ? undefined : walletBundle);
+    return true;
+}
+
+// Same chain config the pinned SDK writes; the paywall test compares the two.
+const chainConfig = {
+    base: {
+        usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        usdcName: "USDC",
+    },
+    "base-sepolia": {
+        usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        usdcName: "USDC",
+    },
+};
 
 // Render the x402 response amount using the SDK's asset metadata, not the route price.
 function quotedPrice(paymentRequired, findAsset) {
@@ -30,36 +80,24 @@ function quotedPrice(paymentRequired, findAsset) {
         .replace(/0+$/, "")
         .padEnd(2, "0");
     const currency = asset.symbol === "USDC" ? "USD" : asset.symbol;
-    return `${amount / scale}.${fraction} ${currency}`;
+    return { amount: `${amount / scale}.${fraction}`, currency };
 }
 
-// Compose the pinned SDK template; signing and content delivery stay SDK-owned.
-function addWalletCheckout(page, paymentRequired) {
-    const payment = paymentRequired.accepts[0];
-    let walletPage = evmPaywall.generateHtml(payment, paymentRequired, {
+// The SDK bundle reads window.x402; we write it so escaping and the retry URL stay ours.
+function walletConfig(paymentRequired, amount) {
+    const x402 = {
+        amount: Number(amount),
+        paymentRequired,
+        testnet: paymentRequired.accepts[0].network === "eip155:84532",
+        currentUrl: "",
+        config: { chainConfig },
         appName: "Pollinations",
-        testnet: payment.network === "eip155:84532",
-    });
-    const quote = JSON.stringify(paymentRequired);
-    // The SDK interpolates JSON into a script: escape HTML without changing the parsed quote.
-    walletPage = walletPage.replace(
-        `paymentRequired: ${quote}`,
-        `paymentRequired: ${quote.replace(/</g, "\\u003c")}`,
-    );
+        appLogo: "",
+    };
+    const json = JSON.stringify(x402).replace(/</g, "\\u003c");
     // Retry the page the buyer opened, never a URL supplied by forwarded request headers.
-    walletPage = walletPage.replace(
-        /currentUrl: "(?:[^"\\]|\\.)*",/,
-        "currentUrl: window.location.href,",
-    );
-    const style = page.match(/<style>[\s\S]*?<\/style>/)[0];
-    const body = page.match(/<body>([\s\S]*?)<\/body>/)[1];
-    return walletPage
-        .replace(
-            "<title>Payment Required</title>",
-            "<title>Payment Required - Pollinations</title>",
-        )
-        .replace("</head>", `${style}</head>`)
-        .replace('<div id="root"></div>', body);
+    return `${sdkStyle}
+        <script>window.x402 = ${json}; window.x402.currentUrl = window.location.href;</script>`;
 }
 
 /** Create the browser paywall; disable wallet checkout when the request cannot be replayed as GET. */
@@ -69,22 +107,24 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
         generateHtml(paymentRequired) {
             const price = quotedPrice(paymentRequired, findAsset);
             const heading = price
-                ? `Get your ${item} for just ${price}`
+                ? `Get your ${item} for just ${price.amount} ${price.currency}`
                 : `Get your ${item} with Weft`;
             const payment = paymentRequired?.accepts?.[0];
             const showWallet =
                 allowWallet &&
+                walletBundle &&
                 price &&
                 paymentRequired.x402Version === 2 &&
                 payment.scheme === "exact" &&
                 ["eip155:8453", "eip155:84532"].includes(payment.network) &&
                 /^0x[0-9a-fA-F]{40}$/.test(payment.payTo);
-            const page = `<!DOCTYPE html>
+            return `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Payment Required - Pollinations</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${showWallet ? walletConfig(paymentRequired, price.amount) : ""}
         <style>
             :root { color-scheme: light; --ink: #182734; --muted: #506577; --line: #dce6ee; --pollen: #ffe36b; }
             * { box-sizing: border-box; }
@@ -159,9 +199,9 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
             </section>
             <p class="connected">Already connected? Ask your agent to pay for this request.</p>
         </main>
+        ${showWallet ? `<script type="module" src="${WEFT_WALLET_SCRIPT_PATH}"></script>` : ""}
     </body>
 </html>`;
-            return showWallet ? addWalletCheckout(page, paymentRequired) : page;
         },
     };
 }

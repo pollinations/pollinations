@@ -4,7 +4,10 @@ import { runInNewContext } from "node:vm";
 import { findDefaultAsset, getDefaultAsset } from "@x402/evm";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createWeftPaywall } from "../../shared/weft-paywall.js";
+import {
+    createWeftPaywall,
+    WEFT_WALLET_SCRIPT_PATH,
+} from "../../shared/weft-paywall.js";
 import { requireImagePayment } from "../src/weftX402.ts";
 
 const network = "eip155:84532";
@@ -216,7 +219,11 @@ describe("Weft image paywall", () => {
         expect(response.text).toContain("Pay with my wallet");
         expect(response.text).toContain('id="root"');
         expect(response.text).toContain("window.x402 =");
-        expect(response.text).toContain("currentUrl: window.location.href");
+        expect(response.text).toContain(
+            "window.x402.currentUrl = window.location.href",
+        );
+        expect(response.text).toContain(`src="${WEFT_WALLET_SCRIPT_PATH}"`);
+        expect(response.text.length).toBeLessThan(100_000);
         expect(response.headers["cache-control"]).toContain("no-store");
 
         const challenge = JSON.parse(

@@ -1,9 +1,7 @@
 import { Button } from "../../primitives/Button.tsx";
-import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
+import { useColorMode } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
-import { Surface } from "../../primitives/Surface.tsx";
-import { Text } from "../../primitives/Typography.tsx";
-import { AuthFlowLayout, ErrorBanner } from "./AuthModal.tsx";
+import { AuthFlowLayout } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
 
 const signInErrors = {
@@ -38,6 +36,8 @@ export function DashboardSignIn({
     isPending?: boolean;
     sessionError?: string | null;
 }) {
+    // Auth modals carry no theme switch; they follow the saved or system mode.
+    useColorMode();
     const code =
         typeof window === "undefined"
             ? null
@@ -47,18 +47,23 @@ export function DashboardSignIn({
         : code && Object.hasOwn(signInErrors, code)
           ? signInErrors[code as keyof typeof signInErrors]
           : null;
+    const shownError = isPending ? null : error;
     return (
         <AuthFlowLayout
-            headerAction={<ColorModeToggle />}
-            title={!isPending && error ? error.title : "Sign in"}
+            title={shownError ? shownError.title : `Sign in to ${appName}`}
+            description={
+                shownError ? undefined : "Use your Pollinations admin account."
+            }
+            error={shownError?.message}
             actions={
                 isPending ? (
-                    <output>Checking sign-in…</output>
+                    <PollinationsSignInButton isPending>
+                        Checking sign-in…
+                    </PollinationsSignInButton>
                 ) : sessionError ? (
                     <Button
                         icon={<RefreshIcon />}
                         onClick={() => window.location.reload()}
-                        className="polli:w-full"
                     >
                         Reload
                     </Button>
@@ -68,18 +73,6 @@ export function DashboardSignIn({
                     </PollinationsSignInButton>
                 )
             }
-        >
-            {!isPending && error && <ErrorBanner>{error.message}</ErrorBanner>}
-            <Surface>
-                <Text size="sm" weight="semibold" tone="strong">
-                    {appName}
-                </Text>
-            </Surface>
-            {!(!isPending && error) && (
-                <Text size="sm" tone="muted">
-                    Sign in with your Pollinations admin account.
-                </Text>
-            )}
-        </AuthFlowLayout>
+        />
     );
 }

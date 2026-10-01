@@ -12,6 +12,7 @@ import {
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     base64ToBuffer,
+    detectMimeType,
     downloadUserImage,
     readImageDimensions,
     toDataUri,
@@ -403,8 +404,6 @@ export async function callOpenRouterSeedreamProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "bytedance/seedream-4.5",
             usage: {
@@ -461,8 +460,6 @@ export async function callOpenRouterGrokImagineProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
@@ -523,8 +520,6 @@ export async function callOpenRouterGrokImagineImage2API(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
@@ -586,21 +581,47 @@ export async function callOpenRouterFlux2MaxAPI(
         throw buildOpenRouterNoImageError(data);
     }
 
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+    // OpenRouter only takes an aspect ratio and picks the pixels itself, so the
+    // caller is charged for the image it returns, not the size it requested.
+    const buffer = base64ToBuffer(encodedImage);
+    const output = readImageDimensions(buffer, detectMimeType(buffer));
+    if (!output) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter FLUX.2 Max returned an image of unknown size",
+        });
+    }
+    // Reference megapixels are charged like on the Replicate primary.
+    const usage: Usage = {};
+    addUsage(
+        usage,
+        "promptImageTokens",
+        downloadedImages.reduce((megapixels, { buffer, mimeType }) => {
+            const input = readImageDimensions(buffer, mimeType);
+            return input
+                ? megapixels + (input.width * input.height) / 1_000_000
+                : megapixels;
+        }, 0),
+    );
+    usage.completionImageTokens = (output.width * output.height) / 1_000_000;
+
     logOps("FLUX.2 Max generation complete", {
         referenceImages: inputReferences.length,
-        providerCost: data.usage?.cost,
+        providerCost,
+        output,
     });
 
     return {
-        buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
+        buffer,
         trackingData: {
             actualModel: "black-forest-labs/flux.2-max:openrouter",
-            usage: {
-                completionImageTokens:
-                    (safeParams.width * safeParams.height) / 1_000_000,
-            },
+            // Our cost is OpenRouter's reported charge plus its 5.5%
+            // credit-purchase fee (#14895), not BFL's tiered megapixel formula.
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage,
         },
     };
 }
@@ -696,8 +717,6 @@ export async function callOpenRouterGeminiImageAPI(
 
     return {
         buffer: finalImageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage,
@@ -758,8 +777,6 @@ export async function callOpenRouterRecraftFlashAPI(
 
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: RECRAFT_FLASH_MODEL,
             // OpenRouter bills this endpoint a fixed $0.007 per output image.
@@ -840,8 +857,6 @@ export async function callOpenRouterRecraftVectorAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         mimeType: SVG_MEDIA_TYPE,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.

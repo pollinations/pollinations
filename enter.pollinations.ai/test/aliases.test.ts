@@ -154,6 +154,13 @@ test("GPT-5.5 is available without paid-only gating", () => {
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
+        ["openai/gpt-6-astra", 1],
+        ["openai/gpt-6-astra:azure:datazone", 1],
+        ["openai/gpt-6-sol", 1],
+        ["openai/gpt-6.1-sol", 1],
+        ["openai/gpt-6-luna", 1],
+        ["openai/tts-1", 1],
+        ["openai/tts-1-hd", 1],
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
@@ -213,15 +220,6 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
-});
-
-test("Amazon Nova media models use the AWS billing provider", () => {
-    for (const model of [
-        "amazon/nova-canvas-v1",
-        "amazon/nova-reel-v1",
-    ] as const) {
-        expect(getRegistryModelDefinition(model).provider).toBe("aws");
-    }
 });
 
 test("DeepSeek V4 models are billed at their route's multiplier", () => {

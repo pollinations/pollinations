@@ -171,7 +171,7 @@ const create = new Command("create")
     .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(
         "--permissions <perms...>",
-        'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
+        'Account permissions (e.g. profile usage). "keys" lets the new key create keys.',
     )
     .addHelpText(
         "after",

@@ -40,7 +40,7 @@ export function OpenWebUiLink({
     return (
         <InlineLink
             href={openWebUiChatUrl(modelId)}
-            className="inline-flex min-w-0 max-w-full items-baseline"
+            className="model-title-link inline-flex min-w-0 max-w-full items-baseline"
             aria-label={`Open ${title} in Open WebUI`}
         >
             <span className="min-w-0 truncate">{title}</span>

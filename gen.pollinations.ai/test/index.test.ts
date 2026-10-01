@@ -453,24 +453,24 @@ describe("gen worker routing", () => {
         }
     });
 
-    it.each(["/models", "/audio/models"] as const)(
-        "advertises transcription endpoints on %s",
-        async (path) => {
-            const response = await fetchWorker(path, envWithEnter());
+    it.each([
+        "/models",
+        "/audio/models",
+    ] as const)("advertises transcription endpoints on %s", async (path) => {
+        const response = await fetchWorker(path, envWithEnter());
 
-            expect(response.status).toBe(200);
-            const models = (await response.json()) as {
-                name: string;
-                supported_endpoints?: string[];
-            }[];
-            for (const name of TRANSCRIPTION_MODEL_IDS) {
-                expect(
-                    models.find((model) => model.name === name)
-                        ?.supported_endpoints,
-                ).toEqual(["/v1/audio/transcriptions"]);
-            }
-        },
-    );
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            supported_endpoints?: string[];
+        }[];
+        for (const name of TRANSCRIPTION_MODEL_IDS) {
+            expect(
+                models.find((model) => model.name === name)
+                    ?.supported_endpoints,
+            ).toEqual(["/v1/audio/transcriptions"]);
+        }
+    });
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -678,36 +678,33 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it.each(["all", "regular"])(
-        "proxies %s traffic with a separate 60 second edge cache",
-        async (traffic) => {
-            const upstream = vi
-                .spyOn(globalThis, "fetch")
-                .mockResolvedValueOnce(
-                    Response.json({ data: [{ model: "test" }] }),
-                );
-
-            const response = await fetchWorker(
-                `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
+    it.each([
+        "all",
+        "regular",
+    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({ data: [{ model: "test" }] }),
             );
-            expect(response.status).toBe(200);
-            expect(response.headers.get("Cache-Control")).toBe(
-                "public, max-age=60",
-            );
-            expect(await response.json()).toEqual({
-                data: [{ model: "test" }],
-            });
 
-            const [url, init] = upstream.mock.calls[0] as [
-                URL,
-                { cf?: unknown },
-            ];
-            expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
-            expect(url.searchParams.get("minutes")).toBe("15");
-            expect(url.searchParams.get("traffic")).toBe(traffic);
-            expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
-        },
-    );
+        const response = await fetchWorker(
+            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=60",
+        );
+        expect(await response.json()).toEqual({
+            data: [{ model: "test" }],
+        });
+
+        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
+        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+        expect(url.searchParams.get("minutes")).toBe("15");
+        expect(url.searchParams.get("traffic")).toBe(traffic);
+        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
+    });
 
     it("rejects unsupported traffic groups before contacting Tinybird", async () => {
         const response = await fetchWorker("/models/status?traffic=invalid");

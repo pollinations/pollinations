@@ -1,3 +1,5 @@
+import { once } from "node:events";
+import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
 import {
@@ -80,6 +82,8 @@ function newClient() {
     });
 }
 
+const nativeFetch = globalThis.fetch;
+
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
@@ -158,6 +162,111 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it.each([
+        ["text", undefined],
+        ["text", new Error("Caller cancelled")],
+        ["chat", undefined],
+        ["chat", new Error("Caller cancelled")],
+    ] as const)("%s rejects an already-aborted signal before dispatch (reason: %s)", async (method, reason) => {
+        const client = newClient();
+        const controller = new AbortController();
+        controller.abort(reason);
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                choices: [{ message: { content: "unexpected response" } }],
+            }),
+        );
+
+        const options = { signal: controller.signal };
+        const request =
+            method === "text"
+                ? client.text("hello", options)
+                : client.chat([{ role: "user", content: "hello" }], options);
+
+        await expect(request).rejects.toBeInstanceOf(PollinationsError);
+        await expect(request).rejects.toMatchObject({
+            code: "CANCELLED",
+            status: 499,
+            message: "Request was cancelled",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("cancels an in-flight request when the caller aborts", async () => {
+        const controller = new AbortController();
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_, reject) => {
+                    init.signal?.addEventListener("abort", () => {
+                        reject(new DOMException("Aborted", "AbortError"));
+                    });
+                }),
+        );
+
+        const request = newClient().text("hello", {
+            signal: controller.signal,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        controller.abort();
+
+        await expect(request).rejects.toBeInstanceOf(PollinationsError);
+        await expect(request).rejects.toMatchObject({
+            code: "CANCELLED",
+            status: 499,
+            message: "Request was cancelled",
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    for (const outcome of ["success", "http error", "parse error"] as const) {
+        it(`cleans up cancellation and timeout after ${outcome}`, async () => {
+            vi.useFakeTimers();
+            const controller = new AbortController();
+            const add = vi.spyOn(controller.signal, "addEventListener");
+            const remove = vi.spyOn(controller.signal, "removeEventListener");
+            fetchMock.mockResolvedValue(
+                new Response(
+                    outcome === "parse error"
+                        ? "invalid json"
+                        : JSON.stringify({ choices: [] }),
+                    { status: outcome === "http error" ? 503 : 200 },
+                ),
+            );
+            const request = newClient().chat(
+                [{ role: "user", content: "test" }],
+                { signal: controller.signal },
+            );
+            if (outcome === "success")
+                await expect(request).resolves.toEqual({ choices: [] });
+            else if (outcome === "http error")
+                await expect(request).rejects.toMatchObject({ status: 503 });
+            else await expect(request).rejects.toBeInstanceOf(SyntaxError);
+            expect(remove).toHaveBeenCalledWith("abort", add.mock.calls[0][1]);
+            expect(vi.getTimerCount()).toBe(0);
+            const requestSignal = fetchMock.mock.calls[0][1]
+                .signal as AbortSignal;
+            controller.abort();
+            expect(requestSignal.aborted).toBe(false);
+        });
+    }
+
+    it("does not turn the stream header timeout into a stream deadline", async () => {
+        vi.useFakeTimers();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"delta":{"content":"hello"}}]}\n\ndata: [DONE]\n\n',
+                { kind: "stream" },
+            ),
+        );
+        const client = new Pollinations({ apiKey: "local-test", timeout: 50 });
+        const stream = client.chatStream([{ role: "user", content: "test" }]);
+        await expect(stream.next()).resolves.toMatchObject({ done: false });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false);
+        expect(vi.getTimerCount()).toBe(0);
+        await expect(stream.next()).resolves.toMatchObject({ done: true });
+    });
+
     it("keeps video requests alive until the 20-minute default timeout", async () => {
         vi.useFakeTimers();
         let aborted = false;
@@ -1390,4 +1499,94 @@ describe("Pollinations.accountQuests", () => {
             "https://example.test/account/quests",
         );
     });
+});
+
+describe("response body cancellation", () => {
+    let server: Server;
+    let baseUrl: string;
+    let status: number;
+    const bodyTimers = new Set<ReturnType<typeof setTimeout>>();
+
+    beforeEach(async () => {
+        status = 200;
+        server = createServer((request, response) => {
+            request.resume();
+            response.writeHead(status, { "content-type": "application/json" });
+            response.flushHeaders();
+            const timer = setTimeout(() => {
+                bodyTimers.delete(timer);
+                response.end(
+                    JSON.stringify({
+                        choices: [],
+                        error: { message: "failed" },
+                    }),
+                );
+            }, 500);
+            bodyTimers.add(timer);
+        });
+        server.listen(0, "127.0.0.1");
+        await once(server, "listening");
+        const address = server.address();
+        if (!address || typeof address === "string")
+            throw new Error("No server address");
+        baseUrl = `http://127.0.0.1:${address.port}`;
+    });
+
+    afterEach(async () => {
+        for (const timer of bodyTimers) clearTimeout(timer);
+        bodyTimers.clear();
+        server.closeAllConnections();
+        await new Promise<void>((resolve, reject) =>
+            server.close((error) => (error ? reject(error) : resolve())),
+        );
+    });
+
+    for (const method of ["chat", "image"] as const) {
+        for (const responseStatus of [200, 503]) {
+            for (const cancellation of ["abort", "timeout"] as const) {
+                it(`${method} ${cancellation} after actual ${responseStatus} headers interrupts the body`, async () => {
+                    status = responseStatus;
+                    const controller = new AbortController();
+                    const add = vi.spyOn(controller.signal, "addEventListener");
+                    const remove = vi.spyOn(
+                        controller.signal,
+                        "removeEventListener",
+                    );
+                    let receivedHeaders = false;
+                    fetchMock.mockImplementation(
+                        async (...args: Parameters<typeof fetch>) => {
+                            const response = await nativeFetch(...args);
+                            receivedHeaders = true;
+                            if (cancellation === "abort")
+                                setTimeout(() => controller.abort(), 10);
+                            return response;
+                        },
+                    );
+                    const client = new Pollinations({
+                        apiKey: "local-test",
+                        baseUrl,
+                        timeout: cancellation === "timeout" ? 200 : 2000,
+                    });
+                    const request =
+                        method === "chat"
+                            ? client.chat([{ role: "user", content: "test" }], {
+                                  signal: controller.signal,
+                              })
+                            : client.image("test", {
+                                  signal: controller.signal,
+                              });
+                    await expect(request).rejects.toMatchObject({
+                        code:
+                            cancellation === "abort" ? "CANCELLED" : "TIMEOUT",
+                        status: cancellation === "abort" ? 499 : 408,
+                    });
+                    expect(receivedHeaders).toBe(true);
+                    expect(remove).toHaveBeenCalledWith(
+                        "abort",
+                        add.mock.calls[0][1],
+                    );
+                });
+            }
+        }
+    }
 });

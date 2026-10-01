@@ -4,7 +4,6 @@ import {
     byopRequests24h,
     compareAppUsage,
     type DirectoryApp,
-    describeModelKinds,
     isBuzz,
     selectWeeklyApps,
     type WeeklyAppUsage,
@@ -230,10 +229,67 @@ describe("platform stats", () => {
         );
 
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            community: 2,
-            models: 5,
+            // Community agents count as agents, not community models.
+            community: 1,
             agents: 1,
-            byCategory: { text: 3, image: 3 },
+            // Kinds count official models only; agents are not a kind.
+            kinds: { text: 2, image: 2 },
+        });
+    });
+
+    it("picks the two newest general-purpose models per category and for the community", async () => {
+        vi.resetModules();
+        const { loadPlatformStats } = await import("./publicStats");
+        const catalog = [
+            {
+                name: "old",
+                title: "Old",
+                category: "image",
+                publisher: "A",
+                added_date: 1,
+            },
+            {
+                name: "new",
+                title: "New",
+                category: "image",
+                publisher: "B",
+                added_date: 3,
+            },
+            {
+                name: "new-turbo",
+                title: "New Turbo",
+                category: "image",
+                publisher: "B",
+                added_date: 2,
+            },
+            {
+                name: "owner/newer",
+                category: "image",
+                community: true,
+                added_date: 4,
+            },
+            {
+                name: "codex",
+                category: "text",
+                is_specialized: true,
+                added_date: 5,
+            },
+            { name: "chat", category: "text", publisher: "C", added_date: 2 },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json(catalog)),
+        );
+
+        await expect(loadPlatformStats()).resolves.toMatchObject({
+            // Community models form their own group. Specialized models and
+            // a second model from the same publisher are left out; untitled
+            // models fall back to their name.
+            newest: {
+                image: ["New", "Old"],
+                text: ["chat"],
+                community: ["owner/newer"],
+            },
         });
     });
 
@@ -261,7 +317,6 @@ describe("platform stats", () => {
         await expect(loadPlatformStats()).rejects.toThrow("models: 503");
         catalogAvailable = true;
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            models: 1,
             agents: 1,
         });
         expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -291,33 +346,12 @@ describe("platform stats", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
         await expect(loadPlatformStats()).resolves.toEqual({
-            models: 0,
             agents: 0,
             community: 0,
-            byCategory: {},
+            kinds: {},
+            newest: {},
         });
         await loadPlatformStats();
         expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-});
-
-describe("model kinds", () => {
-    it("lists every catalog category, largest first, with readable labels", () => {
-        expect(
-            describeModelKinds({
-                "3d": 3,
-                audio: 27,
-                embedding: 6,
-                image: 58,
-                realtime: 4,
-                text: 190,
-                video: 19,
-            }),
-        ).toBe("Text, image, audio, video, embeddings, realtime and 3D");
-    });
-
-    it("skips uncategorised entries and handles a single or empty catalog", () => {
-        expect(describeModelKinds({ other: 9, text: 1 })).toBe("Text");
-        expect(describeModelKinds({})).toBeNull();
     });
 });

@@ -15,6 +15,7 @@ import {
 type PromptAgentRequest = {
     messages?: unknown[];
     stream?: boolean;
+    tools?: unknown[];
 };
 
 const BASE_RUNTIME: PromptAgentRuntime = {
@@ -39,6 +40,7 @@ async function runAgent(
             model: "00000000-0000-4000-8000-000000000001",
             input: body.messages ?? [],
             stream: body.stream ?? false,
+            tools: body.tools,
         }),
         new AbortController().signal,
         runtime,
@@ -315,12 +317,293 @@ describe("prompt-agent runtime", () => {
     });
 
     it.each([
+        false,
+        true,
+    ])("hands caller tools back after executing MCP tools and resumes with their results, stream:%s", async (stream) => {
+        let modelCalls = 0;
+        let mcpCalls = 0;
+        const tools = [
+            {
+                type: "function",
+                name: "read_file",
+                description: "Read a file in the caller's workspace",
+                strict: true,
+                parameters: {
+                    type: "object",
+                    properties: { path: { type: "string" } },
+                    required: ["path"],
+                    additionalProperties: false,
+                },
+            },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (request.method === "GET")
+                        return new Response(null, { status: 405 });
+                    if (request.method === "DELETE")
+                        return new Response(null, { status: 200 });
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                    };
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/call") mcpCalls++;
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result:
+                            body.method === "initialize"
+                                ? {
+                                      protocolVersion: "2025-06-18",
+                                      capabilities: { tools: {} },
+                                      serverInfo: {
+                                          name: "test-mcp",
+                                          version: "1.0.0",
+                                      },
+                                  }
+                                : body.method === "tools/list"
+                                  ? {
+                                        tools: [
+                                            {
+                                                name: "listModels",
+                                                inputSchema: { type: "object" },
+                                            },
+                                        ],
+                                    }
+                                  : {
+                                        content: [
+                                            { type: "text", text: "found" },
+                                        ],
+                                    },
+                    });
+                }
+                modelCalls++;
+                const body = (await request.json()) as {
+                    tools: { function: { name: string } }[];
+                    messages: unknown[];
+                };
+                expect(
+                    body.tools.map((tool) => tool.function.name).sort(),
+                ).toEqual(["mcp__pollinations__listModels", "read_file"]);
+                const { type, ...definition } = tools[0];
+                expect(body.tools).toContainEqual({
+                    type,
+                    function: definition,
+                });
+                if (modelCalls === 2) {
+                    expect(body.messages).toEqual(
+                        expect.arrayContaining([
+                            expect.objectContaining({
+                                role: "tool",
+                                tool_call_id: "mcp-call",
+                                content: expect.stringContaining("found"),
+                            }),
+                            expect.objectContaining({
+                                role: "tool",
+                                tool_call_id: "caller-call",
+                                content: "plain text file contents",
+                            }),
+                        ]),
+                    );
+                }
+                const message = {
+                    role: "assistant",
+                    content:
+                        modelCalls === 1 ? null : "Read the file and models.",
+                    ...(modelCalls === 1
+                        ? {
+                              tool_calls: [
+                                  {
+                                      index: 0,
+                                      id: "mcp-call",
+                                      type: "function",
+                                      function: {
+                                          name: "mcp__pollinations__listModels",
+                                          arguments: "{}",
+                                      },
+                                  },
+                                  {
+                                      index: 1,
+                                      id: "caller-call",
+                                      type: "function",
+                                      function: {
+                                          name: "read_file",
+                                          arguments: '{"path":"README.md"}',
+                                      },
+                                  },
+                              ],
+                          }
+                        : {}),
+                };
+                const finishReason = modelCalls === 1 ? "tool_calls" : "stop";
+                const usage = {
+                    prompt_tokens: 3,
+                    completion_tokens: 2,
+                    total_tokens: 5,
+                };
+                if (!stream)
+                    return Response.json({
+                        choices: [{ message, finish_reason: finishReason }],
+                        usage,
+                    });
+                return new Response(
+                    `${[
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: finishReason,
+                                },
+                            ],
+                            usage,
+                        },
+                    ]
+                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            },
+        );
+        const runtime: PromptAgentRuntime = {
+            ...BASE_RUNTIME,
+            config: { ...BASE_RUNTIME.config, mcpServers: ["pollinations"] },
+        };
+        const readResult = async (response: Response) => {
+            expect(response.status).toBe(200);
+            if (!stream)
+                return response.json() as Promise<{
+                    output: AgentOutputItem[];
+                    status: string;
+                    usage: { tool_call_counts: Record<string, number> };
+                }>;
+            const events = responseStreamEvents(await response.text());
+            expect(
+                events.some(
+                    (event) =>
+                        event.type === "response.failed" ||
+                        event.type === "error",
+                ),
+            ).toBe(false);
+            return events.find((event) => event.type === "response.completed")
+                ?.response as {
+                output: AgentOutputItem[];
+                status: string;
+                usage: { tool_call_counts: Record<string, number> };
+            };
+        };
+        const messages = [
+            { role: "user", content: "Read my README and list models." },
+        ];
+        const response = await runAgent({ messages, tools, stream }, runtime);
+        const chatSource = stream ? response.clone().body : null;
+        const result = await readResult(response);
+        expect(modelCalls).toBe(1);
+        expect(mcpCalls).toBe(1);
+        expect(result.status).toBe("completed");
+        expect(result).toMatchObject({ tools });
+        expect(result.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+        expect(
+            result.output.filter((item) => item.type === "function_call"),
+        ).toHaveLength(2);
+        expect(
+            result.output.filter(
+                (item) => item.type === "function_call_output",
+            ),
+        ).toEqual([expect.objectContaining({ call_id: "mcp-call" })]);
+        const chat = responsesToChatCompletion(
+            result,
+            "test-agent",
+            new URL("https://gen.test/v1/responses"),
+        );
+        expect(chat.choices?.[0]).toMatchObject({
+            finish_reason: "tool_calls",
+            message: {
+                tool_calls: [
+                    {
+                        id: "caller-call",
+                        type: "function",
+                        function: {
+                            name: "read_file",
+                            arguments: '{"path":"README.md"}',
+                        },
+                    },
+                ],
+            },
+        });
+        if (chatSource) {
+            const chunks = responseStreamEvents(
+                await new Response(
+                    responsesToChatStream(chatSource, "test-agent"),
+                ).text(),
+            ) as unknown as OpenAI.Chat.Completions.ChatCompletionChunk[];
+            const calls = chunks.flatMap((chunk) =>
+                chunk.choices.flatMap(
+                    (choice) => choice.delta.tool_calls ?? [],
+                ),
+            );
+            expect(
+                calls.map((call) => call.function?.name).filter(Boolean),
+            ).toEqual(["read_file"]);
+            expect(calls.map((call) => call.id).filter(Boolean)).toEqual([
+                "caller-call",
+            ]);
+            expect(
+                calls.map((call) => call.function?.arguments ?? "").join(""),
+            ).toBe('{"path":"README.md"}');
+            expect(
+                chunks
+                    .flatMap((chunk) => chunk.choices)
+                    .some((choice) => choice.finish_reason === "tool_calls"),
+            ).toBe(true);
+        }
+        const resumed = await readResult(
+            await runAgent(
+                {
+                    messages: [
+                        ...messages,
+                        ...result.output,
+                        {
+                            type: "function_call_output",
+                            call_id: "caller-call",
+                            output: "plain text file contents",
+                        },
+                    ],
+                    tools,
+                    stream,
+                },
+                runtime,
+            ),
+        );
+        expect(responseOutputText(resumed)).toBe("Read the file and models.");
+        expect(resumed.usage.tool_call_counts).toEqual({});
+        expect(modelCalls).toBe(2);
+        expect(mcpCalls).toBe(1);
+    });
+
+    it.each([
         { stream: false, fail: false },
         { stream: true, fail: false },
         { stream: true, fail: true },
-    ])("preserves the step limit and session cleanup: $stream/$fail", async ({
+        { stream: false, fail: false, handoff: true },
+        { stream: true, fail: false, handoff: true },
+    ])("preserves the step limit and session cleanup: $stream/$fail/$handoff", async ({
         stream,
         fail,
+        handoff,
     }) => {
         let modelCalls = 0;
         let toolCalls = 0;
@@ -404,7 +687,10 @@ describe("prompt-agent runtime", () => {
                             id: `call-${modelCalls}`,
                             type: "function",
                             function: {
-                                name: "mcp__exa__echo",
+                                name:
+                                    handoff && modelCalls === 24
+                                        ? "read_file"
+                                        : "mcp__exa__echo",
                                 arguments: "{}",
                             },
                         },
@@ -456,6 +742,15 @@ describe("prompt-agent runtime", () => {
             {
                 messages: [{ role: "user", content: "Keep using tools" }],
                 stream,
+                tools: handoff
+                    ? [
+                          {
+                              type: "function",
+                              name: "read_file",
+                              parameters: { type: "object" },
+                          },
+                      ]
+                    : undefined,
             },
             {
                 ...BASE_RUNTIME,
@@ -467,7 +762,11 @@ describe("prompt-agent runtime", () => {
             ? responseStreamEvents(await response.text()).find(
                   (event) =>
                       event.type ===
-                      (fail ? "response.failed" : "response.incomplete"),
+                      (fail
+                          ? "response.failed"
+                          : handoff
+                            ? "response.completed"
+                            : "response.incomplete"),
               )?.response
             : await response.json();
         expect(closedSessions).toEqual(["loop-session"]);
@@ -478,6 +777,21 @@ describe("prompt-agent runtime", () => {
                 status: "failed",
                 error: { message: "Upstream failed" },
             });
+        } else if (handoff) {
+            expect(modelCalls).toBe(24);
+            expect(toolCalls).toBe(23);
+            expect(body).toMatchObject({
+                status: "completed",
+                usage: { tool_call_counts: { mcp_call: 23 } },
+                output: expect.arrayContaining([
+                    expect.objectContaining({
+                        type: "function_call",
+                        call_id: "call-24",
+                        name: "read_file",
+                    }),
+                ]),
+            });
+            expect(responseOutputText(body)).toBe("");
         } else {
             expect(modelCalls).toBe(24);
             expect(toolCalls).toBe(24);

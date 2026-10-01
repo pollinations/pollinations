@@ -32,12 +32,12 @@ describe("tgpt harness", () => {
         expect(configureTgpt(ctx, "sk_test_key")).toMatchObject({
             harness: "tgpt",
             configured: true,
-            model: "openai/gpt-5.4-nano",
+            model: "openai/gpt-6-sol",
         });
         expect(parseEnv(read())).toMatchObject({
             AI_PROVIDER: "pollinations",
             POLLINATIONS_API_KEY: "sk_test_key",
-            POLLINATIONS_MODEL: "openai/gpt-5.4-nano",
+            POLLINATIONS_MODEL: "openai/gpt-6-sol",
         });
         expect(statSync(configFile()).mode & 0o777).toBe(0o600);
     });

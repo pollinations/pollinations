@@ -74,7 +74,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}&traffic=regular`;
             const response = await fetch(url);
 
             if (!response.ok) {

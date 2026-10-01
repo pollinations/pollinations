@@ -13,6 +13,7 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 // own request limit instead of the 60 RPM floor.
 const QUOTA_BOUND_MODELS = new Set([
     "microsoft/mai-image-2.5-flash",
+    "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
 ]);

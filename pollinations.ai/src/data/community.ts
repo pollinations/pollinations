@@ -2,7 +2,8 @@
  * Anonymous community signals.
  *
  * GitHub feeds, the Discord widget and the Quest leaderboard are requested
- * anonymously from each visitor's browser. Failures surface as `failed`, and live counts hide.
+ * anonymously from each visitor's browser. Failures surface as `failed`, and
+ * live counts hide.
  */
 import { cachePublic } from "./cachePublic";
 import { type UseAsyncOptions, useAsync } from "./useAsync";
@@ -57,15 +58,13 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 
 /* ── Quests ─────────────────────────────────────────────────────────────── */
 
-export type QuestLeaderboardEntry = {
-    githubLogin: string;
-    completedQuests: number;
-    totalPollen: number;
-};
-
 /** Completed GitHub Quest rewards: global totals plus the top contributors. */
 export type QuestLeaderboardData = {
-    leaderboard: QuestLeaderboardEntry[];
+    leaderboard: {
+        githubLogin: string;
+        completedQuests: number;
+        totalPollen: number;
+    }[];
     totals: {
         contributors: number;
         completedQuests: number;

@@ -1,0 +1,33 @@
+{
+  "pr_number": 16151,
+  "title": "feat: category toggles with counts in key model picker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16151",
+  "merged_at": "2026-10-01T19:37:49Z",
+  "labels": [],
+  "pr_body_excerpt": "Restricting a key to one modality (e.g. text only) took five clicks through tabs and \\\"Clear shown\\\" / \\\"Select all shown\\\". The Generate row now has one toggle per category with a selected/total count, used by create key, edit key and app consent.\n\n- Adds `All`, `Text`, `Image`, `Video`, … chips showing e.g. `Text 372/373`\n- One click: an empty category fills; a full or partial one clears. Text only = `All` then `Text`\n- Three looks: full = solid fill, partial = pale fill (`aria-pressed=\"mixed\"`, new `TabButton` state), none = the standard unselected pill\n- `All` works like a select-all checkbox: when partial, a click fills everything\n- Counts reserve their widest width, so chips don't move while toggling\n- `Choose models` keeps search and per-model picks; the duplicate category tabs are removed\n- Fix consent: apps' requested models are a preselection again, not a hard limit, so users can add models (regressed in #15271). Selecting everything grants all models, same as dashboard keys\n- Grants stay explicit model IDs (today's text models); no API or gen auth change\n\n| | Before | After |\n|---|---|---|\n| Text-only key | 5 clicks, nothing says \\\"text only\\\" | 2 clicks: `All`, `Text` |\n| Partial category | invisible until expanded | `7/20` on the chip |\n| Consent screen | only the app's models, can't add | full catalogue, app's models preselected |\n\n\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two clicks to text only",
+    "blurb": "Model permissions get category toggles with counts, so a text-only key takes two clicks instead of five. The app consent screen gets the full model catalogue back, with the app’s requests already picked.",
+    "summary": "Added All and per-category model toggles with selected/total counts across key creation, key editing, and app consent; consent now preselects requested models without restricting users to them.",
+    "impact": "A text-only key takes two clicks instead of five, partial selections are visible on their category chips, and users can add models beyond an app’s initial request.",
+    "keywords": [
+      "model picker",
+      "key permissions",
+      "category toggles",
+      "app consent",
+      "model selection"
+    ],
+    "visual_concept": "Polli uses a tiny tool belt to tap chunky All and Text category chips on a retro key-permissions screen; a count on Text makes the selection visible. A friendly monitor robot holds the app’s preselected models beside an open catalogue, with code-plants and flowers around the workspace.",
+    "image_prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny tool belt, she taps chunky 'All' and 'Text' chips on a retro screen while a friendly CRT-head robot holds an open model catalogue beside blooming code-plants. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent soft lime green (#ecf874) glow fills the warm cream scene, with dark purple (#110518) outlines and restrained pixel-font text reading 'Text 372/373'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16151.jpg",
+    "prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny tool belt, she taps chunky 'All' and 'Text' chips on a retro screen while a friendly CRT-head robot holds an open model catalogue beside blooming code-plants. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent soft lime green (#ecf874) glow fills the warm cream scene, with dark purple (#110518) outlines and restrained pixel-font text reading 'Text 372/373'."
+  },
+  "generated_at": "2026-10-01T19:38:47.593426+00:00"
+}

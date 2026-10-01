@@ -178,10 +178,11 @@ const PortalLink: FC<{
     useResetWhenShownAgain(() => setOpening(false));
     return (
         <span className="flex flex-col items-end gap-1">
+            {/* Same tab, and Stripe brings the buyer back: no new-tab arrow,
+                the label already says where it goes. */}
             <InlineLink
                 as="button"
                 type="button"
-                external
                 size="sm"
                 disabled={opening}
                 onClick={async () => {

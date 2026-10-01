@@ -3,7 +3,6 @@ import {
     cn,
     Dialog,
     DialogBody,
-    ExternalLinkIcon,
     InlineLink,
     LoadingStatus,
     WarningIcon,
@@ -436,7 +435,6 @@ const WalletPay: FC<{
                 ready && card && needsDetails ? (
                     <Button
                         size="lg"
-                        icon={<ExternalLinkIcon />}
                         disabled={openingDetails}
                         onClick={() => void completeDetails()}
                         className="w-full"
@@ -486,7 +484,9 @@ const WalletPay: FC<{
                         >
                             Cancel
                         </button>
-                        <InlineLink href={hostedHref} external>
+                        {/* Same tab, like Buy without a card: Stripe's page
+                            returns here, and no modal is left behind. */}
+                        <InlineLink href={hostedHref}>
                             Another card or method
                         </InlineLink>
                     </div>
@@ -582,12 +582,15 @@ const CheckoutLoading: FC<{ overlay?: boolean }> = ({ overlay }) => (
     </div>
 );
 
-/** Leaves for Stripe's hosted page: a navigation, so a filled button. */
+/**
+ * Leaves for Stripe's hosted page in the same tab (it returns here): a
+ * navigation, so a filled button, and no new-tab arrow.
+ */
 const HostedButton: FC<{ href: string; children: ReactNode }> = ({
     href,
     children,
 }) => (
-    <Button as="a" href={href} size="lg" icon={<ExternalLinkIcon />}>
+    <Button as="a" href={href} size="lg">
         {children}
     </Button>
 );

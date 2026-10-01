@@ -5,7 +5,7 @@ on:
     types: [opened]
   pull_request_target:
     types: [opened]
-  # Re-classify existing items, replacing their classifier labels (defaults to every open PR).
+  # Re-classify existing items, overwriting their Area, type and Priority (defaults to every open PR).
   workflow_dispatch:
     inputs:
       pr_numbers:
@@ -56,7 +56,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: python operations/github/project_manager.py
 
       - name: Organize existing issues and PRs
@@ -65,7 +64,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}

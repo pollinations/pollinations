@@ -13,6 +13,8 @@ export type UnlistedMediaUpload = {
     contentType: string;
     fileName?: string;
     size: number;
+    uploadedBy?: string;
+    keyType?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -38,20 +40,23 @@ export async function uploadUnlistedMedia(
     const id = crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
     const upload = new FixedLengthStream(input.size);
-    body.pipeTo(upload.writable).catch(() => undefined);
+    const pipe = body.pipeTo(upload.writable);
     try {
-        await env.MEDIA_BUCKET.put(id, upload.readable, {
-            httpMetadata: {
-                contentType,
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
-            },
-            customMetadata: {
-                uploadedAt: new Date().toISOString(),
-                originalName: input.fileName?.slice(0, 253) || "",
-                uploadedBy: "pollinations-service",
-                keyType: "service",
-            },
-        });
+        await Promise.all([
+            env.MEDIA_BUCKET.put(id, upload.readable, {
+                httpMetadata: {
+                    contentType,
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: {
+                    uploadedAt: new Date().toISOString(),
+                    originalName: input.fileName?.slice(0, 253) || "",
+                    uploadedBy: input.uploadedBy || "pollinations-service",
+                    keyType: input.keyType || "service",
+                },
+            }),
+            pipe,
+        ]);
     } catch (error) {
         throw new Error(
             `R2 upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,

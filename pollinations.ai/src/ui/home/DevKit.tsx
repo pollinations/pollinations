@@ -39,8 +39,7 @@ type Feature = {
     note?: string;
     /** Pills shown between the header and the body. */
     chips?: string[];
-    linkLabel?: string;
-    href?: string;
+    links: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
     detail?: ComponentType;
@@ -69,8 +68,12 @@ const BUILD_FEATURES: Feature[] = [
                 for long-running agents are coming soon.
             </>
         ),
-        linkLabel: "Explore agents",
-        href: "https://enter.pollinations.ai/models?category=agent",
+        links: [
+            {
+                label: "Explore agents",
+                href: "https://enter.pollinations.ai/models?category=agent",
+            },
+        ],
         icon: RobotIcon,
     },
     {
@@ -81,8 +84,12 @@ const BUILD_FEATURES: Feature[] = [
                 Gmail. Use them in your agents or any MCP client.
             </>
         ),
-        linkLabel: "Explore MCP servers",
-        href: "https://enter.pollinations.ai/models?category=mcp",
+        links: [
+            {
+                label: "Explore MCP servers",
+                href: "https://enter.pollinations.ai/models?category=mcp",
+            },
+        ],
         icon: McpIcon,
         detail: McpServers,
     },
@@ -92,12 +99,20 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["npx @pollinations/cli"],
         body: (
             <>
-                <Em>Generate media, manage keys and track usage</Em> from your
-                terminal, or hand it to your coding agent.
+                <Em>Start with one working task</Em>, then explore keys, models,
+                usage and earnings.
             </>
         ),
-        linkLabel: "CLI guide",
-        href: "https://gen.pollinations.ai/docs#tag/cli",
+        links: [
+            {
+                label: "Connect OpenCode",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#connect-opencode",
+            },
+            {
+                label: "Generate an image",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#generate-an-image-from-the-terminal",
+            },
+        ],
         icon: TerminalIcon,
     },
     {
@@ -108,8 +123,12 @@ const BUILD_FEATURES: Feature[] = [
                 <Em>Usage is billed to each user's own account.</Em>
             </>
         ),
-        linkLabel: "Integration guide",
-        href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        links: [
+            {
+                label: "Integration guide",
+                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+            },
+        ],
         icon: WalletIcon,
     },
     {
@@ -120,8 +139,12 @@ const BUILD_FEATURES: Feature[] = [
                 model calls. Generated files get a link too.
             </>
         ),
-        linkLabel: "Media storage guide",
-        href: "https://gen.pollinations.ai/docs#tag/media-storage",
+        links: [
+            {
+                label: "Media storage guide",
+                href: "https://gen.pollinations.ai/docs#tag/media-storage",
+            },
+        ],
         icon: CloudUploadIcon,
     },
     {
@@ -134,8 +157,12 @@ const BUILD_FEATURES: Feature[] = [
                 checks on per request.
             </>
         ),
-        linkLabel: "Safety guide",
-        href: "https://gen.pollinations.ai/docs#tag/safety",
+        links: [
+            {
+                label: "Safety guide",
+                href: "https://gen.pollinations.ai/docs#tag/safety",
+            },
+        ],
         icon: LockIcon,
     },
 ];
@@ -163,8 +190,7 @@ const PUBLISH_FEATURES: Feature[] = [
                 <Em>Turn on app earnings.</Em>
             </>
         ),
-        linkLabel: "Submit your app",
-        href: LINKS.githubSubmitApp,
+        links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
         icon: AppIcon,
     },
     {
@@ -175,8 +201,12 @@ const PUBLISH_FEATURES: Feature[] = [
                 call adds Pollen to your balance.
             </>
         ),
-        linkLabel: "Add a model",
-        href: "https://enter.pollinations.ai/my-models",
+        links: [
+            {
+                label: "Add a model",
+                href: "https://enter.pollinations.ai/my-models",
+            },
+        ],
         icon: BeakerIcon,
     },
     {
@@ -187,8 +217,12 @@ const PUBLISH_FEATURES: Feature[] = [
                 call it.
             </>
         ),
-        linkLabel: "Create an agent",
-        href: "https://enter.pollinations.ai/my-models",
+        links: [
+            {
+                label: "Create an agent",
+                href: "https://enter.pollinations.ai/my-models",
+            },
+        ],
         icon: RobotIcon,
     },
 ];
@@ -233,26 +267,29 @@ function FeatureCard({
 
             <Text size="sm">{feature.body}</Text>
 
-            {feature.href && feature.linkLabel ? (
-                <ExternalLinkButton
-                    href={feature.href}
-                    size="md"
-                    intent="neutral"
-                    icon={
-                        feature.href.startsWith(
-                            "https://gen.pollinations.ai/docs",
-                        ) ? (
-                            <BookIcon
-                                aria-hidden="true"
-                                className="size-4 shrink-0"
-                            />
-                        ) : undefined
-                    }
-                    className="mt-auto max-w-full self-start whitespace-normal text-left"
-                >
-                    {feature.linkLabel}
-                </ExternalLinkButton>
-            ) : null}
+            <div className="mt-auto flex flex-wrap gap-2">
+                {feature.links.map((link) => (
+                    <ExternalLinkButton
+                        key={link.href}
+                        href={link.href}
+                        size="md"
+                        intent="neutral"
+                        icon={
+                            link.href.startsWith(
+                                "https://gen.pollinations.ai/docs",
+                            ) ? (
+                                <BookIcon
+                                    aria-hidden="true"
+                                    className="size-4 shrink-0"
+                                />
+                            ) : undefined
+                        }
+                        className="max-w-full whitespace-normal text-left"
+                    >
+                        {link.label}
+                    </ExternalLinkButton>
+                ))}
+            </div>
         </Surface>
     );
 }

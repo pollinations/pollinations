@@ -14,6 +14,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
+    HeyGen: "heygen",
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",

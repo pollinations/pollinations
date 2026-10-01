@@ -39,6 +39,9 @@ Vendor spellings in use: `Anthropic`, `Automat-it`, `BytePlus`, `Cloudflare`,
 | 2026-09 | `1xaedH3eoVwLKylYzCVl01k1rclt5rRGc` |
 | 2026-10 | `1Bd_awlPPJjduMsHtyFLdc-ChLUKBj_Cn` |
 
+The October 2026 `Supporting Evidence` folder is
+`1WJuT599iJV5Klh6aVeb9zT_Lf_2Gh0Rc`.
+
 The `2026` folder is `1t4Fpuf_3ga4mb2kIVe9JkZT43W0geFYO`; create a new month
 with the Drive connector (`create_file` with the folder MIME type), then an
 `Invoices` subfolder inside it.

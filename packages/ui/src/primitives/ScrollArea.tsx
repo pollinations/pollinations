@@ -21,7 +21,7 @@ const axisClasses: Record<ScrollAxis, string> = {
 type ScrollAreaOwnProps = {
     /** Scroll direction. Default `y`. */
     axis?: ScrollAxis;
-    /** Use the system scrollbar instead of the custom auto-hiding track. */
+    /** Native respects system preferences; subtle opts into a themed track. */
     scrollbar?: "subtle" | "native";
     className?: string;
 };
@@ -39,7 +39,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
 /** Scroll container with an optional themed, auto-hiding scrollbar. */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
     (
-        { axis = "y", scrollbar = "subtle", className, children, ...rest },
+        { axis = "y", scrollbar = "native", className, children, ...rest },
         externalRef,
     ) => {
         const innerRef = useRef<HTMLDivElement | null>(null);

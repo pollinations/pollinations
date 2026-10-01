@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { weftPaymentMiddleware } from "@weftlabs/sdk/facilitator/middleware";
+import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import express from "express";
+import { createWeftPaywall } from "../../shared/weft-paywall.js";
 
 let paymentMiddleware: ReturnType<typeof weftPaymentMiddleware> | undefined;
 
@@ -41,6 +43,7 @@ export function requireImagePayment(
             name: "Pollinations legacy image",
             type: "api",
             tags: ["image"],
+            paywall: createWeftPaywall("image", findDefaultAsset),
             schemes: [{ network, server: new ExactEvmScheme() }],
         },
     );

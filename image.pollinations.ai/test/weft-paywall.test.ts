@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { runInNewContext } from "node:vm";
 import { findDefaultAsset, getDefaultAsset } from "@x402/evm";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -25,8 +26,10 @@ const facilitator = createServer((req, res) => {
         }),
     );
 });
+let generatedImages = 0;
 const image = createServer((req, res) => {
     requireImagePayment(req, res, async () => {
+        generatedImages++;
         res.writeHead(200);
         res.end("Unexpected image generation");
     });
@@ -108,7 +111,82 @@ describe("Payment-response pricing", () => {
     });
 });
 
+describe("Native wallet checkout", () => {
+    it.each(["eip155:8453", "eip155:84532"])(
+        "uses the exact %s quote and the buyer's current URL",
+        (network) => {
+            const quote = {
+                x402Version: 2,
+                resource: {
+                    url: 'https://untrusted.example/"\\\\</script><script>attack()</script>',
+                    description: "</script><script>attack()</script>",
+                },
+                accepts: [
+                    {
+                        scheme: "exact",
+                        amount: "10000",
+                        asset: getDefaultAsset(network).asset,
+                        network,
+                        payTo,
+                        maxTimeoutSeconds: 60,
+                    },
+                ],
+            };
+            const html = createWeftPaywall(
+                "image",
+                findDefaultAsset,
+            ).generateHtml(quote);
+            const script = html.match(
+                /<script>\s*(window\.x402 = [\s\S]*?)<\/script>/,
+            )?.[1];
+            if (!script) throw new Error("Missing wallet configuration");
+            expect(html).not.toContain("<script>attack()");
+            const window = {
+                location: {
+                    href: "https://merchant.example/prompt/hello?width=512",
+                },
+                x402: {
+                    paymentRequired: {},
+                    currentUrl: "",
+                    testnet: false,
+                    amount: 0,
+                },
+            };
+            runInNewContext(script, { window, console: { log() {} } });
+            expect(JSON.stringify(window.x402.paymentRequired)).toBe(
+                JSON.stringify(quote),
+            );
+            expect(window.x402.currentUrl).toBe(window.location.href);
+            expect(window.x402.testnet).toBe(network === "eip155:84532");
+            expect(window.x402.amount).toBe(0.01);
+            expect(html).toContain("Pay with my wallet");
+            const agentOnly = createWeftPaywall(
+                "response",
+                findDefaultAsset,
+                false,
+            ).generateHtml(quote);
+            expect(agentOnly).not.toContain("<script");
+            expect(agentOnly).not.toContain("Pay with my wallet");
+        },
+    );
+});
+
 describe("Weft image paywall", () => {
+    it("answers wallet header probes without generating or charging", async () => {
+        const response = await request(image).head("/prompt/hello");
+        expect(response.status).toBe(204);
+        expect(response.headers.allow).toBe("GET, HEAD");
+        expect(response.headers["cache-control"]).toContain("no-store");
+        expect(response.headers["payment-required"]).toBeUndefined();
+        expect(generatedImages).toBe(0);
+    });
+
+    it("rejects unsupported methods without a paid callback", async () => {
+        const response = await request(image).post("/prompt/hello");
+        expect(response.status).toBe(405);
+        expect(generatedImages).toBe(0);
+    });
+
     it("shows account setup and free credit to browsers without changing the challenge", async () => {
         const response = await request(image)
             .get("/prompt/hello")
@@ -135,7 +213,10 @@ describe("Weft image paywall", () => {
         expect(response.text).toContain('class="setup-link"');
         expect(response.text).not.toMatch(/<img[^>]+src="https?:/);
         expect(response.text).not.toContain("Note to developers");
-        expect(response.text).not.toContain("<script");
+        expect(response.text).toContain("Pay with my wallet");
+        expect(response.text).toContain('id="root"');
+        expect(response.text).toContain("window.x402 =");
+        expect(response.text).toContain("currentUrl: window.location.href");
         expect(response.headers["cache-control"]).toContain("no-store");
 
         const challenge = JSON.parse(

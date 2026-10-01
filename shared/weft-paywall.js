@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { evmPaywall } from "@x402/paywall/evm";
 
 // Inline the packaged art so the 402 page needs no external or paid asset request.
 const illustration = readFileSync(
@@ -32,8 +33,37 @@ function quotedPrice(paymentRequired, findAsset) {
     return `${amount / scale}.${fraction} ${currency}`;
 }
 
-/** Create the default browser paywall with route-specific wording and SDK asset lookup. */
-export function createWeftPaywall(resourceType, findAsset) {
+// Compose the pinned SDK template; signing and content delivery stay SDK-owned.
+function addWalletCheckout(page, paymentRequired) {
+    const payment = paymentRequired.accepts[0];
+    let walletPage = evmPaywall.generateHtml(payment, paymentRequired, {
+        appName: "Pollinations",
+        testnet: payment.network === "eip155:84532",
+    });
+    const quote = JSON.stringify(paymentRequired);
+    // The SDK interpolates JSON into a script: escape HTML without changing the parsed quote.
+    walletPage = walletPage.replace(
+        `paymentRequired: ${quote}`,
+        `paymentRequired: ${quote.replace(/</g, "\\u003c")}`,
+    );
+    // Retry the page the buyer opened, never a URL supplied by forwarded request headers.
+    walletPage = walletPage.replace(
+        /currentUrl: "(?:[^"\\]|\\.)*",/,
+        "currentUrl: window.location.href,",
+    );
+    const style = page.match(/<style>[\s\S]*?<\/style>/)[0];
+    const body = page.match(/<body>([\s\S]*?)<\/body>/)[1];
+    return walletPage
+        .replace(
+            "<title>Payment Required</title>",
+            "<title>Payment Required - Pollinations</title>",
+        )
+        .replace("</head>", `${style}</head>`)
+        .replace('<div id="root"></div>', body);
+}
+
+/** Create the browser paywall; disable wallet checkout when the request cannot be replayed as GET. */
+export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
     const item = resourceType === "image" ? "image" : "response";
     return {
         generateHtml(paymentRequired) {
@@ -41,7 +71,15 @@ export function createWeftPaywall(resourceType, findAsset) {
             const heading = price
                 ? `Get your ${item} for just ${price}`
                 : `Get your ${item} with Weft`;
-            return `<!DOCTYPE html>
+            const payment = paymentRequired?.accepts?.[0];
+            const showWallet =
+                allowWallet &&
+                price &&
+                paymentRequired.x402Version === 2 &&
+                payment.scheme === "exact" &&
+                ["eip155:8453", "eip155:84532"].includes(payment.network) &&
+                /^0x[0-9a-fA-F]{40}$/.test(payment.payTo);
+            const page = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Payment Required - Pollinations</title>
@@ -70,7 +108,14 @@ export function createWeftPaywall(resourceType, findAsset) {
             .credit strong { color: var(--ink); }
             .setup-link { display: block; margin-top: 22px; padding: 13px 18px; border: 1px solid #e6c448; border-radius: 10px; background: var(--pollen); color: var(--ink); text-align: center; text-decoration: none; font-size: 15px; font-weight: 750; }
             .setup-link:hover { background: #ffdc44; }
-            a:focus-visible { outline: 3px solid #24567e; outline-offset: 4px; }
+            a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible { outline: 3px solid #24567e; outline-offset: 4px; }
+            .wallet-checkout { margin-bottom: 24px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
+            .wallet-checkout summary { padding: 14px 18px; cursor: pointer; font-size: 15px; font-weight: 700; }
+            .wallet-checkout #root .container { width: 100%; max-width: none; margin: 0; border-radius: 0 0 12px 12px; box-shadow: none; }
+            .wallet-checkout #root h1 { display: none; }
+            .wallet-checkout .button-primary { background: var(--pollen); color: var(--ink); }
+            .wallet-checkout .button-primary:hover { background: #ffdc44; }
+            .wallet-checkout button:disabled { opacity: 0.5; cursor: not-allowed; }
             .connected { max-width: 460px; margin: 20px auto 0; color: var(--muted); text-align: center; font-size: 13px; }
             @media (max-width: 480px) {
                 main { margin: 16px auto; padding: 20px; border-radius: 18px; }
@@ -80,6 +125,8 @@ export function createWeftPaywall(resourceType, findAsset) {
                 .art { max-width: 300px; margin-bottom: 18px; }
                 .intro { font-size: 15px; }
                 .setup { padding: 18px; }
+                .wallet-checkout .cta-container { flex-direction: column; width: 100%; }
+                .wallet-checkout .cta-container select, .wallet-checkout .cta-container button { width: 100%; }
             }
         </style>
     </head>
@@ -94,6 +141,7 @@ export function createWeftPaywall(resourceType, findAsset) {
                 <h1 id="paywall-heading">${heading}</h1>
                 <p class="intro">Give your AI agent a wallet. Let it pay for the ${item} and get back to work.</p>
             </section>
+            ${showWallet ? '<details class="wallet-checkout"><summary>Pay with my wallet</summary><div id="root"></div></details>' : ""}
             <section class="setup" aria-label="Set up Weft">
                 <ol class="steps" role="list">
                     <li>
@@ -113,6 +161,7 @@ export function createWeftPaywall(resourceType, findAsset) {
         </main>
     </body>
 </html>`;
+            return showWallet ? addWalletCheckout(page, paymentRequired) : page;
         },
     };
 }

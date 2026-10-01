@@ -3,7 +3,7 @@ import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { createWeftPaywall } from "../shared/weft-paywall.js";
 
-let paymentMiddleware;
+const paymentMiddlewares = {};
 
 export function weftTextEnabled() {
     return Boolean(
@@ -32,7 +32,9 @@ export function weftTextPayment(req, res, next) {
             .json({ error: "x402 payments are not configured" });
     }
 
-    paymentMiddleware ??= weftPaymentMiddleware(
+    // The wallet UI retries GET only; never replay a POST as a different paid request.
+    const pageKind = req.method === "GET" ? "get" : "other";
+    paymentMiddlewares[pageKind] ??= weftPaymentMiddleware(
         {
             "GET *": {
                 accepts: {
@@ -59,9 +61,13 @@ export function weftTextPayment(req, res, next) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
-            paywall: createWeftPaywall("response", findDefaultAsset),
+            paywall: createWeftPaywall(
+                "response",
+                findDefaultAsset,
+                pageKind === "get",
+            ),
             schemes: [{ network: WEFT_NETWORK, server: new ExactEvmScheme() }],
         },
     );
-    return paymentMiddleware(req, res, next);
+    return paymentMiddlewares[pageKind](req, res, next);
 }

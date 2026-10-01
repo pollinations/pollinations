@@ -21,6 +21,17 @@ export function requireImagePayment(
     res: ServerResponse,
     onPaid: () => Promise<void>,
 ): void {
+    // Wallet SDKs probe headers before connecting; this must never generate or charge.
+    if (req.method === "HEAD") {
+        res.writeHead(204, { Allow: "GET, HEAD", "Cache-Control": "no-store" });
+        res.end();
+        return;
+    }
+    if (req.method !== "GET") {
+        res.writeHead(405, { Allow: "GET, HEAD" });
+        res.end();
+        return;
+    }
     const {
         WEFT_SELLER_API_KEY,
         WEFT_PAY_TO,

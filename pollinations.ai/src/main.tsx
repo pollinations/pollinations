@@ -4,7 +4,6 @@ import {
     stringifySearchWith,
 } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
-import { AuthProvider } from "./hooks/useAuth";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -31,9 +30,4 @@ for (const tag of document.head.querySelectorAll("[data-route-meta]")) {
     tag.remove();
 }
 
-// The old Apps and Play pages still sign in through AuthProvider.
-createRoot(rootElement).render(
-    <AuthProvider>
-        <RouterProvider router={router} />
-    </AuthProvider>,
-);
+createRoot(rootElement).render(<RouterProvider router={router} />);

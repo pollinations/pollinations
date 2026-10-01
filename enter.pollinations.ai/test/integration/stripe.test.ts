@@ -415,6 +415,40 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
+test.for([
+    "top-up",
+    "pollen",
+    "https://evil.example",
+])("checkout return %s stays on Enter and preserves the app redirect", async (returnPage, {
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const query = new URLSearchParams({
+        return: returnPage,
+        redirect: "https://app.example/chat",
+    });
+    const response = await SELF.fetch(`${base}/checkout/p10?${query}`, {
+        headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    for (const field of ["success_url", "cancel_url"]) {
+        const url = new URL(String(body?.[field]));
+        expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect(url.pathname).toBe(
+            returnPage === "top-up" ? "/top-up" : "/pollen",
+        );
+        expect(url.searchParams.get("redirect")).toBe(
+            "https://app.example/chat",
+        );
+        expect(url.searchParams.get("pack")).toBe("p10");
+    }
+});
+
 test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", async ({
     sessionToken,
     mocks,

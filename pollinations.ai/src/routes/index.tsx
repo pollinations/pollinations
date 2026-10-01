@@ -4,8 +4,11 @@ import {
     ExternalLinkButton,
     InlineLink,
     RocketIcon,
+    Text,
+    UsageIcon,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
+import { useRequestsLastHour } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
@@ -54,6 +57,7 @@ function HelloPage() {
                         Quick start
                     </InlineLink>
                 </div>
+                <RequestsLastHour />
             </HeroScene>
 
             <DevKit className={postHeroSpacingClassName} />
@@ -62,5 +66,35 @@ function HelloPage() {
             <StartBuilding />
             <BottomScene page="home" />
         </>
+    );
+}
+
+/** Measured traffic; the line keeps its height while loading or on failure. */
+function RequestsLastHour() {
+    const { data: requests } = useRequestsLastHour();
+
+    return (
+        <Text
+            size="sm"
+            tone="muted"
+            className="flex min-h-5 items-center gap-2 tabular-nums"
+        >
+            {requests ? (
+                <>
+                    <UsageIcon aria-hidden="true" className="size-4 shrink-0" />
+                    <span>
+                        <Text
+                            as="strong"
+                            size="sm"
+                            tone="strong"
+                            weight="semibold"
+                        >
+                            {requests.toLocaleString()}
+                        </Text>{" "}
+                        requests in the last hour
+                    </span>
+                </>
+            ) : null}
+        </Text>
     );
 }

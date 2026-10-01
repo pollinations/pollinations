@@ -26,7 +26,6 @@ ITEM_DATA = (
 )
 
 ISSUE_NUMBER = ITEM_DATA.get("number")
-ISSUE_DB_ID = ITEM_DATA.get("id")
 ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")

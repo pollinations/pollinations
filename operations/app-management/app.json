@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollinations for Figma - AI Image Studio",
+    "url": "https://guest453.github.io/pollinations-figma/%20Figma%20plug-ins%20have%20no%20hosted%20runtime;%20this%20page%20serves%20the%20built%20plug-in%20folder%20(%20dist/manifest.json%20+%20code.js%20+%20ui.html%20)%20and%20the%20install%20steps.%20Import%20it%20in%20Figma%20via%20**Plugins%20%E2%86%92%20Development%20%E2%86%92%20Import%20plugin%20from%20manifest%E2%80%A6**",
+    "description": "A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "Guest453",
+    "githubUserId": "202215077",
+    "repositoryUrl": "https://github.com/Guest453/pollinations-figma",
+    "repositoryStars": null,
+    "discordUsername": "guest453",
+    "other": null,
+    "submittedDate": "2026-09-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15611",
+    "approvedDate": "2026-10-01",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎮",
     "name": "Pollinations for Godot 4",
     "url": "https://github.com/davealan74/godot-pollinations",

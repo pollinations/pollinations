@@ -12,6 +12,7 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 // Azure image deployments with a small quota cap each user at the deployment's
 // own request limit instead of the 60 RPM floor.
 const QUOTA_BOUND_MODELS = new Set([
+    "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
 ]);

@@ -128,7 +128,7 @@ describe("wallet card colors", () => {
         expect(html).not.toContain("polli-wallet-panel-tier");
         expect(html).not.toContain("polli-wallet-text-tier");
         expect(html).toContain("polli:bg-surface-opaque");
-        expect(html).toContain("polli:rounded-xl polli:p-4");
+        expect(html).toContain("polli:rounded-card polli:p-3.5");
         expect(html).toContain("polli-wallet-balance-value");
         expect(html).toContain("27.5");
     });

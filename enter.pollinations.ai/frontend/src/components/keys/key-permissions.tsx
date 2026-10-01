@@ -136,9 +136,9 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         </AuthAccessItem>
     );
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
             <div
-                className={`grid items-start gap-4 [&_li>:first-child]:min-h-11 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
+                className={`grid items-start gap-3 [&_li>:first-child]:min-h-11 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
             >
                 <AuthInfoCard>
                     <ul className="space-y-3 text-sm">

@@ -8,6 +8,8 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
+The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
+
 Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
@@ -73,6 +75,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Coding Principles — Simplicity & Radical YAGNI (CRITICAL)
 
+- For coding and code reviews, read and use the repo-wide [Ponytail skill](.agents/skills/ponytail/SKILL.md) to look for the smallest correct solution. Its brevity advice does not override explicit requests or this repository's safety, testing, and design-decision requirements.
 - Code is debt: implement only what's needed now. Prefer deleting or reusing code over adding it; avoid speculative abstractions, configuration, and helpers.
 - Use plain data and small functions. No classes or inheritance; compose functions and keep side effects at the edges where practical.
 - Prefer declarative tables, configuration, and data transformations when they make behavior clearer. Keep control flow easy to follow; fewer lines do not justify clever or dense code.
@@ -247,7 +250,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-Issues and PRs share one label list, defined in `operations/github/project-manager.md`: one kind (`MODEL`, `ECONOMICS`, `MONITORING`, `APPS`, `INFRA`, `UI-UX`, `API`, `DOCS`), at most one type (`BUG`, `FEATURE`, `QUESTION`, `TRACKING`), and flags (`BILLING`, `SECURITY`, `AUTOMATED`, `POLLEN-QUEST` on PRs only). Workflow labels (`APP-*`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
+A bot labels every new issue and PR using the rules in `operations/github/project-manager.md`. Workflow labels (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
 
 ## Contributor Attribution
 

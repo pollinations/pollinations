@@ -145,11 +145,45 @@ export const XAI_TTS_VOICES = [
     "zenith",
 ] as const;
 
+export const GEMINI_TTS_VOICES = [
+    "Zephyr",
+    "Puck",
+    "Charon",
+    "Kore",
+    "Fenrir",
+    "Leda",
+    "Orus",
+    "Aoede",
+    "Callirrhoe",
+    "Autonoe",
+    "Enceladus",
+    "Iapetus",
+    "Umbriel",
+    "Algieba",
+    "Despina",
+    "Erinome",
+    "Algenib",
+    "Rasalgethi",
+    "Laomedeia",
+    "Achernar",
+    "Alnilam",
+    "Schedar",
+    "Gacrux",
+    "Pulcherrima",
+    "Achird",
+    "Zubenelgenubi",
+    "Vindemiatrix",
+    "Sadachbia",
+    "Sadaltager",
+    "Sulafat",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
     ...XAI_TTS_VOICES,
+    ...GEMINI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
@@ -302,6 +336,45 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
+    "elevenlabs/stem-separation": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-09-26").getTime(),
+        priceMultiplier: 1,
+        // Workspace analytics: 20s input costs $0.10 (six) or $0.05 (two).
+        cost: { promptAudioSeconds: 0.3 / 60 },
+        ...defineCostVariants(
+            { two_stems_v1: { promptAudioSeconds: 0.15 / 60 } },
+            ({ input }) =>
+                input?.stemVariation === "two_stems_v1"
+                    ? "two_stems_v1"
+                    : undefined,
+            {
+                two_stems_v1: {
+                    label: "Two stems",
+                    description:
+                        "Vocals and instrumental; stem_variation_id=two_stems_v1.",
+                },
+            },
+            "Six stems",
+            [
+                {
+                    key: "stem_variation_id",
+                    label: "Stems",
+                    values: { "": "Six", two_stems_v1: "Two" },
+                },
+            ],
+        ),
+        title: "ElevenLabs Stem Separation",
+        description:
+            "Separate vocals and instruments into two or six downloadable audio tracks",
+        inputModalities: ["audio"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/alpha/audio/stem-separation"],
+    },
     "elevenlabs/music-v2": {
         aliases: ["music", "elevenmusic"],
         provider: "elevenlabs",
@@ -341,6 +414,25 @@ const AUDIO_BASE_SERVICES = {
         description:
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
+    "google/lyria-3.5": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-26").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        flatRate: true,
+        cost: {
+            // Gemini Developer API bills $0.08 per generated song, including input.
+            completionAudioTokens: 0.08,
+        },
+        title: "Lyria 3.5",
+        description:
+            "Full songs with vocals or instrumental arrangements; describe structure and approximate duration in the prompt",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "google/lyria-3-clip-preview": {
@@ -453,6 +545,29 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "google/gemini-3.5-transcribe": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-26").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vertex global: published audio-input and text-output rates.
+            promptAudioTokens: 2 / 1_000_000,
+            completionTextTokens: 12 / 1_000_000,
+            // Vertex reports extra text usage with timestamps; no input-text
+            // rate is published. Preserve this usage separately from audio.
+            promptTextTokens: 0,
+        },
+        title: "Gemini 3.5 Transcribe",
+        description:
+            "Speech recognition with word timestamps and speaker labels for up to eight speakers",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "x-ai/grok-tts": {
         aliases: ["grok-tts"],
         provider: "xai",
@@ -472,6 +587,81 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
         voices: [...XAI_TTS_VOICES],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 15 / 1_000_000 },
+        title: "OpenAI TTS",
+        description:
+            "Low-latency speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "openai/tts-1-hd": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-09-29").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: { completionAudioTokens: 30 / 1_000_000 },
+        title: "OpenAI TTS HD",
+        description:
+            "Higher-quality speech synthesis with six voices and six output formats",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
+    "google/gemini-3.8-flash-tts": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini Developer API standard pricing through 2026-12-31.
+            // https://ai.google.dev/gemini-api/docs/pricing
+            promptTextTokens: 0.5 / 1_000_000,
+            completionAudioTokens: 9 / 1_000_000,
+        },
+        title: "Gemini 3.8 Flash TTS",
+        description:
+            "Expressive, style-steerable speech across 30 voices for creative narration",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
+    },
+    "google/gemini-3.8-flash-lite-tts": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "audio",
+        addedDate: new Date("2026-09-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini Developer API standard pricing through 2026-12-31.
+            // https://ai.google.dev/gemini-api/docs/pricing
+            promptTextTokens: 0.5 / 1_000_000,
+            completionAudioTokens: 6 / 1_000_000,
+        },
+        title: "Gemini 3.8 Flash Lite TTS",
+        description: "Fast, high-throughput speech across 30 voices",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...GEMINI_TTS_VOICES],
     },
     "assemblyai/universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2", "universal-2"],

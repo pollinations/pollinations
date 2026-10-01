@@ -25,15 +25,10 @@ export function DashboardSignInTrigger({
             </Button>
             {open && (
                 <SignInScreen
-                    title="Sign in"
-                    description="to your Pollinations account."
+                    title="Sign in to Pollinations"
+                    description="Continuing creates your account if you don’t have one yet."
                     onCancel={() => setOpen(false)}
-                >
-                    <p className="text-sm text-theme-text-muted">
-                        Continuing creates your Pollinations account if you
-                        don’t have one yet.
-                    </p>
-                </SignInScreen>
+                />
             )}
         </>
     );

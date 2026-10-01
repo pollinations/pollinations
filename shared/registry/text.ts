@@ -490,7 +490,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
         retirementDate: new Date("2028-01-11").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),
@@ -541,16 +541,17 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-6-sol": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],
-        provider: "openai",
+        provider: "azure",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
             promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(10),
         },
         ...defineCostVariants(
@@ -559,6 +560,7 @@ const TEXT_BASE_SERVICES = {
                     promptTextTokens: perMillion(4),
                     promptCachedTokens: perMillion(0.4),
                     promptCacheWriteTokens: perMillion(5),
+                    promptImageTokens: perMillion(4),
                     completionTextTokens: perMillion(15),
                 },
             },
@@ -592,19 +594,78 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6.1-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // OpenAI list rates; Azure has not published GPT-6.1 Sol rates yet.
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(5),
+                    promptImageTokens: perMillion(4),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.1 Sol",
+        description:
+            "Faster near-Astra reasoning for coding, agents, and professional work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "openai/gpt-6-luna": {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],
-        provider: "openai",
+        provider: "azure",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             promptCacheWriteTokens: perMillion(0.125),
+            promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.5),
         },
         ...defineCostVariants(
@@ -613,6 +674,7 @@ const TEXT_BASE_SERVICES = {
                     promptTextTokens: perMillion(0.2),
                     promptCachedTokens: perMillion(0.02),
                     promptCacheWriteTokens: perMillion(0.25),
+                    promptImageTokens: perMillion(0.2),
                     completionTextTokens: perMillion(0.75),
                 },
             },
@@ -1402,6 +1464,36 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "respan/span-01-lite": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Respan",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Free upstream, so billed at zero.
+        // Free upstream, so Quest Pollen can reach it at no cost.
+        paidOnly: false,
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Span-01 Lite",
+        description:
+            "Free behaviour scoring: the probability that plain-language " +
+            "behaviours are present in an agent or LLM conversation. Accepts " +
+            "only noul questions with plain-string instructions, and Respan " +
+            "retains prompts (no training). Post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        isSpecialized: true,
+    },
     "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev", "typesafe/jev"],
@@ -1438,6 +1530,38 @@ const TEXT_BASE_SERVICES = {
         contextLength: 64000,
         isSpecialized: true,
     },
+    "jaredpalmer/kev-4b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Jared Palmer",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Like Jev, Quest Pollen must reach it; $0.042/M in with free output
+        // bounds what a free-tier account can spend.
+        paidOnly: false,
+        cost: {
+            // OpenRouter list price plus its 5.5% credit fee, as every
+            // OpenRouter route records.
+            promptTextTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Kev 4B",
+        description:
+            "Small open-weight decision model that returns typed choices, " +
+            "scores and probabilities with no prompt retention; post state " +
+            "and questions to /alpha/decisions, or send the same JSON in " +
+            "the last user message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 8192,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],
@@ -1455,7 +1579,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MIDIjourney",
         description: "Turns your musical ideas into playable MIDI notation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: true,
@@ -1508,7 +1632,7 @@ const TEXT_BASE_SERVICES = {
         title: "MIDIjourney Large",
         description:
             "Composes richer, more detailed MIDI arrangements; costs more per piece",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: true,
@@ -1589,6 +1713,33 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
+        isSpecialized: false,
+    },
+    "anthropic/claude-sonnet-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-28").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(10),
+        },
+        title: "Claude Sonnet 5.5",
+        description:
+            "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "anthropic/claude-opus-4.6": {
@@ -2827,7 +2978,7 @@ const TEXT_BASE_SERVICES = {
         title: "Qwen3.8 2.4T A95B",
         description:
             "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,

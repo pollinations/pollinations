@@ -30,6 +30,10 @@ const PINNED_NEWS: Highlight[] = [
         title: "MAI Image 2.5 Flash moves to 2.6 Flash",
         description:
             "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
+        details: [
+            "Use microsoft/mai-image-2.6-flash for new integrations.",
+            "Nova Canvas and Nova Reel retired on September 30. Their model IDs and aliases no longer accept requests.",
+        ],
     },
     {
         date: "2026-09-24",
@@ -81,14 +85,6 @@ const PINNED_NEWS: Highlight[] = [
             "Choose a base model, add instructions, and optionally enable Pollinations tools.",
             "Create an agent from [My Models](/my-models).",
         ],
-    },
-    {
-        date: "2026-08-15",
-        dateLabel: "New quests",
-        emoji: "🌱",
-        title: "More ways to earn Pollen",
-        description:
-            "Earn 15 Pollen for your first external Paid Pollen request, 3 for reaching ten external app users, and 5 when other users spend 3 Paid Pollen through your apps. [View quests](/quests).",
     },
     {
         date: "2026-06-30",

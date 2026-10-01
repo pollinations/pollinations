@@ -100,6 +100,7 @@ function parseSubmission(body) {
     const category = clean(section(body, "App Category"), 30).toLowerCase();
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
+    const quest = clean(section(body, "Quest"), 20).replace(/^#/, "");
 
     return {
         name,
@@ -109,6 +110,7 @@ function parseSubmission(body) {
         category,
         language,
         discord,
+        quest,
         platform: inferPlatform(name, appUrl || repoUrl, description),
         emoji: CATEGORY_EMOJI[category] || "🚀",
     };
@@ -134,6 +136,8 @@ function validateSubmission(submission) {
         !/^https:\/\/github\.com\/[^/]+\/[^/]+/i.test(submission.repoUrl)
     )
         errors.push("GitHub Repository URL must point to a GitHub repository.");
+    if (submission.quest && !/^\d+$/.test(submission.quest))
+        errors.push("Quest must be a quest issue number such as #15600.");
     return errors;
 }
 

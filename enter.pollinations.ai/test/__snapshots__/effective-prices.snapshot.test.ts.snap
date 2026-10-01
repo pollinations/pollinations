@@ -1662,18 +1662,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
-  "microsoft/mai-image-2.5-flash": {
-    "cost": {
-      "completionImageTokens": 0.0000195,
-      "promptImageTokens": 0.00000175,
-      "promptTextTokens": 0.00000175,
-    },
-    "price": {
-      "completionImageTokens": 0.000014625,
-      "promptImageTokens": 0.0000013125,
-      "promptTextTokens": 0.0000013125,
-    },
-  },
   "microsoft/mai-image-2.6": {
     "cost": {
       "completionImageTokens": 0.000038,
@@ -3233,6 +3221,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0844,
+    },
+  },
+  "respan/span-01-lite": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
   },
   "sakana/fugu-max": {

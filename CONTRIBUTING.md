@@ -20,6 +20,8 @@ If a quest asks for an app, submit it with the [app submission form](https://git
 
 Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.
 
+If you use a coding agent for a quest, ask it to read the [Ponytail skill](.agents/skills/ponytail/SKILL.md). It encourages reusing existing code and keeping the solution small while preserving required tests and safety checks.
+
 ### 3. Documentation Contributions
 
 We are in profound need of members who can help enhance our documentation. If you possess experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:

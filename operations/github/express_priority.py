@@ -1,8 +1,8 @@
 """Move recent issues from paying customers to Express priority on the Dev project.
 
-Only issues the project manager already gave a priority are changed, so census
-responses and app submissions are left alone, and an issue it hasn't reached yet
-is picked up on the next run.
+Only Community issues the project manager already gave a priority are changed:
+team members' own issues, census responses and app submissions are left alone, and
+an issue it hasn't reached yet is picked up on the next run.
 """
 
 import os
@@ -69,7 +69,8 @@ def recent_issues() -> list:
                         projectItems(first: 10) { nodes {
                             id
                             project { id }
-                            fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+                            priority: fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+                            source: fieldValueByName(name: "Source") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
                         } }
                     } }
                 } }""",
@@ -88,8 +89,9 @@ def main():
         if (issue.get("author") or {}).get("databaseId") not in customers:
             continue
         item = next((i for i in issue["projectItems"]["nodes"] if i["project"]["id"] == DEV_PROJECT_ID), None)
-        priority = ((item or {}).get("fieldValueByName") or {}).get("name")
-        if priority is None or priority == EXPRESS:
+        priority = ((item or {}).get("priority") or {}).get("name")
+        source = ((item or {}).get("source") or {}).get("name")
+        if source != "Community" or priority is None or priority == EXPRESS:
             continue
         print(f"{'DRY-RUN ' if DRY_RUN else ''}#{issue['number']}\t{priority} -> {EXPRESS}")
         if not DRY_RUN:

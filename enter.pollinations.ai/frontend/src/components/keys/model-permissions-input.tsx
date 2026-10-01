@@ -68,17 +68,16 @@ export function ModelPermissionsInput({
                     const count = ids.filter((id) =>
                         selectedIds.has(id),
                     ).length;
-                    // All works like a select-all checkbox: lit only when
-                    // every model is on, and a partial click fills it.
+                    // All works like a select-all checkbox: a partial click
+                    // fills it. Categories clear on a partial click instead.
                     const isAll = tab === "all";
                     const isFull = count === ids.length;
                     return (
                         <TabButton
                             key={tab}
                             size="xs"
-                            variant="ghost"
                             className={isAll ? "mr-2" : undefined}
-                            active={isAll ? isFull : count > 0}
+                            active={isFull ? true : count > 0 ? "mixed" : false}
                             disabled={disabled}
                             ariaLabel={`${TAB_LABELS[tab]}: ${count} of ${ids.length} models`}
                             detail={

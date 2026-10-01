@@ -1,0 +1,33 @@
+{
+  "pr_number": 16152,
+  "title": "docs: recognize meaningful effort in quest reviews",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16152",
+  "merged_at": "2026-10-01T16:20:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Recognizes real testing, failure investigation, feedback response, and simplifying iterations in quest reviews.\n- Keeps correctness and maintainability as gates; neither code size nor commit count is an effort score.\n- Allows a small bonus for valuable testing or thoughtful iteration, with an honest explanation.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Effort gets its due",
+    "blurb": "Quest reviews get a little more room to recognize the useful work between first draft and merged solution. Commit count remains a remarkably poor measuring stick.",
+    "summary": "The quest-review skill recognizes testing, failure investigation, feedback responses, and simplifying iterations, while keeping correctness and maintainability as gates and allowing a small, explained bonus for valuable effort.",
+    "impact": "Contributors can receive explicit credit in quest reviews for useful testing and thoughtful iteration, without code size or commit count standing in for quality.",
+    "keywords": [
+      "quests",
+      "reviews",
+      "contributors",
+      "testing",
+      "review guidelines"
+    ],
+    "visual_concept": "Depict a cozy quest-review desk where Polli examines a tested code-plant, a repaired error log, and a simplified draft. A small bonus token sits beside a checklist marked for correctness and maintainability; the scene makes thoughtful work visible without treating stacks of commits as a score.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny reviewer glasses and warmly examines a code-plant beside a testing checklist, a mended error log, and a small bonus token; a retro monitor glows behind her and lime green (#ecf874) flowers fill the windowsill. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16152.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny reviewer glasses and warmly examines a code-plant beside a testing checklist, a mended error log, and a small bonus token; a retro monitor glows behind her and lime green (#ecf874) flowers fill the windowsill. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-01T16:21:19.141913+00:00"
+}

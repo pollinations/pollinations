@@ -7,7 +7,10 @@ import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { KeyLimitInput } from "./key-limit-input.tsx";
 import { ModelPermissionsInput } from "./model-permissions-input.tsx";
-import { normalizeAllowedModelSelection } from "./model-selection.ts";
+import {
+    normalizeAllowedModelSelection,
+    withUncataloguedModels,
+} from "./model-selection.ts";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
@@ -77,17 +80,17 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     // A dashboard key belongs to the account, so it can call that account's own
     // private models. Offer them here too, or a key already scoped to one shows
     // up as granting nothing and loses the grant on the next edit.
-    const { categories, catalog } = useModelCategories(useOwnCommunityModels());
-    const allModels = categories.flatMap(({ models }) => models);
+    const { categories, catalog, loaded } = useModelCategories(
+        useOwnCommunityModels(),
+    );
     // Consent offers the whole catalog with the request preselected, so users
-    // can add models too. Requested IDs the catalog lacks stay visible.
-    const catalogIds = new Set(allModels.map(({ id }) => id));
-    const models = [
-        ...allModels,
-        ...(requestedModels ?? [])
-            .filter((id) => !catalogIds.has(id))
-            .map((id) => ({ id, label: id })),
-    ];
+    // can add models too. IDs the key or request started with stay visible
+    // even when the catalog lacks them, so no grant is left hidden.
+    const [initialModels] = useState(permissions.allowedModels);
+    const models = withUncataloguedModels(
+        categories.flatMap(({ models }) => models),
+        initialModels,
+    );
 
     const hasModels =
         permissions.allowedModels === null ||
@@ -178,6 +181,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                                 normalizeAllowedModelSelection(
                                     next,
                                     models.map(({ id }) => id),
+                                    loaded,
                                 ),
                             )
                         }

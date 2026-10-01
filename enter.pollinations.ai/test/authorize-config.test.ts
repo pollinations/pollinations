@@ -3,6 +3,7 @@ import {
     setConsentModelGroup,
     toggleConsentModel,
     toggleConsentModelGroup,
+    withUncataloguedModels,
 } from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
@@ -198,6 +199,28 @@ describe("permission picker selections", () => {
             "t1",
             "t2",
         ]);
+    });
+    it("keeps a full selection finite until the catalog has loaded", () => {
+        expect(
+            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], false),
+        ).toEqual(["a", "b"]);
+        expect(
+            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], true),
+        ).toBeNull();
+    });
+    it("offers selected IDs the catalog lacks so bulk toggles reach them", () => {
+        const catalog = [{ id: "a", label: "A" }];
+        expect(withUncataloguedModels(catalog, ["a", "gone"])).toEqual([
+            { id: "a", label: "A" },
+            { id: "gone", label: "gone" },
+        ]);
+        expect(withUncataloguedModels(catalog, null)).toEqual(catalog);
+        const offered = withUncataloguedModels(catalog, ["gone"]).map(
+            ({ id }) => id,
+        );
+        expect(setConsentModelGroup(["gone"], offered, offered, false)).toEqual(
+            [],
+        );
     });
     it("preserves the difference between no models and all models", () => {
         expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);

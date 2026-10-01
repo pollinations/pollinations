@@ -1,14 +1,36 @@
+import type { ModelCategoryModel } from "../models/model-categories.ts";
+
+/** A full selection means "all models" only when the catalog is complete;
+ * otherwise picking every visible model could grant ones never shown. */
 export function normalizeAllowedModelSelection(
     next: string[],
     allModelIds: string[],
+    catalogLoaded = true,
 ): string[] | null {
     const uniqueNext = new Set(next);
     const hasExactFullSelection =
+        catalogLoaded &&
         uniqueNext.size > 0 &&
         uniqueNext.size === allModelIds.length &&
         allModelIds.every((id) => uniqueNext.has(id));
 
     return hasExactFullSelection ? null : next;
+}
+
+/** Catalog models plus selected IDs it lacks (retired, misspelled or not yet
+ * loaded), so bulk toggles can reach every model the selection holds. */
+export function withUncataloguedModels(
+    catalogModels: ModelCategoryModel[],
+    selectedIds: string[] | null,
+): ModelCategoryModel[] {
+    const catalogIds = new Set(catalogModels.map(({ id }) => id));
+    const missingIds = new Set(
+        (selectedIds ?? []).filter((id) => !catalogIds.has(id)),
+    );
+    return [
+        ...catalogModels,
+        ...[...missingIds].map((id) => ({ id, label: id })),
+    ];
 }
 
 /** Toggle one offered model; an unrestricted (null) selection first expands

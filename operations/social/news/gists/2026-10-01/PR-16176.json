@@ -1,0 +1,34 @@
+{
+  "pr_number": 16176,
+  "title": "fix: make Polli CLI first run work",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16176",
+  "merged_at": "2026-10-01T20:47:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Puts login and a low-cost text result at the top of the CLI README.\n- Offers device login when an interactive generation command has no key, then resumes that command.\n- Gives 402 responses direct balance, Quest, and top-up actions; key-budget errors still point to key settings.\n\nTests: CLI build and focused error tests (4 passed).\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli finds the front door",
+    "blurb": "Polli CLI’s first run gets a gentler path: sign in when prompted, finish the command you started, and find a small text example right at the top of the README.",
+    "summary": "Polli CLI offers device login when an interactive generation command has no key and resumes that command afterward; its README leads with login and a low-cost text result, while 402 errors point to balance, Quests, and top-ups.",
+    "impact": "A first-time CLI user can authenticate without restarting their generation command, and a 402 response gives them direct next steps; key-budget errors still point to key settings.",
+    "keywords": [
+      "Polli CLI",
+      "first run",
+      "device login",
+      "authentication",
+      "402",
+      "Quests"
+    ],
+    "visual_concept": "Polli CLI is a terminal tool, so depict a welcoming retro terminal beside a garden path: Polli opens a little login gate, with a short text result waiting beyond it. Small signposts for balance, Quests, and top-ups represent the 402 guidance; a separate key-settings sign keeps budget errors distinct.",
+    "image_prompt": "In a cozy pixel art garden shed, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, wearing a tiny tool belt as she opens a login gate beside a glowing retro terminal showing a short text result, with flower-lined signs for balance, Quests, top-ups, and key settings. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream and lavender tones, chunky sprites, and a soft CRT glow make the scene nostalgic and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16176.jpg",
+    "prompt": "In a cozy pixel art garden shed, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, wearing a tiny tool belt as she opens a login gate beside a glowing retro terminal showing a short text result, with flower-lined signs for balance, Quests, top-ups, and key settings. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874), warm cream and lavender tones, chunky sprites, and a soft CRT glow make the scene nostalgic and inviting."
+  },
+  "generated_at": "2026-10-01T20:49:01.992993+00:00"
+}

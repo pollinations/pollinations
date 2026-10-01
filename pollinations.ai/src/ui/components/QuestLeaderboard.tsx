@@ -1,3 +1,12 @@
+import {
+    Chip,
+    ExternalLinkButton,
+    Heading,
+    Section,
+    StatCard,
+    Surface,
+    Text,
+} from "@pollinations/ui";
 import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -31,99 +40,118 @@ export function QuestLeaderboardContent({
     const visible = data.leaderboard.slice(0, VISIBLE_CONTRIBUTORS);
 
     return (
-        <section className="mb-12" aria-labelledby="quest-leaderboard-heading">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h2
-                        id="quest-leaderboard-heading"
-                        className="mb-3 border-l-4 border-dark pl-4 font-headline text-2xl font-black uppercase tracking-widest text-dark md:text-3xl"
-                    >
-                        {copy.questLeaderboardTitle}
-                    </h2>
-                    <p className="font-body text-sm leading-relaxed text-dark">
-                        {copy.questLeaderboardDescription}
-                    </p>
-                </div>
-                <a
+        <Section
+            title={copy.questLeaderboardTitle}
+            intro={copy.questLeaderboardDescription}
+            action={
+                <ExternalLinkButton
                     href={QUESTS_PAGE_URL}
-                    className="w-fit bg-accent-strong px-2 py-1 font-headline text-xs font-black text-dark hover:underline"
+                    size="md"
+                    intent="brand"
+                    external={false}
                 >
                     {copy.questLeaderboardCta}
-                </a>
-            </div>
-
+                </ExternalLinkButton>
+            }
+            className="gap-5"
+            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
+        >
             <dl
-                className="mb-4 grid grid-cols-3 gap-2"
+                className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
                 aria-label={copy.questLeaderboardTotalsLabel}
             >
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.contributors}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardBuildersLabel}
-                    </dt>
-                </div>
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.completedQuests}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardCompletedLabel}
-                    </dt>
-                </div>
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.totalPollen}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardPollenLabel}
-                    </dt>
-                </div>
+                {(
+                    [
+                        [
+                            copy.questLeaderboardBuildersLabel,
+                            data.totals.contributors,
+                        ],
+                        [
+                            copy.questLeaderboardCompletedLabel,
+                            data.totals.completedQuests,
+                        ],
+                        [
+                            copy.questLeaderboardPollenLabel,
+                            data.totals.totalPollen,
+                        ],
+                    ] as const
+                ).map(([label, value]) => (
+                    <Surface key={label} as="div" variant="card">
+                        <StatCard
+                            label={label}
+                            value={value}
+                            className="flex flex-col"
+                            labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                            valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
+                        />
+                    </Surface>
+                ))}
             </dl>
 
-            <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <ol className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
                 {visible.map((entry, index) => (
                     <li key={entry.githubLogin}>
-                        <a
+                        <Surface
+                            as="a"
+                            variant="card"
                             href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-px hover:translate-y-px"
+                            className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
                         >
-                            <span
+                            <Chip
+                                intent="neutral"
+                                size="sm"
                                 aria-hidden="true"
-                                className="w-6 shrink-0 text-center font-headline text-xs font-black text-muted"
+                                className="w-8"
                             >
                                 {index + 1}
-                            </span>
+                            </Chip>
                             <img
                                 src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
                                 alt=""
-                                className="h-8 w-8 shrink-0 rounded-full"
+                                aria-hidden="true"
+                                className="size-9 shrink-0 rounded-full bg-theme-bg-subtle"
                                 loading="lazy"
                                 decoding="async"
-                                width={32}
-                                height={32}
+                                width={36}
+                                height={36}
                             />
-                            <span className="min-w-0 flex-1">
-                                <span className="block truncate font-headline text-xs font-black text-dark">
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <Heading
+                                    as="span"
+                                    size="card"
+                                    className="truncate"
+                                >
                                     @{entry.githubLogin}
-                                </span>
-                                <span className="block font-body text-xs text-subtle">
-                                    {entry.completedQuests}{" "}
-                                    {copy.questLeaderboardRowCompletedLabel}
+                                </Heading>
+                                <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                    <Text
+                                        as="span"
+                                        size="xs"
+                                        tone="muted"
+                                        className="whitespace-nowrap"
+                                    >
+                                        {entry.completedQuests}{" "}
+                                        {copy.questLeaderboardRowCompletedLabel}
+                                    </Text>
+                                    <Text
+                                        as="strong"
+                                        size="xs"
+                                        tone="strong"
+                                        weight="bold"
+                                        className="whitespace-nowrap tabular-nums"
+                                    >
+                                        {entry.totalPollen}{" "}
+                                        {copy.questLeaderboardRowPollenLabel}
+                                    </Text>
                                 </span>
                             </span>
-                            <strong className="shrink-0 font-headline text-xs font-black text-dark">
-                                {entry.totalPollen}{" "}
-                                {copy.questLeaderboardRowPollenLabel}
-                            </strong>
-                        </a>
+                        </Surface>
                     </li>
                 ))}
             </ol>
-        </section>
+        </Section>
     );
 }
 
@@ -160,10 +188,5 @@ export function QuestLeaderboard() {
 
     if (!data) return null;
 
-    return (
-        <>
-            <QuestLeaderboardContent data={data} />
-            <hr className="my-12 border-t-2 border-white" />
-        </>
-    );
+    return <QuestLeaderboardContent data={data} />;
 }

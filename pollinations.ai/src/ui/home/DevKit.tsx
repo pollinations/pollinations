@@ -63,7 +63,7 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Media storage",
-        body: "Upload files and share public links, kept 30 days and renewable.",
+        body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
         linkLabel: "Media storage guide",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
@@ -80,12 +80,12 @@ const BUILD_FEATURES: Feature[] = [
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Submit it for review to join the Apps catalog.",
+        body: "Submit it for review to join the Apps catalog. Turn on app earnings to add a markup.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Connect an endpoint you run and set your price.",
+        body: "Connect an endpoint you run and set your price. Each call adds Pollen to your balance.",
         icon: BeakerIcon,
     },
     {
@@ -159,7 +159,7 @@ function FeatureGroup({
 }: {
     eyebrow: string;
     title: string;
-    description?: string;
+    description: string;
     children: ReactNode;
 }) {
     return (
@@ -180,7 +180,11 @@ export function DevKit({ className }: { className?: string }) {
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
-            <FeatureGroup eyebrow="Build" title="Pick the pieces you need.">
+            <FeatureGroup
+                eyebrow="Build"
+                title="Pick the pieces you need."
+                description="Models and agents, plus hosted tools, storage and billing."
+            >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
@@ -199,7 +203,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Publish"
                 title="Put your model, agent or app in front of our users."
-                description="We handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
+                description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (

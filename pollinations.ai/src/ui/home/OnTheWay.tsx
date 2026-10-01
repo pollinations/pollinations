@@ -3,7 +3,7 @@ import { ContentHeader } from "@pollinations/ui";
 const UPCOMING = [
     {
         title: "Permanent media hosting",
-        body: "Keep generated media online for good, with paid storage and delivery.",
+        body: "Keep generated images, audio, and video available with paid storage and delivery.",
     },
     {
         title: "App hosting",
@@ -11,7 +11,7 @@ const UPCOMING = [
     },
     {
         title: "Flexible markups",
-        body: "Set your own markup on app and agent usage.",
+        body: "Choose the markup on app and agent usage. App earnings currently use a fixed markup.",
     },
 ];
 

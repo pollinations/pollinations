@@ -68,6 +68,19 @@ export function attachModelHealth(
     };
 }
 
+function searchableText(entry: GenerationModelEntry): string {
+    return [
+        entry.info.name,
+        ...(entry.info.aliases ?? []),
+        entry.info.title,
+        entry.info.description,
+        entry.info.publisher,
+    ]
+        .filter((part): part is string => Boolean(part))
+        .join("\n")
+        .toLowerCase();
+}
+
 // Discovery only: callers apply access checks before entering this function.
 export async function filterCatalogEntries(
     c: Context<Env>,
@@ -83,18 +96,43 @@ export async function filterCatalogEntries(
               : "official";
     const source =
         query.source ?? communitySource ?? headers["pollinations-model-source"];
-    const filtered = entries.filter(
-        (entry) =>
-            source === undefined ||
-            entry.info.community === (source === "community"),
-    );
+    const tokens =
+        query.query?.toLowerCase().split(/\s+/).filter(Boolean) ?? [];
+    const capabilities = query.capabilities;
+    const agent =
+        query.agent === undefined
+            ? undefined
+            : query.agent === "true" || query.agent === "1";
+    const filtered = entries
+        .filter(
+            (entry) =>
+                source === undefined ||
+                entry.info.community === (source === "community"),
+        )
+        .filter((entry) => {
+            if (tokens.length === 0) return true;
+            const text = searchableText(entry);
+            return tokens.every((token) => text.includes(token));
+        })
+        .filter(
+            (entry) =>
+                capabilities === undefined ||
+                capabilities.length === 0 ||
+                capabilities.every((capability) =>
+                    entry.info.capabilities?.includes(capability),
+                ),
+        )
+        .filter(
+            (entry) =>
+                agent === undefined || (entry.info.agent === true) === agent,
+        );
 
     const lookup = await getModelHealthLookup(filtered);
     const reliability =
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const reliable = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +141,9 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+    // Limit last: every other filter must apply before truncation, and the
+    // catalog order is preserved.
+    return query.limit === undefined
+        ? reliable
+        : reliable.slice(0, query.limit);
 }

@@ -22,10 +22,27 @@ async function fetchModels(url, context) {
     return response.json();
 }
 
-export function getModels(type = "all", context, community) {
+// Gen performs all filtering; the MCP only forwards parameters (thin proxy).
+// `false` booleans are meaningful and must be forwarded, not dropped.
+export function getModels(type = "all", context, filters = {}) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchModels(buildUrl(path, { community }), context);
+    // Backward compatibility: a bare boolean third argument meant `community`.
+    if (typeof filters === "boolean") filters = { community: filters };
+    const { community, query, capabilities, agent, limit } = filters;
+    return fetchModels(
+        buildUrl(path, {
+            community,
+            query,
+            capabilities:
+                Array.isArray(capabilities) && capabilities.length > 0
+                    ? capabilities.join(",")
+                    : undefined,
+            agent,
+            limit,
+        }),
+        context,
+    );
 }
 
 export const getImageModels = (context) => getModels("image", context);

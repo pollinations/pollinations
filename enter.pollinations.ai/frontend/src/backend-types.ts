@@ -5,3 +5,9 @@
 export type { FrontendApiRoutes as ApiRoutes } from "../../src/frontend-api.ts";
 export type { QuestCatalogResponse } from "../../src/routes/quests.ts";
 export type { QuestCheckResult } from "../../src/services/quest-checker.ts";
+export type {
+    AutoTopUpIssue,
+    BillingOverview,
+    BillingTaxId,
+    SavedPaymentMethod,
+} from "../../src/utils/stripe-billing/types.ts";

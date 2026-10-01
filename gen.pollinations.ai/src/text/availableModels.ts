@@ -240,6 +240,18 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.1-sol",
+        config: portkeyConfig["gpt-6.1-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.1-sol:openai",
+        config: portkeyConfig["gpt-6.1-sol-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
@@ -673,8 +685,18 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "respan/span-01-lite",
+        config: portkeyConfig["span-01-lite"],
+        useSystemOneApi: true,
+    },
+    {
         name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "jaredpalmer/kev-4b",
+        config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,
     },
     {

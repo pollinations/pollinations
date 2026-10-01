@@ -200,7 +200,8 @@ function Dashboard({ accountUser }) {
                     <Text as="p" tone="base">
                         Weekly KPIs for pollinations.ai. Figures are the last
                         full week ({weekLabel(currentWeek?.week)}) against the
-                        one before it.
+                        one before it. Usage excludes legacy APIs, company
+                        operations and development tests.
                     </Text>
                     <label className="flex items-center gap-2 text-sm text-theme-text-muted">
                         Range

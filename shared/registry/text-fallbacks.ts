@@ -57,6 +57,9 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-6-sol": {
         "openai/gpt-6-sol:openai": { provider: "openai" },
     },
+    "openai/gpt-6.1-sol": {
+        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+    },
     "openai/gpt-6-luna": {
         "openai/gpt-6-luna:openai": { provider: "openai" },
     },

@@ -801,6 +801,7 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         ),
+        resolutions: ["720p"],
         title: "Seedance 2.0",
         description:
             "720p video with natively synced sound, from text, images, or references",
@@ -906,6 +907,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
+        resolutions: ["720p"],
         title: "Wan 2.6",
         description:
             "Video with sound from text or an image (720p, 5/10/15s clips)",
@@ -932,6 +934,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
+        resolutions: ["480p"],
         title: "Wan 2.2",
         description:
             "Cheap 5-second silent clips at 480p — great for quick drafts",
@@ -1467,6 +1470,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.002, // per start-frame image
             completionVideoSeconds: 0.07, // per sec at 720p
         },
+        resolutions: ["720p"],
         title: "Grok Video Pro",
         description: "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
@@ -1638,6 +1642,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.0988 * 1.055, // per sec at 720p
         },
+        resolutions: ["720p"],
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
         inputModalities: ["text", "image"],
@@ -1790,15 +1795,15 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch rates, verified 2026-09-27. Update cost and price in a
-        // separate PR when the promotion ends on 2026-09-30; keep multiplier 1.
+        // fal published post-promotion rates (promotion ends 2026-09-30).
+        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
         cost: {
-            completionVideoSeconds: 0.0125, // Also fal's rate per reported billing unit.
+            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.02 },
-                "1080p": { completionVideoSeconds: 0.04 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {
@@ -1963,77 +1968,6 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 10,
         defaultDuration: 5,
-    },
-    "amazon/nova-canvas-v1": {
-        aliases: ["amazon-nova-canvas", "nova-canvas"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "image",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
-        cost: {
-            completionImageTokens: 0.04, // per image
-        },
-        ...defineCostVariants(
-            {
-                "2048": {
-                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
-                },
-            },
-            ({ input }) =>
-                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
-            {
-                "2048": {
-                    label: "2048 tier",
-                    description:
-                        "Applies when either output dimension exceeds 1024 pixels.",
-                },
-            },
-            "1024 tier",
-            [
-                {
-                    "key": "image_size",
-                    "label": "Max side",
-                    "unit": "px",
-                    "values": {
-                        "2048": ">1024",
-                        "": "≤1024",
-                    },
-                },
-            ],
-        ),
-        title: "Nova Canvas",
-        description: "Image generation with editing and inpainting tools",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Nova Canvas route forwards one input image.
-    },
-    "amazon/nova-reel-v1": {
-        aliases: ["amazon-nova-reel", "nova-reel"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "video",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionVideoSeconds: 0.08, // per sec
-        },
-        title: "Nova Reel",
-        description:
-            "Long-form video — clips from 6 seconds up to 2 minutes at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 6,
-        maxDuration: 120,
-        defaultDuration: 6,
-        durationStep: 6,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

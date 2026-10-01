@@ -183,15 +183,19 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "qwen/qwen-image-3:replicate": {
-            const image = params.image[0]
-                ? await toDataUri(params.image[0])
-                : undefined;
-            promptImageTokens = params.image.length;
+            // Replicate takes one reference. Send what the caller sent and let
+            // Replicate reject more, instead of silently dropping references.
+            const images = await Promise.all(
+                params.image.map((url) => toDataUri(url)),
+            );
+            promptImageTokens = images.length;
             buffer = await runReplicateImage(
                 "alibaba/qwen-image-3",
                 {
                     prompt,
-                    ...(image ? { image } : {}),
+                    ...(images.length > 0
+                        ? { image: images.length === 1 ? images[0] : images }
+                        : {}),
                     aspect_ratio: closestRatio(params, QWEN_RATIOS),
                     match_input_image: false,
                     enable_prompt_expansion: false,

@@ -82,12 +82,12 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
-    it("uses the first reference when Replicate supports fewer than the public route", async () => {
+    it("bills the single Qwen Image 3 reference it sends", async () => {
         const fetchSpy = mockPrediction();
 
         const result = await callReplicateFallbackImage(
             "make it blue",
-            params("qwen/qwen-image-3:replicate", [PNG, PNG]),
+            params("qwen/qwen-image-3:replicate", [PNG]),
         );
 
         const body = JSON.parse(
@@ -95,9 +95,23 @@ describe("callReplicateFallbackImage", () => {
         );
         expect(body.input.image).toBe(PNG);
         expect(result.trackingData.usage).toEqual({
-            promptImageTokens: 2,
+            promptImageTokens: 1,
             completionImageTokens: 1,
         });
+    });
+
+    it("passes every Qwen Image 3 reference to Replicate instead of dropping extras", async () => {
+        const fetchSpy = mockPrediction();
+
+        await callReplicateFallbackImage(
+            "make it blue",
+            params("qwen/qwen-image-3:replicate", [PNG, PNG]),
+        );
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input.image).toEqual([PNG, PNG]);
     });
 
     it("maps FLUX.2 Max generation to the exact Replicate model", async () => {

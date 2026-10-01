@@ -133,8 +133,7 @@ Wallet colors and utilities are bundled into the main stylesheet
 `Dialog` keeps rounded corners at every width. Below 480px it spans the phone
 width with an 8px vertical gap; larger viewports have a 16px outer inset and use
 the `size` width limit. Height follows the content, capped by the available
-viewport. `fullscreenOnMobile={false}` keeps compact confirmations and results
-inset on phones too.
+viewport. Confirmations and completed results follow the same phone-width rule.
 
 Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter` for
 consistent spacing and actions. The frame uses Enter's themed panel color;
@@ -143,7 +142,7 @@ for standalone pages. Content such as document previews can request a height,
 which remains capped by the shared frame.
 
 Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
-compact results stay centered. It inherits the shared viewport sizing.
+completed results use the centered `Dialog`. Both inherit the same viewport sizing.
 
 Authentication and creation-flow footers use a bordered primary
 action (`intent="commit"`, or `brand` for sign-in) and a muted, borderless

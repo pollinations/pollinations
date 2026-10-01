@@ -64,7 +64,7 @@
 
 /* Phone dialogs keep their rounded outline and a small vertical gap, while
    their top-level cards run edge to edge with a 20px content gutter.
-   Nested cards and compact dialogs are untouched. */
+   Nested cards keep their own spacing. */
 @media (width < 30rem) {
     .polli-dialog-mobile-positioner {
         padding: 0.5rem 0;

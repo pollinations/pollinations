@@ -1200,6 +1200,7 @@ test("Google text model providers match their configured routes", () => {
 const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
     "typesafe/jev-1.13",
     "jaredpalmer/kev-4b",
+    "respan/span-01-lite",
 ]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {

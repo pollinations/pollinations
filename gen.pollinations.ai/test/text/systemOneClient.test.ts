@@ -85,6 +85,30 @@ describe("System One adapter", () => {
         expect(findModelByName("kev")).toBeNull();
     });
 
+    it("routes respan/span-01-lite to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite-20260925",
+                    answers,
+                    usage: { input_tokens: 27, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "respan/span-01-lite",
+                modelConfig: { ...modelConfig, model: "respan/span-01-lite" },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

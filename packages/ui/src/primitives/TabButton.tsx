@@ -7,7 +7,8 @@ import type {
 import { cn } from "../lib/cn.ts";
 
 type TabButtonOwnProps = {
-    active: boolean;
+    /** `mixed`: a group toggle where only some of its items are selected. */
+    active: boolean | "mixed";
     /** Omit when rendering as a link (`as`) and navigation carries the change. */
     onClick?: () => void;
     children: ReactNode;
@@ -62,6 +63,7 @@ const variantClasses = {
     soft: {
         base: "",
         active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+        mixed: "polli:bg-theme-bg-active/45 polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
         inactive:
             "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
     },
@@ -70,6 +72,7 @@ const variantClasses = {
     ghost: {
         base: "polli:border polli:border-transparent",
         active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+        mixed: "polli:bg-theme-bg-active/45 polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
         inactive:
             "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
     },
@@ -111,7 +114,10 @@ export function TabButton<T extends ElementType = "button">({
         intent === "neutral"
             ? variantClasses.soft
             : intent
-              ? intentClasses[intent]
+              ? {
+                    ...intentClasses[intent],
+                    mixed: intentClasses[intent].active,
+                }
               : variantClasses[variant];
     const handleClick = disabled
         ? (event: ReactMouseEvent) => {
@@ -134,11 +140,15 @@ export function TabButton<T extends ElementType = "button">({
             // selected state with aria-current instead.
             {...(isButton
                 ? { "aria-pressed": active }
-                : { "aria-current": active ? "page" : undefined })}
+                : { "aria-current": active === true ? "page" : undefined })}
             className={cn(
                 tabButtonBaseClass,
                 variantClasses[variant].base,
-                active ? colors.active : colors.inactive,
+                active === "mixed"
+                    ? colors.mixed
+                    : active
+                      ? colors.active
+                      : colors.inactive,
                 disabled &&
                     "polli:pointer-events-none polli:cursor-not-allowed polli:opacity-50",
                 tabButtonSizeClass[size],

@@ -26,6 +26,7 @@ type Feature = {
     catalogCount?: "models" | "agents";
     linkLabel?: string;
     href?: string;
+    links?: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
 };
 
@@ -71,9 +72,17 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Pollinations CLI",
-        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and earnings.",
-        linkLabel: "CLI guide",
-        href: "https://gen.pollinations.ai/docs#tag/cli",
+        body: "Start with one working task, then explore keys, models, usage and earnings.",
+        links: [
+            {
+                label: "Connect OpenCode",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#connect-opencode",
+            },
+            {
+                label: "Generate an image",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#generate-an-image-from-the-terminal",
+            },
+        ],
         icon: TerminalIcon,
     },
 ];
@@ -160,6 +169,17 @@ function FeatureCard({
                     {feature.linkLabel}
                 </ExternalLinkButton>
             ) : null}
+            {feature.links?.map((link) => (
+                <ExternalLinkButton
+                    key={link.href}
+                    href={link.href}
+                    size="md"
+                    intent="neutral"
+                    className="max-w-full self-start whitespace-normal text-left"
+                >
+                    {link.label}
+                </ExternalLinkButton>
+            ))}
         </Surface>
     );
 }

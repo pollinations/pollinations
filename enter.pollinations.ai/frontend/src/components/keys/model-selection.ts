@@ -41,3 +41,15 @@ export function setConsentModelGroup(
     }
     return [...selected];
 }
+
+/** One click per category: an empty group fills, a full or partial one clears. */
+export function toggleConsentModelGroup(
+    current: string[] | null,
+    requestedIds: string[],
+    groupIds: string[],
+): string[] {
+    const isEmpty = !groupIds.some(
+        (id) => requestedIds.includes(id) && (current?.includes(id) ?? true),
+    );
+    return setConsentModelGroup(current, requestedIds, groupIds, isEmpty);
+}

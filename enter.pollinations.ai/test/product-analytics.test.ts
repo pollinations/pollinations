@@ -51,6 +51,11 @@ test("page schema accepts only fixed labels and length-capped attribution, never
             client_id: "pk_abc",
         }).success,
     ).toBe(true);
+    expect(
+        new URLSearchParams(
+            productPageViewSchema.parse(VIEW) as Record<string, string>,
+        ).toString(),
+    ).toBe("page=%2Ftop-up");
     for (const body of [
         { page: "/top-up?key=secret" },
         { page: "https://example.com" },
@@ -94,7 +99,7 @@ test("signed-out views are recorded without a user and pass attribution through"
         return originalFetch(input, init);
     });
     const view = {
-        page: "/_dashboard/news",
+        page: "/news",
         referrer_host: "github.com",
         utm_source: "readme",
         utm_campaign: "launch",
@@ -113,6 +118,32 @@ test("signed-out views are recorded without a user and pass attribution through"
         }),
         expect.objectContaining({ user_id: "" }),
     ]);
+});
+
+test("views record the visitor's country from Cloudflare, never the IP", async () => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    expect(
+        (
+            await pageView(VIEW, "", {
+                "CF-IPCountry": "DE",
+                "CF-Connecting-IP": "203.0.113.7",
+            })
+        ).status,
+    ).toBe(204);
+    expect(rows).toEqual([
+        expect.objectContaining({ page: "/top-up", country: "DE" }),
+    ]);
+    expect(JSON.stringify(rows)).not.toContain("203.0.113.7");
 });
 
 test("page views derive the user from the authenticated session", async ({
@@ -193,7 +224,10 @@ test("signing in records the request to GitHub and the resulting session", async
         "http://localhost:3000/api/auth/sign-in/social",
         {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "http://localhost:3000/sign-in",
+            },
             body: JSON.stringify({ provider: "github" }),
         },
     );
@@ -215,11 +249,73 @@ test("signing in records the request to GitHub and the resulting session", async
     const signIn = mocks.tinybird.state.productEvents.filter((row) =>
         String(row.event).startsWith("sign_in_"),
     );
+    // The middle stage splits the loss: a start that never returns was lost at
+    // GitHub, a return that never completes was lost in our own callback.
     expect(signIn.map((row) => row.event)).toEqual([
         "sign_in_started",
+        "sign_in_returned",
         "sign_in_completed",
     ]);
     expect(signIn[0]?.user_id).toBe("");
-    expect(signIn[1]?.user_id).toEqual(expect.any(String));
-    expect(signIn[1]?.user_id).not.toBe("");
+    expect(signIn[2]?.user_id).toEqual(expect.any(String));
+    expect(signIn[2]?.user_id).not.toBe("");
+    // The start carries the page it came from, so the funnel can divide it by
+    // views of that same page.
+    expect(signIn[0]?.page).toBe("/sign-in");
+    // A first sign-in also created the user, which is what separates new from
+    // returning without joining the daily d1_user snapshot.
+    const signup = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "signup_completed",
+    );
+    expect(signup?.user_id).toBe(signIn[2]?.user_id);
+});
+
+test("a start from an untracked page stays out of the funnel ratio", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const started = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "https://pollinations.ai/some/other/page",
+            },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(started.status).toBe(200);
+    const start = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "sign_in_started",
+    );
+    expect(start?.page ?? "").toBe("");
+    // The host is recorded even when the path is not one of ours: most starts
+    // come from outside the tracked routes and would otherwise be one bucket.
+    expect(start?.referrer_host).toBe("pollinations.ai");
+});
+
+test("an external path that collides with one of our routes is not our page", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    // '/' is a route of ours, so matching the path alone would credit this
+    // start to our landing page.
+    const started = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "https://pollinations.ai/",
+            },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(started.status).toBe(200);
+    const start = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "sign_in_started",
+    );
+    expect(start?.referrer_host).toBe("pollinations.ai");
+    expect(start?.page ?? "").toBe("");
 });

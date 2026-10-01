@@ -95,8 +95,6 @@ export async function callXaiImageAPI(
 
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel:
                 modelId === "grok-imagine-image-quality" ||

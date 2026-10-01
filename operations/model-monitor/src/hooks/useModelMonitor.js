@@ -7,7 +7,7 @@ import {
 } from "../model-data.js";
 
 const MODEL_ROUTE_HEALTH_URL = "https://gen.pollinations.ai/models/status";
-const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
+const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models?reliability=all";
 
 // Minutes parameter for the parameterized model_route_health pipe
 const WINDOW_MINUTES = {
@@ -74,7 +74,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}&traffic=regular`;
             const response = await fetch(url);
 
             if (!response.ok) {

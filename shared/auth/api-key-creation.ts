@@ -34,7 +34,6 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
-    allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
 
@@ -220,7 +219,6 @@ export async function createApiKeyForUser({
     pollenBudget,
     accountPermissions,
     metadata,
-    allowAccountKeysPermission,
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
@@ -244,11 +242,8 @@ export async function createApiKeyForUser({
         }
     }
 
-    const sanitizedAccountPerms =
-        sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
-    const safeAccountPerms = allowAccountKeysPermission
-        ? sanitizedAccountPerms
-        : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
+    const safeAccountPerms =
+        sanitizeAuthorizeAccountPermissions(accountPermissions);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {

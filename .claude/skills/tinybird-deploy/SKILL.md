@@ -104,13 +104,17 @@ Staging and prod are separate approvals — don't batch them into one command, s
 Verify the staging deployment and test the deployed endpoints with the read token for the same workspace.
 
 ```bash
+set -o pipefail
 tb --staging --cloud --host "$TB_HOST" endpoint ls
 tb --cloud --host "$TB_HOST" deployment ls
 
 TINYBIRD_TOKEN="$(SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s sops-age-key -w 2>/dev/null || true) \
   sops -d ../secrets/staging.vars.json | jq -r '.TINYBIRD_READ_TOKEN')"
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
-  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq '.data | length'
+curl -fsS "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
+  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq -e '
+    if has("error") then error(.error)
+    elif (.data | type) != "array" then error("Missing data array")
+    else .data | length end'
 ```
 
 For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not use `--staging`.

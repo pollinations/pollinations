@@ -33,22 +33,24 @@ function sourceAttribution(): Record<string, string> {
 
 export function Analytics() {
     const { data: session, isPending, error } = authClient.useSession();
+    // The real URL path, not the route id: /_dashboard is a pathless layout
+    // that contributes no segment, so the routeId ("/_dashboard/news") never
+    // matched the Referer path the server sees on the next request ("/news").
     const page = useRouterState({
-        select: (state) => state.matches.at(-1)?.routeId,
+        select: (state) => state.location.pathname,
     });
     const lastPage = useRef("");
     const userId = session?.user.id;
     useEffect(() => {
         if (isPending || error) return;
         const params = new URLSearchParams(location.search);
+        // Spread, never `client_id: undefined`: the key would survive parsing
+        // and URLSearchParams would send the string "undefined".
+        const clientId = params.get("client_id") ?? params.get("app_key");
         const view = productPageViewSchema.safeParse({
             page,
             ...sourceAttribution(),
-            client_id: (
-                params.get("client_id") ??
-                params.get("app_key") ??
-                undefined
-            )?.slice(0, 100),
+            ...(clientId ? { client_id: clientId.slice(0, 100) } : {}),
         });
         const key = `${userId ?? ""}:${page}`;
         if (!view.success || lastPage.current === key) return;

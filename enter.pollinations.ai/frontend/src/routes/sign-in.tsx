@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
+import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import {
     isDashboardPath,
     SIGNED_OUT_NAV_ITEMS,
 } from "../components/layout/dashboard-theme.ts";
 import { NewsFaq } from "../components/news-faq";
-import { SignedOutAccountArea } from "./_dashboard.tsx";
 
 type SignInSearch = {
     next?: string;
@@ -57,11 +57,8 @@ export const Route = createFileRoute("/sign-in")({
 
 function SignInPage() {
     return (
-        <DashboardShell
-            navItems={SIGNED_OUT_NAV_ITEMS}
-            accountArea={<SignedOutAccountArea />}
-            showFooterLinks={false}
-        >
+        <DashboardShell navItems={SIGNED_OUT_NAV_ITEMS}>
+            <DashboardSignInBanner defaultOpen />
             <NewsFaq />
         </DashboardShell>
     );

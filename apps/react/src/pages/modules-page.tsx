@@ -9,7 +9,7 @@ import {
     Alert,
     ButtonGroup,
     Chip,
-    ExternalLinkButton,
+    InlineLink,
     Surface,
     Table,
     TableBody,
@@ -291,8 +291,8 @@ export function ModulesPage() {
                         <AppUserMenu />
                         {!isLoggedIn ? (
                             <span className="text-sm font-medium text-intent-danger-text">
-                                Authorize the app to load your account and
-                                per-key access.
+                                Authorize the app to load your Pollinations
+                                account and per-key access.
                             </span>
                         ) : null}
                     </div>
@@ -625,12 +625,13 @@ export function ModulesPage() {
                         </Surface>
                     </section>
 
-                    <ExternalLinkButton
+                    <InlineLink
                         href="https://playground.pollinations.ai"
+                        size="sm"
                         className="self-start"
                     >
                         Try it out in Playground
-                    </ExternalLinkButton>
+                    </InlineLink>
                 </>
             ) : (
                 <section>

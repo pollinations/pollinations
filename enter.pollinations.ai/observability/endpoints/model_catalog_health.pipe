@@ -1,0 +1,33 @@
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Discovery reliability: the latest 50 eligible final requests per model within
+seven days. Fallback rescues are successes for the requested model. Caller 4xx
+are excluded; owner requests and monitor probes are included.
+Bounded aggregate state avoids sorting or retaining every request in the window.
+
+NODE recent_requests
+SQL >
+    SELECT
+        resolved_model_requested AS model,
+        event_type,
+        groupArraySorted(50)(tuple(-toInt64(toUnixTimestamp(start_time)), request_id, response_status)) AS recent
+    FROM generation_event_v2
+    WHERE start_time >= now() - INTERVAL 7 DAY
+        AND is_final
+        AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
+        AND startsWith(resolved_model_requested, 'community/')
+    GROUP BY model, event_type
+
+NODE endpoint
+SQL >
+    SELECT
+        model,
+        event_type,
+        1 AS is_rollup,
+        arrayCount(row -> row.3 >= 200 AND row.3 < 300, recent) AS status_2xx,
+        arrayCount(row -> row.3 >= 500, recent) AS errors_5xx
+    FROM recent_requests
+
+TYPE endpoint

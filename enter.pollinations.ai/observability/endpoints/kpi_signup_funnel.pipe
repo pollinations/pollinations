@@ -25,7 +25,7 @@ SQL >
     FROM product_event
     WHERE environment = {{String(environment, 'production')}}
         AND event = 'page_viewed'
-        AND page IN ('/_dashboard/pollen', '/top-up')
+        AND page IN ('/pollen', '/top-up')
         AND user_id != ''
         AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
     GROUP BY user_id

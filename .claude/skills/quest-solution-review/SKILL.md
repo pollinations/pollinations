@@ -28,6 +28,8 @@ A candidate must:
 - Meet the quest's observable acceptance criteria.
 - Use the real provider/API contract and the repository's existing architecture.
 - Preserve required auth, permissions, security, accounting, and tracking.
+- Bill from the provider's reported usage when the route reports it, not from
+  a price formula rebuilt from request parameters.
 - Handle failure modes that users can realistically encounter.
 
 Reject a candidate that only appears to work, silently changes the public

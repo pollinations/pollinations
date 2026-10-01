@@ -1,4 +1,8 @@
 import {
+    COMMUNITY_MODEL_PREFIX,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
+import {
     type ApiModelInfo,
     getCatalogCategory,
     getCatalogDisplayName,
@@ -74,16 +78,6 @@ const CATEGORY_MODALITIES: Record<
     "community-agent": "text",
 };
 
-const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
-    "text",
-    "images",
-    "video",
-    "3d",
-    "audio",
-    "realtime",
-    "embeddings",
-];
-
 export function getModelDisplayCategory(
     category: ModelCategory,
     community = false,
@@ -94,6 +88,17 @@ export function getModelDisplayCategory(
         return `community-${category}`;
     }
     return category;
+}
+
+/**
+ * Creator of a community model, read from its canonical ID
+ * (`community/<user>/<model>`), so it also works for requested IDs the public
+ * catalog does not list.
+ */
+export function getCommunityModelOwner(id: string): string | undefined {
+    return id.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? parseCommunityModelId(id)?.ownerGithubUsername
+        : undefined;
 }
 
 export function getModelCategoriesFromCatalog(
@@ -127,22 +132,4 @@ export function getModelCategoriesFromCatalog(
             models: categoryModels,
         };
     }).filter(({ models }) => models.length > 0);
-}
-
-export function computeCategoryModalities(
-    allowedModels: string[] | null,
-    categories: ModelCategoryGroup[] = [],
-): ModelCategoryGroup["modality"][] {
-    if (categories.length === 0) {
-        return allowedModels === null ? ALL_MODALITIES : [];
-    }
-
-    const selected = allowedModels === null ? null : new Set(allowedModels);
-    const modalities = categories
-        .filter(
-            ({ models }) =>
-                selected === null || models.some(({ id }) => selected.has(id)),
-        )
-        .map(({ modality }) => modality);
-    return [...new Set(modalities)];
 }

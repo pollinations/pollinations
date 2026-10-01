@@ -1,9 +1,6 @@
-import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
-import {
-    CONTENT_POLICY_STATUS,
-    isContentPolicyViolation,
-} from "../image/utils/contentModeration.ts";
+import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -18,21 +15,6 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
-
-function isClientInputError(details: unknown): boolean {
-    const serialized =
-        typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
-        serialized,
-    );
-}
-
-function apiErrorStatus(details: unknown, status: number): number {
-    if (isContentPolicyViolation(JSON.stringify(details))) {
-        return CONTENT_POLICY_STATUS;
-    }
-    return isClientInputError(details) ? 400 : remapUpstreamStatus(status);
-}
 
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
@@ -99,8 +81,8 @@ function extractErrorMessage(details: unknown): string | null {
 
 /**
  * Some OpenAI-compatible gateways return an upstream rate limit inside an
- * otherwise successful completion. Normalize explicit rate limits and policy
- * rejections; other finish errors (e.g. malformed tool output) stay unchanged.
+ * otherwise successful completion. Normalize explicit rate limits and input/
+ * policy rejections; other finish errors (e.g. malformed tool output) stay unchanged.
  */
 function responseBodyError(
     completion: ChatCompletion,
@@ -115,7 +97,7 @@ function responseBodyError(
         if (
             embedded.code !== 429 &&
             embedded.status !== 429 &&
-            !isContentPolicyViolation(JSON.stringify(details))
+            apiErrorStatus(details, 502) >= 500
         )
             continue;
 

@@ -12,6 +12,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
+import { resolveKreaAspectRatio } from "./kreaModel.ts";
 
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
@@ -45,17 +46,6 @@ const QWEN_RATIOS = [
     "2:3",
     "2:1",
     "1:2",
-] as const;
-
-const KREA_RATIOS = [
-    "1:1",
-    "4:3",
-    "3:2",
-    "16:9",
-    "2.35:1",
-    "4:5",
-    "2:3",
-    "9:16",
 ] as const;
 
 async function runReplicateImage(
@@ -234,7 +224,8 @@ export async function callReplicateFallbackImage(
                 "krea/krea-2-medium",
                 {
                     prompt,
-                    aspect_ratio: closestRatio(params, KREA_RATIOS),
+                    // Same resolution as the fal primary, which accepts the same ratios.
+                    aspect_ratio: resolveKreaAspectRatio(params),
                     seed: params.seed,
                 },
                 "Krea 2 Medium",
@@ -249,8 +240,6 @@ export async function callReplicateFallbackImage(
 
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: {

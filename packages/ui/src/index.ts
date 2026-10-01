@@ -1,5 +1,7 @@
 export {
     AccountIdentity,
+    AccountIdentityLink,
+    type AccountIdentityLinkProps,
     type AccountIdentityProps,
 } from "./compositions/AccountIdentity.tsx";
 export {
@@ -7,6 +9,7 @@ export {
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
@@ -39,6 +42,10 @@ export {
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
 export {
+    ConfirmationDialog,
+    type ConfirmationDialogProps,
+} from "./compositions/ConfirmationDialog.tsx";
+export {
     ContentHeader,
     type ContentHeaderProps,
 } from "./compositions/ContentHeader.tsx";
@@ -46,6 +53,7 @@ export {
     CopyButton,
     type CopyButtonProps,
 } from "./compositions/CopyButton.tsx";
+export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
     EditableCombobox,
     type EditableComboboxProps,
@@ -65,6 +73,7 @@ export {
     type FileUploadProps,
 } from "./compositions/FileUpload.tsx";
 export { InfoTip } from "./compositions/InfoTip.tsx";
+export { KeyChip, type KeyChipProps } from "./compositions/KeyChip.tsx";
 export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
 // Markdown and Prose live at @pollinations/ui/markdown — see src/markdown.ts.
 export {
@@ -99,6 +108,7 @@ export {
     periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export { BrandMark, type BrandMarkProps } from "./primitives/BrandMark.tsx";
 export {
     Button,
     type ButtonAppearance,
@@ -117,6 +127,8 @@ export {
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
+    DialogBody,
+    type DialogBodyProps,
     DialogDescription,
     DialogFooter,
     type DialogFooterProps,
@@ -142,12 +154,14 @@ export {
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LoadingStatus } from "./primitives/LoadingStatus.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
 export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,
+    type SwitchSize,
     type SwitchStatus,
 } from "./primitives/Switch.tsx";
 export {

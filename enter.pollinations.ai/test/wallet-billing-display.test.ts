@@ -7,6 +7,7 @@ import {
     formatTaxId,
     paymentMethodDetails,
 } from "../frontend/src/components/pollen/payment-method-format.ts";
+import { paymentMethods } from "../frontend/src/components/pollen/payment-trust-badge.tsx";
 
 function billing(
     overrides: {
@@ -215,5 +216,16 @@ describe("saved payment methods and billing details", () => {
                 country: "EE",
             }),
         ).toBe("Tartu mnt 1, 10115 Tallinn, Estonia");
+    });
+});
+
+describe("payment logos before checkout", () => {
+    it("puts the local method first and drops PayPal where checkout hides it", () => {
+        expect(paymentMethods("IN")[0]).toBe("upi");
+        expect(paymentMethods("IN")).not.toContain("paypal");
+        expect(paymentMethods("NL")).toEqual(
+            expect.arrayContaining(["ideal-wero", "paypal"]),
+        );
+        expect(paymentMethods(null)).toContain("paypal");
     });
 });

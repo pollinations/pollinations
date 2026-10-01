@@ -64,10 +64,7 @@ export type BillingOverview = {
     billingDetailsComplete: boolean;
     /** Lets the wallet load Stripe.js before the buyer picks a pack. */
     publishableKey: string;
-    /**
-     * The buyer's IP country (ISO code), set by GET /billing only. Checkout
-     * localizes the currency, and with it the payment methods, by location.
-     */
+    /** The buyer's IP country; GET /billing adds it for the payment logos. */
     ipCountry?: string | null;
 };
 

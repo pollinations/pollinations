@@ -235,7 +235,8 @@ Return only JSON:
     # larger budget and fail with a readable message instead.
     content = ""
     finish_reason = None
-    for max_tokens in (500, 2000):
+    match = None
+    for attempt, max_tokens in enumerate((500, 2000)):
         response = requests.post(
             POLLINATIONS_API,
             headers={"Authorization": f"Bearer {POLLINATIONS_API_KEY}"},
@@ -243,7 +244,7 @@ Return only JSON:
                 "model": MODEL,
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
+                    {"role": "user", "content": prompt if attempt == 0 else prompt + "\n\nReply with JSON only."},
                 ],
                 "max_tokens": max_tokens,
                 "temperature": 0,
@@ -254,11 +255,13 @@ Return only JSON:
         choice = (response.json().get("choices") or [{}])[0]
         content = (choice.get("message") or {}).get("content") or ""
         finish_reason = choice.get("finish_reason")
-        if content.strip():
+        match = re.search(r"\{[\s\S]*\}", content)
+        if match:
             break
-    if not content.strip():
+    if not match:
         raise RuntimeError(
-            f"pre-review model returned no content (finish_reason={finish_reason})"
+            "pre-review model returned no JSON "
+            f"(finish_reason={finish_reason}, chars={len(content.strip())})"
         )
     match = re.search(r"\{[\s\S]*\}", content)
     if not match:

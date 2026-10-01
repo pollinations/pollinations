@@ -84,7 +84,10 @@ import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
 } from "@/image/utils/contentModeration.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
+import type {
+    AuthVariables,
+    GenerationAuthSnapshot,
+} from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import {
     type GenerationCacheVariables,
@@ -1108,7 +1111,10 @@ export type UserData = {
     apiKeyOriginAppId?: string;
 };
 
-export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+// Also called with a snapshot of the auth, from work that outlives its request.
+export function requestIdentity(
+    auth: Partial<GenerationAuthSnapshot>,
+): UserData {
     const apiKeyMetadata = auth.apiKey?.metadata as
         | Record<string, unknown>
         | undefined;

@@ -20,11 +20,15 @@ interface CloudflareBindings {
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
+    SMOL_API_KEY?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
+    >;
+    MACHINE_METER: DurableObjectNamespace<
+        import("./src/durable-objects/MachineMeter.ts").MachineMeter
     >;
     DB: D1Database;
     ENVIRONMENT:

@@ -57,8 +57,15 @@ export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
  *   balance and usage are free regardless)
  * - `keys`: account admin; create, list, and revoke API keys, plus My Models
  *   access where enabled.
+ * - `machines`: create and run hosted machines, billed per hour. Agent run
+ *   tokens inherit it from their parent key.
  */
-export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
+export const CONSENT_PERMISSIONS = [
+    "profile",
+    "usage",
+    "keys",
+    "machines",
+] as const;
 
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,

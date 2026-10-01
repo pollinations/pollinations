@@ -17,6 +17,7 @@ const genAliases = [
     "cache",
     "durable-objects/PollenRateLimiter.ts",
     "durable-objects/GenerationCoordinator.ts",
+    "durable-objects/MachineMeter.ts",
     "env.ts",
     "error.ts",
     "events.ts",

@@ -26,6 +26,10 @@ describe("budgetHint", () => {
             JSON.stringify({ error: { code: "INSUFFICIENT_BALANCE" } }),
         );
         expect(hint).toContain("Top up: https://enter.pollinations.ai/pollen");
+        expect(hint).toContain("Balance: https://enter.pollinations.ai/pollen");
+        expect(hint).toContain(
+            "Earn Quest Pollen: https://enter.pollinations.ai/quests",
+        );
         expect(hint).toContain("Account balance: 0 pollen");
         expect(hint).not.toContain("Manage key budget:");
     });

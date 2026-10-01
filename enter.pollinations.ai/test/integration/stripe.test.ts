@@ -752,7 +752,7 @@ test("POST /api/stripe/billing/portal returns to standalone top-up without chang
     expect(defaultUrl.searchParams.has("redirect")).toBe(false);
 });
 
-test("POST /api/stripe/billing/portal opens adding a card and comes back when asked", async ({
+test("POST /api/stripe/billing/portal opens adding a card and comes back to the chosen pack", async ({
     sessionToken,
     mocks,
 }) => {
@@ -767,9 +767,11 @@ test("POST /api/stripe/billing/portal opens adding a card and comes back when as
             body: JSON.stringify(body),
         });
 
-    expect((await open({ return: "top-up", flow: "card" })).status).toBe(200);
-    // Anything else opens the portal's home page.
-    expect((await open({ flow: "details" })).status).toBe(200);
+    expect(
+        (await open({ return: "top-up", flow: "card", pack: "p50" })).status,
+    ).toBe(200);
+    // Anything else opens the portal's home page; an unknown pack is dropped.
+    expect((await open({ flow: "details", pack: "p7" })).status).toBe(200);
 
     const [card, other] = mocks.stripe.state.requests.filter(
         (request) => request.path === "/v1/billing_portal/sessions",
@@ -781,7 +783,12 @@ test("POST /api/stripe/billing/portal opens adding a card and comes back when as
     );
     expect(back.pathname).toBe("/top-up");
     expect(back.searchParams.get("stripe_billing_return")).toBe("true");
+    // The chosen pack is selected again on return.
+    expect(back.searchParams.get("pack")).toBe("p50");
     expect(other?.body["flow_data[type]"]).toBeUndefined();
+    expect(
+        new URL(String(other?.body.return_url)).searchParams.has("pack"),
+    ).toBe(false);
 });
 
 test("POST /api/stripe/billing/portal returns to Pollen for any other return value", async ({
@@ -962,7 +969,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
-test("GET /api/stripe/billing derives disabled auto top-up when default card is removed", async ({
+test("GET /api/stripe/billing turns auto top-up off when the default card is removed", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1006,15 +1013,17 @@ test("GET /api/stripe/billing derives disabled auto top-up when default card is 
     expect(data.paymentMethods.some((m) => m.isDefault)).toBe(false);
     expect(data.billingDetailsComplete).toBe(true);
 
+    // Recorded off, not just shown off: adding a card back must not turn
+    // charging on without the buyer choosing it.
     const [updatedUser] = await db
         .select({ autoTopUpEnabled: userTable.autoTopUpEnabled })
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
-    expect(updatedUser?.autoTopUpEnabled).toBe(true);
+    expect(updatedUser?.autoTopUpEnabled).toBe(false);
 });
 
-test("GET /api/stripe/billing derives disabled auto top-up when billing address is missing", async ({
+test("GET /api/stripe/billing turns auto top-up off when the billing address is missing, and restoring it keeps it off", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1069,7 +1078,20 @@ test("GET /api/stripe/billing derives disabled auto top-up when billing address 
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
-    expect(updatedUser?.autoTopUpEnabled).toBe(true);
+    expect(updatedUser?.autoTopUpEnabled).toBe(false);
+
+    // The buyer adds the address back in the portal: still off until they
+    // turn it on themselves.
+    customer.address = { country: "EE" } as typeof customer.address;
+    const restored = await SELF.fetch(`${base}/billing`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    const after = (await restored.json()) as {
+        autoTopUp: { enabled: boolean };
+        billingDetailsComplete: boolean;
+    };
+    expect(after.billingDetailsComplete).toBe(true);
+    expect(after.autoTopUp.enabled).toBe(false);
 });
 
 test("GET /api/stripe/billing shows pending auto top-up invoice payment link", async ({

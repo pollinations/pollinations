@@ -55,5 +55,19 @@ export function autoTopUpStatus(billing: BillingOverview): AutoTopUpStatus {
             action: { kind: "portal", label: "Update card" },
         };
     }
+    // A card but no name or tax location: auto top-up can't be turned on.
+    // The portal opens on its overview, so say where the details are.
+    if (
+        !autoTopUp.enabled &&
+        hasDefaultPaymentMethod(billing) &&
+        !billing.billingDetailsComplete
+    ) {
+        return {
+            tab: tab(true),
+            text: "Billing details needed",
+            detail: "On Stripe, open your initials (top right), then Profile settings, and add your name and billing address.",
+            action: { kind: "portal", label: "Add details" },
+        };
+    }
     return { tab: tab(false), text: null, action: null };
 }

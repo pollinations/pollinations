@@ -3,6 +3,7 @@ import {
     calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
+    isPollenPackKey,
     POLLEN_PACKS,
     SERVICE_FEE_NAME,
     SERVICE_FEE_TAX_CODE,
@@ -168,6 +169,7 @@ export const stripeRoutes = new Hono<Env>()
             return?: unknown;
             redirect?: unknown;
             flow?: unknown;
+            pack?: unknown;
         } | null;
 
         try {
@@ -179,6 +181,11 @@ export const stripeRoutes = new Hono<Env>()
                     redirect:
                         typeof body?.redirect === "string"
                             ? body.redirect
+                            : undefined,
+                    pack:
+                        typeof body?.pack === "string" &&
+                        isPollenPackKey(body.pack)
+                            ? body.pack
                             : undefined,
                 },
                 body?.flow === "card" ? "card" : undefined,

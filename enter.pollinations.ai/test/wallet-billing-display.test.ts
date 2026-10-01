@@ -53,7 +53,8 @@ describe("automatic top-up on the tab label", () => {
         for (const state of [
             billing(),
             billing({ paymentMethods: [] }),
-            billing({ billingDetailsComplete: false }),
+            // No card yet: the switch opens adding one first.
+            billing({ paymentMethods: [], billingDetailsComplete: false }),
         ])
             expect(autoTopUpStatus(state)).toEqual({
                 tab: { on: false, label: "Off", warning: false },
@@ -86,6 +87,16 @@ describe("automatic top-up on the tab label", () => {
             href: "https://invoice.stripe.com/i/test",
         });
         expect(pending.detail).toBeUndefined();
+
+        // A card but no details: point to where they are on Stripe.
+        const noDetails = autoTopUpStatus(
+            billing({ billingDetailsComplete: false }),
+        );
+        expect(noDetails.action).toEqual({
+            kind: "portal",
+            label: "Add details",
+        });
+        expect(noDetails.detail).toMatch(/Profile settings/);
 
         // Turned off while the bank waits: no new purchases, but this one
         // is still payable, so Approve stays and says why.

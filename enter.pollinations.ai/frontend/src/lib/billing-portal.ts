@@ -1,3 +1,4 @@
+import type { PollenPackKey } from "@shared/pollen-packs.ts";
 import { apiClient } from "../api.ts";
 
 /** "card": straight to adding a card (made the default), then back here. */
@@ -11,6 +12,8 @@ export type BillingPortalFlow = "card";
 export async function openBillingPortal(
     returnToTopUp?: { redirect?: string },
     flow?: BillingPortalFlow,
+    /** Selected again on return, so the buyer finds the pack they chose. */
+    pack?: PollenPackKey,
 ): Promise<string> {
     try {
         const response = await apiClient.stripe.billing.portal.$post({
@@ -20,6 +23,7 @@ export async function openBillingPortal(
                     redirect: returnToTopUp.redirect,
                 }),
                 ...(flow && { flow }),
+                ...(pack && { pack }),
             },
         });
         const payload = (await response.json().catch(() => ({}))) as {

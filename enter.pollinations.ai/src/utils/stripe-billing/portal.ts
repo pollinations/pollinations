@@ -1,3 +1,4 @@
+import type { PollenPackKey } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
@@ -156,7 +157,12 @@ function isBillingPortalConfigurationCurrent(
 }
 
 /** Where the portal sends the user back: the standalone page, else Pollen. */
-type BillingReturn = { topUp?: boolean; redirect?: string };
+/** The pack keeps the buyer's selection across the round trip. */
+type BillingReturn = {
+    topUp?: boolean;
+    redirect?: string;
+    pack?: PollenPackKey;
+};
 
 function getBillingReturnUrl(
     env: CloudflareBindings,
@@ -165,6 +171,7 @@ function getBillingReturnUrl(
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
     const url = new URL(returnTo?.topUp ? "/top-up" : "/pollen", baseUrl);
     if (returnTo?.redirect) url.searchParams.set("redirect", returnTo.redirect);
+    if (returnTo?.pack) url.searchParams.set("pack", returnTo.pack);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

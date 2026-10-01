@@ -194,9 +194,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
 
     function openPortal(flow?: BillingPortalFlow): void {
         setSlotError(null);
-        void openBillingPortal(returnToTopUp, flow).then((message) => {
-            if (message) setSlotError(PORTAL_FAILED);
-        });
+        void openBillingPortal(returnToTopUp, flow, selectedPack?.packKey).then(
+            (message) => {
+                if (message) setSlotError(PORTAL_FAILED);
+            },
+        );
     }
 
     async function saveAutoTopUp(

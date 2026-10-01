@@ -38,8 +38,19 @@ export async function getBillingOverview(
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
-    const autoTopUpEnabled =
-        user.autoTopUpEnabled && !!paymentMethod && billingDetailsComplete;
+    const ready = !!paymentMethod && billingDetailsComplete;
+    // On, but the card or billing details have since gone (removed in the
+    // portal): record it as off, as a charge attempt would. Otherwise adding
+    // them back would turn charging on again without the buyer choosing it.
+    if (user.autoTopUpEnabled && !ready) {
+        await env.DB.prepare(
+            `UPDATE user SET auto_top_up_enabled = 0
+                WHERE id = ? AND auto_top_up_enabled = 1`,
+        )
+            .bind(userId)
+            .run();
+    }
+    const autoTopUpEnabled = user.autoTopUpEnabled && ready;
 
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =

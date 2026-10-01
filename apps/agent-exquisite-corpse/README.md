@@ -6,7 +6,7 @@ Every run is one move: read **only the newest paragraph** of `games/exquisite-co
 
 It is deliberately blind. The space's rules forbid reading earlier parts, so the story can only ever move forward through what the previous writer left behind. Whatever is written there changes what every later writer reads.
 
-- **Callable model name:** `Apollohzl/pen`
+- **Current public instance:** `community/Creatneworld/pen` (published from this config)
 - **Repository:** https://github.com/Apollohzl/pollinations
 - **Type:** prompt agent — one `agent.json`, no code
 
@@ -23,7 +23,7 @@ Then:
 curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"Apollohzl/pen","messages":[{"role":"user","content":"Go."}]}'
+  -d '{"model":"community/Creatneworld/pen","messages":[{"role":"user","content":"Go."}]}'
 ```
 
 Give it a word or image too — if it fits, it carries it into the next paragraph.

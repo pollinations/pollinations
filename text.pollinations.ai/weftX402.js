@@ -3,38 +3,20 @@ import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { createWeftPaywall } from "../shared/weft-paywall.js";
 
-const paymentMiddlewares = {};
+let paymentMiddleware;
 
 export function weftTextEnabled() {
-    return Boolean(
-        process.env.WEFT_SELLER_API_KEY &&
-            process.env.WEFT_PAY_TO &&
-            process.env.WEFT_NETWORK &&
-            process.env.WEFT_FACILITATOR_URL,
-    );
+    return Boolean(process.env.WEFT_SELLER_API_KEY && process.env.WEFT_PAY_TO &&
+        process.env.WEFT_NETWORK && process.env.WEFT_FACILITATOR_URL);
 }
 
 export function weftTextPayment(req, res, next) {
-    const {
-        WEFT_SELLER_API_KEY,
-        WEFT_PAY_TO,
-        WEFT_NETWORK,
-        WEFT_FACILITATOR_URL,
-    } = process.env;
-    if (
-        !WEFT_SELLER_API_KEY ||
-        !WEFT_PAY_TO ||
-        !WEFT_NETWORK ||
-        !WEFT_FACILITATOR_URL
-    ) {
-        return res
-            .status(503)
-            .json({ error: "x402 payments are not configured" });
+    const { WEFT_SELLER_API_KEY, WEFT_PAY_TO, WEFT_NETWORK, WEFT_FACILITATOR_URL } = process.env;
+    if (!WEFT_SELLER_API_KEY || !WEFT_PAY_TO || !WEFT_NETWORK || !WEFT_FACILITATOR_URL) {
+        return res.status(503).json({ error: "x402 payments are not configured" });
     }
 
-    // The wallet UI retries GET only; never replay a POST as a different paid request.
-    const pageKind = req.method === "GET" ? "get" : "other";
-    paymentMiddlewares[pageKind] ??= weftPaymentMiddleware(
+    paymentMiddleware ??= weftPaymentMiddleware(
         {
             "GET *": {
                 accepts: {
@@ -61,13 +43,9 @@ export function weftTextPayment(req, res, next) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
-            paywall: createWeftPaywall(
-                "response",
-                findDefaultAsset,
-                pageKind === "get",
-            ),
+            paywall: createWeftPaywall("response", findDefaultAsset),
             schemes: [{ network: WEFT_NETWORK, server: new ExactEvmScheme() }],
         },
     );
-    return paymentMiddlewares[pageKind](req, res, next);
+    return paymentMiddleware(req, res, next);
 }

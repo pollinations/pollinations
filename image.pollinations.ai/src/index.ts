@@ -15,7 +15,6 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
-import { serveWeftWalletScript } from "../../shared/weft-paywall.js";
 import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
@@ -698,7 +697,6 @@ const checkCacheAndGenerate = async (
 // Modify the server creation to set CORS headers for all requests
 const server = http.createServer((req, res) => {
     setCORSHeaders(res);
-    if (serveWeftWalletScript(req, res)) return;
 
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;

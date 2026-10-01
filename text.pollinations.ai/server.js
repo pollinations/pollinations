@@ -7,7 +7,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { Transform } from "stream";
-import { serveWeftWalletScript } from "../shared/weft-paywall.js";
 import { weftTextEnabled, weftTextPayment } from "./weftX402.js";
 import { availableModels } from "./availableModels.js";
 import { getProviderByModelId } from "../shared/registry/registry.js";
@@ -109,7 +108,6 @@ app.use((req, res, next) => {
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors({ exposedHeaders: ["Payment-Required", "Payment-Response"] }));
-app.use((req, res, next) => serveWeftWalletScript(req, res) || next());
 // New route handler for root path
 app.get("/", (req, res) => {
     res.redirect(

@@ -10,7 +10,6 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
-        "@x402/paywall": "2.27.0",
         "debug": "^4.4.1",
         "dotenv": "^16.5.0",
         "memoizee": "^0.4.17",

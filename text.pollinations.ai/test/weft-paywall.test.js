@@ -89,12 +89,7 @@ for (const [method, path] of [
         assert.match(response.text, /class="setup-link"/);
         assert.doesNotMatch(response.text, /<img[^>]+src="https?:/);
         assert.doesNotMatch(response.text, /Note to developers/);
-        if (method === "get") {
-            assert.match(response.text, /Pay with my wallet/);
-            assert.match(response.text, /window\.x402 =/);
-        } else {
-            assert.doesNotMatch(response.text, /Pay with my wallet|<script/);
-        }
+        assert.doesNotMatch(response.text, /<script/);
         assert.match(response.headers["cache-control"], /no-store/);
 
         const challenge = JSON.parse(

@@ -1,60 +1,9 @@
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { evmPaywall } from "@x402/paywall/evm";
 
 // Inline the packaged art so the 402 page needs no external or paid asset request.
 const illustration = readFileSync(
     new URL("./assets/weft-paywall.webp", import.meta.url),
 ).toString("base64");
-
-// Split the pinned SDK page once: its CSS goes inline, and its 2.3 MB wallet
-// bundle is served as a cacheable script instead of inside every 402 page.
-const sdkPage = evmPaywall.generateHtml({ network: "eip155:8453" }, {}, {});
-const sdkStyle = sdkPage.match(/<style>[\s\S]*?<\/style>/)?.[0];
-const moduleTag = '<script type="module">';
-const bundleStart = sdkPage.indexOf(moduleTag);
-const bundleEnd = sdkPage.lastIndexOf("</script></body>");
-const walletBundle =
-    sdkStyle && bundleStart >= 0 && bundleEnd > bundleStart
-        ? Buffer.from(sdkPage.slice(bundleStart + moduleTag.length, bundleEnd))
-        : null;
-if (!walletBundle)
-    console.error(
-        "weft-paywall: unexpected @x402/paywall template; wallet checkout disabled",
-    );
-
-export const WEFT_WALLET_SCRIPT_PATH = walletBundle
-    ? `/weft-paywall/${createHash("sha256").update(walletBundle).digest("hex").slice(0, 16)}.js`
-    : null;
-
-/** Serve the wallet bundle; returns false when the request is not for it. */
-export function serveWeftWalletScript(req, res) {
-    if (
-        !walletBundle ||
-        req.url !== WEFT_WALLET_SCRIPT_PATH ||
-        (req.method !== "GET" && req.method !== "HEAD")
-    )
-        return false;
-    res.writeHead(200, {
-        "Content-Type": "text/javascript; charset=utf-8",
-        "Content-Length": walletBundle.length,
-        "Cache-Control": "public, max-age=31536000, immutable",
-    });
-    res.end(req.method === "HEAD" ? undefined : walletBundle);
-    return true;
-}
-
-// Same chain config the pinned SDK writes; the paywall test compares the two.
-const chainConfig = {
-    base: {
-        usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        usdcName: "USDC",
-    },
-    "base-sepolia": {
-        usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-        usdcName: "USDC",
-    },
-};
 
 // Render the x402 response amount using the SDK's asset metadata, not the route price.
 function quotedPrice(paymentRequired, findAsset) {
@@ -80,51 +29,24 @@ function quotedPrice(paymentRequired, findAsset) {
         .replace(/0+$/, "")
         .padEnd(2, "0");
     const currency = asset.symbol === "USDC" ? "USD" : asset.symbol;
-    return { amount: `${amount / scale}.${fraction}`, currency };
+    return `${amount / scale}.${fraction} ${currency}`;
 }
 
-// The SDK bundle reads window.x402; we write it so escaping and the retry URL stay ours.
-function walletConfig(paymentRequired, amount) {
-    const x402 = {
-        amount: Number(amount),
-        paymentRequired,
-        testnet: paymentRequired.accepts[0].network === "eip155:84532",
-        currentUrl: "",
-        config: { chainConfig },
-        appName: "Pollinations",
-        appLogo: "",
-    };
-    const json = JSON.stringify(x402).replace(/</g, "\\u003c");
-    // Retry the page the buyer opened, never a URL supplied by forwarded request headers.
-    return `${sdkStyle}
-        <script>window.x402 = ${json}; window.x402.currentUrl = window.location.href;</script>`;
-}
-
-/** Create the browser paywall; disable wallet checkout when the request cannot be replayed as GET. */
-export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
+/** Create the browser 402 page that points buyers to Weft agent setup. */
+export function createWeftPaywall(resourceType, findAsset) {
     const item = resourceType === "image" ? "image" : "response";
     return {
         generateHtml(paymentRequired) {
             const price = quotedPrice(paymentRequired, findAsset);
             const heading = price
-                ? `Get your ${item} for just ${price.amount} ${price.currency}`
+                ? `Get your ${item} for just ${price}`
                 : `Get your ${item} with Weft`;
-            const payment = paymentRequired?.accepts?.[0];
-            const showWallet =
-                allowWallet &&
-                walletBundle &&
-                price &&
-                paymentRequired.x402Version === 2 &&
-                payment.scheme === "exact" &&
-                ["eip155:8453", "eip155:84532"].includes(payment.network) &&
-                /^0x[0-9a-fA-F]{40}$/.test(payment.payTo);
             return `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Payment Required - Pollinations</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        ${showWallet ? walletConfig(paymentRequired, price.amount) : ""}
         <style>
             :root { color-scheme: light; --ink: #182734; --muted: #506577; --line: #dce6ee; --pollen: #ffe36b; }
             * { box-sizing: border-box; }
@@ -148,17 +70,7 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
             .credit strong { color: var(--ink); }
             .setup-link { display: block; margin-top: 22px; padding: 13px 18px; border: 1px solid #e6c448; border-radius: 10px; background: var(--pollen); color: var(--ink); text-align: center; text-decoration: none; font-size: 15px; font-weight: 750; }
             .setup-link:hover { background: #ffdc44; }
-            a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible { outline: 3px solid #24567e; outline-offset: 4px; }
-            .wallet-checkout { margin-top: 16px; text-align: center; overflow-wrap: anywhere; }
-            .wallet-checkout summary { display: inline-block; padding: 8px 16px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
-            .wallet-checkout summary::-webkit-details-marker { display: none; }
-            .wallet-checkout summary:hover { color: var(--ink); border-color: var(--muted); }
-            .wallet-checkout #root { margin-top: 12px; text-align: left; }
-            .wallet-checkout #root .container { width: 100%; max-width: none; margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: none; }
-            .wallet-checkout #root h1, .wallet-checkout #root .instructions { display: none; }
-            .wallet-checkout .button-primary { background: var(--pollen); color: var(--ink); }
-            .wallet-checkout .button-primary:hover { background: #ffdc44; }
-            .wallet-checkout button:disabled { opacity: 0.5; cursor: not-allowed; }
+            a:focus-visible { outline: 3px solid #24567e; outline-offset: 4px; }
             .connected { max-width: 460px; margin: 20px auto 0; color: var(--muted); text-align: center; font-size: 13px; }
             @media (max-width: 480px) {
                 main { margin: 16px auto; padding: 20px; border-radius: 18px; }
@@ -168,8 +80,6 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
                 .art { max-width: 300px; margin-bottom: 18px; }
                 .intro { font-size: 15px; }
                 .setup { padding: 18px; }
-                .wallet-checkout .cta-container { flex-direction: column; width: 100%; }
-                .wallet-checkout .cta-container select, .wallet-checkout .cta-container button { width: 100%; }
             }
         </style>
     </head>
@@ -200,9 +110,7 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
                 <a class="setup-link" href="https://weft.network/setup.md">Give my agent a wallet &rarr;</a>
             </section>
             <p class="connected">Already connected? Ask your agent to pay for this request.</p>
-            ${showWallet ? '<details class="wallet-checkout"><summary>Pay with my wallet</summary><div id="root"></div></details>' : ""}
         </main>
-        ${showWallet ? `<script type="module" src="${WEFT_WALLET_SCRIPT_PATH}"></script>` : ""}
     </body>
 </html>`;
         },

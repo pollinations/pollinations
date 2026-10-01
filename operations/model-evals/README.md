@@ -45,6 +45,8 @@ Get an API key at https://enter.pollinations.ai/keys. Options: run
 - **Errors and timeouts count as failures** —
   a model is never skipped for misbehaving. Unanswered questions lower the
   score.
+  Account authentication/balance/permission failures and invalid request bodies
+  stop the run as incomplete instead of being published as model scores.
 - **429 rate limits are our limit, not the model's**: the runner backs off
   and retries slowly (15s, 30s, 60s, 120s). Exhausting that account quota
   marks the run incomplete, not the model bad. Incomplete runs are retained

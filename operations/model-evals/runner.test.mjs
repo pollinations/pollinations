@@ -230,3 +230,33 @@ test("request seeds are stable for the same inputs and vary across them", () => 
     assert.notEqual(a, b);
     assert.notEqual(a, c);
 });
+
+test("every generated request seed satisfies the live chat schema", () => {
+    for (let i = 0; i < 10000; i++) {
+        const seed = requestSeed(i, "model", `question-${i}`, 1);
+        assert.ok(Number.isInteger(seed) && seed >= 0 && seed <= 2147483647);
+    }
+});
+
+test("auth, balance and request-validation failures stop without model scores", async () => {
+    for (const status of [400, 401, 402, 403, 422]) {
+        let calls = 0;
+        const result = await runEval({
+            models: [MODEL, { ...MODEL, name: "other" }],
+            questions: makeQuestions(2),
+            runSeed: 10,
+            options: baseOverrides(),
+            fetchFn: async () => {
+                calls++;
+                return jsonResponse(status, {
+                    error: { message: "request rejected" },
+                });
+            },
+        });
+        assert.equal(calls, 1);
+        assert.match(result.requestError, new RegExp(`HTTP ${status}`));
+        assert.ok(
+            result.entries.every((entry) => entry.status === "request_error"),
+        );
+    }
+});

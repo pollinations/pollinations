@@ -25,7 +25,9 @@ export function hashString(str) {
 }
 
 export function requestSeed(runSeed, ...parts) {
-    return hashString([String(runSeed), ...parts].join("\u0000"));
+    // The chat-completions schema caps seeds at signed int32, unlike some
+    // other endpoints. Keep deterministic hashes within that accepted range.
+    return hashString([String(runSeed), ...parts].join("\u0000")) & 0x7fffffff;
 }
 
 export function sleep(ms) {

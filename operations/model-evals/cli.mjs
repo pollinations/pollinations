@@ -291,6 +291,7 @@ export async function main(argv = process.argv.slice(2)) {
         entries,
         capReached,
         rateLimited,
+        requestError,
         unknownCostRequests,
         costUpperBoundPollen,
     } = await runEval({
@@ -335,7 +336,9 @@ export async function main(argv = process.argv.slice(2)) {
         }));
 
     const incomplete = entries
-        .filter((entry) => entry.status === "rate_limited")
+        .filter((entry) =>
+            ["rate_limited", "request_error"].includes(entry.status),
+        )
         .map((entry) => ({
             name: entry.model.name,
             community: entry.model.community === true,
@@ -358,7 +361,8 @@ export async function main(argv = process.argv.slice(2)) {
         maxCostPollen: args.maxCostPollen,
         capReached,
         rateLimited,
-        complete: !capReached && !rateLimited,
+        requestError,
+        complete: !capReached && !rateLimited && !requestError,
         unknownCostRequests,
         costUpperBoundPollen,
         costMethod:
@@ -405,6 +409,11 @@ export async function main(argv = process.argv.slice(2)) {
             "Run incomplete: account rate limit exhausted. No weekly leaderboard will be published.",
         );
 
+    if (requestError)
+        console.error(
+            `Run incomplete: request/authentication configuration failed (${requestError}). No leaderboard will be published.`,
+        );
+
     if (args.out) {
         await writeJson(args.out, run);
         console.log(`Results written to ${args.out}`);
@@ -430,7 +439,7 @@ export async function main(argv = process.argv.slice(2)) {
         await writeJson(args.history, history.slice(-HISTORY_RUN_LIMIT));
         console.log(`History updated: ${args.history}`);
     }
-    return rateLimited ? 2 : capReached ? 3 : 0;
+    return requestError ? 1 : rateLimited ? 2 : capReached ? 3 : 0;
 }
 
 if (

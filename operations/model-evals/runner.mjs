@@ -143,6 +143,10 @@ async function runQuestion({
                 family: question.family,
                 correct: false,
                 error: extractError(payload, response.status),
+                httpStatus: response.status,
+                fatalRequestError: [400, 401, 402, 403, 422].includes(
+                    response.status,
+                ),
                 attempt,
                 latencyMs,
                 costPollen: null,
@@ -198,6 +202,7 @@ export async function runEval({
     const totalCost = { pollen: 0, reserved: 0, uncertain: 0 };
     let unknownCostRequests = 0;
     let rateLimited = false;
+    let requestError = null;
     const entries = [];
     let queueIndex = 0;
     let capReached = false;
@@ -207,6 +212,14 @@ export async function runEval({
             const model = prepared[queueIndex];
             queueIndex += 1;
 
+            if (requestError) {
+                entries.push({
+                    model,
+                    status: "request_error",
+                    questionResults: [],
+                });
+                continue;
+            }
             if (rateLimited) {
                 entries.push({
                     model,
@@ -227,7 +240,7 @@ export async function runEval({
 
             const questionResults = [];
             for (const question of questions) {
-                if (capReached || rateLimited) break;
+                if (capReached || rateLimited || requestError) break;
                 const reservation = estimateCostPollenOf(
                     model,
                     question,
@@ -260,6 +273,8 @@ export async function runEval({
                     log,
                 });
                 totalCost.reserved -= reservation;
+                if (result.fatalRequestError)
+                    requestError = `HTTP ${result.httpStatus}: ${result.error}`;
                 if (result.error === "rate_limited") {
                     // Our quota is not a model-quality failure. Do not publish
                     // a comparable score for an incomplete rate-limited run.
@@ -276,9 +291,18 @@ export async function runEval({
                         capReached = true;
                 }
                 questionResults.push(result);
-                if (rateLimited) break;
+                if (rateLimited || requestError) break;
             }
             if (
+                questionResults.some((r) => r.fatalRequestError) ||
+                (requestError && questionResults.length < questions.length)
+            ) {
+                entries.push({
+                    model,
+                    status: "request_error",
+                    questionResults,
+                });
+            } else if (
                 (rateLimited && questionResults.length < questions.length) ||
                 questionResults.some((r) => r.error === "rate_limited")
             ) {
@@ -314,6 +338,7 @@ export async function runEval({
         entries,
         capReached,
         rateLimited,
+        requestError,
         unknownCostRequests,
         costUpperBoundPollen: totalCost.pollen + totalCost.uncertain,
     };

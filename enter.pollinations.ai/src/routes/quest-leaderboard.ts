@@ -182,8 +182,9 @@ export async function buildQuestStandings(
     const rows = await db
         .select({
             githubLogin,
-            totalPollen:
-                sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(Number),
+            totalPollen: sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
+                Number,
+            ),
         })
         .from(rewardsTable)
         .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))

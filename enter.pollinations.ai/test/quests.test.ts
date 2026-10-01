@@ -2223,7 +2223,7 @@ test("Bee Census quest pays 3 Pollen once for the user's own labelled survey iss
     ]);
 });
 
-test("Honey Census quest pays 10 Pollen only once the survey author has bought Pollen", async ({
+test("Honey Census quest pays 5 Pollen only once the survey author has bought more than 2 Pollen", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2265,6 +2265,17 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
     await checkQuestsForUser(env, user.id);
     expect(await honeyCensusRewards()).toEqual([]);
 
+    // The smallest pack alone doesn't qualify.
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_test_honey_census_small",
+        eventId: "evt_test_honey_census_small",
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 2,
+    });
+    await checkQuestsForUser(env, user.id);
+    expect(await honeyCensusRewards()).toEqual([]);
+
     await db.insert(schema.stripeCheckoutCredits).values({
         sessionId: "cs_test_honey_census",
         eventId: "evt_test_honey_census",
@@ -2277,7 +2288,7 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
     expect(await honeyCensusRewards()).toEqual([
         {
             idempotencyKey: `quest:honey_census:github:${user.githubId}`,
-            pollenAmount: 10,
+            pollenAmount: 5,
             balanceBucket: "tier",
         },
     ]);

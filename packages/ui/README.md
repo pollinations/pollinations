@@ -130,16 +130,20 @@ Wallet colors and utilities are bundled into the main stylesheet
 
 ## Dialog layout
 
-`Dialog` uses one responsive frame for forms, confirmations, and results:
-full viewport without a border below 640px, contained with rounded corners on
-larger screens. `size` controls desktop width only. Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter`
-for consistent spacing and actions; avoid overriding viewport dimensions
-in consumers. The frame uses Enter’s themed panel color; inset cards use the
-neutral `Surface` default. `AuthModal` uses the same frame for standalone pages.
+`Dialog` keeps rounded corners at every width. Below 480px it spans the phone
+width with an 8px vertical gap; larger viewports have a 16px outer inset and use
+the `size` width limit. Height follows the content, capped by the available
+viewport. `fullscreenOnMobile={false}` keeps compact confirmations and results
+inset on phones too.
 
-Enter's `ResourceDialog` keeps dashboard forms and confirmations contained on
-mobile too, with viewport margins and scrollable content. Keep that exception
-in the shared dashboard wrapper rather than repeating dimensions in consumers.
+Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter` for
+consistent spacing and actions. The frame uses Enter's themed panel color;
+inner cards use the neutral `Surface` default. `AuthModal` uses the same frame
+for standalone pages. Content such as document previews can request a height,
+which remains capped by the shared frame.
+
+Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
+compact results stay centered. It inherits the shared viewport sizing.
 
 ## What's exported
 

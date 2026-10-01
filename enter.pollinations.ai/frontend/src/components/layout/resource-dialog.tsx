@@ -1,16 +1,17 @@
 import { cn, Dialog, type DialogProps } from "@pollinations/ui";
 
-/** Top-aligned, scrollable shell for dashboard forms; full-screen on phones
- * unless the caller shows a compact result. */
+/** Keep expandable forms top-aligned; compact results stay centered. */
 export function ResourceDialog({
     contentClassName,
+    fullscreenOnMobile = true,
     ...props
 }: Omit<DialogProps, "positionerClassName">) {
     return (
         <Dialog
             {...props}
+            fullscreenOnMobile={fullscreenOnMobile}
             contentClassName={cn(
-                "resource-dialog polli:sm:rounded-2xl",
+                fullscreenOnMobile && "resource-dialog",
                 contentClassName,
             )}
         />

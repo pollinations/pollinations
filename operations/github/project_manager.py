@@ -84,6 +84,28 @@ CONFIG = {
                 "Medium": "e874fe65",
                 "Low": "7495a981",
             },
+            # Focus areas, defined in focus-areas.md.
+            "area_field_id": "PVTSSF_lADOBS76fs4AwCAMzhj_BWQ",
+            "area_options": {
+                "Models": "ab499fb1",
+                "Community models": "05800eb9",
+                "Agents & agent tools": "e6719013",
+                "Developer tools": "4c7b9551",
+                "Accounts & keys": "041d6d93",
+                "Payments & earnings": "9ef54496",
+                "Quests & rewards": "04989bd3",
+                "Dashboard": "7bbc7e39",
+                "API & reliability": "ed382573",
+                "Metering & billing": "2aeab82e",
+                "CI & releases": "b49245d6",
+                "Internal automation": "f141fdaa",
+                "Website": "622c0f6c",
+                "Docs & support": "06f39998",
+                "App catalog & showcase": "062bac6c",
+                "Social & news": "13321a89",
+                "Data pipelines": "0de0ec74",
+                "Insights": "e1549284",
+            },
         },
     },
     "discord_relay_bot_id": 247793354,
@@ -168,8 +190,12 @@ def get_script_dir() -> str:
 
 
 def read_prompt_file() -> str:
-    with open(os.path.join(get_script_dir(), "project-manager.md"), "r") as f:
-        return f.read()
+    """The classifier rules followed by the focus area definitions they refer to."""
+    parts = []
+    for name in ("project-manager.md", "focus-areas.md"):
+        with open(os.path.join(get_script_dir(), name), "r") as f:
+            parts.append(f.read())
+    return "\n\n---\n\n".join(parts)
 
 
 # One label list for issues and pull requests; definitions live in project-manager.md.
@@ -182,6 +208,10 @@ FLAGS = {"BILLING", "SECURITY", "AUTOMATED"} | ({"POLLEN-QUEST"} if IS_PULL_REQU
 OWNED_LABELS = set(KINDS) | set(TYPES) | FLAGS
 # Types a person set on an issue that the classifier keeps.
 PINNED_TYPES = {"TRACKING", "VOTING"}
+# GitHub issue types for the type labels; pull requests have no issue type.
+ISSUE_TYPES = {"BUG": "Bug", "FEATURE": "Feature", "QUESTION": "Question", "TRACKING": "Tracking"}
+AREAS = CONFIG["projects"]["dev"]["area_options"]
+APP_SUBMISSION_AREA = "App catalog & showcase"
 
 
 def parse_labels(raw: dict) -> Optional[list]:
@@ -277,6 +307,12 @@ Body: {ISSUE_BODY[:2000]}
     if labels is None:
         return None
 
+    # null only for promotion PRs, which carry other PRs' work.
+    area = raw.get("area")
+    if area is not None and area not in AREAS:
+        log_error(f"AI returned invalid area: {area!r}")
+        return None
+
     priority = raw.get("priority")
     if not IS_PULL_REQUEST and priority not in {"High", "Medium", "Low"}:
         log_error(f"AI returned invalid priority: {priority}")
@@ -290,6 +326,7 @@ Body: {ISSUE_BODY[:2000]}
         tracking_number = int(tracking_raw.strip().lstrip("#"))
 
     classification = {
+        "area": area,
         "labels": labels,
         "priority": priority,
         "tracking_issue": tracking_number,
@@ -432,6 +469,38 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         log_error(f"Failed to set project field: field_id={field_id}")
 
 
+def set_area(item_id: str, area: Optional[str]):
+    if area is None:
+        log_debug(f"No area for #{ISSUE_NUMBER}")
+        return
+    project = CONFIG["projects"]["dev"]
+    set_project_field(project["id"], item_id, project["area_field_id"], project["area_options"][area])
+
+
+def set_issue_type(labels: list):
+    """Mirror the type label as the GitHub issue type; issues without a type keep theirs."""
+    issue_type = next((ISSUE_TYPES[l] for l in labels if l in ISSUE_TYPES), None)
+    if issue_type is None:
+        return
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would set issue type: {issue_type}")
+        return
+    try:
+        r = requests.patch(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
+            headers=GITHUB_HEADERS,
+            json={"type": issue_type},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        log_error(f"Exception setting issue type on #{ISSUE_NUMBER}: {e}")
+        return
+    if r.status_code == 200:
+        log_debug(f"Set issue type: {issue_type}")
+    else:
+        log_error(f"Failed to set issue type {issue_type} on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
+
+
 def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
@@ -552,7 +621,7 @@ def fetch_linked_issues() -> list:
 
 def label_pull_request():
     # Every open PR sits next to the issues in Dev, where views separate them.
-    add_to_project(CONFIG["projects"]["dev"]["id"])
+    item_id = add_to_project(CONFIG["projects"]["dev"]["id"])
 
     files = fetch_pr_files()
     linked = "\n".join(fetch_linked_issues()) or "none"
@@ -561,10 +630,12 @@ def label_pull_request():
     if classification is None:
         fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
     labels = classification["labels"]
-    log_debug(f"PR #{ISSUE_NUMBER} labels: {labels} ({classification['reasoning']})")
+    area = classification["area"]
+    log_debug(f"PR #{ISSUE_NUMBER} area: {area}, labels: {labels} ({classification['reasoning']})")
     if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{','.join(labels)}\t{ISSUE_TITLE}")
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{area}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
+    set_area(item_id, area)
     set_labels(labels)
 
 
@@ -581,7 +652,7 @@ def main():
     existing_labels = get_existing_labels()
     if "APP-SUBMISSION" in existing_labels:
         log_debug("Found APP-SUBMISSION label, routing to Dev project")
-        add_to_project(CONFIG["projects"]["dev"]["id"])
+        set_area(add_to_project(CONFIG["projects"]["dev"]["id"]), APP_SUBMISSION_AREA)
         return
     if {"BEE-CENSUS", "HONEY-CENSUS"} & set(existing_labels):
         log_debug("Found a survey label, survey response; skipping")
@@ -610,15 +681,18 @@ def main():
     pinned = set(existing_labels) & PINNED_TYPES
     if pinned:
         labels = [l for l in labels if l not in TYPES] + sorted(pinned)
-    log_debug(f"Labels: {labels}")
+    area = classification["area"]
+    log_debug(f"Area: {area}, labels: {labels}")
     if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{','.join(labels)}\t{ISSUE_TITLE}")
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{area}\t{','.join(labels)}\t{ISSUE_TITLE}")
 
     item_id = add_to_project(project["id"])
     set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
     if priority:
         set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
+    set_area(item_id, area)
     set_labels(labels)
+    set_issue_type(labels)
 
     # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
     is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels

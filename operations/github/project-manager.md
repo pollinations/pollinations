@@ -5,6 +5,10 @@ The context at the end says whether this is an issue or a pull request.
 
 One list for issues and pull requests. Judge issues by what the reporter describes and pull requests by the changed files and what the change does.
 
+## Area (pick exactly ONE)
+
+Pick the focus area from the **Focus areas** document below this prompt, using its exact name from the overview table, for example `"Payments & earnings"`. Follow its "Not here" notes and boundary rules. Return `null` only for a pull request that only promotes or syncs `main` into `production`.
+
 ## Kind (pick exactly ONE)
 
 When several kinds fit, pick the first matching kind in this list. `kind` is always one of these eight; `BUG`, `FEATURE`, `QUESTION` and `TRACKING` are types, never kinds.
@@ -40,6 +44,7 @@ Return an empty `flags` list when none apply.
 
 ```json
 {
+  "area": "Models" | "Community models" | ... | null,
   "kind": "MODEL" | "ECONOMICS" | "MONITORING" | "APPS" | "INFRA" | "UI-UX" | "API" | "DOCS",
   "type": "BUG" | "FEATURE" | "QUESTION" | "TRACKING" | null,
   "flags": ["BILLING"],

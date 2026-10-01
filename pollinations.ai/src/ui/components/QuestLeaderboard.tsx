@@ -7,26 +7,13 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
+import {
+    type QuestLeaderboardData,
+    useQuestLeaderboard,
+} from "../../data/community";
 import { usePageCopy } from "../../hooks/usePageCopy";
 
-export type QuestLeaderboardEntry = {
-    githubLogin: string;
-    completedQuests: number;
-    totalPollen: number;
-};
-
-export type QuestLeaderboardData = {
-    leaderboard: QuestLeaderboardEntry[];
-    totals: {
-        contributors: number;
-        completedQuests: number;
-        totalPollen: number;
-    };
-};
-
-const LEADERBOARD_API = "https://enter.pollinations.ai/api/quests/leaderboard";
 const QUESTS_PAGE_URL = "https://enter.pollinations.ai/quests";
 const VISIBLE_CONTRIBUTORS = 8;
 
@@ -155,38 +142,9 @@ export function QuestLeaderboardContent({
     );
 }
 
-/** Fetches the small public aggregate; failure keeps the optional section hidden. */
+/** The small public aggregate; a failed or empty board keeps the section hidden. */
 export function QuestLeaderboard() {
-    const [data, setData] = useState<QuestLeaderboardData | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetch(LEADERBOARD_API, { headers: { Accept: "application/json" } })
-            .then(async (response) => {
-                if (!response.ok) return null;
-                return (await response.json()) as QuestLeaderboardData;
-            })
-            .then((body) => {
-                if (
-                    !cancelled &&
-                    body &&
-                    Array.isArray(body.leaderboard) &&
-                    body.leaderboard.length > 0
-                ) {
-                    setData(body);
-                }
-            })
-            .catch(() => {
-                // Optional community section: leave it hidden on network failure.
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    if (!data) return null;
-
+    const { data } = useQuestLeaderboard();
+    if (!data || data.leaderboard.length === 0) return null;
     return <QuestLeaderboardContent data={data} />;
 }

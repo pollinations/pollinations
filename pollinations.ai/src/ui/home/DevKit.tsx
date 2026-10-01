@@ -313,6 +313,10 @@ function Models() {
                       0,
                   )
                 : null,
+            added: categories.reduce(
+                (sum, category) => sum + (stats?.addedThisWeek[category] ?? 0),
+                0,
+            ),
             names: categories.flatMap(
                 (category) => stats?.newest[category] ?? [],
             ),
@@ -324,6 +328,7 @@ function Models() {
             icon: SproutIcon,
             href: "https://enter.pollinations.ai/models?q=source:community",
             count: stats?.community ?? null,
+            added: stats?.addedThisWeek.community ?? 0,
             names: stats?.newest.community ?? [],
             // The wallet's Paid card colors: the brand gold, softened.
             color: "var(--polli-color-paid-deep)",
@@ -343,6 +348,7 @@ function Models() {
                         icon: Icon,
                         href,
                         count,
+                        added,
                         names,
                         color,
                         background,
@@ -366,10 +372,17 @@ function Models() {
                                     </span>
                                 </span>
                                 <span
-                                    className="mt-1 min-h-9 font-bold text-4xl leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl"
+                                    className="mt-1 flex min-h-9 flex-wrap items-baseline gap-x-2 tabular-nums sm:min-h-12"
                                     style={{ color }}
                                 >
-                                    {count}
+                                    <span className="font-bold text-4xl leading-none tracking-tight sm:text-5xl">
+                                        {count}
+                                    </span>
+                                    {added > 0 ? (
+                                        <span className="font-semibold text-xs">
+                                            +{added} this week
+                                        </span>
+                                    ) : null}
                                 </span>
                                 <Text size="sm" tone="muted" className="mt-1.5">
                                     {names.length > 0 ? (
@@ -445,6 +458,9 @@ function FeatureGroup({
     );
 }
 
+const agentsLabel = (count: number, added: number) =>
+    `${count.toLocaleString()} in the catalog${added > 0 ? ` · +${added} this week` : ""}`;
+
 export function DevKit({ className }: { className?: string }) {
     const { data } = usePlatformStats();
 
@@ -463,7 +479,10 @@ export function DevKit({ className }: { className?: string }) {
                             feature={feature}
                             countLabel={
                                 data && feature.catalogCount === "agents"
-                                    ? `${data.agents.toLocaleString()} in the catalog`
+                                    ? agentsLabel(
+                                          data.agents,
+                                          data.addedThisWeek.agents ?? 0,
+                                      )
                                     : undefined
                             }
                         />

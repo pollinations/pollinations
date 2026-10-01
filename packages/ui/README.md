@@ -144,10 +144,11 @@ which remains capped by the shared frame.
 Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
 completed results use the centered `Dialog`. Both inherit the same viewport sizing.
 
-Authentication and creation-flow footers use a bordered primary
-action (`intent="commit"`, or `brand` for sign-in) and a muted, borderless
-Cancel/Decline/Close action (`intent="neutral"`). Destructive confirmations
-keep `intent="danger"`. Ordinary buttons retain their default borderless style.
+Actions that write server data use a bordered button (`intent="commit"`).
+Navigation and export actions, including device Continue and Copy and close,
+use the default filled style. Sign-in uses `intent="brand"`; destructive
+confirmations use `intent="danger"`. Cancel/Decline/Close actions use the muted,
+borderless `intent="neutral"` style.
 Saved-card checkout preserves its dedicated footer: full-width Confirm with
 Cancel and the alternative payment-method link on the line below.
 

@@ -71,15 +71,17 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
+                        // Ark numbers nested dialogs (--layer-index), so a
+                        // dialog opened from another dims and covers it.
                         className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
+                            "polli:fixed polli:inset-0 polli:z-[calc(100_+_var(--layer-index,0)_*_20)] polli:bg-[#000]/50",
                             backdropBlur && "polli:backdrop-blur-sm",
                         )}
                     />
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
+                        "polli:fixed polli:inset-0 polli:z-[calc(110_+_var(--layer-index,0)_*_20)] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
                         fullscreenOnMobile
                             ? "polli:p-0 polli:sm:p-4"
                             : "polli:p-4",

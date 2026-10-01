@@ -1,4 +1,8 @@
 import {
+    COMMUNITY_MODEL_PREFIX,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
+import {
     type ApiModelInfo,
     getCatalogCategory,
     getCatalogDisplayName,
@@ -84,6 +88,17 @@ export function getModelDisplayCategory(
         return `community-${category}`;
     }
     return category;
+}
+
+/**
+ * Creator of a community model, read from its canonical ID
+ * (`community/<user>/<model>`), so it also works for requested IDs the public
+ * catalog does not list.
+ */
+export function getCommunityModelOwner(id: string): string | undefined {
+    return id.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? parseCommunityModelId(id)?.ownerGithubUsername
+        : undefined;
 }
 
 export function getModelCategoriesFromCatalog(

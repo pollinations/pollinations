@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-09-27**
+**Updated: 2026-10-01**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -17,9 +17,9 @@ Your wallet may include:
 
 ## 2) Final-Sale Policy
 
-All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
+All sales are final except where required by law or expressly approved by us. Pollen provides access to digital API services, and each API request consumes credit. Charges for completed API usage are generally non-refundable, subject to statutory rights.
 
-Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
+Outside statutory withdrawal or refund rights, Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
 
 Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 
@@ -36,14 +36,13 @@ Approval is discretionary except where required by law. On any approved refund, 
 
 ## 4) EU/EEA Consumer Withdrawal
 
-If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content or digital services not supplied on a physical medium, that right can be lost once performance begins if you:
+If you buy as a consumer in the EEA, you generally have 14 days from purchase to withdraw. Crediting Pollen to your wallet does not by itself remove that right.
 
-- expressly request immediate access, and
-- acknowledge that you lose the withdrawal right once performance begins.
+At pack checkout, we ask you to expressly request immediate API service. When you enable auto top-up, the request covers each refill while it remains enabled. If you withdraw after making that request, you must pay the proportionate amount for service supplied before you notified us, as permitted by applicable law. The withdrawal right ends once the service is fully performed, provided you gave the required prior request and acknowledgement.
 
-When you buy a Pollen pack at checkout, you ask for immediate delivery and acknowledge that you lose the withdrawal right once your Pollen is credited. Your invoice confirms this. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
+To withdraw, email billing@pollinations.ai with your order ID and a clear statement that you wish to withdraw. You do not need to give a reason. We refund any amount due within 14 days of receiving your notice using the original payment method, unless you expressly agree otherwise, and reverse the corresponding unused purchased Pollen.
 
-This policy does not limit any non-waivable statutory rights for non-conforming digital services.
+These statutory rights take precedence over the final-sale policy and discretionary review process above, including for auto top-ups. This policy does not limit rights for non-conforming services or other non-waivable rights.
 
 ## 5) Subscriptions
 

@@ -4,6 +4,11 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
+import {
+    AUTO_TOP_UP_CONSENT_TEXT,
+    CHECKOUT_CONSENT_VERSION,
+    CHECKOUT_INVOICE_FOOTER,
+} from "@shared/billing/checkout-consent.ts";
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import {
     calculateServiceFeeCents,
@@ -108,6 +113,18 @@ export async function updateAutoTopUpSettings(
             status: 400,
             error: "Add billing details in Stripe before enabling auto top-up.",
         };
+    }
+
+    // Only record an express request supplied by the buyer. Existing
+    // settings and API callers without it are not evidence of consent.
+    if (input.immediateService) {
+        await stripe.customers.update(customerId, {
+            metadata: {
+                auto_top_up_consent_version: CHECKOUT_CONSENT_VERSION,
+                auto_top_up_consent_at: new Date().toISOString(),
+                auto_top_up_consent_text: AUTO_TOP_UP_CONSENT_TEXT,
+            },
+        });
     }
 
     const updated = await env.DB.prepare(
@@ -230,6 +247,14 @@ export async function processAutoTopUpForUser(
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
             autoTopUpAttemptId: attemptId,
+            ...(customer.metadata.auto_top_up_consent_version && {
+                auto_top_up_consent_version:
+                    customer.metadata.auto_top_up_consent_version,
+                auto_top_up_consent_at:
+                    customer.metadata.auto_top_up_consent_at,
+                auto_top_up_consent_text:
+                    customer.metadata.auto_top_up_consent_text,
+            }),
         };
 
         // auto_advance: false keeps collection explicit: one manual pay()
@@ -243,6 +268,7 @@ export async function processAutoTopUpForUser(
                 automatic_tax: { enabled: true },
                 default_payment_method: paymentMethod.id,
                 description: pack.checkoutName,
+                footer: CHECKOUT_INVOICE_FOOTER,
                 metadata,
                 rendering: {
                     amount_tax_display: "exclude_tax",
@@ -370,8 +396,32 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: verification.reason };
     }
 
+    // Credit only while the attempt is still unpaid, then mark it paid in the
+    // same transaction, so a concurrent caller for this invoice credits nothing.
     const now = Date.now();
-    const [attemptUpdate] = await env.DB.batch([
+    const [walletUpdate] = await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE user
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
+                WHERE id = ?
+                    AND EXISTS (
+                        SELECT 1
+                        FROM stripe_auto_top_up_attempt
+                        WHERE stripe_invoice_id = ?
+                            AND user_id = ?
+                            AND status IN (?, ?)
+                    )`,
+        ).bind(
+            attempt.amountUsd,
+            attempt.userId,
+            invoice.id,
+            attempt.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        ),
         env.DB.prepare(
             `UPDATE stripe_auto_top_up_attempt
                 SET status = ?,
@@ -388,33 +438,9 @@ export async function creditAutoTopUpInvoice(
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
             AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
         ),
-        env.DB.prepare(
-            `UPDATE user
-                SET pack_balance = ROUND(
-                    COALESCE(pack_balance, 0) + ?,
-                    ${POLLEN_BILLING_PRECISION}
-                )
-                WHERE id = ?
-                    AND EXISTS (
-                        SELECT 1
-                        FROM stripe_auto_top_up_attempt
-                        WHERE stripe_invoice_id = ?
-                            AND user_id = ?
-                            AND status = ?
-                            AND completed_at = ?
-                    )`,
-        ).bind(
-            attempt.amountUsd,
-            attempt.userId,
-            invoice.id,
-            attempt.userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            now,
-        ),
     ]);
 
-    const attemptChanges = attemptUpdate.meta.changes ?? 0;
-    if (attemptChanges === 0) {
+    if ((walletUpdate.meta.changes ?? 0) === 0) {
         return { credited: false, reason: "invoice already credited" };
     }
 

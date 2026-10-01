@@ -14,7 +14,7 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires an API key; retrieval is public. Raw file uploads can reach 400 MiB through `media.pollinations.ai`. Multipart and base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+Upload requires an API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
 
 Raw file body (streams to storage; returns a random, unlisted ID):
 

@@ -26,6 +26,11 @@ import {
 } from "./catalog.ts";
 
 import { readMedia, uploadUnlistedMedia } from "./media-upload.ts";
+import {
+    putStagedMultipartUpload,
+    type StagedMultipartUpload,
+    stageMultipartUpload,
+} from "./multipart-upload.ts";
 
 export { MediaUpload } from "./media-upload.ts";
 
@@ -37,7 +42,7 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
-const MAX_BUFFERED_SIZE = 104857600; // formData() and json() load the body into memory
+const MAX_BUFFERED_SIZE = 104857600; // JSON base64 uploads still buffer in memory
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -282,7 +287,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Raw uploads stream to storage and receive a random, unlisted ID; use them for files over 100 MiB. Multipart and JSON uploads are limited to 100 MiB because they buffer the file in Worker memory. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -380,9 +385,11 @@ api.post(
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
-        const maxSize = Math.min(uploadMaxSize, MAX_BUFFERED_SIZE);
+        const jsonMaxSize = Math.min(uploadMaxSize, MAX_BUFFERED_SIZE);
 
-        let fileBuffer: ArrayBuffer;
+        let fileBuffer: ArrayBuffer | undefined;
+        let stagedUpload: StagedMultipartUpload | undefined;
+        let fileSize: number;
         let contentType: string;
         let fileName: string | undefined;
         let requestedId: string | undefined;
@@ -390,21 +397,28 @@ api.post(
         const requestContentType = c.req.header("content-type") || "";
         const rawTags: string[] = [];
 
-        // A request above the buffered formats' possible file limit should
-        // never reach formData() or json() on a zone that allows large uploads.
+        // Reject clearly oversized requests early. The multipart parser also
+        // counts file bytes as it streams, including when this header is absent.
         const requestSize = Number(c.req.header("content-length"));
         const bufferedWireLimit = requestContentType.includes(
             "application/json",
         )
-            ? Math.ceil((maxSize * 4) / 3) + 1024 * 1024
-            : maxSize + 1024 * 1024;
+            ? Math.ceil((jsonMaxSize * 4) / 3) + 1024 * 1024
+            : uploadMaxSize + 1024 * 1024;
         if (
             (requestContentType.includes("multipart/form-data") ||
                 requestContentType.includes("application/json")) &&
             Number.isSafeInteger(requestSize) &&
             requestSize > bufferedWireLimit
         ) {
-            return c.json(fileTooLargeError(maxSize), 413);
+            return c.json(
+                fileTooLargeError(
+                    requestContentType.includes("application/json")
+                        ? jsonMaxSize
+                        : uploadMaxSize,
+                ),
+                413,
+            );
         }
 
         if (
@@ -445,9 +459,13 @@ api.post(
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
-                const formData = await c.req.formData();
+                stagedUpload = await stageMultipartUpload(
+                    c.req.raw,
+                    c.env.MEDIA_BUCKET,
+                    uploadMaxSize,
+                );
                 const parsedId = UploadIdSchema.safeParse(
-                    formData.get("id") ?? undefined,
+                    stagedUpload.requestedId,
                 );
                 if (!parsedId.success) {
                     return c.json(
@@ -456,29 +474,13 @@ api.post(
                     );
                 }
                 requestedId = parsedId.data;
-                const file = formData.get("file") as File | null;
-
-                if (!(file instanceof File)) {
-                    return c.json(
-                        {
-                            error: "No file provided. Use 'file' field in form-data.",
-                        },
-                        400,
-                    );
-                }
-
-                if (file.size > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (file.size === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                fileBuffer = await file.arrayBuffer();
-                contentType = file.type || detectContentType(file.name);
-                fileName = file.name;
-
-                rawTags.push(...splitTags(formData.getAll("tags")));
+                fileSize = stagedUpload.size;
+                contentType =
+                    stagedUpload.contentType === "application/octet-stream"
+                        ? detectContentType(stagedUpload.fileName)
+                        : stagedUpload.contentType;
+                fileName = stagedUpload.fileName;
+                rawTags.push(...splitTags(stagedUpload.rawTags));
             } else if (requestContentType.includes("application/json")) {
                 let rawBody: unknown;
                 try {
@@ -514,12 +516,13 @@ api.post(
                 }
                 fileBuffer = bytes.buffer;
 
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
+                if (fileBuffer.byteLength > jsonMaxSize) {
+                    return c.json(fileTooLargeError(jsonMaxSize), 413);
                 }
                 if (fileBuffer.byteLength === 0) {
                     return c.json({ error: "Empty file" }, 400);
                 }
+                fileSize = fileBuffer.byteLength;
 
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
@@ -588,7 +591,7 @@ api.post(
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
-            const stored = await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+            const putOptions: R2PutOptions = {
                 ...(requestedId !== undefined && {
                     onlyIf: new Headers({ "If-None-Match": "*" }),
                 }),
@@ -602,7 +605,24 @@ api.post(
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
                 },
-            });
+            };
+            let stored: R2Object | null;
+            if (stagedUpload) {
+                stored = await putStagedMultipartUpload(
+                    c.env.MEDIA_BUCKET,
+                    id,
+                    stagedUpload,
+                    putOptions,
+                );
+            } else if (fileBuffer) {
+                stored = await c.env.MEDIA_BUCKET.put(
+                    id,
+                    fileBuffer,
+                    putOptions,
+                );
+            } else {
+                throw new Error("Missing decoded upload body");
+            }
             if (requestedId !== undefined && stored === null) {
                 return c.json({ error: "Media ID already exists" }, 409);
             }
@@ -620,7 +640,7 @@ api.post(
                     ownerUserId: authResult.userId,
                     appKeyId: authResult.byopClientKeyId,
                     contentType,
-                    size: fileBuffer.byteLength,
+                    size: fileSize,
                     tags,
                 });
             }
@@ -629,7 +649,7 @@ api.post(
                 JSON.stringify({
                     event: "upload",
                     id,
-                    size: fileBuffer.byteLength,
+                    size: fileSize,
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
@@ -640,12 +660,27 @@ api.post(
                 id,
                 url: mediaUrl(id),
                 contentType,
-                size: fileBuffer.byteLength,
+                size: fileSize,
                 ...(tags.length > 0 ? { tags } : {}),
             });
         } catch (error) {
+            if (
+                error instanceof Error &&
+                "status" in error &&
+                (error.status === 400 || error.status === 413)
+            ) {
+                return c.json({ error: error.message }, error.status);
+            }
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
+        } finally {
+            if (stagedUpload?.temporaryKey) {
+                await c.env.MEDIA_BUCKET.delete(
+                    stagedUpload.temporaryKey,
+                ).catch((error) =>
+                    console.error("Staged upload cleanup failed:", error),
+                );
+            }
         }
     },
 );
@@ -957,7 +992,7 @@ app.get("/", (c) => {
             docs: "GET /openapi.json",
         },
         limits: {
-            maxFileSize: "400 MiB (raw upload); 100 MiB (multipart or JSON)",
+            maxFileSize: "400 MiB (multipart or raw upload); 100 MiB (JSON)",
         },
     });
 });

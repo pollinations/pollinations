@@ -123,7 +123,7 @@ Publishing requires a key attached to a user account.
 
 **Errors:**
 - `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
-- `413` - File too large (max 400 MiB for raw uploads; 100 MiB for multipart/JSON)
+- `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
 
 ### `GET /:id`
 
@@ -224,7 +224,7 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 400 MiB for streamed raw uploads; 100 MiB for buffered multipart/JSON uploads. The `pollinations.ai` Cloudflare zone must allow at least 425 MB per request to accept 400 MiB uploads.
+- **Max file size:** 400 MiB for streamed multipart and raw uploads; 100 MiB for base64 JSON uploads. Existing FormData clients can use the larger limit without changing their request format. The `pollinations.ai` Cloudflare zone must allow at least 425 MB per request to accept 400 MiB uploads.
 - **Storage:** Cloudflare R2
 - **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
 

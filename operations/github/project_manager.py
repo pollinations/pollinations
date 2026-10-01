@@ -176,8 +176,9 @@ def read_brief() -> str:
 
 
 def area_names(brief: str) -> list:
-    """The areas, as listed in the brief's overview table."""
-    return re.findall(r"^\| \[(.+?)\]\(#.+?\) \| .+? \|$", brief, re.MULTILINE)
+    """The areas: the headings of the brief's Areas section."""
+    section = brief.split("\n## Areas\n", 1)[1].split("\n## ", 1)[0]
+    return re.findall(r"^### (.+)$", section, re.MULTILINE)
 
 
 def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:

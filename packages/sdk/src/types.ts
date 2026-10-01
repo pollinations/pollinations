@@ -1025,13 +1025,15 @@ export interface ModelInfo {
     aspect_ratios?: string[];
     /** How width and height apply to text-to-image requests. Unverified limits are omitted. */
     image_size?: {
-        mode: "pixels" | "presets" | "provider";
+        mode: "pixels" | "presets" | "fixed" | "provider";
         default?: string;
         min_side?: number;
         max_side?: number;
         multiple_of?: number;
         min_pixels?: number;
         max_pixels?: number;
+        /** Largest long side ÷ short side. */
+        max_aspect_ratio?: number;
         sizes?: string[];
     };
     min_duration?: number;

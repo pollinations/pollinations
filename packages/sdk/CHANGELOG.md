@@ -6,7 +6,7 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ### Added
 - `ModelInfo.aspect_ratios` and `ModelInfo.image_size` for the aspect ratios
-  and width/height limits each model accepts.
+  and width/height limits each model's primary route accepts.
 
 ## [5.1.0-alpha.7] - 2026-09-05
 

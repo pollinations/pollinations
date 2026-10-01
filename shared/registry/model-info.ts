@@ -145,7 +145,7 @@ export const ModelInfoSchema = z.object({
             mode: z
                 .enum(IMAGE_SIZE_MODES)
                 .describe(
-                    "`pixels`: width × height sets the output within the limits. `presets`: the output is the listed size nearest the request. `provider`: only the ratio is used and the provider picks the pixels.",
+                    "`pixels`: width × height sets the output within the limits. `presets`: the output is the listed size nearest the request. `fixed`: only the listed sizes are accepted; others are rejected. `provider`: the provider picks the pixels; on some models the requested width × height still selects a size tier such as 1K, 2K or 4K.",
                 ),
             default: z
                 .string()
@@ -158,11 +158,16 @@ export const ModelInfoSchema = z.object({
             multiple_of: z.number().int().positive().optional(),
             min_pixels: z.number().int().positive().optional(),
             max_pixels: z.number().int().positive().optional(),
+            max_aspect_ratio: z
+                .number()
+                .positive()
+                .optional()
+                .describe("Largest long side ÷ short side."),
             sizes: z.array(z.string()).optional(),
         })
         .optional()
         .describe(
-            "How width and height apply to text-to-image requests; edits may follow the input image. Unverified limits are omitted.",
+            "How width and height apply to text-to-image requests on the model's primary route; edits may follow the input image, and fallback routes may differ. Unverified limits are omitted.",
         ),
     title: z.string(),
     description: z.string().optional(),
@@ -312,6 +317,7 @@ export function modelInfoFromDefinition(
             multiple_of: service.imageSize.multipleOf,
             min_pixels: service.imageSize.minPixels,
             max_pixels: service.imageSize.maxPixels,
+            max_aspect_ratio: service.imageSize.maxAspectRatio,
             sizes: service.imageSize.sizes && [...service.imageSize.sizes],
         },
         // User-facing metadata from service definition

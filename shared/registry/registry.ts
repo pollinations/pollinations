@@ -115,11 +115,17 @@ export const VIDEO_CAPABILITIES = [
 
 export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
-export const IMAGE_SIZE_MODES = ["pixels", "presets", "provider"] as const;
+export const IMAGE_SIZE_MODES = [
+    "pixels",
+    "presets",
+    "fixed",
+    "provider",
+] as const;
 
-// "pixels": width×height sets the output within the limits.
-// "presets": the output is the listed size nearest the request.
-// "provider": only a ratio is sent; the provider picks the pixels.
+// Primary route only. "pixels": width×height sets the output within the
+// limits. "presets": the output is the listed size nearest the request.
+// "fixed": only the listed sizes are accepted. "provider": the provider picks
+// the pixels; width×height may still select a size tier.
 export type ImageSize = {
     mode: (typeof IMAGE_SIZE_MODES)[number];
     default?: string; // "WxH" when width/height are omitted
@@ -128,6 +134,7 @@ export type ImageSize = {
     multipleOf?: number;
     minPixels?: number;
     maxPixels?: number;
+    maxAspectRatio?: number; // long side ÷ short side
     sizes?: string[];
 };
 

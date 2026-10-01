@@ -709,6 +709,7 @@ const IMAGE_BASE_SERVICES = {
             multipleOf: 16,
             minPixels: 655360,
             maxPixels: 8294400,
+            maxAspectRatio: 3,
         },
         title: "GPT Image 2",
         description:
@@ -741,6 +742,7 @@ const IMAGE_BASE_SERVICES = {
             multipleOf: 16,
             minPixels: 655360,
             maxPixels: 8294400,
+            maxAspectRatio: 3,
         },
         title: "GPT Image 2.5 Flare",
         description:
@@ -773,6 +775,7 @@ const IMAGE_BASE_SERVICES = {
             multipleOf: 16,
             minPixels: 655360,
             maxPixels: 8294400,
+            maxAspectRatio: 3,
         },
         title: "GPT Image 2.5 Sunburst",
         description:
@@ -2210,7 +2213,7 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.02, // per image
         },
         imageSize: {
-            mode: "presets",
+            mode: "fixed",
             default: "1024x1024",
             sizes: ["1024x1024"],
         },

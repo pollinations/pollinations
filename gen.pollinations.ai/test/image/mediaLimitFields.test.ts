@@ -51,10 +51,11 @@ describe("image_size", () => {
             size.multiple_of,
             size.min_pixels,
             size.max_pixels,
+            size.max_aspect_ratio,
         ];
         if (size.default) expect(size.default).toMatch(/^\d+x\d+$/);
 
-        if (size.mode === "presets") {
+        if (size.mode === "presets" || size.mode === "fixed") {
             expect(size.sizes?.length).toBeGreaterThan(0);
             for (const preset of size.sizes ?? []) {
                 expect(preset).toMatch(/^\d+x\d+$/);
@@ -81,6 +82,11 @@ describe("image_size", () => {
         expect(width * height).toBeGreaterThanOrEqual(size.min_pixels ?? 0);
         expect(width * height).toBeLessThanOrEqual(
             size.max_pixels ?? width * height,
+        );
+        expect(
+            Math.max(width, height) / Math.min(width, height),
+        ).toBeLessThanOrEqual(
+            size.max_aspect_ratio ?? Number.POSITIVE_INFINITY,
         );
     });
 });

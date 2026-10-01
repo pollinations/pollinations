@@ -53,6 +53,7 @@
         "@pollinations/ui": "*",
         "@standard-community/standard-json": "^0.3.5",
         "@standard-community/standard-openapi": "^0.2.9",
+        "@stripe/stripe-js": "8.11.0",
         "@tanstack/react-router": "^1.139.3",
         "better-auth": "1.6.30",
         "clsx": "^2.1.1",

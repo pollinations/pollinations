@@ -202,7 +202,13 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const polliClient = c.req
+            .header("x-polli-client")
+            ?.match(/^cli\/(\d+\.\d+\.\d+)$/);
+        const userTracking = {
+            ...requestIdentity(c.var.auth),
+            polliClientVersion: polliClient?.[1],
+        };
 
         let responseOverride: Response | null = null;
         // What the caller asked for; a provider's response may refine it.
@@ -1098,6 +1104,8 @@ export type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
 };
 
 export function requestIdentity(auth: AuthVariables["auth"]): UserData {
@@ -1120,6 +1128,10 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
             ? "redirect-auth"
             : (apiKeyMetadata?.createdVia as string | undefined),
         apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedById: apiKeyMetadata?.createdByApiKeyId as
+            | string
+            | undefined,
+        apiKeyOriginAppId: apiKeyMetadata?.originAppKeyId as string | undefined,
         apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
     };

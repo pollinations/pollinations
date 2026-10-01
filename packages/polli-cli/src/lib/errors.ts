@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { ApiError, gen, requireKey } from "./api.js";
+import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
 import { ExitSignal, getOutputMode, printError } from "./output.js";
 
@@ -79,6 +80,7 @@ export async function fetchGen(
 ): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set("Authorization", `Bearer ${await generationKey()}`);
+    headers.set("X-Polli-Client", POLLI_CLIENT);
     const response = await fetch(`${BASE_URL}${path}`, {
         ...init,
         headers,

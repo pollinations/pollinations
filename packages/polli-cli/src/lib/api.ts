@@ -1,3 +1,4 @@
+import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
 import { fail, printError } from "./output.js";
 
@@ -38,6 +39,7 @@ const send = async (
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        "X-Polli-Client": POLLI_CLIENT,
     };
     if (key) headers.Authorization = `Bearer ${key}`;
 

@@ -31,7 +31,7 @@ for (const tag of document.head.querySelectorAll("[data-route-meta]")) {
     tag.remove();
 }
 
-// The old Apps and Play pages still sign in through AuthProvider.
+// Play and the Community build diary sign in through AuthProvider.
 createRoot(rootElement).render(
     <AuthProvider>
         <RouterProvider router={router} />

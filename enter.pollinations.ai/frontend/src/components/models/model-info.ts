@@ -36,6 +36,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Pruna: "pruna",
     Qwen: "qwen",
     Recraft: "recraft",
+    Respan: "respan",
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",

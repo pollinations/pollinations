@@ -680,8 +680,18 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "respan/span-01-lite",
+        config: portkeyConfig["span-01-lite"],
+        useSystemOneApi: true,
+    },
+    {
         name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "jaredpalmer/kev-4b",
+        config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,
     },
     {

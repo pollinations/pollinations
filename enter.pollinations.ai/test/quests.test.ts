@@ -1940,6 +1940,46 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
+// Regression guard: GitHub search returns at most 100 issues per page, so a
+// bounty ranked past the first page must still be loaded and rewarded.
+test("issue bounties beyond the first 100 quest issues still record", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    for (let issueNumber = 2000; issueNumber < 2100; issueNumber++) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Open bounty #${issueNumber}`,
+            goal: "Merge a focused PR.",
+            reward: 1,
+        });
+    }
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 1999,
+        title: "Bounty on the second page",
+        goal: "Merge the linked PR.",
+        reward: 9,
+        completedByPrNumber: 3999,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:issue:1999"));
+    expect(rewards.map((reward) => reward.idempotencyKey)).toEqual([
+        `quest:github:issue:1999:github:${user.githubId}`,
+    ]);
+});
+
 // An approved app submission closes a quest through the bot's catalog PR, which
 // credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
 // even when a GitHub user with the bot's login opens one on a catalog branch.
@@ -2223,7 +2263,7 @@ test("Bee Census quest pays 3 Pollen once for the user's own labelled survey iss
     ]);
 });
 
-test("Honey Census quest pays 10 Pollen only once the survey author has bought Pollen", async ({
+test("Honey Census quest pays 5 Pollen only once the survey author has bought more than 2 Pollen", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2265,6 +2305,17 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
     await checkQuestsForUser(env, user.id);
     expect(await honeyCensusRewards()).toEqual([]);
 
+    // The smallest pack alone doesn't qualify.
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_test_honey_census_small",
+        eventId: "evt_test_honey_census_small",
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 2,
+    });
+    await checkQuestsForUser(env, user.id);
+    expect(await honeyCensusRewards()).toEqual([]);
+
     await db.insert(schema.stripeCheckoutCredits).values({
         sessionId: "cs_test_honey_census",
         eventId: "evt_test_honey_census",
@@ -2277,7 +2328,7 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
     expect(await honeyCensusRewards()).toEqual([
         {
             idempotencyKey: `quest:honey_census:github:${user.githubId}`,
-            pollenAmount: 10,
+            pollenAmount: 5,
             balanceBucket: "tier",
         },
     ]);

@@ -156,22 +156,32 @@ export function AppCarousel({ apps }: { apps: DirectoryApp[] }) {
                             startX: event.clientX,
                             startScroll: event.currentTarget.scrollLeft,
                         };
-                        event.currentTarget.setPointerCapture(event.pointerId);
                     }
                 }}
                 onPointerMove={(event) => {
                     if (drag.current?.pointerId !== event.pointerId) return;
                     const distance = event.clientX - drag.current.startX;
-                    if (Math.abs(distance) > 5) suppressClick.current = true;
+                    if (!suppressClick.current && Math.abs(distance) > 5) {
+                        // Capture only once it is a real drag; capturing on
+                        // pointerdown retargets the click away from the link.
+                        suppressClick.current = true;
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                    }
                     event.currentTarget.scrollLeft =
                         drag.current.startScroll - distance;
                 }}
                 onPointerUp={(event) => {
                     if (drag.current?.pointerId === event.pointerId) {
                         drag.current = null;
-                        event.currentTarget.releasePointerCapture(
-                            event.pointerId,
-                        );
+                        if (
+                            event.currentTarget.hasPointerCapture(
+                                event.pointerId,
+                            )
+                        ) {
+                            event.currentTarget.releasePointerCapture(
+                                event.pointerId,
+                            );
+                        }
                     }
                     setPaused(false);
                 }}

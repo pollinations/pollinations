@@ -453,6 +453,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
                 checkoutQuery={checkoutParams.toString()}
                 onCredited={onWalletChange}
+                onCompleteDetails={() =>
+                    openBillingPortal(
+                        returnToTopUp,
+                        undefined,
+                        selectedPack?.packKey,
+                    )
+                }
             />
         </div>
     );

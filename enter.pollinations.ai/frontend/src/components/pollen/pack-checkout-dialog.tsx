@@ -96,6 +96,8 @@ type PackCheckoutDialogProps = {
     /** return/redirect for the standalone top-up page, as a query string. */
     checkoutQuery: string;
     onCredited?: () => void;
+    /** Open Stripe to add the billing address tax needs; resolves to an error message, "" on success. */
+    onCompleteDetails: () => Promise<string>;
 };
 
 /**
@@ -109,6 +111,7 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
     pack,
     checkoutQuery,
     onCredited,
+    onCompleteDetails,
 }) => {
     const slot = useRef<SessionSlot | null>(null);
     const [attempt, setAttempt] = useState(0);
@@ -146,6 +149,7 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
                         setAttempt((value) => value + 1);
                     }}
                     onCredited={onCredited}
+                    onCompleteDetails={onCompleteDetails}
                     onClose={() => onOpenChange(false)}
                 />
             )}
@@ -171,8 +175,17 @@ const CheckoutBody: FC<{
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
+    onCompleteDetails: () => Promise<string>;
     onClose: () => void;
-}> = ({ hostedHref, start, onFinished, onRetry, onCredited, onClose }) => {
+}> = ({
+    hostedHref,
+    start,
+    onFinished,
+    onRetry,
+    onCredited,
+    onCompleteDetails,
+    onClose,
+}) => {
     const [state, setState] = useState<BodyState>({ phase: "loading" });
     // Read once on mount: a new pack or retry remounts this body.
     const startOnMount = useRef(start);
@@ -245,6 +258,7 @@ const CheckoutBody: FC<{
                         setState({ phase: "complete", sessionId });
                     }}
                     onLoadError={() => setState(LOAD_ERROR)}
+                    onCompleteDetails={onCompleteDetails}
                     onClose={onClose}
                 />
             );
@@ -267,8 +281,17 @@ const WalletPay: FC<{
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
+    onCompleteDetails: () => Promise<string>;
     onClose: () => void;
-}> = ({ stripe, checkout, hostedHref, onComplete, onLoadError, onClose }) => {
+}> = ({
+    stripe,
+    checkout,
+    hostedHref,
+    onComplete,
+    onLoadError,
+    onCompleteDetails,
+    onClose,
+}) => {
     const currencySelector = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
@@ -277,6 +300,13 @@ const WalletPay: FC<{
     // Nothing shows until Stripe's currency selector is drawn, so the modal
     // appears complete instead of building itself up.
     const [ready, setReady] = useState(false);
+    // Stripe requires its currency selector beside the price whenever it
+    // offers the buyer's currency: no Confirm until it is drawn, and Stripe's
+    // own page if it never loads.
+    const [selector, setSelector] = useState<
+        "none" | "loading" | "ready" | "failed"
+    >("none");
+    const [openingDetails, setOpeningDetails] = useState(false);
     const callbacks = useRef({ onComplete, onLoadError });
     callbacks.current = { onComplete, onLoadError };
 
@@ -329,10 +359,27 @@ const WalletPay: FC<{
                 },
             });
             if (current.currencyOptions?.length && currencySelector.current) {
-                const selector = elements.createCurrencySelectorElement();
-                selector.once("ready", show);
-                selector.mount(currencySelector.current);
-                cleanups.push(() => selector.destroy());
+                setSelector("loading");
+                const element = elements.createCurrencySelectorElement();
+                // Counted from the mount: a selector that never draws must
+                // not leave Confirm waiting, so Stripe's page takes over.
+                const settle = (state: "ready" | "failed") => {
+                    clearTimeout(giveUp);
+                    if (canceled) return;
+                    // The first outcome stays: a late ready doesn't swap
+                    // Stripe's page back to Confirm under the buyer.
+                    setSelector((now) => (now === "loading" ? state : now));
+                    show();
+                };
+                const giveUp = setTimeout(
+                    () => settle("failed"),
+                    READY_TIMEOUT_MS,
+                );
+                cleanups.push(() => clearTimeout(giveUp));
+                element.once("ready", () => settle("ready"));
+                element.once("loaderror", () => settle("failed"));
+                element.mount(currencySelector.current);
+                cleanups.push(() => element.destroy());
             } else show();
         })().catch(() => {
             if (!canceled) callbacks.current.onLoadError();
@@ -346,9 +393,23 @@ const WalletPay: FC<{
     const card = session?.savedPaymentMethods?.[0];
     const taxReady = session?.tax.status === "ready";
     const tax = session?.total.taxExclusive;
+    // The saved card's address wasn't enough for tax (a US card without a
+    // ZIP, say): only the buyer can complete it, on Stripe.
+    const needsDetails = session?.tax.status === "requires_billing_address";
+    const selectorOk = selector === "none" || selector === "ready";
     // Not session.canConfirm: it waits for a Payment Element, which the
     // saved card replaces.
-    const canConfirm = Boolean(card && taxReady && actions);
+    const canConfirm = Boolean(card && taxReady && actions && selectorOk);
+
+    async function completeDetails(): Promise<void> {
+        setOpeningDetails(true);
+        setError(null);
+        const failure = await onCompleteDetails();
+        if (failure) {
+            setError(failure);
+            setOpeningDetails(false);
+        }
+    }
 
     async function confirmWithCard(): Promise<void> {
         if (!card || !actions) return;
@@ -367,8 +428,26 @@ const WalletPay: FC<{
         <DialogBody
             actions={
                 // With a saved card, Confirm is the one action and fills the
-                // row; Cancel moves to the quiet line below it.
-                ready && card ? (
+                // row; Cancel moves to the quiet line below it. Missing tax
+                // details or a selector that never loaded replace it with
+                // the way forward.
+                ready && card && needsDetails ? (
+                    <Button
+                        size="lg"
+                        icon={<ExternalLinkIcon />}
+                        disabled={openingDetails}
+                        onClick={() => void completeDetails()}
+                        className="w-full"
+                    >
+                        {openingDetails
+                            ? "Opening Stripe…"
+                            : "Complete billing details on Stripe"}
+                    </Button>
+                ) : ready && card && selector === "failed" ? (
+                    <HostedButton href={hostedHref}>
+                        Pay on Stripe’s page
+                    </HostedButton>
+                ) : ready && card ? (
                     <Button
                         intent="commit"
                         size="lg"
@@ -444,6 +523,19 @@ const WalletPay: FC<{
                         </div>
                     )}
                     <div ref={currencySelector} />
+                    {needsDetails && card && (
+                        <p className="text-[13px] leading-snug text-theme-text-muted">
+                            Stripe needs your full billing address to work out
+                            tax. On Stripe, open your initials (top right), then
+                            Profile settings, then buy again.
+                        </p>
+                    )}
+                    {selector === "failed" && card && (
+                        <p className="text-[13px] leading-snug text-theme-text-muted">
+                            The currency choice didn’t load here, so pay on
+                            Stripe’s page instead.
+                        </p>
+                    )}
                     {error && <ErrorLine>{error}</ErrorLine>}
                 </div>
             </div>

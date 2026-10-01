@@ -58,12 +58,10 @@ GITHUB_HEADERS = {
 BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
 DEV_PROJECT_ID = "PVT_kwDOBS76fs4AwCAM"
 TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
-# github-actions[bot] issues report our own failures.
-CI_BOT_IDS = {41898282}
 DISCORD_RELAY_BOT_ID = 247793354
 TYPES = ["Bug", "Feature", "Question", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
-SOURCES = ["Team", "Community"]
+SOURCES = ["Team", "Community", "Agent"]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 
@@ -182,6 +180,30 @@ def dev_fields(areas: list) -> dict:
         if missing:
             fail(f"Dev field {name} does not match project-manager.md; missing options: {missing}")
     return fields
+
+
+def author_source() -> str:
+    """Team for our accounts, Agent for bot accounts, Community for everyone else."""
+    if ISSUE_AUTHOR_ID in TEAM_IDS:
+        return "Team"
+    # The Discord relay bot opens issues on behalf of people.
+    if ITEM_DATA.get("user", {}).get("type") == "Bot" and ISSUE_AUTHOR_ID != DISCORD_RELAY_BOT_ID:
+        return "Agent"
+    return "Community"
+
+
+def current_priority() -> Optional[str]:
+    """The issue's Priority on Dev, if someone or an earlier run already set it."""
+    data = graphql_request(
+        """query($id: ID!) { node(id: $id) { ... on Issue { projectItems(first: 10) { nodes {
+            project { id }
+            fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+        } } } } }""",
+        {"id": ISSUE_NODE_ID},
+    )
+    items = data.get("node", {}).get("projectItems", {}).get("nodes", [])
+    item = next((i for i in items if i["project"]["id"] == DEV_PROJECT_ID), {})
+    return (item.get("fieldValueByName") or {}).get("name")
 
 
 def add_to_dev() -> str:
@@ -316,13 +338,16 @@ def main():
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
             return
 
-    source = "Team" if ISSUE_AUTHOR_ID in TEAM_IDS | CI_BOT_IDS else "Community"
-    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{answer['priority']}\t{ISSUE_TITLE}")
+    source = author_source()
+    # A priority that is already set (by a person, an earlier run or the Express job) is kept.
+    existing = current_priority() if answer["priority"] else None
+    priority = existing or answer["priority"]
+    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{priority}{' (kept)' if existing else ''}\t{ISSUE_TITLE}")
 
     item_id = add_to_dev()
     set_field(item_id, fields["Area"], answer["area"])
     set_field(item_id, fields["Source"], source)
-    if answer["priority"]:
+    if answer["priority"] and not existing:
         set_field(item_id, fields["Priority"], answer["priority"])
     if answer["type"]:
         set_issue_type(answer["type"])

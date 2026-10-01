@@ -388,25 +388,6 @@ function emitCheckoutSessionAnalytics(
 }
 
 /**
- * After a new checkout credit, make a card the buyer chose to save their
- * default card. Runs via waitUntil so neither the ACK nor the credit waits on
- * the Stripe RTTs; a failure only leaves the default unset.
- */
-function saveCheckoutCardInBackground(
-    c: { executionCtx: { waitUntil(p: Promise<unknown>): void } },
-    stripe: Stripe,
-    session: Stripe.Checkout.Session,
-    result: CheckoutSessionResult,
-): void {
-    if (!result.success) return;
-    c.executionCtx.waitUntil(
-        saveCheckoutCardAsDefault(stripe, session).catch((err) =>
-            console.error("Saving checkout card as default failed:", err),
-        ),
-    );
-}
-
-/**
  * Emit a payment_intent analytics event to Tinybird (shared by
  * payment_intent.succeeded and payment_intent.payment_failed). Fetches the
  * latest Charge for card_country + Radar fields, then sends. Fetch + send run
@@ -675,6 +656,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         c.env,
                     );
 
+                    if (result.success) {
+                        await saveCheckoutCardAsDefault(stripe, session);
+                    }
+
                     if (result.duplicate) {
                         break;
                     }
@@ -686,7 +671,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         result,
                         "Failed to process checkout:",
                     );
-                    saveCheckoutCardInBackground(c, stripe, session, result);
                 } else {
                     console.log(
                         `Checkout session ${session.id} not yet paid (status: ${session.payment_status})`,
@@ -704,6 +688,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                 );
 
+                if (result.success) {
+                    await saveCheckoutCardAsDefault(stripe, session);
+                }
+
                 if (result.duplicate) {
                     break;
                 }
@@ -715,7 +703,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     result,
                     "Failed to process async payment:",
                 );
-                saveCheckoutCardInBackground(c, stripe, session, result);
                 break;
             }
 

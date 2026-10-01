@@ -969,7 +969,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
-test("GET /api/stripe/billing turns auto top-up off when the default card is removed", async ({
+test("GET /api/stripe/billing shows auto top-up unavailable without changing its setting", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1013,17 +1013,15 @@ test("GET /api/stripe/billing turns auto top-up off when the default card is rem
     expect(data.paymentMethods.some((m) => m.isDefault)).toBe(false);
     expect(data.billingDetailsComplete).toBe(true);
 
-    // Recorded off, not just shown off: adding a card back must not turn
-    // charging on without the buyer choosing it.
     const [updatedUser] = await db
         .select({ autoTopUpEnabled: userTable.autoTopUpEnabled })
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
-    expect(updatedUser?.autoTopUpEnabled).toBe(false);
+    expect(updatedUser?.autoTopUpEnabled).toBe(true);
 });
 
-test("GET /api/stripe/billing turns auto top-up off when the billing address is missing, and restoring it keeps it off", async ({
+test("GET /api/stripe/billing shows auto top-up unavailable until billing details return", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1078,10 +1076,9 @@ test("GET /api/stripe/billing turns auto top-up off when the billing address is 
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
-    expect(updatedUser?.autoTopUpEnabled).toBe(false);
+    expect(updatedUser?.autoTopUpEnabled).toBe(true);
 
-    // The buyer adds the address back in the portal: still off until they
-    // turn it on themselves.
+    // The stored setting remains enabled while details are temporarily missing.
     customer.address = { country: "EE" } as typeof customer.address;
     const restored = await SELF.fetch(`${base}/billing`, {
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
@@ -1091,7 +1088,7 @@ test("GET /api/stripe/billing turns auto top-up off when the billing address is 
         billingDetailsComplete: boolean;
     };
     expect(after.billingDetailsComplete).toBe(true);
-    expect(after.autoTopUp.enabled).toBe(false);
+    expect(after.autoTopUp.enabled).toBe(true);
 });
 
 test("GET /api/stripe/billing shows pending auto top-up invoice payment link", async ({
@@ -3514,20 +3511,19 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     });
 });
 
-/**
- * Post a paid p10 checkout whose card has the given save state, then wait
- * until the background default-card step has read the payment method.
- */
+/** Post a paid p10 checkout whose card has the given save state. */
 async function completeCheckoutWithCard(
     stripeState: MockStripeState,
     {
         id,
         allowRedisplay,
         existingDefault = null,
+        expectedStatus = 200,
     }: {
         id: string;
         allowRedisplay: "always" | "limited";
         existingDefault?: string | null;
+        expectedStatus?: number;
     },
 ) {
     const userId = await getSeededUserId();
@@ -3544,7 +3540,7 @@ async function completeCheckoutWithCard(
         payment_method: card.id,
     });
 
-    const response = await postSignedStripeWebhook({
+    const event = {
         id: `evt_${id}`,
         type: "checkout.session.completed",
         livemode: false,
@@ -3562,17 +3558,16 @@ async function completeCheckoutWithCard(
                 payment_method_types: ["card"],
             },
         },
-    });
-    expect(response.status).toBe(200);
+    };
+    const response = await postSignedStripeWebhook(event);
+    expect(response.status).toBe(expectedStatus);
 
-    await vi.waitFor(() =>
-        expect(
-            stripeState.requests.some(
-                (request) => request.path === `/v1/payment_methods/${card.id}`,
-            ),
-        ).toBe(true),
-    );
-    return { customer, card };
+    expect(
+        stripeState.requests.some(
+            (request) => request.path === `/v1/payment_methods/${card.id}`,
+        ),
+    ).toBe(true);
+    return { customer, card, event };
 }
 
 function customerUpdates(stripeState: MockStripeState, customerId: string) {
@@ -3595,9 +3590,7 @@ test("POST /api/webhooks/stripe makes a card saved at checkout the default", asy
         { id: "checkout_save_default", allowRedisplay: "always" },
     );
 
-    await vi.waitFor(() =>
-        expect(customer.invoice_settings.default_payment_method).toBe(card.id),
-    );
+    expect(customer.invoice_settings.default_payment_method).toBe(card.id);
 });
 
 test("POST /api/webhooks/stripe keeps an existing default card", async ({
@@ -3613,15 +3606,13 @@ test("POST /api/webhooks/stripe keeps an existing default card", async ({
         existingDefault: "pm_existing_default",
     });
 
-    await vi.waitFor(() =>
-        expect(
-            mocks.stripe.state.requests.some(
-                (request) =>
-                    request.method === "GET" &&
-                    request.path === `/v1/customers/${customer.id}`,
-            ),
-        ).toBe(true),
-    );
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) =>
+                request.method === "GET" &&
+                request.path === `/v1/customers/${customer.id}`,
+        ),
+    ).toBe(true);
     expect(customerUpdates(mocks.stripe.state, customer.id)).toHaveLength(0);
     expect(customer.invoice_settings.default_payment_method).toBe(
         "pm_existing_default",
@@ -3642,6 +3633,37 @@ test("POST /api/webhooks/stripe does not default a card the buyer did not save",
 
     expect(customerUpdates(mocks.stripe.state, customer.id)).toHaveLength(0);
     expect(customer.invoice_settings.default_payment_method).toBeNull();
+});
+
+test("checkout card update retries without crediting twice", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    mocks.stripe.state.failCustomerUpdates = true;
+
+    const { customer, card, event } = await completeCheckoutWithCard(
+        mocks.stripe.state,
+        {
+            id: "checkout_default_retry",
+            allowRedisplay: "always",
+            expectedStatus: 500,
+        },
+    );
+    const credit = () =>
+        env.DB.prepare(
+            "SELECT COUNT(*) AS count FROM stripe_checkout_credits WHERE session_id = ?",
+        )
+            .bind("cs_checkout_default_retry")
+            .first<{ count: number }>();
+    expect((await credit())?.count).toBe(1);
+    expect(customer.invoice_settings.default_payment_method).toBeNull();
+
+    mocks.stripe.state.failCustomerUpdates = false;
+    expect((await postSignedStripeWebhook(event)).status).toBe(200);
+    expect((await credit())?.count).toBe(1);
+    expect(customer.invoice_settings.default_payment_method).toBe(card.id);
 });
 
 test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card issuer and Radar score", async ({

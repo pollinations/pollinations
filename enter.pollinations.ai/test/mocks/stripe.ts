@@ -182,6 +182,7 @@ export type MockStripeState = {
     fraudDisputes: Record<string, unknown>[];
     fraudWarnings: Record<string, unknown>[];
     failFraudWarnings: boolean;
+    failCustomerUpdates: boolean;
     requests: StripeRequest[];
     onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
@@ -329,6 +330,17 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/customers/:id", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            if (state.failCustomerUpdates) {
+                return c.json(
+                    {
+                        error: {
+                            type: "api_error",
+                            message: "Stripe unavailable",
+                        },
+                    },
+                    500,
+                );
+            }
             const customer = findCustomer(state, c.req.param("id"));
             if (!customer) return stripeNotFound(c);
 
@@ -718,6 +730,7 @@ function createInitialState(): MockStripeState {
         fraudDisputes: [],
         fraudWarnings: [],
         failFraudWarnings: false,
+        failCustomerUpdates: false,
         requests: [],
         onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},

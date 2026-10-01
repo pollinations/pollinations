@@ -1,115 +1,241 @@
+import type { ModelCategory } from "@pollinations/sdk";
 import {
     AppIcon,
+    AudioIcon,
     BeakerIcon,
     BookIcon,
+    ChatIcon,
     CloudUploadIcon,
     ContentHeader,
     cn,
     ExternalLinkButton,
-    GenApiIcon,
     Heading,
     type IconProps,
+    ImageIcon,
+    LinkCard,
+    LockIcon,
     McpIcon,
     RobotIcon,
+    SearchIcon,
+    SproutIcon,
     Surface,
     TerminalIcon,
     Text,
+    VideoIcon,
     WalletIcon,
 } from "@pollinations/ui";
+import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
+import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
-import { describeModelKinds, usePlatformStats } from "../../data/publicStats";
+import { LINKS } from "../../copy/content/socialLinks";
+import { useMcpServers, usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
     title: string;
-    /** Static copy, or copy built from the live catalog's model kinds. */
-    body: string | ((modelKinds: string | null) => string);
-    catalogCount?: "models" | "agents";
-    linkLabel?: string;
-    href?: string;
+    /** Short copy; wrap the phrase worth skimming in <Em>. */
+    body: ReactNode;
+    /** A line under the title: a live catalog count, or a fixed note. */
+    catalogCount?: "agents";
+    note?: string;
+    /** Pills shown between the header and the body. */
+    chips?: string[];
+    links: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
+    /** Live detail shown between the header and the body. */
+    detail?: ComponentType;
 };
 
-// The first row mirrors the headline: models, agents, tools.
+/** The phrase a skimming reader should catch in a card's copy. */
+function Em({ children }: { children: ReactNode }) {
+    return (
+        <Text as="strong" size="sm" tone="strong" weight="semibold">
+            {children}
+        </Text>
+    );
+}
+
+// Agents and tools lead, after the Models section, mirroring the headline's
+// models, agents, tools.
 const BUILD_FEATURES: Feature[] = [
     {
-        title: "Official and community models",
-        body: (modelKinds) =>
-            `${modelKinds ? `${modelKinds}. ` : ""}OpenAI-compatible, with plain GET URLs for quick calls.`,
-        catalogCount: "models",
-        linkLabel: "Explore the API",
-        href: "https://gen.pollinations.ai/docs",
-        icon: GenApiIcon,
-    },
-    {
-        title: "Ready-made agents",
+        title: "Agents",
         catalogCount: "agents",
-        body: "Call an agent the way you call a model. Instructions and any tools come wired in; you pay for what it uses.",
-        linkLabel: "Explore agents",
-        href: "https://enter.pollinations.ai/models?category=agent",
+        chips: ["Prompt + tools", "Code (agent.ts)", "Your own server"],
+        body: (
+            <>
+                <Em>Call an agent the way you call a model</Em>, or build your
+                own. We run prompt and code agents for you. <Em>Sandboxes</Em>{" "}
+                for long-running agents are coming soon.
+            </>
+        ),
+        links: [
+            {
+                label: "Explore agents",
+                href: "https://enter.pollinations.ai/models?category=agent",
+            },
+        ],
         icon: RobotIcon,
     },
     {
         title: "Hosted MCP tools",
-        body: "Web search, media editing, a private computer, and the GitHub, Gmail or Slack accounts users connect—for your agents and compatible MCP clients.",
-        linkLabel: "Explore MCP servers",
-        href: "https://enter.pollinations.ai/models?category=mcp",
+        body: (
+            <>
+                <Em>A private computer, web search and connected apps</Em> like
+                Gmail. Use them in your agents or any MCP client.
+            </>
+        ),
+        links: [
+            {
+                label: "Explore MCP servers",
+                href: "https://enter.pollinations.ai/models?category=mcp",
+            },
+        ],
         icon: McpIcon,
+        detail: McpServers,
     },
     {
-        title: "Connect user wallets",
-        body: "Users sign in with Pollinations and approve a Pollen budget. Their wallet, not yours, pays for what they use.",
-        linkLabel: "Integration guide",
-        href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        title: "Pollinations CLI",
+        note: "For humans, AI agents and everything in between",
+        chips: ["npx @pollinations/cli"],
+        body: (
+            <>
+                <Em>Start with one working task</Em>, then explore keys, models,
+                usage and earnings.
+            </>
+        ),
+        links: [
+            {
+                label: "Connect OpenCode",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#connect-opencode",
+            },
+            {
+                label: "Generate an image",
+                href: "https://github.com/pollinations/pollinations/blob/main/packages/polli-cli/TASKS.md#generate-an-image-from-the-terminal",
+            },
+        ],
+        icon: TerminalIcon,
+    },
+    {
+        title: "Users pay",
+        body: (
+            <>
+                Sign in with Pollinations and approve a spending limit.{" "}
+                <Em>Usage is billed to each user's own account.</Em>
+            </>
+        ),
+        links: [
+            {
+                label: "Integration guide",
+                href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+            },
+        ],
         icon: WalletIcon,
     },
     {
         title: "Media storage",
-        body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
-        linkLabel: "Media storage guide",
-        href: "https://gen.pollinations.ai/docs#tag/media-storage",
+        body: (
+            <>
+                <Em>Upload images, audio and video</Em> and get a link to use in
+                model calls. Generated files get a link too.
+            </>
+        ),
+        links: [
+            {
+                label: "Media storage guide",
+                href: "https://gen.pollinations.ai/docs#tag/media-storage",
+            },
+        ],
         icon: CloudUploadIcon,
     },
     {
-        title: "Pollinations CLI",
-        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and earnings.",
-        linkLabel: "CLI guide",
-        href: "https://gen.pollinations.ai/docs#tag/cli",
-        icon: TerminalIcon,
+        title: "Safety checks",
+        chips: ["Privacy", "Secrets", "NSFW", "Prompt attacks"],
+        body: (
+            <>
+                <Em>Redact personal data and keys</Em>, or{" "}
+                <Em>block unsafe prompts</Em>, before they reach the model. Turn
+                checks on per request.
+            </>
+        ),
+        links: [
+            {
+                label: "Safety guide",
+                href: "https://gen.pollinations.ai/docs#tag/safety",
+            },
+        ],
+        icon: LockIcon,
     },
+];
+
+/** Most-used kind first; counts and names come from the live catalog. */
+const MODEL_KINDS: {
+    label: string;
+    icon: ComponentType<IconProps>;
+    /** Catalog categories; the first one is the enter filter and the color. */
+    categories: ModelCategory[];
+}[] = [
+    { label: "Image", icon: ImageIcon, categories: ["image"] },
+    { label: "Text", icon: ChatIcon, categories: ["text"] },
+    { label: "Audio", icon: AudioIcon, categories: ["audio", "realtime"] },
+    { label: "Video & 3D", icon: VideoIcon, categories: ["video", "3d"] },
+    { label: "Embeddings", icon: SearchIcon, categories: ["embedding"] },
 ];
 
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Submit it for review to join the Apps catalog. To earn, connect user wallets and turn on app earnings.",
+        body: (
+            <>
+                Submit it for review to join the Apps catalog.{" "}
+                <Em>Turn on app earnings.</Em>
+            </>
+        ),
+        links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Connect an endpoint you run and set your price. Earn Pollen when others call it.",
+        body: (
+            <>
+                Connect an endpoint you run and <Em>set your price</Em>. Each
+                call adds Pollen to your balance.
+            </>
+        ),
+        links: [
+            {
+                label: "Add a model",
+                href: "https://enter.pollinations.ai/my-models",
+            },
+        ],
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it; earnings are coming soon.",
+        body: (
+            <>
+                Make your agent <Em>public in the catalog</Em> so anyone can
+                call it.
+            </>
+        ),
+        links: [
+            {
+                label: "Create an agent",
+                href: "https://enter.pollinations.ai/my-models",
+            },
+        ],
         icon: RobotIcon,
     },
 ];
 
 function FeatureCard({
     feature,
-    count,
-    modelKinds = null,
+    countLabel,
 }: {
     feature: Feature;
-    count?: number;
-    modelKinds?: string | null;
+    countLabel?: string;
 }) {
     const Icon = feature.icon;
-    const body =
-        typeof feature.body === "function"
-            ? feature.body(modelKinds)
-            : feature.body;
+    const Detail = feature.detail;
 
     return (
         <Surface
@@ -124,61 +250,192 @@ function FeatureCard({
                     <Heading as="h3" size="card">
                         {feature.title}
                     </Heading>
-                    {feature.catalogCount ? (
+                    {feature.catalogCount || feature.note ? (
                         <Text
                             size="xs"
                             tone="muted"
                             className="min-h-4 tabular-nums"
                         >
-                            {count === undefined
-                                ? null
-                                : `${count.toLocaleString()} ${feature.catalogCount}`}
+                            {countLabel ?? feature.note}
                         </Text>
                     ) : null}
                 </div>
             </div>
 
-            <Text size="sm">{body}</Text>
+            {feature.chips ? <ChipList names={feature.chips} /> : null}
+            {Detail ? <Detail /> : null}
 
-            {feature.href && feature.linkLabel ? (
-                <ExternalLinkButton
-                    href={feature.href}
-                    size="md"
-                    intent="neutral"
-                    icon={
-                        feature.href.startsWith(
-                            "https://gen.pollinations.ai/docs",
-                        ) ? (
-                            <BookIcon
-                                aria-hidden="true"
-                                className="size-4 shrink-0"
-                            />
-                        ) : undefined
-                    }
-                    className="max-w-full self-start whitespace-normal text-left"
-                >
-                    {feature.linkLabel}
-                </ExternalLinkButton>
-            ) : null}
+            <Text size="sm">{feature.body}</Text>
+
+            <div className="mt-auto flex flex-wrap gap-2">
+                {feature.links.map((link) => (
+                    <ExternalLinkButton
+                        key={link.href}
+                        href={link.href}
+                        size="md"
+                        intent="neutral"
+                        icon={
+                            link.href.startsWith(
+                                "https://gen.pollinations.ai/docs",
+                            ) ? (
+                                <BookIcon
+                                    aria-hidden="true"
+                                    className="size-4 shrink-0"
+                                />
+                            ) : undefined
+                        }
+                        className="max-w-full whitespace-normal text-left"
+                    >
+                        {link.label}
+                    </ExternalLinkButton>
+                ))}
+            </div>
         </Surface>
     );
 }
 
+/**
+ * The models section: one card per official kind, then one for the
+ * community, each linking to the matching filter on enter. Laid out like the
+ * wallet's balance cards, tinted with the modality colors and the wallet's
+ * gold. Counts and the two newest models are live.
+ */
+function Models() {
+    const { data: stats } = usePlatformStats();
+    const cards = [
+        ...MODEL_KINDS.map(({ label, icon, categories }) => ({
+            label,
+            icon,
+            href: `https://enter.pollinations.ai/models?category=${categories[0]}`,
+            count: stats
+                ? categories.reduce(
+                      (sum, category) => sum + (stats.kinds[category] ?? 0),
+                      0,
+                  )
+                : null,
+            names: categories.flatMap(
+                (category) => stats?.newest[category] ?? [],
+            ),
+            color: modalityTextColor(categories[0]),
+            background: modalityBgVar(categories[0]),
+        })),
+        {
+            label: "Community",
+            icon: SproutIcon,
+            href: "https://enter.pollinations.ai/models?q=source:community",
+            count: stats?.community ?? null,
+            names: stats?.newest.community ?? [],
+            // The wallet's Paid card colors: the brand gold, softened.
+            color: "var(--polli-color-paid-deep)",
+            background: "var(--polli-color-paid-pale)",
+        },
+    ];
+
+    return (
+        <FeatureGroup
+            title="Models"
+            description="From official providers and the community. Add yours too."
+        >
+            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {cards.map(
+                    ({
+                        label,
+                        icon: Icon,
+                        href,
+                        count,
+                        names,
+                        color,
+                        background,
+                    }) => (
+                        <li key={label}>
+                            <LinkCard
+                                href={href}
+                                surfaceClassName="gap-0 p-3.5 sm:p-5"
+                                style={{ backgroundColor: background }}
+                            >
+                                <span
+                                    className="flex items-center gap-2"
+                                    style={{ color }}
+                                >
+                                    <Icon
+                                        aria-hidden="true"
+                                        className="size-3.5 shrink-0"
+                                    />
+                                    <span className="font-bold text-sm uppercase tracking-wide">
+                                        {label}
+                                    </span>
+                                </span>
+                                <span
+                                    className="mt-1 min-h-9 font-bold text-4xl leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl"
+                                    style={{ color }}
+                                >
+                                    {count}
+                                </span>
+                                <Text size="sm" tone="muted" className="mt-1.5">
+                                    {names.length > 0 ? (
+                                        <>
+                                            <span
+                                                className="font-semibold"
+                                                style={{ color }}
+                                            >
+                                                Latest:
+                                            </span>{" "}
+                                            {names.slice(0, 2).join(" · ")}
+                                        </>
+                                    ) : null}
+                                </Text>
+                            </LinkCard>
+                        </li>
+                    ),
+                )}
+            </ul>
+            <ExternalLinkButton
+                href="https://gen.pollinations.ai/docs"
+                size="md"
+                intent="neutral"
+                icon={
+                    <BookIcon aria-hidden="true" className="size-4 shrink-0" />
+                }
+                className="self-start"
+            >
+                Explore the API
+            </ExternalLinkButton>
+        </FeatureGroup>
+    );
+}
+
+/** The hosted servers, live from gen. Nothing shows until they load. */
+function McpServers() {
+    const { data: servers } = useMcpServers();
+    if (servers.length === 0) return null;
+    return <ChipList names={servers} />;
+}
+
+function ChipList({ names }: { names: string[] }) {
+    return (
+        <ul className="flex flex-wrap gap-2">
+            {names.map((name) => (
+                <li key={name}>
+                    <PaidChip size="md">{name}</PaidChip>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
 function FeatureGroup({
-    eyebrow,
     title,
     description,
     children,
 }: {
-    eyebrow: string;
     title: string;
-    description: string;
+    description?: string;
     children: ReactNode;
 }) {
     return (
         <section className="flex flex-col gap-5">
             <ContentHeader
-                eyebrow={eyebrow}
+                eyebrow={null}
                 title={title}
                 subtitle={description}
                 className="px-1"
@@ -190,34 +447,32 @@ function FeatureGroup({
 
 export function DevKit({ className }: { className?: string }) {
     const { data } = usePlatformStats();
-    const modelKinds = data ? describeModelKinds(data.byCategory) : null;
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
+            <Models />
+
             <FeatureGroup
-                eyebrow="Build"
                 title="Pick the pieces you need."
-                description="Models and agents from us and the community, plus the tools and wallets around them."
+                description="Agents and hosted tools, plus storage, billing and safety."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
                             key={feature.title}
                             feature={feature}
-                            count={
-                                feature.catalogCount
-                                    ? data?.[feature.catalogCount]
+                            countLabel={
+                                data && feature.catalogCount === "agents"
+                                    ? `${data.agents.toLocaleString()} in the catalog`
                                     : undefined
                             }
-                            modelKinds={modelKinds}
                         />
                     ))}
                 </div>
             </FeatureGroup>
 
             <FeatureGroup
-                eyebrow="Publish and earn"
-                title="Publish where people already spend Pollen."
+                title="Put your model, agent or app in front of our users."
                 description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -225,14 +480,6 @@ export function DevKit({ className }: { className?: string }) {
                         <FeatureCard key={feature.title} feature={feature} />
                     ))}
                 </div>
-                <ExternalLinkButton
-                    href="https://enter.pollinations.ai"
-                    size="lg"
-                    intent="brand"
-                    className="self-start whitespace-nowrap"
-                >
-                    Open dashboard
-                </ExternalLinkButton>
             </FeatureGroup>
         </section>
     );

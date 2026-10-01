@@ -23,7 +23,7 @@ export function LiveApps() {
     return (
         <section className="flex flex-col gap-5">
             <ContentHeader
-                eyebrow="Live now"
+                eyebrow={null}
                 title="Apps from the community."
                 subtitle="The most-used Pollen Pay apps over the last 7 days."
             />

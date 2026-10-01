@@ -1,9 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     getOutputMode,
     printError,
     printInfo,
@@ -27,7 +26,6 @@ export function createVideoCommand() {
         .option("--image <url>", "Reference frame URL")
         .option("--output <path>", "Save to file", "video.mp4")
         .action(async (prompt, opts) => {
-            const key = requireKey();
             const isHuman = getOutputMode() === "human";
 
             const params = new URLSearchParams({
@@ -44,30 +42,19 @@ export function createVideoCommand() {
                     printError(
                         `--image requires a public http(s) URL, not a local path: ${opts.image}`,
                     );
-                    process.exit(1);
+                    throw new ExitSignal(1);
                 }
                 params.set("image", opts.image);
             }
 
             const encodedPrompt = encodeURIComponent(prompt);
-            const url = `${BASE_URL}/video/${encodedPrompt}?${params}`;
+            const path = `/video/${encodedPrompt}?${params}`;
 
             if (isHuman)
                 printInfo("Generating video (this can take up to 60s)...");
 
             try {
-                const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${key}` },
-                });
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, text);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(`${res.status} ${res.statusText}: ${text}`);
-                }
+                const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
@@ -76,11 +63,8 @@ export function createVideoCommand() {
                     size: buffer.length,
                     model: opts.model,
                 });
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

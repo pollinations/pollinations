@@ -9,29 +9,32 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    permissions:
+    permissions: &codeql_permissions
       security-events: write
       contents: read
 
-    strategy:
+    strategy: &codeql_strategy
       fail-fast: false
       matrix:
         language: [actions, javascript-typescript, python]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - &checkout_repository
+        name: Checkout repository
+        uses: actions/checkout@v5
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - &initialize_codeql
+        name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - &autobuild
+        name: Autobuild
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   # Keep the pre-rename categories available while historical branch results
   # still reference them. This can be removed after those stale analyses are
@@ -39,28 +42,15 @@ jobs:
   analyze_legacy:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [actions, javascript-typescript, python]
+    permissions: *codeql_permissions
+    strategy: *codeql_strategy
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - *checkout_repository
+      - *initialize_codeql
+      - *autobuild
 
       - name: Perform legacy CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: .github/workflows/codeql.yml:analyze/language:${{ matrix.language }}

@@ -3,14 +3,27 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import { rewards, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
+import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export const MAX_REWARD_AMOUNT = 10_000;
+
+/**
+ * Idempotency key for a reward one person can earn once. Keyed on the GitHub
+ * id, which outlives the account row, so a deleted-and-recreated account
+ * cannot earn it again.
+ */
+export function rewardKey(questId: string, githubId: number | null): string {
+    if (githubId === null) {
+        throw new Error(`Reward ${questId} requires a GitHub identity`);
+    }
+    return `quest:${questId}:github:${githubId}`;
+}
 
 export interface RecordRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical reward so retries
      * never create duplicates; encodes the quest's completion scope, e.g.
-     * "quest:{issue}" or "quest:{questId}:user:{userId}".
+     * "quest:{issue}" or rewardKey().
      */
     idempotencyKey: string;
     userId: string;
@@ -149,7 +162,7 @@ export async function claimReward(
         db
             .update(userTable)
             .set({
-                [`${row.balanceBucket}Balance`]: sql`COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}`,
+                [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
             })
             .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
             .returning({ newBalance: bucketColumn }),

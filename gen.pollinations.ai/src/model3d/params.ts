@@ -8,6 +8,7 @@ const VALID_3D_MODELS = [
 
 export const Model3dParamsSchema = z.object({
     model: z.enum(VALID_3D_MODELS as unknown as [string, ...string[]]),
+    resolution: z.enum(["low", "medium", "high"]).default("low"),
     image: z
         .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
         .transform((value?: string[] | string | null) => {

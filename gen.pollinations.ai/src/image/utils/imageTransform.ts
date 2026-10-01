@@ -1,4 +1,4 @@
-import { HttpError } from "../httpError.ts";
+import { UpstreamError } from "@shared/error.ts";
 
 type TransformOptions = {
     format?: "image/jpeg" | "image/png" | "image/webp";
@@ -17,10 +17,6 @@ let imagesBinding: ImagesBinding | null = null;
 
 export function setImagesBinding(binding: ImagesBinding | undefined): void {
     imagesBinding = binding || null;
-}
-
-export function getImagesBinding(): ImagesBinding | null {
-    return imagesBinding;
 }
 
 export async function transformImage(
@@ -81,12 +77,14 @@ export async function transformImage(
         return Buffer.from(await response.arrayBuffer());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Cloudflare Images ${stage} failed: ${message}`,
-            502,
-            { service: "cloudflare-images", stage },
-            CLOUDFLARE_IMAGES_UPSTREAM_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `Cloudflare Images ${stage} failed: ${message}`,
+            responseBody: JSON.stringify({
+                service: "cloudflare-images",
+                stage,
+            }),
+            requestUrl: new URL(CLOUDFLARE_IMAGES_UPSTREAM_URL),
+        });
     }
 }
 

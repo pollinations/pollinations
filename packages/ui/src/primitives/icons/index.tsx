@@ -17,6 +17,23 @@ export function AppIcon(props: IconProps) {
     );
 }
 
+export function AccountIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+        </svg>
+    );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -27,11 +44,33 @@ export function BeakerIcon(props: IconProps) {
     );
 }
 
+export function BotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 8V4H8" />
+            <rect x="4" y="8" width="16" height="12" rx="2" />
+            <path d="M2 14h2M20 14h2" />
+            <path d="M9 13v2M15 13v2" />
+        </svg>
+    );
+}
+
 export function BookIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
             <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
+        </svg>
+    );
+}
+
+export function BugIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m8 2 1.9 1.9M14.1 3.9 16 2" />
+            <path d="M9 7V6a3 3 0 0 1 6 0v1" />
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" />
+            <path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />
         </svg>
     );
 }
@@ -79,12 +118,83 @@ export function DiscordIcon(props: IconProps) {
     );
 }
 
+export function InstagramIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle
+                cx="17.5"
+                cy="6.5"
+                r="1"
+                fill="currentColor"
+                stroke="none"
+            />
+        </svg>
+    );
+}
+
+export function XSocialIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path
+                fill="currentColor"
+                d="M18.24 2.25h3.31l-7.23 8.26 8.51 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"
+            />
+        </svg>
+    );
+}
+
+export function LinkedInIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path
+                fill="currentColor"
+                d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13ZM7.1 20.45H3.54V9H7.1v11.45Z"
+            />
+        </svg>
+    );
+}
+
 export function DownloadIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+    );
+}
+
+export function ExpandIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5" />
+        </svg>
+    );
+}
+
+export function PlayIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path fill="currentColor" d="M7 4.5v15l12-7.5z" />
+        </svg>
+    );
+}
+
+export function PauseIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path fill="currentColor" d="M6 4h4v16H6zM14 4h4v16h-4z" />
+        </svg>
+    );
+}
+
+export function CloudUploadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M17.5 19H19a4 4 0 0 0 .4-8A7.5 7.5 0 0 0 5 9.5 5 5 0 0 0 6 19h1.5" />
+            <path d="m8.5 15.5 3.5-3.5 3.5 3.5M12 12v9" />
         </svg>
     );
 }
@@ -113,6 +223,16 @@ export function GitBranchIcon(props: IconProps) {
             <circle cx="18" cy="6" r="3" />
             <circle cx="6" cy="18" r="3" />
             <path d="M18 9a9 9 0 0 1-9 9" />
+        </svg>
+    );
+}
+
+export function GitPullRequestIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="6" cy="6" r="3" />
+            <circle cx="18" cy="18" r="3" />
+            <path d="M6 9v12M13 6h3a2 2 0 0 1 2 2v7" />
         </svg>
     );
 }
@@ -185,6 +305,26 @@ export function LockIcon(props: IconProps) {
     );
 }
 
+export function LogInIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10 17l5-5-5-5" />
+            <path d="M15 12H3" />
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        </svg>
+    );
+}
+
+export function LogOutIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
+        </svg>
+    );
+}
+
 export function MailIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -197,8 +337,8 @@ export function MailIcon(props: IconProps) {
 export function McpIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <rect x="2" y="7" width="8" height="10" rx="1.5" />
-            <rect x="14" y="7" width="8" height="10" rx="1.5" />
+            <rect x="2" y="4" width="8" height="16" rx="1.5" />
+            <rect x="14" y="4" width="8" height="16" rx="1.5" />
             <path d="M10 12h4" />
         </svg>
     );
@@ -239,6 +379,14 @@ export function TerminalIcon(props: IconProps) {
     );
 }
 
+export function ToolIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l2.1 2.1a1 1 0 0 0 1.4 0l4-4a6 6 0 0 1-8 8l-8 8a2.8 2.8 0 0 1-4-4l8-8a6 6 0 0 1 8-8l-4 4Z" />
+        </svg>
+    );
+}
+
 export function TargetIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -265,6 +413,15 @@ export function UsageIcon(props: IconProps) {
             <path d="M7 18h10" />
             <path d="M7.5 12.5 6 11" />
             <path d="M16.5 12.5 18 11" />
+        </svg>
+    );
+}
+
+export function WarningIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10.3 3.1 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.1a2 2 0 0 0-3.4 0Z" />
+            <path d="M12 9v4M12 17h.01" />
         </svg>
     );
 }
@@ -326,6 +483,17 @@ export function XIcon(props: IconProps) {
     );
 }
 
+export function TrashIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="m19 6-1 15H6L5 6" />
+            <path d="M10 11v6M14 11v6" />
+        </svg>
+    );
+}
+
 // --- Model modality / capability / price glyphs (single-ink, replace emoji) ---
 
 export function ChatIcon(props: IconProps) {
@@ -336,11 +504,32 @@ export function ChatIcon(props: IconProps) {
     );
 }
 
+export function RobotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <rect x="3" y="6" width="18" height="15" rx="3" />
+            <path d="M12 2v4M3 11H1v5h2M21 11h2v5h-2M8 17h8" />
+            <circle cx="9" cy="12" r="1" />
+            <circle cx="15" cy="12" r="1" />
+        </svg>
+    );
+}
+
 export function EyeIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
             <circle cx="12" cy="12" r="3" />
+        </svg>
+    );
+}
+
+export function EyeOffIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M3 3l18 18" />
         </svg>
     );
 }
@@ -374,6 +563,15 @@ export function SpeakerIcon(props: IconProps) {
     );
 }
 
+export function MegaphoneIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m3 11 18-5v12L3 14v-3z" />
+            <path d="m7 15 1.5 6H14l-2-7" />
+        </svg>
+    );
+}
+
 export function ReasoningIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -402,6 +600,25 @@ export function SearchIcon(props: IconProps) {
     );
 }
 
+export function SignOutIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
+        </svg>
+    );
+}
+
+export function PowerIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 2v10" />
+            <path d="M18.4 6.6a9 9 0 1 1-12.77.04" />
+        </svg>
+    );
+}
+
 export function SparkleIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -410,6 +627,23 @@ export function SparkleIcon(props: IconProps) {
             <path d="M22 5h-4" />
             <path d="M4 17v2" />
             <path d="M5 18H3" />
+        </svg>
+    );
+}
+
+export function StarIcon({
+    filled = false,
+    ...props
+}: IconProps & { filled?: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            {...strokeProps}
+            fill={filled ? "currentColor" : "none"}
+            {...props}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
     );
 }
@@ -477,6 +711,24 @@ export function GlobeIcon(props: IconProps) {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
             <path d="M2 12h20" />
+        </svg>
+    );
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+        </svg>
+    );
+}
+
+export function RefreshIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
         </svg>
     );
 }

@@ -543,7 +543,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - ⚠️ **Only test models that appear in the discovery endpoint**
 - **Image models**: NO tier requirements, only pollen balance matters for paid models
 - **Text models**: May have tier requirements, check model details
-- Default image model: `flux` (free, 1024x1024)
+- Default image model: `flux` (0.002 Pollen per image, 1024x1024)
 - Default text model: `openai` (GPT-4o)
 - **Seedream**: Requires minimum 960x960 pixels (921600 total pixels)
 
@@ -699,7 +699,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-api-reference.yml` runs after a successful production deploy (`Deploy / gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-api-reference.yml` runs after a successful production deploy (`Deploy / Cloudflare production` workflow on the `production` branch, gated on its `deploy-gen` job succeeding). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
 - **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes

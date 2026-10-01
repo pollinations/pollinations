@@ -2,12 +2,15 @@ DESCRIPTION >
     Materializes generation_event_v2 usage at hourly dashboard grain.
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
+    traffic_group comes from generation_events_classified, so dashboards can
+    select regular usage while retaining legacy, operations and dev totals.
 
 NODE generation_usage_hourly_mv_node
 SQL >
     SELECT
         toStartOfHour(start_time) AS hour,
         environment,
+        traffic_group,
         coalesce(
             nullIf(nullIf(resolved_model_requested, ''), 'undefined'),
             nullIf(nullIf(model_used, ''), 'undefined'),
@@ -25,7 +28,7 @@ SQL >
         api_key_client_id NOT IN ('', 'undefined') AS is_byop,
         model_provider_used = 'community' AS is_community,
         multiIf(is_byop, 'byop', is_community, 'community_direct', 'core') AS business_stream,
-        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(is_final)) AS all_calls,  -- attempts are not requests
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
         sumState(
             toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)
@@ -117,11 +120,11 @@ SQL >
                 )
             )
         ) AS completion_video_tokens
-    FROM generation_event_v2
+    FROM generation_events_classified
     WHERE
         environment IN ('production', 'debug-prod-copy')
         AND start_time >= toDateTime('2026-01-09 00:00:00')
-    GROUP BY hour, environment, model, workload, funding_source, is_byop, is_community, business_stream
+    GROUP BY hour, environment, traffic_group, model, workload, funding_source, is_byop, is_community, business_stream
 
 TYPE MATERIALIZED
 DATASOURCE generation_usage_hourly

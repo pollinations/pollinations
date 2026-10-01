@@ -3,9 +3,9 @@ import logging
 
 import aiohttp
 
-from ...utils.url import quote
 from ...core.config import config
-from . import auth as github_auth
+from ...utils.url import quote
+from .auth import get_github_token, has_github_auth
 from .graphql import github_graphql
 
 logger = logging.getLogger(__name__)
@@ -48,25 +48,9 @@ class GitHubManager:
             await self._connector.close()
             self._connector = None
 
-    async def _get_token(self) -> str | None:
-        """Get GitHub token (from App or PAT)."""
-        if github_auth.github_app_auth:
-            token = await github_auth.github_app_auth.get_token()
-            if token:
-                return token
-        # Fallback to PAT
-        return config.github.token if config.github.token else None
-
-    def _has_auth(self) -> bool:
-        """Check if any auth method is available (sync check)."""
-        has_app = github_auth.github_app_auth is not None
-        has_pat = bool(config.github.token)
-        logger.debug(f"_has_auth check: app={has_app}, pat={has_pat}")
-        return has_app or has_pat
-
     async def _get_headers(self) -> dict | None:
         """Get standard GitHub API headers."""
-        token = await self._get_token()
+        token = await get_github_token()
         if not token:
             return None
         return {
@@ -84,7 +68,7 @@ class GitHubManager:
         limit: int = 10,
     ) -> list[dict]:
 
-        if not self._has_auth():
+        if not has_github_auth():
             return []
 
         # Build query parts
@@ -106,25 +90,46 @@ class GitHubManager:
                 query_parts.append(f'label:"{label}"')
 
         query = " ".join(query_parts)
-        encoded_query = quote(query, safe="")
-        url = f"https://api.github.com/search/issues?q={encoded_query}&per_page={limit}&sort=updated&order=desc"
+        requested_limit = max(1, min(limit, 1000))
+        per_page = min(requested_limit, 100)
+        max_pages = min(10, (requested_limit + per_page - 1) // per_page)
+        collected: list[dict] = []
+        total_count = 0
+        truncated = False
 
         try:
             session = await self.get_session()
-            async with session.get(
-                url,
-                headers=await self._get_headers(),
-                timeout=aiohttp.ClientTimeout(total=15),
-            ) as response:
-                if response.status == 200:
+            for page in range(1, max_pages + 1):
+                url = (
+                    "https://api.github.com/search/issues?"
+                    f"q={quote(query, safe='')}&per_page={per_page}&page={page}&sort=updated&order=desc"
+                )
+                async with session.get(
+                    url,
+                    headers=await self._get_headers(),
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as response:
+                    if response.status != 200:
+                        logger.warning("Search API returned HTTP %d", response.status)
+                        break
                     data = await response.json()
-                    return self._format_issue_list(data.get("items", []))
-                else:
-                    logger.warning(f"Search API error: {response.status}")
-        except Exception as e:
-            logger.warning(f"Issue search failed: {e}")
+                total_count = int(data.get("total_count", 0))
+                page_items = data.get("items", [])
+                collected.extend(page_items)
+                if len(collected) >= requested_limit:
+                    truncated = total_count > len(collected)
+                    break
+                if len(page_items) < per_page:
+                    break
+            else:
+                truncated = total_count > len(collected)
+        except Exception:
+            logger.exception("Issue search failed")
 
-        return []
+        formatted = self._format_issue_list(collected[:requested_limit])
+        if truncated:
+            logger.info("Issue search stopped at bounded result limit")
+        return formatted
 
     async def search_discord_issues(
         self,
@@ -156,7 +161,7 @@ class GitHubManager:
         Returns:
             Issue dict with full details, or None if not found
         """
-        if not self._has_auth():
+        if not has_github_auth():
             return None
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}"
@@ -182,7 +187,7 @@ class GitHubManager:
 
     async def get_issue_comments(self, issue_number: int, limit: int = 5) -> list[dict]:
 
-        if not self._has_auth():
+        if not has_github_auth():
             return []
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/comments?per_page={limit}"
@@ -222,7 +227,7 @@ class GitHubManager:
         message_url: str | None = None,
     ) -> dict:
 
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         if not config.bot.default_repo:
@@ -277,7 +282,7 @@ class GitHubManager:
 
     async def add_comment(self, issue_number: int, comment: str, author: str) -> dict:
 
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/comments"
@@ -348,7 +353,7 @@ class GitHubManager:
 
     async def edit_comment(self, comment_id: int, new_body: str, requester: str = None) -> dict:
 
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/comments/{comment_id}"
@@ -398,7 +403,7 @@ class GitHubManager:
 
     async def delete_comment(self, comment_id: int, requester: str = None) -> dict:
         """Delete a comment by its ID. Only the original requester can delete."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/comments/{comment_id}"
@@ -452,7 +457,7 @@ class GitHubManager:
         comment: str | None = None,
     ) -> dict:
         """Close an issue with optional comment."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}"
@@ -492,7 +497,7 @@ class GitHubManager:
 
     async def reopen_issue(self, issue_number: int, comment: str | None = None) -> dict:
         """Reopen a closed issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}"
@@ -529,7 +534,7 @@ class GitHubManager:
 
     async def edit_issue(self, issue_number: int, title: str | None = None, body: str | None = None) -> dict:
         """Edit an issue's title and/or body."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         if not title and not body:
@@ -573,7 +578,7 @@ class GitHubManager:
 
     async def add_labels(self, issue_number: int, labels: list[str]) -> dict:
         """Add labels to an issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/labels"
@@ -605,7 +610,7 @@ class GitHubManager:
 
     async def remove_labels(self, issue_number: int, labels: list[str]) -> dict:
         """Remove labels from an issue (parallel execution)."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         async def remove_single_label(label: str) -> tuple[str, bool, str]:
@@ -648,7 +653,7 @@ class GitHubManager:
 
     async def assign_issue(self, issue_number: int, assignees: list[str]) -> dict:
         """Assign users to an issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/assignees"
@@ -691,7 +696,7 @@ class GitHubManager:
 
     async def unassign_issue(self, issue_number: int, assignees: list[str]) -> dict:
         """Remove assignees from an issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/assignees"
@@ -723,7 +728,7 @@ class GitHubManager:
 
     async def link_issues(self, issue_number: int, related_issues: list[int], relationship: str) -> dict:
         """Link issues by adding a comment with references."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         # Build relationship text
@@ -748,7 +753,7 @@ class GitHubManager:
 
     async def set_milestone(self, issue_number: int, milestone: str) -> dict:
         """Set or remove milestone from an issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}"
@@ -838,7 +843,7 @@ class GitHubManager:
 
     async def lock_issue(self, issue_number: int, lock: bool, reason: str | None = None) -> dict:
         """Lock or unlock an issue."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{config.bot.default_repo}/issues/{issue_number}/lock"

@@ -2,11 +2,19 @@ import { env } from "cloudflare:test";
 import {
     getTinybirdDatasourceIngestUrl,
     sendErrorEventToTinybird,
+    sendToTinybird,
 } from "@shared/events.ts";
-import { usageToEventParams } from "@shared/schemas/generation-event.ts";
+import {
+    type TinybirdEvent,
+    usageToEventParams,
+} from "@shared/schemas/generation-event.ts";
 import { exponentialBackoffDelay } from "@shared/util.ts";
-import { expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 import { test } from "./fixtures.ts";
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 test("usageToEventParams preserves fractional seconds for video and audio durations", () => {
     // LTX-2 produces durations of the form N + 1/24 (8n+1 frames at 24fps);
@@ -53,6 +61,36 @@ test("sendErrorEventToTinybird sends structured error events", async ({
         status: 502,
         kind: "server_error",
     });
+});
+
+test("sendToTinybird does not retry failed responses", async ({ log }) => {
+    const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response("unavailable", { status: 503 }));
+
+    await sendToTinybird(
+        { id: "evt_single_attempt" } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+test("sendToTinybird does not retry network errors", async ({ log }) => {
+    const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockRejectedValue(new Error("connection lost"));
+
+    await sendToTinybird(
+        { id: "evt_single_attempt" } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
 test("Exponential backoff delay", async () => {

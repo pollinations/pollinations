@@ -1,15 +1,16 @@
 import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { requestId } from "hono/request-id";
 import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -38,13 +39,12 @@ function getCurrentGenOrigin(c: Context<Env>): string {
 }
 
 const app = new Hono<Env>()
-    // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
         "*",
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: [], // reflect Access-Control-Request-Headers (permissive; origin already "*")
+            allowHeaders: [],
             exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),
@@ -85,8 +85,11 @@ app.notFound(async (c: Context<Env>) => {
 
 app.onError(handleError);
 
-export type AppRoutes = typeof app;
-
 export default {
-    fetch: app.fetch,
-} satisfies ExportedHandler<CloudflareBindings>;
+    fetch(request, env, ctx) {
+        if (env.CODE_AGENT_CONTEXT) {
+            return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
+        }
+        return app.fetch(request, env, ctx);
+    },
+} satisfies ExportedHandler<Env["Bindings"]>;

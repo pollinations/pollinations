@@ -7,17 +7,13 @@ import {
     useState,
 } from "react";
 import { pollinationsErrorFromResponse } from "../error-response.js";
-import {
-    fetchModelCatalog,
-    type ModelCatalog,
-    type ModelCatalogItem,
-} from "../models.js";
+import { fetchModelCatalog, type ModelCatalog } from "../models.js";
 import type {
     AccountBalance,
     AccountProfile,
     KeyInfo,
     KeyUsageOptions,
-    ModelCategory,
+    ModelInfo,
     UsageResponse,
 } from "../types.js";
 import { PollinationsError } from "../types.js";
@@ -56,7 +52,7 @@ function useRequiredAuth(): AuthContextValue {
     return ctx;
 }
 
-/** Current auth session state only. Does not fetch account data. */
+/** Auth state without fetching account data. */
 export function useAuthState(): AuthStateValue {
     const { apiKey, isLoggedIn, isHydrated, error } = useRequiredAuth();
     return useMemo(
@@ -65,7 +61,7 @@ export function useAuthState(): AuthStateValue {
     );
 }
 
-/** Stable login/logout refs and provider config. */
+/** Login/logout actions and provider settings. */
 export function useAuthActions(): AuthActionsValue {
     const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
         useRequiredAuth();
@@ -75,7 +71,7 @@ export function useAuthActions(): AuthActionsValue {
     );
 }
 
-/** Combined thin auth hook. Account data is available through opt-in hooks. */
+/** Auth state and actions. Use account hooks to fetch data. */
 export function useAuth(): AuthContextValue {
     return useRequiredAuth();
 }
@@ -85,8 +81,10 @@ function accountUrl(
     path: string,
     params?: URLSearchParams,
 ): string {
+    let end = apiBaseUrl.length;
+    while (apiBaseUrl[end - 1] === "/") end--;
     const qs = params?.toString();
-    return `${apiBaseUrl.replace(/\/+$/, "")}${path}${qs ? `?${qs}` : ""}`;
+    return `${apiBaseUrl.slice(0, end)}${path}${qs ? `?${qs}` : ""}`;
 }
 
 async function fetchAccountJson<T>(
@@ -170,24 +168,19 @@ export function useAccountProfile(options: { enabled?: boolean } = {}) {
 }
 
 export interface UseModelCatalogValue {
-    models: ModelCatalogItem[];
+    models: ModelInfo[];
     allowedModelIds: ReadonlySet<string>;
-    /** Categories the key may use: restricted to allowed models when logged in,
-     * every public category when logged out. */
-    allowedCategories: ModelCategory[];
     isLoggedIn: boolean;
     isLoading: boolean;
     error: Error | null;
     refresh: () => Promise<void>;
 }
 
-const EMPTY_MODELS: ModelCatalogItem[] = [];
+const EMPTY_MODELS: ModelInfo[] = [];
 const EMPTY_ALLOWED: ReadonlySet<string> = new Set();
 
 /**
- * Loads the public model catalog and, when the provider holds an API key, the
- * set of models that key may use (`allowedModelIds`). The catalog is a public
- * endpoint, so `apiKey` is optional — this works logged out.
+ * Loads the public catalog, plus allowedModelIds when logged in.
  */
 export function useModelCatalog(
     options: { baseUrl?: string; enabled?: boolean } = {},
@@ -229,16 +222,9 @@ export function useModelCatalog(
     return useMemo(() => {
         const models = catalog?.models ?? EMPTY_MODELS;
         const allowedModelIds = catalog?.allowedModelIds ?? EMPTY_ALLOWED;
-        const allowed = isLoggedIn
-            ? models.filter((model) => allowedModelIds.has(model.id))
-            : models;
-        const allowedCategories = [
-            ...new Set(allowed.map((model) => model.category)),
-        ];
         return {
             models,
             allowedModelIds,
-            allowedCategories,
             isLoggedIn,
             isLoading,
             error,

@@ -1,12 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen } from "../lib/api.js";
-import {
-    getOutputMode,
-    printError,
-    printResult,
-    printTable,
-} from "../lib/output.js";
+import { fail, getOutputMode, printResult, printTable } from "../lib/output.js";
 import { fetchModelStats } from "./stats.js";
 
 const MAX_STATS_WINDOW_MINUTES = 7 * 24 * 60;
@@ -26,6 +21,7 @@ interface ModelEntry {
 
 function classifyType(m: ModelEntry): string {
     const out = m.output_modalities ?? [];
+    if (out.includes("3d")) return "3d";
     if (out.includes("video")) return "video";
     if (out.includes("embedding")) return "embedding";
     if (out.includes("audio")) return "audio";
@@ -71,7 +67,7 @@ export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option(
         "--type <type>",
-        "Filter: text, image, audio, video, embedding, all",
+        "Filter: text, image, audio, video, 3d, embedding, all",
         "all",
     )
     .option("--verbose", "Show additional details (context length)")
@@ -82,6 +78,21 @@ export const modelsCommand = new Command("models")
         "60",
     )
     .action(async (opts) => {
+        if (
+            ![
+                "text",
+                "image",
+                "audio",
+                "video",
+                "3d",
+                "embedding",
+                "all",
+            ].includes(opts.type)
+        ) {
+            fail(
+                "--type must be one of: text, image, audio, video, 3d, embedding, all",
+            );
+        }
         if (opts.stats) {
             try {
                 const windowMinutes = Number(opts.window);
@@ -90,10 +101,9 @@ export const modelsCommand = new Command("models")
                     windowMinutes < 1 ||
                     windowMinutes > MAX_STATS_WINDOW_MINUTES
                 ) {
-                    printError(
+                    fail(
                         `--window must be an integer between 1 and ${MAX_STATS_WINDOW_MINUTES}`,
                     );
-                    process.exit(1);
                 }
 
                 const rows = await fetchModelStats(windowMinutes);
@@ -133,10 +143,7 @@ export const modelsCommand = new Command("models")
                     printTable(curated);
                 }
             } catch (err) {
-                printError(
-                    `Failed to fetch stats: ${err instanceof Error ? err.message : "unknown"}`,
-                );
-                process.exit(1);
+                fail("Failed to fetch stats", err);
             }
             return;
         }
@@ -170,6 +177,11 @@ export const modelsCommand = new Command("models")
                 for (const m of embeddingModels)
                     raw.push({ model: m, type: "embedding" });
             }
+            if (type === "all" || type === "3d") {
+                const model3dModels = await gen<ModelEntry[]>("/3d/models");
+                for (const m of model3dModels)
+                    raw.push({ model: m, type: "3d" });
+            }
 
             if (getOutputMode() === "json") {
                 printResult(
@@ -193,9 +205,6 @@ export const modelsCommand = new Command("models")
                 : ["name", "type", "capabilities", "description"];
             printTable(rows, cols);
         } catch (err) {
-            printError(
-                `Failed to fetch models: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch models", err);
         }
     });

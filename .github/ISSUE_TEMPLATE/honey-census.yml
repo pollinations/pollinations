@@ -1,0 +1,175 @@
+name: 🍯 Honey Census
+description: For anyone who has bought Pollen. Takes 3 minutes and earns 10 Quest Pollen.
+title: "[Honey Census] "
+labels: ["HONEY-CENSUS"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A 3-minute survey for anyone who has bought Pollen.
+
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 10 Quest Pollen (once per GitHub account that has bought Pollen). The Pollen is paid when the two big text boxes have at least 100 characters in total.
+
+  - type: dropdown
+    id: first-buy
+    attributes:
+      label: Why did you first buy Pollen?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - I ran out of Quest Pollen
+        - I needed a Paid Pollen only model
+        - The first top-up bonus
+        - A deadline, client or launch
+        - To support Pollinations
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: first-buy-other
+    attributes:
+      label: Another reason? (optional)
+
+  - type: dropdown
+    id: checkout
+    attributes:
+      label: Did anything get in the way when you bought it?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - No, it went smoothly
+        - The price or pack sizes
+        - The service fee
+        - My payment method or currency was missing
+        - My card was declined or the bank check failed
+        - Not sure what Pollen buys
+        - Not sure I could trust you
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: checkout-other
+    attributes:
+      label: Something else, or a payment method you'd rather use? (optional)
+
+  - type: dropdown
+    id: who-pays
+    attributes:
+      label: Who pays for your Pollen?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Me, personally
+        - My company or a client
+        - My app's revenue covers it
+        - Someone else
+    validations:
+      required: true
+
+  - type: input
+    id: who-pays-other
+    attributes:
+      label: Someone else? Who (optional)
+
+  - type: dropdown
+    id: now
+    attributes:
+      label: How do you use Pollinations these days?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - I'm still using the Pollen I bought
+        - I top up when I run out
+        - Quest Pollen covers what I need
+        - My project ended or paused
+        - I mostly use another service now
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: now-other
+    attributes:
+      label: Anything else about how you use it? (optional)
+
+  - type: dropdown
+    id: prices
+    attributes:
+      label: For what you use, our prices feel…
+      description: Pick one.
+      multiple: true
+      options:
+        - 🤑 A steal
+        - 👍 Fair
+        - 😬 A bit pricey
+        - 💸 Too expensive
+    validations:
+      required: true
+
+  - type: dropdown
+    id: plan
+    attributes:
+      label: If we offered a monthly plan, which would suit you?
+      description: Pick one.
+      multiple: true
+      options:
+        - $5 a month
+        - $10 a month
+        - $20 a month
+        - $50 a month
+        - $100+ a month
+        - None, I'd rather pay as I go
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-more
+    attributes:
+      label: What would make you use Pollinations more?
+      description: A model, a feature, a fix, anything. A sentence or two.
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-tools
+    attributes:
+      label: Which other AI tools or services do you pay for, and what for?
+      description: Name the tool and what you use it for.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vanish
+    attributes:
+      label: If Pollinations vanished tomorrow, you'd feel…
+      description: Pick one.
+      multiple: true
+      options:
+        - 😭 Very disappointed
+        - 😕 Somewhat disappointed
+        - 😐 Not really
+        - 💃 I'd throw a party
+    validations:
+      required: true
+
+  - type: input
+    id: roast
+    attributes:
+      label: "🔥 Roast us: what's the one thing we get wrong?"
+      description: One sentence. Be blunt; it's the answer we read first.
+    validations:
+      required: true
+
+  - type: input
+    id: five-words
+    attributes:
+      label: 🐝 Describe Pollinations to a friend in five words
+    validations:
+      required: true
+
+  - type: input
+    id: call
+    attributes:
+      label: Up for a 15-minute call with the team? Leave your Discord handle (optional)

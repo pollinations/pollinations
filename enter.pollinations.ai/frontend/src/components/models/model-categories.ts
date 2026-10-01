@@ -1,4 +1,8 @@
 import {
+    COMMUNITY_MODEL_PREFIX,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
+import {
     type ApiModelInfo,
     getCatalogCategory,
     getCatalogDisplayName,
@@ -15,7 +19,8 @@ export type ModelCategoryLabel =
     | "Realtime"
     | "Embedding"
     | "Community Text"
-    | "Community Image";
+    | "Community Image"
+    | "Community Agents";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
@@ -41,6 +46,7 @@ const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "embedding",
     "community-text",
     "community-image",
+    "community-agent",
 ];
 
 const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
@@ -53,6 +59,7 @@ const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     embedding: "Embedding",
     "community-text": "Community Text",
     "community-image": "Community Image",
+    "community-agent": "Community Agents",
 };
 
 const CATEGORY_MODALITIES: Record<
@@ -68,26 +75,30 @@ const CATEGORY_MODALITIES: Record<
     embedding: "embeddings",
     "community-text": "text",
     "community-image": "images",
+    "community-agent": "text",
 };
-
-const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
-    "text",
-    "images",
-    "video",
-    "3d",
-    "audio",
-    "realtime",
-    "embeddings",
-];
 
 export function getModelDisplayCategory(
     category: ModelCategory,
     community = false,
+    agent = false,
 ): ModelDisplayCategory {
+    if (community && agent) return "community-agent";
     if (community && (category === "text" || category === "image")) {
         return `community-${category}`;
     }
     return category;
+}
+
+/**
+ * Creator of a community model, read from its canonical ID
+ * (`community/<user>/<model>`), so it also works for requested IDs the public
+ * catalog does not list.
+ */
+export function getCommunityModelOwner(id: string): string | undefined {
+    return id.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? parseCommunityModelId(id)?.ownerGithubUsername
+        : undefined;
 }
 
 export function getModelCategoriesFromCatalog(
@@ -101,6 +112,7 @@ export function getModelCategoriesFromCatalog(
                     getModelDisplayCategory(
                         getCatalogCategory(model),
                         model.community,
+                        model.agent,
                     ) === category,
             )
             .map((model) => {
@@ -120,22 +132,4 @@ export function getModelCategoriesFromCatalog(
             models: categoryModels,
         };
     }).filter(({ models }) => models.length > 0);
-}
-
-export function computeCategoryModalities(
-    allowedModels: string[] | null,
-    categories: ModelCategoryGroup[] = [],
-): ModelCategoryGroup["modality"][] {
-    if (categories.length === 0) {
-        return allowedModels === null ? ALL_MODALITIES : [];
-    }
-
-    const selected = allowedModels === null ? null : new Set(allowedModels);
-    const modalities = categories
-        .filter(
-            ({ models }) =>
-                selected === null || models.some(({ id }) => selected.has(id)),
-        )
-        .map(({ modality }) => modality);
-    return [...new Set(modalities)];
 }

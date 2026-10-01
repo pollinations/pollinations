@@ -6,6 +6,125 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
+test("mixed historical and canonical usage stays separate in daily JSON and CSV", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const ids = [
+        "claude-large",
+        "anthropic/claude-opus-5",
+        "owner/custom-model",
+    ];
+    mocks.tinybird.state.dailyResponse = ids.map((model, index) => ({
+        date: "2026-09-07",
+        api_key_id: "key_history",
+        api_key: "history-fixture",
+        model,
+        meter_source: "pack",
+        requests: [10, 5, 1][index],
+        cost_usd: [2, 1, 0.5][index],
+    }));
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30",
+        {
+            headers: authHeaders(sessionToken),
+        },
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage: Array<{ model: string; requests: number; cost_usd: number }>;
+    };
+    expect(body.usage.map((row) => row.model)).toEqual(ids);
+    expect(body.usage.reduce((sum, row) => sum + row.requests, 0)).toBe(16);
+    expect(body.usage.reduce((sum, row) => sum + row.cost_usd, 0)).toBe(3.5);
+    const csvResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30&format=csv",
+        {
+            headers: authHeaders(sessionToken),
+        },
+    );
+    expect(csvResponse.status).toBe(200);
+    const csv = await csvResponse.text();
+    for (const id of ids) expect(csv).toContain(`,${id},`);
+    expect(csv.trim().split("\n")).toHaveLength(4);
+});
+
+test("activity filters, cursors and exports keep the exact recorded model ID", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const ids = [
+        "claude-large",
+        "anthropic/claude-opus-5",
+        "owner/custom-model",
+        "retired-unknown",
+    ];
+    mocks.tinybird.state.usageResponse = ids.map((model, index) => ({
+        cursor_event_id: `event-${index}`,
+        timestamp: "2026-09-07 10:00:00",
+        type: "generate.text",
+        model,
+        api_key_id: "key_history",
+        api_key: "history-fixture",
+        api_key_type: "secret",
+        meter_source: "pack",
+        input_text_tokens: 10,
+        input_cached_tokens: 0,
+        input_audio_tokens: 0,
+        input_audio_seconds: 0,
+        input_image_tokens: 0,
+        output_text_tokens: 20,
+        output_reasoning_tokens: 0,
+        output_audio_tokens: 0,
+        output_audio_seconds: 0,
+        output_image_tokens: 0,
+        output_video_seconds: 0,
+        cost_usd: 1,
+        response_time_ms: 123,
+    }));
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30",
+        {
+            headers: authHeaders(sessionToken),
+        },
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage: Array<{ model: string; cursor_event_id: string }>;
+    };
+    expect(body.usage.map((row) => row.model)).toEqual(ids);
+    expect(body.usage[0].cursor_event_id).toBe("event-0");
+
+    // The real route must pass each exact selection through to Tinybird;
+    // mapping an old ID to the current model would change historical meaning.
+    for (const id of ids) {
+        const query = new URLSearchParams({
+            days: "30",
+            models: id,
+            before: "2026-09-07 10:00:00",
+            before_event_id: "event-0",
+        });
+        const filtered = await SELF.fetch(
+            `http://localhost:3000/api/account/usage?${query}`,
+            { headers: authHeaders(sessionToken) },
+        );
+        expect(filtered.status).toBe(200);
+        const call = mocks.tinybird.state.pipeCalls.at(-1);
+        expect(call?.query.models).toBe(id);
+        expect(call?.query.before_event_id).toBe("event-0");
+    }
+    const csvResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&format=csv",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(csvResponse.status).toBe(200);
+    const csv = await csvResponse.text();
+    for (const id of ids) expect(csv).toContain(`,${id},`);
+    expect(csv.trim().split("\n")).toHaveLength(5);
+});
+
 async function createUsageApiKey(sessionToken: string) {
     const createResponse = await SELF.fetch(
         "http://localhost:3000/api/account/keys",
@@ -52,7 +171,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
             date: "2026-04-14",
             api_key_id: "key_abc123",
             api_key: "debug-usage-fixture",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             requests: 3,
             cost_usd: 10,
@@ -107,7 +226,7 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
             date: "2026-04-14",
             api_key_id: "key_abc123",
             api_key: "debug-usage-fixture",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             requests: 3,
             cost_usd: 10,
@@ -128,7 +247,7 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
         "date,api_key_id,api_key,model,meter_source,requests,cost_usd",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_abc123,debug-usage-fixture,openai-fast,tier,3,10",
+        "2026-04-14,key_abc123,debug-usage-fixture,openai/gpt-5-nano,tier,3,10",
     );
 });
 
@@ -230,7 +349,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
             cursor_event_id: "event-2",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -281,7 +400,7 @@ test("GET /api/account/usage accepts account usage permission", async ({
             cursor_event_id: "event-admin",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
@@ -352,7 +471,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",

@@ -60,7 +60,7 @@ function App() {
     const [uploadedFile, setUploadedFile] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
     const [apiKey, setApiKey] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isAuthenticated = Boolean(apiKey);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -72,7 +72,6 @@ function App() {
         if (keyFromUrl) {
             sessionStorage.setItem("pollinations_api_key", keyFromUrl);
             setApiKey(keyFromUrl);
-            setIsAuthenticated(true);
             window.history.replaceState(
                 {},
                 document.title,
@@ -82,7 +81,6 @@ function App() {
             const savedKey = sessionStorage.getItem("pollinations_api_key");
             if (savedKey) {
                 setApiKey(savedKey);
-                setIsAuthenticated(true);
             }
         }
     }, []);
@@ -98,7 +96,6 @@ function App() {
     const handleLogout = () => {
         sessionStorage.removeItem("pollinations_api_key");
         setApiKey(null);
-        setIsAuthenticated(false);
     };
 
     const handleImageUpload = (event) => {
@@ -137,11 +134,11 @@ function App() {
         }
 
         const data = await response.json();
-        return data.url || data.secure_url || data.media_url;
+        return data.url;
     };
 
     const applyMakeup = async () => {
-        if (!uploadedImage || !uploadedFile || !apiKey) return;
+        if (!uploadedFile || !apiKey) return;
 
         setIsLoading(true);
         setImageLoaded(false);
@@ -187,12 +184,12 @@ function App() {
             }
             setMakeupImage(resultUrl);
             setImageLoaded(true);
-            setIsLoading(false);
         } catch (error) {
             console.error("Error applying makeup:", error);
             setErrorMessage(
                 error.message || "Something went wrong. Please try again.",
             );
+        } finally {
             setIsLoading(false);
         }
     };

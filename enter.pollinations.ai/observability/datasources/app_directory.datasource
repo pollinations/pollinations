@@ -1,12 +1,13 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    APPS.md directory synced daily — all community apps with categories, platforms, and metadata
+    app.json directory synced daily — all community apps with categories, platforms, and metadata
 
 SCHEMA >
     `emoji` String `json:$.emoji`,
     `name` String `json:$.name`,
     `web_url` String `json:$.web_url`,
+    `screenshot_url` String `json:$.screenshot_url`,
     `description` String `json:$.description`,
     `language` String `json:$.language`,
     `category` String `json:$.category`,

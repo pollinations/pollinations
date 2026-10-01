@@ -1,0 +1,528 @@
+#!/usr/bin/env node
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
+import {
+    imageProbeRequest,
+    imageProbeResult,
+    nextImageOperation,
+} from "./image-probe.mjs";
+import { nextProbeAt, recordProbe } from "./probe-schedule.mjs";
+
+// Probe selected community text/image models, at most once every four hours.
+// Repeated failures back off to weekly; --model is a one-off diagnostic check.
+// Actual spend is reconciled from real `usage` tokens and recorded in state.
+// Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
+
+const TOKEN = process.env.POLLI_TOKEN;
+if (!TOKEN) {
+    console.error("POLLI_TOKEN missing");
+    process.exit(1);
+}
+const GEN = process.env.POLLINATIONS_GEN_URL ?? "https://gen.pollinations.ai";
+const CONCURRENCY = 4;
+const TEXT_TIMEOUT_MS = 45_000;
+const IMAGE_TIMEOUT_MS = 150_000;
+const STATE_PATH =
+    process.env.MONITOR_STATE_PATH ?? "/home/ubuntu/monitor/state.json";
+const RESULTS_PATH =
+    process.env.MONITOR_RESULTS_PATH ??
+    "/home/ubuntu/monitor/probe-results.json";
+// Rough estimate for planning only -- actual spend is reconciled from real
+// `usage` in each response, not from these constants.
+const EST_PROMPT_TOKENS = 20;
+const EST_COMPLETION_TOKENS = 8;
+const EST_IMAGE_OUTPUT_TOKENS = 1120;
+
+// Keep persisted cadence keys stable across aliases.
+const stateModelId = (id) => id.replace(/^community\//, "");
+
+const modelArgIndex = process.argv.indexOf("--model");
+let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+if (modelArgIndex !== -1 && !onlyModel) {
+    console.error("--model requires a community/owner/model id");
+    process.exit(1);
+}
+// --models-file <path>: selected routine checks, including hidden exact IDs.
+// JSON array of { name, category, operation? }; [] does not sweep the catalog.
+const modelsFileArgIndex = process.argv.indexOf("--models-file");
+const fileModels =
+    modelsFileArgIndex === -1
+        ? []
+        : JSON.parse(
+              fs.readFileSync(process.argv[modelsFileArgIndex + 1], "utf8"),
+          );
+if (
+    (modelsFileArgIndex !== -1 && onlyModel) ||
+    !Array.isArray(fileModels) ||
+    fileModels.some(
+        (m) =>
+            typeof m?.name !== "string" ||
+            !["text", "image"].includes(m.category) ||
+            (m.operation !== undefined &&
+                !["generate", "edit"].includes(m.operation)),
+    )
+) {
+    console.error(
+        "--models-file needs a JSON array of { name, category: text|image, operation?: generate|edit } and excludes --model",
+    );
+    process.exit(1);
+}
+const categoryArgIndex = process.argv.indexOf("--category");
+const onlyCategory =
+    categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
+if (
+    categoryArgIndex !== -1 &&
+    onlyCategory !== "text" &&
+    onlyCategory !== "image"
+) {
+    console.error("--category must be text or image");
+    process.exit(1);
+}
+
+function readState() {
+    try {
+        return JSON.parse(fs.readFileSync(STATE_PATH, "utf8"));
+    } catch (error) {
+        if (error.code === "ENOENT") return {};
+        throw error;
+    }
+}
+
+const operationArgIndex = process.argv.indexOf("--operation");
+const onlyOperation =
+    operationArgIndex === -1 ? null : process.argv[operationArgIndex + 1];
+if (
+    operationArgIndex !== -1 &&
+    (!onlyModel || !["generate", "edit"].includes(onlyOperation))
+) {
+    console.error("--operation requires --model and must be generate or edit");
+    process.exit(1);
+}
+if (!onlyModel && modelsFileArgIndex === -1) {
+    console.error(
+        "Select routine probes with --models-file, or diagnose one --model",
+    );
+    process.exit(1);
+}
+
+// Pricing is public, no auth needed: https://gen.pollinations.ai/models
+async function fetchCatalog() {
+    const response = await fetch(`${GEN}/models?reliability=all`, {
+        signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok)
+        throw new Error(`model catalog returned ${response.status}`);
+    const list = await response.json();
+    return Array.isArray(list) ? list : list.data;
+}
+
+function estimateCost(model) {
+    const p = Number(model.pricing?.promptTextTokens ?? 0);
+    const c = Number(model.pricing?.completionTextTokens ?? 0);
+    if (model.category === "image") {
+        const image = Number(model.pricing?.completionImageTokens ?? 0);
+        return model.flat_rate
+            ? image
+            : p * EST_PROMPT_TOKENS + image * EST_IMAGE_OUTPUT_TOKENS;
+    }
+    return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
+}
+
+async function probeText(model) {
+    const started = Date.now();
+    const requestPath = "/v1/chat/completions";
+    const marker = `ok-${randomUUID().slice(0, 8)}`;
+    const prompt = `Reply with exactly: ${marker}`;
+    // The abort timer must stay armed through the BODY read, not just until
+    // headers arrive: a stalled response stream otherwise hangs this job --
+    // and, with it, the whole sweep -- forever. This exact hang killed every
+    // sweep from 2026-07-20 08:29 until it was found a day later.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TEXT_TIMEOUT_MS);
+    try {
+        const res = await fetch(`${GEN}${requestPath}`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: model.name,
+                messages: [{ role: "user", content: prompt }],
+                stream: true,
+                stream_options: { include_usage: true },
+            }),
+            signal: ctrl.signal,
+        });
+        const body = await res.text();
+        let usage;
+        let content;
+        let servedModel;
+        let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
+        if (res.ok) {
+            ({
+                usage,
+                content,
+                servedModel,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
+            try {
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
+            } catch {
+                // Do not persist raw non-JSON error bodies.
+            }
+        }
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
+        const contentPreview =
+            typeof content === "string" && content.trim()
+                ? JSON.stringify(content.trim().slice(0, 200))
+                : "<empty>";
+        const ok = res.ok && !protocolError && hasProbeMarker;
+        const modelUsed = res.headers.get("x-model-used");
+        const result = {
+            model: model.name,
+            modelUsed,
+            fallbackUsed: modelUsed ? modelUsed !== model.name : null,
+            servedModel: servedModel ?? null,
+            category: model.category,
+            requestPath,
+            requestId: res.headers.get("x-request-id"),
+            httpStatus: res.status,
+            timestamp: new Date(started).toISOString(),
+            ok,
+            status: protocolError
+                ? "PROTOCOL"
+                : res.ok && !hasProbeMarker
+                  ? "INVALID"
+                  : res.status,
+            ms: Date.now() - started,
+            usage,
+            probeMarker: marker,
+            protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
+            detail: res.ok
+                ? protocolError
+                    ? (errorMessage ?? protocolError)
+                    : hasProbeMarker
+                      ? undefined
+                      : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
+        };
+        return result;
+    } catch (err) {
+        return {
+            model: model.name,
+            category: model.category,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
+            ok: false,
+            status: "ERR",
+            ms: Date.now() - started,
+            detail: String(err).slice(0, 200),
+        };
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+async function probeImage(model, operation) {
+    const started = Date.now();
+    const marker = `image-${randomUUID().slice(0, 8)}`;
+    const { requestPath, body: requestBody } = imageProbeRequest(
+        model,
+        marker,
+        operation,
+    );
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), IMAGE_TIMEOUT_MS);
+    try {
+        const res = await fetch(`${GEN}${requestPath}`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+            signal: ctrl.signal,
+        });
+        const body = await res.text();
+        const result = {
+            model: model.name,
+            category: model.category,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
+            ms: Date.now() - started,
+            probeMarker: marker,
+            ...imageProbeResult(res, body, model.name),
+        };
+        return result;
+    } catch (err) {
+        return {
+            model: model.name,
+            category: model.category,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
+            ok: false,
+            status: "ERR",
+            ms: Date.now() - started,
+            detail: String(err).slice(0, 200),
+        };
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+function probe(model) {
+    return model.category === "image"
+        ? probeImage(
+              model,
+              onlyOperation ??
+                  fileOperation.get(model.name) ??
+                  (targeted
+                      ? "generate"
+                      : nextImageOperation(
+                            model,
+                            state.spend?.probes?.[stateModelId(model.name)]
+                                ?.operation,
+                        )),
+          )
+        : probeText(model);
+}
+
+function actualCost(result, priceByModel) {
+    if (!result.usage) return 0;
+    const price = priceByModel.get(result.model);
+    if (!price) return 0;
+    if (result.category === "image") {
+        const inputText = result.usage.input_tokens_details?.text_tokens ?? 0;
+        const inputImage = result.usage.input_tokens_details?.image_tokens ?? 0;
+        const outputImage = result.usage.output_tokens ?? 0;
+        return (
+            inputText * price.promptTextTokens +
+            inputImage * price.promptImageTokens +
+            outputImage * price.completionImageTokens
+        );
+    }
+    const promptTokens = result.usage.prompt_tokens ?? 0;
+    const completionTokens = result.usage.completion_tokens ?? 0;
+    return (
+        promptTokens * price.promptTextTokens +
+        completionTokens * price.completionTextTokens
+    );
+}
+
+const catalog = await fetchCatalog();
+// Agents can perform real work on the probe account; never select them.
+const models = catalog.filter(
+    (model) =>
+        model.community &&
+        !model.agent &&
+        ["text", "image"].includes(model.category),
+);
+const listedTarget = catalog.find(
+    (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
+);
+if (listedTarget) {
+    if (!models.includes(listedTarget))
+        throw new Error("Only community text/image proxy models can be probed");
+    onlyModel = listedTarget.name;
+}
+if (
+    onlyOperation &&
+    ((listedTarget?.category ?? onlyCategory) !== "image" ||
+        (onlyOperation === "edit" &&
+            listedTarget &&
+            !listedTarget.input_modalities?.includes("image")))
+) {
+    console.error(
+        "--operation requires an image model; listed edit targets must advertise image input",
+    );
+    process.exit(1);
+}
+if (onlyModel && !models.some((model) => model.name === onlyModel)) {
+    if (!onlyCategory) {
+        console.error(
+            `listed community model not found: ${onlyModel}; pass --category to probe a hidden exact ID`,
+        );
+        process.exit(1);
+    }
+    models.push({
+        name: onlyModel,
+        category: onlyCategory,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+for (const entry of fileModels) {
+    const listed = catalog.find(
+        (model) =>
+            model.name === entry.name || model.aliases?.includes(entry.name),
+    );
+    if (listed) {
+        if (!models.includes(listed))
+            throw new Error(
+                "Only community text/image proxy models can be probed",
+            );
+        entry.name = listed.name;
+    }
+    if (models.some((model) => model.name === entry.name)) continue;
+    models.push({
+        name: entry.name,
+        category: entry.category,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+const fileOperation = new Map(
+    fileModels.map((model) => [model.name, model.operation]),
+);
+const targetNames = new Set(
+    onlyModel ? [onlyModel] : fileModels.map((m) => m.name),
+);
+const targeted = Boolean(onlyModel);
+const priceByModel = new Map(
+    models.map((m) => [
+        m.name,
+        {
+            promptTextTokens: Number(m.pricing?.promptTextTokens ?? 0),
+            promptImageTokens: Number(m.pricing?.promptImageTokens ?? 0),
+            completionTextTokens: Number(m.pricing?.completionTextTokens ?? 0),
+            completionImageTokens: Number(
+                m.pricing?.completionImageTokens ?? 0,
+            ),
+        },
+    ]),
+);
+
+const state = readState();
+const now = Date.now();
+const selectedModels = models.filter((model) => targetNames.has(model.name));
+const probeDue = (model) =>
+    now >= nextProbeAt(state.spend?.probes?.[stateModelId(model.name)]);
+const modelsToProbe = targeted
+    ? selectedModels
+    : selectedModels.filter(probeDue);
+const skippedModels = targeted
+    ? []
+    : selectedModels
+          .filter((model) => !probeDue(model))
+          .map((model) => model.name);
+const estimatedSpend = modelsToProbe.reduce(
+    (sum, model) => sum + estimateCost(model),
+    0,
+);
+const jobs = modelsToProbe;
+
+// Worker pool, not batched Promise.all: one slow request must not
+// head-of-line-block the other CONCURRENCY-1 slots for up to its timeout.
+const results = [];
+let nextJob = 0;
+await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+        while (nextJob < jobs.length) {
+            const i = nextJob++;
+            results[i] = await probe(jobs[i]);
+        }
+    }),
+);
+
+const actualSpend = results.reduce(
+    (sum, r) => sum + actualCost(r, priceByModel),
+    0,
+);
+
+// Persist spend history. probe.mjs owns only the `spend` key in state.json --
+// CYCLE.md/the agent owns everything else and
+// read-modify-writes this file, so merge rather than clobber. Re-read the
+// file NOW rather than reusing the startup snapshot: the sweep takes minutes
+// and the agent rewrites state.json in the meantime -- merging into the old
+// snapshot would silently revert those writes.
+const currentState = readState();
+const nextState = {
+    ...currentState,
+    spend: {
+        ...currentState.spend,
+        ...(!targeted && {
+            lastCycleBudget: undefined,
+            lastEstimatedPollen: estimatedSpend,
+            lastActualPollen: actualSpend,
+            lastRequestCount: jobs.length,
+            lastRunAt: new Date().toISOString(),
+        }),
+        probes: {
+            ...currentState.spend?.probes,
+            ...Object.fromEntries(
+                results.map((result) => [
+                    stateModelId(result.model),
+                    recordProbe(
+                        currentState.spend?.probes?.[
+                            stateModelId(result.model)
+                        ],
+                        result,
+                    ),
+                ]),
+            ),
+        },
+    },
+};
+fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
+
+const out = {
+    ts: new Date().toISOString(),
+    actualSpend,
+    skippedModels,
+    results,
+};
+if (targeted) {
+    // One-off diagnostics update the cadence but not the routine result file.
+    console.log(JSON.stringify(out));
+    process.exit(0);
+}
+fs.writeFileSync(RESULTS_PATH, JSON.stringify(out, null, 2));
+
+// Per-model summary: worst status per model, plus request count.
+const byModel = new Map();
+for (const r of results) {
+    const cur = byModel.get(r.model);
+    if (!cur || (cur.ok && !r.ok)) {
+        byModel.set(r.model, { ...r, count: (cur?.count ?? 0) + 1 });
+    } else {
+        cur.count += 1;
+    }
+}
+for (const r of [...byModel.values()].sort(
+    (a, b) => Number(a.ok) - Number(b.ok),
+)) {
+    console.log(
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}${r.servedModel ? ` upstream=${r.servedModel}` : ""}`,
+    );
+}
+console.log(
+    `${results.filter((r) => r.ok).length}/${results.length} requests healthy across ${byModel.size} models`,
+);
+if (skippedModels.length) {
+    console.log(
+        `${skippedModels.length} models not due (4h base interval, failure backoff up to 6d)`,
+    );
+}
+console.log(
+    `estimated ${estimatedSpend.toFixed(4)} pollen, actual ${actualSpend.toFixed(4)}`,
+);

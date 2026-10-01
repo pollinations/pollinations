@@ -6,9 +6,20 @@ import {
     POLLEN_PACKS,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+    Await,
+    createFileRoute,
+    redirect,
+    useNavigate,
+} from "@tanstack/react-router";
+import { Suspense, useDeferredValue } from "react";
+import { apiClient } from "../api.ts";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
-import { Route as DashboardRoute } from "./_dashboard.tsx";
+import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
@@ -27,14 +38,23 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
+    loader: () => ({
+        billing: apiClient.stripe.billing
+            .$get()
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
+    }),
     component: PollenPage,
 });
 
 function PollenPage() {
+    const retry = useDashboardRetry("balance");
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
-        DashboardRoute.useLoaderData();
+    const { balance, earnings } = useDeferredValue(
+        DashboardRoute.useLoaderData(),
+    );
+    const { billing } = useDeferredValue(Route.useLoaderData());
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
     function selectPack(amount: number): void {
@@ -43,22 +63,50 @@ function PollenPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <Section title="Wallet" framed>
-                <PollenBalance
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    paidWeek={paidWeek}
-                    tierWeek={tierWeek}
-                />
+        <>
+            <Section title="Wallet">
+                <Await promise={balance} fallback={<PageStatus />}>
+                    {(balances) =>
+                        balances ? (
+                            <Await
+                                promise={earnings}
+                                fallback={
+                                    <>
+                                        <PollenBalance {...balances} />
+                                        <PageStatus />
+                                    </>
+                                }
+                            >
+                                {(earnings) => (
+                                    <PollenBalance
+                                        {...balances}
+                                        {...earnings}
+                                    />
+                                )}
+                            </Await>
+                        ) : (
+                            <LoadError onRetry={retry}>
+                                Couldn’t load your balance.
+                            </LoadError>
+                        )
+                    }
+                </Await>
             </Section>
-            <Section title="Top-up" framed id="buy-pollen">
-                <BuyPollenPanel
-                    initialBillingState={billingState}
-                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                    onSelectedPackAmountChange={selectPack}
-                />
+            <Section title="Top-up" id="buy-pollen">
+                <Suspense fallback={<PageStatus />}>
+                    <Await promise={billing}>
+                        {(billingState) => (
+                            <BuyPollenPanel
+                                initialBillingState={billingState}
+                                selectedPackAmount={
+                                    selectedPack?.amountUsd ?? 5
+                                }
+                                onSelectedPackAmountChange={selectPack}
+                            />
+                        )}
+                    </Await>
+                </Suspense>
             </Section>
-        </div>
+        </>
     );
 }

@@ -3,13 +3,12 @@
 from ..utils.regex import re
 from .tools import (
     CODE_SEARCH_TOOL,
-    DATA_VIZ_TOOL,
     DISCORD_SEARCH_TOOL,
-    GITHUB_TOOLS,
     RENDER_VISUAL_TOOL,
     WEB_SCRAPE_TOOL,
     WEB_SEARCH_TOOL,
 )
+
 
 def get_tools_with_embeddings(base_tools: list, code_search_enabled: bool) -> list:
     """Build the tool list, including code_search only when it is configured."""
@@ -25,7 +24,7 @@ def get_tools_with_embeddings(base_tools: list, code_search_enabled: bool) -> li
     tools.append(WEB_SEARCH_TOOL)
     tools.append(WEB_SCRAPE_TOOL)
     tools.append(DISCORD_SEARCH_TOOL)
-    tools.append(DATA_VIZ_TOOL)
+    tools.append(RENDER_VISUAL_TOOL)
 
     if code_search_enabled:
         tools.append(CODE_SEARCH_TOOL)
@@ -168,7 +167,18 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool, is_collaborator
 
 # Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
 API_RESTRICTED_ACTIONS = {
-    "github_issue": ADMIN_ACTIONS["github_issue"],
+    "discord_search": {"members", "roles"},
+    "github_issue": ADMIN_ACTIONS["github_issue"]
+    | {
+        "create",
+        "comment",
+        "edit_comment",
+        "delete_comment",
+        "subscribe",
+        "unsubscribe",
+        "unsubscribe_all",
+        "list_subscriptions",
+    },
     "github_pr": ADMIN_ACTIONS["github_pr"] | {"comment", "review"},
     "github_project": ADMIN_ACTIONS["github_project"],
 }
@@ -264,6 +274,7 @@ DEFAULT_TOOLS = {
     "web_search",
     "web_scrape",
     "discord_search",
+    "render_visual",
     "github_overview",
     "github_issue",
 }
@@ -295,11 +306,7 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
     # answer open-ended questions rather than the whole set: it is cheaper on every
     # iteration, and a shorter list is easier to choose from correctly.
     if not matched_tools:
-        fallback = [
-            tool
-            for tool in all_tools
-            if tool.get("function", {}).get("name") in DEFAULT_TOOLS
-        ]
+        fallback = [tool for tool in all_tools if tool.get("function", {}).get("name") in DEFAULT_TOOLS]
         return fallback or all_tools
 
     # Always include github_issue if user mentions a number like #123
@@ -310,7 +317,7 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
             matched_tools.add("github_pr")
 
     # Always include these tools - AI decides when to use them
-    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search"}
+    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search", "render_visual"}
 
     # Filter tools list
     filtered = [
@@ -327,4 +334,3 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
 # =============================================================================
 # TOOL-BASED SYSTEM PROMPT - AI has FULL AUTONOMY
 # =============================================================================
-

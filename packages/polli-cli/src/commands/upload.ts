@@ -1,28 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
-import { basename, extname } from "node:path";
+import { basename } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
 import { MEDIA_URL } from "../lib/config.js";
-import { getOutputMode, printError, printMeta } from "../lib/output.js";
-
-const MIME_BY_EXT: Record<string, string> = {
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".png": "image/png",
-    ".gif": "image/gif",
-    ".webp": "image/webp",
-    ".svg": "image/svg+xml",
-    ".bmp": "image/bmp",
-    ".mp3": "audio/mpeg",
-    ".wav": "audio/wav",
-    ".ogg": "audio/ogg",
-    ".m4a": "audio/mp4",
-    ".flac": "audio/flac",
-    ".aac": "audio/aac",
-    ".mp4": "video/mp4",
-    ".webm": "video/webm",
-    ".mov": "video/quicktime",
-};
+import { mimeTypeFor } from "../lib/mime.js";
+import { fail, getOutputMode, printMeta } from "../lib/output.js";
 
 interface UploadResponse {
     id: string;
@@ -41,13 +23,10 @@ export const uploadCommand = new Command("upload")
         const isHuman = getOutputMode() === "human";
 
         if (!existsSync(file)) {
-            printError(`File not found: ${file}`);
-            process.exit(1);
+            fail(`File not found: ${file}`);
         }
 
-        const mime =
-            MIME_BY_EXT[extname(file).toLowerCase()] ||
-            "application/octet-stream";
+        const mime = mimeTypeFor(file);
         const form = new FormData();
         form.append(
             "file",
@@ -63,8 +42,7 @@ export const uploadCommand = new Command("upload")
 
         if (!res.ok) {
             const text = await res.text().catch(() => "");
-            printError(`${res.status} ${res.statusText}: ${text}`);
-            process.exit(1);
+            fail(`${res.status} ${res.statusText}: ${text}`);
         }
 
         const data = (await res.json()) as UploadResponse;

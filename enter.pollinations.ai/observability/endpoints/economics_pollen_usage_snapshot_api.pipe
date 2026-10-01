@@ -1,0 +1,64 @@
+DESCRIPTION >
+    Latest finalized production Pollen economics snapshot for staging and
+    local Economics development. This endpoint contains no locally materialized
+    staging usage and therefore cannot double-count the production snapshot.
+
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        tupleElement(latest, 1) AS month,
+        tupleElement(latest, 2) AS vendor,
+        tupleElement(latest, 3) AS model,
+        tupleElement(latest, 4) AS currency,
+        tupleElement(latest, 5) AS cost_paid,
+        tupleElement(latest, 6) AS cost_quests,
+        tupleElement(latest, 7) AS price_paid,
+        tupleElement(latest, 8) AS price_quests,
+        tupleElement(latest, 9) AS byop_paid,
+        tupleElement(latest, 10) AS byop_quests,
+        tupleElement(latest, 11) AS model_paid,
+        tupleElement(latest, 12) AS model_quests,
+        tupleElement(latest, 13) AS requests_paid,
+        tupleElement(latest, 14) AS requests_quests
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(
+                tuple(
+                    month,
+                    vendor,
+                    model,
+                    currency,
+                    cost_paid,
+                    cost_quests,
+                    price_paid,
+                    price_quests,
+                    byop_paid,
+                    byop_quests,
+                    model_paid,
+                    model_quests,
+                    requests_paid,
+                    requests_quests
+                ),
+                recorded_at
+            ) AS latest
+        FROM economics_pollen_usage_snapshot
+        GROUP BY entry_id
+    )
+    WHERE
+        tupleElement(latest, 5) != 0
+        OR tupleElement(latest, 6) != 0
+        OR tupleElement(latest, 7) != 0
+        OR tupleElement(latest, 8) != 0
+        OR tupleElement(latest, 9) != 0
+        OR tupleElement(latest, 10) != 0
+        OR tupleElement(latest, 11) != 0
+        OR tupleElement(latest, 12) != 0
+        OR tupleElement(latest, 13) != 0
+        OR tupleElement(latest, 14) != 0
+    ORDER BY month DESC, vendor, model
+
+TYPE ENDPOINT

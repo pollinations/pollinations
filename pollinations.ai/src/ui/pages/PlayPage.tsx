@@ -1,12 +1,13 @@
+import { useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
-import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
+import { findModelById } from "../components/play/model-selection";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
 import { PageCard } from "../components/ui/page-card";
@@ -14,11 +15,11 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const { model } = useSearch({ from: "/play" });
+    const [selectedModel, setSelectedModel] = useState(model ?? "flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
-        imageModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -28,7 +29,6 @@ function PlayPage() {
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
-    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const allModels = useMemo(() => {
         const typeOrder: Record<string, number> = {
@@ -50,15 +50,13 @@ function PlayPage() {
         );
     }, [registryModels]);
 
-    const currentModel = allModels.find((m) => m.id === selectedModel);
+    const currentModel = findModelById(allModels, selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
     const isAudioModel =
         !isVideoModel &&
         (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
     const isImageModel =
-        !isVideoModel &&
-        !isAudioModel &&
-        imageModels.some((m) => m.id === selectedModel);
+        !isVideoModel && !isAudioModel && currentModel?.type === "image";
     const promptPlaceholder = isVideoModel
         ? pageCopy.videoPlaceholder
         : isAudioModel
@@ -76,7 +74,9 @@ function PlayPage() {
             : "border-secondary-strong focus:ring-secondary-strong";
 
     return (
-        <PageContainer>
+        // The old site clipped horizontal overflow on <body>; the new frame
+        // doesn't, so edge tooltips would widen the page on phones.
+        <PageContainer className="overflow-x-clip">
             <PageCard isTranslating={isTranslating}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
                     <Title spacing="none">{pageCopy.createTitle}</Title>
@@ -102,7 +102,7 @@ function PlayPage() {
 
                 <ModelSelector
                     models={allModels}
-                    selectedModel={selectedModel}
+                    selectedModel={currentModel?.id ?? selectedModel}
                     onSelectModel={setSelectedModel}
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}

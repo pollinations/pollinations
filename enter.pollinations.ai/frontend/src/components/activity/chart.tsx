@@ -4,6 +4,11 @@ import {
 } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    ACTIVITY_MIN_DATE,
+    type ActivityPeriod,
+    activityBucketKey,
+} from "./activity-period";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { DataPoint, Metric } from "./types";
 
@@ -16,7 +21,9 @@ const CHART_COLORS = {
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
-    showModelBreakdown: boolean;
+    label: string;
+    period: ActivityPeriod;
+    onSelect: (point: DataPoint) => void;
 };
 
 function getYAxisPadding({
@@ -30,8 +37,29 @@ function getYAxisPadding({
     return isCompact ? 36 : 55;
 }
 
-export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
-    const [hovered, setHovered] = useState<number | null>(null);
+export const Chart: FC<ChartProps> = ({
+    data,
+    metric,
+    label,
+    onSelect,
+    period,
+}) => {
+    const now = new Date();
+    const canSelect = (point: DataPoint) =>
+        point.timestamp >= ACTIVITY_MIN_DATE && point.timestamp <= now;
+    const selectableIndices = data.flatMap((point, index) =>
+        canSelect(point) ? [index] : [],
+    );
+    const [focusedIndex, setFocusedIndex] = useState(() =>
+        data.findIndex(
+            (point) =>
+                activityBucketKey(point.timestamp, period) === period.bucket,
+        ),
+    );
+    const activeIndex = selectableIndices.includes(focusedIndex)
+        ? focusedIndex
+        : (selectableIndices[0] ?? -1);
+    const barRefs = useRef<Array<SVGRectElement | null>>([]);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
@@ -162,7 +190,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
         return Math.round(v).toString();
     };
 
-    const formatTooltipVal = (v: number) => {
+    const formatAccessibleValue = (v: number) => {
         if (metric === "pollen") return formatActivityPollen(v);
         if (Number.isInteger(v)) {
             return v.toLocaleString();
@@ -187,14 +215,14 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 
     return (
         <div ref={containerRef} className="w-full" style={{ height }}>
+            {/* biome-ignore lint/a11y/useSemanticElements: SVG group contains keyboard-operable chart bars. */}
             <svg
                 width="100%"
                 height="100%"
                 viewBox={`0 0 ${width} ${height}`}
                 className="overflow-visible"
-                onMouseLeave={() => setHovered(null)}
-                role="img"
-                aria-label="Usage chart"
+                role="group"
+                aria-label={`${label} chart. Use arrow keys to move between bars and Enter or Space to filter the table. Select again or press Escape within this card to clear selection.`}
             >
                 {/* Grid lines */}
                 {yTicks.map((t) => (
@@ -258,225 +286,138 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 )}
 
                 {/* Bars - stacked wallet split: Quest at bottom, paid on top */}
-                {bars.map((bar, idx) => (
-                    <g key={bar.label}>
-                        {/* Quest segment (bottom) */}
-                        {bar.tierHeight > 0 && (
-                            <rect
-                                x={bar.x}
-                                y={
-                                    bar.tierY -
-                                    (bar.tierHeight * animationProgress -
-                                        bar.tierHeight)
-                                }
-                                width={bar.width}
-                                height={Math.max(
-                                    0,
-                                    bar.tierHeight * animationProgress,
-                                )}
-                                rx={bar.paidHeight > 0 ? 0 : 2}
-                                style={{
-                                    fill: TIER_BALANCE_CHART_COLOR,
-                                    opacity: hovered === idx ? 0.85 : 1,
-                                    transition: "opacity 0.15s ease-out",
-                                }}
-                            />
-                        )}
-                        {/* Paid segment (top) */}
-                        {bar.paidHeight > 0 && (
-                            <rect
-                                x={bar.x}
-                                y={
-                                    bar.paidY -
-                                    (bar.height * animationProgress -
-                                        bar.height)
-                                }
-                                width={bar.width}
-                                height={Math.max(
-                                    0,
-                                    bar.paidHeight * animationProgress,
-                                )}
-                                rx={2}
-                                style={{
-                                    fill: PAID_BALANCE_CHART_COLOR,
-                                    opacity: hovered === idx ? 0.85 : 1,
-                                    transition: "opacity 0.15s ease-out",
-                                }}
-                            />
-                        )}
-                        {/* Invisible overlay for consistent hover area */}
-                        {/* biome-ignore lint/a11y/noStaticElementInteractions: SVG rect for chart interaction */}
-                        <rect
-                            x={bar.x}
-                            y={bar.y}
-                            width={bar.width}
-                            height={Math.max(0, bar.height * animationProgress)}
-                            fill="transparent"
-                            style={{ cursor: "pointer" }}
-                            onMouseEnter={() => setHovered(idx)}
-                        />
-                    </g>
-                ))}
-
-                {/* Tooltip */}
-                {hovered !== null &&
-                    bars[hovered] &&
-                    (() => {
-                        const bar = bars[hovered];
-                        const allBreakdown = bar.modelBreakdown || [];
-                        const valOf = (m: {
-                            requests: number;
-                            pollen: number;
-                        }) => (metric === "requests" ? m.requests : m.pollen);
-                        const threshold = bar.value * 0.005;
-                        const ranked = allBreakdown
-                            .filter((m) => valOf(m) > threshold)
-                            .sort((a, b) => valOf(b) - valOf(a));
-                        const MAX_ROWS = 5;
-                        const breakdown = ranked.slice(0, MAX_ROWS);
-                        const hiddenCount = ranked.length - breakdown.length;
-                        const hasBreakdown =
-                            showModelBreakdown && breakdown.length > 0;
-                        const lineHeight = 16;
-                        const headerHeight = 48;
-                        const separatorHeight = hasBreakdown ? 12 : 0;
-                        const breakdownRows =
-                            breakdown.length + (hiddenCount > 0 ? 1 : 0);
-                        const tooltipHeight =
-                            headerHeight +
-                            separatorHeight +
-                            (hasBreakdown ? breakdownRows * lineHeight + 8 : 0);
-                        const tooltipWidth = hasBreakdown ? 280 : 160;
-                        const tooltipX = Math.max(
-                            pad.left,
-                            Math.min(
-                                bar.x + bar.width / 2 - tooltipWidth / 2,
-                                width - pad.right - tooltipWidth,
-                            ),
-                        );
-                        const tooltipY = Math.max(
-                            pad.top,
-                            bar.y - tooltipHeight - 10,
-                        );
-
-                        const dateOnly = bar.fullDate.replace(
-                            /^[A-Za-z]+,\s*/,
-                            "",
-                        );
-
-                        const truncateLabel = (label: string, maxLen = 28) =>
-                            label.length > maxLen
-                                ? `${label.substring(0, maxLen - 2)}...`
-                                : label;
-
-                        return (
-                            <g style={{ pointerEvents: "none" }}>
+                {bars.map((bar, index) => {
+                    const selected =
+                        period.bucket ===
+                        activityBucketKey(bar.timestamp, period);
+                    const dimmed = Boolean(period.bucket) && !selected;
+                    return (
+                        <g key={bar.label}>
+                            {/* Quest segment (bottom) */}
+                            {bar.tierHeight > 0 && (
                                 <rect
-                                    x={tooltipX}
-                                    y={tooltipY}
-                                    width={tooltipWidth}
-                                    height={tooltipHeight}
-                                    rx="8"
-                                    className="fill-theme-bg-pale stroke-theme-border"
-                                    strokeWidth="1"
-                                />
-                                <text
-                                    x={tooltipX + 12}
-                                    y={tooltipY + 18}
-                                    textAnchor="start"
-                                    className="text-xs fill-theme-text-soft"
-                                >
-                                    {dateOnly}
-                                </text>
-                                <text
-                                    x={tooltipX + 12}
-                                    y={tooltipY + 36}
-                                    textAnchor="start"
-                                    className="text-sm font-bold fill-theme-text-strong"
-                                >
-                                    {metric === "requests"
-                                        ? "requests"
-                                        : "pollen"}{" "}
-                                    {formatTooltipVal(bar.value)}
-                                </text>
-                                {hasBreakdown && (
-                                    <line
-                                        x1={tooltipX + 12}
-                                        y1={tooltipY + headerHeight + 2}
-                                        x2={tooltipX + tooltipWidth - 12}
-                                        y2={tooltipY + headerHeight + 2}
-                                        className="stroke-theme-border"
-                                        strokeWidth="1"
-                                    />
-                                )}
-                                {hasBreakdown &&
-                                    breakdown.map(
-                                        (
-                                            m: {
-                                                model: string;
-                                                label: string;
-                                                requests: number;
-                                                pollen: number;
-                                            },
-                                            i: number,
-                                        ) => (
-                                            <g key={m.model}>
-                                                <text
-                                                    x={tooltipX + 12}
-                                                    y={
-                                                        tooltipY +
-                                                        headerHeight +
-                                                        separatorHeight +
-                                                        4 +
-                                                        i * lineHeight
-                                                    }
-                                                    className="text-xs fill-theme-text-soft"
-                                                >
-                                                    {truncateLabel(m.label, 22)}
-                                                </text>
-                                                <text
-                                                    x={
-                                                        tooltipX +
-                                                        tooltipWidth -
-                                                        12
-                                                    }
-                                                    y={
-                                                        tooltipY +
-                                                        headerHeight +
-                                                        separatorHeight +
-                                                        4 +
-                                                        i * lineHeight
-                                                    }
-                                                    textAnchor="end"
-                                                    className="text-xs fill-theme-text-strong font-medium"
-                                                >
-                                                    {formatTooltipVal(
-                                                        metric === "requests"
-                                                            ? m.requests
-                                                            : m.pollen,
-                                                    )}
-                                                </text>
-                                            </g>
-                                        ),
+                                    x={bar.x}
+                                    y={
+                                        bar.tierY -
+                                        (bar.tierHeight * animationProgress -
+                                            bar.tierHeight)
+                                    }
+                                    width={bar.width}
+                                    height={Math.max(
+                                        0,
+                                        bar.tierHeight * animationProgress,
                                     )}
-                                {hasBreakdown && hiddenCount > 0 && (
-                                    <text
-                                        x={tooltipX + 12}
-                                        y={
-                                            tooltipY +
-                                            headerHeight +
-                                            separatorHeight +
-                                            4 +
-                                            breakdown.length * lineHeight
-                                        }
-                                        className="text-xs fill-theme-text-soft/60 italic"
-                                    >
-                                        +{hiddenCount} more
-                                    </text>
-                                )}
-                            </g>
-                        );
-                    })()}
+                                    rx={bar.paidHeight > 0 ? 0 : 2}
+                                    style={{
+                                        fill: dimmed
+                                            ? "var(--polli-color-text-muted)"
+                                            : TIER_BALANCE_CHART_COLOR,
+                                        opacity: dimmed ? 0.3 : 1,
+                                        transition: "opacity 0.15s ease-out",
+                                    }}
+                                />
+                            )}
+                            {/* Paid segment (top) */}
+                            {bar.paidHeight > 0 && (
+                                <rect
+                                    x={bar.x}
+                                    y={
+                                        bar.paidY -
+                                        (bar.height * animationProgress -
+                                            bar.height)
+                                    }
+                                    width={bar.width}
+                                    height={Math.max(
+                                        0,
+                                        bar.paidHeight * animationProgress,
+                                    )}
+                                    rx={2}
+                                    style={{
+                                        fill: dimmed
+                                            ? "var(--polli-color-text-muted)"
+                                            : PAID_BALANCE_CHART_COLOR,
+                                        opacity: dimmed ? 0.3 : 1,
+                                        transition: "opacity 0.15s ease-out",
+                                    }}
+                                />
+                            )}
+                            {/* Full-height targets let touch and keyboard users select small or empty buckets. */}
+                            {/* biome-ignore lint/a11y/useSemanticElements: SVG rect provides the chart bar hit target; supports button keyboard interactions. */}
+                            <rect
+                                x={bar.x - (cw / bars.length - bar.width) / 2}
+                                y={pad.top}
+                                width={cw / bars.length}
+                                height={ch}
+                                fill="transparent"
+                                role="button"
+                                aria-pressed={selected}
+                                ref={(node) => {
+                                    barRefs.current[index] = node;
+                                }}
+                                tabIndex={index === activeIndex ? 0 : -1}
+                                onFocus={() => setFocusedIndex(index)}
+                                aria-disabled={!canSelect(bar)}
+                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${selected ? "Clear selection" : "Filter table"}`}
+                                className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
+                                style={{
+                                    cursor: canSelect(bar)
+                                        ? "pointer"
+                                        : "default",
+                                }}
+                                onClick={(event) => {
+                                    if (!canSelect(bar)) return;
+                                    event.currentTarget.focus({
+                                        preventScroll: true,
+                                    });
+                                    onSelect(bar);
+                                }}
+                                onKeyDown={(event) => {
+                                    const position =
+                                        selectableIndices.indexOf(index);
+                                    let nextPosition: number;
+                                    switch (event.key) {
+                                        case "ArrowLeft":
+                                        case "ArrowUp":
+                                            nextPosition = Math.max(
+                                                0,
+                                                position - 1,
+                                            );
+                                            break;
+                                        case "ArrowRight":
+                                        case "ArrowDown":
+                                            nextPosition = Math.min(
+                                                selectableIndices.length - 1,
+                                                position + 1,
+                                            );
+                                            break;
+                                        case "Home":
+                                            nextPosition = 0;
+                                            break;
+                                        case "End":
+                                            nextPosition =
+                                                selectableIndices.length - 1;
+                                            break;
+                                        default:
+                                            nextPosition = -1;
+                                    }
+                                    if (nextPosition >= 0) {
+                                        event.preventDefault();
+                                        barRefs.current[
+                                            selectableIndices[nextPosition]
+                                        ]?.focus({ preventScroll: true });
+                                    }
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        if (canSelect(bar)) onSelect(bar);
+                                    }
+                                }}
+                            />
+                        </g>
+                    );
+                })}
             </svg>
         </div>
     );

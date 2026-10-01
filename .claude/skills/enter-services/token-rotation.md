@@ -33,7 +33,7 @@ this gains explicit workspace handling (tracked in #11127).
 replacement. It is not an Enter Worker secret and does not belong in Enter
 SOPS files.
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/observability`)
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `operations/observability`)
 lives in the retired `pollinations_ai` workspace and has no rotation path —
 rotate manually or migrate observability off the legacy workspace and delete
 the token.
@@ -82,6 +82,28 @@ live — do not silently retry from step 1; report exactly which step failed
 and let the operator decide whether to retry the tail or roll back (see
 Rollback below).
 
+## A merged secret is not a deployed secret
+
+A secret lives in three places: the SOPS file, the staging Worker, and the
+production Worker. Merging only updates the file. `Deploy / Cloudflare
+production` pushes the enter and gen secrets after each deploy; `Deploy /
+Cloudflare staging` pushes them when `push_secrets` is ticked. So a merged
+secret reaches a Worker only once that Worker has been deployed again.
+
+To confirm, list what the Worker actually has:
+
+```bash
+wrangler secret list --env production   # or --env staging
+```
+
+If a name is missing, push just that one with `wrangler secret put <NAME>
+--env production`. `wrangler secret bulk` writes every name in the file, so
+leave it to the workflows.
+
+Approval: re-pushing an unchanged, already-approved secret (what the deploy
+workflows do) needs no new approval. A new or changed value needs Secret
+Mutation Safety approval (root `AGENTS.md`) before the `put`.
+
 ## What breaks what
 
 | If this token is wrong... | ...these break |
@@ -97,21 +119,25 @@ Rollback below).
 
 | Worker | Pod / Host | SSH target | Restart |
 |---|---|---|---|
-| Flux | Vast.ai 5090 instance(s) — see `image.pollinations.ai/GPU_INSTANCES.md` for current instance | `vastai show instances` for IP/port | restart `flux` screen |
+| Flux | Vast.ai instance(s) — see `operations/infrastructure/gpu/GPU_INSTANCES.md` for the current fleet | `vastai show instances` for IP/port | restart `flux` screen |
 | Z-Image | 3× RunPod single-GPU pods (`runpodctl pod list`) | rotating tcp port via RunPod GraphQL | `/root/relaunch-zimage.sh` |
 | Klein 4B | RunPod (id changes if recreated — verify with `runpodctl pod list` and `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json`) | RunPod relay, interactive-only | `/workspace/restart.sh` (token baked in via `export`; edit + re-run inside an interactive session) |
 | LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | SSH key in enter SOPS | `systemctl restart ltx2 acestep sana` |
 
 Hosts move (pods get recreated, Flux migrated from RunPod to Vast.ai in
 2026-07) — confirm current host/pod identity against
-`image.pollinations.ai/GPU_INSTANCES.md` before rotating; don't trust this
+`operations/infrastructure/gpu/GPU_INSTANCES.md` before rotating; don't trust this
 table's specifics as current without checking.
 
 ## SOPS recipient rotation
 
 Recipients are age public keys declared per path in `.sops.yaml`
 `creation_rules` — there is no separate role registry; that file is the source
-of truth. Economics secrets (`apps/operation/economics/**/secrets/*`) encrypt to
+of truth. A `creation_rules` `path_regex` matches the file sops **reads**,
+not where the output goes: `sops -e plaintext.json > secrets/env.json` fails
+with "no matching creation rules found". Either copy to the final path first
+and encrypt in place (`sops -e -i secrets/env.json`), or pass
+`--filename-override <target-path>`. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
 a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
 `env.json`) encrypt to the team key set. Rotating a recipient means changing the
 `age:` list on the relevant `creation_rules` entry, as a two-phase,

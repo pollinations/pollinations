@@ -11,6 +11,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
     promptVideoTokens: "x-usage-prompt-video-tokens",
+    promptVideoSeconds: "x-usage-prompt-video-seconds",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
@@ -19,6 +20,30 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoSeconds: "x-usage-completion-video-seconds",
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
+
+export const USAGE_MISSING_HEADER = "x-usage-missing";
+
+/** Internal worker header for response-derived prompt-cache pricing. */
+export const PROMPT_CACHE_TYPE_HEADER = "x-usage-prompt-cache-type";
+
+/** Provider billing units are independent of generated media duration. */
+export const PROVIDER_BILLING_HEADERS = {
+    units: "x-usage-provider-billable-units",
+    unitCost: "x-usage-provider-unit-cost",
+} as const;
+
+/** Alibaba reports `ephemeral` only when an explicit prompt-cache read served. */
+export function hasExplicitPromptCacheHit(usage: unknown): boolean {
+    if (!usage || typeof usage !== "object") return false;
+    const value = usage as {
+        prompt_tokens_details?: { cache_type?: unknown } | null;
+        input_tokens_details?: { cache_type?: unknown } | null;
+    };
+    return (
+        value.prompt_tokens_details?.cache_type === "ephemeral" ||
+        value.input_tokens_details?.cache_type === "ephemeral"
+    );
+}
 
 export const OPENAI_CHAT_USAGE_TYPES = [
     "promptTextTokens",
@@ -44,6 +69,7 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
     ],
     promptCacheWriteTokens: [
         "prompt_tokens_details.cache_write_tokens",
+        "prompt_tokens_details.cache_creation_input_tokens",
         "cache_creation_input_tokens",
     ],
     promptAudioTokens: ["prompt_tokens_details.audio_tokens"],
@@ -62,6 +88,36 @@ export type OpenAIImageUsage = {
         image_tokens: number;
     };
 };
+
+export const OPENAI_EMBEDDING_USAGE_PATHS = {
+    promptTextTokens: ["prompt_tokens"],
+} as const satisfies Partial<Record<UsageType, readonly string[]>>;
+
+export type OpenAIEmbeddingUsage = {
+    prompt_tokens: number;
+    total_tokens: number;
+};
+
+export function getOpenAIEmbeddingUsage(
+    value: unknown,
+): OpenAIEmbeddingUsage | null {
+    if (!value || typeof value !== "object" || !("usage" in value)) {
+        return null;
+    }
+    const usage = value.usage;
+    if (
+        !usage ||
+        typeof usage !== "object" ||
+        !("prompt_tokens" in usage) ||
+        !isTokenCount(usage.prompt_tokens) ||
+        !("total_tokens" in usage) ||
+        !isTokenCount(usage.total_tokens) ||
+        usage.total_tokens !== usage.prompt_tokens
+    ) {
+        return null;
+    }
+    return usage as OpenAIEmbeddingUsage;
+}
 
 export function getOpenAIImageUsage(value: unknown): OpenAIImageUsage | null {
     if (!value || typeof value !== "object" || !("usage" in value)) {
@@ -117,12 +173,18 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     };
 }
 
-/**
- * Internal worker header carrying Portkey's served fallback target (e.g.
- * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
- * tracking can read it off the worker response like the other usage headers.
- */
+/** Internal worker header carrying the served fallback candidate index. */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
+ * Our id for the model that served the request. Authoritative over any name a
+ * provider reports for itself, which for a community endpoint is its upstream's
+ * name rather than the listing anyone can act on.
+ */
+export const MODEL_USED_HEADER = "x-model-used";
+
+/** The canonical model requested, after alias resolution. */
+export const MODEL_REQUESTED_HEADER = "x-model-requested";
 
 /**
  * Convert OpenAI usage format to Usage format.
@@ -147,6 +209,7 @@ export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens_details?: {
         cached_tokens?: number | null;
         cache_write_tokens?: number | null;
+        cache_creation_input_tokens?: number | null;
         audio_tokens?: number | null;
         image_tokens?: number | null;
         video_tokens?: number | null;
@@ -170,6 +233,7 @@ export function openaiUsageToUsage(openaiUsage: {
         0;
     const promptCacheWriteTokens =
         openaiUsage.prompt_tokens_details?.cache_write_tokens ??
+        openaiUsage.prompt_tokens_details?.cache_creation_input_tokens ??
         openaiUsage.cache_creation_input_tokens ??
         0;
     const promptDetails = [
@@ -244,6 +308,36 @@ export function openaiUsageToUsage(openaiUsage: {
         completionImageTokens,
         completionReasoningTokens,
     };
+}
+
+/** Convert OpenAI Responses token accounting into the shared billing shape. */
+export function responsesUsageToUsage(responsesUsage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details?: {
+        cached_tokens?: number | null;
+        cache_write_tokens?: number | null;
+        cache_creation_input_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        video_tokens?: number | null;
+    } | null;
+    output_tokens_details?: {
+        reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
+    } | null;
+}): Usage {
+    return openaiUsageToUsage({
+        prompt_tokens: responsesUsage.input_tokens,
+        completion_tokens: responsesUsage.output_tokens,
+        total_tokens: responsesUsage.total_tokens,
+        prompt_tokens_details: responsesUsage.input_tokens_details,
+        completion_tokens_details: responsesUsage.output_tokens_details,
+    });
 }
 
 export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
@@ -334,11 +428,16 @@ function detectUsageConvention(
  */
 export function buildUsageHeaders(
     modelUsed: string,
-    usage: Usage,
+    usage?: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
-        "x-model-used": modelUsed,
+        [MODEL_USED_HEADER]: modelUsed,
     };
+
+    if (!usage) {
+        headers[USAGE_MISSING_HEADER] = "true";
+        return headers;
+    }
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];
@@ -361,18 +460,13 @@ export function parseUsageHeaders(
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    const FLOAT_USAGE_TYPES: Set<string> = new Set([
-        "promptAudioSeconds",
-        "completionAudioSeconds",
-        "completionVideoSeconds",
-    ]);
-
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
-                ? parseFloat(value)
-                : parseInt(value, 10);
+            // buildUsageHeaders writes String(number), and Number() is its
+            // exact inverse: integer token counts and fractional units
+            // (seconds, megapixels) parse alike.
+            usage[usageType as UsageType] = Number(value);
         }
     }
 

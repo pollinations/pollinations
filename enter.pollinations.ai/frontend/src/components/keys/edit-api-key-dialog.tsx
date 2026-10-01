@@ -1,65 +1,42 @@
 import { apiClient } from "@frontend/api.ts";
-import {
-    AppIcon,
-    Button,
-    Chip,
-    CopyButton,
-    cn,
-    Dialog,
-    DialogTitle,
-    Field,
-    GlobeIcon,
-    Input,
-    LockIcon,
-    ScrollArea,
-} from "@pollinations/ui";
-import type { FC } from "react";
+import { AuthModal } from "@pollinations/ui/auth";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
-import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
-import { PublishableKeySettings } from "./publishable-key-settings.tsx";
+import { resourceActionError } from "../../lib/resource-action-error.ts";
+import { ResourceDialog } from "../layout/resource-dialog.tsx";
+import { KeyDialogContent } from "./key-dialog-content.tsx";
+import { useKeyPermissions } from "./key-permissions.tsx";
+import {
+    isAppKey,
+    isPublishableKey,
+    readRedirectUris,
+    shouldPostKeyMetadata,
+} from "./key-type.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
+    /** Use grant-specific wording in the standalone editor. */
+    accessContext?: "app" | "device";
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
-}
-
-function readInitialRedirectUris(
-    metadata: Record<string, unknown> | null | undefined,
-): string[] {
-    const list = metadata?.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
-}
-
-function sameRedirectUris(a: string[], b: string[]): boolean {
-    if (a.length !== b.length) return false;
-    return a.every((v, i) => v === b[i]);
+    /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
+    header?: ReactNode;
+    /** Standalone page only: the line under the actions. */
+    footnote?: ReactNode;
 }
 
 function cleanRedirectUris(uris: string[]): string[] {
     return uris.map((v) => v.trim()).filter((v) => v !== "");
 }
 
-function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
-function isAppKey(apiKey: ApiKey): boolean {
-    return (
-        isPublishableKey(apiKey) &&
-        (readInitialRedirectUris(apiKey.metadata).length > 0 ||
-            apiKey.metadata?.earningsEnabled === true)
-    );
-}
-
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
+    accessContext,
     onUpdate,
     onClose,
+    header,
+    footnote,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -69,7 +46,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const initialRedirectUris = readRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
@@ -95,34 +72,19 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, ...permissions } = keyPermissions.permissions;
-            await onUpdate(apiKey.id, {
-                name,
-                ...permissions,
-                expiresAt: expiryDays
-                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
-                    : null,
-            });
-
-            // Save app settings only for keys that belong in the App section.
-            if (appKey) {
-                const cleaned = cleanRedirectUris(redirectUris);
-                if (
-                    sameRedirectUris(cleaned, initialRedirectUris) &&
-                    earningsEnabled === initialEarningsEnabled
-                ) {
-                    onClose();
-                    return;
-                }
-                const metadataBody = {
+            // Save metadata before onUpdate refreshes and waits for the key list.
+            const cleaned = cleanRedirectUris(redirectUris);
+            if (
+                shouldPostKeyMetadata(apiKey, {
                     redirectUris: cleaned,
                     earningsEnabled,
-                };
+                })
+            ) {
                 const metaRes = await apiClient["api-keys"][
                     ":id"
                 ].metadata.$post({
                     param: { id: apiKey.id },
-                    json: metadataBody,
+                    json: { redirectUris: cleaned, earningsEnabled },
                 });
                 if (!metaRes.ok) {
                     const err = await metaRes.json().catch(() => null);
@@ -133,132 +95,79 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 }
             }
 
+            const { expiryDays, ...permissions } = keyPermissions.permissions;
+            await onUpdate(apiKey.id, {
+                name,
+                ...permissions,
+                expiresAt: expiryDays
+                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+                    : null,
+            });
+
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
             setError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to update API key",
+                resourceActionError(
+                    "save",
+                    accessContext
+                        ? `${accessContext} access`
+                        : appKey
+                          ? "the app key"
+                          : "the secret key",
+                    error,
+                ),
             );
         } finally {
             setIsSubmitting(false);
         }
     }
 
+    // Same content in both places: the standalone page paints the page shell,
+    // the dashboard dims the page behind a dialog.
+    const Shell = header ? AuthModal : DashboardDialog;
     return (
-        <Dialog
-            open
-            onOpenChange={(open) => !open && onClose()}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
-        >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-xl font-bold mb-4">
-                    {appKey ? "Edit App Key" : "Edit API Key"}
-                </DialogTitle>
-
-                <div className="flex items-center gap-3">
-                    <Chip>
-                        {appKey ? (
-                            <>
-                                <AppIcon className="h-4 w-4" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-4 w-4" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-4 w-4" />
-                                Secret
-                            </>
-                        )}
-                    </Chip>
-                    {isPublishable && plaintextKey ? (
-                        <CopyButton
-                            value={plaintextKey}
-                            tooltipClassName="inline-flex min-w-0"
-                            aria-label="Copy publishable API key"
-                            className={(copied) =>
-                                cn(
-                                    "font-mono text-sm cursor-pointer transition-all",
-                                    copied
-                                        ? "text-intent-success-text font-semibold"
-                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
-                                )
-                            }
-                        >
-                            {(copied) => (copied ? "Copied!" : plaintextKey)}
-                        </CopyButton>
-                    ) : (
-                        <span className="font-mono text-sm text-theme-text-muted">
-                            {apiKey.start}...
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                {error && (
-                    <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
-                        {error}
-                    </div>
-                )}
-
-                <div className="space-y-4">
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            Name
-                        </Field.Label>
-                        <Input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full"
-                            placeholder="Enter API key name"
-                            disabled={isSubmitting}
-                        />
-                    </Field.Root>
-
-                    {appKey && (
-                        <PublishableKeySettings
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={setRedirectUris}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={setEarningsEnabled}
-                            disabled={isSubmitting}
-                        />
-                    )}
-
-                    {!isPublishable && (
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
-                            inline
-                        />
-                    )}
-                </div>
-            </ScrollArea>
-
-            <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                <Button
-                    type="button"
-                    intent="danger"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? "Saving..." : "Save"}
-                </Button>
-            </div>
-        </Dialog>
+        <Shell onClose={onClose} size="lg">
+            <KeyDialogContent
+                header={header}
+                mode="edit"
+                accessContext={accessContext}
+                app={appKey}
+                publishable={isPublishable}
+                name={name}
+                onNameChange={setName}
+                permissions={keyPermissions}
+                redirectUris={redirectUris}
+                onRedirectUrisChange={setRedirectUris}
+                earningsEnabled={earningsEnabled}
+                onEarningsEnabledChange={setEarningsEnabled}
+                existingKey={{
+                    prefix: apiKey.start ?? "",
+                    value: isPublishable ? plaintextKey : undefined,
+                }}
+                error={error}
+                isSubmitting={isSubmitting}
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleSave();
+                }}
+                onClose={onClose}
+                footnote={footnote}
+            />
+        </Shell>
     );
 };
+
+const DashboardDialog: FC<{
+    onClose: () => void;
+    size: "lg";
+    children: ReactNode;
+}> = ({ onClose, size, children }) => (
+    <ResourceDialog
+        open
+        onOpenChange={(open) => !open && onClose()}
+        size={size}
+    >
+        {children}
+    </ResourceDialog>
+);

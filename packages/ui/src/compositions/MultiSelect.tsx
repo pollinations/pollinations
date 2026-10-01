@@ -20,6 +20,10 @@ export type MultiSelectProps = {
     disabledTooltip?: string;
     align?: "start" | "end";
     label?: string;
+    /** Accessible name when the visible label is supplied by the caller. */
+    ariaLabel?: string;
+    /** Fill the available width, allowing the trigger label to truncate. */
+    fullWidth?: boolean;
 };
 
 const TRIGGER_BASE =
@@ -41,6 +45,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledTooltip,
     align = "start",
     label,
+    ariaLabel,
+    fullWidth = false,
 }) => {
     const isAllSelected = selected.length === 0;
 
@@ -57,8 +63,11 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     const displayText = disabled
         ? disabledText
         : isAllSelected
-          ? "All"
-          : `${selected.length} selected`;
+          ? placeholder
+          : selected.length === 1
+            ? (options.find((option) => option.value === selected[0])?.label ??
+              "1 selected")
+            : `${selected.length} selected`;
 
     const labelNode = label ? (
         <span className="polli:text-xs polli:font-medium polli:text-theme-text-soft">
@@ -68,19 +77,29 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 
     if (disabled) {
         return (
-            <div className="polli:flex polli:items-center polli:gap-2">
+            <div
+                className={cn(
+                    "polli:flex polli:items-center polli:gap-2",
+                    fullWidth && "polli:w-full polli:min-w-0",
+                )}
+            >
                 {labelNode}
                 <Tooltip
                     triggerAs="span"
                     content={disabledTooltip || "No items available"}
                     align="center"
-                    className="polli:inline-flex"
+                    className={cn(
+                        "polli:inline-flex polli:cursor-not-allowed",
+                        fullWidth && "polli:min-w-0 polli:flex-1",
+                    )}
                 >
                     <button
                         type="button"
                         disabled
+                        aria-label={ariaLabel || label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
+                            fullWidth && "polli:w-full polli:min-w-0",
                             "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
                         )}
                     >
@@ -98,16 +117,23 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     }
 
     return (
-        <div className="polli:flex polli:items-center polli:gap-2">
+        <div
+            className={cn(
+                "polli:flex polli:items-center polli:gap-2",
+                fullWidth && "polli:w-full polli:min-w-0",
+            )}
+        >
             {labelNode}
             <Dropdown
                 align={align}
-                className="polli:min-w-[320px]"
+                className="polli:w-[min(20rem,calc(100vw-2rem))]"
                 trigger={(open) => (
                     <button
                         type="button"
+                        aria-label={ariaLabel || label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
+                            fullWidth && "polli:w-full polli:min-w-0",
                             open
                                 ? "polli:bg-theme-bg-hover"
                                 : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
@@ -139,6 +165,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     <button
                         type="button"
                         onClick={selectAll}
+                        aria-pressed={isAllSelected}
                         className={cn(
                             ROW_BASE,
                             isAllSelected
@@ -147,6 +174,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         )}
                     >
                         <span
+                            aria-hidden="true"
                             className={cn(
                                 CHECK_BASE,
                                 isAllSelected &&
@@ -164,6 +192,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 type="button"
                                 key={opt.value}
                                 onClick={() => toggleItem(opt.value)}
+                                aria-pressed={isChecked}
                                 className={cn(
                                     ROW_BASE,
                                     isChecked
@@ -172,6 +201,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 )}
                             >
                                 <span
+                                    aria-hidden="true"
                                     className={cn(
                                         CHECK_BASE,
                                         isChecked &&
@@ -180,7 +210,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 >
                                     {isChecked && "✓"}
                                 </span>
-                                <span className="polli:whitespace-nowrap">
+                                <span className="polli:min-w-0 polli:[overflow-wrap:anywhere]">
                                     {opt.label}
                                 </span>
                             </button>

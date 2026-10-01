@@ -1,6 +1,6 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { createApiKeyViaApi, test } from "../fixtures.ts";
 
 describe("Account Key Management API", () => {
     describe("POST /api/account/keys (create)", () => {
@@ -131,7 +131,10 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "restricted-child",
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: [
+                            "black-forest-labs/flux.1-schnell",
+                            "openai/gpt-5.4-nano",
+                        ],
                         pollenBudget: 50,
                         accountPermissions: ["profile", "usage"],
                     }),
@@ -141,57 +144,75 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "openai/gpt-5.4-nano",
+                ],
                 account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
         });
 
-        test("should strip 'keys' from child account permissions", async ({
+        test("should let a key with account:keys create a child that can create keys", async ({
             sessionToken,
         }) => {
-            const response = await SELF.fetch(
+            const parentKey = await createApiKeyViaApi(sessionToken, {
+                name: "machine-parent",
+                accountPermissions: ["keys"],
+            });
+
+            const createChild = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${parentKey.key}`,
                     },
                     body: JSON.stringify({
-                        name: "escalation-attempt",
+                        name: "machine-child",
                         accountPermissions: ["profile", "keys", "usage"],
                     }),
                 },
             );
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            // "keys" should be stripped
-            expect(data.permissions.account).toEqual(["profile", "usage"]);
-            expect(data.permissions.account).not.toContain("keys");
+            expect(createChild.status).toBe(200);
+            const child = await createChild.json();
+            expect(child.permissions.account).toEqual([
+                "profile",
+                "keys",
+                "usage",
+            ]);
+
+            // The child can mint its own key in turn.
+            const createGrandchild = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${child.key}`,
+                    },
+                    body: JSON.stringify({ name: "harness-grandchild" }),
+                },
+            );
+            expect(createGrandchild.status).toBe(200);
+            const grandchild = await createGrandchild.json();
+            expect(grandchild.key.startsWith("sk_")).toBe(true);
+            expect(grandchild.permissions?.account ?? []).not.toContain("keys");
         });
 
         test("should create key via API key with account:keys permission", async ({
-            auth,
             sessionToken,
         }) => {
             // First create a key with account:keys permission via session
-            const createParent = await auth.apiKey.create({
+            const parentKey = await createApiKeyViaApi(sessionToken, {
                 name: "parent-key",
-                prefix: "sk",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            if (!createParent.data)
-                throw new Error("Failed to create parent key");
 
             // Set account:keys permission via the update endpoint
             const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createParent.data.id}/update`,
+                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
                 {
                     method: "POST",
                     headers: {
@@ -212,7 +233,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${createParent.data.key}`,
+                        Authorization: `Bearer ${parentKey.key}`,
                     },
                     body: JSON.stringify({
                         name: "child-from-api",
@@ -349,12 +370,26 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "account-key-with-retired-model",
-                        allowedModels: ["flux", "retired-model"],
+                        allowedModels: ["black-forest-labs/flux.1-schnell"],
                     }),
                 },
             );
             expect(createResponse.status).toBe(200);
             const created = await createResponse.json();
+
+            await env.DB.prepare(
+                "UPDATE apikey SET permissions = ? WHERE id = ?",
+            )
+                .bind(
+                    JSON.stringify({
+                        models: [
+                            "black-forest-labs/flux.1-schnell",
+                            "retired-model",
+                        ],
+                    }),
+                    created.id,
+                )
+                .run();
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -370,7 +405,9 @@ describe("Account Key Management API", () => {
             const listed = body.data.find(
                 (key: { id: string }) => key.id === created.id,
             );
-            expect(listed.permissions.models).toEqual(["flux"]);
+            expect(listed.permissions.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
         });
 
         test("should reject API key without account:keys permission", async ({
@@ -391,23 +428,15 @@ describe("Account Key Management API", () => {
 
     describe("DELETE /api/account/keys/:id (revoke)", () => {
         test("should revoke a key via session auth", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key to revoke
-            const createResp = await auth.apiKey.create({
+            const created = await createApiKeyViaApi(sessionToken, {
                 name: "to-be-revoked",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            if (!createResp.data) throw new Error("Failed to create key");
-            const keyId = createResp.data.id;
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/account/keys/${keyId}`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
                     method: "DELETE",
                     headers: {
@@ -425,7 +454,7 @@ describe("Account Key Management API", () => {
                 "http://localhost:3000/api/account/key",
                 {
                     headers: {
-                        Authorization: `Bearer ${createResp.data.key}`,
+                        Authorization: `Bearer ${created.key}`,
                     },
                 },
             );
@@ -433,23 +462,16 @@ describe("Account Key Management API", () => {
         });
 
         test("should prevent self-revocation via API key", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key with account:keys permission
-            const createResp = await auth.apiKey.create({
+            const created = await createApiKeyViaApi(sessionToken, {
                 name: "self-revoke-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            if (!createResp.data) throw new Error("Failed to create key");
 
             // Grant account:keys permission
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createResp.data.id}/update`,
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
                 {
                     method: "POST",
                     headers: {
@@ -464,11 +486,11 @@ describe("Account Key Management API", () => {
 
             // Try to revoke itself
             const response = await SELF.fetch(
-                `http://localhost:3000/api/account/keys/${createResp.data.id}`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
                     method: "DELETE",
                     headers: {
-                        Authorization: `Bearer ${createResp.data.key}`,
+                        Authorization: `Bearer ${created.key}`,
                     },
                 },
             );

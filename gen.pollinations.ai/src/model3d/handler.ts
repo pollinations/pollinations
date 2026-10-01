@@ -1,10 +1,11 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import { HttpError } from "../image/httpError.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     createAndReturnModel3d,
     type Model3dGenerationResult,
@@ -20,15 +21,27 @@ export async function generate3dResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncModel3dEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "");
+    const originalPrompt = prompt || "";
     const safeParams = parseModel3dParams(c, body);
+    c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
-        const result = await createAndReturnModel3d(originalPrompt, safeParams);
-        assertNonEmptyMedia(result);
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(originalPrompt, safeParams, result),
-        });
+        return await withModelFallbackResponse(
+            c.var.model,
+            async (candidate) => {
+                const params = { ...safeParams, model: candidate.id };
+                const result = await createAndReturnModel3d(
+                    originalPrompt,
+                    params,
+                );
+                assertNonEmptyMedia(result);
+                return new Response(bufferToUint8Array(result.buffer), {
+                    headers: mediaHeaders(originalPrompt, params, result),
+                });
+            },
+            c.var.track?.attempts,
+            (candidate) => enforceModelRateLimit(c, candidate),
+        );
     } catch (error) {
         throw3dError(error);
     }
@@ -38,28 +51,11 @@ export async function handle3dPrompt(
     c: Model3dContext,
     prompt: string,
 ): Promise<Response> {
-    return generate3dResponse(c, prompt, await readJsonBody(c));
-}
-
-export async function readJsonBody(
-    c: Model3dContext,
-): Promise<Record<string, unknown>> {
-    if (c.req.method !== "POST") return {};
-    const contentType = c.req.header("content-type") || "";
-    if (!contentType.includes("application/json")) return {};
-    try {
-        return (await c.req.json()) as Record<string, unknown>;
-    } catch {
-        return {};
-    }
-}
-
-export function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
-    }
+    const body =
+        c.req.method === "POST"
+            ? (c.req.valid("json" as never) as Record<string, unknown>)
+            : {};
+    return generate3dResponse(c, prompt, body);
 }
 
 export function parseModel3dParams(
@@ -68,6 +64,7 @@ export function parseModel3dParams(
 ): Model3dParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const mergedParams = {
+        resolution: "low",
         ...queryParams,
         ...body,
         model: c.var.model.resolved,
@@ -87,11 +84,13 @@ export function parseModel3dParams(
 
 export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     if (!result.buffer || result.buffer.length === 0) {
-        throw new HttpError("3D provider returned an empty response", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "3D provider returned an empty response",
+        });
     }
 }
 
-function contentDisposition(prompt: string): string {
+function contentDisposition(prompt: string, contentType: string): string {
     const baseFilename = prompt
         .slice(0, 100)
         .replace(/[^a-z0-9\s-]/gi, "")
@@ -99,7 +98,11 @@ function contentDisposition(prompt: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
-    return `inline; filename="${baseFilename || "generated-model"}.glb"`;
+    const filename = baseFilename || "generated-model";
+    if (contentType === "model/ply") {
+        return `inline; filename="${filename}.ply"`;
+    }
+    return `inline; filename="${filename}.glb"`;
 }
 
 export function mediaHeaders(
@@ -111,7 +114,10 @@ export function mediaHeaders(
         "Content-Type": result.contentType,
         "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
-    headers.set("Content-Disposition", contentDisposition(prompt));
+    headers.set(
+        "Content-Disposition",
+        contentDisposition(prompt, result.contentType),
+    );
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };
@@ -126,14 +132,6 @@ export function mediaHeaders(
 export function throw3dError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
 
-    if (error instanceof HttpError) {
-        throw new UpstreamError(remapUpstreamStatus(error.status), {
-            message: error.message,
-            upstreamStatus: error.status,
-            responseBody: JSON.stringify({ message: error.message }),
-            cause: error,
-        });
-    }
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "3D model generation failed",

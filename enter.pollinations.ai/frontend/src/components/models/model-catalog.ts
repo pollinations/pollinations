@@ -1,41 +1,17 @@
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
     formatPriceFlat,
     formatPricePer1M,
 } from "./formatters.ts";
-import type {
-    ModelCapability,
-    ModelCategory,
-    ModelPrice,
-    ModelPriceLine,
-} from "./types.ts";
+import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
-type ApiPricing = Partial<Record<PriceField, string>> & {
-    currency?: string;
-};
+type ApiPricing = ModelInfo["pricing"];
 
-export type ApiModelInfo = {
-    name?: string;
+export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
-    category?: ModelCategory;
-    brand?: string;
-    community?: boolean;
-    pricing?: ApiPricing;
-    title?: string;
-    description?: string;
-    input_modalities?: string[];
-    output_modalities?: string[];
-    capabilities?: ModelCapability[];
-    tools?: boolean;
-    reasoning?: boolean;
-    context_length?: number;
-    voices?: string[];
-    is_specialized?: boolean;
-    paid_only?: boolean;
-    alpha?: boolean;
-    flat_rate?: boolean;
-    added_date?: number;
 };
 
 type PriceField =
@@ -85,22 +61,48 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         : pricePerSecond.toFixed(4);
 };
 
+// A 200 response with an empty array, a non-array body, or entries that all
+// lack an identifiable name/id is indistinguishable from "no models" to the
+// caller — it must be treated as a fetch failure, not a valid empty catalog,
+// so the UI surfaces an error instead of silently rendering an empty table.
+export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Model catalog response was empty or malformed");
+    }
+    const models = data as ApiModelInfo[];
+    if (!models.some((model) => getCatalogModelId(model))) {
+        throw new Error("Model catalog response had no usable model entries");
+    }
+    return models;
+}
+
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
+let modelCatalogExpiresAt = 0;
+
+async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
+    const catalogUrl = new URL(url);
+    // Keep the full accessible catalog so the search bar can offer status:all.
+    catalogUrl.searchParams.set("reliability", "all");
+    const response = await fetch(catalogUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch models (${response.status})`);
+    }
+    return parseModelCatalogResponse(await response.json());
+}
 
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
-    if (options.refresh) modelCatalogPromise = null;
+    // Health changes over time; share requests without keeping a snapshot forever.
+    if (options.refresh || Date.now() >= modelCatalogExpiresAt) {
+        modelCatalogPromise = null;
+        modelCatalogExpiresAt = Date.now() + 60_000;
+    }
     modelCatalogPromise ??= import("../../config.ts")
-        .then(({ config }) =>
-            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
-        )
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Failed to fetch models (${response.status})`);
-            }
-            return response.json() as Promise<ApiModelInfo[]>;
-        })
+        .then(({ config }) => fetchCatalog(`${config.genBaseUrl}/models`))
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -178,28 +180,48 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
 
     return {
         name,
+        aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
+        health: model.health,
+        agent: model.agent,
+        baseModel: model.base_model,
+        perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
-        brand: model.brand,
+        publisher: model.publisher,
+        brandUrl: model.brand_url,
+        brandIconUrl: isCommunityProviderIconUrl(model.brand_icon_url)
+            ? model.brand_icon_url
+            : undefined,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
+        supportedEndpoints: model.supported_endpoints,
         capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
+        // Agents may spend Pollen downstream even when their wrapper is free.
         free:
+            !model.agent &&
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
-            outputSortPrice === undefined,
+            outputSortPrice === undefined &&
+            !model.pricing_adjustments?.some(({ price }) => Number(price) > 0),
         alpha: model.alpha,
         addedDate: model.added_date,
         inputSortPrice,
         outputSortPrice,
         prices: [],
+        priceAdjustments: model.pricing_adjustments,
+        contextLength: model.context_length,
+        minDuration: model.min_duration,
+        maxDuration: model.max_duration,
+        allowedDurations: model.allowed_durations
+            ? [...model.allowed_durations]
+            : undefined,
     };
 }
 
-function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const price = baseModelPrice(model);
     if (!price) return null;
 
@@ -265,11 +287,8 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (
-            model.flat_rate === false ||
-            promptTextTokens ||
-            promptImageTokens
-        ) {
+        const isFlatRate = model.flat_rate ?? !promptTextTokens;
+        if (!isFlatRate) {
             return {
                 ...price,
                 prices: priceLines(
@@ -296,12 +315,20 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         }
         return {
             ...price,
-            prices: priceLines([
-                "output",
-                "image",
-                formatPrice(completionImageTokens, formatPriceFlat),
-                "request",
-            ]),
+            prices: priceLines(
+                [
+                    "input",
+                    "image",
+                    formatPrice(promptImageTokens, formatPriceFlat),
+                    "request",
+                ],
+                [
+                    "output",
+                    "image",
+                    formatPrice(completionImageTokens, formatPriceFlat),
+                    "request",
+                ],
+            ),
         };
     }
 
@@ -313,6 +340,18 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
                 "3d",
                 formatPrice(completionImageTokens, formatPriceFlat),
                 "request",
+            ]),
+        };
+    }
+
+    if (price.type === "realtime" && promptAudioSeconds) {
+        return {
+            ...price,
+            prices: priceLines([
+                "input",
+                "audioIn",
+                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                "second",
             ]),
         };
     }
@@ -465,6 +504,38 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     };
 }
 
+function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+    const basePrice = modelPriceFromPricing(model);
+    if (!basePrice) return null;
+
+    const priceVariants = model.pricing_variants?.flatMap((variant) => {
+        const variantPrice = modelPriceFromPricing({
+            ...model,
+            pricing: variant.pricing,
+            pricing_variants: undefined,
+        });
+        return variantPrice
+            ? [
+                  {
+                      name: variant.name,
+                      label: variant.label,
+                      description: variant.description,
+                      prices: variantPrice.prices,
+                  },
+              ]
+            : [];
+    });
+
+    return priceVariants?.length
+        ? {
+              ...basePrice,
+              priceVariants,
+              priceDefaultLabel: model.pricing_default_label,
+              pricingDimensions: model.pricing_dimensions,
+          }
+        : basePrice;
+}
+
 export function getModelPricesFromCatalog(
     models: ApiModelInfo[],
     modelStats?: ModelStats,
@@ -477,8 +548,11 @@ export function getModelPricesFromCatalog(
 
     return prices.map((price) => {
         const stats = modelStats[price.name];
-        return stats?.avgCost
-            ? { ...price, realAvgCost: stats.avgCost }
-            : price;
+        if (!stats) return price;
+        return {
+            ...price,
+            ...(stats.avgCost > 0 ? { realAvgCost: stats.avgCost } : {}),
+            users7d: stats.userCount,
+        };
     });
 }

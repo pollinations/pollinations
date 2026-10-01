@@ -3,10 +3,10 @@ import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 const log = getLogger(["enter", "quests", "model-usage"]);
@@ -69,10 +69,10 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     { env }: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
     const rows = await fetchTinybirdRows<ModalityRow>(
@@ -102,7 +102,7 @@ export async function findRewardProposalsForUser(
         },
     );
 
-    const proposals: RewardProposal[] = [];
+    const proposals: QuestEvaluation["proposals"] = [];
     for (const row of matched) {
         if (row.usedText) {
             proposals.push({ quest: useTextModelQuest, userId: row.userId });
@@ -122,5 +122,5 @@ export async function findRewardProposalsForUser(
             questIds: proposals.map((p) => p.quest.id),
         },
     );
-    return proposals;
+    return { proposals };
 }

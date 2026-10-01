@@ -1,0 +1,26 @@
+DESCRIPTION >
+    Record successful top-level prompt, code and endpoint agent calls, including
+    zero-cost agents. Internal steps, MCP calls, proxies and failed calls do not
+    qualify. The creator's own successful test counts. Creator attribution uses
+    the existing community/<github-username>/<name> model ID. GitHub renames
+    before claiming can lose historical creator eligibility.
+    Backfill is bounded to three months; live flags persist thereafter.
+
+NODE quest_agent_usage_populate_node
+SQL >
+    SELECT
+        user_id,
+        if(startsWith(resolved_model_requested, 'community/'), lower(splitByChar('/', resolved_model_requested)[2]), '') AS owner_username,
+        maxState(toUInt8(1)) AS used_agent
+    FROM generation_event_v2
+    WHERE community_endpoint_type IN ('prompt_agent', 'code_agent', 'endpoint_agent')
+      AND parent_request_id = ''
+      AND is_final
+      AND response_status >= 200 AND response_status < 300
+      AND event_type != 'mcp.call'
+      AND user_id NOT IN ('', 'undefined')
+      AND start_time >= now() - INTERVAL 3 MONTH
+    GROUP BY user_id, owner_username
+
+TYPE MATERIALIZED
+DATASOURCE quest_agent_usage_mv

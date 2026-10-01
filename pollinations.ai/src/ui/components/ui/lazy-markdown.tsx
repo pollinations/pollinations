@@ -21,9 +21,5 @@ export function LazyMarkdownGfm(props: Omit<MarkdownProps, "remarkPlugins">) {
         import("remark-gfm").then((m) => setGfm([m.default]));
     }, []);
 
-    return (
-        <Suspense fallback={<span>{props.children}</span>}>
-            <ReactMarkdown {...props} remarkPlugins={gfm} />
-        </Suspense>
-    );
+    return <LazyMarkdown {...props} remarkPlugins={gfm} />;
 }

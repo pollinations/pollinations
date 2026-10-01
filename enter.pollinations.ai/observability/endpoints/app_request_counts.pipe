@@ -12,6 +12,7 @@ SQL >
     FROM generation_event_v2 events
     INNER JOIN d1_user users ON events.user_id = users.id
     WHERE events.start_time > now() - INTERVAL 1 DAY
+    AND events.is_final  -- one row per request; attempts counted separately
       AND users.synced_at = (SELECT max(synced_at) FROM d1_user)
       AND users.github_id IS NOT NULL
       AND events.user_id != 'undefined'

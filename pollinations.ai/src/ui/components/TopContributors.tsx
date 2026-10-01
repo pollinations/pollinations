@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { QuestLeaderboard } from "./QuestLeaderboard";
 import { Divider } from "./ui/divider";
 import { Body, Heading } from "./ui/typography";
 
@@ -17,7 +18,6 @@ export function TopContributors() {
     const { copy } = usePageCopy(COMMUNITY_PAGE);
 
     const [contributors, setContributors] = useState<Contributor[]>([]);
-    const [loadingContributors, setLoadingContributors] = useState(true);
 
     useEffect(() => {
         const CACHE_KEY = "top_contributors_v1";
@@ -30,7 +30,6 @@ export function TopContributors() {
                 const { data, day } = JSON.parse(cached);
                 if (day === today) {
                     setContributors(data);
-                    setLoadingContributors(false);
                     return;
                 }
             }
@@ -108,24 +107,19 @@ export function TopContributors() {
                 }
             } catch (err) {
                 console.error("Contributor aggregation failed:", err);
-            } finally {
-                setLoadingContributors(false);
             }
         };
 
         fetchTopContributors365();
     }, []);
 
-    if (loadingContributors && contributors.length === 0) {
-        return null;
-    }
-
-    if (!loadingContributors && contributors.length === 0) {
-        return null;
+    if (contributors.length === 0) {
+        return <QuestLeaderboard />;
     }
 
     return (
         <>
+            <QuestLeaderboard />
             <div className="mb-12">
                 <Heading variant="section">{copy.topContributorsTitle}</Heading>
                 <Body size="sm" spacing="comfortable">
@@ -163,7 +157,7 @@ export function TopContributors() {
                                 className="group flex flex-col items-center text-center transition hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                                 <div
-                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition`}
+                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24/0.15)] group-hover:shadow-none transition`}
                                 >
                                     <img
                                         src={contributor.avatar_url}

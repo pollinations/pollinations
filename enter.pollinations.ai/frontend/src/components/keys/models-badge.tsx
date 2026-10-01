@@ -1,4 +1,4 @@
-import { Chip, Tooltip } from "@pollinations/ui";
+import { Tooltip } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 
 export const ModelsBadge: FC<{
@@ -29,15 +29,9 @@ export const ModelsBadge: FC<{
 
     return (
         <Tooltip content={tooltipContent()} ariaLabel="Show allowed models">
-            <Chip
-                intent="neutral"
-                size="sm"
-                className={`cursor-default transition-colors hover:brightness-95 ${
-                    isAllModels ? "text-intent-success-text" : ""
-                }`}
-            >
+            <span className="text-xs font-medium tabular-nums text-theme-text-strong">
                 {isAllModels ? "All" : modelCount}
-            </Chip>
+            </span>
         </Tooltip>
     );
 };

@@ -221,8 +221,14 @@ async def sync_repo() -> dict:
     if not (REPO_DIR / ".git").is_dir():
         REPO_DIR.parent.mkdir(parents=True, exist_ok=True)
         code, _, stderr = await _run(
-            "git", "clone", "--depth=1", "--filter=blob:none",
-            "--branch", branch, config.code_search.local_repo_url, str(REPO_DIR),
+            "git",
+            "clone",
+            "--depth=1",
+            "--filter=blob:none",
+            "--branch",
+            branch,
+            config.code_search.local_repo_url,
+            str(REPO_DIR),
             cwd=REPO_DIR.parent,
         )
         if code != 0:

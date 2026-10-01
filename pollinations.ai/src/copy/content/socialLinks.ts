@@ -79,7 +79,7 @@ export const LINKS = {
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
     docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
     highlightsSource:
-        "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+        "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md",
     polliCli:
         "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

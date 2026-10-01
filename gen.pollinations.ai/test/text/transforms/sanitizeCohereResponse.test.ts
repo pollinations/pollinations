@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    sanitizeCohereResponse,
-    validateCohereRequest,
-} from "../../../src/text/cohereCommandAPlus.js";
+import { sanitizeCohereResponse } from "../../../src/text/cohereCommandAPlus.js";
 import type { ChatCompletion } from "../../../src/text/types.js";
 
 async function streamText(
@@ -125,77 +122,5 @@ describe("sanitizeCohereResponse", () => {
             ],
             content: "answer",
         });
-    });
-});
-
-describe("validateCohereRequest", () => {
-    it("accepts text and automatic tool selection", () => {
-        expect(
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tool_choice: "auto",
-            }),
-        ).toEqual({
-            messages: [{ role: "user", content: "hi" }],
-            options: { tool_choice: "auto" },
-        });
-    });
-
-    it("honors tool_choice none by removing tools before Azure", () => {
-        expect(
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tools: [
-                    {
-                        type: "function",
-                        function: {
-                            name: "lookup",
-                            parameters: { type: "object", properties: {} },
-                        },
-                    },
-                ],
-                tool_choice: "none",
-            }),
-        ).toEqual({
-            messages: [{ role: "user", content: "hi" }],
-            options: {},
-        });
-    });
-
-    it("rejects unsupported image input before calling Azure", () => {
-        expect(() =>
-            validateCohereRequest(
-                [
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: "describe" },
-                            {
-                                type: "image_url",
-                                image_url: { url: "https://example.com/a.jpg" },
-                            },
-                        ],
-                    },
-                ],
-                {},
-            ),
-        ).toThrow(
-            expect.objectContaining({
-                status: 400,
-                message: "Cohere Command A+ on Azure supports text input only",
-            }),
-        );
-    });
-
-    it("rejects tool choices the Azure route does not honor", () => {
-        expect(() =>
-            validateCohereRequest([{ role: "user", content: "hi" }], {
-                tool_choice: "required",
-            }),
-        ).toThrow(
-            expect.objectContaining({
-                status: 400,
-                message:
-                    'Cohere Command A+ on Azure supports tool_choice "auto" or "none" only',
-            }),
-        );
     });
 });

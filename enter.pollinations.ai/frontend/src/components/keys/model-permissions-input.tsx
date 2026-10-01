@@ -6,7 +6,10 @@ import type {
     ModelCategoryGroup,
     ModelCategoryModel,
 } from "../models/model-categories.ts";
-import { toggleConsentModelGroup } from "./model-selection.ts";
+import {
+    setConsentModelGroup,
+    toggleConsentModelGroup,
+} from "./model-selection.ts";
 
 type ModelTab = ModelCategoryGroup["modality"] | "other" | "all";
 
@@ -65,13 +68,17 @@ export function ModelPermissionsInput({
                     const count = ids.filter((id) =>
                         selectedIds.has(id),
                     ).length;
+                    // All works like a select-all checkbox: lit only when
+                    // every model is on, and a partial click fills it.
+                    const isAll = tab === "all";
+                    const isFull = count === ids.length;
                     return (
                         <TabButton
                             key={tab}
                             size="xs"
                             variant="ghost"
-                            className={tab === "all" ? "mr-2" : undefined}
-                            active={count > 0}
+                            className={isAll ? "mr-2" : undefined}
+                            active={isAll ? isFull : count > 0}
                             disabled={disabled}
                             ariaLabel={`${TAB_LABELS[tab]}: ${count} of ${ids.length} models`}
                             detail={
@@ -82,11 +89,18 @@ export function ModelPermissionsInput({
                             }
                             onClick={() =>
                                 onChange(
-                                    toggleConsentModelGroup(
-                                        selected,
-                                        modelIds,
-                                        ids,
-                                    ),
+                                    isAll
+                                        ? setConsentModelGroup(
+                                              selected,
+                                              modelIds,
+                                              ids,
+                                              !isFull,
+                                          )
+                                        : toggleConsentModelGroup(
+                                              selected,
+                                              modelIds,
+                                              ids,
+                                          ),
                                 )
                             }
                         >

@@ -42,7 +42,7 @@ const BUILD_FEATURES: Feature[] = [
     {
         title: "Ready-made agents",
         catalogCount: "agents",
-        body: "Call an agent the way you call a model. Instructions and any tools come wired in; you pay for what it uses.",
+        body: "Call an agent the way you call a model. Instructions and any tools come wired in.",
         linkLabel: "Explore agents",
         href: "https://enter.pollinations.ai/models?category=agent",
         icon: RobotIcon,
@@ -55,22 +55,22 @@ const BUILD_FEATURES: Feature[] = [
         icon: McpIcon,
     },
     {
-        title: "Let users pay for their usage",
-        body: "Users sign in with Pollinations and approve a spending limit. Their usage is billed to their account, not yours.",
+        title: "Users pay",
+        body: "Sign in with Pollinations and approve a spending limit. Their usage is billed to their account, not yours.",
         linkLabel: "Integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
     },
     {
         title: "Media storage",
-        body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
+        body: "Upload images, audio and video.",
         linkLabel: "Media storage guide",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
     },
     {
         title: "Pollinations CLI",
-        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and revenue.",
+        body: "Allow your agent to generate media, manage keys and track usage with polli.",
         linkLabel: "CLI guide",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
@@ -80,7 +80,7 @@ const BUILD_FEATURES: Feature[] = [
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Submit it for review to join the Apps catalog. Turn on app earnings to add a markup.",
+        body: "Submit it for review to join the Apps catalog. Turn on app earnings.",
         icon: AppIcon,
     },
     {

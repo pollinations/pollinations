@@ -11,7 +11,7 @@ import {
     Text,
 } from "@pollinations/ui";
 
-/** Users' side is covered by the panel intro; the card holds the rates. */
+/** The only place on Home with the revenue-share rates. */
 const EARNINGS = {
     title: "Revenue share",
     body: "Publish a model, or turn on earnings for your app, and get a share of what others spend on it, paid in Pollen.",
@@ -35,7 +35,6 @@ const EARNINGS = {
             docsLabel: "Agent publishing documentation",
         },
     ],
-    note: "Example: with app earnings on, $1.00 of usage costs your user $1.25, and your app gets $0.25 in Pollen.",
 };
 
 export function MoneyMoves() {
@@ -93,9 +92,6 @@ export function MoneyMoves() {
                         );
                     })}
                 </ul>
-                <Text size="xs" tone="muted">
-                    {EARNINGS.note}
-                </Text>
             </Surface>
         </section>
     );

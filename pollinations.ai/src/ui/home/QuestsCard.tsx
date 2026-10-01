@@ -14,7 +14,7 @@ export function QuestsCard() {
                 <ContentHeader
                     eyebrow="Quests"
                     title="Free credits for contributors."
-                    subtitle="Get free Quest Pollen for solving GitHub Quests, trying models, or building an app or agent. Many models need Paid Pollen."
+                    subtitle="Get free Quest Pollen for solving GitHub Quests, trying models, or building an app or agent."
                 />
                 <ExternalLinkButton
                     href="https://enter.pollinations.ai/quests"

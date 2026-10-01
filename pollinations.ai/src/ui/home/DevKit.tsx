@@ -458,7 +458,7 @@ function FeatureGroup({
 }
 
 const agentsLabel = (count: number, added: number) =>
-    `${count.toLocaleString()} in the catalog${added > 0 ? ` · +${added} this week` : ""}`;
+    `${count.toLocaleString()}${added > 0 ? ` · +${added} this week` : ""}`;
 
 export function DevKit({ className }: { className?: string }) {
     const { data } = usePlatformStats();

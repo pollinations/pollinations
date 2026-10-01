@@ -341,8 +341,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                 )}
                                                 <span className="sr-only">
                                                     {status?.detail ??
-                                                        status?.text}
-                                                    :
+                                                        `${status?.text}:`}
                                                 </span>
                                                 {status?.action?.kind ===
                                                 "link" ? (

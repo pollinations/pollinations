@@ -23,7 +23,7 @@ export function MoneyMoves() {
         >
             <div className="relative z-10 flex flex-col gap-10 lg:max-w-[46%]">
                 <ContentHeader
-                    eyebrow="Pollen"
+                    eyebrow={null}
                     title="One credit for every model, agent and tool."
                 />
                 <ul className="flex flex-col gap-6">

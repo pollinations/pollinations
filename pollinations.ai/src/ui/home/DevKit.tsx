@@ -296,14 +296,8 @@ function Models() {
 
     return (
         <FeatureGroup
-            eyebrow="Models"
-            title="Official and community models."
-            description={
-                // A blank line until the stats load, so the cards stay put.
-                stats
-                    ? `${stats.models.toLocaleString()} models from ${stats.providers} providers.`
-                    : "\u00a0"
-            }
+            title="Models"
+            description="From official providers and the community. Add yours too."
         >
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {cards.map(
@@ -393,20 +387,18 @@ function ChipList({ names }: { names: string[] }) {
 }
 
 function FeatureGroup({
-    eyebrow,
     title,
     description,
     children,
 }: {
-    eyebrow: string;
     title: string;
-    description: string;
+    description?: string;
     children: ReactNode;
 }) {
     return (
         <section className="flex flex-col gap-5">
             <ContentHeader
-                eyebrow={eyebrow}
+                eyebrow={null}
                 title={title}
                 subtitle={description}
                 className="px-1"
@@ -424,7 +416,6 @@ export function DevKit({ className }: { className?: string }) {
             <Models />
 
             <FeatureGroup
-                eyebrow="Build"
                 title="Pick the pieces you need."
                 description="Agents and hosted tools, plus storage, billing and safety."
             >
@@ -444,7 +435,6 @@ export function DevKit({ className }: { className?: string }) {
             </FeatureGroup>
 
             <FeatureGroup
-                eyebrow="Publish"
                 title="Put your model, agent or app in front of our users."
                 description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >

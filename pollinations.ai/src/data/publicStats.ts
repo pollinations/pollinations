@@ -161,8 +161,6 @@ export function useWeeklyApps() {
 }
 
 type PlatformStats = {
-    /** Callable models excluding agents; official and community entries included. */
-    models: number;
     /** Callable agents, counted separately from models. */
     agents: number;
     /**
@@ -170,8 +168,6 @@ type PlatformStats = {
      * excluded. The public catalog already leaves out unreliable ones.
      */
     community: number;
-    /** Distinct publishers of the listed models, official and community. */
-    providers: number;
     /** Official models per catalog category, e.g. { image: 42, text: 99 }. */
     kinds: Record<string, number>;
     /**
@@ -217,12 +213,8 @@ export const loadPlatformStats = cachePublic(
             if (category) kinds[category] = (kinds[category] ?? 0) + 1;
         }
         return {
-            models: models.length,
             agents: catalog.length - models.length,
             community: models.length - official.length,
-            providers: new Set(
-                models.map((model) => model.publisher).filter(Boolean),
-            ).size,
             kinds,
             newest: newestByGroup(models),
         };

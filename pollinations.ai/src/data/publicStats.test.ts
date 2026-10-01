@@ -231,7 +231,6 @@ describe("platform stats", () => {
         await expect(loadPlatformStats()).resolves.toMatchObject({
             // Community agents count as agents, not community models.
             community: 1,
-            models: 5,
             agents: 1,
             // Kinds count official models only; agents are not a kind.
             kinds: { text: 2, image: 2 },
@@ -318,7 +317,6 @@ describe("platform stats", () => {
         await expect(loadPlatformStats()).rejects.toThrow("models: 503");
         catalogAvailable = true;
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            models: 1,
             agents: 1,
         });
         expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -348,10 +346,8 @@ describe("platform stats", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
         await expect(loadPlatformStats()).resolves.toEqual({
-            models: 0,
             agents: 0,
             community: 0,
-            providers: 0,
             kinds: {},
             newest: {},
         });

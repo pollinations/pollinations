@@ -1,0 +1,36 @@
+{
+  "pr_number": 16102,
+  "title": "chore: Honey Census pays 5 Quest Pollen and needs more than 2 Pollen bought",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16102",
+  "merged_at": "2026-10-01T01:36:46Z",
+  "labels": [
+    "API",
+    "BILLING"
+  ],
+  "pr_body_excerpt": "- Lower the Honey Census reward from 10 to 5 Quest Pollen\n- Require more than 2 Pollen bought in total (Stripe checkouts + paid auto top-ups + Polar orders). The smallest pack (2 Pollen) alone no longer qualifies; 9 farmed accounts each bought exactly that pack to unlock the reward\n- Form and quest descriptions state the new rule\n- Rewards already earned keep their amount. The form text changes as soon as this merges; the quest code ships with the next production promotion\n\nTest: `npx vitest run test/quests.test.ts --testNamePattern=\"Honey Census\"` passes (2 Pollen bought: no reward; 7 bought: 5 Quest Pollen).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Counting the honey jars",
+    "blurb": "Honey Census counts Pollen bought across Stripe checkouts, paid auto top-ups, and Polar orders. A total above 2 qualifies for its 5 Quest Pollen reward; rewards already earned keep their original amount.",
+    "summary": "Honey Census sets its reward at 5 Quest Pollen instead of 10 and requires more than 2 Pollen bought in total across Stripe checkouts, paid auto top-ups, and Polar orders, while preserving previously earned rewards.",
+    "impact": "A combined purchase total above 2 Pollen qualifies for 5 Quest Pollen; an exact total of 2 does not, and previously earned rewards retain their original amounts.",
+    "keywords": [
+      "Honey Census",
+      "Quests",
+      "Pollen",
+      "billing",
+      "purchase eligibility"
+    ],
+    "visual_concept": "Depict Honey Census as a cozy garden counting table: jars from three purchase paths feed a shared tally, with a small sign reading “>2” and a reward jar marked “5.” Polli, wearing tiny accountant glasses, checks the tally beside flowers and an already-filled jar left undisturbed.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli in tiny accountant glasses checks three honey jars feeding a shared tally marked “>2,” beside a reward jar marked “5” and blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent soft lime green (#ecf874) and pastel gradient background, chunky sprites, and dark purple (#110518) pixel text make the scene nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16102.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli in tiny accountant glasses checks three honey jars feeding a shared tally marked “>2,” beside a reward jar marked “5” and blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent soft lime green (#ecf874) and pastel gradient background, chunky sprites, and dark purple (#110518) pixel text make the scene nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-01T01:38:14.681484+00:00"
+}

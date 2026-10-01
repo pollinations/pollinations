@@ -69,8 +69,11 @@ Read `operations/economics/provider-registry.json` first.
   `admin`, `payroll`), optional `cashRules` (bank-description rules for mixed
   vendors) and `runwayLine`. A new vendor in a bank statement needs a registry
   entry before its cash can be categorized.
-- Active vendors have `monthlyReview: true`. Refresh only those during a normal
-  monthly run.
+- A vendor is in a month’s normal review only when `monthlyReview: true` and
+  that month is within its `activeFrom`/`activeTo` bounds (inclusive). Apply
+  the same month bounds to each account. Record excluded vendors with the
+  lifecycle reason in the coverage manifest so a stale review flag is not
+  mistaken for a missing collection.
 - Inactive vendors remain visible for history. Inspect them only when the user
   asks or when they are deliberately reactivated.
 - Never infer aliases, accounts, models, or funding from similar names.

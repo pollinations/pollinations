@@ -1,0 +1,34 @@
+{
+  "pr_number": 16139,
+  "title": "fix(sdk): keep cancellation active while reading response bodies",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16139",
+  "merged_at": "2026-10-01T22:14:33Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16138\n\n- Keeps SDK cancellation and timeout protection active while non-stream response bodies are consumed, so cancelled JSON/binary downloads reject instead of completing.\n- Preserves CANCELLED/499 and TIMEOUT/408, including delayed HTTP-error bodies. Successful streams retain their existing header-only timeout and reader cancellation.\n- Migrates existing private-helper callers without changing public signatures, dependencies, or secondary image-download lifecycles.\n- Verification: eight real HTTP regressions fail before the fix and pass after it; all 107 SDK tests, typecheck, ESM/CJS/browser/declaration builds, Biome and independent built-SDK loopback checks pass. Zero generation calls or Pollen spent.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The stop button means stop",
+    "blurb": "The SDK keeps an eye on the clock while reading response bodies. Cancelled downloads stop instead of quietly finishing the job.",
+    "summary": "The SDK keeps cancellation and timeout protection active while consuming non-stream JSON and binary response bodies, preserving CANCELLED/499 and TIMEOUT/408 even when HTTP-error bodies arrive late.",
+    "impact": "SDK calls cancelled or timed out during a non-stream body download reject with the appropriate error; successful streams keep their existing header-only timeout behavior.",
+    "keywords": [
+      "SDK",
+      "cancellation",
+      "timeouts",
+      "response bodies",
+      "JSON",
+      "binary downloads"
+    ],
+    "visual_concept": "A cozy pixel workbench represents an SDK response arriving in pieces: a CRT robot carries JSON and binary parcels along a little vine-lined path while Polli uses a tiny stop button and clock to halt a parcel mid-delivery. The stopped parcel makes cancellation during body reading visible without suggesting a change to streaming.",
+    "image_prompt": "In a cozy pixel art garden workshop, a CRT-headed robot carries little JSON and binary parcels along a vine-lined path while Polli, wearing a tiny tool belt, gently stops one mid-delivery with a lime green (#ecf874) button and a small clock. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, strictly pixel art, with soft pastel gradients, dark purple (#110518) outlines, warm lighting, cozy pixel art, 8-bit aesthetic, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16139.jpg",
+    "prompt": "In a cozy pixel art garden workshop, a CRT-headed robot carries little JSON and binary parcels along a vine-lined path while Polli, wearing a tiny tool belt, gently stops one mid-delivery with a lime green (#ecf874) button and a small clock. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, strictly pixel art, with soft pastel gradients, dark purple (#110518) outlines, warm lighting, cozy pixel art, 8-bit aesthetic, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T22:15:49.709659+00:00"
+}

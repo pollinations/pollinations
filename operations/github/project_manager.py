@@ -58,7 +58,8 @@ GITHUB_HEADERS = {
 BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
 DEV_PROJECT_ID = "PVT_kwDOBS76fs4AwCAM"
 TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
-DISCORD_RELAY_BOT_ID = 247793354
+# The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
+RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent"]
@@ -182,12 +183,16 @@ def dev_fields(areas: list) -> dict:
     return fields
 
 
+def is_relayed() -> bool:
+    """An issue a bot opened on behalf of a person from Discord."""
+    return not IS_PULL_REQUEST and bool(RELAY_AUTHOR_LINE.search(ISSUE_BODY))
+
+
 def author_source() -> str:
     """Team for our accounts, Agent for bot accounts, Community for everyone else."""
     if ISSUE_AUTHOR_ID in TEAM_IDS:
         return "Team"
-    # The Discord relay bot opens issues on behalf of people.
-    if ITEM_DATA.get("user", {}).get("type") == "Bot" and ISSUE_AUTHOR_ID != DISCORD_RELAY_BOT_ID:
+    if ITEM_DATA.get("user", {}).get("type") == "Bot" and not is_relayed():
         return "Agent"
     return "Community"
 
@@ -296,8 +301,7 @@ def classify(brief: str, areas: list) -> dict:
             facts += f"\n... and {len(files) - 300} more"
     else:
         facts = ""
-    # The Discord relay bot opens issues on behalf of people.
-    author = "a person, relayed from Discord" if ISSUE_AUTHOR_ID == DISCORD_RELAY_BOT_ID else ITEM_DATA.get("user", {}).get("type", "User")
+    author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
     raw = ask_ai(brief, f"""This is {"a pull request" if IS_PULL_REQUEST else "an issue"}.
 Author: {ISSUE_AUTHOR} ({author})
 Title: {ISSUE_TITLE}

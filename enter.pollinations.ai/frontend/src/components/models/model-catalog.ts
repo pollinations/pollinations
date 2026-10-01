@@ -81,7 +81,7 @@ let modelCatalogExpiresAt = 0;
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const catalogUrl = new URL(url);
-    // Keep the full accessible catalog so the search bar can offer status:all.
+    // Keep the full accessible catalog; the search bar applies health filters.
     catalogUrl.searchParams.set("reliability", "all");
     const response = await fetch(catalogUrl, {
         cache: "no-store",

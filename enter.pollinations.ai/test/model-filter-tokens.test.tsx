@@ -10,25 +10,25 @@ import {
 describe("catalog filter dropdowns", () => {
     it.each([
         [
-            "source:community status:all llama",
+            "source:community health:healthy llama",
             "source",
             "official",
-            "source:official status:all llama",
+            "source:official health:healthy llama",
             ["community", "official"],
         ],
         [
-            "status:healthy llama source:official",
+            "health:healthy llama source:official",
             "source",
             "community",
-            "status:healthy llama source:community",
+            "health:healthy llama source:community",
             ["community", "official"],
         ],
         [
-            "status:healthy source:community llama",
-            "status",
-            "all",
-            "status:all source:community llama",
-            ["all", "healthy", "reliable"],
+            "health:healthy source:community llama",
+            "health",
+            "reliable",
+            "health:reliable source:community llama",
+            ["healthy", "reliable"],
         ],
     ])("changes %s without editing its other tokens", (initial, key, choice, expected, values) => {
         let query = initial;
@@ -45,7 +45,7 @@ describe("catalog filter dropdowns", () => {
                 );
             },
         }) as ReactElement<{ children: ReactNode }>;
-        const label = key === "source" ? "Source" : "Status";
+        const label = key === "source" ? "Source" : "Health";
         const dropdown = Children.toArray(content.props.children)
             .filter(
                 (child): child is ReactElement<DropdownProps> =>

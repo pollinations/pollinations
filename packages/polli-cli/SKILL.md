@@ -33,10 +33,15 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
+| Generate a 3D model | `polli gen 3d "<prompt>" --output out.glb` (or `--image <url>` for image-only models) |
+| Embed text | `polli gen embeddings "<text>" ["<text2>" ...]` (one vector per line; also reads stdin) |
+| Change a voice | `polli gen voice-change talk.mp3 --voice nova` |
+| Isolate speech | `polli gen isolate interview.mp4` (strips music/noise) |
+| Speech + character timings | `polli gen audio "<text>" --timestamps` (also writes `speech.mp3.json`) |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` |
+| Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`, max 90) |
@@ -53,6 +58,7 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
 Override the stored key for a single command with `--key <key>`.
+Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once.
 
 ## Recipes
 
@@ -126,7 +132,34 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 
 **Flag support varies per model and is not enforced client-side.** `--duration`, `--aspect-ratio`, and `--audio` are forwarded to the server but may be silently ignored — verified on `wan-fast` where duration is locked to 5s, `--aspect-ratio 9:16` still returns 16:9, and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
 
-**Video is not tracked by `--stats`.** `polli models --type video --stats` returns empty — the stats pipe only records text/image/audio events. To compare video models, fall back to `polli models --type video --json` and look at price/description fields.
+**Video is not tracked by `--stats`.** `polli models --type video --stats` returns empty — the stats pipe only records text/image/audio events. To compare video models, fall back to `polli models --type video --json` and look at price/description fields. The same applies to `--type 3d`.
+
+### Generate a 3D model
+```bash
+polli gen 3d "a red fox" --output fox.glb
+polli gen 3d --image https://media.pollinations.ai/abc --resolution high
+```
+`--model` defaults to `hyper3d/rodin-2.5` for a text-only prompt and `microsoft/trellis-2` once `--image <url>` is given (public http(s), upload local files first with `polli upload`) — `trellis-2` is **image-to-3D only** and rejects a bare prompt. `--resolution low|medium|high` only affects `trellis-2`. The output extension is inferred from the response's `Content-Type`, not the model name: `nvidia/asset-harvester` returns a Gaussian Splat `.ply`, everything else returns `.glb`. `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen.
+
+### Generate embeddings
+```bash
+polli gen embeddings "first text" "second text" --model google/gemini-embedding-2
+printf 'first\nsecond\n' | polli gen embeddings          # one input per stdin line
+```
+Prints one JSON array per input, in input order, one per line (pipe/`jq`-friendly). `--dimensions <n>` (128-4096), `--task-type` (Gemini retrieval hint), and `--input-type query|document` (Cohere) are optional. `--json` prints the full response including `usage`.
+
+### Change or isolate a voice
+```bash
+polli gen voice-change talk.mp3 --voice nova --format wav
+polli gen isolate interview.mp4
+```
+`voice-change` re-speaks a **local** audio file in another voice (preset name or ElevenLabs voice ID) — default output `voice.<format>`. `isolate` strips music/background noise from local audio **or video**, keeping only speech — default output `isolated.mp3`. Both upload the file as multipart form data; ElevenLabs requires **at least 4.6 seconds** of audio for isolation, shorter clips fail with the API's `audio_too_short` error.
+
+### Speech with character-level timestamps
+```bash
+polli gen audio "Hello world" --timestamps
+```
+Saves the audio as usual (`speech.mp3` by default) and appends `.json` to its path for the `alignment`/`normalized_alignment` character timings. Only `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2` support this — other models fail with the API's error message.
 
 ### Transcribe audio to text
 ```bash
@@ -209,6 +242,8 @@ polli keys revoke <id>                                             # id comes fr
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness
+Polli defaults to `openai/gpt-6-sol`; `--model <id>` overrides it. Bloom is key-only and keeps its own model selection.
+
 ```bash
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
@@ -216,6 +251,9 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+polli harness hermes on             # login if needed, mint key "polli-harness-hermes", add provider + Polli skill
+polli harness hermes on --model deepseek/deepseek-v4-flash # use the model ID from `polli models`
+polli harness hermes off            # restore the config backed up before "on"
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
@@ -225,11 +263,10 @@ polli harness openclaw on           # login if needed, mint key "polli-harness-o
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
 polli harness tgpt on               # use tgpt's Pollinations provider with a dedicated key
 polli harness tgpt off              # restore tgpt's previous configuration
-polli harness hermes on             # Hermes Agent custom provider + hosted MCP
 ```
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
 
-Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. Hermes Agent gets a `custom` provider, dedicated key, default model, and hosted Pollinations MCP in `$HERMES_HOME/config.yaml` (default `~/.hermes/config.yaml`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

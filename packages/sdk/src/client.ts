@@ -7,6 +7,8 @@ import type {
     AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
+    AudioSpeechOptions,
+    AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
@@ -1036,7 +1038,7 @@ export class Pollinations {
      */
     async audioSpeech(
         text: string,
-        options: AudioGenerateOptions = {},
+        options: AudioSpeechOptions = {},
     ): Promise<AudioBinaryResponse> {
         if (!text || typeof text !== "string") {
             throw new PollinationsError(
@@ -1050,6 +1052,9 @@ export class Pollinations {
             input: text,
             voice: options.voice,
             model: options.model,
+            duration: options.duration,
+            seed: options.seed,
+            reference_audio: options.referenceAudio,
         };
 
         const response = await fetchWithTimeout(
@@ -1072,6 +1077,35 @@ export class Pollinations {
             response.headers.get("content-type") || "audio/mpeg";
 
         return { buffer, contentType };
+    }
+
+    /** Transform uploaded audio, or isolate speech from audio/video. */
+    async audioTransform(
+        audio: Blob,
+        options: AudioTransformOptions,
+    ): Promise<AudioBinaryResponse> {
+        const formData = new FormData();
+        formData.append("audio", audio);
+        if (options.model) formData.append("model", options.model);
+        if (options.voice && options.operation === "voice-changer") {
+            formData.append("voice", options.voice);
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/${options.operation}`,
+            {
+                method: "POST",
+                headers: this.getHeaders(),
+                body: formData,
+            },
+            this.textTimeout,
+            options.signal,
+        );
+        if (!response.ok) await this.handleErrorResponse(response);
+        return {
+            buffer: await response.arrayBuffer(),
+            contentType: response.headers.get("content-type") || "audio/mpeg",
+        };
     }
 
     // ============================================================================

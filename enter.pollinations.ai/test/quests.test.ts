@@ -516,7 +516,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     ).toMatchObject({
         category: "contribute",
         state: "available",
-        rewardAmount: 4,
+        rewardAmount: 3,
         balanceBucket: "tier",
         url: "https://github.com/pollinations/pollinations/issues/new/choose",
     });
@@ -1940,6 +1940,46 @@ test("two lazy GitHub issue bounties each record independently", async ({
     ).toBeCloseTo(13);
 });
 
+// Regression guard: GitHub search returns at most 100 issues per page, so a
+// bounty ranked past the first page must still be loaded and rewarded.
+test("issue bounties beyond the first 100 quest issues still record", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    for (let issueNumber = 2000; issueNumber < 2100; issueNumber++) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Open bounty #${issueNumber}`,
+            goal: "Merge a focused PR.",
+            reward: 1,
+        });
+    }
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 1999,
+        title: "Bounty on the second page",
+        goal: "Merge the linked PR.",
+        reward: 9,
+        completedByPrNumber: 3999,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:issue:1999"));
+    expect(rewards.map((reward) => reward.idempotencyKey)).toEqual([
+        `quest:github:issue:1999:github:${user.githubId}`,
+    ]);
+});
+
 // An approved app submission closes a quest through the bot's catalog PR, which
 // credits the submitter as commit co-author. Co-authors on other PRs earn nothing,
 // even when a GitHub user with the bot's login opens one on a catalog branch.
@@ -2031,7 +2071,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
     ]);
 });
 
-test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
+test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2115,7 +2155,7 @@ test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        4, 4, 4,
+        3, 3, 3,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2131,7 +2171,167 @@ test("reporters earn 4 Pollen per issue fixed since the 90-day cutoff, excluding
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
+});
+
+test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    const survey = (
+        number: number,
+        title: string,
+        databaseId: number,
+        written: [string, string],
+        labels = [{ name: "BEE-CENSUS" }],
+    ) => ({
+        number,
+        state: "open" as const,
+        title,
+        labels,
+        html_url: `https://github.com/pollinations/pollinations/issues/${number}`,
+        body: [
+            "### What kind of bee are you?\n\n🧪 Hobbyist / tinkerer",
+            `### What would make you pay this month?\n\n${written[0]}`,
+            `### What did you last try to build that Pollinations couldn't do?\n\n${written[1]}`,
+            "### 🔥 Roast us in one sentence (optional)\n\n_No response_",
+        ].join("\n\n"),
+        created_at: "2026-09-29T00:00:00Z",
+        updated_at: "2026-09-29T00:00:00Z",
+        closed_at: null,
+        user: { login: user.githubUsername ?? "", databaseId },
+    });
+    const beeCensusRewards = async () =>
+        (
+            await db
+                .select({
+                    idempotencyKey: schema.rewards.idempotencyKey,
+                    pollenAmount: schema.rewards.pollenAmount,
+                    balanceBucket: schema.rewards.balanceBucket,
+                })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).filter((reward) => reward.idempotencyKey.includes("bee_census"));
+
+    mocks.github.state.questIssues.push(
+        survey(9201, "[Bee Census] hello", user.githubId ?? 0, [
+            "cheaper",
+            "all good",
+        ]),
+        survey(9203, "[Bee Census] renamed account", 999999, [
+            "A $5 plan that includes the image models I use every day.",
+            "A Discord bot that answers by voice.",
+        ]),
+        survey(
+            9204,
+            "[Bee Census] typed without the form",
+            user.githubId ?? 0,
+            [
+                "A $5 plan that includes the image models I use every day.",
+                "A Discord bot that answers by voice.",
+            ],
+            [],
+        ),
+        // Invisible characters don't count towards the written minimum.
+        survey(9205, "[Bee Census] filler", user.githubId ?? 0, [
+            "\u200e\u200e ".repeat(40),
+            "\u200e\u200e ".repeat(40),
+        ]),
+    );
+    await checkQuestsForUser(env, user.id);
+    expect(await beeCensusRewards()).toEqual([]);
+
+    mocks.github.state.questIssues.push(
+        survey(9202, "developer", user.githubId ?? 0, [
+            "A $5 plan that includes the image models I use every day.",
+            "A Discord bot that answers by voice.",
+        ]),
+    );
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, user.id);
+
+    expect(await beeCensusRewards()).toEqual([
+        {
+            idempotencyKey: `quest:bee_census:github:${user.githubId}`,
+            pollenAmount: 3,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
+test("Honey Census quest pays 5 Pollen only once the survey author has bought more than 2 Pollen", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    mocks.github.state.questIssues.push({
+        number: 9301,
+        state: "open" as const,
+        title: "[Honey Census] ",
+        labels: [{ name: "HONEY-CENSUS" }],
+        html_url: "https://github.com/pollinations/pollinations/issues/9301",
+        body: [
+            "### Why did you first buy Pollen?\n\nI ran out of Quest Pollen",
+            "### What would make you use Pollinations more?\n\nCheaper video models and a monthly invoice for my company.",
+            "### Which other AI tools or services do you pay for, and what for?\n\nElevenLabs for character voices, about $22 a month.",
+        ].join("\n\n"),
+        created_at: "2026-09-30T00:00:00Z",
+        updated_at: "2026-09-30T00:00:00Z",
+        closed_at: null,
+        user: {
+            login: user.githubUsername ?? "",
+            databaseId: user.githubId ?? 0,
+        },
+    });
+    const honeyCensusRewards = async () =>
+        (
+            await db
+                .select({
+                    idempotencyKey: schema.rewards.idempotencyKey,
+                    pollenAmount: schema.rewards.pollenAmount,
+                    balanceBucket: schema.rewards.balanceBucket,
+                })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).filter((reward) => reward.idempotencyKey.includes("honey_census"));
+
+    await checkQuestsForUser(env, user.id);
+    expect(await honeyCensusRewards()).toEqual([]);
+
+    // The smallest pack alone doesn't qualify.
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_test_honey_census_small",
+        eventId: "evt_test_honey_census_small",
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 2,
+    });
+    await checkQuestsForUser(env, user.id);
+    expect(await honeyCensusRewards()).toEqual([]);
+
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: "cs_test_honey_census",
+        eventId: "evt_test_honey_census",
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 5,
+    });
+    await checkQuestsForUser(env, user.id);
+
+    expect(await honeyCensusRewards()).toEqual([
+        {
+            idempotencyKey: `quest:honey_census:github:${user.githubId}`,
+            pollenAmount: 5,
+            balanceBucket: "tier",
+        },
+    ]);
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({

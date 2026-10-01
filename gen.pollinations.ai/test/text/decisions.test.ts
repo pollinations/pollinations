@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import { apikey } from "@shared/db/better-auth.ts";
 import {
     test as baseTest,
@@ -184,6 +185,81 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "jaredpalmer/kev-4b",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "jaredpalmer/kev-4b",
+        provider: "Jared Palmer",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "jaredpalmer/kev-4b" },
+    });
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "jaredpalmer/kev-4b",
+        modelProviderUsed: "openrouter",
+        tokenCountPromptText: 452,
+        tokenCountCompletionText: 73,
+        isBilledUsage: true,
+    });
+    expect(event.totalCost).toBeCloseTo((452 * 0.042 * 1.055) / 1_000_000, 12);
+    expect(event.totalPrice).toBe(0.00002003);
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.99997997,
+        packBalance: 0,
+    });
+});
+
+test("routes Span-01 Lite under its own id and bills nothing", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "respan/span-01-lite",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "respan/span-01-lite",
+        provider: "Respan",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "respan/span-01-lite" },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "respan/span-01-lite",
+        modelProviderUsed: "openrouter",
+        totalCost: 0,
+        totalPrice: 0,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",
@@ -294,6 +370,67 @@ test("jev still answers on chat completions", async ({ apiKey, mocks }) => {
     await wait();
     expect(mocks.decisions.state.requests).toHaveLength(1);
 });
+
+for (const stream of [false, true]) {
+    test(`Kev answers on chat completions with stream=${stream}`, async ({
+        apiKey,
+        mocks,
+    }) => {
+        mocks.decisions.state.response = Response.json({
+            model: "jaredpalmer/kev-4b-20260924",
+            answers,
+            usage: { input_tokens: 452, output_tokens: 73 },
+        });
+        const { response, wait } = await post("/v1/chat/completions", apiKey, {
+            model: "jaredpalmer/kev-4b",
+            stream,
+            messages: [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: `Disk at ${stream ? 94 : 93}%`,
+                        questions,
+                    }),
+                },
+            ],
+        });
+        expect(response.status).toBe(200);
+        if (stream) {
+            const events = (await response.text())
+                .split("\n\n")
+                .filter(Boolean)
+                .map((event) => event.replace(/^data: /, ""));
+            expect(events.at(-1)).toBe("[DONE]");
+            const chunks = events
+                .slice(0, -1)
+                .map((event) => JSON.parse(event));
+            expect(JSON.parse(chunks[0].choices[0].delta.content)).toEqual(
+                answers,
+            );
+            expect(chunks.at(-1)?.usage).toMatchObject({
+                prompt_tokens: 452,
+                completion_tokens: 73,
+            });
+        } else {
+            const body = (await response.json()) as {
+                choices: { message: { content: string } }[];
+            };
+            expect(JSON.parse(body.choices[0].message.content)).toEqual(
+                answers,
+            );
+        }
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(1);
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            body: { model: "jaredpalmer/kev-4b" },
+        });
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            modelRequested: "jaredpalmer/kev-4b",
+            isBilledUsage: true,
+        });
+    });
+}
 
 test("jev is not offered on the plain text route", async ({
     apiKey,

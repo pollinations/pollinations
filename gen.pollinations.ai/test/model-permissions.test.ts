@@ -473,15 +473,32 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Jev is the one OpenRouter route free-tier accounts may select, so it is
-    // visible to both keys and cannot take part in this comparison.
-    const openRouterModelNames = getVisibleTextModels().filter(
-        (model) =>
-            getRegistryModelDefinition(model).provider === "openrouter" &&
-            model !== "typesafe/jev-1.13",
-    );
+    // Only the approved low-cost decision models are exempt from paid balance.
+    const questPollenModels = new Set([
+        "typesafe/jev-1.13",
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ]);
+    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        const definition = getRegistryModelDefinition(model);
+        return (
+            definition.provider === "openrouter" &&
+            !questPollenModels.has(model)
+        );
+    });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of questPollenModels) {
+        expect(
+            freeModelNames.has(model),
+            `${model} visible to Quest Pollen`,
+        ).toBe(true);
+        expect(
+            paidModelNames.has(model),
+            `${model} visible to paid users`,
+        ).toBe(true);
+    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(
@@ -506,7 +523,11 @@ test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"] as const;
+    const models = [
+        "openai/gpt-6-sol",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-luna",
+    ] as const;
     const [freeResponse, paidResponse] = await Promise.all([
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${apiKey}` },

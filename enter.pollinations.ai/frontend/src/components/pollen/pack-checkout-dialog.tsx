@@ -428,62 +428,52 @@ const WalletPay: FC<{
     return (
         <DialogBody
             actions={
-                // With a saved card, Confirm is the one action and fills the
-                // row; Cancel moves to the quiet line below it. Missing tax
-                // details or a selector that never loaded replace it with
-                // the way forward.
-                ready && card && needsDetails ? (
-                    <Button
-                        size="lg"
-                        disabled={openingDetails}
-                        onClick={() => void completeDetails()}
-                        className="w-full"
-                    >
-                        {openingDetails
-                            ? "Opening Stripe…"
-                            : "Complete billing details on Stripe"}
-                    </Button>
-                ) : ready && card && selector === "failed" ? (
-                    <HostedButton href={hostedHref}>
-                        Pay on Stripe’s page
-                    </HostedButton>
-                ) : ready && card ? (
-                    <Button
-                        intent="commit"
-                        size="lg"
-                        disabled={!canConfirm || submitting}
-                        onClick={() => void confirmWithCard()}
-                        className="w-full tabular-nums"
-                    >
-                        {submitting
-                            ? "Confirming…"
-                            : session
-                              ? `Confirm · ${session.total.total.amount}`
-                              : "Confirm"}
-                    </Button>
-                ) : (
-                    <>
-                        <CloseButton onClick={onClose} disabled={submitting} />
-                        {ready && session && (
+                <>
+                    <CloseButton onClick={onClose} disabled={submitting} />
+                    {/* Keep the same Cancel + primary action pair in every state. */}
+                    {ready && card && needsDetails ? (
+                        <Button
+                            intent="commit"
+                            size="lg"
+                            disabled={openingDetails}
+                            onClick={() => void completeDetails()}
+                        >
+                            {openingDetails
+                                ? "Opening Stripe…"
+                                : "Complete billing details on Stripe"}
+                        </Button>
+                    ) : ready && card && selector === "failed" ? (
+                        <HostedButton href={hostedHref}>
+                            Pay on Stripe’s page
+                        </HostedButton>
+                    ) : ready && card ? (
+                        <Button
+                            intent="commit"
+                            size="lg"
+                            disabled={!canConfirm || submitting}
+                            onClick={() => void confirmWithCard()}
+                            className="tabular-nums"
+                        >
+                            {submitting
+                                ? "Confirming…"
+                                : session
+                                  ? `Confirm · ${session.total.total.amount}`
+                                  : "Confirm"}
+                        </Button>
+                    ) : (
+                        ready &&
+                        session && (
                             // A card Stripe won't show again: its own page.
                             <HostedButton href={hostedHref}>
                                 Pay on Stripe’s page
                             </HostedButton>
-                        )}
-                    </>
-                )
+                        )
+                    )}
+                </>
             }
             footnote={
                 ready && card ? (
-                    <div className="flex items-center justify-between gap-4 px-(--polli-dialog-gutter) pb-6 text-[13px] leading-snug">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={submitting}
-                            className="cursor-pointer text-theme-text-muted transition-colors hover:text-theme-text-strong disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Cancel
-                        </button>
+                    <div className="flex justify-end px-(--polli-dialog-gutter) pb-6 text-[13px] leading-snug">
                         {/* Same tab, like Buy without a card: Stripe's page
                             returns here, and no modal is left behind. */}
                         <InlineLink href={hostedHref}>
@@ -583,14 +573,13 @@ const CheckoutLoading: FC<{ overlay?: boolean }> = ({ overlay }) => (
 );
 
 /**
- * Leaves for Stripe's hosted page in the same tab (it returns here): a
- * navigation, so a filled button, and no new-tab arrow.
+ * Primary checkout action, opening Stripe in the same tab so it returns here.
  */
 const HostedButton: FC<{ href: string; children: ReactNode }> = ({
     href,
     children,
 }) => (
-    <Button as="a" href={href} size="lg">
+    <Button as="a" href={href} intent="commit" size="lg">
         {children}
     </Button>
 );

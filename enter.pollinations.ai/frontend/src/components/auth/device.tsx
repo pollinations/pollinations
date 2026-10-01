@@ -137,6 +137,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 <Button
                     type="submit"
                     form="device-code-form"
+                    intent="commit"
                     icon={<ArrowRightIcon />}
                     disabled={!canContinue}
                     aria-busy={checking}

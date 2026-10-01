@@ -72,7 +72,7 @@ Models, agents and MCP servers that community members publish on Pollinations, a
 Agents as a product, and the tools agents use to get work done.
 
 **Covers**
-- Agents we host for users, and prompt agents
+- Agents we host for users, such as Floret (`apps/floret/`), the generative media agent we sell media through, and prompt agents
 - Agent harnesses (Claude Code, Hermes, Codex) and their defaults
 - The agent computer: shell, git, sandboxes and VMs
 - Hosted MCP servers in `apps/` (computer, FFmpeg, Exa, Composio, Ask Jev)

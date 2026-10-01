@@ -4,7 +4,6 @@ import {
     byopRequests24h,
     compareAppUsage,
     type DirectoryApp,
-    describeModelKinds,
     isBuzz,
     selectWeeklyApps,
     type WeeklyAppUsage,
@@ -233,7 +232,6 @@ describe("platform stats", () => {
             community: 2,
             models: 5,
             agents: 1,
-            byCategory: { text: 3, image: 3 },
         });
     });
 
@@ -294,30 +292,8 @@ describe("platform stats", () => {
             models: 0,
             agents: 0,
             community: 0,
-            byCategory: {},
         });
         await loadPlatformStats();
         expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-});
-
-describe("model kinds", () => {
-    it("lists every catalog category, largest first, with readable labels", () => {
-        expect(
-            describeModelKinds({
-                "3d": 3,
-                audio: 27,
-                embedding: 6,
-                image: 58,
-                realtime: 4,
-                text: 190,
-                video: 19,
-            }),
-        ).toBe("Text, image, audio, video, embeddings, realtime and 3D");
-    });
-
-    it("skips uncategorised entries and handles a single or empty catalog", () => {
-        expect(describeModelKinds({ other: 9, text: 1 })).toBe("Text");
-        expect(describeModelKinds({})).toBeNull();
     });
 });

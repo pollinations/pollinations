@@ -165,42 +165,14 @@ type PlatformStats = {
     models: number;
     /** Callable agents, counted separately from models. */
     agents: number;
-    /** Count per category, e.g. { text: 141, image: 51 }. */
-    byCategory: Record<string, number>;
     /** Models and agents explicitly marked as community-published by the catalog. */
     community: number;
 };
 
 type CatalogModel = {
-    category?: string;
     agent?: boolean;
     community?: boolean;
 };
-
-const MODEL_KIND_LABELS: Record<string, string> = {
-    embedding: "embeddings",
-    "3d": "3D",
-};
-
-/**
- * The catalog's model categories as a sentence, largest first — e.g.
- * "Text, image, audio, video, embeddings, realtime and 3D". A new category
- * appears on the homepage as soon as the catalog lists it.
- */
-export function describeModelKinds(
-    byCategory: Record<string, number>,
-): string | null {
-    const kinds = Object.entries(byCategory)
-        .filter(([category]) => category !== "other")
-        .sort(([, left], [, right]) => right - left)
-        .map(([category]) => MODEL_KIND_LABELS[category] ?? category);
-    if (kinds.length === 0) return null;
-    const list =
-        kinds.length > 1
-            ? `${kinds.slice(0, -1).join(", ")} and ${kinds[kinds.length - 1]}`
-            : kinds[0];
-    return list.charAt(0).toUpperCase() + list.slice(1);
-}
 
 /**
  * Shared across the dev kit and Community so each mount reuses the cached
@@ -210,7 +182,7 @@ export function usePlatformStats() {
     return useAsync<PlatformStats | null>(loadPlatformStats, null);
 }
 
-/** Only request the catalog used by the visible counts and model categories. */
+/** Only request the catalog used by the visible counts. */
 export const loadPlatformStats = cachePublic(
     async (): Promise<PlatformStats> => {
         const response = await fetch("https://gen.pollinations.ai/models");
@@ -218,15 +190,9 @@ export const loadPlatformStats = cachePublic(
         const body = await response.json();
         if (!Array.isArray(body)) throw new Error("models: invalid catalog");
         const catalog = body as CatalogModel[];
-        const byCategory: Record<string, number> = {};
-        for (const model of catalog) {
-            const category = model.category ?? "other";
-            byCategory[category] = (byCategory[category] ?? 0) + 1;
-        }
         return {
             models: catalog.filter((model) => model.agent !== true).length,
             agents: catalog.filter((model) => model.agent === true).length,
-            byCategory,
             community: catalog.filter((model) => model.community === true)
                 .length,
         };

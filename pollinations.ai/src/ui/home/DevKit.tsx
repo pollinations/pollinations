@@ -17,12 +17,12 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
-import { describeModelKinds, usePlatformStats } from "../../data/publicStats";
+import { usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
     title: string;
     /** Static copy, or copy built from the live catalog's model kinds. */
-    body: string | ((modelKinds: string | null) => string);
+    body: string;
     catalogCount?: "models" | "agents";
     linkLabel?: string;
     href?: string;
@@ -33,8 +33,7 @@ type Feature = {
 const BUILD_FEATURES: Feature[] = [
     {
         title: "Official and community models",
-        body: (modelKinds) =>
-            `${modelKinds ? `${modelKinds}. ` : ""}OpenAI-compatible, with plain GET URLs for quick calls.`,
+        body: "OpenAI-compatible, with plain GET URLs for quick calls.",
         catalogCount: "models",
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
@@ -64,7 +63,7 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Media storage",
-        body: "Upload images, audio and video. Public links, kept 30 days and renewable.",
+        body: "Upload files and share public links, kept 30 days and renewable.",
         linkLabel: "Media storage guide",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
@@ -81,35 +80,23 @@ const BUILD_FEATURES: Feature[] = [
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Submit it for review to join the Apps catalog. For a revenue share, let users pay for their own usage and turn on app earnings.",
+        body: "Submit it for review to join the Apps catalog.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Connect an endpoint you run and set your price. You get 75% of its listed price each time someone calls it.",
+        body: "Connect an endpoint you run and set your price.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it; revenue share is coming soon.",
+        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it for you.",
         icon: RobotIcon,
     },
 ];
 
-function FeatureCard({
-    feature,
-    count,
-    modelKinds = null,
-}: {
-    feature: Feature;
-    count?: number;
-    modelKinds?: string | null;
-}) {
+function FeatureCard({ feature, count }: { feature: Feature; count?: number }) {
     const Icon = feature.icon;
-    const body =
-        typeof feature.body === "function"
-            ? feature.body(modelKinds)
-            : feature.body;
 
     return (
         <Surface
@@ -138,7 +125,7 @@ function FeatureCard({
                 </div>
             </div>
 
-            <Text size="sm">{body}</Text>
+            <Text size="sm">{feature.body}</Text>
 
             {feature.href && feature.linkLabel ? (
                 <ExternalLinkButton
@@ -172,7 +159,7 @@ function FeatureGroup({
 }: {
     eyebrow: string;
     title: string;
-    description: string;
+    description?: string;
     children: ReactNode;
 }) {
     return (
@@ -190,15 +177,10 @@ function FeatureGroup({
 
 export function DevKit({ className }: { className?: string }) {
     const { data } = usePlatformStats();
-    const modelKinds = data ? describeModelKinds(data.byCategory) : null;
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
-            <FeatureGroup
-                eyebrow="Build"
-                title="Pick the pieces you need."
-                description="Models and agents from us and the community, plus hosted tools, storage and billing."
-            >
+            <FeatureGroup eyebrow="Build" title="Pick the pieces you need.">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
@@ -209,7 +191,6 @@ export function DevKit({ className }: { className?: string }) {
                                     ? data?.[feature.catalogCount]
                                     : undefined
                             }
-                            modelKinds={modelKinds}
                         />
                     ))}
                 </div>
@@ -218,7 +199,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Publish"
                 title="Put your model, agent or app in front of our users."
-                description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
+                description="We handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (

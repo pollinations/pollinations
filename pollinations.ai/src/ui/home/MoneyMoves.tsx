@@ -44,7 +44,7 @@ export function MoneyMoves() {
             <ContentHeader
                 eyebrow="Pricing"
                 title="Prepaid credits, priced in dollars."
-                subtitle="Pollen is our prepaid API credit: 1 Pollen = $1, bought by card through Stripe, with a service fee added at checkout. It is not a cryptocurrency and can’t be traded. Your app’s users can also pay for their own usage."
+                subtitle="Pollen is our prepaid API credit: 1 Pollen = $1, bought by card through Stripe, with a service fee added at checkout. It is not a cryptocurrency and can’t be traded."
             />
 
             <Surface variant="card" className="flex flex-col gap-3 p-5">

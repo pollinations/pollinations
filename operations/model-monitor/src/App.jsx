@@ -8,7 +8,6 @@ import {
     DiscordIcon,
     ExternalLinkButton,
     GitHubIcon,
-    Heading,
     IconButton,
     StarIcon,
     Surface,
@@ -620,6 +619,7 @@ function ViewTabs({ value, onChange }) {
 function Header() {
     return (
         <AppHeader
+            appName="Model Monitor"
             navLabel="Model Monitor links"
             autoHide
             innerClassName="polli:max-w-6xl"
@@ -637,9 +637,6 @@ function EvalsPage({ view, onView }) {
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <Header />
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <Heading as="h1" size="title" className="polli:m-0 sm:text-5xl">
-                    Model Monitor
-                </Heading>
                 <Text className="m-0 max-w-3xl">
                     Weekly evals: every text model, community models included,
                     answers the same fresh questions.
@@ -856,26 +853,13 @@ function App({ view, onView }) {
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <Header />
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
-                        <Heading
-                            as="h1"
-                            size="title"
-                            className="polli:m-0 sm:text-5xl"
-                        >
-                            Model Monitor
-                        </Heading>
                         <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
-                            models.
+                            models, based on real user requests. Our own tests
+                            and monitoring probes are not counted.
                         </Text>
-                        <ViewTabs value={view} onChange={onView} />
-                    </div>
-                    <div className="flex flex-col items-start gap-2 sm:items-end">
-                        <WindowTabs
-                            value={aggregationWindow}
-                            onChange={setAggregationWindow}
-                        />
                         <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}
                             {lastUpdated?.toLocaleTimeString("en-GB", {
@@ -886,7 +870,12 @@ function App({ view, onView }) {
                             }) || "-"}{" "}
                             UTC
                         </Text>
+                        <ViewTabs value={view} onChange={onView} />
                     </div>
+                    <WindowTabs
+                        value={aggregationWindow}
+                        onChange={setAggregationWindow}
+                    />
                 </section>
 
                 {error && (

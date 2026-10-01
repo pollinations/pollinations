@@ -11,8 +11,8 @@ export function normalizeAllowedModelSelection(
     return hasExactFullSelection ? null : next;
 }
 
-/** Consent may narrow a request, but reselecting every offered model must not
- * turn a finite request into an unrestricted key. */
+/** Toggle one offered model; an unrestricted (null) selection first expands
+ * to the offered list. Callers decide whether a full list means "all". */
 export function toggleConsentModel(
     current: string[] | null,
     requestedIds: string[],

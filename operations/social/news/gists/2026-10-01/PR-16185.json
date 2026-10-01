@@ -1,0 +1,34 @@
+{
+  "pr_number": 16185,
+  "title": "feat: live community numbers on Home",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16185",
+  "merged_at": "2026-10-01T23:34:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #16103: Home shows that people are using and building on Pollinations right now. Every number is measured live from a public feed.\n\n- Adds \"N requests in the last hour\" under the hero CTA (gen `/models/status`, one rollup row per model)\n- Adds GitHub Quest totals to the Free credits line, via a cached leaderboard loader now shared with Community\n- Adds \"Most used this week | Newest\" tabs to the Apps shelf (both from the cached app directory)\n- Simplifies card copy in Build and Publish (shorter, plainer sentences); the Agents card shows just its count\n\n| | Before | After |\n|---|---|---|\n| Hero | static | 38,272 requests in the last hour |\n| Apps | most used only | Most used this week / Newest |\n\nNote: apps listed since Sep 29 have no screenshot yet (screenshots come from manual backfills), so the Newest tab shows placeholders for now.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Qv9n8zUKi85ULQDkKt9Use\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden has a pulse",
+    "blurb": "Home gets a little less static: an hourly request count, GitHub Quest totals, and a way to browse both popular and newly added apps. The numbers come from public feeds rather than decorative guesswork.",
+    "summary": "Home adds an hourly request count from gen `/models/status`, GitHub Quest totals from a cached leaderboard shared with Community, and “Most used this week” and “Newest” app tabs backed by the cached app directory.",
+    "impact": "Visitors get a measured view of Pollinations activity and two ways to explore apps; recently listed apps without backfilled screenshots display placeholders.",
+    "keywords": [
+      "homepage",
+      "community stats",
+      "requests",
+      "GitHub Quests",
+      "apps",
+      "leaderboard"
+    ],
+    "visual_concept": "Polli checks a cozy garden dashboard: a glowing CRT shows the last-hour request count, a small Quest tally sits beside it, and two labeled paths lead to popular and newest app sprouts. The dashboard and sprouts represent public usage data and the app directory; the newest sprouts can have simple placeholder picture frames.",
+    "image_prompt": "In a cozy pixel art garden workspace, a glowing CRT displays a last-hour request tally while two paths labeled “MOST USED” and “NEWEST” lead to app sprouts, some with blank picture frames; lime green (#ecf874) leaves and soft mint-to-peach gradients fill the scene. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and warmly points out the tally to a curious chunky CRT-headed robot, small-to-medium sized within the scene, sharing the frame and never oversized or dominating, strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16185.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a glowing CRT displays a last-hour request tally while two paths labeled “MOST USED” and “NEWEST” lead to app sprouts, some with blank picture frames; lime green (#ecf874) leaves and soft mint-to-peach gradients fill the scene. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and warmly points out the tally to a curious chunky CRT-headed robot, small-to-medium sized within the scene, sharing the frame and never oversized or dominating, strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T23:35:25.754603+00:00"
+}

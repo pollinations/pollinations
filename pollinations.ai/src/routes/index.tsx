@@ -4,14 +4,8 @@ import {
     ExternalLinkButton,
     InlineLink,
     RocketIcon,
-    Text,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-    compact,
-    useAppDirectory,
-    useLastWeekHealth,
-} from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
@@ -26,26 +20,6 @@ export const Route = createFileRoute("/")({
     head: () => routeHead("/"),
     component: HelloPage,
 });
-
-/** Measured numbers only; each part appears once its public feed loads. */
-function HeroStats() {
-    const { data: week } = useLastWeekHealth();
-    const { data: apps } = useAppDirectory();
-    const stats: string[] = [];
-    if (week) {
-        stats.push(
-            `${compact(week.status_2xx)} successful requests last week`,
-            `${week.availability}% availability`,
-        );
-    }
-    if (apps.length > 0) stats.push(`${apps.length} listed apps`);
-    if (stats.length === 0) return null;
-    return (
-        <Text size="sm" tone="muted">
-            {stats.join(" · ")}
-        </Text>
-    );
-}
 
 function HelloPage() {
     return (
@@ -82,7 +56,6 @@ function HelloPage() {
                         Quick start
                     </InlineLink>
                 </div>
-                <HeroStats />
             </HeroScene>
 
             <DevKit className={postHeroSpacingClassName} />

@@ -3,7 +3,10 @@ import { getPublicOrigin } from "@shared/public-origin.ts";
 import { Hono } from "hono";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { captureProductEvent } from "../utils/product-analytics.ts";
+import {
+    captureProductEvent,
+    visitorCountry,
+} from "../utils/product-analytics.ts";
 
 // Same-origin beacon: everything is read from the query string, never the
 // body. Signed-out views are recorded with an empty user id. The browser sends
@@ -20,12 +23,10 @@ export const productAnalyticsRoutes = new Hono<Env>().post(
             query: { disableRefresh: true },
         });
         c.executionCtx.waitUntil(
-            captureProductEvent(
-                c.env,
-                "page_viewed",
-                session?.user.id ?? "",
-                view.data,
-            ),
+            captureProductEvent(c.env, "page_viewed", session?.user.id ?? "", {
+                ...view.data,
+                ...visitorCountry(c.req.raw.headers),
+            }),
         );
         return c.body(null, 204);
     },

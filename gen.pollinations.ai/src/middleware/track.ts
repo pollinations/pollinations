@@ -205,7 +205,13 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const polliClient = c.req
+            .header("x-polli-client")
+            ?.match(/^cli\/(\d+\.\d+\.\d+)$/);
+        const userTracking = {
+            ...requestIdentity(c.var.auth),
+            polliClientVersion: polliClient?.[1],
+        };
 
         let responseOverride: Response | null = null;
         // What the caller asked for; a provider's response may refine it.
@@ -1012,10 +1018,16 @@ function getContentTypeGuard(
         const isTimestampedTts =
             response.headers.get("x-pollinations-response-format") ===
             "audio-with-timestamps";
+        const isStemSeparation =
+            requestTracking.modelDefinition.supportedEndpoints?.includes(
+                "/alpha/audio/stem-separation",
+            );
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
+                (isStemSeparation &&
+                    contentType.startsWith("application/zip")) ||
                 (isSTTModel &&
                     (contentType.startsWith("application/json") ||
                         contentType.startsWith("text/plain"))) ||
@@ -1095,6 +1107,8 @@ export type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
 };
 
 // Also called with a snapshot of the auth, from work that outlives its request.
@@ -1120,6 +1134,10 @@ export function requestIdentity(
             ? "redirect-auth"
             : (apiKeyMetadata?.createdVia as string | undefined),
         apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedById: apiKeyMetadata?.createdByApiKeyId as
+            | string
+            | undefined,
+        apiKeyOriginAppId: apiKeyMetadata?.originAppKeyId as string | undefined,
         apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
     };

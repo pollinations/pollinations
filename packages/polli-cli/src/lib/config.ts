@@ -8,8 +8,14 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+// POLLINATIONS_ENV=staging points polli at staging, with a separate login.
+const STAGING = process.env.POLLINATIONS_ENV === "staging";
+
 const CONFIG_DIR = join(homedir(), ".pollinations");
-const CREDENTIALS_FILE = join(CONFIG_DIR, "credentials.json");
+const CREDENTIALS_FILE = join(
+    CONFIG_DIR,
+    STAGING ? "credentials.staging.json" : "credentials.json",
+);
 
 export interface PolliCredentials {
     apiKey?: string;
@@ -59,10 +65,19 @@ export const resolveApiKey = (flagKey?: string): string | undefined =>
     (process.env.POLLINATIONS_API_KEY || loadCredentials().apiKey);
 
 export const BASE_URL =
-    process.env.POLLINATIONS_BASE_URL ?? "https://gen.pollinations.ai";
+    process.env.POLLINATIONS_BASE_URL ??
+    (STAGING
+        ? "https://staging.gen.pollinations.ai"
+        : "https://gen.pollinations.ai");
 
 export const ENTER_URL =
-    process.env.POLLINATIONS_ENTER_URL ?? "https://enter.pollinations.ai";
+    process.env.POLLINATIONS_ENTER_URL ??
+    (STAGING
+        ? "https://staging.enter.pollinations.ai"
+        : "https://enter.pollinations.ai");
+
+// Staging has no copy of polli's app key, so staging logins skip attribution.
+export const LOGIN_CLIENT_ID = STAGING ? undefined : "pk_VZF38YW4tQX36SEn";
 
 export const MEDIA_URL =
     process.env.POLLINATIONS_MEDIA_URL ?? "https://media.pollinations.ai";

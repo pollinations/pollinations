@@ -4,13 +4,19 @@ The Pollinations CLI — for humans, AI agents, and everything in between.
 
 Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
 
+## First result
+
+```bash
+npm install -g @pollinations/cli
+polli auth login
+polli gen text "Say hello in one sentence" --model openai/gpt-5.4-nano
+```
+
+Device login opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
+
 <video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
   <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
 </video>
-
-```bash
-npx @pollinations/cli gen image "a cat in space" --output cat.png
-```
 
 ## For AI agents
 
@@ -24,18 +30,18 @@ Every command is agent-friendly:
 
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
-- When a call runs out of pollen, the first line of the error is the top-up link.
+- A 402 error links to your balance, Quests, and top-up options.
 - `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
-## Get started
+## Other ways to start
 
 ```bash
-npm install -g @pollinations/cli     # installs the `polli` binary
-polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+
+Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
 ```bash
 polli update    # npm install -g @pollinations/cli@latest, if installed globally
@@ -57,7 +63,13 @@ polli gen image "enhance this" --image https://media.pollinations.ai/abc --model
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
+polli gen audio "Hello world" --timestamps            # also saves speech.mp3.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+polli gen 3d "a red fox" --output fox.glb
+polli gen 3d --image https://media.pollinations.ai/abc --resolution high
+polli gen embeddings "first text" "second text"        # one vector per line
+polli gen voice-change talk.mp3 --voice nova
+polli gen isolate interview.mp4                        # strip music/noise, keep speech
 polli gen transcribe speech.mp3
 
 polli gen chat --model openai                         # interactive multi-turn
@@ -69,7 +81,7 @@ polli gen chat --model openai                         # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter
+polli models --type image    # filter (text, image, audio, video, 3d, embedding)
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
@@ -136,6 +148,9 @@ Creating an agent also creates its callable model listing. See [Publish an Agent
 Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
 key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
+
+The default is `openai/gpt-6-sol`; pass `--model <id>` to choose another model.
+Bloom is key-only and keeps its own model selection.
 
 ```bash
 polli harness --help              # supported harnesses

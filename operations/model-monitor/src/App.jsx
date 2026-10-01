@@ -8,7 +8,6 @@ import {
     DiscordIcon,
     ExternalLinkButton,
     GitHubIcon,
-    Heading,
     IconButton,
     StarIcon,
     Surface,
@@ -798,6 +797,7 @@ function App() {
     return (
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <AppHeader
+                appName="Model Monitor"
                 navLabel="Model Monitor links"
                 autoHide
                 innerClassName="polli:max-w-6xl"
@@ -808,25 +808,13 @@ function App() {
                 <ColorModeToggle />
             </AppHeader>
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
-                        <Heading
-                            as="h1"
-                            size="title"
-                            className="polli:m-0 sm:text-5xl"
-                        >
-                            Model Monitor
-                        </Heading>
                         <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
-                            models.
+                            models, based on real user requests. Our own tests
+                            and monitoring probes are not counted.
                         </Text>
-                    </div>
-                    <div className="flex flex-col items-start gap-2 sm:items-end">
-                        <WindowTabs
-                            value={aggregationWindow}
-                            onChange={setAggregationWindow}
-                        />
                         <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}
                             {lastUpdated?.toLocaleTimeString("en-GB", {
@@ -838,6 +826,10 @@ function App() {
                             UTC
                         </Text>
                     </div>
+                    <WindowTabs
+                        value={aggregationWindow}
+                        onChange={setAggregationWindow}
+                    />
                 </section>
 
                 {error && (

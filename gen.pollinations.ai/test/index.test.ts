@@ -225,11 +225,12 @@ describe("gen worker routing", () => {
         expect(body).toContain("/docs/polli-skill.md");
         expect(body).toContain("/docs/polli-tasks.md");
         expect(body).toContain("/docs/llm.txt");
+        expect(body).toContain("/docs/llm.txt?section=cli");
+        expect(body).toContain("/docs/llm.txt?section=mcp");
 
         for (const path of [
             "/docs/polli-skill.md",
             "/docs/polli-tasks.md",
-            "/docs/cli.md",
             "/docs/llm.txt",
         ]) {
             const response = await fetchWorker(path);

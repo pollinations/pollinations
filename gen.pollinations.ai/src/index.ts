@@ -70,7 +70,6 @@ function robotsTxt(): Response {
         [
             "User-agent: *",
             "Allow: /docs",
-            "Allow: /llms.txt",
             "Allow: /docs/llm.txt",
             "Disallow: /image/",
             "Disallow: /text/",
@@ -96,11 +95,13 @@ function llmsTxt(c: Context<Env>): Response {
 
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
-- [Polli CLI guide](${origin}/docs/cli.md): Installation, login, usage, and harness setup.
+- [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
+- [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
 
 ## Account
 

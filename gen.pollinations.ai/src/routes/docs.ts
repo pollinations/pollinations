@@ -1016,7 +1016,6 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
-        .get("/cli.md", (c) => c.text(CLI_README))
         .get("/polli-skill.md", (c) => c.text(CLI_SKILL))
         .get("/polli-tasks.md", (c) => c.text(CLI_TASKS))
         .get("/open-api/generate-schema", async (c) => {

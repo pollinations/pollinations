@@ -8,7 +8,7 @@ The focus wall groups every issue and pull request into one of 15 areas. It show
 - Judge a PR by what it does and which files it changes, not by its title prefix alone.
 - When a change touches several areas, pick the one its reviewer would need to understand it.
 - Where a PR came from does not decide its area. A PR that completes a quest goes to the area of the code it changes; the `POLLEN-QUEST` label is never a reason to pick Quests & rewards.
-- PRs that only promote or sync `main` into `production` get no area. They carry other PRs' work and are counted separately as release overhead.
+- PRs that only promote, sync or deploy `main` into `production` (titled "Promote…", "Sync…" or "Deploy…") get no area. They carry other PRs' work and are counted separately as release overhead.
 - Automated PRs from the Pollinations bot (API docs regeneration, app metrics, README refreshes) get the area of what they refresh, but are left out when measuring effort.
 
 ## Overview
@@ -55,7 +55,7 @@ Which models we offer, how they are routed to providers, and what they cost.
 Models, agents and MCP servers that community members publish on Pollinations, and the checks that keep them healthy.
 
 **Covers**
-- Publisher access: who may publish, allowlists, publisher triage
+- Publisher access: who may publish, the publisher allowlist ("Add X to the list" PRs), publisher triage
 - The community model catalog and how it is listed
 - The community monitor (`operations/community-monitor/`) and its alerts to owners
 - Moving Quest models to community hosting
@@ -105,9 +105,9 @@ Who a user is, what their keys can do, and stopping abuse.
 
 **Covers**
 - Sign-in (GitHub, Google), OAuth and account linking
-- API keys, child keys, expiries and key permissions
+- API keys, child keys, expiries and key permissions, including which models a key may use
 - Account management and settings logic
-- Fraud, abuse, bans and allowlists
+- Fraud, abuse and bans
 
 **Not here**
 - Who may publish community models → [Community models](#community-models)
@@ -155,6 +155,7 @@ Shared UI in the Enter dashboard (`enter.pollinations.ai/frontend/`) and the `@p
 
 **Covers**
 - Dashboard layout, navigation, loading states and redesigns
+- Notices and announcement banners in the dashboard
 - Shared components in `packages/ui/`
 - Dashboard pages not owned by one area, such as the model list
 
@@ -287,6 +288,8 @@ Getting data into Tinybird (`enter.pollinations.ai/observability/`), and what we
 
 | When it's unclear between… | Rule |
 |---|---|
+| Models · Accounts & keys | A model's routing or price → Models. Which keys or accounts may use a model → Accounts & keys |
+| Accounts & keys · Community models | Bans, fraud and abuse → Accounts & keys. The publisher allowlist → Community models |
 | Models · Billing & payments | A model's price or route → Models. A request charged the wrong amount → Billing & payments |
 | Models · Community models | We run it → Models. A community member publishes it → Community models |
 | Agents & agent tools · Developer tools | Runs as an agent or hosted MCP server → Agents. Installed by a developer (SDK, CLI, MCP package, plugin) → Developer tools |

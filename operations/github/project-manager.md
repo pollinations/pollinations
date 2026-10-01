@@ -7,7 +7,7 @@ One list for issues and pull requests. Judge issues by what the reporter describ
 
 ## Area (pick exactly ONE)
 
-Pick the focus area from the **Focus areas** document below this prompt, using its exact name from the overview table, for example `"Billing & payments"`. Follow its "Not here" notes and boundary rules. Return `null` only for a pull request that only promotes or syncs `main` into `production`.
+Pick the focus area from the **Focus areas** document below this prompt, using its exact name from the overview table, for example `"Billing & payments"`. Follow its "Not here" notes and boundary rules. Return `null` only for a pull request that only promotes, syncs or deploys `main` into `production`.
 
 ## Kind (pick exactly ONE)
 

@@ -75,6 +75,12 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "span-01-lite": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "respan/span-01-lite",
+    }),
     // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
     // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
     // OpenRouter exposes no floating alias, so the version is pinned here.

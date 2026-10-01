@@ -224,6 +224,42 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     });
 });
 
+test("routes Span-01 Lite under its own id and bills nothing", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "respan/span-01-lite",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "respan/span-01-lite",
+        provider: "Respan",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "respan/span-01-lite" },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "respan/span-01-lite",
+        modelProviderUsed: "openrouter",
+        totalCost: 0,
+        totalPrice: 0,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",

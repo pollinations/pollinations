@@ -94,14 +94,15 @@ describe("Payment-response pricing", () => {
         { accepts: [{ amount: 10000, asset, network }] },
         { accepts: [{ amount: "10000", asset: payTo, network }] },
         { accepts: [{ amount: "<script>alert(1)</script>", asset, network }] },
-    ])("does not invent a price for an absent or invalid quote", ({
-        accepts,
-    }) => {
-        const html = paywall.generateHtml({ accepts });
-        expect(html).toContain("Get your image with Weft");
-        expect(html).not.toContain(" USD");
-        expect(html).not.toContain("<script");
-    });
+    ])(
+        "does not invent a price for an absent or invalid quote",
+        ({ accepts }) => {
+            const html = paywall.generateHtml({ accepts });
+            expect(html).toContain("Get your image with Weft");
+            expect(html).not.toContain(" USD");
+            expect(html).not.toContain("<script");
+        },
+    );
 });
 
 describe("Weft image paywall", () => {
@@ -122,6 +123,14 @@ describe("Weft image paywall", () => {
             "Create your Weft account and verify your email",
         );
         expect(response.text).toContain("$3 in free credit");
+        expect(response.text).toContain('src="data:image/webp;base64,');
+        expect(response.text).toContain(
+            'alt="The Pollinations bee and Weft mascot exchange a flower coin and a picture."',
+        );
+        expect(response.text).toContain("Connect your agent");
+        expect(response.text).toContain("Ask it to pay");
+        expect(response.text).toContain('class="setup-link"');
+        expect(response.text).not.toMatch(/<img[^>]+src="https?:/);
         expect(response.text).not.toContain("Note to developers");
         expect(response.text).not.toContain("<script");
         expect(response.headers["cache-control"]).toContain("no-store");

@@ -83,6 +83,11 @@ for (const [method, path] of [
             /Create your Weft account and verify your email/,
         );
         assert.match(response.text, /\$3 in free credit/);
+        assert.match(response.text, /src="data:image\/webp;base64,/);
+        assert.match(response.text, /Connect your agent/);
+        assert.match(response.text, /Ask it to pay/);
+        assert.match(response.text, /class="setup-link"/);
+        assert.doesNotMatch(response.text, /<img[^>]+src="https?:/);
         assert.doesNotMatch(response.text, /Note to developers|<script/);
         assert.match(response.headers["cache-control"], /no-store/);
 

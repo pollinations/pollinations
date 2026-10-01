@@ -1,46 +1,71 @@
 import {
+    CardIcon,
+    Chip,
     ContentHeader,
     EarningsIcon,
     Heading,
     InlineLink,
+    Surface,
     TargetIcon,
     Text,
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
-import { artFor } from "../../art";
+import { useArt } from "../../art";
 
-/** Pricing, free Quest credits and earnings in one panel. */
+/** What Pollen is: pay as you go, free Quest credits, and earnings. */
 export function MoneyMoves() {
-    // The panel is always dark, so it always gets the night scene.
-    const scene = artFor("home", "quests", "night");
+    const scene = useArt("home", "quests");
 
     return (
-        <section className="dark relative -mx-5 flex flex-col overflow-hidden rounded-none bg-brand-dark px-5 pt-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14 lg:min-h-[30rem] lg:justify-center lg:py-14">
+        <Surface
+            variant="card"
+            className="relative flex flex-col overflow-hidden p-5 sm:p-8 lg:min-h-[30rem] lg:justify-center"
+        >
             <div className="relative z-10 flex flex-col gap-10 lg:max-w-[46%]">
                 <ContentHeader
-                    eyebrow="Pricing"
-                    title="Prepaid credits, priced in dollars."
-                    subtitle="Pollen is our API credit: 1 Pollen = $1. Pay only for what you use."
+                    eyebrow="Pollen"
+                    title="One credit for every model, agent and tool."
                 />
                 <ul className="flex flex-col gap-6">
+                    <Item
+                        icon={CardIcon}
+                        title="Pay as you go"
+                        badge={
+                            <Chip
+                                size="lg"
+                                className="bg-brand-accent font-semibold text-brand-dark"
+                            >
+                                1 Pollen = $1
+                            </Chip>
+                        }
+                    >
+                        Top up any time and pay only for what you use.
+                    </Item>
                     <Item icon={TargetIcon} title="Free credits">
                         Get free Quest Pollen for solving GitHub Quests, trying
                         models, or building an app or agent.{" "}
-                        <InlineLink
-                            href="https://enter.pollinations.ai/quests"
-                            className="text-brand-accent"
-                        >
+                        <InlineLink href="https://enter.pollinations.ai/quests">
                             Explore Quests
                         </InlineLink>
                     </Item>
                     <Item icon={EarningsIcon} title="Earnings">
-                        Get a share of what others spend on your models and
-                        apps.
+                        Get a share of what others spend on your{" "}
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/publish-a-model">
+                            models
+                        </InlineLink>{" "}
+                        and{" "}
+                        {/* Keep the link's arrow and the full stop on its line. */}
+                        <span className="whitespace-nowrap">
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/connect-user-wallets">
+                                apps
+                            </InlineLink>
+                            .
+                        </span>
                     </Item>
                 </ul>
             </div>
-            {/* Under the copy on phones, reaching the bottom edge; the right
-                side of the panel on wide screens. */}
+            {/* Under the copy on phones, reaching the card's edges; the right
+                side of the card on wide screens. */}
             <img
                 src={scene.src}
                 srcSet={scene.srcSet}
@@ -51,30 +76,35 @@ export function MoneyMoves() {
                 height={1024}
                 loading="lazy"
                 decoding="async"
-                className="pricing-scene pointer-events-none -mx-5 mt-8 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-8 sm:w-[calc(100%+4rem)] md:-mx-14 md:w-[calc(100%+7rem)] lg:absolute lg:right-0 lg:bottom-0 lg:m-0 lg:w-[58%]"
+                className="first-call-scene pointer-events-none -mx-5 -mb-5 mt-8 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-8 sm:-mb-8 sm:w-[calc(100%+4rem)] lg:absolute lg:right-0 lg:bottom-0 lg:m-0 lg:w-[58%]"
             />
-        </section>
+        </Surface>
     );
 }
 
 function Item({
     icon: Icon,
     title,
+    badge,
     children,
 }: {
     icon: ComponentType<{ className?: string }>;
     title: string;
+    badge?: ReactNode;
     children: ReactNode;
 }) {
     return (
         <li className="flex gap-4">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">
-                <Icon className="size-5" />
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
+                <Icon className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
-                <Heading as="h3" size="card" className="text-brand-accent">
-                    {title}
-                </Heading>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Heading as="h3" size="card">
+                        {title}
+                    </Heading>
+                    {badge}
+                </div>
                 <Text size="sm">{children}</Text>
             </div>
         </li>

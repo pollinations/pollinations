@@ -312,13 +312,13 @@ main > * {
     mask-image: linear-gradient(to bottom, transparent 0%, black 34%);
 }
 
-/* Blend into the copy; keep the landscape intact where it meets the panel's edge. */
-.pricing-scene {
+/* Blend into the copy above; keep the landscape intact at both sides and below. */
+.first-call-scene {
     mask-image: linear-gradient(to bottom, transparent, black 30%);
 }
 
 @media (min-width: 64rem) {
-    .pricing-scene {
+    .first-call-scene {
         mask-image:
             linear-gradient(to right, transparent, black 25%),
             linear-gradient(to bottom, transparent, black 30%);

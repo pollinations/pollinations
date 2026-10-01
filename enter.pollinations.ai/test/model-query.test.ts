@@ -106,6 +106,13 @@ describe("model query defaults", () => {
         expect(ensureModelQueryDefaults("SOURCE:community")).toBe(
             "SOURCE:community",
         );
+        // Older page versions wrote this default into every search URL.
+        expect(ensureModelQueryDefaults("source:official status:all")).toBe(
+            "source:official",
+        );
+        expect(ensureModelQueryDefaults("STATUS:all flux")).toBe(
+            "source:official flux",
+        );
     });
 });
 

@@ -118,14 +118,14 @@ export function getExplicitModelQuerySource(
 
 /** Make default catalog filters visible and editable in the search bar. */
 export function ensureModelQueryDefaults(query: string): string {
-    const normalizedQuery = query.trim();
-    const hasSource = normalizedQuery
-        .toLowerCase()
+    // URLs saved before the health filter carry the old `status:all` default.
+    const tokens = query
         .split(/\s+/)
-        .some((token) => token.startsWith("source:"));
-    return hasSource
-        ? normalizedQuery
-        : `source:official ${normalizedQuery}`.trimEnd();
+        .filter((token) => token && token.toLowerCase() !== "status:all");
+    const hasSource = tokens.some((token) =>
+        token.toLowerCase().startsWith("source:"),
+    );
+    return [...(hasSource ? [] : ["source:official"]), ...tokens].join(" ");
 }
 
 export function getModelQueryFilterTokens(

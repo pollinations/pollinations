@@ -88,7 +88,7 @@ Not here: service health → API & reliability.
 
 ## Priority (issues only)
 
-Harm to users today, not how valuable a request is or who asked.
+Harm to users today, not how valuable a request is or who asked. A separate job may later move an issue to Express; never pick Express yourself.
 
 - **High**: broken or blocking for users, including billing problems and outages.
 - **Medium**: wrong, but there is a workaround or the impact is limited.

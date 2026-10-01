@@ -1,0 +1,52 @@
+name: Repo / Express priority
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  # Re-apply after a backfill reclassifies priorities.
+  workflow_dispatch:
+    inputs:
+      since_hours:
+        description: "Look at issues opened in the last N hours"
+        required: false
+        default: "2"
+      dry_run:
+        description: "Log the changes without applying them"
+        type: boolean
+        default: true
+
+concurrency:
+  group: express-priority
+  cancel-in-progress: false
+
+jobs:
+  express:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Move customer issues to Express
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
+          SINCE_HOURS: ${{ inputs.since_hours }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python operations/github/customer_priority.py

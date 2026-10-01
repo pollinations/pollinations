@@ -3235,6 +3235,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.0844,
     },
   },
+  "respan/span-01-lite": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "sesame/csm-1b": {
     "cost": {
       "completionAudioTokens": 0.000007,

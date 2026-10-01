@@ -145,10 +145,6 @@ which remains capped by the shared frame.
 Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
 compact results stay centered. It inherits the shared viewport sizing.
 
-`ScrollArea` defaults to native scrollbars, preserving the browser's overlay
-behavior and the user's visibility preferences. `scrollbar="subtle"` opts into
-the custom themed track. Dialogs use the native default without extra gutters.
-
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and

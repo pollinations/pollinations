@@ -1,0 +1,37 @@
+{
+  "pr_number": 16107,
+  "title": "feat: project manager sets area, type and priority",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16107",
+  "merged_at": "2026-10-01T14:30:37Z",
+  "labels": [
+    "FEATURE",
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Adds a single brief, `operations/github/project-manager.md`: 15 focus areas, issue types and priority rules. The classifier and the team read the same file\n- Every new issue and PR gets an Area and Source in the Dev project; issues also get a GitHub issue type (Bug, Feature, Question, Task) and Priority (High, Medium, Low)\n- Area follows what the merged code does; where work came from (for example a quest) doesn't decide it. Promotion PRs get their Area cleared, census responses are skipped, app submissions get App catalog & showcase without an AI call\n- One flow for issues and PRs; Dev fields are looked up by name. Removes classifier labels, tracking parents, the Discord user map and the paid-customer priority bump\n- Adds a separate job every 30 minutes that moves recent issues from paying customers to the new Express priority, only after the classifier has set one\n- Drops the `BILLING` label from the balance issue template and updates AGENTS.md and the issue-maker skill\n\nTested with log-only runs from this branch on 38 mixed issues and PRs (0 failures) and 300 merged PRs (88% agreement with an earlier manual sort). The Express job was dry-run locally against 212 recent issues. The org issue types and Dev field options already match.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A place for every issue",
+    "blurb": "The Dev project gets a tidier sorting system: one shared brief guides both the classifier and the humans reading its work. Even the express lane waits its turn.",
+    "summary": "A shared 15-area project-manager brief guides classification of new issues and PRs into Dev project Area and Source fields; issues also receive a type and priority, with a separate 30-minute job assigning Express priority to eligible issues after classification.",
+    "impact": "Maintainers get consistent project fields for incoming work, while eligible customer issues can move to Express priority without bypassing their initial classification.",
+    "keywords": [
+      "GitHub",
+      "project management",
+      "issue triage",
+      "classification",
+      "priority",
+      "automation"
+    ],
+    "visual_concept": "Depict the Dev project as a cozy garden sorting board: issue and PR cards go into clearly marked Area and Source planters, with a small Express path branching off after the main sorting station. Polli checks the cards with a clipboard while the monitor robot helps sort them; the visual is about orderly maintainer workflow, not a new user-facing feature.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears a tiny clipboard satchel and checks issue and PR cards as a friendly CRT monitor robot sorts them into lime green (#ecf874) Area and Source planters beside a small path labeled 'EXPRESS'; code-plants bloom around the board. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, in a cozy pixel art, 8-bit aesthetic with chunky sprites, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16107.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny clipboard satchel and checks issue and PR cards as a friendly CRT monitor robot sorts them into lime green (#ecf874) Area and Source planters beside a small path labeled 'EXPRESS'; code-plants bloom around the board. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, in a cozy pixel art, 8-bit aesthetic with chunky sprites, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-01T14:31:47.350771+00:00"
+}

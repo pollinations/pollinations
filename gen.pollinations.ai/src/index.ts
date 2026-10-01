@@ -27,6 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { deleteExpiredVms, exeRoutes } from "./routes/exe.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
@@ -151,6 +152,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
+    .route("/exe", exeRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.
@@ -175,4 +177,9 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
+    scheduled: (
+        _controller: ScheduledController,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) => ctx.waitUntil(deleteExpiredVms(env)),
 };

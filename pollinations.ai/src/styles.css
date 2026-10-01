@@ -312,16 +312,22 @@ main > * {
     mask-image: linear-gradient(to bottom, transparent 0%, black 34%);
 }
 
-/* Blend into the copy above; keep the landscape intact at both sides and below. */
-.first-call-scene {
-    mask-image: linear-gradient(to bottom, transparent, black 30%);
+/* Blend into the copy around it; keep the edges that touch the panel's border. */
+.pricing-scene {
+    mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        black 25%,
+        black 75%,
+        transparent
+    );
 }
 
 @media (min-width: 64rem) {
-    .first-call-scene {
+    .pricing-scene {
         mask-image:
-            linear-gradient(to right, transparent, black 25%),
-            linear-gradient(to bottom, transparent, black 30%);
+            linear-gradient(to right, transparent, black 30%),
+            linear-gradient(to top, transparent, black 30%);
         mask-composite: intersect;
     }
 }

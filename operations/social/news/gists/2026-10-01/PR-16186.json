@@ -1,0 +1,35 @@
+{
+  "pr_number": 16186,
+  "title": "feat: allow 32 MiB text request bodies",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16186",
+  "merged_at": "2026-10-01T23:14:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises the shared text JSON request limit from 20 MiB to 32 MiB, including inline chat images.\n- Returns a clear 413 error with the allowed size and documents the limit in the Chat, Responses, and Messages API schemas.\n- Covers a 28 MiB chat request through the local Worker and a 33 MiB rejection; staging also returned the expected 413.\n\nDirect OpenAI accepted a 23.9 MiB inline-image request; OpenRouter accepted 47.8 MiB. The 32 MiB Worker cap leaves headroom under its 128 MB memory limit.\n\nAddresses #15889\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More room in the hive",
+    "blurb": "The text API makes room for bigger requests, including chats with inline images. Oversized requests get a clear 413 instead of a guessing game.",
+    "summary": "The shared text JSON request limit rises from 20 MiB to 32 MiB, including inline chat images, with the limit documented in the Chat, Responses, and Messages schemas and reported in 413 errors.",
+    "impact": "Developers can send text requests up to 32 MiB, while requests over the limit receive a 413 response stating the allowed size.",
+    "keywords": [
+      "text API",
+      "request size",
+      "inline images",
+      "Chat API",
+      "Responses API",
+      "Messages API",
+      "413"
+    ],
+    "visual_concept": "Depict the text API as a cozy garden post office: Polli guides a large chat envelope containing a little picture through a gate marked 32 MiB, with code-plants growing nearby. A small, friendly 413 sign shows where the size boundary is.",
+    "image_prompt": "In a cozy pixel art garden post office, Polli in a tiny mail-carrier cap guides a chat envelope with an inline picture through a lime green (#ecf874) gate marked '32 MiB'; a small '413' sign and flowering code-plants sit beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized or elongated, in strictly pixel art style, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16186.jpg",
+    "prompt": "In a cozy pixel art garden post office, Polli in a tiny mail-carrier cap guides a chat envelope with an inline picture through a lime green (#ecf874) gate marked '32 MiB'; a small '413' sign and flowering code-plants sit beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized or elongated, in strictly pixel art style, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-01T23:15:18.723952+00:00"
+}

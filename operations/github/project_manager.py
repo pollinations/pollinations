@@ -1,3 +1,8 @@
+"""GitHub project manager: puts every new issue and pull request on the Dev project.
+
+project-manager.md is the brief: the only definition of areas, types and priorities.
+"""
+
 import sys
 import os
 import json
@@ -9,8 +14,6 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-TINYBIRD_READ_TOKEN = os.getenv("TINYBIRD_READ_TOKEN")
-TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
 GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
 try:
     GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
@@ -52,6 +55,18 @@ GITHUB_HEADERS = {
     "Content-Type": "application/json",
 }
 
+BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
+DEV_PROJECT_ID = "PVT_kwDOBS76fs4AwCAM"
+TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
+# github-actions[bot] issues report our own failures.
+CI_BOT_IDS = {41898282}
+DISCORD_RELAY_BOT_ID = 247793354
+TYPES = ["Bug", "Feature", "Question", "Task"]
+PRIORITIES = ["High", "Medium", "Low"]
+SOURCES = ["Team", "Community"]
+NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
+APP_SUBMISSION_AREA = "App catalog & showcase"
+
 
 def log_debug(msg: str):
     print(f"[DEBUG] {msg}", file=sys.stderr)
@@ -65,109 +80,6 @@ def fail(msg: str):
     """Log and exit non-zero so a broken run shows up red in Actions."""
     log_error(msg)
     sys.exit(1)
-
-
-CONFIG = {
-    "projects": {
-        "dev": {
-            "id": "PVT_kwDOBS76fs4AwCAM",
-            "name": "Dev",
-            # Team vs Community; the SUPPORT view lists Community issues.
-            "source_field_id": "PVTSSF_lADOBS76fs4AwCAMzhjSPy4",
-            "source_options": {"Team": "00bb2074", "Community": "55f6f20d"},
-            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
-            "priority_options": {
-                "High": "dc7fa85f",
-                "Medium": "e874fe65",
-                "Low": "7495a981",
-            },
-            # Options are read from GitHub by name; the names live in project-manager.md.
-            "area_field_name": "Area",
-        },
-    },
-    "discord_relay_bot_id": 247793354,
-    # CI bots whose issues report our own failures (github-actions[bot]).
-    "ci_bot_ids": {41898282},
-    "org_member_ids": {5099901, 36901823, 74301576, 158852059, 34513273},
-    "discord_uid_to_github": {
-        "304378879705874432": {"id": 5099901, "login": "voodoohop"},
-        "884468469452656732": {"id": 36901823, "login": "ElliotEtag"},
-        "738661669332320287": {"id": 74301576, "login": "Circuit-Overtime"},
-        "859708931478388767": {"id": 158852059, "login": "Itachi-1824"},
-    },
-}
-
-# The relay bot appends "**Author:** `name` (UID: `123`)" after the relayed message,
-# so only whole Author lines count and the last one is the relay's own.
-RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?(\d+)`?\)\s*$", re.MULTILINE)
-
-
-def get_real_author() -> tuple[str, Optional[int]]:
-    if ISSUE_AUTHOR_ID == CONFIG["discord_relay_bot_id"]:
-        uids = RELAY_AUTHOR_LINE.findall(ISSUE_BODY)
-        if uids:
-            discord_uid = uids[-1]
-            log_debug(f"Extracted Discord UID: {discord_uid}")
-            github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
-            if github_user:
-                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user['login']} (id={github_user['id']})")
-                return github_user["login"], github_user["id"]
-            log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
-    return ISSUE_AUTHOR, ISSUE_AUTHOR_ID
-
-
-def is_org_member(github_id: Optional[int]) -> bool:
-    if github_id is None:
-        return False
-    is_member = github_id in CONFIG["org_member_ids"]
-    log_debug(f"Checked GitHub ID {github_id} org membership: {is_member}")
-    return is_member
-
-
-_PAID_CUSTOMER_IDS: Optional[set] = None
-
-
-def fetch_paid_customer_ids() -> set:
-    """Return the set of GitHub numeric user IDs that have ever completed a paid
-    Stripe checkout. Cached for the lifetime of the process."""
-    global _PAID_CUSTOMER_IDS
-    if _PAID_CUSTOMER_IDS is not None:
-        return _PAID_CUSTOMER_IDS
-    if not TINYBIRD_READ_TOKEN:
-        log_debug("TINYBIRD_READ_TOKEN not set; skipping paid-customer lookup")
-        _PAID_CUSTOMER_IDS = set()
-        return _PAID_CUSTOMER_IDS
-    try:
-        r = requests.get(
-            f"{TINYBIRD_API}/v0/pipes/paid_customers.json",
-            headers={"Authorization": f"Bearer {TINYBIRD_READ_TOKEN}"},
-            timeout=15,
-        )
-        if r.status_code != 200:
-            log_error(f"Tinybird paid_customers HTTP {r.status_code}: {r.text[:200]}")
-            _PAID_CUSTOMER_IDS = set()
-            return _PAID_CUSTOMER_IDS
-        rows = r.json().get("data", [])
-        _PAID_CUSTOMER_IDS = {row["github_id"] for row in rows if row.get("github_id") is not None}
-        log_debug(f"Loaded {len(_PAID_CUSTOMER_IDS)} paid-customer GitHub IDs from Tinybird")
-        return _PAID_CUSTOMER_IDS
-    except (requests.RequestException, ValueError) as e:
-        log_error(f"Failed to fetch paid customers: {e}")
-        _PAID_CUSTOMER_IDS = set()
-        return _PAID_CUSTOMER_IDS
-
-
-def is_paid_customer(github_id) -> bool:
-    if github_id is None:
-        return False
-    return github_id in fetch_paid_customer_ids()
-
-
-BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
-TYPES = ["Bug", "Feature", "Question", "Task"]
-PRIORITIES = ["High", "Medium", "Low"]
-APP_SUBMISSION_AREA = "App catalog & showcase"
-SKIPPED_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 
 
 def read_brief() -> str:
@@ -225,14 +137,6 @@ def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
     return None
 
 
-def describe_author() -> str:
-    """How the model sees the author; issues relayed from Discord come from people."""
-    user = ITEM_DATA.get("user", {})
-    if user.get("id") == CONFIG["discord_relay_bot_id"]:
-        return f"{user.get('login', '')} (a person, relayed from Discord)"
-    return f"{user.get('login', '')} (account type: {user.get('type', 'User')})"
-
-
 def graphql_request(query: str, variables: dict = None) -> dict:
     try:
         r = requests.post(
@@ -254,75 +158,89 @@ def graphql_request(query: str, variables: dict = None) -> dict:
         return {}
 
 
-def add_to_project(project_id: str) -> Optional[str]:
-    mutation = """
-    mutation($projectId: ID!, $contentId: ID!) {
-        addProjectV2ItemById(input: {
-            projectId: $projectId,
-            contentId: $contentId
-        }) {
-            item { id }
+def dev_fields(areas: list) -> dict:
+    """Dev project fields by name, each {id, options: {name: id}}; fails when one doesn't match."""
+    query = """
+    query($projectId: ID!) {
+        node(id: $projectId) {
+            ... on ProjectV2 {
+                fields(first: 50) {
+                    nodes { ... on ProjectV2SingleSelectField { id name options { id name } } }
+                }
+            }
         }
     }
     """
+    nodes = graphql_request(query, {"projectId": DEV_PROJECT_ID}).get("node", {}).get("fields", {}).get("nodes", [])
+    fields = {
+        n["name"]: {"id": n["id"], "options": {o["name"]: o["id"] for o in n["options"]}}
+        for n in nodes
+        if n.get("options")
+    }
+    for name, values in (("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)):
+        missing = [v for v in values if v not in fields.get(name, {}).get("options", {})]
+        if missing:
+            fail(f"Dev field {name} does not match project-manager.md; missing options: {missing}")
+    return fields
+
+
+def add_to_dev() -> str:
     if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would add #{ISSUE_NUMBER} to project {project_id}")
         return "dry-run"
-    data = graphql_request(mutation, {
-        "projectId": project_id,
-        "contentId": ISSUE_NODE_ID
-    })
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+        addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) { item { id } }
+    }
+    """
+    data = graphql_request(mutation, {"projectId": DEV_PROJECT_ID, "contentId": ISSUE_NODE_ID})
     item_id = data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
     if not item_id:
-        fail(f"Failed to add #{ISSUE_NUMBER} to project {project_id}")
-    log_debug(f"Added to project {project_id}: item_id={item_id}")
+        fail(f"Failed to add #{ISSUE_NUMBER} to the Dev project")
     return item_id
 
 
-def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
-    mutation = """
-    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-        updateProjectV2ItemFieldValue(input: {
-            projectId: $projectId,
-            itemId: $itemId,
-            fieldId: $fieldId,
-            value: { singleSelectOptionId: $optionId }
-        }) {
-            projectV2Item { id }
-        }
-    }
-    """
+def set_field(item_id: str, field: dict, value: Optional[str]):
+    """Set a single-select field, or clear it when value is None."""
     if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would set project field {field_id} to {option_id}")
         return
-    data = graphql_request(mutation, {
-        "projectId": project_id,
-        "itemId": item_id,
-        "fieldId": field_id,
-        "optionId": option_id,
-    })
-    if data.get("updateProjectV2ItemFieldValue"):
-        log_debug(f"Set project field: field_id={field_id}, option_id={option_id}")
+    if value is None:
+        mutation = """
+        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
+            clearProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $fieldId }) {
+                projectV2Item { id }
+            }
+        }
+        """
+        variables = {}
     else:
-        log_error(f"Failed to set project field: field_id={field_id}")
+        mutation = """
+        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+            updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+                value: { singleSelectOptionId: $optionId }
+            }) { projectV2Item { id } }
+        }
+        """
+        variables = {"optionId": field["options"][value]}
+    data = graphql_request(mutation, {"projectId": DEV_PROJECT_ID, "itemId": item_id, "fieldId": field["id"], **variables})
+    if not data:
+        fail(f"Failed to set field {field['id']} to {value!r} on #{ISSUE_NUMBER}")
 
 
-def assign_issue(assignee: str):
-    if not assignee or DRY_RUN:
+def set_issue_type(issue_type: str):
+    if DRY_RUN:
         return
     try:
-        r = requests.post(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/assignees",
+        r = requests.patch(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
             headers=GITHUB_HEADERS,
-            json={"assignees": [assignee]},
+            json={"type": issue_type},
             timeout=10,
         )
-        if r.status_code == 201:
-            log_debug(f"Assigned issue to: {assignee}")
-        else:
-            log_error(f"Failed to assign issue: {r.status_code} - {r.text}")
     except requests.RequestException as e:
-        log_error(f"Exception assigning issue: {e}")
+        fail(f"Exception setting issue type on #{ISSUE_NUMBER}: {e}")
+    if r.status_code != 200:
+        fail(f"Failed to set issue type {issue_type} on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
 
 
 def fetch_pr_files() -> list:
@@ -339,9 +257,7 @@ def fetch_pr_files() -> list:
         except requests.RequestException as e:
             fail(f"Exception fetching files for PR #{ISSUE_NUMBER}: {e}")
         if r.status_code != 200:
-            fail(
-                f"Failed to fetch files for PR #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}"
-            )
+            fail(f"Failed to fetch files for PR #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
         batch = [f["filename"] for f in r.json()]
         files.extend(batch)
         if len(batch) < 100:
@@ -349,142 +265,67 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def fetch_area_options(names: list) -> dict:
-    """Area option IDs from the Dev project, by name; fails when the brief and the field differ."""
-    project = CONFIG["projects"]["dev"]
-    query = """
-    query($projectId: ID!, $name: String!) {
-        node(id: $projectId) {
-            ... on ProjectV2 {
-                field(name: $name) {
-                    ... on ProjectV2SingleSelectField { id options { id name } }
-                }
-            }
-        }
-    }
-    """
-    field = graphql_request(query, {"projectId": project["id"], "name": project["area_field_name"]})
-    field = field.get("node", {}).get("field") or {}
-    options = {o["name"]: o["id"] for o in field.get("options", [])}
-    missing = [n for n in names if n not in options]
-    if not field or missing:
-        fail(f"Dev Area field does not match project-manager.md; missing options: {missing}")
-    return {"field_id": field["id"], "options": options}
-
-
-def classify(brief: str, areas: list, facts: str) -> dict:
-    """The project manager's answer for the current issue or PR."""
-    item = "a pull request" if IS_PULL_REQUEST else "an issue"
-    user_prompt = f"""This is {item}.
-Author: {describe_author()}
+def classify(brief: str, areas: list) -> dict:
+    """The project manager's answer: area for everything, plus type and priority for issues."""
+    if IS_PULL_REQUEST:
+        files = fetch_pr_files()
+        facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
+        if len(files) > 300:
+            facts += f"\n... and {len(files) - 300} more"
+    else:
+        facts = ""
+    # The Discord relay bot opens issues on behalf of people.
+    author = "a person, relayed from Discord" if ISSUE_AUTHOR_ID == DISCORD_RELAY_BOT_ID else ITEM_DATA.get("user", {}).get("type", "User")
+    raw = ask_ai(brief, f"""This is {"a pull request" if IS_PULL_REQUEST else "an issue"}.
+Author: {ISSUE_AUTHOR} ({author})
 Title: {ISSUE_TITLE}
 Body: {ISSUE_BODY[:2000]}
 {facts}
-"""
-    raw = ask_ai(brief, user_prompt)
+""")
     if raw is None:
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
-    log_debug(f"AI answer: {raw}")
     area = raw.get("area")
     if area is not None and area not in areas:
         fail(f"AI returned invalid area for #{ISSUE_NUMBER}: {area!r}")
-    # No area means a promotion PR or an unlabelled census response: nothing to classify.
+    # No area means a promotion PR or an unlabelled census response.
     if IS_PULL_REQUEST or area is None:
-        return {"area": area}
+        return {"area": area, "type": None, "priority": None}
     if raw.get("type") not in TYPES or raw.get("priority") not in PRIORITIES:
         fail(f"AI returned invalid type or priority for #{ISSUE_NUMBER}: {raw.get('type')!r}, {raw.get('priority')!r}")
     return {"area": area, "type": raw["type"], "priority": raw["priority"]}
 
 
-def set_area(item_id: str, area_field: dict, area: Optional[str]):
-    if area is None:
-        log_debug(f"No area for #{ISSUE_NUMBER}")
-        return
-    project = CONFIG["projects"]["dev"]
-    set_project_field(project["id"], item_id, area_field["field_id"], area_field["options"][area])
-
-
-def set_issue_type(issue_type: str):
-    if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would set issue type: {issue_type}")
-        return
-    try:
-        r = requests.patch(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
-            headers=GITHUB_HEADERS,
-            json={"type": issue_type},
-            timeout=10,
-        )
-    except requests.RequestException as e:
-        fail(f"Exception setting issue type on #{ISSUE_NUMBER}: {e}")
-    if r.status_code != 200:
-        fail(f"Failed to set issue type {issue_type} on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
-    log_debug(f"Set issue type: {issue_type}")
-
-
-def label_names() -> set:
-    return {l.get("name", "").upper() for l in ITEM_DATA.get("labels", []) if isinstance(l, dict)}
-
-
-def organize_pull_request(brief: str, areas: list, area_field: dict):
-    # Every PR sits next to the issues in Dev, where views separate them.
-    item_id = add_to_project(CONFIG["projects"]["dev"]["id"])
-    files = fetch_pr_files()
-    listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
-    answer = classify(brief, areas, f"Changed files ({len(files)}):\n{listed}")
-    if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{answer['area']}\t{ISSUE_TITLE}")
-    set_area(item_id, area_field, answer["area"])
-
-
-def organize_issue(brief: str, areas: list, area_field: dict):
-    project = CONFIG["projects"]["dev"]
-    real_author, real_author_id = get_real_author()
-    is_internal = ISSUE_AUTHOR_ID in CONFIG["ci_bot_ids"] or is_org_member(real_author_id)
-    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
-    if real_author != ISSUE_AUTHOR and is_internal:
-        assign_issue(real_author)
-
-    answer = classify(brief, areas, f"Author type: {'Internal' if is_internal else 'External'}")
-    if answer["area"] is None:
-        log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
-        return
-    source = "Team" if is_internal else "Community"
-    priority = answer["priority"]
-    if source == "Community" and is_paid_customer(real_author_id):
-        log_debug(f"Author {real_author} (id={real_author_id}) is a paying customer; raising priority to High")
-        priority = "High"
-    if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{answer['type']}\t{answer['area']}\t{ISSUE_TITLE}")
-
-    item_id = add_to_project(project["id"])
-    set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
-    set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
-    set_area(item_id, area_field, answer["area"])
-    set_issue_type(answer["type"])
-
-
 def main():
-    log_debug(f"Processing #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
-        log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
+        log_debug("Missing issue or PR number, skipping")
         return
-    labels = label_names()
-    if not IS_PULL_REQUEST and labels & SKIPPED_LABELS:
-        log_debug("Survey response; skipping")
+    labels = {l.get("name", "").upper() for l in ITEM_DATA.get("labels", []) if isinstance(l, dict)}
+    if not IS_PULL_REQUEST and labels & NOT_WORK_LABELS:
+        log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
         return
 
     brief = read_brief()
     areas = area_names(brief)
-    area_field = fetch_area_options(areas)
+    fields = dev_fields(areas)
 
-    if IS_PULL_REQUEST:
-        organize_pull_request(brief, areas, area_field)
-    elif "APP-SUBMISSION" in labels:
-        log_debug("App submission; routing to Dev without classification")
-        set_area(add_to_project(CONFIG["projects"]["dev"]["id"]), area_field, APP_SUBMISSION_AREA)
+    if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
+        answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
-        organize_issue(brief, areas, area_field)
+        answer = classify(brief, areas)
+        if not IS_PULL_REQUEST and answer["area"] is None:
+            log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
+            return
+
+    source = "Team" if ISSUE_AUTHOR_ID in TEAM_IDS | CI_BOT_IDS else "Community"
+    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{answer['priority']}\t{ISSUE_TITLE}")
+
+    item_id = add_to_dev()
+    set_field(item_id, fields["Area"], answer["area"])
+    set_field(item_id, fields["Source"], source)
+    if answer["priority"]:
+        set_field(item_id, fields["Priority"], answer["priority"])
+    if answer["type"]:
+        set_issue_type(answer["type"])
 
 
 if __name__ == "__main__":

@@ -31,6 +31,7 @@ Return `null` when no type fits, for example a refactor, cleanup or routine upda
 
 - `BILLING`: Money: Stripe, checkout, payments, wallets, balances, Pollen credits, debits, refunds, payouts, or Pollen rewards. Setting or changing a model's price is `MODEL`, not `BILLING`; a report that users are charged the wrong amount is `BILLING`
 - `SECURITY`: API keys, permissions, secrets or secret files (`secrets/*.json`), account access, fraud or ban handling, or allowlists
+- `REVENUE`: Work meant to get more people paying or paying more: payment methods, checkout and buy-page conversion, pricing clarity, subscriptions, quests or referrals that reward payments, acquisition (ads, AI-assistant discoverability, "Made with Pollinations" badges), lowering provider costs, metrics that track payers or conversion, and emailing or notifying users about payments or breaking API changes. Billing bug fixes, refunds and model price changes alone are not `REVENUE`
 - `AUTOMATED`: The author's account type is `Bot`. A person relayed from Discord is not automated
 - `POLLEN-QUEST`: Pull requests only. The pull request says it closes or completes a referenced issue that has the `POLLEN-QUEST` label (for example `Fixes #123`). Fixing a problem that a quest issue reported, or only mentioning one, is not enough
 

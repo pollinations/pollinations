@@ -177,7 +177,7 @@ def read_prompt_file() -> str:
 KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
 TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
 # POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
-FLAGS = {"BILLING", "SECURITY", "AUTOMATED"} | ({"POLLEN-QUEST"} if IS_PULL_REQUEST else set())
+FLAGS = {"BILLING", "SECURITY", "AUTOMATED", "REVENUE"} | ({"POLLEN-QUEST"} if IS_PULL_REQUEST else set())
 # Labels the classifier owns; it replaces these and leaves workflow labels alone.
 OWNED_LABELS = set(KINDS) | set(TYPES) | FLAGS
 # Types a person set on an issue that the classifier keeps.

@@ -7,7 +7,9 @@ const illustration = readFileSync(
 
 // Render the x402 response amount using the SDK's asset metadata, not the route price.
 function quotedPrice(paymentRequired, findAsset) {
-    const payment = paymentRequired.accepts[0];
+    const payment = Array.isArray(paymentRequired?.accepts)
+        ? paymentRequired.accepts[0]
+        : undefined;
     if (
         !payment ||
         typeof payment.amount !== "string" ||

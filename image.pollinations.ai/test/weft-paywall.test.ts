@@ -85,6 +85,12 @@ describe("Payment-response pricing", () => {
     });
 
     it.each([
+        undefined,
+        null,
+        {},
+        { accepts: null },
+        { accepts: "10000" },
+        { accepts: { 0: { amount: "10000", asset, network } } },
         { accepts: [] },
         { accepts: [{ amount: "10000" }] },
         { accepts: [{ amount: "10000", network }] },
@@ -94,15 +100,12 @@ describe("Payment-response pricing", () => {
         { accepts: [{ amount: 10000, asset, network }] },
         { accepts: [{ amount: "10000", asset: payTo, network }] },
         { accepts: [{ amount: "<script>alert(1)</script>", asset, network }] },
-    ])(
-        "does not invent a price for an absent or invalid quote",
-        ({ accepts }) => {
-            const html = paywall.generateHtml({ accepts });
-            expect(html).toContain("Get your image with Weft");
-            expect(html).not.toContain(" USD");
-            expect(html).not.toContain("<script");
-        },
-    );
+    ])("does not invent a price for an absent or invalid quote", (quote) => {
+        const html = paywall.generateHtml(quote);
+        expect(html).toContain("Get your image with Weft");
+        expect(html).not.toContain(" USD");
+        expect(html).not.toContain("<script");
+    });
 });
 
 describe("Weft image paywall", () => {
